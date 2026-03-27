@@ -24,6 +24,7 @@
         .nav-cta::after { display: none !important; }
         .page-hero { padding: 180px 60px 100px; position: relative; overflow: hidden; }
         .page-hero::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at 70% 20%, rgba(201,168,76,0.08), transparent 60%); }
+        .hero-animation { position: absolute; top: 0; right: 0; width: 55%; height: 100%; z-index: 1; pointer-events: none; }
         .page-hero-content { position: relative; z-index: 2; max-width: 800px; }
         .breadcrumb { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; }
         .breadcrumb a { color: var(--gold); text-decoration: none; }
@@ -102,6 +103,7 @@
     </nav>
 
     <section class="page-hero">
+        <canvas class="hero-animation" id="heroCanvas"></canvas>
         <div class="page-hero-content">
             <div class="breadcrumb">
                 <a href="sterling-law">Home</a><span class="sep">/</span>
@@ -185,6 +187,116 @@
         const reveals = document.querySelectorAll('.reveal');
         const observer = new IntersectionObserver(entries => { entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); }); }, { threshold: 0.15 });
         reveals.forEach(el => observer.observe(el));
+
+        // Real Estate - Skyline rising animation with lit windows
+        const canvas = document.getElementById('heroCanvas');
+        const ctx = canvas.getContext('2d');
+        function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+        resize(); window.addEventListener('resize', resize);
+
+        const buildings = [
+            { x: 0.08, w: 0.1, h: 0.35, delay: 0 },
+            { x: 0.15, w: 0.08, h: 0.5, delay: 200 },
+            { x: 0.22, w: 0.12, h: 0.65, delay: 400 },
+            { x: 0.33, w: 0.09, h: 0.45, delay: 300 },
+            { x: 0.4, w: 0.11, h: 0.72, delay: 600 },
+            { x: 0.5, w: 0.07, h: 0.4, delay: 500 },
+            { x: 0.56, w: 0.13, h: 0.58, delay: 350 },
+            { x: 0.67, w: 0.08, h: 0.68, delay: 700 },
+            { x: 0.74, w: 0.1, h: 0.42, delay: 450 },
+            { x: 0.83, w: 0.09, h: 0.52, delay: 550 },
+        ];
+
+        let startTime = Date.now();
+        let windowFlickers = [];
+        // Generate random window positions
+        buildings.forEach((b, bi) => {
+            const cols = Math.floor(b.w * 10 / 0.1 * 2);
+            const rows = Math.floor(b.h * 10);
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    if (Math.random() > 0.4) {
+                        windowFlickers.push({
+                            bi, r, c, cols, rows,
+                            flickerSpeed: 0.01 + Math.random() * 0.02,
+                            flickerOffset: Math.random() * Math.PI * 2,
+                            baseOpacity: 0.15 + Math.random() * 0.35
+                        });
+                    }
+                }
+            }
+        });
+
+        let t = 0;
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            t++;
+            const elapsed = Date.now() - startTime;
+            const w = canvas.width, h = canvas.height;
+            const groundY = h * 0.88;
+
+            // Ground line
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(w, groundY);
+            ctx.strokeStyle = 'rgba(201,168,76,0.15)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Draw buildings
+            buildings.forEach((b, bi) => {
+                const rise = Math.min(1, Math.max(0, (elapsed - b.delay) / 1500));
+                const eased = 1 - Math.pow(1 - rise, 3); // ease out cubic
+                const bx = b.x * w;
+                const bw = b.w * w;
+                const bh = b.h * h * 0.55 * eased;
+                const by = groundY - bh;
+
+                // Building body
+                ctx.beginPath();
+                ctx.rect(bx, by, bw, bh);
+                ctx.fillStyle = 'rgba(10,22,40,0.9)';
+                ctx.fill();
+                ctx.strokeStyle = `rgba(201,168,76,${0.2 * eased})`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Top accent line
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.lineTo(bx + bw, by);
+                ctx.strokeStyle = `rgba(201,168,76,${0.5 * eased})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            // Draw windows
+            windowFlickers.forEach(wf => {
+                const b = buildings[wf.bi];
+                const rise = Math.min(1, Math.max(0, (elapsed - b.delay) / 1500));
+                if (rise < 0.5) return;
+                const eased = 1 - Math.pow(1 - rise, 3);
+                const bx = b.x * w;
+                const bw = b.w * w;
+                const bh = b.h * h * 0.55 * eased;
+                const by = groundY - bh;
+
+                const padding = bw * 0.12;
+                const winW = (bw - padding * 2 - (wf.cols - 1) * 3) / wf.cols;
+                const winH = 4;
+                const wx = bx + padding + wf.c * (winW + 3);
+                const wy = by + padding + wf.r * (winH + 6);
+
+                if (wy > groundY - 5 || wy < by + 3) return;
+
+                const flicker = wf.baseOpacity + Math.sin(t * wf.flickerSpeed + wf.flickerOffset) * 0.12;
+                ctx.fillStyle = `rgba(201,168,76,${flicker * eased})`;
+                ctx.fillRect(wx, wy, winW, winH);
+            });
+
+            requestAnimationFrame(animate);
+        }
+        animate();
     </script>
 </body>
 </html>
