@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Auburn Business Network — Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold: #C9A84C;
+            --gold-light: #E8D5A3;
+            --gold-dark: #8B7331;
+            --gold-bg: rgba(201,168,76,0.08);
+            --navy: #0A1628;
+            --navy-mid: #12243B;
+            --navy-light: #1B3A5C;
+            --text: #F5F0E8;
+            --text-light: rgba(245,240,232,0.6);
+            --text-muted: rgba(245,240,232,0.4);
+            --bg: #0A1628;
+            --bg-light: #12243B;
+            --bg-card: #0E1C32;
+            --border: rgba(201,168,76,0.15);
+            --green: #22c55e;
+            --green-bg: rgba(34,197,94,0.1);
+            --red: #ef4444;
+            --red-bg: rgba(239,68,68,0.1);
+            --orange: #f59e0b;
+            --orange-bg: rgba(245,158,11,0.1);
+            --blue: #3b82f6;
+            --blue-bg: rgba(59,130,246,0.1);
+            --r: 10px;
+        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        html{scroll-behavior:smooth}
+        body{font-family:'Open Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+        /* SIDEBAR */
+        .sidebar{width:260px;background:var(--navy-mid);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50;border-right:1px solid var(--border)}
+        .sidebar-header{padding:24px 24px 20px;border-bottom:1px solid var(--border)}
+        .sidebar-logo{font-size:1.1rem;font-weight:800;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase}
+        .sidebar-sub{font-size:.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-top:4px}
+        .sidebar-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+        .nav-section{font-size:.6rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;padding:16px 16px 6px}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:8px;color:var(--text-light);text-decoration:none;font-size:.85rem;font-weight:500;transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left}
+        .nav-item:hover{background:rgba(201,168,76,0.08);color:var(--text)}
+        .nav-item.active{background:rgba(201,168,76,0.12);color:var(--gold)}
+        .nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.7}
+        .nav-item.active svg{opacity:1}
+        .nav-badge{margin-left:auto;background:var(--gold);color:var(--navy);font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:50px}
+        .sidebar-footer{padding:16px 24px;border-top:1px solid var(--border);font-size:.65rem;color:var(--text-muted)}
+
+        /* MAIN */
+        .main{margin-left:260px;min-height:100vh}
+        .topbar{background:var(--navy-mid);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+        .topbar h1{font-size:1.3rem;font-weight:700;color:var(--text);letter-spacing:-0.01em}
+        .topbar-right{display:flex;align-items:center;gap:14px}
+        .avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem}
+        .content{padding:28px 32px}
+
+        /* STATS */
+        .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+        .stat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+        .stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+        .stat-icon svg{width:20px;height:20px}
+        .stat-label{font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em}
+        .stat-value{font-size:2rem;font-weight:800;color:var(--text);margin-top:4px;letter-spacing:-0.02em}
+        .stat-sub{font-size:.78rem;color:var(--text-light);margin-top:2px}
+
+        /* CARDS & TABLE */
+        .card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+        .card-header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .card-header h2{font-size:1rem;font-weight:700;color:var(--text)}
+        .card-body{padding:0}
+
+        .filter-tabs{display:flex;gap:4px;background:rgba(201,168,76,0.06);border-radius:8px;padding:3px}
+        .filter-tab{padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:600;color:var(--text-light);cursor:pointer;border:none;background:none;transition:all .2s}
+        .filter-tab:hover{color:var(--text)}
+        .filter-tab.active{background:var(--gold);color:var(--navy)}
+
+        table{width:100%;border-collapse:collapse}
+        thead th{padding:12px 20px;text-align:left;font-size:.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border)}
+        tbody tr{border-bottom:1px solid rgba(201,168,76,0.06);transition:background .15s}
+        tbody tr:hover{background:rgba(201,168,76,0.04)}
+        tbody tr:last-child{border-bottom:none}
+        tbody td{padding:14px 20px;font-size:.85rem;color:var(--text-light);vertical-align:middle}
+        .biz-name{font-weight:700;color:var(--text);display:block}
+        .biz-category{font-size:.75rem;color:var(--text-muted);margin-top:2px}
+        .biz-email{color:var(--text-light);font-size:.82rem}
+        .biz-date{color:var(--text-muted);font-size:.82rem}
+
+        /* BADGES */
+        .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+        .badge-pending{background:var(--orange-bg);color:var(--orange)}
+        .badge-approved{background:var(--blue-bg);color:var(--blue)}
+        .badge-active{background:var(--green-bg);color:var(--green)}
+        .badge-denied{background:var(--red-bg);color:var(--red)}
+        .badge-waived{background:rgba(168,85,247,0.1);color:#a855f7}
+        .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+
+        /* BUTTONS */
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-weight:600;font-size:.78rem;font-family:inherit;cursor:pointer;border:none;transition:all .2s}
+        .btn-approve{background:var(--green);color:#fff}.btn-approve:hover{filter:brightness(1.1)}
+        .btn-deny{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.2)}.btn-deny:hover{background:var(--red);color:#fff}
+        .btn-waive{background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.2)}.btn-waive:hover{background:#a855f7;color:#fff}
+        .btn-gold{background:var(--gold);color:var(--navy)}.btn-gold:hover{filter:brightness(1.1)}
+        .btn-outline{background:transparent;color:var(--text-light);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+        .btn-sm{padding:5px 10px;font-size:.72rem}
+        .btn-group{display:flex;gap:6px}
+        .btn svg{width:14px;height:14px}
+
+        /* SEARCH */
+        .search-bar{display:flex;align-items:center;gap:10px;background:var(--navy);border:1px solid var(--border);border-radius:8px;padding:8px 14px;width:300px}
+        .search-bar svg{width:16px;height:16px;color:var(--text-muted);flex-shrink:0}
+        .search-bar input{background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:.85rem;width:100%}
+        .search-bar input::placeholder{color:var(--text-muted)}
+
+        /* MODAL */
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center}
+        .modal-overlay.show{display:flex}
+        .modal{background:var(--navy-mid);border:1px solid var(--border);border-radius:14px;width:520px;max-width:90vw;max-height:85vh;overflow-y:auto}
+        .modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .modal-header h3{font-size:1.05rem;font-weight:700;color:var(--text)}
+        .modal-close{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px}
+        .modal-close:hover{color:var(--text)}
+        .modal-close svg{width:20px;height:20px}
+        .modal-body{padding:24px}
+        .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+        .detail-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(201,168,76,0.06)}
+        .detail-row:last-child{border-bottom:none}
+        .detail-label{font-size:.78rem;font-weight:600;color:var(--text-muted)}
+        .detail-value{font-size:.85rem;color:var(--text);font-weight:600;text-align:right}
+
+        /* EMPTY STATE */
+        .empty-state{padding:60px 24px;text-align:center}
+        .empty-state svg{width:48px;height:48px;color:var(--text-muted);margin-bottom:16px}
+        .empty-state h3{font-size:1rem;font-weight:700;color:var(--text-light);margin-bottom:6px}
+        .empty-state p{font-size:.85rem;color:var(--text-muted)}
+
+        /* TOAST */
+        .toast{position:fixed;bottom:24px;right:24px;background:var(--navy-mid);border:1px solid var(--border);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:10px;z-index:200;transform:translateY(100px);opacity:0;transition:all .3s ease}
+        .toast.show{transform:translateY(0);opacity:1}
+        .toast-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .toast-icon svg{width:16px;height:16px}
+        .toast-text{font-size:.85rem;font-weight:600;color:var(--text)}
+        .toast-sub{font-size:.75rem;color:var(--text-muted)}
+
+        /* RESPONSIVE */
+        @media(max-width:1024px){
+            .stats-row{grid-template-columns:repeat(2,1fr)}
+        }
+        @media(max-width:768px){
+            .sidebar{transform:translateX(-100%)}
+            .sidebar.open{transform:translateX(0)}
+            .main{margin-left:0}
+            .stats-row{grid-template-columns:1fr 1fr}
+            .content{padding:20px 16px}
+            .topbar{padding:14px 16px}
+            .filter-tabs{flex-wrap:wrap}
+            table{font-size:.8rem}
+            thead th,tbody td{padding:10px 12px}
+            .btn-group{flex-wrap:wrap}
+        }
+        @media(max-width:480px){
+            .stats-row{grid-template-columns:1fr}
+            .search-bar{width:100%}
+        }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">Auburn Business Network</div>
+        <div class="sidebar-sub">Admin Dashboard</div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">Management</div>
+        <button class="nav-item active" onclick="showSection('submissions')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Submissions
+            <span class="nav-badge" id="pending-count">3</span>
+        </button>
+        <button class="nav-item" onclick="showSection('active')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Active Businesses
+        </button>
+        <button class="nav-item" onclick="showSection('denied')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Denied
+        </button>
+
+        <div class="nav-section">Tools</div>
+        <button class="nav-item" onclick="showSection('settings')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+        </button>
+    </nav>
+    <div class="sidebar-footer">
+        Auburn Business Network &copy; 2026
+    </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+            <button class="btn-outline btn-sm" id="menu-toggle" style="display:none;padding:6px 8px" onclick="document.getElementById('sidebar').classList.toggle('open')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <h1 id="page-title">Submissions</h1>
+        </div>
+        <div class="topbar-right">
+            <div class="search-bar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search businesses..." oninput="filterTable(this.value)">
+            </div>
+            <div class="avatar">DW</div>
+        </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+        <!-- STATS -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:var(--orange-bg)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <div class="stat-label">Pending</div>
+                <div class="stat-value" id="stat-pending">3</div>
+                <div class="stat-sub">Awaiting review</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:var(--blue-bg)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div class="stat-label">Approved</div>
+                <div class="stat-value" id="stat-approved">0</div>
+                <div class="stat-sub">Payment pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:var(--green-bg)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div class="stat-label">Active</div>
+                <div class="stat-value" id="stat-active">0</div>
+                <div class="stat-sub">Live on directory</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:var(--gold-bg)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+                <div class="stat-label">Revenue</div>
+                <div class="stat-value" id="stat-revenue">$0</div>
+                <div class="stat-sub">Total collected</div>
+            </div>
+        </div>
+
+        <!-- SUBMISSIONS SECTION -->
+        <div id="section-submissions">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Business Submissions</h2>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" onclick="filterByStatus('all',this)">All</button>
+                        <button class="filter-tab" onclick="filterByStatus('pending',this)">Pending</button>
+                        <button class="filter-tab" onclick="filterByStatus('approved',this)">Approved</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Business</th>
+                                <th>Contact</th>
+                                <th>Submitted</th>
+                                <th>Status</th>
+                                <th style="text-align:right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submissions-table">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIVE SECTION -->
+        <div id="section-active" style="display:none">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Active Businesses</h2>
+                </div>
+                <div class="card-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Business</th>
+                                <th>Contact</th>
+                                <th>Activated</th>
+                                <th>Type</th>
+                                <th style="text-align:right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="active-table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- DENIED SECTION -->
+        <div id="section-denied" style="display:none">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Denied Submissions</h2>
+                </div>
+                <div class="card-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Business</th>
+                                <th>Contact</th>
+                                <th>Denied On</th>
+                                <th>Reason</th>
+                                <th style="text-align:right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="denied-table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS SECTION -->
+        <div id="section-settings" style="display:none">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Settings</h2>
+                </div>
+                <div class="card-body" style="padding:24px">
+                    <div style="margin-bottom:20px">
+                        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px">STRIPE PAYMENT LINK</label>
+                        <input type="text" id="stripe-link" value="https://buy.stripe.com/7sY5kD2fo8PE425aLScfK0k" style="width:100%;padding:10px 14px;background:var(--navy);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:.85rem;outline:none" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+                    </div>
+                    <div style="margin-bottom:20px">
+                        <label style="font-size:.78rem;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px">LISTING FEE</label>
+                        <input type="text" id="listing-fee" value="$500" style="width:200px;padding:10px 14px;background:var(--navy);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:.85rem;outline:none" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'">
+                    </div>
+                    <button class="btn btn-gold" onclick="saveSettings()">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modal-title">Business Details</h3>
+            <button class="modal-close" onclick="closeModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+        <div class="modal-footer" id="modal-footer"></div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+    <div class="toast-icon" id="toast-icon"></div>
+    <div>
+        <div class="toast-text" id="toast-text"></div>
+        <div class="toast-sub" id="toast-sub"></div>
+    </div>
+</div>
+
+<script>
+    // =========================================================
+    // DATA — In production, this would connect to Firebase/Supabase
+    // For now, uses localStorage so the admin can demo the flow
+    // =========================================================
+    const STRIPE_LINK = 'https://buy.stripe.com/7sY5kD2fo8PE425aLScfK0k';
+
+    const defaultBusinesses = [
+        {id:1, name:"Tiger Town Coffee", category:"Coffee & Cafe", contact:"Sarah Mitchell", email:"sarah@tigertowncoffee.com", phone:"(334) 555-0142", address:"142 N College St, Auburn, AL", submitted:"2026-03-26", status:"pending", notes:"Local coffee shop, open since 2022"},
+        {id:2, name:"Plains Plumbing Co", category:"Home Services", contact:"James Carter", email:"james@plainsplumbing.com", phone:"(334) 555-0287", address:"890 Opelika Rd, Auburn, AL", submitted:"2026-03-25", status:"pending", notes:"Licensed plumber serving Lee County"},
+        {id:3, name:"Auburn Family Dental", category:"Healthcare", contact:"Dr. Lisa Nguyen", email:"office@auburnfamilydental.com", phone:"(334) 555-0391", address:"220 E Glenn Ave, Auburn, AL", submitted:"2026-03-27", status:"pending", notes:"Family dental practice, 3 dentists on staff"},
+    ];
+
+    function loadData() {
+        const stored = localStorage.getItem('abn_businesses');
+        if (stored) return JSON.parse(stored);
+        localStorage.setItem('abn_businesses', JSON.stringify(defaultBusinesses));
+        return defaultBusinesses;
+    }
+
+    function saveData(data) {
+        localStorage.setItem('abn_businesses', JSON.stringify(data));
+    }
+
+    let businesses = loadData();
+    let currentFilter = 'all';
+
+    // =========================================================
+    // RENDER
+    // =========================================================
+    function render() {
+        renderSubmissions();
+        renderActive();
+        renderDenied();
+        updateStats();
+    }
+
+    function renderSubmissions() {
+        const tbody = document.getElementById('submissions-table');
+        const items = businesses.filter(b => {
+            if (currentFilter === 'all') return b.status === 'pending' || b.status === 'approved';
+            return b.status === currentFilter;
+        });
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><h3>No submissions</h3><p>New business requests will appear here</p></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = items.map(b => `
+            <tr data-name="${b.name.toLowerCase()}">
+                <td>
+                    <span class="biz-name">${b.name}</span>
+                    <span class="biz-category">${b.category}</span>
+                </td>
+                <td>
+                    <span class="biz-email">${b.contact}</span><br>
+                    <span class="biz-category">${b.email}</span>
+                </td>
+                <td><span class="biz-date">${formatDate(b.submitted)}</span></td>
+                <td><span class="badge badge-${b.status}">${b.status}</span></td>
+                <td style="text-align:right">
+                    <div class="btn-group" style="justify-content:flex-end">
+                        <button class="btn btn-outline btn-sm" onclick="viewDetails(${b.id})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            View
+                        </button>
+                        ${b.status === 'pending' ? `
+                            <button class="btn btn-approve btn-sm" onclick="approveBusiness(${b.id})">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                                Approve
+                            </button>
+                            <button class="btn btn-waive btn-sm" onclick="waiveFee(${b.id})">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                Waive Fee
+                            </button>
+                            <button class="btn btn-deny btn-sm" onclick="denyBusiness(${b.id})">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                Deny
+                            </button>
+                        ` : `
+                            <button class="btn btn-gold btn-sm" onclick="markPaid(${b.id})">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                Mark Paid
+                            </button>
+                        `}
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderActive() {
+        const tbody = document.getElementById('active-table');
+        const items = businesses.filter(b => b.status === 'active' || b.status === 'waived');
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><h3>No active businesses yet</h3><p>Approved & paid businesses will appear here</p></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = items.map(b => `
+            <tr data-name="${b.name.toLowerCase()}">
+                <td>
+                    <span class="biz-name">${b.name}</span>
+                    <span class="biz-category">${b.category}</span>
+                </td>
+                <td>
+                    <span class="biz-email">${b.contact}</span><br>
+                    <span class="biz-category">${b.email}</span>
+                </td>
+                <td><span class="biz-date">${formatDate(b.activatedOn || b.submitted)}</span></td>
+                <td><span class="badge ${b.status === 'waived' ? 'badge-waived' : 'badge-active'}">${b.status === 'waived' ? 'Fee Waived' : 'Paid'}</span></td>
+                <td style="text-align:right">
+                    <button class="btn btn-outline btn-sm" onclick="viewDetails(${b.id})">View</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderDenied() {
+        const tbody = document.getElementById('denied-table');
+        const items = businesses.filter(b => b.status === 'denied');
+
+        if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><h3>No denied submissions</h3><p>Denied business requests will appear here</p></div></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = items.map(b => `
+            <tr data-name="${b.name.toLowerCase()}">
+                <td>
+                    <span class="biz-name">${b.name}</span>
+                    <span class="biz-category">${b.category}</span>
+                </td>
+                <td>
+                    <span class="biz-email">${b.contact}</span><br>
+                    <span class="biz-category">${b.email}</span>
+                </td>
+                <td><span class="biz-date">${formatDate(b.deniedOn || b.submitted)}</span></td>
+                <td><span style="font-size:.82rem;color:var(--text-muted)">${b.denyReason || '—'}</span></td>
+                <td style="text-align:right">
+                    <div class="btn-group" style="justify-content:flex-end">
+                        <button class="btn btn-outline btn-sm" onclick="viewDetails(${b.id})">View</button>
+                        <button class="btn btn-approve btn-sm" onclick="reconsider(${b.id})">Reconsider</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updateStats() {
+        const pending = businesses.filter(b => b.status === 'pending').length;
+        const approved = businesses.filter(b => b.status === 'approved').length;
+        const active = businesses.filter(b => b.status === 'active' || b.status === 'waived').length;
+        const paid = businesses.filter(b => b.status === 'active').length;
+
+        document.getElementById('stat-pending').textContent = pending;
+        document.getElementById('stat-approved').textContent = approved;
+        document.getElementById('stat-active').textContent = active;
+        document.getElementById('stat-revenue').textContent = '$' + (paid * 500).toLocaleString();
+        document.getElementById('pending-count').textContent = pending;
+    }
+
+    // =========================================================
+    // ACTIONS
+    // =========================================================
+    function approveBusiness(id) {
+        const biz = businesses.find(b => b.id === id);
+        if (!biz) return;
+        biz.status = 'approved';
+        biz.approvedOn = new Date().toISOString().split('T')[0];
+        saveData(businesses);
+        render();
+        showToast('Approved', `${biz.name} approved — payment link ready to send`, 'var(--green-bg)', 'var(--green)');
+
+        // Auto-copy payment link
+        copyPaymentLink(biz);
+    }
+
+    function denyBusiness(id) {
+        const biz = businesses.find(b => b.id === id);
+        if (!biz) return;
+
+        const reason = prompt('Reason for denial (optional):');
+        biz.status = 'denied';
+        biz.deniedOn = new Date().toISOString().split('T')[0];
+        biz.denyReason = reason || 'No reason provided';
+        saveData(businesses);
+        render();
+        showToast('Denied', `${biz.name} has been denied`, 'var(--red-bg)', 'var(--red)');
+    }
+
+    function waiveFee(id) {
+        const biz = businesses.find(b => b.id === id);
+        if (!biz) return;
+
+        if (!confirm(`Waive the listing fee for ${biz.name}? They will be activated immediately without payment.`)) return;
+
+        biz.status = 'waived';
+        biz.activatedOn = new Date().toISOString().split('T')[0];
+        saveData(businesses);
+        render();
+        showToast('Fee Waived', `${biz.name} is now active — no payment required`, 'rgba(168,85,247,0.1)', '#a855f7');
+    }
+
+    function markPaid(id) {
+        const biz = businesses.find(b => b.id === id);
+        if (!biz) return;
+        biz.status = 'active';
+        biz.activatedOn = new Date().toISOString().split('T')[0];
+        saveData(businesses);
+        render();
+        showToast('Payment Confirmed', `${biz.name} is now active on the directory`, 'var(--green-bg)', 'var(--green)');
+    }
+
+    function reconsider(id) {
+        const biz = businesses.find(b => b.id === id);
+        if (!biz) return;
+        biz.status = 'pending';
+        delete biz.deniedOn;
+        delete biz.denyReason;
+        saveData(businesses);
+        render();
+        showToast('Reconsidered', `${biz.name} moved back to pending`, 'var(--orange-bg)', 'var(--orange)');
+    }
+
+    function copyPaymentLink(biz) {
+        const link = document.getElementById('stripe-link')?.value || STRIPE_LINK;
+        navigator.clipboard.writeText(link).catch(() => {});
+    }
+
+    // =========================================================
+    // MODAL
+    // =========================================================
+    function viewDetails(id) {
+        const biz = businesses.find(b => b.id === id);
+        if (!biz) return;
+
+        document.getElementById('modal-title').textContent = biz.name;
+        document.getElementById('modal-body').innerHTML = `
+            <div class="detail-row"><span class="detail-label">Business Name</span><span class="detail-value">${biz.name}</span></div>
+            <div class="detail-row"><span class="detail-label">Category</span><span class="detail-value">${biz.category}</span></div>
+            <div class="detail-row"><span class="detail-label">Contact</span><span class="detail-value">${biz.contact}</span></div>
+            <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${biz.email}</span></div>
+            <div class="detail-row"><span class="detail-label">Phone</span><span class="detail-value">${biz.phone}</span></div>
+            <div class="detail-row"><span class="detail-label">Address</span><span class="detail-value">${biz.address}</span></div>
+            <div class="detail-row"><span class="detail-label">Submitted</span><span class="detail-value">${formatDate(biz.submitted)}</span></div>
+            <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value"><span class="badge badge-${biz.status}">${biz.status}</span></span></div>
+            ${biz.notes ? `<div class="detail-row"><span class="detail-label">Notes</span><span class="detail-value" style="max-width:280px;text-align:right">${biz.notes}</span></div>` : ''}
+            ${biz.status === 'approved' ? `
+                <div style="margin-top:20px;padding:16px;background:var(--blue-bg);border-radius:8px;border:1px solid rgba(59,130,246,0.15)">
+                    <div style="font-size:.78rem;font-weight:700;color:var(--blue);margin-bottom:6px">PAYMENT LINK</div>
+                    <div style="font-size:.82rem;color:var(--text-light);word-break:break-all">${STRIPE_LINK}</div>
+                    <button class="btn btn-gold btn-sm" style="margin-top:10px" onclick="navigator.clipboard.writeText('${STRIPE_LINK}');this.textContent='Copied!'">Copy Link</button>
+                </div>
+            ` : ''}
+        `;
+
+        let footerHTML = '';
+        if (biz.status === 'pending') {
+            footerHTML = `
+                <button class="btn btn-deny" onclick="denyBusiness(${biz.id});closeModal()">Deny</button>
+                <button class="btn btn-waive" onclick="waiveFee(${biz.id});closeModal()">Waive Fee</button>
+                <button class="btn btn-approve" onclick="approveBusiness(${biz.id});closeModal()">Approve & Send Link</button>
+            `;
+        } else if (biz.status === 'approved') {
+            footerHTML = `
+                <button class="btn btn-outline" onclick="closeModal()">Close</button>
+                <button class="btn btn-gold" onclick="markPaid(${biz.id});closeModal()">Mark as Paid</button>
+            `;
+        } else {
+            footerHTML = `<button class="btn btn-outline" onclick="closeModal()">Close</button>`;
+        }
+        document.getElementById('modal-footer').innerHTML = footerHTML;
+        document.getElementById('detail-modal').classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('detail-modal').classList.remove('show');
+    }
+
+    // =========================================================
+    // UI HELPERS
+    // =========================================================
+    function showSection(name) {
+        ['submissions','active','denied','settings'].forEach(s => {
+            document.getElementById('section-' + s).style.display = s === name ? 'block' : 'none';
+        });
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        document.getElementById('page-title').textContent = {submissions:'Submissions',active:'Active Businesses',denied:'Denied',settings:'Settings'}[name];
+    }
+
+    function filterByStatus(status, el) {
+        currentFilter = status;
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        renderSubmissions();
+    }
+
+    function filterTable(query) {
+        const q = query.toLowerCase();
+        document.querySelectorAll('tbody tr[data-name]').forEach(row => {
+            row.style.display = row.dataset.name.includes(q) ? '' : 'none';
+        });
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr + 'T00:00:00');
+        return d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    }
+
+    function showToast(text, sub, bg, color) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-text').textContent = text;
+        document.getElementById('toast-sub').textContent = sub;
+        document.getElementById('toast-icon').style.background = bg;
+        document.getElementById('toast-icon').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    function saveSettings() {
+        showToast('Saved', 'Settings updated', 'var(--gold-bg)', 'var(--gold)');
+    }
+
+    // Close modal on overlay click
+    document.getElementById('detail-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // Responsive menu toggle
+    const mq = window.matchMedia('(max-width:768px)');
+    function checkMobile(e) { document.getElementById('menu-toggle').style.display = e.matches ? 'inline-flex' : 'none'; }
+    mq.addListener(checkMobile);
+    checkMobile(mq);
+
+    // Init
+    render();
+</script>
+</body>
+</html>
