@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Business Directory — Auburn Business Network</title>
+  <meta name="description" content="Browse Auburn family-owned businesses by city and industry. Find Auburn-owned spots wherever you travel.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css?v=3">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-brand">
+        <span class="brand-icon">AB</span>
+        Auburn Business Network
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="directory.html" class="active">Directory</a></li>
+        <li><a href="apply.html" class="btn-nav">List Your Business</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="directory-header">
+    <div class="container">
+      <h1>Business Directory</h1>
+      <p>Find Auburn family-owned businesses by city or industry</p>
+    </div>
+  </section>
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="container">
+      <div class="filters-row">
+        <div class="filter-group">
+          <label for="filter-location">City</label>
+          <select id="filter-location" onchange="applyFilters()">
+            <option value="">All Cities</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-industry">Industry</label>
+          <select id="filter-industry" onchange="applyFilters()">
+            <option value="">All Industries</option>
+          </select>
+        </div>
+        <div class="filter-group" style="flex:2;">
+          <label for="filter-search">Search</label>
+          <input type="text" id="filter-search" placeholder="Search by name, keyword, or owner..." oninput="applyFilters()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="directory-results">
+    <div class="container">
+      <div class="results-count" id="results-count"></div>
+      <div class="business-grid" id="results-grid" style="margin-top:20px;"></div>
+      <div class="no-results" id="no-results" style="display:none;">
+        <h3>No businesses found</h3>
+        <p>Try adjusting your filters or search terms.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2026 Auburn Business Network. War Eagle.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js?v=3"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadBusinesses();
+      const industrySelect = document.getElementById('filter-industry');
+      const locationSelect = document.getElementById('filter-location');
+
+      getIndustries().forEach(ind => {
+        industrySelect.innerHTML += `<option value="${ind}">${ind}</option>`;
+      });
+      getLocations().forEach(loc => {
+        locationSelect.innerHTML += `<option value="${loc}">${loc}</option>`;
+      });
+
+      // Check URL params for pre-selected filters
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('industry')) industrySelect.value = params.get('industry');
+      if (params.get('location')) locationSelect.value = params.get('location');
+      if (params.get('q')) document.getElementById('filter-search').value = params.get('q');
+
+      applyFilters();
+    });
+
+    function applyFilters() {
+      const industry = document.getElementById('filter-industry').value;
+      const location = document.getElementById('filter-location').value;
+      const query = document.getElementById('filter-search').value;
+
+      const results = searchBusinesses({ query, industry, location });
+
+      const grid = document.getElementById('results-grid');
+      const noResults = document.getElementById('no-results');
+      const countEl = document.getElementById('results-count');
+
+      if (results.length === 0) {
+        grid.style.display = 'none';
+        noResults.style.display = 'block';
+        countEl.innerHTML = '';
+      } else {
+        grid.style.display = '';
+        noResults.style.display = 'none';
+        grid.innerHTML = results.map(b => createBusinessCard(b)).join('');
+        countEl.innerHTML = `Showing <strong>${results.length}</strong> business${results.length !== 1 ? 'es' : ''}`;
+      }
+
+      // Update URL params without reload
+      const params = new URLSearchParams();
+      if (industry) params.set('industry', industry);
+      if (location) params.set('location', location);
+      if (query) params.set('q', query);
+      const newUrl = params.toString() ? `?${params.toString()}` : window.location.pathname;
+      history.replaceState(null, '', newUrl);
+    }
+  </script>
+
+</body>
+</html>
