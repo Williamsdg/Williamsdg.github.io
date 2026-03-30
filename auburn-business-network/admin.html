@@ -7,9 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=3">
+  <link rel="stylesheet" href="assets/css/styles.css?v=4">
 </head>
-<body>
+<body class="admin-body">
 
   <!-- Navigation -->
   <nav class="navbar">
@@ -203,7 +203,7 @@
     function renderApplications() {
       const tbody = document.getElementById('applications-body');
       if (_applications.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#6c757d;padding:40px;">No applications yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:rgba(255,255,255,0.4);padding:40px;">No applications yet</td></tr>';
         return;
       }
       tbody.innerHTML = _applications.map(app => `
@@ -216,9 +216,10 @@
           <td><span class="status-badge ${app.status}">${app.status.charAt(0).toUpperCase() + app.status.slice(1)}</span></td>
           <td>
             <div class="action-btns">
-              <button class="action-btn" onclick="toggleDetails('${app.id}')" style="background:#0a3a6b;color:#fff;">Details</button>
+              <button class="action-btn details-btn" onclick="toggleDetails('${app.id}')">Details</button>
               ${app.status === 'pending' ? `
                 <button class="action-btn approve" onclick="approveApp('${app.id}')">Approve</button>
+                <button class="action-btn waive-btn" onclick="waiveApp('${app.id}')">Waive Fee</button>
                 <button class="action-btn reject" onclick="rejectApp('${app.id}')">Reject</button>
               ` : ''}
             </div>
@@ -297,6 +298,25 @@
       } catch (err) {
         console.error(err);
         alert('Error rejecting application.');
+      }
+    }
+
+    async function waiveApp(id) {
+      const app = _applications.find(a => a.id === id);
+      if (!app) return;
+      if (!confirm(`Waive the listing fee for "${app.business_name}"? They will go live immediately without payment.`)) return;
+
+      try {
+        await approveAndCreateBusiness(app);
+        // Find the newly created business and mark as waived
+        const refreshed = await loadAllBusinesses();
+        const biz = refreshed.find(b => b.application_id === app.id);
+        if (biz) await updateBusinessPayment(biz.id, 'waived');
+        alert(`${app.business_name} approved with fee waived! They are now live on the directory.`);
+        await refreshData();
+      } catch (err) {
+        console.error(err);
+        alert('Error waiving fee.');
       }
     }
 
