@@ -35,37 +35,55 @@
     /* ── LOADER ── */
     .loader {
       position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
-      background: var(--dark); display: flex; flex-direction: column;
+      background: #050510; display: flex; flex-direction: column;
       align-items: center; justify-content: center; z-index: 9998;
-      transition: opacity 0.8s ease, visibility 0.8s ease;
+      transition: opacity 1s ease, visibility 1s ease;
+      overflow: hidden;
     }
     .loader.hide { opacity: 0; visibility: hidden; pointer-events: none; }
-    .loader-icon { font-size: 4rem; margin-bottom: 1.5rem; animation: castleFloat 2s ease-in-out infinite; }
-    @keyframes castleFloat {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-12px); }
+    .loader-canvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     }
-    .loader-sparkles {
-      position: absolute; width: 200px; height: 200px;
+    .loader-center {
+      position: relative; z-index: 2; text-align: center;
+      display: flex; flex-direction: column; align-items: center;
     }
-    .loader-sparkle {
-      position: absolute; width: 4px; height: 4px; background: var(--accent);
-      border-radius: 50%; opacity: 0; animation: loaderSparkle 2s ease-in-out infinite;
+    .loader-castle {
+      font-size: 4.5rem; margin-bottom: 1rem;
+      animation: castleGlow 2s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 20px rgba(var(--accent-rgb),0.4));
     }
-    @keyframes loaderSparkle {
-      0%, 100% { opacity: 0; transform: scale(0); }
-      50% { opacity: 1; transform: scale(1); }
-    }
-    .loader-bar { width: 140px; height: 3px; background: rgba(var(--accent-rgb),0.15); border-radius: 3px; margin-bottom: 1.5rem; overflow: hidden; }
-    .loader-bar-fill { height: 100%; width: 30%; background: var(--accent); border-radius: 3px; animation: barSlide 1.2s ease-in-out infinite; }
-    @keyframes barSlide {
-      0% { width: 0%; margin-left: 0; }
-      50% { width: 60%; margin-left: 20%; }
-      100% { width: 0%; margin-left: 100%; }
+    @keyframes castleGlow {
+      0% { filter: drop-shadow(0 0 15px rgba(var(--accent-rgb),0.3)); transform: translateY(0); }
+      100% { filter: drop-shadow(0 0 35px rgba(var(--accent-rgb),0.7)); transform: translateY(-6px); }
     }
     .loader-text {
-      font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 900;
-      letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent);
+      font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 900;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent);
+      margin-bottom: 0.6rem; opacity: 0;
+      animation: loaderFadeUp 0.8s 0.3s ease forwards;
+    }
+    .loader-tagline {
+      font-size: 0.72rem; color: rgba(255,255,255,0.4); letter-spacing: 0.25em;
+      text-transform: uppercase; font-weight: 400; opacity: 0;
+      animation: loaderFadeUp 0.8s 0.6s ease forwards;
+    }
+    .loader-bar {
+      width: 120px; height: 2px; background: rgba(var(--accent-rgb),0.1);
+      border-radius: 2px; margin-top: 1.5rem; overflow: hidden; opacity: 0;
+      animation: loaderFadeUp 0.5s 0.8s ease forwards;
+    }
+    .loader-bar-fill {
+      height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      border-radius: 2px; animation: barFill 1.8s 0.8s ease-in-out forwards;
+    }
+    @keyframes barFill {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+    @keyframes loaderFadeUp {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
     }
 
     /* ── NAV ── */
@@ -564,10 +582,13 @@
 
   <!-- Loader -->
   <div class="loader" id="loader">
-    <div class="loader-sparkles" id="loaderSparkles"></div>
-    <div class="loader-icon">🏰</div>
-    <div class="loader-bar"><div class="loader-bar-fill"></div></div>
-    <div class="loader-text">Adam's Magical Moments</div>
+    <canvas class="loader-canvas" id="fireworksCanvas"></canvas>
+    <div class="loader-center">
+      <div class="loader-castle">🏰</div>
+      <div class="loader-text">Adam's Magical Moments</div>
+      <div class="loader-tagline">Your magic starts here</div>
+      <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+    </div>
   </div>
 
   <!-- Nav -->
@@ -1102,24 +1123,125 @@
   </footer>
 
   <script>
-    // Loader
-    window.addEventListener('load', () => {
-      setTimeout(() => document.getElementById('loader').classList.add('hide'), 1400);
-    });
+    // Fireworks loader
+    (function() {
+      const canvas = document.getElementById('fireworksCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let W, H;
+      const fireworks = [];
+      const particles = [];
+      const colors = [
+        [212,168,67], [240,215,140], [255,255,255],
+        [100,160,255], [180,130,255], [255,180,100], [255,120,120]
+      ];
 
-    // Loader sparkles
-    const loaderSparkles = document.getElementById('loaderSparkles');
-    if (loaderSparkles) {
-      for (let i = 0; i < 12; i++) {
-        const s = document.createElement('div');
-        s.classList.add('loader-sparkle');
-        s.style.left = (30 + Math.random() * 140) + 'px';
-        s.style.top = (30 + Math.random() * 140) + 'px';
-        s.style.animationDelay = (Math.random() * 2) + 's';
-        s.style.animationDuration = (1.5 + Math.random() * 2) + 's';
-        loaderSparkles.appendChild(s);
+      function resize() {
+        W = canvas.width = canvas.offsetWidth;
+        H = canvas.height = canvas.offsetHeight;
       }
-    }
+      resize();
+      window.addEventListener('resize', resize);
+
+      function Firework() {
+        this.x = W * (0.2 + Math.random() * 0.6);
+        this.y = H;
+        this.targetY = H * (0.15 + Math.random() * 0.35);
+        this.speed = 3 + Math.random() * 3;
+        this.trail = [];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.alive = true;
+      }
+      Firework.prototype.update = function() {
+        this.trail.push({ x: this.x, y: this.y, a: 1 });
+        if (this.trail.length > 8) this.trail.shift();
+        this.y -= this.speed;
+        this.x += (Math.random() - 0.5) * 0.8;
+        if (this.y <= this.targetY) {
+          this.alive = false;
+          explode(this.x, this.y, this.color);
+        }
+      };
+      Firework.prototype.draw = function() {
+        for (let i = 0; i < this.trail.length; i++) {
+          const t = this.trail[i];
+          const a = (i / this.trail.length) * 0.6;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(' + this.color.join(',') + ',' + a + ')';
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(' + this.color.join(',') + ',1)';
+        ctx.fill();
+      };
+
+      function explode(x, y, baseColor) {
+        const count = 40 + Math.floor(Math.random() * 30);
+        for (let i = 0; i < count; i++) {
+          const angle = (Math.PI * 2 / count) * i + (Math.random() - 0.5) * 0.3;
+          const speed = 1.5 + Math.random() * 3.5;
+          const c = Math.random() > 0.3 ? baseColor : colors[Math.floor(Math.random() * colors.length)];
+          particles.push({
+            x: x, y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1,
+            decay: 0.012 + Math.random() * 0.015,
+            color: c,
+            size: 1 + Math.random() * 2,
+            gravity: 0.03 + Math.random() * 0.02
+          });
+        }
+      }
+
+      let lastFirework = 0;
+      let running = true;
+
+      function loop(t) {
+        if (!running) return;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = 'rgba(5,5,16,0.18)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'lighter';
+
+        if (t - lastFirework > 250 + Math.random() * 300) {
+          fireworks.push(new Firework());
+          lastFirework = t;
+        }
+
+        for (let i = fireworks.length - 1; i >= 0; i--) {
+          fireworks[i].update();
+          fireworks[i].draw();
+          if (!fireworks[i].alive) fireworks.splice(i, 1);
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += p.gravity;
+          p.vx *= 0.985;
+          p.life -= p.decay;
+          if (p.life <= 0) { particles.splice(i, 1); continue; }
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(' + p.color.join(',') + ',' + (p.life * 0.8) + ')';
+          ctx.fill();
+        }
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+
+      // Hide loader
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          document.getElementById('loader').classList.add('hide');
+          setTimeout(() => { running = false; }, 1000);
+        }, 2800);
+      });
+    })();
 
     // Hero sparkles
     const heroSparkles = document.getElementById('heroSparkles');
