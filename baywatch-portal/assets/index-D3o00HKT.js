@@ -37260,6 +37260,11 @@ var eventColor = {
 	vendor: "border-l-purple-500 bg-purple-50",
 	event: "border-l-emerald-500 bg-emerald-50"
 };
+var deptColor$1 = {
+	Management: "bg-ocean-100 text-ocean-700",
+	Board: "bg-purple-100 text-purple-700",
+	Maintenance: "bg-amber-100 text-amber-700"
+};
 var statusDot$1 = {
 	Occupied: "bg-blue-400",
 	Vacant: "bg-gray-300",
@@ -38071,7 +38076,7 @@ function Dashboard() {
 											})]
 										}),
 										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											className: `rounded-full px-2 py-0.5 text-[10px] font-medium ${deptColor[member.department]}`,
+											className: `rounded-full px-2 py-0.5 text-[10px] font-medium ${deptColor$1[member.department]}`,
 											children: member.department
 										})
 									]
@@ -38654,7 +38659,7 @@ function Units() {
 }
 //#endregion
 //#region src/pages/Staff.jsx
-var deptColor$1 = {
+var deptColor = {
 	Management: "bg-ocean-100 text-ocean-700",
 	Board: "bg-purple-100 text-purple-700",
 	Maintenance: "bg-amber-100 text-amber-700"
@@ -38741,7 +38746,7 @@ function TeamView() {
 									children: selectedMember.role
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: `mt-2 rounded-full px-3 py-0.5 text-xs font-medium ${deptColor$1[selectedMember.department]}`,
+									className: `mt-2 rounded-full px-3 py-0.5 text-xs font-medium ${deptColor[selectedMember.department]}`,
 									children: selectedMember.department
 								})
 							]
@@ -38821,7 +38826,7 @@ function TeamView() {
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "flex items-center justify-between",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-							className: `rounded-full px-2.5 py-0.5 text-xs font-medium ${deptColor$1[member.department]}`,
+							className: `rounded-full px-2.5 py-0.5 text-xs font-medium ${deptColor[member.department]}`,
 							children: member.department
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "flex gap-2",
