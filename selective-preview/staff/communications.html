@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Communications Center — Staff Portal — Selective Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../portal.css">
+  <style>
+    /* === Communications Page Styles === */
+
+    .page-title-area h1 {
+      font-size: 1.25rem;
+      line-height: 1.3;
+    }
+
+    .header-search {
+      position: relative;
+      width: 260px;
+    }
+
+    .header-search input {
+      width: 100%;
+      padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      background: var(--off-white);
+      transition: var(--transition-fast);
+    }
+
+    .header-search input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(200,162,84,0.15);
+      background: var(--white);
+    }
+
+    .header-search input::placeholder { color: var(--text-light); }
+
+    .header-search svg {
+      position: absolute;
+      left: 0.625rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .notification-btn {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      transition: var(--transition-fast);
+      color: var(--text-body);
+      cursor: pointer;
+    }
+
+    .notification-btn:hover { background: var(--off-white); }
+    .notification-btn svg { width: 20px; height: 20px; }
+    .notification-btn .notification-count {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+    }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.375rem 0.625rem;
+      border-radius: var(--radius-sm);
+      transition: var(--transition-fast);
+      cursor: pointer;
+      margin-left: 0.5rem;
+    }
+
+    .header-user:hover { background: var(--off-white); }
+
+    .header-user .avatar {
+      width: 34px;
+      height: 34px;
+      font-size: 0.75rem;
+      background: var(--gold-subtle);
+      color: var(--gold-dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+      .header-search { width: 180px; }
+    }
+    @media (max-width: 500px) {
+      .header-search { display: none; }
+    }
+
+    .breadcrumb {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-top: 0.125rem;
+    }
+
+    .breadcrumb a {
+      color: var(--text-muted);
+      transition: var(--transition-fast);
+    }
+
+    .breadcrumb a:hover { color: var(--gold); }
+
+    .breadcrumb .sep {
+      margin: 0 0.375rem;
+      opacity: 0.5;
+    }
+
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.25rem 0;
+    }
+
+    .sidebar-user .avatar {
+      width: 38px;
+      height: 38px;
+      background: rgba(200,162,84,0.2);
+      color: var(--gold-light);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-user-info .name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--white);
+      line-height: 1.2;
+    }
+
+    .sidebar-user-info .role {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .status-online {
+      width: 8px;
+      height: 8px;
+      background: #4ADE80;
+      border-radius: 50%;
+      display: inline-block;
+      position: relative;
+    }
+
+    .status-online::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      border: 2px solid rgba(74, 222, 128, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    .portal-content > * + * {
+      margin-top: 1.25rem;
+    }
+
+    /* Inbox layout */
+    .inbox-layout {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 0;
+      min-height: 540px;
+    }
+
+    @media (max-width: 900px) {
+      .inbox-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Message list */
+    .message-list {
+      border-right: 1px solid var(--border-light);
+      overflow-y: auto;
+      max-height: 600px;
+    }
+
+    @media (max-width: 900px) {
+      .message-list {
+        border-right: none;
+        border-bottom: 1px solid var(--border-light);
+        max-height: 320px;
+      }
+    }
+
+    .message-item {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.875rem 1.25rem;
+      border-bottom: 1px solid var(--border-light);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      align-items: flex-start;
+    }
+
+    .message-item:hover {
+      background: var(--off-white);
+    }
+
+    .message-item.active {
+      background: rgba(200,162,84,0.06);
+      border-left: 3px solid var(--gold);
+      padding-left: calc(1.25rem - 3px);
+    }
+
+    .message-item.unread .msg-subject {
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .message-item.unread::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--gold);
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+
+    .msg-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .msg-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .msg-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.125rem;
+    }
+
+    .msg-from {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .msg-time {
+      font-size: 0.6875rem;
+      color: var(--text-light);
+      flex-shrink: 0;
+    }
+
+    .msg-subject {
+      font-size: 0.8125rem;
+      color: var(--text-body);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .msg-community {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-top: 0.125rem;
+    }
+
+    /* Message preview */
+    .message-preview {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .preview-from {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .preview-from .msg-avatar {
+      width: 44px;
+      height: 44px;
+      font-size: 0.8125rem;
+    }
+
+    .preview-from-name {
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .preview-from-meta {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .preview-action-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .preview-action-btn:hover {
+      background: var(--off-white);
+      color: var(--text-dark);
+    }
+
+    .preview-action-btn svg { width: 16px; height: 16px; }
+
+    .preview-subject {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 1rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .preview-body {
+      flex: 1;
+      font-size: 0.9375rem;
+      line-height: 1.7;
+      color: var(--text-body);
+    }
+
+    .reply-box {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-light);
+    }
+
+    .reply-input {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      font-size: 0.875rem;
+      min-height: 80px;
+      resize: vertical;
+      transition: var(--transition-fast);
+    }
+
+    .reply-input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(200,162,84,0.15);
+    }
+
+    .reply-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+    }
+
+    .reply-tools {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    /* Compose form */
+    .compose-form {
+      max-width: 700px;
+    }
+
+    .send-via-options {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .send-via-option {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    .send-via-option input[type="radio"] {
+      accent-color: var(--gold);
+    }
+
+    /* Template grid */
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 1100px) {
+      .template-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .template-grid { grid-template-columns: 1fr; }
+    }
+
+    .template-card {
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .template-card:hover {
+      border-color: var(--gold);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-2px);
+    }
+
+    .template-card h4 {
+      font-size: 0.9375rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .template-card .template-snippet {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .template-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .template-card-actions .btn {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+    }
+
+    .template-card-actions .edit-link {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .template-card-actions .edit-link:hover {
+      color: var(--gold);
+    }
+
+    /* Mass notices */
+    .community-checkboxes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .community-checkboxes { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .community-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    .community-checkbox input[type="checkbox"] {
+      accent-color: var(--gold);
+      width: 16px;
+      height: 16px;
+    }
+
+    .method-options {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .method-option {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+
+    .method-option input[type="radio"] {
+      accent-color: var(--gold);
+    }
+
+    .schedule-options {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    /* History tab */
+    .history-item {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.875rem 0;
+      border-bottom: 1px solid var(--border-light);
+      align-items: center;
+    }
+
+    .history-item:last-child { border-bottom: none; }
+
+    .history-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .history-icon svg { width: 16px; height: 16px; }
+
+    td .badge {
+      font-size: 0.6875rem;
+      padding: 0.1875rem 0.625rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="portal-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:1.125rem;letter-spacing:0.04em;color:var(--white);">SELECTIVE</div>
+            <div style="width:24px;height:2px;background:var(--gold);border-radius:2px;margin:2px 0;"></div>
+            <div style="font-size:0.6875rem;color:var(--gold);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">Staff Portal</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Overview</div>
+        </div>
+
+        <a href="index.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+          </span>
+          Dashboard
+        </a>
+
+        <a href="calendar.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </span>
+          Calendar
+        </a>
+
+        <div class="sidebar-section" style="margin-top:0.75rem;">
+          <div class="sidebar-section-title">Management</div>
+        </div>
+
+        <a href="communities.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </span>
+          Communities
+        </a>
+
+        <a href="residents.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+              <path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </span>
+          Residents
+        </a>
+
+        <a href="work-orders.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </span>
+          Work Orders
+        </a>
+
+        <div class="sidebar-section" style="margin-top:0.75rem;">
+          <div class="sidebar-section-title">Operations</div>
+        </div>
+
+        <a href="compliance.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+          </span>
+          Compliance
+          <span class="notification-count" style="margin-left:auto;background:var(--warning);">12</span>
+        </a>
+
+        <a href="communications.html" class="sidebar-link active">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </span>
+          Communications
+        </a>
+
+        <a href="arc-review.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+            </svg>
+          </span>
+          ARC Review
+        </a>
+
+        <a href="amenities.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </span>
+          Amenities
+        </a>
+
+        <div class="sidebar-section" style="margin-top:0.75rem;">
+          <div class="sidebar-section-title">Reports</div>
+        </div>
+
+        <a href="documents.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </span>
+          Documents
+        </a>
+
+        <a href="reports.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </span>
+          Reports
+        </a>
+
+        <a href="financials.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </span>
+          Financials
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">SM</div>
+          <div class="sidebar-user-info">
+            <div class="name">Sarah Mitchell</div>
+            <div class="role">
+              <span class="status-online"></span>
+              &nbsp;Property Manager
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content -->
+    <main class="portal-main">
+      <header class="portal-header">
+        <div class="page-title-area">
+          <h1>Communications Center</h1>
+          <div class="breadcrumb">
+            <a href="index.html">Staff Portal</a>
+            <span class="sep">/</span>
+            <span>Communications</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="header-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" placeholder="Search messages, residents...">
+          </div>
+
+          <button class="notification-btn" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            <span class="notification-count">5</span>
+          </button>
+
+          <div class="header-user">
+            <div class="avatar">SM</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="portal-content">
+
+        <!-- Tabs -->
+        <div class="card card-elevated" style="padding:0;">
+          <div style="padding:1.25rem 1.5rem 0;">
+            <div class="tabs" id="commTabs">
+              <button class="tab active" data-tab="tab-inbox">Inbox</button>
+              <button class="tab" data-tab="tab-compose">Compose</button>
+              <button class="tab" data-tab="tab-templates">Templates</button>
+              <button class="tab" data-tab="tab-mass">Mass Notices</button>
+              <button class="tab" data-tab="tab-history">History</button>
+            </div>
+          </div>
+
+          <div id="commTabContent">
+
+            <!-- INBOX TAB -->
+            <div class="tab-panel active" id="tab-inbox">
+              <div class="inbox-layout">
+                <!-- Message List -->
+                <div class="message-list">
+                  <div class="message-item unread active" data-msg="1">
+                    <div class="msg-avatar" style="background:rgba(27,42,74,0.1);color:var(--navy);">JC</div>
+                    <div class="msg-content">
+                      <div class="msg-header">
+                        <span class="msg-from">James Carter</span>
+                        <span class="msg-time">Mar 15</span>
+                      </div>
+                      <div class="msg-subject">Question about pool hours</div>
+                      <div class="msg-community">The Preserve</div>
+                    </div>
+                  </div>
+
+                  <div class="message-item unread" data-msg="2">
+                    <div class="msg-avatar" style="background:rgba(46,125,111,0.1);color:var(--teal);">LB</div>
+                    <div class="msg-content">
+                      <div class="msg-header">
+                        <span class="msg-from">Lisa Brown</span>
+                        <span class="msg-time">Mar 14</span>
+                      </div>
+                      <div class="msg-subject">Payment plan request</div>
+                      <div class="msg-community">Arbor Trail</div>
+                    </div>
+                  </div>
+
+                  <div class="message-item" data-msg="3">
+                    <div class="msg-avatar" style="background:rgba(200,162,84,0.1);color:var(--gold-dark);">MT</div>
+                    <div class="msg-content">
+                      <div class="msg-header">
+                        <span class="msg-from">Michael Torres</span>
+                        <span class="msg-time">Mar 13</span>
+                      </div>
+                      <div class="msg-subject">Response to violation notice</div>
+                      <div class="msg-community">Hillsboro</div>
+                    </div>
+                  </div>
+
+                  <div class="message-item" data-msg="4">
+                    <div class="msg-avatar" style="background:rgba(192,57,43,0.08);color:var(--danger);">BD</div>
+                    <div class="msg-content">
+                      <div class="msg-header">
+                        <span class="msg-from">Board: Danberry</span>
+                        <span class="msg-time">Mar 12</span>
+                      </div>
+                      <div class="msg-subject">Budget amendment proposal</div>
+                      <div class="msg-community">Danberry HOA Board</div>
+                    </div>
+                  </div>
+
+                  <div class="message-item" data-msg="5">
+                    <div class="msg-avatar" style="background:rgba(27,42,74,0.1);color:var(--navy);">RC</div>
+                    <div class="msg-content">
+                      <div class="msg-header">
+                        <span class="msg-from">Robert Chen</span>
+                        <span class="msg-time">Mar 11</span>
+                      </div>
+                      <div class="msg-subject">Re: Easter event planning</div>
+                      <div class="msg-community">The Preserve</div>
+                    </div>
+                  </div>
+
+                  <div class="message-item" data-msg="6">
+                    <div class="msg-avatar" style="background:rgba(200,162,84,0.1);color:var(--gold-dark);">JD</div>
+                    <div class="msg-content">
+                      <div class="msg-header">
+                        <span class="msg-from">Jennifer Davis</span>
+                        <span class="msg-time">Mar 10</span>
+                      </div>
+                      <div class="msg-subject">ARC status inquiry</div>
+                      <div class="msg-community">Barimore</div>
+                    </div>
+                  </div>
+
+                  <div class="message-item" data-msg="7">
+                    <div class="msg-avatar" style="background:rgba(46,125,111,0.1);color:var(--teal);">MW</div>
+                    <div class="msg-content">
+                      <div class="msg-header">
+                        <span class="msg-from">Marcus Williams</span>
+                        <span class="msg-time">Mar 9</span>
+                      </div>
+                      <div class="msg-subject">Parking concern</div>
+                      <div class="msg-community">Knox Square</div>
+                    </div>
+                  </div>
+
+                  <div class="message-item" data-msg="8">
+                    <div class="msg-avatar" style="background:rgba(41,128,185,0.1);color:var(--info);">GL</div>
+                    <div class="msg-content">
+                      <div class="msg-header">
+                        <span class="msg-from">GreenScape LLC</span>
+                        <span class="msg-time">Mar 8</span>
+                      </div>
+                      <div class="msg-subject">Monthly service report</div>
+                      <div class="msg-community">Vendor</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Message Preview -->
+                <div class="message-preview" id="messagePreview">
+                  <div class="preview-header">
+                    <div class="preview-from">
+                      <div class="msg-avatar" style="background:rgba(27,42,74,0.1);color:var(--navy);">JC</div>
+                      <div>
+                        <div class="preview-from-name">James Carter</div>
+                        <div class="preview-from-meta">The Preserve &bull; Mar 15, 2024 at 9:42 AM</div>
+                      </div>
+                    </div>
+                    <div class="preview-actions">
+                      <button class="preview-action-btn" data-tooltip="Reply">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="9 17 4 12 9 7"/>
+                          <path d="M20 18v-2a4 4 0 00-4-4H4"/>
+                        </svg>
+                      </button>
+                      <button class="preview-action-btn" data-tooltip="Forward">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="15 17 20 12 15 7"/>
+                          <path d="M4 18v-2a4 4 0 014-4h12"/>
+                        </svg>
+                      </button>
+                      <button class="preview-action-btn" data-tooltip="Archive">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="21 8 21 21 3 21 3 8"/>
+                          <rect x="1" y="3" width="22" height="5"/>
+                          <line x1="10" y1="12" x2="14" y2="12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="preview-subject">Question about pool hours</div>
+
+                  <div class="preview-body">
+                    <p>Hi Sarah,</p>
+                    <p>I noticed the pool hours sign still shows last year's schedule. When will the updated hours for the spring season be posted?</p>
+                    <p>Also, my wife wanted to know if the pool house can be reserved for our daughter's birthday party on April 12.</p>
+                    <p>Thanks,<br>James</p>
+                  </div>
+
+                  <div class="reply-box">
+                    <textarea class="reply-input" placeholder="Type your reply..."></textarea>
+                    <div class="reply-actions">
+                      <div class="reply-tools">
+                        <button class="preview-action-btn" data-tooltip="Attach file">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                          </svg>
+                        </button>
+                        <button class="preview-action-btn" data-tooltip="Use template">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                          </svg>
+                        </button>
+                      </div>
+                      <button class="btn btn-primary btn-sm" onclick="showToast('Reply sent successfully')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <line x1="22" y1="2" x2="11" y2="13"/>
+                          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                        Send Reply
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- COMPOSE TAB -->
+            <div class="tab-panel" id="tab-compose" style="display:none;padding:1.5rem;">
+              <div class="compose-form">
+                <div class="form-group">
+                  <label class="form-label">To *</label>
+                  <input type="text" class="form-input" placeholder="Search resident name, or select community...">
+                  <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+                    <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 010 7.75"/>
+                      </svg>
+                      All Residents
+                    </button>
+                    <select class="form-select" style="width:auto;padding:0.375rem 1.5rem 0.375rem 0.5rem;font-size:0.75rem;">
+                      <option value="">Select Community...</option>
+                      <option>Barimore</option>
+                      <option>Hillsboro</option>
+                      <option>Knox Square</option>
+                      <option>Sterling Gate</option>
+                      <option>Danberry</option>
+                      <option>Abingdon</option>
+                      <option>The Preserve</option>
+                      <option>Arbor Trail</option>
+                      <option>Windsor Court</option>
+                      <option>Magnolia Park</option>
+                      <option>Crestview</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Subject *</label>
+                  <input type="text" class="form-input" placeholder="Message subject">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Message *</label>
+                  <div style="border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
+                    <div style="display:flex;gap:0.25rem;padding:0.5rem 0.75rem;background:var(--off-white);border-bottom:1px solid var(--border-light);">
+                      <button class="preview-action-btn" style="width:28px;height:28px;" data-tooltip="Bold"><strong style="font-size:0.8125rem;">B</strong></button>
+                      <button class="preview-action-btn" style="width:28px;height:28px;" data-tooltip="Italic"><em style="font-size:0.8125rem;">I</em></button>
+                      <button class="preview-action-btn" style="width:28px;height:28px;" data-tooltip="Underline"><u style="font-size:0.8125rem;">U</u></button>
+                      <div style="width:1px;height:20px;background:var(--border);margin:0 0.25rem;align-self:center;"></div>
+                      <button class="preview-action-btn" style="width:28px;height:28px;" data-tooltip="Bullet list">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <line x1="8" y1="6" x2="21" y2="6"/>
+                          <line x1="8" y1="12" x2="21" y2="12"/>
+                          <line x1="8" y1="18" x2="21" y2="18"/>
+                          <line x1="3" y1="6" x2="3.01" y2="6"/>
+                          <line x1="3" y1="12" x2="3.01" y2="12"/>
+                          <line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                      </button>
+                      <button class="preview-action-btn" style="width:28px;height:28px;" data-tooltip="Link">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+                          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+                        </svg>
+                      </button>
+                    </div>
+                    <textarea class="form-textarea" rows="6" placeholder="Compose your message..." style="border:none;border-radius:0;"></textarea>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Attachments</label>
+                  <div style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:1rem;text-align:center;cursor:pointer;transition:var(--transition-fast);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 0.25rem;">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                    <div style="font-size:0.8125rem;color:var(--text-muted);">Click to attach files or drag and drop</div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Send Via</label>
+                  <div class="send-via-options">
+                    <label class="send-via-option">
+                      <input type="radio" name="sendVia" value="email" checked> Email
+                    </label>
+                    <label class="send-via-option">
+                      <input type="radio" name="sendVia" value="sms"> SMS
+                    </label>
+                    <label class="send-via-option">
+                      <input type="radio" name="sendVia" value="both"> Both
+                    </label>
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+                  <button class="btn btn-primary" onclick="showToast('Message sent successfully')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"/>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                    Send Message
+                  </button>
+                  <button class="btn btn-outline btn-sm" onclick="showToast('Draft saved', 'info')">Save Draft</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- TEMPLATES TAB -->
+            <div class="tab-panel" id="tab-templates" style="display:none;padding:1.5rem;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+                <h4>Communication Templates</h4>
+                <button class="btn btn-primary btn-sm">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  New Template
+                </button>
+              </div>
+
+              <div class="template-grid">
+                <div class="template-card">
+                  <h4>Welcome Letter</h4>
+                  <div class="template-snippet">Welcome to [Community Name]! We are pleased to have you as a new homeowner and member of our community...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Assessment Due Reminder</h4>
+                  <div class="template-snippet">This is a friendly reminder that your quarterly HOA assessment of [Amount] is due on [Date]...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Late Payment Notice</h4>
+                  <div class="template-snippet">Our records indicate that your HOA assessment payment of [Amount] due on [Date] has not been received...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Violation First Notice</h4>
+                  <div class="template-snippet">During a recent inspection of [Community], a violation of the community covenants was observed at your property...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Violation Second Notice</h4>
+                  <div class="template-snippet">This serves as a second notice regarding the previously documented violation at [Address]. A cure period of 14 days...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Hearing Notice</h4>
+                  <div class="template-snippet">You are hereby notified that a hearing has been scheduled for [Date] at [Time] regarding the outstanding violation...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Board Meeting Notice</h4>
+                  <div class="template-snippet">The [Community] Board of Directors will hold its regular meeting on [Date] at [Time] in the community clubhouse...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Community Event Announcement</h4>
+                  <div class="template-snippet">You are invited to [Event Name]! Join your neighbors on [Date] at [Location] for a fun-filled community event...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Pool Season Opening</h4>
+                  <div class="template-snippet">The community pool will officially open for the season on [Date]. Hours of operation will be [Hours]. All residents...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Maintenance Update</h4>
+                  <div class="template-snippet">We would like to inform you of upcoming maintenance work scheduled for [Date] in the [Area] area of [Community]...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+
+                <div class="template-card">
+                  <h4>Emergency Notice</h4>
+                  <div class="template-snippet">IMPORTANT: This is an emergency notice regarding [Issue]. Please take the following immediate actions for your safety...</div>
+                  <div class="template-card-actions">
+                    <button class="btn btn-primary">Use Template</button>
+                    <span class="edit-link">Edit</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MASS NOTICES TAB -->
+            <div class="tab-panel" id="tab-mass" style="display:none;padding:1.5rem;">
+              <h4 style="margin-bottom:1.25rem;">Send Mass Notice</h4>
+
+              <div style="max-width:700px;">
+                <div class="form-group">
+                  <label class="form-label">Recipients *</label>
+                  <div class="community-checkboxes">
+                    <label class="community-checkbox">
+                      <input type="checkbox" id="selectAll"> <strong>Select All</strong>
+                    </label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Barimore</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Hillsboro</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Knox Square</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Sterling Gate</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Danberry</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Abingdon</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> The Preserve</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Arbor Trail</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Windsor Court</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Magnolia Park</label>
+                    <label class="community-checkbox"><input type="checkbox" class="comm-cb"> Crestview</label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Delivery Method *</label>
+                  <div class="method-options">
+                    <label class="method-option"><input type="radio" name="method" value="email" checked> Email</label>
+                    <label class="method-option"><input type="radio" name="method" value="sms"> SMS</label>
+                    <label class="method-option"><input type="radio" name="method" value="both"> Both</label>
+                    <label class="method-option"><input type="radio" name="method" value="mail"> Physical Mail</label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Template</label>
+                  <select class="form-select">
+                    <option value="">Select a template (optional)...</option>
+                    <option>Welcome Letter</option>
+                    <option>Assessment Due Reminder</option>
+                    <option>Late Payment Notice</option>
+                    <option>Violation First Notice</option>
+                    <option>Board Meeting Notice</option>
+                    <option>Community Event Announcement</option>
+                    <option>Pool Season Opening</option>
+                    <option>Maintenance Update</option>
+                    <option>Emergency Notice</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Subject *</label>
+                  <input type="text" class="form-input" placeholder="Notice subject line">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Message *</label>
+                  <textarea class="form-textarea" rows="5" placeholder="Compose your mass notice..."></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Schedule</label>
+                  <div class="schedule-options">
+                    <label class="method-option">
+                      <input type="radio" name="schedule" value="now" checked> Send Now
+                    </label>
+                    <label class="method-option">
+                      <input type="radio" name="schedule" value="later"> Schedule
+                    </label>
+                    <input type="datetime-local" class="form-input" style="width:auto;padding:0.5rem 0.75rem;font-size:0.8125rem;" disabled id="scheduleDateTime">
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+                  <button class="btn btn-outline btn-sm" onclick="showToast('Preview generated', 'info')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Preview
+                  </button>
+                  <button class="btn btn-primary" onclick="showToast('Mass notice sent to selected communities')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"/>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                    Send Notice
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- HISTORY TAB -->
+            <div class="tab-panel" id="tab-history" style="display:none;padding:1.5rem;">
+              <h4 style="margin-bottom:1.25rem;">Communication History</h4>
+
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Subject</th>
+                      <th>Recipients</th>
+                      <th>Method</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Mar 14</td>
+                      <td><span class="badge badge-navy">Individual</span></td>
+                      <td>Re: Parking concern</td>
+                      <td>Marcus Williams</td>
+                      <td>Email</td>
+                      <td><span class="badge badge-success">Delivered</span></td>
+                    </tr>
+                    <tr>
+                      <td>Mar 12</td>
+                      <td><span class="badge badge-gold">Mass Notice</span></td>
+                      <td>Spring Assessment Reminder</td>
+                      <td>All Communities (487)</td>
+                      <td>Email + SMS</td>
+                      <td><span class="badge badge-success">Delivered</span></td>
+                    </tr>
+                    <tr>
+                      <td>Mar 10</td>
+                      <td><span class="badge badge-navy">Individual</span></td>
+                      <td>ARC Application Status Update</td>
+                      <td>Jennifer Davis</td>
+                      <td>Email</td>
+                      <td><span class="badge badge-success">Delivered</span></td>
+                    </tr>
+                    <tr>
+                      <td>Mar 8</td>
+                      <td><span class="badge badge-warning">Violation</span></td>
+                      <td>Second Notice — Lawn Maintenance</td>
+                      <td>Michael Torres</td>
+                      <td>Certified Mail</td>
+                      <td><span class="badge badge-success">Delivered</span></td>
+                    </tr>
+                    <tr>
+                      <td>Mar 5</td>
+                      <td><span class="badge badge-gold">Mass Notice</span></td>
+                      <td>Easter Egg Hunt Announcement</td>
+                      <td>The Preserve (89)</td>
+                      <td>Email</td>
+                      <td><span class="badge badge-success">Delivered</span></td>
+                    </tr>
+                    <tr>
+                      <td>Mar 3</td>
+                      <td><span class="badge badge-navy">Board</span></td>
+                      <td>March Board Meeting Agenda</td>
+                      <td>Danberry Board (5)</td>
+                      <td>Email</td>
+                      <td><span class="badge badge-success">Delivered</span></td>
+                    </tr>
+                    <tr>
+                      <td>Mar 1</td>
+                      <td><span class="badge badge-gold">Mass Notice</span></td>
+                      <td>Pool Season Preparation Update</td>
+                      <td>The Preserve (89)</td>
+                      <td>Email + SMS</td>
+                      <td><span class="badge badge-success">Delivered</span></td>
+                    </tr>
+                    <tr>
+                      <td>Feb 28</td>
+                      <td><span class="badge badge-warning">Violation</span></td>
+                      <td>First Notice — Exterior Paint</td>
+                      <td>Thomas Baker</td>
+                      <td>Mail</td>
+                      <td><span class="badge badge-success">Delivered</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Sidebar Toggle -->
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+  </button>
+
+  <script src="../portal.js"></script>
+  <script>
+    // Tab switching
+    document.querySelectorAll('#commTabs .tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('#commTabs .tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const target = tab.dataset.tab;
+        document.querySelectorAll('#commTabContent .tab-panel').forEach(panel => {
+          panel.style.display = panel.id === target ? '' : 'none';
+          if (panel.id === target) panel.classList.add('active');
+          else panel.classList.remove('active');
+        });
+      });
+    });
+
+    // Message list click
+    document.querySelectorAll('.message-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.message-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        item.classList.remove('unread');
+        // In a real app, would update the preview pane based on message data
+      });
+    });
+
+    // Select All checkbox for mass notices
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+      selectAll.addEventListener('change', () => {
+        document.querySelectorAll('.comm-cb').forEach(cb => {
+          cb.checked = selectAll.checked;
+        });
+      });
+    }
+
+    // Schedule toggle
+    document.querySelectorAll('input[name="schedule"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const dt = document.getElementById('scheduleDateTime');
+        if (dt) {
+          dt.disabled = radio.value !== 'later';
+          if (radio.value === 'later') dt.focus();
+        }
+      });
+    });
+
+    // Template card click to switch to compose
+    document.querySelectorAll('.template-card .btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Switch to compose tab
+        document.querySelectorAll('#commTabs .tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('#commTabs .tab[data-tab="tab-compose"]').classList.add('active');
+        document.querySelectorAll('#commTabContent .tab-panel').forEach(panel => {
+          panel.style.display = panel.id === 'tab-compose' ? '' : 'none';
+        });
+        showToast('Template loaded into composer', 'info');
+      });
+    });
+
+    // Search filtering for message list
+    const searchInput = document.querySelector('.header-search input');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        const query = searchInput.value.toLowerCase();
+        document.querySelectorAll('.message-item').forEach(item => {
+          const text = item.textContent.toLowerCase();
+          item.style.display = text.includes(query) ? '' : 'none';
+        });
+      });
+    }
+  </script>
+</body>
+</html>
