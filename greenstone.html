@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Construction & Landscaping Portals | Williams Digital</title>
+    <meta name="description" content="Custom-built client and crew portals for construction and landscaping companies. Manage projects, crews, invoices, and clients in one place.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        html { scroll-behavior: smooth; }
+
+        /* Scroll-triggered fade-in */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        .reveal-delay-5 { transition-delay: 0.5s; }
+        .reveal-delay-6 { transition-delay: 0.6s; }
+        .reveal-delay-7 { transition-delay: 0.7s; }
+
+        /* Portal preview float animation */
+        @keyframes portalFloat {
+            0%, 100% { transform: perspective(1200px) rotateX(2deg) rotateY(-2deg) translateY(0px); }
+            50% { transform: perspective(1200px) rotateX(2deg) rotateY(-2deg) translateY(-16px); }
+        }
+        .portal-float {
+            animation: portalFloat 6s ease-in-out infinite;
+        }
+
+        /* Notification slide-in */
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(60px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .slide-in { animation: slideInRight 0.5s ease forwards; }
+
+        /* Fade in up for activity items */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in-up { animation: fadeInUp 0.5s ease forwards; }
+
+        /* Progress bar animation */
+        @keyframes progressGrow {
+            from { width: 0%; }
+            to { width: 65%; }
+        }
+        .progress-animate { animation: progressGrow 1.5s ease forwards; }
+
+        /* CTA hover effect */
+        .cta-btn {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .cta-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(5, 150, 105, 0.3);
+        }
+        .cta-btn-outline:hover {
+            box-shadow: 0 12px 40px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Glow border for "after" card */
+        .glow-border {
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.15), 0 0 60px rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Notification cycling */
+        .notification-item {
+            opacity: 0;
+            transform: translateX(40px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .notification-item.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* Subtle grid pattern for hero */
+        .hero-grid {
+            background-image:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* Pricing card highlight */
+        .pricing-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+            border: 2px solid #d1fae5;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(5, 150, 105, 0.15);
+        }
+
+        /* Feature card hover */
+        .feature-card {
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Smooth navbar transition */
+        .navbar-scrolled {
+            background: rgba(255, 255, 255, 0.98) !important;
+            box-shadow: 0 1px 20px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(20px);
+        }
+        .navbar-scrolled .nav-link { color: #334155 !important; }
+        .navbar-scrolled .nav-link:hover { color: #059669 !important; }
+        .navbar-scrolled .logo-text { color: #0f172a !important; }
+    </style>
+</head>
+<body class="bg-white antialiased">
+
+<!-- ========== NAVIGATION ========== -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" style="background: transparent;">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="flex items-center justify-between h-20">
+            <!-- Logo -->
+            <a href="#" class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="layers" class="w-4 h-4 text-white"></i>
+                </div>
+                <span class="logo-text text-white font-semibold text-sm tracking-tight transition-colors duration-300">Williams Digital</span>
+            </a>
+            <!-- Nav Links -->
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#features" class="nav-link text-sm text-white/80 hover:text-white transition-colors duration-200">Features</a>
+                <a href="#demo" class="nav-link text-sm text-white/80 hover:text-white transition-colors duration-200">Demo</a>
+                <a href="#pricing" class="nav-link text-sm text-white/80 hover:text-white transition-colors duration-200">Pricing</a>
+                <a href="mailto:dylan@williamsdigital.io?subject=Custom%20Portal%20Inquiry" class="nav-link text-sm text-white/80 hover:text-white transition-colors duration-200">Contact</a>
+            </div>
+            <!-- CTA -->
+            <a href="mailto:dylan@williamsdigital.io?subject=Custom%20Portal%20Inquiry" class="hidden md:inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-5 py-2.5 rounded-full transition-all duration-200 hover:shadow-lg hover:shadow-emerald-600/20">
+                Get Your Portal Built
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+            <!-- Mobile menu button -->
+            <button id="mobileMenuBtn" class="md:hidden text-white">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+        </div>
+    </div>
+    <!-- Mobile menu -->
+    <div id="mobileMenu" class="hidden md:hidden bg-slate-900/98 backdrop-blur-lg border-t border-white/10 px-6 py-4">
+        <a href="#features" class="block py-3 text-sm text-white/80">Features</a>
+        <a href="#demo" class="block py-3 text-sm text-white/80">Demo</a>
+        <a href="#pricing" class="block py-3 text-sm text-white/80">Pricing</a>
+        <a href="mailto:dylan@williamsdigital.io?subject=Custom%20Portal%20Inquiry" class="block py-3 text-sm text-white/80">Contact</a>
+        <a href="mailto:dylan@williamsdigital.io?subject=Custom%20Portal%20Inquiry" class="mt-3 block text-center bg-emerald-600 text-white text-sm font-medium px-5 py-2.5 rounded-full">Get Your Portal Built</a>
+    </div>
+</nav>
+
+<!-- ========== HERO SECTION ========== -->
+<section class="relative bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 pt-32 pb-24 lg:pt-40 lg:pb-32 overflow-hidden hero-grid">
+    <!-- Gradient orbs for depth -->
+    <div class="absolute top-0 left-1/4 w-[600px] h-[600px] bg-emerald-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-teal-500/8 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="text-center max-w-4xl mx-auto">
+            <!-- Badge -->
+            <div class="reveal inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-8">
+                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                <span class="text-xs text-emerald-300 font-medium">Now accepting new portal builds</span>
+            </div>
+
+            <!-- Headline -->
+            <h1 class="reveal text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold text-white leading-[1.08] tracking-tight mb-6">
+                Manage Projects, Clients, and Crews
+                <span class="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent"> &mdash; All in One Place</span>
+            </h1>
+
+            <!-- Subheadline -->
+            <p class="reveal reveal-delay-1 text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                A modern construction portal built for growing service companies. Stop losing leads to disorganization.
+            </p>
+
+            <!-- CTAs -->
+            <div class="reveal reveal-delay-2 flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                <a href="greenstone-portal.html" class="cta-btn inline-flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-semibold px-8 py-4 rounded-full text-base shadow-lg shadow-emerald-600/25">
+                    View Live Demo
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </a>
+                <a href="mailto:dylan@williamsdigital.io?subject=Custom%20Portal%20Inquiry" class="cta-btn cta-btn-outline inline-flex items-center gap-2.5 border-2 border-white/20 text-white font-semibold px-8 py-4 rounded-full text-base hover:border-white/40 transition-colors duration-200">
+                    Get Your Custom Portal
+                </a>
+            </div>
+
+            <!-- Trust text -->
+            <p class="reveal reveal-delay-3 text-xs text-slate-500 mb-16">Built by Williams Digital &middot; Trusted by Alabama contractors</p>
+        </div>
+
+        <!-- Portal Preview Mockup -->
+        <div class="reveal reveal-delay-3 max-w-5xl mx-auto portal-float">
+            <div class="bg-slate-800 rounded-2xl shadow-2xl shadow-black/40 border border-white/5 overflow-hidden">
+                <!-- Browser chrome -->
+                <div class="flex items-center gap-2 px-5 py-3 bg-slate-900/80 border-b border-white/5">
+                    <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+                    <div class="flex-1 mx-4">
+                        <div class="bg-slate-700/50 rounded-md px-4 py-1.5 text-xs text-slate-400 max-w-md mx-auto text-center">portal.greenstone-landscapes.com/dashboard</div>
+                    </div>
+                </div>
+                <!-- Portal content -->
+                <div class="flex min-h-[340px]">
+                    <!-- Mini sidebar -->
+                    <div class="hidden sm:block w-48 bg-slate-900/60 border-r border-white/5 p-4">
+                        <div class="flex items-center gap-2 mb-6">
+                            <div class="w-7 h-7 bg-emerald-600 rounded-md flex items-center justify-center">
+                                <i data-lucide="mountain" class="w-4 h-4 text-white"></i>
+                            </div>
+                            <span class="text-xs font-semibold text-white">Greenstone</span>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 px-3 py-2 bg-slate-700/50 rounded-md">
+                                <div class="w-3.5 h-3.5 rounded bg-emerald-500/30"></div>
+                                <span class="text-xs text-emerald-300 font-medium">Dashboard</span>
+                            </div>
+                            <div class="flex items-center gap-2 px-3 py-2 rounded-md">
+                                <div class="w-3.5 h-3.5 rounded bg-slate-600/40"></div>
+                                <span class="text-xs text-slate-500">Jobs</span>
+                            </div>
+                            <div class="flex items-center gap-2 px-3 py-2 rounded-md">
+                                <div class="w-3.5 h-3.5 rounded bg-slate-600/40"></div>
+                                <span class="text-xs text-slate-500">Estimates</span>
+                            </div>
+                            <div class="flex items-center gap-2 px-3 py-2 rounded-md">
+                                <div class="w-3.5 h-3.5 rounded bg-slate-600/40"></div>
+                                <span class="text-xs text-slate-500">Invoices</span>
+                            </div>
+                            <div class="flex items-center gap-2 px-3 py-2 rounded-md">
+                                <div class="w-3.5 h-3.5 rounded bg-slate-600/40"></div>
+                                <span class="text-xs text-slate-500">Crew</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Mini dashboard -->
+                    <div class="flex-1 p-5 bg-gradient-to-br from-slate-800/50 to-slate-900/30">
+                        <!-- Metric cards row -->
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                            <div class="bg-slate-900/60 border border-white/5 rounded-lg p-3">
+                                <div class="text-[10px] text-slate-500 mb-1">Active Jobs</div>
+                                <div class="text-lg font-bold text-white">14</div>
+                                <div class="text-[10px] text-emerald-400 mt-0.5">+3 this week</div>
+                            </div>
+                            <div class="bg-slate-900/60 border border-white/5 rounded-lg p-3">
+                                <div class="text-[10px] text-slate-500 mb-1">Revenue (MTD)</div>
+                                <div class="text-lg font-bold text-white">$184K</div>
+                                <div class="text-[10px] text-emerald-400 mt-0.5">+12% vs last</div>
+                            </div>
+                            <div class="hidden lg:block bg-slate-900/60 border border-white/5 rounded-lg p-3">
+                                <div class="text-[10px] text-slate-500 mb-1">Open Estimates</div>
+                                <div class="text-lg font-bold text-white">7</div>
+                                <div class="text-[10px] text-amber-400 mt-0.5">$92K pending</div>
+                            </div>
+                            <div class="hidden lg:block bg-slate-900/60 border border-white/5 rounded-lg p-3">
+                                <div class="text-[10px] text-slate-500 mb-1">Crew Online</div>
+                                <div class="text-lg font-bold text-white">23</div>
+                                <div class="text-[10px] text-emerald-400 mt-0.5">4 sites active</div>
+                            </div>
+                        </div>
+                        <!-- Activity feed -->
+                        <div class="bg-slate-900/60 border border-white/5 rounded-lg p-3">
+                            <div class="text-xs font-semibold text-slate-300 mb-3">Recent Activity</div>
+                            <div class="space-y-2.5">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+                                    <span class="text-[11px] text-slate-400">Estimate #1047 approved &mdash; <span class="text-white">$14,200</span></span>
+                                    <span class="text-[10px] text-slate-600 ml-auto">2m ago</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                                    <span class="text-[11px] text-slate-400">Crew B checked in at <span class="text-white">Oak Hill Residence</span></span>
+                                    <span class="text-[10px] text-slate-600 ml-auto">15m ago</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-amber-400"></div>
+                                    <span class="text-[11px] text-slate-400">Invoice #892 paid &mdash; <span class="text-white">$8,750</span></span>
+                                    <span class="text-[10px] text-slate-600 ml-auto">1h ago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== SOCIAL PROOF BAR ========== -->
+<section class="relative bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 py-10 lg:py-12">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            <div class="reveal">
+                <div class="text-3xl lg:text-4xl font-extrabold text-white" data-count="14">0</div>
+                <div class="text-sm text-emerald-100/80 mt-1">Active Jobs Tracked</div>
+            </div>
+            <div class="reveal reveal-delay-1">
+                <div class="text-3xl lg:text-4xl font-extrabold text-white">$<span data-count="2.4">0</span>M+</div>
+                <div class="text-sm text-emerald-100/80 mt-1">Invoiced Through Portal</div>
+            </div>
+            <div class="reveal reveal-delay-2">
+                <div class="text-3xl lg:text-4xl font-extrabold text-white" data-count="46">0</div>
+                <div class="text-sm text-emerald-100/80 mt-1">Crew Members Managed</div>
+            </div>
+            <div class="reveal reveal-delay-3">
+                <div class="text-3xl lg:text-4xl font-extrabold text-white"><span data-count="99.2">0</span>%</div>
+                <div class="text-sm text-emerald-100/80 mt-1">On-Time Delivery</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== WHY COMPANIES SWITCH ========== -->
+<section class="py-20 lg:py-28 bg-white">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <h2 class="reveal text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4">
+                Why Smart Contractors Are Switching to Portals
+            </h2>
+            <p class="reveal reveal-delay-1 text-lg text-slate-500 leading-relaxed">
+                Your competitors are still using text messages and spreadsheets. Here's why that's costing them.
+            </p>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Card 1 -->
+            <div class="reveal feature-card bg-white border border-slate-100 rounded-2xl p-7 shadow-sm">
+                <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-5">
+                    <i data-lucide="target" class="w-6 h-6 text-emerald-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Lose Fewer Leads</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Estimates, follow-ups, and approvals in one place. Nothing falls through the cracks.</p>
+            </div>
+            <!-- Card 2 -->
+            <div class="reveal reveal-delay-1 feature-card bg-white border border-slate-100 rounded-2xl p-7 shadow-sm">
+                <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-5">
+                    <i data-lucide="message-square" class="w-6 h-6 text-emerald-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Faster Client Communication</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Clients see real-time updates, photos, and invoices. They stop calling you 10x a day.</p>
+            </div>
+            <!-- Card 3 -->
+            <div class="reveal reveal-delay-2 feature-card bg-white border border-slate-100 rounded-2xl p-7 shadow-sm">
+                <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-5">
+                    <i data-lucide="clipboard-check" class="w-6 h-6 text-emerald-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Organized Job Tracking</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">From estimate to invoice &mdash; every job, crew, and dollar tracked automatically.</p>
+            </div>
+            <!-- Card 4 -->
+            <div class="reveal reveal-delay-3 feature-card bg-white border border-slate-100 rounded-2xl p-7 shadow-sm">
+                <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-5">
+                    <i data-lucide="trophy" class="w-6 h-6 text-amber-500"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Professional Brand Perception</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">When a client logs into YOUR portal, they see a company that has its act together.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== BEFORE vs AFTER ========== -->
+<section class="py-20 lg:py-28 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 hero-grid relative overflow-hidden">
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-600/5 rounded-full blur-[150px] pointer-events-none"></div>
+    <div class="relative max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <h2 class="reveal text-3xl lg:text-4xl font-extrabold text-white mb-4">
+                The Difference Is Night and Day
+            </h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-5xl mx-auto">
+            <!-- BEFORE -->
+            <div class="reveal bg-slate-900/80 border border-red-500/10 rounded-2xl p-8 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-red-600/5 rounded-full blur-[60px]"></div>
+                <div class="relative">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
+                            <i data-lucide="x-circle" class="w-5 h-5 text-red-400"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">How most companies operate</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="x" class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-400">Estimates scribbled on paper or buried in texts</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="x" class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-400">Clients call 5x asking "when will you be here?"</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="x" class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-400">Job updates lost in group chats</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="x" class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-400">Invoices sent late, payments slower</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="x" class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-400">No idea which crew is where</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="x" class="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-400">Looks unprofessional to high-value clients</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- AFTER -->
+            <div class="reveal reveal-delay-2 glow-border bg-slate-900/80 rounded-2xl p-8 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-600/10 rounded-full blur-[60px]"></div>
+                <div class="relative">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">With your custom portal</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-300">Digital estimates that convert to jobs in one click</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-300">Clients log in and see exactly what's happening</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-300">Real-time job updates, photos, and daily logs</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-300">Automated invoicing with online payments</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-300">GPS-verified crew tracking and time logs</span>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check" class="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-sm text-slate-300">Premium brand that wins bigger contracts</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== INTERACTIVE PORTAL PREVIEW ========== -->
+<section id="demo" class="py-20 lg:py-28 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-14">
+            <h2 class="reveal text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4">See It In Action</h2>
+            <p class="reveal reveal-delay-1 text-lg text-slate-500">
+                This isn't a mockup &mdash; it's a fully functional demo portal.
+            </p>
+            <div class="reveal reveal-delay-2 mt-8">
+                <a href="greenstone-portal.html" class="cta-btn inline-flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-semibold px-8 py-4 rounded-full text-base shadow-lg shadow-emerald-600/25">
+                    Explore the Full Demo
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Interactive mini-preview -->
+        <div class="reveal reveal-delay-2 max-w-3xl mx-auto bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+            <div class="p-6 lg:p-8">
+                <!-- Notification area -->
+                <div class="mb-6 min-h-[52px] relative" id="notificationArea">
+                    <div class="notification-item absolute inset-0 flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3" data-notif="0">
+                        <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>
+                        </div>
+                        <span class="text-sm font-medium text-emerald-800">New estimate #1047 approved &mdash; $14,200</span>
+                        <span class="text-xs text-emerald-500 ml-auto flex-shrink-0">Just now</span>
+                    </div>
+                    <div class="notification-item absolute inset-0 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3" data-notif="1">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-blue-600"></i>
+                        </div>
+                        <span class="text-sm font-medium text-blue-800">Crew A checked in at Riverside Patio project</span>
+                        <span class="text-xs text-blue-500 ml-auto flex-shrink-0">2 min ago</span>
+                    </div>
+                    <div class="notification-item absolute inset-0 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-3" data-notif="2">
+                        <div class="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="credit-card" class="w-4 h-4 text-amber-600"></i>
+                        </div>
+                        <span class="text-sm font-medium text-amber-800">Invoice #892 paid &mdash; $8,750 received</span>
+                        <span class="text-xs text-amber-500 ml-auto flex-shrink-0">5 min ago</span>
+                    </div>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="mb-6 bg-slate-50 rounded-xl p-5 border border-slate-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-semibold text-slate-800">Mountain Brook Estate</span>
+                        <span class="text-sm font-bold text-emerald-600" id="progressPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-3">
+                        <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-3 rounded-full transition-all duration-[1500ms] ease-out" style="width: 0%"></div>
+                    </div>
+                    <div class="flex items-center justify-between mt-2">
+                        <span class="text-xs text-slate-400">Hardscape &amp; Grading Phase</span>
+                        <span class="text-xs text-slate-400">Est. completion: Apr 18</span>
+                    </div>
+                </div>
+
+                <!-- Activity feed -->
+                <div class="mb-6">
+                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Live Activity</div>
+                    <div id="activityFeed" class="space-y-3">
+                        <div class="activity-item opacity-0 flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div class="w-8 h-8 bg-emerald-50 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="camera" class="w-4 h-4 text-emerald-500"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-slate-700"><span class="font-semibold">Marcus R.</span> added 4 photos to <span class="font-semibold">Oak Hill Terrace</span></div>
+                                <div class="text-xs text-slate-400 mt-0.5">12 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item opacity-0 flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div class="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-slate-700">Estimate #1048 sent to <span class="font-semibold">Johnson Residence</span> &mdash; $22,400</div>
+                                <div class="text-xs text-slate-400 mt-0.5">28 minutes ago</div>
+                            </div>
+                        </div>
+                        <div class="activity-item opacity-0 flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                            <div class="w-8 h-8 bg-purple-50 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="clock" class="w-4 h-4 text-purple-500"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm text-slate-700"><span class="font-semibold">Crew B</span> logged 6.5 hours at Riverside project</div>
+                                <div class="text-xs text-slate-400 mt-0.5">1 hour ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client message -->
+                <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-xl p-4 flex items-start gap-3">
+                    <div class="w-9 h-9 bg-emerald-200 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-emerald-700">SW</div>
+                    <div>
+                        <div class="text-xs font-semibold text-emerald-700 mb-0.5">Sarah W. &middot; Client</div>
+                        <div class="text-sm text-emerald-800">"Love the progress photos! This portal makes it so easy to keep up with everything."</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== FEATURES SECTION ========== -->
+<section id="features" class="py-20 lg:py-28 bg-white">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <h2 class="reveal text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4">
+                Everything a Growing Contractor Needs
+            </h2>
+            <p class="reveal reveal-delay-1 text-lg text-slate-500">
+                Each feature is designed to save you time and make you money.
+            </p>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Feature 1 -->
+            <div class="reveal feature-card bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <div class="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="users" class="w-5 h-5 text-emerald-600"></i>
+                </div>
+                <h3 class="text-[15px] font-bold text-slate-900 mb-2">Clients track projects without calling you</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">A branded portal where clients see status, photos, and updates 24/7.</p>
+            </div>
+            <!-- Feature 2 -->
+            <div class="reveal reveal-delay-1 feature-card bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <div class="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i>
+                </div>
+                <h3 class="text-[15px] font-bold text-slate-900 mb-2">Build estimates in minutes, not hours</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Templates, line items, and one-click conversion to jobs.</p>
+            </div>
+            <!-- Feature 3 -->
+            <div class="reveal reveal-delay-2 feature-card bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <div class="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="message-circle" class="w-5 h-5 text-emerald-600"></i>
+                </div>
+                <h3 class="text-[15px] font-bold text-slate-900 mb-2">Never lose a message or update</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Every note, photo, and voice memo attached to the right job.</p>
+            </div>
+            <!-- Feature 4 -->
+            <div class="reveal reveal-delay-3 feature-card bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <div class="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="map-pin" class="w-5 h-5 text-emerald-600"></i>
+                </div>
+                <h3 class="text-[15px] font-bold text-slate-900 mb-2">Know where every crew is, right now</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">GPS check-in, time tracking, and daily accountability.</p>
+            </div>
+            <!-- Feature 5 -->
+            <div class="reveal feature-card bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <div class="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="arrow-right-circle" class="w-5 h-5 text-emerald-600"></i>
+                </div>
+                <h3 class="text-[15px] font-bold text-slate-900 mb-2">From estimate to job to invoice in clicks</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">The full lifecycle automated so nothing gets missed.</p>
+            </div>
+            <!-- Feature 6 -->
+            <div class="reveal reveal-delay-1 feature-card bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <div class="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="clipboard-list" class="w-5 h-5 text-emerald-600"></i>
+                </div>
+                <h3 class="text-[15px] font-bold text-slate-900 mb-2">Daily job logs that write themselves</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Weather, photos, materials, voice notes &mdash; all in one entry.</p>
+            </div>
+            <!-- Feature 7 -->
+            <div class="reveal reveal-delay-2 feature-card bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <div class="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="credit-card" class="w-5 h-5 text-amber-500"></i>
+                </div>
+                <h3 class="text-[15px] font-bold text-slate-900 mb-2">Get paid faster with online invoicing</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Send professional invoices. Track payments. Auto-reminders.</p>
+            </div>
+            <!-- Feature 8 -->
+            <div class="reveal reveal-delay-3 feature-card bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                <div class="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-emerald-600"></i>
+                </div>
+                <h3 class="text-[15px] font-bold text-slate-900 mb-2">Role-based access keeps everyone aligned</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Admins, PMs, foremen, and clients &mdash; each sees exactly what they need.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== WHO THIS IS FOR ========== -->
+<section class="py-20 lg:py-28 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <h2 class="reveal text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4">Built For Companies Like Yours</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <!-- Persona 1 -->
+            <div class="reveal feature-card bg-white rounded-2xl p-8 shadow-sm border border-emerald-100/50">
+                <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mb-5">
+                    <i data-lucide="hard-hat" class="w-7 h-7 text-amber-500"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Growing Contractors</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Doing $500K&ndash;$5M and tired of the chaos. You know you need systems but haven't found the right one.</p>
+            </div>
+            <!-- Persona 2 -->
+            <div class="reveal reveal-delay-1 feature-card bg-white rounded-2xl p-8 shadow-sm border border-emerald-100/50">
+                <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-5">
+                    <i data-lucide="tree-pine" class="w-7 h-7 text-emerald-600"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Landscaping Companies</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Managing multiple crews across job sites. You need visibility without micromanaging.</p>
+            </div>
+            <!-- Persona 3 -->
+            <div class="reveal reveal-delay-2 feature-card bg-white rounded-2xl p-8 shadow-sm border border-emerald-100/50">
+                <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-5">
+                    <i data-lucide="briefcase" class="w-7 h-7 text-blue-500"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-3">Service Company Owners</h3>
+                <p class="text-sm text-slate-500 leading-relaxed">Who want to look more professional, win bigger bids, and stop leaving money on the table.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== PRICING ========== -->
+<section id="pricing" class="py-20 lg:py-28 bg-white">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-14">
+            <h2 class="reveal text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4">Investment</h2>
+            <p class="reveal reveal-delay-1 text-lg text-slate-500">Custom portals built specifically for your business.</p>
+        </div>
+        <div class="reveal reveal-delay-1 max-w-md mx-auto">
+            <div class="pricing-card rounded-3xl p-10 text-center relative overflow-hidden">
+                <!-- Badge -->
+                <div class="absolute top-5 right-5">
+                    <span class="inline-flex items-center gap-1 bg-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                        <i data-lucide="star" class="w-3 h-3"></i>
+                        Most Popular
+                    </span>
+                </div>
+                <div class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Custom Portal</div>
+                <div class="text-sm text-slate-400 mb-1">Starting at</div>
+                <div class="text-6xl font-extrabold text-emerald-600 mb-1">$3,500</div>
+                <div class="text-sm text-slate-500 mb-8">One-time build &middot; You own it forever</div>
+
+                <div class="space-y-3.5 text-left mb-10">
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="check" class="w-3 h-3 text-emerald-600"></i>
+                        </div>
+                        <span class="text-sm text-slate-700">Custom branded to your company</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="check" class="w-3 h-3 text-emerald-600"></i>
+                        </div>
+                        <span class="text-sm text-slate-700">All features included</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="check" class="w-3 h-3 text-emerald-600"></i>
+                        </div>
+                        <span class="text-sm text-slate-700">Client portal included</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="check" class="w-3 h-3 text-emerald-600"></i>
+                        </div>
+                        <span class="text-sm text-slate-700">Mobile-friendly</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="check" class="w-3 h-3 text-emerald-600"></i>
+                        </div>
+                        <span class="text-sm text-slate-700">30 days of support</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="check" class="w-3 h-3 text-emerald-600"></i>
+                        </div>
+                        <span class="text-sm text-slate-700">Training walkthrough</span>
+                    </div>
+                </div>
+
+                <a href="mailto:dylan@williamsdigital.io?subject=Custom%20Portal%20Inquiry" class="cta-btn block w-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-semibold py-4 rounded-full text-base shadow-lg shadow-emerald-600/20">
+                    Get Started
+                    <span class="ml-1">&rarr;</span>
+                </a>
+                <p class="text-xs text-slate-400 mt-4">Optional: $200/mo hosting &amp; maintenance</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ========== FINAL CTA ========== -->
+<section class="py-20 lg:py-28 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 hero-grid relative overflow-hidden">
+    <div class="absolute top-0 left-1/3 w-[500px] h-[500px] bg-emerald-600/8 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-teal-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="relative max-w-4xl mx-auto px-6 lg:px-8 text-center">
+        <h2 class="reveal text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-6">
+            Ready to Run Your Company<br class="hidden sm:block"> Like a Tech Company?
+        </h2>
+        <p class="reveal reveal-delay-1 text-lg text-slate-400 max-w-2xl mx-auto mb-10">
+            Your next client could log into something like this tomorrow.
+        </p>
+        <div class="reveal reveal-delay-2 flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+            <a href="greenstone-portal.html" class="cta-btn inline-flex items-center gap-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-semibold px-8 py-4 rounded-full text-base shadow-lg shadow-emerald-600/25">
+                View the Demo
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+            </a>
+            <a href="mailto:dylan@williamsdigital.io?subject=Custom%20Portal%20Inquiry" class="cta-btn cta-btn-outline inline-flex items-center gap-2.5 border-2 border-white/20 text-white font-semibold px-8 py-4 rounded-full text-base hover:border-white/40 transition-colors duration-200">
+                Let's Build Yours
+                <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+            </a>
+        </div>
+        <div class="reveal reveal-delay-3 flex items-center justify-center gap-4 text-sm text-slate-500">
+            <span>Built in Alabama</span>
+            <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+            <span>Williams Digital</span>
+            <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+            <span>(334) 555-0100</span>
+        </div>
+    </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer class="bg-slate-950 py-12 border-t border-white/5">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 bg-emerald-600 rounded-lg flex items-center justify-center">
+                    <i data-lucide="layers" class="w-3.5 h-3.5 text-white"></i>
+                </div>
+                <span class="text-sm font-semibold text-white">Williams Digital</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <a href="https://williamsdigital.io" class="text-sm text-slate-500 hover:text-slate-300 transition-colors">Portfolio</a>
+                <a href="mailto:dylan@williamsdigital.io" class="text-sm text-slate-500 hover:text-slate-300 transition-colors">Contact</a>
+                <a href="#" class="text-sm text-slate-500 hover:text-slate-300 transition-colors">Privacy</a>
+            </div>
+            <p class="text-sm text-slate-600">&copy; 2026 Williams Digital. Built in Alabama.</p>
+        </div>
+    </div>
+</footer>
+
+<!-- ========== SCRIPTS ========== -->
+<script>
+    // Initialize Lucide icons
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+
+        // ---- Scroll-triggered reveal animations ----
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+        // ---- Navbar scroll effect ----
+        const navbar = document.getElementById('navbar');
+        const handleScroll = () => {
+            if (window.scrollY > 60) {
+                navbar.classList.add('navbar-scrolled');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        // ---- Mobile menu toggle ----
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        // Close mobile menu on link click
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+        });
+
+        // ---- Counter animation ----
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    const target = parseFloat(el.getAttribute('data-count'));
+                    const isDecimal = target % 1 !== 0;
+                    const duration = 2000;
+                    const startTime = performance.now();
+
+                    const animate = (currentTime) => {
+                        const elapsed = currentTime - startTime;
+                        const progress = Math.min(elapsed / duration, 1);
+                        // Ease out cubic
+                        const eased = 1 - Math.pow(1 - progress, 3);
+                        const current = target * eased;
+
+                        if (isDecimal) {
+                            el.textContent = current.toFixed(1);
+                        } else {
+                            el.textContent = Math.floor(current);
+                        }
+
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            el.textContent = isDecimal ? target.toFixed(1) : target;
+                        }
+                    };
+                    requestAnimationFrame(animate);
+                    counterObserver.unobserve(el);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
+
+        // ---- Notification cycling ----
+        const notifications = document.querySelectorAll('.notification-item');
+        let currentNotif = 0;
+
+        function showNotification(index) {
+            notifications.forEach(n => n.classList.remove('active'));
+            notifications[index].classList.add('active');
+        }
+
+        // Initial show
+        const notifObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    showNotification(0);
+                    setInterval(() => {
+                        currentNotif = (currentNotif + 1) % notifications.length;
+                        showNotification(currentNotif);
+                    }, 3000);
+                    notifObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        notifObserver.observe(document.getElementById('notificationArea'));
+
+        // ---- Progress bar animation ----
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+
+        const progressObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    progressBar.style.width = '65%';
+                    // Animate the percentage text
+                    let current = 0;
+                    const target = 65;
+                    const interval = setInterval(() => {
+                        current += 1;
+                        progressPercent.textContent = current + '%';
+                        if (current >= target) clearInterval(interval);
+                    }, 23);
+                    progressObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        progressObserver.observe(progressBar.parentElement.parentElement);
+
+        // ---- Activity feed staggered fade-in ----
+        const activityItems = document.querySelectorAll('.activity-item');
+
+        const activityObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    activityItems.forEach((item, index) => {
+                        setTimeout(() => {
+                            item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                            item.style.opacity = '1';
+                            item.style.transform = 'translateY(0)';
+                        }, index * 300);
+                    });
+                    activityObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.2 });
+
+        activityObserver.observe(document.getElementById('activityFeed'));
+
+        // ---- Smooth scroll for anchor links ----
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href === '#') return;
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    const offsetTop = target.offsetTop - 80;
+                    window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
