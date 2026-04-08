@@ -1119,12 +1119,33 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'SUBMITTING...';
 
-      var data = new FormData(form);
+      // Collect form data as JSON for Resend Lambda
+      var selectedAthletes = [];
+      document.querySelectorAll('.athlete-select-card.selected').forEach(function(card) {
+        selectedAthletes.push(card.getAttribute('data-name'));
+      });
 
-      fetch(form.action, {
+      var jsonData = {
+        name: document.getElementById('fieldName').value.trim(),
+        email: document.getElementById('fieldEmail').value.trim(),
+        phone: document.getElementById('fieldPhone').value.trim(),
+        company: document.getElementById('fieldCompany').value.trim(),
+        title: (document.getElementById('fieldTitle') || {}).value || '',
+        city: (document.getElementById('fieldCity') || {}).value || '',
+        handicap: (document.getElementById('fieldHandicap') || {}).value || '',
+        frequency: (document.getElementById('fieldFrequency') || {}).value || '',
+        home_course: (document.getElementById('fieldCourse') || {}).value || '',
+        tier: (document.querySelector('input[name="tier"]:checked') || {}).value || '',
+        athletes: selectedAthletes,
+        referral: (document.getElementById('fieldReferral') || {}).value || '',
+        notes: (document.getElementById('fieldNotes') || {}).value || '',
+        _source: document.getElementById('sourceField').value
+      };
+
+      fetch('https://ha2sinzpu3.execute-api.us-east-1.amazonaws.com/prod/apply', {
         method: 'POST',
-        body: data,
-        headers: { 'Accept': 'application/json' }
+        body: JSON.stringify(jsonData),
+        headers: { 'Content-Type': 'application/json' }
       }).then(function(response) {
         if (response.ok) {
           // Get first name for personalized message
