@@ -849,10 +849,11 @@
       <div class="login-brand">CARTPATH</div>
       <div class="login-title">Admin Dashboard</div>
       <form id="loginForm" onsubmit="return handleLogin(event)">
-        <input type="password" class="login-input" id="passwordInput" placeholder="Enter password" autocomplete="off">
+        <input type="email" class="login-input" id="emailInput" placeholder="Email" autocomplete="email" style="margin-bottom: 12px;">
+        <input type="password" class="login-input" id="passwordInput" placeholder="Password" autocomplete="off">
         <button type="submit" class="login-btn">Access Dashboard</button>
       </form>
-      <div class="login-error" id="loginError">Incorrect password. Try again.</div>
+      <div class="login-error" id="loginError">Invalid email or password.</div>
     </div>
   </div>
 
@@ -933,7 +934,10 @@
 
   <script>
     const API = 'https://ha2sinzpu3.execute-api.us-east-1.amazonaws.com/prod';
-    const PASSWORD = 'CartPathAdmin2026!';
+    const ADMINS = {
+      'dylan@williamsdigital.io': 'CartPath2026!',
+      'msowell@cartpath.com': 'CartPath2026!'
+    };
     let currentFilter = 'all';
     let applications = [];
     let stats = { total: 0, pending: 0, approved: 0, declined: 0 };
@@ -949,9 +953,11 @@
 
     function handleLogin(e) {
       e.preventDefault();
+      const email = document.getElementById('emailInput').value.trim().toLowerCase();
       const pw = document.getElementById('passwordInput').value;
-      if (pw === PASSWORD) {
-        sessionStorage.setItem('cartpath_admin_token', PASSWORD);
+      if (ADMINS[email] && ADMINS[email] === pw) {
+        sessionStorage.setItem('cartpath_admin_token', pw);
+        sessionStorage.setItem('cartpath_admin_email', email);
         showDashboard();
       } else {
         document.getElementById('loginError').style.display = 'block';
@@ -978,7 +984,7 @@
     }
 
     // Check session on load
-    if (getToken() === PASSWORD) {
+    if (getToken() && Object.values(ADMINS).includes(getToken())) {
       showDashboard();
     }
 
