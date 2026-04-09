@@ -458,6 +458,28 @@
       transition: all 0.2s;
     }
 
+    .btn-waive {
+      padding: 6px 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid rgba(100,180,255,0.3);
+      background: rgba(100,180,255,0.08);
+      color: #7CB8F0;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-waive:hover {
+      background: rgba(100,180,255,0.15);
+      border-color: rgba(100,180,255,0.5);
+    }
+    .detail-actions .btn-waive {
+      padding: 12px 28px;
+      font-size: 12px;
+    }
     .btn-resend {
       padding: 6px 16px;
       font-family: 'Inter', sans-serif;
@@ -917,6 +939,9 @@
         </div>
       </div>
 
+      <!-- Tier Breakdown -->
+      <div id="tierBreakdown" style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;"></div>
+
       <!-- Filters -->
       <div class="filter-tabs" id="filterTabs">
         <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">
@@ -1036,8 +1061,12 @@
       return res.json();
     }
 
-    async function approveApplication(id) {
-      const res = await fetch(API + '/applications/' + id + '/approve', { method: 'PATCH', headers: apiHeaders() });
+    async function approveApplication(id, waiveFee) {
+      const res = await fetch(API + '/applications/' + id + '/approve', {
+        method: 'PATCH',
+        headers: apiHeaders(),
+        body: JSON.stringify({ waiveFee: waiveFee || false })
+      });
       if (!res.ok) throw new Error('Failed to approve');
       return res.json();
     }
@@ -1092,6 +1121,24 @@
         pendingCard.classList.add('pending');
       } else {
         pendingCard.classList.remove('pending');
+      }
+
+      // Tier breakdown
+      var tierDiv = document.getElementById('tierBreakdown');
+      if (stats.byTier && stats.byTier.length > 0) {
+        var tierHtml = '<span style="font-size:10px;color:rgba(245,240,225,0.3);letter-spacing:0.15em;text-transform:uppercase;align-self:center;margin-right:8px;">BY TIER:</span>';
+        stats.byTier.forEach(function(t) {
+          var tierName = t.tier || 'Unknown';
+          var color = '#BF9B3B';
+          if (tierName.toLowerCase().includes('founder')) color = '#BF9B3B';
+          else if (tierName.toLowerCase().includes('chairman')) color = '#A8B8C8';
+          else color = '#F5F0E1';
+          tierHtml += '<div style="background:rgba(16,53,42,0.5);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:8px 16px;display:flex;align-items:center;gap:8px;"><span style="font-size:11px;color:' + color + ';font-weight:600;">' + tierName + '</span><span style="font-size:14px;color:#F5F0E1;font-weight:700;">' + t.count + '</span></div>';
+        });
+        tierDiv.innerHTML = tierHtml;
+        tierDiv.style.display = 'flex';
+      } else {
+        tierDiv.style.display = 'none';
       }
 
       document.getElementById('badgeAll').textContent = stats.total;
@@ -1170,6 +1217,7 @@
         html += '<div class="cell-actions" onclick="event.stopPropagation()">';
         if (status === 'pending') {
           html += '<div class="action-btns"><button class="btn-approve" onclick="openModal(\'approve\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Approve</button>';
+          html += '<button class="btn-waive" onclick="openModal(\'waive\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Waive Fee</button>';
           html += '<button class="btn-decline" onclick="openModal(\'decline\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Decline</button></div>';
         } else if (status === 'approved') {
           html += '<div class="action-btns"><button class="btn-resend" onclick="event.stopPropagation(); resendApproval(\'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\')">Resend Email</button></div>';
@@ -1193,6 +1241,7 @@
         if (status === 'pending') {
           html += '<div class="detail-actions">';
           html += '<button class="btn-approve" onclick="openModal(\'approve\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Approve Application</button>';
+          html += '<button class="btn-waive" onclick="openModal(\'waive\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Approve &amp; Waive Fee</button>';
           html += '<button class="btn-decline" onclick="openModal(\'decline\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Decline Application</button>';
           html += '</div>';
         } else if (status === 'approved') {
@@ -1232,6 +1281,13 @@
         confirmBtn.className = 'modal-confirm approve';
         declineWrap.style.display = 'none';
         declineInput.value = '';
+      } else if (action === 'waive') {
+        titleEl.textContent = 'Approve & Waive Fee';
+        textEl.textContent = 'Approve ' + name + ' for ' + tier + ' with fee waived? They will receive a welcome email WITHOUT a payment link — complimentary membership.';
+        confirmBtn.textContent = 'Approve & Waive';
+        confirmBtn.className = 'modal-confirm approve';
+        declineWrap.style.display = 'none';
+        declineInput.value = '';
       } else {
         titleEl.textContent = 'Decline Application';
         textEl.textContent = "Decline " + name + "'s application? Please provide a reason below — this will be included in the email to the applicant.";
@@ -1261,7 +1317,10 @@
       try {
         if (pendingAction.action === 'approve') {
           await approveApplication(pendingAction.id);
-          showToast('Approved! Welcome email sent to ' + pendingAction.email, 'success');
+          showToast('Approved! Welcome email with payment link sent to ' + pendingAction.email, 'success');
+        } else if (pendingAction.action === 'waive') {
+          await approveApplication(pendingAction.id, true);
+          showToast('Approved with fee waived! Welcome email sent to ' + pendingAction.email, 'success');
         } else {
           var reason = document.getElementById('declineReason').value.trim();
           await declineApplication(pendingAction.id, reason);
