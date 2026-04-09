@@ -1590,7 +1590,7 @@
       }
 
       allApplications.forEach(function(app) {
-        const raw = app.createdAt || app.created_at || app.submittedAt || app.submitted_at || '';
+        const raw = app.created_at || '';
         if (!raw) return;
         const dateKey = new Date(raw).toISOString().split('T')[0];
         const day = days.find(function(d) { return d.key === dateKey; });
@@ -1652,7 +1652,7 @@
         }
         if (cutoff) {
           filtered = filtered.filter(function(app) {
-            const raw = app.createdAt || app.created_at || app.submittedAt || app.submitted_at || '';
+            const raw = app.created_at || '';
             if (!raw) return false;
             return new Date(raw) >= cutoff;
           });
@@ -1663,9 +1663,9 @@
       const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
       if (query) {
         filtered = filtered.filter(function(app) {
-          const name = ((app.firstName || app.first_name || '') + ' ' + (app.lastName || app.last_name || '')).toLowerCase();
+          const name = (app.name || '').toLowerCase();
           const email = (app.email || '').toLowerCase();
-          const company = (app.companyName || app.company_name || app.company || '').toLowerCase();
+          const company = (app.company || '').toLowerCase();
           return name.includes(query) || email.includes(query) || company.includes(query);
         });
       }
@@ -1674,14 +1674,14 @@
       filtered.sort(function(a, b) {
         let va, vb;
         if (currentSort.col === 'date') {
-          va = new Date(a.createdAt || a.created_at || a.submittedAt || a.submitted_at || 0).getTime();
-          vb = new Date(b.createdAt || b.created_at || b.submittedAt || b.submitted_at || 0).getTime();
+          va = new Date(a.created_at || 0).getTime();
+          vb = new Date(b.created_at || 0).getTime();
         } else if (currentSort.col === 'name') {
-          va = ((a.firstName || a.first_name || '') + ' ' + (a.lastName || a.last_name || '')).toLowerCase();
-          vb = ((b.firstName || b.first_name || '') + ' ' + (b.lastName || b.last_name || '')).toLowerCase();
+          va = (a.name || '').toLowerCase();
+          vb = (b.name || '').toLowerCase();
         } else if (currentSort.col === 'tier') {
-          va = (a.membershipTier || a.membership_tier || a.tier || '').toLowerCase();
-          vb = (b.membershipTier || b.membership_tier || b.tier || '').toLowerCase();
+          va = (a.tier || '').toLowerCase();
+          vb = (b.tier || '').toLowerCase();
         } else if (currentSort.col === 'status') {
           va = (a.status || 'pending').toLowerCase();
           vb = (b.status || 'pending').toLowerCase();
@@ -1715,11 +1715,11 @@
     }
 
     function getAppName(app) {
-      return ((app.firstName || app.first_name || '') + ' ' + (app.lastName || app.last_name || '')).trim() || 'Unknown';
+      return (app.name || '').trim() || 'Unknown';
     }
 
     function getAppTier(app) {
-      return app.membershipTier || app.membership_tier || app.tier || 'executive';
+      return app.tier || 'executive';
     }
 
     function getTierClass(tier) {
@@ -1893,11 +1893,11 @@
         const id = getAppId(app);
         const name = getAppName(app);
         const email = app.email || '';
-        const company = app.companyName || app.company_name || app.company || '';
+        const company = app.company || '';
         const title = app.jobTitle || app.job_title || app.title || '';
         const tier = getAppTier(app);
         const status = (app.status || 'pending').toLowerCase();
-        const rawDate = app.createdAt || app.created_at || app.submittedAt || app.submitted_at || '';
+        const rawDate = app.created_at || '';
         const date = formatDate(rawDate);
         const phone = app.phone || app.phoneNumber || app.phone_number || '';
         const city = app.city || '';
@@ -1943,7 +1943,7 @@
           html += '</div>';
         } else if (status === 'approved') {
           html += '<div class="action-btns">';
-          html += '<button class="btn-resend" onclick="event.stopPropagation(); resendApproval(\'' + escapeAttr(id) + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', this)">Resend</button>';
+          html += '<button class="btn-resend" onclick="event.stopPropagation(); confirmResend(\'' + escapeAttr(id) + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', this)">Resend</button>';
           html += '<button class="btn-remove" onclick="event.stopPropagation(); openModal(\'remove\', \'' + escapeAttr(id) + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Remove</button>';
           html += '</div>';
         }
@@ -2025,7 +2025,7 @@
           html += '</div>';
         } else if (status === 'approved') {
           html += '<div class="detail-actions">';
-          html += '<button class="btn-resend" onclick="event.stopPropagation(); resendApproval(\'' + escapeAttr(id) + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', this)">Resend Welcome Email &amp; Payment Link</button>';
+          html += '<button class="btn-resend" onclick="event.stopPropagation(); confirmResend(\'' + escapeAttr(id) + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', this)">Resend Welcome Email &amp; Payment Link</button>';
           html += '<button class="btn-remove" onclick="event.stopPropagation(); openModal(\'remove\', \'' + escapeAttr(id) + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Remove Member</button>';
           html += '</div>';
         }
@@ -2187,8 +2187,13 @@
       }
     }
 
-    // RESEND
-    async function resendApproval(id, name, email, btnEl) {
+    // RESEND with confirmation
+    function confirmResend(id, name, email, btnEl) {
+      if (!confirm('Resend welcome email with Stripe payment link to ' + name + ' (' + email + ')?')) return;
+      doResendApproval(id, name, email, btnEl);
+    }
+
+    async function doResendApproval(id, name, email, btnEl) {
       if (btnEl) {
         btnEl.disabled = true;
         btnEl.textContent = 'Sending...';
@@ -2219,11 +2224,11 @@
       const headers = ['Date', 'Name', 'Email', 'Phone', 'Company', 'Title', 'City', 'Tier', 'Status', 'Handicap', 'Frequency', 'Athletes', 'Referral', 'Notes'];
       const rows = applications.map(function(app) {
         return [
-          formatDate(app.createdAt || app.created_at || app.submittedAt || app.submitted_at || ''),
+          formatDate(app.created_at || ''),
           getAppName(app),
           app.email || '',
           app.phone || app.phoneNumber || app.phone_number || '',
-          app.companyName || app.company_name || app.company || '',
+          app.company || '',
           app.jobTitle || app.job_title || app.title || '',
           app.city || '',
           getTierLabel(getTierClass(getAppTier(app))),
