@@ -1085,6 +1085,7 @@
       }
     }
   </style>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAxT9KdJga5N-IOoBNWkIwDfdsyHIHMZ6E&libraries=places" async defer></script>
 </head>
 <body>
 
@@ -2068,30 +2069,75 @@
     resetScorecard();
   }
 
+  // Google Places autocomplete service
+  var placesService = null;
+  var placesSessionToken = null;
+  var searchTimeout = null;
+
+  function initPlaces() {
+    if (window.google && google.maps && google.maps.places) {
+      placesService = new google.maps.places.AutocompleteService();
+      placesSessionToken = new google.maps.places.AutocompleteSessionToken();
+    }
+  }
+
   function searchCourses(query) {
     var dropdown = document.getElementById('courseDropdown');
     if (!query || query.length < 2) {
       dropdown.style.display = 'none';
       return;
     }
+
+    // First search local database
     var q = query.toLowerCase();
-    var matches = courses.filter(function(c) {
+    var localMatches = courses.filter(function(c) {
       return c.name.toLowerCase().includes(q) || c.location.toLowerCase().includes(q);
     });
-    if (matches.length === 0) {
-      dropdown.innerHTML = '<div style="padding:12px 16px;font-family:var(--font-ui);font-size:13px;color:rgba(245,240,225,0.3);">No courses found. You can type any course name.</div><div style="padding:8px 16px 12px;" onclick="selectManualCourse()"><span style="font-family:var(--font-ui);font-size:12px;color:var(--gold);cursor:pointer;">+ Add manually</span></div>';
-      dropdown.style.display = 'block';
-      return;
-    }
+
+    // Show local results immediately
     var html = '';
-    matches.forEach(function(c) {
-      html += '<div onclick="selectCourse(\'' + c.id + '\')" style="padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(191,155,59,0.05);transition:background 0.2s;" onmouseover="this.style.background=\'rgba(191,155,59,0.05)\'" onmouseout="this.style.background=\'transparent\'">';
-      html += '<div style="font-family:var(--font-ui);font-size:14px;color:var(--cream);font-weight:500;">' + c.name + '</div>';
-      html += '<div style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.35);">' + c.location + ' &middot; Par ' + c.par + ' &middot; ' + c.yards.toLocaleString() + ' yards</div>';
-      html += '</div>';
-    });
-    dropdown.innerHTML = html;
+    if (localMatches.length > 0) {
+      html += '<div style="padding:6px 16px;font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(191,155,59,0.4);">CartPath Courses</div>';
+      localMatches.forEach(function(c) {
+        html += '<div onclick="selectCourse(\'' + c.id + '\')" style="padding:10px 16px;cursor:pointer;border-bottom:1px solid rgba(191,155,59,0.05);transition:background 0.2s;" onmouseover="this.style.background=\'rgba(191,155,59,0.05)\'" onmouseout="this.style.background=\'transparent\'">';
+        html += '<div style="font-family:var(--font-ui);font-size:14px;color:var(--cream);font-weight:500;">' + c.name + '</div>';
+        html += '<div style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.35);">' + c.location + ' &middot; Par ' + c.par + '</div>';
+        html += '</div>';
+      });
+    }
+    dropdown.innerHTML = html || '<div style="padding:12px 16px;font-family:var(--font-ui);font-size:13px;color:rgba(245,240,225,0.25);">Searching...</div>';
     dropdown.style.display = 'block';
+
+    // Then search Google Places (debounced)
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+      if (!placesService) initPlaces();
+      if (!placesService) return;
+
+      placesService.getPlacePredictions({
+        input: query + ' golf course',
+        types: ['establishment'],
+        sessionToken: placesSessionToken
+      }, function(predictions, status) {
+        if (status !== 'OK' || !predictions) return;
+
+        var googleHtml = '<div style="padding:6px 16px;margin-top:4px;border-top:1px solid rgba(191,155,59,0.08);font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.25);">All Courses</div>';
+
+        predictions.slice(0, 5).forEach(function(p) {
+          var mainText = p.structured_formatting.main_text;
+          var secondaryText = p.structured_formatting.secondary_text || '';
+          googleHtml += '<div onclick="selectGooglePlace(\'' + p.place_id + '\')" style="padding:10px 16px;cursor:pointer;border-bottom:1px solid rgba(191,155,59,0.03);transition:background 0.2s;" onmouseover="this.style.background=\'rgba(191,155,59,0.05)\'" onmouseout="this.style.background=\'transparent\'">';
+          googleHtml += '<div style="font-family:var(--font-ui);font-size:14px;color:var(--cream);font-weight:500;">' + mainText + '</div>';
+          googleHtml += '<div style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.3);">' + secondaryText + '</div>';
+          googleHtml += '</div>';
+        });
+
+        // Append Google results below local results
+        var currentHtml = dropdown.innerHTML;
+        if (currentHtml.includes('Searching...')) currentHtml = '';
+        dropdown.innerHTML = currentHtml + googleHtml;
+      });
+    }, 300);
   }
 
   function showCourseDropdown() {
@@ -2107,15 +2153,46 @@
     document.getElementById('selectedCourseId').value = course.id;
     document.getElementById('courseDropdown').style.display = 'none';
 
-    // Populate course info
     document.getElementById('courseInfoName').textContent = course.name;
     document.getElementById('courseInfoLocation').textContent = course.location;
     document.getElementById('courseInfoPar').textContent = course.par;
-    document.getElementById('courseInfoYards').textContent = course.yards.toLocaleString();
+    document.getElementById('courseInfoYards').textContent = course.yards ? course.yards.toLocaleString() : '--';
     document.getElementById('courseInfo').style.display = 'block';
-
-    // Update par row (even distribution since we don't have hole-by-hole par)
     updateParRow(course.par);
+  }
+
+  function selectGooglePlace(placeId) {
+    var detailsService = new google.maps.places.PlacesService(document.createElement('div'));
+    detailsService.getDetails({
+      placeId: placeId,
+      fields: ['name', 'formatted_address', 'rating', 'geometry'],
+      sessionToken: placesSessionToken
+    }, function(place, status) {
+      // Reset session token after details call
+      placesSessionToken = new google.maps.places.AutocompleteSessionToken();
+
+      if (status !== 'OK' || !place) return;
+
+      selectedCourse = {
+        id: 'google_' + placeId,
+        name: place.name,
+        location: place.formatted_address || '',
+        par: 72, // Default — Google doesn't provide par data
+        yards: 0,
+        googleRating: place.rating || null
+      };
+
+      document.getElementById('courseSearch').value = place.name;
+      document.getElementById('selectedCourseId').value = placeId;
+      document.getElementById('courseDropdown').style.display = 'none';
+
+      document.getElementById('courseInfoName').textContent = place.name;
+      document.getElementById('courseInfoLocation').textContent = place.formatted_address || '';
+      document.getElementById('courseInfoPar').textContent = '72 (default)';
+      document.getElementById('courseInfoYards').textContent = place.rating ? place.rating + ' Google rating' : '--';
+      document.getElementById('courseInfo').style.display = 'block';
+      updateParRow(72);
+    });
   }
 
   function selectManualCourse() {
