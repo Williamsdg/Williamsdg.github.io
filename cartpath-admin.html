@@ -458,6 +458,34 @@
       transition: all 0.2s;
     }
 
+    .btn-remove {
+      padding: 6px 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid rgba(200,60,60,0.3);
+      background: rgba(200,60,60,0.08);
+      color: #E06060;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-remove:hover {
+      background: rgba(200,60,60,0.15);
+      border-color: rgba(200,60,60,0.5);
+    }
+    .detail-actions .btn-remove {
+      padding: 12px 28px;
+      font-size: 12px;
+    }
+    .modal-confirm.remove {
+      background: #C03C3C;
+    }
+    .modal-confirm.remove:hover {
+      background: #D04040;
+    }
     .btn-waive {
       padding: 6px 16px;
       font-family: 'Inter', sans-serif;
@@ -1220,7 +1248,8 @@
           html += '<button class="btn-waive" onclick="openModal(\'waive\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Waive Fee</button>';
           html += '<button class="btn-decline" onclick="openModal(\'decline\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Decline</button></div>';
         } else if (status === 'approved') {
-          html += '<div class="action-btns"><button class="btn-resend" onclick="event.stopPropagation(); resendApproval(\'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\')">Resend Email</button></div>';
+          html += '<div class="action-btns"><button class="btn-resend" onclick="event.stopPropagation(); resendApproval(\'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\')">Resend Email</button>';
+          html += '<button class="btn-remove" onclick="event.stopPropagation(); openModal(\'remove\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Remove</button></div>';
         }
         html += '</div>';
         html += '</div>';
@@ -1247,6 +1276,7 @@
         } else if (status === 'approved') {
           html += '<div class="detail-actions">';
           html += '<button class="btn-resend" onclick="resendApproval(\'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\')">Resend Welcome Email &amp; Payment Link</button>';
+          html += '<button class="btn-remove" onclick="openModal(\'remove\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Remove Member</button>';
           html += '</div>';
         }
         html += '</div>';
@@ -1288,6 +1318,16 @@
         confirmBtn.className = 'modal-confirm approve';
         declineWrap.style.display = 'none';
         declineInput.value = '';
+      } else if (action === 'remove') {
+        titleEl.textContent = 'Remove Member';
+        textEl.textContent = 'Remove ' + name + ' from CartPath? Their membership will be revoked. Please provide a reason — this will be included in the notification email.';
+        confirmBtn.textContent = 'Remove Member';
+        confirmBtn.className = 'modal-confirm remove';
+        declineWrap.style.display = 'block';
+        declineInput.value = '';
+        declineInput.placeholder = 'e.g. Membership cancelled, violation of terms, non-payment, etc.';
+        document.querySelector('#declineReasonWrap label').textContent = 'Reason for Removal';
+        setTimeout(function() { declineInput.focus(); }, 100);
       } else {
         titleEl.textContent = 'Decline Application';
         textEl.textContent = "Decline " + name + "'s application? Please provide a reason below — this will be included in the email to the applicant.";
@@ -1321,6 +1361,10 @@
         } else if (pendingAction.action === 'waive') {
           await approveApplication(pendingAction.id, true);
           showToast('Approved with fee waived! Welcome email sent to ' + pendingAction.email, 'success');
+        } else if (pendingAction.action === 'remove') {
+          var removeReason = document.getElementById('declineReason').value.trim();
+          await removeMember(pendingAction.id, removeReason);
+          showToast('Member removed. Notification sent to ' + pendingAction.email, 'success');
         } else {
           var reason = document.getElementById('declineReason').value.trim();
           await declineApplication(pendingAction.id, reason);
@@ -1333,6 +1377,16 @@
         btn.disabled = false;
         btn.textContent = pendingAction.action === 'approve' ? 'Approve' : 'Decline';
       }
+    }
+
+    async function removeMember(id, reason) {
+      const res = await fetch(API + '/applications/' + id + '/remove', {
+        method: 'PATCH',
+        headers: apiHeaders(),
+        body: JSON.stringify({ reason: reason || '' })
+      });
+      if (!res.ok) throw new Error('Failed to remove member');
+      return res.json();
     }
 
     async function resendApproval(id, name, email) {
