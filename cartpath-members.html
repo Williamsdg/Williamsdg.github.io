@@ -1122,7 +1122,8 @@
     <div class="nav-center">
       <button class="nav-tab active" data-tab="dashboard">Dashboard</button>
       <button class="nav-tab" data-tab="roster">Roster</button>
-      <button class="nav-tab" data-tab="scores">Scores</button>
+      <button class="nav-tab" data-tab="livescores">Live Scores</button>
+      <button class="nav-tab" data-tab="myrounds">My Rounds</button>
       <button class="nav-tab" data-tab="account">Account</button>
     </div>
 
@@ -1138,7 +1139,8 @@
     <div class="mobile-welcome">Welcome, <strong id="mobile-name">Member</strong> <span class="tier-badge chairman" id="mobile-badge">Chairman</span></div>
     <button class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard');closeMobileMenu();">Dashboard</button>
     <button class="nav-tab" data-tab="roster" onclick="switchTab('roster');closeMobileMenu();">Roster</button>
-    <button class="nav-tab" data-tab="scores" onclick="switchTab('scores');closeMobileMenu();">Scores</button>
+    <button class="nav-tab" data-tab="livescores" onclick="switchTab('livescores');closeMobileMenu();">Live Scores</button>
+    <button class="nav-tab" data-tab="myrounds" onclick="switchTab('myrounds');closeMobileMenu();">My Rounds</button>
     <button class="nav-tab" data-tab="account" onclick="switchTab('account');closeMobileMenu();">Account</button>
   </div>
 
@@ -1536,21 +1538,159 @@
     </div>
 
     <!-- ===================== SCORES ===================== -->
-    <div class="tab-content" id="tab-scores">
+    <!-- ===================== LIVE SCORES ===================== -->
+    <div class="tab-content" id="tab-livescores">
+      <h2 class="section-title" style="font-size:1.6rem;margin-bottom:24px;">Live Tournament Scores</h2>
+      <p style="font-family: var(--font-body); font-size: 1.05rem; color: rgba(245,240,225,0.5); margin-bottom: 24px;">Real-time PGA Tour leaderboards. Auto-refreshes every 60 seconds during live tournaments.</p>
 
-      <h2 class="section-title" style="font-size:1.6rem;margin-bottom:24px;">Live Scores</h2>
-
-      <div class="scores-section">
-        <a href="cartpath-scores" class="scores-launch-btn" target="_blank">Open Live Scoreboard</a>
+      <div style="background: rgba(16,53,42,0.3); border: 1px solid rgba(191,155,59,0.1); border-radius: 6px; overflow: hidden;">
+        <iframe src="cartpath-scores" style="width: 100%; height: 800px; border: none;" title="Live Scores"></iframe>
       </div>
 
-      <h3 class="section-title">Your Score History</h3>
-      <div class="score-history">
-        <div class="empty-state">
-          <div class="empty-icon">--</div>
-          <h3>No rounds recorded yet</h3>
-          <p>Book your first round and your scores will appear here.</p>
+      <div style="text-align: center; margin-top: 16px;">
+        <a href="cartpath-scores" target="_blank" style="font-family: var(--font-ui); font-size: 12px; color: var(--gold); text-decoration: none; letter-spacing: 0.1em;">Open Full Scoreboard in New Tab</a>
+      </div>
+    </div>
+
+    <!-- ===================== MY ROUNDS ===================== -->
+    <div class="tab-content" id="tab-myrounds">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2 class="section-title" style="font-size:1.6rem;margin-bottom:4px;">My Rounds</h2>
+          <p style="font-family: var(--font-body); font-size: 1rem; color: rgba(245,240,225,0.45);">Track your scores, rate courses, and build your golf history.</p>
         </div>
+        <button onclick="openScoreForm()" style="font-family: var(--font-ui); font-size: 11px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; background: linear-gradient(135deg, var(--gold-dark), var(--gold)); color: var(--green-deep); border: none; padding: 12px 28px; border-radius: 4px; cursor: pointer;">Submit New Round</button>
+      </div>
+
+      <!-- Score Submission Form (hidden by default) -->
+      <div id="scoreFormContainer" style="display: none; margin-bottom: 40px;">
+        <div style="background: rgba(16,53,42,0.4); border: 1px solid rgba(191,155,59,0.15); border-radius: 8px; padding: 32px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h3 style="font-family: var(--font-display); font-size: 1.3rem; color: var(--cream);">Submit Round</h3>
+            <button onclick="closeScoreForm()" style="background: none; border: none; color: rgba(245,240,225,0.4); font-size: 20px; cursor: pointer;">&times;</button>
+          </div>
+
+          <form id="roundForm" onsubmit="return submitRound(event)">
+            <!-- Course Selection -->
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 6px;">GOLF COURSE *</label>
+              <div style="position: relative;">
+                <input type="text" id="courseSearch" placeholder="Search for a course..." autocomplete="off"
+                  style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 15px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none;"
+                  oninput="searchCourses(this.value)" onfocus="showCourseDropdown()">
+                <div id="courseDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #0D2A1E; border: 1px solid rgba(191,155,59,0.15); border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 100;"></div>
+              </div>
+              <input type="hidden" id="selectedCourseId" value="">
+            </div>
+
+            <!-- Course Info (auto-populated) -->
+            <div id="courseInfo" style="display: none; background: rgba(191,155,59,0.04); border: 1px solid rgba(191,155,59,0.1); border-radius: 4px; padding: 16px; margin-bottom: 20px;">
+              <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                <div>
+                  <span style="font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(245,240,225,0.35);">Course</span>
+                  <div id="courseInfoName" style="font-family: var(--font-display); font-size: 1.1rem; color: var(--cream);"></div>
+                </div>
+                <div>
+                  <span style="font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(245,240,225,0.35);">Location</span>
+                  <div id="courseInfoLocation" style="font-family: var(--font-ui); font-size: 13px; color: rgba(245,240,225,0.5);"></div>
+                </div>
+                <div>
+                  <span style="font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(245,240,225,0.35);">Par</span>
+                  <div id="courseInfoPar" style="font-family: var(--font-display); font-size: 1.1rem; color: var(--gold);"></div>
+                </div>
+                <div>
+                  <span style="font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(245,240,225,0.35);">Yards</span>
+                  <div id="courseInfoYards" style="font-family: var(--font-ui); font-size: 13px; color: rgba(245,240,225,0.5);"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Date + Playing With -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <div>
+                <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 6px;">DATE *</label>
+                <input type="date" id="roundDate" required style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 15px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none;">
+              </div>
+              <div>
+                <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 6px;">PLAYED WITH</label>
+                <input type="text" id="playedWith" placeholder="e.g. Charles Barkley, Guest" style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 15px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none;">
+              </div>
+            </div>
+
+            <!-- Hole-by-Hole Scorecard -->
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 10px;">SCORECARD</label>
+              <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                  <thead>
+                    <tr>
+                      <th style="font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,240,225,0.3); padding: 8px 4px; text-align: center; border-bottom: 1px solid rgba(191,155,59,0.08); width: 50px;">Hole</th>
+                      <script>document.write(Array.from({length:9}, (_,i) => '<th style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.4);padding:8px 2px;text-align:center;border-bottom:1px solid rgba(191,155,59,0.08);width:40px;">'+(i+1)+'</th>').join(''));</script>
+                      <th style="font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); padding: 8px 4px; text-align: center; border-bottom: 1px solid rgba(191,155,59,0.08); width: 50px;">Out</th>
+                      <script>document.write(Array.from({length:9}, (_,i) => '<th style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.4);padding:8px 2px;text-align:center;border-bottom:1px solid rgba(191,155,59,0.08);width:40px;">'+(i+10)+'</th>').join(''));</script>
+                      <th style="font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); padding: 8px 4px; text-align: center; border-bottom: 1px solid rgba(191,155,59,0.08); width: 50px;">In</th>
+                      <th style="font-family: var(--font-ui); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); padding: 8px 4px; text-align: center; border-bottom: 1px solid rgba(191,155,59,0.08); width: 55px;">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr id="parRow">
+                      <td style="font-family: var(--font-ui); font-size: 10px; color: rgba(245,240,225,0.3); text-align: center; padding: 6px 4px;">Par</td>
+                      <td colspan="9" id="parFront" style="text-align: center; font-family: var(--font-ui); font-size: 12px; color: rgba(245,240,225,0.25); padding: 6px;">Select a course</td>
+                      <td id="parOutTotal" style="text-align: center; font-family: var(--font-ui); font-size: 12px; color: rgba(191,155,59,0.4); padding: 6px;">--</td>
+                      <td colspan="9" id="parBack" style="text-align: center; font-family: var(--font-ui); font-size: 12px; color: rgba(245,240,225,0.25); padding: 6px;"></td>
+                      <td id="parInTotal" style="text-align: center; font-family: var(--font-ui); font-size: 12px; color: rgba(191,155,59,0.4); padding: 6px;">--</td>
+                      <td id="parTotal" style="text-align: center; font-family: var(--font-display); font-size: 14px; color: var(--gold); padding: 6px;">--</td>
+                    </tr>
+                    <tr id="scoreRow">
+                      <td style="font-family: var(--font-ui); font-size: 10px; color: var(--gold); text-align: center; padding: 6px 4px;">Score</td>
+                      <script>document.write(Array.from({length:18}, (_,i) => '<td style="text-align:center;padding:3px 1px;"><input type="number" min="1" max="15" class="hole-input" id="hole'+(i+1)+'" oninput="updateTotals()" style="width:36px;height:36px;text-align:center;background:var(--green-dark);color:var(--cream);border:1px solid rgba(191,155,59,0.1);border-radius:3px;font-family:var(--font-ui);font-size:14px;font-weight:600;outline:none;-moz-appearance:textfield;" /></td>').join(''));</script>
+                      <td id="scoreOut" style="text-align: center; font-family: var(--font-ui); font-size: 14px; font-weight: 700; color: var(--gold); padding: 6px;">--</td>
+                      <td id="scoreIn" style="text-align: center; font-family: var(--font-ui); font-size: 14px; font-weight: 700; color: var(--gold); padding: 6px;">--</td>
+                      <td id="scoreTotal" style="text-align: center; font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--gold); padding: 6px;">--</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style="margin-top: 8px; text-align: right;">
+                <span id="scoreToPar" style="font-family: var(--font-ui); font-size: 13px; color: rgba(245,240,225,0.4);"></span>
+              </div>
+            </div>
+
+            <!-- Total Score (quick entry alternative) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <div>
+                <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 6px;">TOTAL SCORE * (or fill scorecard above)</label>
+                <input type="number" id="totalScore" min="50" max="150" placeholder="e.g. 82" style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 15px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none;">
+              </div>
+              <div>
+                <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 6px;">COURSE RATING (1-5)</label>
+                <div id="courseRating" style="display: flex; gap: 8px; padding-top: 10px;">
+                  <span class="rate-star" onclick="setRating(1)" style="font-size: 24px; cursor: pointer; color: rgba(191,155,59,0.2); transition: color 0.2s;">&#9733;</span>
+                  <span class="rate-star" onclick="setRating(2)" style="font-size: 24px; cursor: pointer; color: rgba(191,155,59,0.2); transition: color 0.2s;">&#9733;</span>
+                  <span class="rate-star" onclick="setRating(3)" style="font-size: 24px; cursor: pointer; color: rgba(191,155,59,0.2); transition: color 0.2s;">&#9733;</span>
+                  <span class="rate-star" onclick="setRating(4)" style="font-size: 24px; cursor: pointer; color: rgba(191,155,59,0.2); transition: color 0.2s;">&#9733;</span>
+                  <span class="rate-star" onclick="setRating(5)" style="font-size: 24px; cursor: pointer; color: rgba(191,155,59,0.2); transition: color 0.2s;">&#9733;</span>
+                </div>
+                <input type="hidden" id="ratingValue" value="0">
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div style="margin-bottom: 24px;">
+              <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 6px;">ROUND NOTES</label>
+              <textarea id="roundNotes" placeholder="How'd you play? Any highlights? Best hole?" rows="3" style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 14px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none; resize: vertical;"></textarea>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" id="submitRoundBtn" style="width: 100%; font-family: var(--font-ui); font-size: 12px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; background: linear-gradient(135deg, var(--gold-dark), var(--gold)); color: var(--green-deep); border: none; padding: 16px; border-radius: 4px; cursor: pointer;">Save Round</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Round History -->
+      <div id="roundHistory">
+        <h3 style="font-family: var(--font-display); font-size: 1.2rem; color: var(--cream); margin-bottom: 16px;">Round History</h3>
+        <div id="roundsList"></div>
       </div>
 
     </div>
@@ -1885,6 +2025,318 @@
       showLogin();
     }
   })();
+
+  // ===================== MY ROUNDS =====================
+
+  // Course database (from our PostgreSQL + manual additions)
+  var courses = [
+    { id: 'eastlake', name: 'East Lake Golf Club', location: 'Atlanta, GA', par: 72, yards: 7346 },
+    { id: 'aac', name: 'Atlanta Athletic Club', location: 'Johns Creek, GA', par: 72, yards: 7580 },
+    { id: 'tpc', name: 'TPC Sugarloaf', location: 'Duluth, GA', par: 72, yards: 7293 },
+    { id: 'peachtree', name: 'Peachtree Golf Club', location: 'Atlanta, GA', par: 72, yards: 7043 },
+    { id: 'capitalcity', name: 'Capital City Club (Crabapple)', location: 'Milton, GA', par: 72, yards: 7100 },
+    { id: 'atlantacc', name: 'Atlanta Country Club', location: 'Marietta, GA', par: 72, yards: 7018 },
+    { id: 'hawksridge', name: 'Hawks Ridge Golf Club', location: 'Ball Ground, GA', par: 72, yards: 7100 },
+    { id: 'echelon', name: 'Echelon Golf Club', location: 'Alpharetta, GA', par: 72, yards: 7150 },
+    { id: 'augustanational', name: 'Augusta National Golf Club', location: 'Augusta, GA', par: 72, yards: 7565 },
+    { id: 'pebblebeach', name: 'Pebble Beach Golf Links', location: 'Pebble Beach, CA', par: 72, yards: 6828 },
+    { id: 'pinehurst', name: 'Pinehurst No. 2', location: 'Pinehurst, NC', par: 72, yards: 7588 },
+    { id: 'tpcsawgrass', name: 'TPC Sawgrass (Stadium)', location: 'Ponte Vedra Beach, FL', par: 72, yards: 7245 },
+    { id: 'quailhollow', name: 'Quail Hollow Club', location: 'Charlotte, NC', par: 72, yards: 7554 },
+    { id: 'whistling', name: 'Whistling Straits', location: 'Haven, WI', par: 72, yards: 7790 },
+    { id: 'oakmont', name: 'Oakmont Country Club', location: 'Oakmont, PA', par: 71, yards: 7255 },
+    { id: 'royaltroon', name: 'Royal Troon', location: 'Troon, Scotland', par: 71, yards: 7190 },
+  ];
+
+  var selectedCourse = null;
+  var currentRating = 0;
+
+  function openScoreForm() {
+    document.getElementById('scoreFormContainer').style.display = 'block';
+    document.getElementById('roundDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('scoreFormContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function closeScoreForm() {
+    document.getElementById('scoreFormContainer').style.display = 'none';
+    document.getElementById('roundForm').reset();
+    selectedCourse = null;
+    currentRating = 0;
+    document.getElementById('courseInfo').style.display = 'none';
+    document.getElementById('courseDropdown').style.display = 'none';
+    updateRatingStars();
+    resetScorecard();
+  }
+
+  function searchCourses(query) {
+    var dropdown = document.getElementById('courseDropdown');
+    if (!query || query.length < 2) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    var q = query.toLowerCase();
+    var matches = courses.filter(function(c) {
+      return c.name.toLowerCase().includes(q) || c.location.toLowerCase().includes(q);
+    });
+    if (matches.length === 0) {
+      dropdown.innerHTML = '<div style="padding:12px 16px;font-family:var(--font-ui);font-size:13px;color:rgba(245,240,225,0.3);">No courses found. You can type any course name.</div><div style="padding:8px 16px 12px;" onclick="selectManualCourse()"><span style="font-family:var(--font-ui);font-size:12px;color:var(--gold);cursor:pointer;">+ Add manually</span></div>';
+      dropdown.style.display = 'block';
+      return;
+    }
+    var html = '';
+    matches.forEach(function(c) {
+      html += '<div onclick="selectCourse(\'' + c.id + '\')" style="padding:12px 16px;cursor:pointer;border-bottom:1px solid rgba(191,155,59,0.05);transition:background 0.2s;" onmouseover="this.style.background=\'rgba(191,155,59,0.05)\'" onmouseout="this.style.background=\'transparent\'">';
+      html += '<div style="font-family:var(--font-ui);font-size:14px;color:var(--cream);font-weight:500;">' + c.name + '</div>';
+      html += '<div style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.35);">' + c.location + ' &middot; Par ' + c.par + ' &middot; ' + c.yards.toLocaleString() + ' yards</div>';
+      html += '</div>';
+    });
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+  }
+
+  function showCourseDropdown() {
+    var val = document.getElementById('courseSearch').value;
+    if (val.length >= 2) searchCourses(val);
+  }
+
+  function selectCourse(courseId) {
+    var course = courses.find(function(c) { return c.id === courseId; });
+    if (!course) return;
+    selectedCourse = course;
+    document.getElementById('courseSearch').value = course.name;
+    document.getElementById('selectedCourseId').value = course.id;
+    document.getElementById('courseDropdown').style.display = 'none';
+
+    // Populate course info
+    document.getElementById('courseInfoName').textContent = course.name;
+    document.getElementById('courseInfoLocation').textContent = course.location;
+    document.getElementById('courseInfoPar').textContent = course.par;
+    document.getElementById('courseInfoYards').textContent = course.yards.toLocaleString();
+    document.getElementById('courseInfo').style.display = 'block';
+
+    // Update par row (even distribution since we don't have hole-by-hole par)
+    updateParRow(course.par);
+  }
+
+  function selectManualCourse() {
+    var name = document.getElementById('courseSearch').value.trim();
+    if (!name) return;
+    selectedCourse = { id: 'manual', name: name, location: '', par: 72, yards: 0 };
+    document.getElementById('courseDropdown').style.display = 'none';
+    document.getElementById('courseInfoName').textContent = name;
+    document.getElementById('courseInfoLocation').textContent = 'Manual entry';
+    document.getElementById('courseInfoPar').textContent = '72';
+    document.getElementById('courseInfoYards').textContent = '--';
+    document.getElementById('courseInfo').style.display = 'block';
+    updateParRow(72);
+  }
+
+  function updateParRow(totalPar) {
+    // Standard par distribution for display
+    var parFront = document.getElementById('parFront');
+    var parBack = document.getElementById('parBack');
+    parFront.removeAttribute('colspan');
+    parBack.removeAttribute('colspan');
+
+    var standardPar = [4,4,4,3,4,5,4,3,5, 4,4,3,5,4,4,4,3,4]; // generic 72
+    if (totalPar === 71) standardPar = [4,4,4,3,4,5,4,3,4, 4,4,3,5,4,4,4,3,4];
+
+    // Replace par row entirely
+    var parRow = document.getElementById('parRow');
+    var html = '<td style="font-family:var(--font-ui);font-size:10px;color:rgba(245,240,225,0.3);text-align:center;padding:6px 4px;">Par</td>';
+    var frontSum = 0, backSum = 0;
+    for (var i = 0; i < 18; i++) {
+      var p = standardPar[i] || 4;
+      if (i < 9) frontSum += p; else backSum += p;
+      html += '<td style="text-align:center;font-family:var(--font-ui);font-size:12px;color:rgba(245,240,225,0.25);padding:6px 2px;">' + p + '</td>';
+      if (i === 8) html += '<td style="text-align:center;font-family:var(--font-ui);font-size:12px;color:rgba(191,155,59,0.5);padding:6px;font-weight:600;">' + frontSum + '</td>';
+    }
+    html += '<td style="text-align:center;font-family:var(--font-ui);font-size:12px;color:rgba(191,155,59,0.5);padding:6px;font-weight:600;">' + backSum + '</td>';
+    html += '<td style="text-align:center;font-family:var(--font-display);font-size:14px;color:var(--gold);padding:6px;font-weight:600;">' + totalPar + '</td>';
+    parRow.innerHTML = html;
+  }
+
+  function updateTotals() {
+    var front = 0, back = 0, frontCount = 0, backCount = 0;
+    for (var i = 1; i <= 18; i++) {
+      var val = parseInt(document.getElementById('hole' + i).value) || 0;
+      if (val > 0) {
+        if (i <= 9) { front += val; frontCount++; }
+        else { back += val; backCount++; }
+      }
+    }
+    document.getElementById('scoreOut').textContent = frontCount > 0 ? front : '--';
+    document.getElementById('scoreIn').textContent = backCount > 0 ? back : '--';
+    var total = front + back;
+    document.getElementById('scoreTotal').textContent = (frontCount + backCount) > 0 ? total : '--';
+    document.getElementById('totalScore').value = total > 0 ? total : '';
+
+    // Score to par
+    if (selectedCourse && total > 0) {
+      var diff = total - selectedCourse.par;
+      var parText = diff === 0 ? 'Even par' : (diff > 0 ? '+' + diff + ' over par' : diff + ' under par');
+      document.getElementById('scoreToPar').textContent = parText;
+      document.getElementById('scoreToPar').style.color = diff < 0 ? '#C62828' : (diff === 0 ? 'var(--cream)' : 'rgba(245,240,225,0.4)');
+    }
+  }
+
+  function resetScorecard() {
+    for (var i = 1; i <= 18; i++) {
+      var el = document.getElementById('hole' + i);
+      if (el) el.value = '';
+    }
+    document.getElementById('scoreOut').textContent = '--';
+    document.getElementById('scoreIn').textContent = '--';
+    document.getElementById('scoreTotal').textContent = '--';
+    document.getElementById('scoreToPar').textContent = '';
+    document.getElementById('totalScore').value = '';
+  }
+
+  function setRating(n) {
+    currentRating = n;
+    document.getElementById('ratingValue').value = n;
+    updateRatingStars();
+  }
+
+  function updateRatingStars() {
+    var stars = document.querySelectorAll('.rate-star');
+    stars.forEach(function(star, idx) {
+      star.style.color = idx < currentRating ? 'var(--gold)' : 'rgba(191,155,59,0.2)';
+    });
+  }
+
+  // Save rounds to localStorage
+  function getSavedRounds() {
+    try { return JSON.parse(localStorage.getItem('cartpath_rounds') || '[]'); }
+    catch { return []; }
+  }
+
+  function saveRound(round) {
+    var rounds = getSavedRounds();
+    rounds.unshift(round);
+    localStorage.setItem('cartpath_rounds', JSON.stringify(rounds));
+  }
+
+  function submitRound(e) {
+    e.preventDefault();
+    if (!selectedCourse) {
+      alert('Please select a golf course.');
+      return false;
+    }
+    var total = parseInt(document.getElementById('totalScore').value);
+    if (!total || total < 50 || total > 150) {
+      alert('Please enter a valid total score (or fill in the scorecard).');
+      return false;
+    }
+
+    var holes = [];
+    for (var i = 1; i <= 18; i++) {
+      var val = parseInt(document.getElementById('hole' + i).value) || 0;
+      holes.push(val);
+    }
+
+    var round = {
+      id: Date.now().toString(),
+      date: document.getElementById('roundDate').value,
+      course: selectedCourse.name,
+      courseLocation: selectedCourse.location,
+      coursePar: selectedCourse.par,
+      totalScore: total,
+      scoreToPar: total - selectedCourse.par,
+      holes: holes,
+      playedWith: document.getElementById('playedWith').value.trim(),
+      rating: currentRating,
+      notes: document.getElementById('roundNotes').value.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    saveRound(round);
+    closeScoreForm();
+    renderRoundHistory();
+
+    // Show success message
+    var btn = document.getElementById('submitRoundBtn');
+    btn.textContent = 'SAVED!';
+    btn.style.background = '#2D6A4F';
+    setTimeout(function() {
+      btn.textContent = 'SAVE ROUND';
+      btn.style.background = '';
+    }, 2000);
+
+    return false;
+  }
+
+  function renderRoundHistory() {
+    var rounds = getSavedRounds();
+    var container = document.getElementById('roundsList');
+
+    if (rounds.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:48px 24px;"><div style="font-family:var(--font-display);font-size:1.3rem;color:rgba(245,240,225,0.3);margin-bottom:8px;">No rounds recorded yet</div><p style="font-family:var(--font-body);font-size:1rem;color:rgba(245,240,225,0.2);">Submit your first round to start tracking your game.</p></div>';
+      return;
+    }
+
+    // Stats summary
+    var totalRounds = rounds.length;
+    var avgScore = Math.round(rounds.reduce(function(sum, r) { return sum + r.totalScore; }, 0) / totalRounds);
+    var bestScore = Math.min.apply(null, rounds.map(function(r) { return r.totalScore; }));
+    var avgToPar = (rounds.reduce(function(sum, r) { return sum + r.scoreToPar; }, 0) / totalRounds).toFixed(1);
+
+    var html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">';
+    html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--gold);">' + totalRounds + '</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Rounds</div></div>';
+    html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--cream);">' + avgScore + '</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Avg Score</div></div>';
+    html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--cream);">' + bestScore + '</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Best Round</div></div>';
+    html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:' + (parseFloat(avgToPar) <= 0 ? '#C62828' : 'rgba(245,240,225,0.5)') + ';">' + (avgToPar > 0 ? '+' + avgToPar : avgToPar) + '</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Avg to Par</div></div>';
+    html += '</div>';
+
+    // Round cards
+    rounds.forEach(function(r) {
+      var date = new Date(r.date + 'T12:00:00');
+      var dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      var toPar = r.scoreToPar;
+      var toParStr = toPar === 0 ? 'E' : (toPar > 0 ? '+' + toPar : toPar);
+      var toParColor = toPar < 0 ? '#C62828' : (toPar === 0 ? 'var(--cream)' : 'rgba(245,240,225,0.4)');
+      var stars = '';
+      for (var s = 0; s < 5; s++) {
+        stars += '<span style="color:' + (s < r.rating ? 'var(--gold)' : 'rgba(191,155,59,0.15)') + ';">&#9733;</span>';
+      }
+
+      html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.06);border-radius:6px;padding:20px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">';
+      html += '<div style="flex:1;min-width:200px;">';
+      html += '<div style="font-family:var(--font-display);font-size:1.1rem;font-weight:600;color:var(--cream);margin-bottom:4px;">' + r.course + '</div>';
+      html += '<div style="font-family:var(--font-ui);font-size:12px;color:rgba(245,240,225,0.35);">' + dateStr;
+      if (r.playedWith) html += ' &middot; with ' + r.playedWith;
+      html += '</div>';
+      if (r.rating > 0) html += '<div style="margin-top:6px;font-size:14px;">' + stars + '</div>';
+      if (r.notes) html += '<div style="font-family:var(--font-body);font-size:0.95rem;color:rgba(245,240,225,0.4);margin-top:8px;line-height:1.5;">"' + r.notes + '"</div>';
+      html += '</div>';
+      html += '<div style="text-align:center;flex-shrink:0;">';
+      html += '<div style="font-family:var(--font-display);font-size:2rem;font-weight:700;color:var(--cream);">' + r.totalScore + '</div>';
+      html += '<div style="font-family:var(--font-ui);font-size:13px;font-weight:600;color:' + toParColor + ';">' + toParStr + '</div>';
+      html += '</div>';
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  // Initialize round history on tab switch
+  var origSwitchTab = switchTab;
+  switchTab = function(tab) {
+    origSwitchTab(tab);
+    if (tab === 'myrounds') renderRoundHistory();
+  };
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#courseSearch') && !e.target.closest('#courseDropdown')) {
+      document.getElementById('courseDropdown').style.display = 'none';
+    }
+  });
+
+  // Hide number input spinners
+  var style = document.createElement('style');
+  style.textContent = 'input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}input[type=number]{-moz-appearance:textfield;}';
+  document.head.appendChild(style);
 </script>
 
 </body>
