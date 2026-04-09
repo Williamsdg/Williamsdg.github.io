@@ -458,6 +458,32 @@
       transition: all 0.2s;
     }
 
+    .btn-resend {
+      padding: 6px 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid rgba(191,155,59,0.3);
+      background: rgba(191,155,59,0.08);
+      color: #BF9B3B;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-resend:hover {
+      background: rgba(191,155,59,0.15);
+      border-color: rgba(191,155,59,0.5);
+    }
+    .btn-resend:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .detail-actions .btn-resend {
+      padding: 12px 28px;
+      font-size: 12px;
+    }
     .btn-decline:hover {
       background: var(--red-dim);
       color: var(--red);
@@ -922,6 +948,10 @@
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-title" id="modalTitle"></div>
       <div class="modal-text" id="modalText"></div>
+      <div id="declineReasonWrap" style="display:none; margin: 16px 0;">
+        <label style="display:block; font-size:11px; color:rgba(245,240,225,0.5); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:6px;">Reason for Decline</label>
+        <textarea id="declineReason" style="width:100%; min-height:80px; background:#10352A; color:#F5F0E1; border:1px solid rgba(191,155,59,0.15); border-radius:4px; padding:12px; font-family:Inter,sans-serif; font-size:13px; resize:vertical; outline:none;" placeholder="e.g. Incomplete application, outside service area, etc."></textarea>
+      </div>
       <div class="modal-btns">
         <button class="modal-cancel" onclick="closeModal()">Cancel</button>
         <button class="modal-confirm" id="modalConfirm" onclick="confirmAction()">Confirm</button>
@@ -1012,8 +1042,12 @@
       return res.json();
     }
 
-    async function declineApplication(id) {
-      const res = await fetch(API + '/applications/' + id + '/decline', { method: 'PATCH', headers: apiHeaders() });
+    async function declineApplication(id, reason) {
+      const res = await fetch(API + '/applications/' + id + '/decline', {
+        method: 'PATCH',
+        headers: apiHeaders(),
+        body: JSON.stringify({ reason: reason || '' })
+      });
       if (!res.ok) throw new Error('Failed to decline');
       return res.json();
     }
@@ -1137,6 +1171,8 @@
         if (status === 'pending') {
           html += '<div class="action-btns"><button class="btn-approve" onclick="openModal(\'approve\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Approve</button>';
           html += '<button class="btn-decline" onclick="openModal(\'decline\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Decline</button></div>';
+        } else if (status === 'approved') {
+          html += '<div class="action-btns"><button class="btn-resend" onclick="event.stopPropagation(); resendApproval(\'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\')">Resend Email</button></div>';
         }
         html += '</div>';
         html += '</div>';
@@ -1158,6 +1194,10 @@
           html += '<div class="detail-actions">';
           html += '<button class="btn-approve" onclick="openModal(\'approve\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Approve Application</button>';
           html += '<button class="btn-decline" onclick="openModal(\'decline\', \'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\', \'' + escapeAttr(tierLabel) + '\')">Decline Application</button>';
+          html += '</div>';
+        } else if (status === 'approved') {
+          html += '<div class="detail-actions">';
+          html += '<button class="btn-resend" onclick="resendApproval(\'' + id + '\', \'' + escapeAttr(name) + '\', \'' + escapeAttr(email) + '\')">Resend Welcome Email &amp; Payment Link</button>';
           html += '</div>';
         }
         html += '</div>';
@@ -1182,17 +1222,24 @@
       var titleEl = document.getElementById('modalTitle');
       var textEl = document.getElementById('modalText');
       var confirmBtn = document.getElementById('modalConfirm');
+      var declineWrap = document.getElementById('declineReasonWrap');
+      var declineInput = document.getElementById('declineReason');
 
       if (action === 'approve') {
         titleEl.textContent = 'Approve Application';
         textEl.textContent = 'Approve ' + name + ' for ' + tier + '? This will send them a welcome email with Stripe payment link.';
         confirmBtn.textContent = 'Approve';
         confirmBtn.className = 'modal-confirm approve';
+        declineWrap.style.display = 'none';
+        declineInput.value = '';
       } else {
         titleEl.textContent = 'Decline Application';
-        textEl.textContent = "Decline " + name + "'s application?";
+        textEl.textContent = "Decline " + name + "'s application? Please provide a reason below — this will be included in the email to the applicant.";
         confirmBtn.textContent = 'Decline';
         confirmBtn.className = 'modal-confirm decline';
+        declineWrap.style.display = 'block';
+        declineInput.value = '';
+        declineInput.focus();
       }
 
       confirmBtn.disabled = false;
@@ -1216,8 +1263,9 @@
           await approveApplication(pendingAction.id);
           showToast('Approved! Welcome email sent to ' + pendingAction.email, 'success');
         } else {
-          await declineApplication(pendingAction.id);
-          showToast('Application declined.', 'success');
+          var reason = document.getElementById('declineReason').value.trim();
+          await declineApplication(pendingAction.id, reason);
+          showToast('Application declined. Email sent to ' + pendingAction.email, 'success');
         }
         closeModal();
         loadData();
@@ -1225,6 +1273,25 @@
         showToast('Error: ' + err.message, 'error');
         btn.disabled = false;
         btn.textContent = pendingAction.action === 'approve' ? 'Approve' : 'Decline';
+      }
+    }
+
+    async function resendApproval(id, name, email) {
+      var btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'SENDING...';
+      try {
+        var res = await fetch(API + '/applications/' + id + '/approve', {
+          method: 'PATCH',
+          headers: authHeaders()
+        });
+        if (!res.ok) throw new Error('Failed');
+        showToast('Welcome email resent to ' + email, 'success');
+      } catch (err) {
+        showToast('Failed to resend email', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'RESEND EMAIL';
       }
     }
 
