@@ -2048,6 +2048,12 @@
     var refId = user.sub ? user.sub.substring(0, 8).toUpperCase() : 'MEMBER';
     document.getElementById('referral-link').textContent = 'williamsdigital.io/cartpath-apply?ref=' + refId;
 
+    // Admin: Show "View As" tier switcher for Dylan + Mayo
+    var adminEmails = ['dylan@williamsdigital.io', 'msowell@cartpath.com'];
+    if (adminEmails.indexOf((user.email || '').toLowerCase()) !== -1) {
+      showAdminTierSwitcher();
+    }
+
     // Store name for chat
     sessionStorage.setItem('cartpath_member_name', fullName);
 
@@ -2199,6 +2205,106 @@
       showLogin();
     }
   })();
+
+  // ===================== ADMIN TIER SWITCHER =====================
+
+  function showAdminTierSwitcher() {
+    var switcher = document.createElement('div');
+    switcher.id = 'tierSwitcher';
+    switcher.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:99999;background:#0D2A1E;border:1px solid rgba(191,155,59,0.25);border-radius:8px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:200px;';
+
+    switcher.innerHTML = '<div style="font-family:Inter,sans-serif;font-size:9px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:rgba(191,155,59,0.5);margin-bottom:10px;">Admin: View As</div>'
+      + '<button onclick="switchViewAs(\'fairway\')" id="va-fairway" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;background:transparent;border:1px solid rgba(191,155,59,0.08);border-radius:4px;color:#F5F0E1;font-family:Inter,sans-serif;font-size:13px;cursor:pointer;transition:all 0.2s;">The Fairway</button>'
+      + '<button onclick="switchViewAs(\'clubhouse\')" id="va-clubhouse" style="display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;background:transparent;border:1px solid rgba(191,155,59,0.08);border-radius:4px;color:#F5F0E1;font-family:Inter,sans-serif;font-size:13px;cursor:pointer;transition:all 0.2s;">The Clubhouse</button>'
+      + '<button onclick="switchViewAs(\'backnine\')" id="va-backnine" style="display:block;width:100%;text-align:left;padding:8px 12px;background:transparent;border:1px solid rgba(191,155,59,0.08);border-radius:4px;color:#F5F0E1;font-family:Inter,sans-serif;font-size:13px;cursor:pointer;transition:all 0.2s;">The Back Nine</button>'
+      + '<div style="margin-top:10px;font-family:Inter,sans-serif;font-size:10px;color:rgba(245,240,225,0.2);text-align:center;">Admin only — not visible to members</div>';
+
+    document.body.appendChild(switcher);
+    highlightActiveTier(sessionStorage.getItem('cartpath_member_tier') || 'backnine');
+  }
+
+  function highlightActiveTier(tier) {
+    ['fairway', 'clubhouse', 'backnine'].forEach(function(t) {
+      var btn = document.getElementById('va-' + t);
+      if (btn) {
+        if (t === tier) {
+          btn.style.background = 'rgba(191,155,59,0.12)';
+          btn.style.borderColor = 'rgba(191,155,59,0.35)';
+          btn.style.color = '#BF9B3B';
+          btn.style.fontWeight = '600';
+        } else {
+          btn.style.background = 'transparent';
+          btn.style.borderColor = 'rgba(191,155,59,0.08)';
+          btn.style.color = '#F5F0E1';
+          btn.style.fontWeight = '400';
+        }
+      }
+    });
+  }
+
+  function switchViewAs(tier) {
+    sessionStorage.setItem('cartpath_member_tier', tier);
+    highlightActiveTier(tier);
+
+    // Update tier display names
+    var tierNames = { fairway: 'The Fairway', clubhouse: 'The Clubhouse', backnine: 'The Back Nine' };
+    var tierClasses = { fairway: 'fairway', clubhouse: 'clubhouse', backnine: 'backnine' };
+    var tierName = tierNames[tier] || 'The Clubhouse';
+    var tierClass = tierClasses[tier] || 'clubhouse';
+
+    // Update nav badges
+    var badges = document.querySelectorAll('#nav-badge, #mobile-badge, #banner-badge');
+    badges.forEach(function(badge) {
+      badge.textContent = tierName;
+      badge.className = 'tier-badge ' + tierClass;
+    });
+
+    // Show/hide chat
+    showChatForTier(tier);
+
+    // Update roster access based on tier
+    updateRosterAccess(tier);
+
+    // Update dashboard stats
+    updateDashboardForTier(tier);
+  }
+
+  function updateRosterAccess(tier) {
+    var tierAccess = { fairway: 3, clubhouse: 4, backnine: 5 };
+    var maxTier = tierAccess[tier] || 4;
+
+    // Show/hide booking CTAs based on tier access
+    document.querySelectorAll('.roster-card').forEach(function(card) {
+      var athleteTier = parseInt(card.getAttribute('data-tier') || '3');
+      var cta = card.querySelector('.roster-cta');
+      if (cta) {
+        if (athleteTier <= maxTier) {
+          cta.style.opacity = '1';
+          cta.style.pointerEvents = 'auto';
+          cta.textContent = 'Request This Experience';
+        } else {
+          cta.style.opacity = '0.3';
+          cta.style.pointerEvents = 'none';
+          cta.textContent = 'Upgrade to Access';
+        }
+      }
+    });
+  }
+
+  function updateDashboardForTier(tier) {
+    var tierData = {
+      fairway: { rounds: 2, roundsUsed: 0, label: 'The Fairway' },
+      clubhouse: { rounds: 6, roundsUsed: 2, label: 'The Clubhouse' },
+      backnine: { rounds: 'Unlimited', roundsUsed: 4, label: 'The Back Nine' }
+    };
+    var data = tierData[tier] || tierData.clubhouse;
+
+    var roundsEl = document.getElementById('stat-rounds');
+    if (roundsEl) roundsEl.textContent = data.rounds;
+
+    var usedEl = document.getElementById('stat-used');
+    if (usedEl) usedEl.textContent = data.roundsUsed;
+  }
 
   // ===================== CHAT =====================
 
