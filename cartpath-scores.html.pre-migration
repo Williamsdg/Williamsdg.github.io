@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CartPath — Live Tour Scores</title>
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="CartPath — Live Tour Scores">
+    <meta property="og:description" content="Real-time PGA Tour leaderboards. The Masters-inspired scoreboard experience.">
+    <meta property="og:image" content="https://d3gdcjb9djv2d0.cloudfront.net/public/og/cartpath-og.png">
+    <meta property="og:url" content="https://williamsdigital.io/cartpath-scores">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="CartPath — Live Tour Scores">
+    <meta name="twitter:description" content="Real-time PGA Tour leaderboards. The Masters-inspired scoreboard experience.">
+    <meta name="twitter:image" content="https://d3gdcjb9djv2d0.cloudfront.net/public/og/cartpath-og.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Site colors */
+            --green-deep: #091D14;
+            --green-dark: #10352A;
+            --green-mid: #1A3F30;
+            --green-light: #2A5E46;
+            --gold-site: #BF9B3B;
+            --gold-light: #CCAB52;
+            --gold-dark: #A88630;
+            --cream: #F5F0E1;
+            --cream-dark: #E6DECE;
+            --black: #060F0A;
+
+            /* Masters scoreboard colors */
+            --board-frame: #1B4D2E;
+            --board-white: #FAFAF8;
+            --board-header-gray: #F0F0EB;
+            --cell-border: #DDD;
+            --masters-red: #C41E3A;
+            --text-black: #1A1A1A;
+            --gold: #BF9B3B;
+            --text-white: #FAFAF5;
+
+            /* Fonts */
+            --font-display: 'Playfair Display', serif;
+            --font-body: 'Cormorant Garamond', serif;
+            --font-ui: 'Inter', sans-serif;
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--green-deep);
+            color: var(--cream);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ── NAV ── */
+        .nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(9,29,20,0.95);
+            border-bottom: 1px solid rgba(191,155,59,0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-logo img { height: 32px; width: auto; }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-family: var(--font-ui);
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(245,240,225,0.6);
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover { color: var(--cream); }
+        .nav-links a.active { color: var(--gold); }
+
+        /* ── HERO ── */
+        .hero {
+            padding: 120px 40px 80px;
+            position: relative;
+            overflow: hidden;
+            min-height: 480px;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('https://images.unsplash.com/photo-1629293821758-a0400037edf1?w=1920&q=80&auto=format') center/cover no-repeat;
+            opacity: 0.08;
+            filter: blur(2px);
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(9,29,20,0.97) 0%, rgba(20,61,36,0.92) 50%, rgba(9,29,20,0.97) 100%);
+        }
+
+        .hero-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 60px;
+        }
+
+        .hero-info { flex: 1; }
+
+        .hero-label {
+            font-family: var(--font-ui);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 16px;
+        }
+
+        .hero-tournament {
+            font-family: var(--font-display);
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--text-white);
+            line-height: 1.1;
+            margin-bottom: 12px;
+        }
+
+        .hero-course {
+            font-family: var(--font-body);
+            font-size: 20px;
+            color: rgba(245,240,225,0.6);
+            font-weight: 400;
+            margin-bottom: 20px;
+        }
+
+        .hero-round {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-ui);
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(245,240,225,0.7);
+            letter-spacing: 0.5px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: livePulse 2s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(76,175,80,0.5); }
+            50% { box-shadow: 0 0 0 8px rgba(76,175,80,0); }
+        }
+
+        .hero-player-card {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .player-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #143D24;
+            border: 3px solid var(--gold);
+            flex-shrink: 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .player-details { text-align: right; }
+
+        .player-name-hero {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 4px;
+        }
+
+        .player-country {
+            display: inline-block;
+            font-family: var(--font-ui);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--gold);
+            background: rgba(212,168,67,0.12);
+            padding: 3px 10px;
+            border-radius: 3px;
+            margin-bottom: 12px;
+        }
+
+        .player-score-hero {
+            font-family: var(--font-display);
+            font-size: 88px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--masters-red);
+            margin-bottom: 4px;
+        }
+
+        .player-thru-hero {
+            font-family: var(--font-ui);
+            font-size: 13px;
+            color: rgba(245,240,225,0.5);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .player-rounds-hero {
+            font-family: var(--font-ui);
+            font-size: 14px;
+            color: rgba(245,240,225,0.45);
+            letter-spacing: 2px;
+        }
+
+        /* ══════════════════════════════════════════════════
+           AUGUSTA NATIONAL MASTERS LEADERBOARD
+           ══════════════════════════════════════════════════ */
+
+        .leaderboard-section {
+            padding: 0 40px 80px;
+        }
+
+        .leaderboard-container {
+            max-width: 1120px;
+            margin: 0 auto;
+        }
+
+        /* The outer green frame */
+        .augusta-frame {
+            background: var(--board-frame);
+            border-radius: 16px 16px 4px 4px;
+            padding: 6px;
+            box-shadow:
+                0 12px 48px rgba(0,0,0,0.5),
+                0 4px 16px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.08);
+            position: relative;
+        }
+
+        /* Subtle wood grain texture on frame */
+        .augusta-frame::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px 16px 4px 4px;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.03) 2px,
+                    rgba(0,0,0,0.03) 4px
+                );
+            pointer-events: none;
+        }
+
+        /* The arch top with LEADERS */
+        .augusta-arch {
+            text-align: center;
+            padding: 18px 0 14px;
+            position: relative;
+        }
+
+        .augusta-arch-title {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 700;
+            color: #FAFAF5;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        /* The inner white board */
+        .augusta-board {
+            background: var(--board-white);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Board scroll wrapper for mobile */
+        .board-scroll-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .board-scroll-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+        .board-scroll-wrapper::-webkit-scrollbar-track {
+            background: var(--board-header-gray);
+        }
+        .board-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: #BBB;
+            border-radius: 3px;
+        }
+
+        /* The actual scoreboard table */
+        .augusta-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+            table-layout: fixed;
+        }
+
+        .augusta-table th,
+        .augusta-table td {
+            border: 1px solid var(--cell-border);
+            text-align: center;
+            vertical-align: middle;
+            font-family: var(--font-ui);
+            padding: 0;
+        }
+
+        /* Column widths */
+        .augusta-table .col-score {
+            width: 54px;
+        }
+        .augusta-table .col-name {
+            width: 130px;
+            text-align: left;
+        }
+        .augusta-table .col-hole {
+            width: auto;
+        }
+
+        /* Header rows (HOLE + PAR) */
+        .augusta-table thead th {
+            background: var(--board-header-gray);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-black);
+            height: 32px;
+            letter-spacing: 0.5px;
+        }
+
+        .augusta-table thead th.label-cell {
+            background: var(--board-header-gray);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .augusta-table thead tr.par-row th {
+            background: #F5F5F0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            height: 28px;
+        }
+
+        /* Divider between front 9 and back 9 */
+        .augusta-table .nine-divider {
+            border-right: 2px solid #AAA;
+        }
+
+        /* Player rows */
+        .augusta-table tbody tr {
+            transition: background 0.15s;
+        }
+
+        .augusta-table tbody tr:hover {
+            background: #F5F5EE;
+        }
+
+        .augusta-table tbody tr:not(:last-child) td {
+            border-bottom: 1px solid var(--cell-border);
+        }
+
+        .augusta-table tbody td {
+            height: 38px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-black);
+            position: relative;
+        }
+
+        /* Score-to-par column (left) */
+        .augusta-table tbody td.player-total {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: var(--font-display);
+            letter-spacing: -0.5px;
+            background: var(--board-white);
+        }
+
+        .augusta-table tbody td.player-total.under-par {
+            color: var(--masters-red);
+        }
+
+        .augusta-table tbody td.player-total.over-par {
+            color: var(--text-black);
+        }
+
+        /* Player name column */
+        .augusta-table tbody td.player-name-cell {
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            text-align: left;
+            padding-left: 10px;
+            color: var(--text-black);
+            white-space: nowrap;
+        }
+
+        /* Hole score cells — tile effect */
+        .augusta-table tbody td.hole-score {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-black);
+            position: relative;
+        }
+
+        .augusta-table tbody td.hole-score .tile {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 24px;
+            margin: 0 auto;
+            background: #FFF;
+            border-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .augusta-table tbody td.hole-score .tile.birdie {
+            color: var(--masters-red);
+        }
+
+        .augusta-table tbody td.hole-score .tile.par-or-over {
+            color: var(--text-black);
+        }
+
+        /* Playoff box */
+        .playoff-box {
+            position: absolute;
+            top: 70px;
+            right: -6px;
+            transform: translateX(100%);
+            background: var(--board-white);
+            border: 2px solid var(--board-frame);
+            border-radius: 4px;
+            padding: 12px 16px;
+            min-width: 140px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        .playoff-box-title {
+            font-family: var(--font-ui);
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--board-frame);
+            margin-bottom: 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--cell-border);
+            padding-bottom: 6px;
+        }
+
+        .playoff-box-player {
+            font-family: var(--font-display);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-black);
+            text-transform: uppercase;
+            padding: 3px 0;
+            text-align: center;
+        }
+
+        /* Green base bar at bottom of frame */
+        .augusta-base {
+            height: 12px;
+            background: var(--board-frame);
+            border-radius: 0 0 2px 2px;
+            margin-top: 2px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* ── AROUND THE TOURS ── */
+        .tours-section {
+            padding: 0 40px 80px;
+        }
+
+        .tours-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .tours-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .tour-card {
+            background:
+                repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 3px),
+                var(--board-frame);
+            border-radius: 4px;
+            border-top: 3px solid var(--gold);
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .tour-card-header {
+            padding: 20px 20px 16px;
+            border-bottom: 1px solid rgba(42,107,66,0.3);
+        }
+
+        .tour-card-name {
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-white);
+            margin-bottom: 6px;
+        }
+
+        .tour-card-course {
+            font-family: var(--font-body);
+            font-size: 16px;
+            font-weight: 500;
+            color: rgba(245,240,225,0.6);
+            margin-bottom: 10px;
+        }
+
+        .tour-card-status {
+            font-family: var(--font-ui);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tour-card-status.live { color: #4CAF50; }
+        .tour-card-status.upcoming { color: rgba(245,240,225,0.4); }
+
+        .tour-mini-board {
+            padding: 0;
+        }
+
+        .mini-row {
+            display: grid;
+            grid-template-columns: 32px 1fr 48px;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(42,107,66,0.2);
+        }
+
+        .mini-row:last-child { border-bottom: none; }
+
+        .mini-pos {
+            font-family: var(--font-ui);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .mini-player {
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-white);
+        }
+
+        .mini-score {
+            font-family: var(--font-ui);
+            font-size: 15px;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .score-under { color: var(--masters-red); }
+        .score-over { color: #4CAF50; }
+        .score-even { color: var(--text-white); }
+
+        .tour-card-footer {
+            padding: 14px 20px;
+            border-top: 1px solid rgba(42,107,66,0.2);
+        }
+
+        .tour-card-footer a {
+            font-family: var(--font-ui);
+            font-size: 12px;
+            color: var(--gold);
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            transition: color 0.3s;
+        }
+
+        .tour-card-footer a:hover { color: var(--gold-light); }
+
+        .tour-card-upcoming {
+            padding: 32px 20px;
+            text-align: center;
+        }
+
+        .tour-card-upcoming .countdown {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 500;
+            color: rgba(245,240,225,0.7);
+            margin-bottom: 10px;
+        }
+
+        .tour-card-upcoming .purse {
+            font-family: var(--font-ui);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+
+        /* ── MAJORS ── */
+        .majors-section {
+            padding: 0 40px 80px;
+        }
+
+        .majors-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .majors-title {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-white);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .majors-underline {
+            width: 60px;
+            height: 2px;
+            background: var(--gold);
+            margin: 0 auto 40px;
+        }
+
+        .majors-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .major-card {
+            background: var(--green-dark);
+            border: 1px solid rgba(212,168,67,0.15);
+            border-radius: 4px;
+            padding: 28px 24px;
+            text-align: center;
+            transition: border-color 0.3s, transform 0.3s;
+        }
+
+        .major-card:hover {
+            border-color: rgba(212,168,67,0.35);
+            transform: translateY(-2px);
+        }
+
+        .major-card.completed {
+            border-color: rgba(212,168,67,0.3);
+        }
+
+        .major-name {
+            font-family: var(--font-display);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        .major-course {
+            font-family: var(--font-body);
+            font-size: 17px;
+            font-weight: 500;
+            color: rgba(245,240,225,0.6);
+            margin-bottom: 6px;
+        }
+
+        .major-dates {
+            font-family: var(--font-ui);
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(245,240,225,0.45);
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+
+        .major-result {
+            font-family: var(--font-ui);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .major-result .winner { color: var(--text-white); font-weight: 600; }
+        .major-result .winner-score { color: var(--masters-red); font-weight: 700; }
+        .major-result .purse { color: var(--gold); letter-spacing: 0.5px; font-weight: 600; }
+        .major-result .days-away { color: rgba(245,240,225,0.5); font-weight: 500; }
+        .major-defending {
+            font-family: var(--font-ui);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: rgba(245,240,225,0.3);
+            margin-bottom: 4px;
+        }
+        .major-defending-name {
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(245,240,225,0.55);
+            margin-bottom: 12px;
+        }
+        .major-countdown {
+            font-family: var(--font-display);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 2px;
+        }
+        .major-countdown-label {
+            font-family: var(--font-ui);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(245,240,225,0.3);
+            margin-bottom: 16px;
+        }
+
+        /* ── FEATURES ── */
+        .features-section {
+            padding: 0 40px 80px;
+        }
+
+        .features-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--green-dark);
+            border: 1px solid rgba(245,240,225,0.06);
+            border-radius: 4px;
+            padding: 32px 28px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(212,168,67,0.2);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(212,168,67,0.1);
+            border: 1px solid rgba(212,168,67,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-family: var(--font-display);
+            font-size: 18px;
+            color: var(--gold);
+        }
+
+        .feature-title {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 10px;
+        }
+
+        .feature-desc {
+            font-family: var(--font-body);
+            font-size: 16px;
+            color: rgba(245,240,225,0.5);
+            line-height: 1.6;
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+            padding: 60px 40px 80px;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 32px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .btn {
+            font-family: var(--font-ui);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 14px 32px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--gold);
+            color: var(--green-deep);
+        }
+
+        .btn-primary:hover {
+            background: var(--gold-light);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--cream);
+            border: 1px solid rgba(245,240,225,0.2);
+        }
+
+        .btn-secondary:hover {
+            border-color: rgba(245,240,225,0.4);
+        }
+
+        /* ── FOOTER ── */
+        .footer {
+            padding: 40px;
+            border-top: 1px solid rgba(245,240,225,0.06);
+            text-align: center;
+        }
+
+        .footer-logo img {
+            height: 28px;
+            width: auto;
+            opacity: 0.5;
+            margin-bottom: 12px;
+        }
+
+        .footer-brand {
+            font-family: var(--font-display);
+            font-size: 16px;
+            color: rgba(245,240,225,0.4);
+            margin-bottom: 4px;
+        }
+
+        .footer-est {
+            font-family: var(--font-ui);
+            font-size: 11px;
+            color: rgba(245,240,225,0.2);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .footer-powered {
+            font-family: var(--font-ui);
+            font-size: 11px;
+            color: rgba(245,240,225,0.2);
+            margin-bottom: 8px;
+        }
+
+        .footer-copy {
+            font-family: var(--font-ui);
+            font-size: 11px;
+            color: rgba(245,240,225,0.15);
+        }
+
+        /* ── SCROLL REVEAL ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+            .majors-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .playoff-box {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-inner { padding: 0 20px; }
+
+            .hero {
+                padding: 100px 20px 60px;
+            }
+
+            .hero-inner {
+                flex-direction: column;
+                text-align: center;
+                gap: 40px;
+            }
+
+            .hero-tournament { font-size: 32px; }
+
+            .hero-round { justify-content: center; }
+
+            .hero-player-card {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .player-details { text-align: center; }
+            .player-score-hero { font-size: 64px; }
+
+            .leaderboard-section,
+            .tours-section,
+            .majors-section,
+            .features-section,
+            .cta-section {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .augusta-frame {
+                border-radius: 10px 10px 4px 4px;
+                padding: 4px;
+            }
+
+            .augusta-arch-title {
+                font-size: 20px;
+                letter-spacing: 4px;
+            }
+
+            .tours-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .majors-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .section-title,
+            .majors-title {
+                font-size: 26px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="cartpath" class="nav-logo">
+                <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310419663029617589/rMkdqcZajiHmIWkM.png" alt="CartPath">
+            </a>
+            <ul class="nav-links">
+                <li><a href="cartpath">Back to CartPath</a></li>
+                <li><a href="cartpath-scores" class="active">Live Scores</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- HERO — Tournament Leader Spotlight -->
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="hero-info">
+                <div class="hero-label" id="hero-label">Tournament Leader</div>
+                <h1 class="hero-tournament" id="hero-tournament">The Masters 2026</h1>
+                <p class="hero-course" id="hero-course">Augusta National Golf Club &middot; Augusta, GA</p>
+                <div class="hero-round" id="hero-round">
+                    <span class="live-dot" id="hero-live-dot"></span>
+                    <span id="hero-round-text">Round 4 &middot; Final Round</span>
+                </div>
+            </div>
+            <div class="hero-player-card">
+                <div class="player-details">
+                    <div class="player-name-hero" id="hero-player-name">Scottie Scheffler</div>
+                    <span class="player-country" id="hero-player-country">USA</span>
+                    <div class="player-score-hero" id="hero-player-score">-14</div>
+                    <div class="player-thru-hero" id="hero-player-thru">Thru 16</div>
+                    <div class="player-rounds-hero" id="hero-player-rounds">67 &middot; 66 &middot; 68 &middot; --</div>
+                </div>
+                <div class="player-avatar" id="hero-player-avatar" style="display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:36px;font-weight:700;color:#BF9B3B;">SS</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MASTERS LEADERBOARD — Augusta Style -->
+    <section class="leaderboard-section">
+        <div class="leaderboard-container reveal">
+            <div class="augusta-frame" style="position: relative;">
+
+                <!-- Arched top with LEADERS -->
+                <div class="augusta-arch">
+                    <span class="augusta-arch-title">Leaders</span>
+                </div>
+
+                <!-- The white board -->
+                <div class="augusta-board">
+                    <div class="board-scroll-wrapper">
+                        <table class="augusta-table" id="augustaBoard">
+                            <thead>
+                                <tr>
+                                    <th class="col-score label-cell"></th>
+                                    <th class="col-name label-cell">HOLE</th>
+                                    <th class="col-hole">1</th>
+                                    <th class="col-hole">2</th>
+                                    <th class="col-hole">3</th>
+                                    <th class="col-hole">4</th>
+                                    <th class="col-hole">5</th>
+                                    <th class="col-hole">6</th>
+                                    <th class="col-hole">7</th>
+                                    <th class="col-hole">8</th>
+                                    <th class="col-hole nine-divider">9</th>
+                                    <th class="col-hole">10</th>
+                                    <th class="col-hole">11</th>
+                                    <th class="col-hole">12</th>
+                                    <th class="col-hole">13</th>
+                                    <th class="col-hole">14</th>
+                                    <th class="col-hole">15</th>
+                                    <th class="col-hole">16</th>
+                                    <th class="col-hole">17</th>
+                                    <th class="col-hole">18</th>
+                                </tr>
+                                <tr class="par-row">
+                                    <th class="col-score label-cell"></th>
+                                    <th class="col-name label-cell">PAR</th>
+                                    <th>4</th>
+                                    <th>5</th>
+                                    <th>4</th>
+                                    <th>3</th>
+                                    <th>4</th>
+                                    <th>3</th>
+                                    <th>4</th>
+                                    <th>5</th>
+                                    <th class="nine-divider">4</th>
+                                    <th>4</th>
+                                    <th>4</th>
+                                    <th>3</th>
+                                    <th>5</th>
+                                    <th>4</th>
+                                    <th>5</th>
+                                    <th>3</th>
+                                    <th>4</th>
+                                    <th>4</th>
+                                </tr>
+                            </thead>
+                            <tbody id="augustaBody">
+                                <!-- Rows generated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Loading overlay -->
+                <div id="leaderboard-loading" style="text-align:center;padding:40px 0;font-family:var(--font-ui);font-size:14px;color:#888;display:none;">Loading live scores...</div>
+
+                <!-- Green base -->
+                <div class="augusta-base"></div>
+
+                <!-- Last updated -->
+                <div id="last-updated" style="text-align:center;padding:8px 0 0;font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.35);letter-spacing:0.5px;"></div>
+
+                <!-- Playoff box (desktop only) -->
+                <div class="playoff-box" id="playoff-box">
+                    <div class="playoff-box-title">Playoff Prior</div>
+                    <div class="playoff-box-player">McILROY</div>
+                    <div class="playoff-box-player">ROSE</div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- AROUND THE TOURS -->
+    <section class="tours-section">
+        <div class="tours-container">
+            <h2 class="section-title reveal">Upcoming Tournaments</h2>
+            <div class="tours-grid" id="upcoming-grid">
+                <div style="grid-column:1/-1;text-align:center;padding:40px 0;font-family:var(--font-ui);font-size:13px;color:rgba(245,240,225,0.4);letter-spacing:0.5px;">
+                    Loading schedule...
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- THE MAJORS 2026 -->
+    <section class="majors-section">
+        <div class="majors-container">
+            <h2 class="majors-title reveal">The Majors &middot; 2026</h2>
+            <div class="majors-underline"></div>
+            <div class="majors-grid">
+
+                <div class="major-card reveal">
+                    <div class="major-name">The Masters</div>
+                    <div class="major-course">Augusta National</div>
+                    <div class="major-dates">April 9-12</div>
+                    <div class="major-countdown" id="masters-countdown">1</div>
+                    <div class="major-countdown-label">Day Away</div>
+                    <div class="major-defending">Defending Champion</div>
+                    <div class="major-defending-name">Scottie Scheffler (2025)</div>
+                    <div class="major-result">
+                        <span class="purse">$20M</span>
+                    </div>
+                </div>
+
+                <div class="major-card reveal">
+                    <div class="major-name">PGA Championship</div>
+                    <div class="major-course">Quail Hollow</div>
+                    <div class="major-dates">May 15-18</div>
+                    <div class="major-countdown" id="pga-countdown">37</div>
+                    <div class="major-countdown-label">Days Away</div>
+                    <div class="major-defending">Defending Champion</div>
+                    <div class="major-defending-name">Xander Schauffele (2025)</div>
+                    <div class="major-result">
+                        <span class="purse">$17.5M</span>
+                    </div>
+                </div>
+
+                <div class="major-card reveal">
+                    <div class="major-name">U.S. Open</div>
+                    <div class="major-course">Oakmont</div>
+                    <div class="major-dates">June 12-15</div>
+                    <div class="major-countdown" id="usopen-countdown">65</div>
+                    <div class="major-countdown-label">Days Away</div>
+                    <div class="major-defending">Defending Champion</div>
+                    <div class="major-defending-name">Bryson DeChambeau (2025)</div>
+                    <div class="major-result">
+                        <span class="purse">$21.5M</span>
+                    </div>
+                </div>
+
+                <div class="major-card reveal">
+                    <div class="major-name">The Open</div>
+                    <div class="major-course">Royal Troon</div>
+                    <div class="major-dates">July 16-19</div>
+                    <div class="major-countdown" id="open-countdown">99</div>
+                    <div class="major-countdown-label">Days Away</div>
+                    <div class="major-defending">Defending Champion</div>
+                    <div class="major-defending-name">Xander Schauffele (2025)</div>
+                    <div class="major-result">
+                        <span class="purse">$17M</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features-section">
+        <div class="features-container">
+            <div class="features-grid">
+
+                <div class="feature-card reveal">
+                    <div class="feature-icon">L</div>
+                    <div class="feature-title">Live Leaderboards</div>
+                    <p class="feature-desc">Real-time scoring updated every 60 seconds across all major tours and tournaments.</p>
+                </div>
+
+                <div class="feature-card reveal">
+                    <div class="feature-icon">H</div>
+                    <div class="feature-title">Hole-by-Hole Scoring</div>
+                    <p class="feature-desc">Complete scorecards with detailed stats for every player in the field.</p>
+                </div>
+
+                <div class="feature-card reveal">
+                    <div class="feature-icon">P</div>
+                    <div class="feature-title">Player Profiles</div>
+                    <p class="feature-desc">Licensed headshots, world rankings, and comprehensive career statistics.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <h2 class="reveal">Want Access to the Full CartPath Experience?</h2>
+        <div class="cta-buttons reveal">
+            <a href="cartpath-apply" class="btn btn-primary">Apply to Play</a>
+            <a href="cartpath" class="btn btn-secondary">Back to CartPath</a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-logo">
+            <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310419663029617589/rMkdqcZajiHmIWkM.png" alt="CartPath">
+        </div>
+        <div class="footer-brand">CartPath</div>
+        <div class="footer-est">Est. 2024</div>
+        <div class="footer-powered">Scores powered by SportsData.io</div>
+        <div class="footer-copy">&copy; 2026 CartPath. All rights reserved.</div>
+    </footer>
+
+    <script>
+        // ══════════════════════════════════════════════════
+        // CartPath — Live SportsData.io Integration
+        // ══════════════════════════════════════════════════
+
+        (function() {
+            // ── Configuration ──
+            var PROXY_BASE = 'https://ha2sinzpu3.execute-api.us-east-1.amazonaws.com/prod/scores';
+            var TOURNAMENT_ID = 688;
+            var REFRESH_INTERVAL = 60000; // 60 seconds
+            var MAX_LEADERBOARD_PLAYERS = 15;
+
+            // Augusta National par layout
+            var augustaPar = [4, 5, 4, 3, 4, 3, 4, 5, 4, 4, 4, 3, 5, 4, 5, 3, 4, 4];
+
+            // ── Fallback mock data (used if API fails) ──
+            var FALLBACK_PLAYERS = [
+                { total: 12, name: 'McILROY',     scores: [10,10,11,12,12,12,12,12,13, 14,13,13,11,10,11,11,12,11] },
+                { total: 10, name: 'DeCHAMBEAU',  scores: [10,11,10, 9, 9, 9, 9, 9, 9,  9, 7, 6, 6, 7, 7, 8, 7, 7] },
+                { total:  8, name: 'CONNERS',      scores: [ 7, 7, 7, 6, 6, 6, 7, 8, 8,  8, 7, 7, 7, 6, 6, 5, 5, 5] },
+                { total:  6, name: 'REED',         scores: [ 5, 5, 4, 4, 4, 5, 6, 7, 8,  8, 8, 8, 7, 7, 7, 7, 9, 9] },
+                { total:  6, name: '\u00c5BERG',    scores: [ 7, 7, 7, 7, 8, 8, 8, 8, 8,  9, 9, 8, 9, 9,10,10, 9, 6] },
+                { total:  5, name: 'SCHEFFLER',    scores: [ 5, 5, 5, 4, 5, 5, 6, 7, 7,  7, 7, 6, 7, 7, 8, 8, 8, 8] },
+                { total:  5, name: 'ROSE',         scores: [ 6, 6, 7, 6, 5, 5, 6, 7, 7,  7, 8, 9,10, 9,10,11,10,11] },
+                { total:  4, name: 'IM',           scores: [ 4, 5, 5, 4, 3, 3, 4, 5, 5,  5, 5, 5, 7, 7, 7, 6, 7, 7] },
+                { total:  4, name: 'JOHNSON Z.',   scores: [ 3, 5, 5, 5, 5, 5, 4, 4, 4,  4, 4, 4, 5, 6, 6, 6, 5, 5] },
+                { total:  5, name: 'DAY',          scores: [ 5, 5, 5, 5, 6, 6, 6, 6, 7,  7, 7, 7, 7, 7, 7, 7, 6, 5] }
+            ];
+
+            // ── Helper: format score to par display ──
+            function formatScoreToPar(score) {
+                if (score < 0) return score.toString(); // e.g. "-5"
+                if (score === 0) return 'E';
+                return '+' + score;
+            }
+
+            // ── Helper: get last name in uppercase ──
+            function getLastName(fullName) {
+                if (!fullName) return '';
+                var parts = fullName.trim().split(' ');
+                return parts[parts.length - 1].toUpperCase();
+            }
+
+            // ── Helper: format timestamp ──
+            function formatTime(date) {
+                var h = date.getHours();
+                var m = date.getMinutes();
+                var ampm = h >= 12 ? 'PM' : 'AM';
+                h = h % 12;
+                if (h === 0) h = 12;
+                var mm = m < 10 ? '0' + m : m;
+                return h + ':' + mm + ' ' + ampm;
+            }
+
+            // ── Update Hero Section ──
+            function updateHero(tournament, leader) {
+                var tournamentEl = document.getElementById('hero-tournament');
+                var roundTextEl = document.getElementById('hero-round-text');
+                var liveDotEl = document.getElementById('hero-live-dot');
+                var nameEl = document.getElementById('hero-player-name');
+                var countryEl = document.getElementById('hero-player-country');
+                var scoreEl = document.getElementById('hero-player-score');
+                var thruEl = document.getElementById('hero-player-thru');
+                var roundsEl = document.getElementById('hero-player-rounds');
+
+                if (tournament) {
+                    if (tournamentEl) tournamentEl.textContent = tournament.Name || 'The Masters 2026';
+
+                    var roundNum = tournament.CurrentRound || 1;
+                    var roundNames = { 1: 'First Round', 2: 'Second Round', 3: 'Third Round', 4: 'Final Round' };
+                    var statusText = 'Round ' + roundNum;
+                    if (roundNames[roundNum]) statusText += ' \u00B7 ' + roundNames[roundNum];
+
+                    if (tournament.IsOver) {
+                        if (liveDotEl) {
+                            liveDotEl.style.background = '#888';
+                            liveDotEl.style.animation = 'none';
+                        }
+                        if (roundTextEl) roundTextEl.textContent = 'FINAL';
+                    } else if (tournament.IsInProgress) {
+                        if (liveDotEl) {
+                            liveDotEl.style.background = '#4CAF50';
+                            liveDotEl.style.animation = 'livePulse 2s ease-in-out infinite';
+                        }
+                        if (roundTextEl) roundTextEl.innerHTML = 'LIVE \u00B7 ' + statusText;
+                    } else {
+                        if (liveDotEl) {
+                            liveDotEl.style.background = '#888';
+                            liveDotEl.style.animation = 'none';
+                        }
+                        if (roundTextEl) roundTextEl.textContent = statusText;
+                    }
+                }
+
+                if (leader) {
+                    if (nameEl) nameEl.textContent = leader.Name || '';
+                    if (countryEl) countryEl.textContent = leader.Country || '';
+
+                    // Update avatar initials
+                    var avatarEl = document.getElementById('hero-player-avatar');
+                    if (avatarEl && leader.Name) {
+                        var nameParts = leader.Name.split(' ');
+                        var initials = nameParts.map(function(n) { return n.charAt(0); }).join('').substring(0, 2).toUpperCase();
+                        avatarEl.textContent = initials;
+                    }
+                    if (scoreEl) scoreEl.textContent = formatScoreToPar(leader.TotalScore);
+                    if (scoreEl) scoreEl.style.color = leader.TotalScore < 0 ? 'var(--masters-red)' : 'var(--text-white)';
+
+                    var thruText = leader.TotalThrough ? 'Thru ' + leader.TotalThrough : '';
+                    if (leader.TotalThrough === '18' || leader.TotalThrough === 'F') thruText = 'F';
+                    if (thruEl) thruEl.textContent = thruText;
+
+                    // Build rounds summary
+                    if (roundsEl && leader.Rounds && leader.Rounds.length > 0) {
+                        var roundScores = leader.Rounds.map(function(r) {
+                            return (r && r.Score) ? r.Score : '--';
+                        });
+                        roundsEl.innerHTML = roundScores.join(' &middot; ');
+                    }
+                }
+            }
+
+            // ── Render Leaderboard Table ──
+            function renderLeaderboard(players, currentRound) {
+                var tbody = document.getElementById('augustaBody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                var topPlayers = players.slice(0, MAX_LEADERBOARD_PLAYERS);
+
+                topPlayers.forEach(function(player) {
+                    var tr = document.createElement('tr');
+
+                    // Total score-to-par cell
+                    var tdTotal = document.createElement('td');
+                    tdTotal.className = 'player-total';
+                    var score = player.TotalScore;
+                    if (score < 0) {
+                        tdTotal.textContent = score.toString();
+                        tdTotal.classList.add('under-par');
+                    } else if (score === 0) {
+                        tdTotal.textContent = 'E';
+                    } else {
+                        tdTotal.textContent = '+' + score;
+                        tdTotal.classList.add('over-par');
+                    }
+                    tr.appendChild(tdTotal);
+
+                    // Player name cell
+                    var tdName = document.createElement('td');
+                    tdName.className = 'player-name-cell';
+                    tdName.textContent = getLastName(player.Name);
+                    tr.appendChild(tdName);
+
+                    // Hole-by-hole scores
+                    var holes = null;
+                    var roundIdx = (currentRound || 1) - 1;
+
+                    // Try to get hole data from the current round
+                    if (player.Rounds && player.Rounds[roundIdx] && player.Rounds[roundIdx].Holes && player.Rounds[roundIdx].Holes.length > 0) {
+                        holes = player.Rounds[roundIdx].Holes;
+                    }
+
+                    for (var h = 0; h < 18; h++) {
+                        var td = document.createElement('td');
+                        td.className = 'hole-score';
+                        if (h === 8) td.classList.add('nine-divider');
+
+                        var tile = document.createElement('span');
+                        tile.className = 'tile';
+
+                        if (holes && holes[h] && holes[h].Score) {
+                            // We have hole-by-hole data
+                            tile.textContent = holes[h].Score;
+                            if (holes[h].IsBirdie || holes[h].IsEagle) {
+                                tile.classList.add('birdie');
+                            } else {
+                                tile.classList.add('par-or-over');
+                            }
+                        } else if (holes && holes.length > 0) {
+                            // Holes array exists but this hole may not be played yet
+                            // Find hole by Number property
+                            var holeData = null;
+                            for (var hi = 0; hi < holes.length; hi++) {
+                                if (holes[hi].Number === h + 1) {
+                                    holeData = holes[hi];
+                                    break;
+                                }
+                            }
+                            if (holeData && holeData.Score) {
+                                tile.textContent = holeData.Score;
+                                if (holeData.IsBirdie || holeData.IsEagle) {
+                                    tile.classList.add('birdie');
+                                } else {
+                                    tile.classList.add('par-or-over');
+                                }
+                            } else {
+                                tile.textContent = '';
+                                tile.classList.add('par-or-over');
+                            }
+                        } else {
+                            // No hole data — show cumulative round scores if available
+                            if (player.Rounds && player.Rounds.length > 0) {
+                                // Show round scores in first few cells instead
+                                if (h < player.Rounds.length && player.Rounds[h] && player.Rounds[h].Score) {
+                                    tile.textContent = player.Rounds[h].Score;
+                                    var rPar = 72;
+                                    tile.classList.add(player.Rounds[h].Score < rPar ? 'birdie' : 'par-or-over');
+                                } else {
+                                    tile.textContent = '';
+                                    tile.classList.add('par-or-over');
+                                }
+                            } else {
+                                tile.textContent = '';
+                                tile.classList.add('par-or-over');
+                            }
+                        }
+
+                        td.appendChild(tile);
+                        tr.appendChild(td);
+                    }
+
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // ── Render Fallback (mock data) ──
+            function renderFallback() {
+                var tbody = document.getElementById('augustaBody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                FALLBACK_PLAYERS.forEach(function(p) {
+                    var tr = document.createElement('tr');
+
+                    var tdTotal = document.createElement('td');
+                    tdTotal.className = 'player-total';
+                    if (p.total > 0) {
+                        tdTotal.textContent = '-' + p.total;
+                        tdTotal.classList.add('under-par');
+                    } else if (p.total === 0) {
+                        tdTotal.textContent = 'E';
+                    } else {
+                        tdTotal.textContent = '+' + Math.abs(p.total);
+                        tdTotal.classList.add('over-par');
+                    }
+                    tr.appendChild(tdTotal);
+
+                    var tdName = document.createElement('td');
+                    tdName.className = 'player-name-cell';
+                    tdName.textContent = p.name;
+                    tr.appendChild(tdName);
+
+                    for (var h = 0; h < 18; h++) {
+                        var td = document.createElement('td');
+                        td.className = 'hole-score';
+                        if (h === 8) td.classList.add('nine-divider');
+
+                        var tile = document.createElement('span');
+                        tile.className = 'tile';
+                        tile.textContent = p.scores[h];
+
+                        var isBirdie = false;
+                        if (h === 0) {
+                            isBirdie = p.scores[0] < augustaPar[0];
+                        } else {
+                            isBirdie = p.scores[h] < p.scores[h - 1];
+                        }
+                        tile.classList.add(isBirdie ? 'birdie' : 'par-or-over');
+
+                        td.appendChild(tile);
+                        tr.appendChild(td);
+                    }
+
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // ── Show / hide loading state ──
+            function showLoading(show) {
+                var loader = document.getElementById('leaderboard-loading');
+                var board = document.querySelector('.augusta-board .board-scroll-wrapper');
+                if (loader) loader.style.display = show ? 'block' : 'none';
+                if (board) board.style.opacity = show ? '0.4' : '1';
+            }
+
+            // ── Update "Last updated" timestamp ──
+            function updateTimestamp() {
+                var el = document.getElementById('last-updated');
+                if (el) el.textContent = 'Last updated: ' + formatTime(new Date());
+            }
+
+            // ── Main fetch and render ──
+            var isFirstLoad = true;
+
+            function fetchLeaderboard() {
+                if (isFirstLoad) showLoading(true);
+
+                fetch(PROXY_BASE + '/current')
+                .then(function(response) {
+                    if (!response.ok) throw new Error('API returned ' + response.status);
+                    return response.json();
+                })
+                .then(function(data) {
+                    showLoading(false);
+                    isFirstLoad = false;
+
+                    var tournament = data.Tournament || {};
+                    var players = data.Players || [];
+
+                    // Sort players by Rank
+                    players.sort(function(a, b) {
+                        return (a.Rank || 999) - (b.Rank || 999);
+                    });
+
+                    var leader = players.length > 0 ? players[0] : null;
+                    var currentRound = tournament.CurrentRound || 1;
+
+                    // Update hero
+                    updateHero(tournament, leader);
+
+                    // Render leaderboard
+                    renderLeaderboard(players, currentRound);
+
+                    // Update timestamp
+                    updateTimestamp();
+
+                    // Schedule next refresh if tournament is live
+                    if (tournament.IsInProgress) {
+                        setTimeout(fetchLeaderboard, REFRESH_INTERVAL);
+                    } else if (!tournament.IsOver) {
+                        // Tournament hasn't started yet — check less frequently
+                        setTimeout(fetchLeaderboard, REFRESH_INTERVAL * 5);
+                    }
+                    // If tournament is over, no more refreshes
+                })
+                .catch(function(err) {
+                    console.warn('CartPath: API fetch failed, using fallback data.', err);
+                    showLoading(false);
+                    isFirstLoad = false;
+
+                    // Render fallback mock data
+                    renderFallback();
+                    updateTimestamp();
+
+                    // Retry after interval
+                    setTimeout(fetchLeaderboard, REFRESH_INTERVAL * 2);
+                });
+            }
+
+            // ── Upcoming schedule ──
+            function renderUpcoming(tournaments) {
+                var grid = document.getElementById('upcoming-grid');
+                if (!grid) return;
+                if (!tournaments || tournaments.length === 0) {
+                    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 0;font-family:var(--font-ui);font-size:13px;color:rgba(245,240,225,0.4);">No upcoming tournaments on the schedule.</div>';
+                    return;
+                }
+
+                var now = new Date();
+                now.setHours(0, 0, 0, 0);
+
+                var html = tournaments.map(function(t) {
+                    var start = new Date(t.StartDate);
+                    var end = new Date(t.EndDate);
+                    var dateRange = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+                        '\u2013' + end.toLocaleDateString('en-US', { day: 'numeric' });
+                    var daysUntil = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
+                    var countdown = daysUntil <= 0 ? 'Starts today'
+                        : daysUntil === 1 ? 'Starts tomorrow'
+                        : 'Begins in ' + daysUntil + ' days';
+                    var badge = '';
+                    if (t.IsMajor) {
+                        badge = '<div class="tour-card-status" style="background:var(--gold);color:var(--green-deep);font-weight:700;">MAJOR</div>';
+                    } else if (t.IsSignature) {
+                        badge = '<div class="tour-card-status" style="background:rgba(191,155,59,0.15);border:1px solid rgba(191,155,59,0.4);color:var(--gold);font-weight:600;">SIGNATURE EVENT</div>';
+                    } else {
+                        badge = '<div class="tour-card-status upcoming">Upcoming &middot; ' + dateRange + '</div>';
+                    }
+                    var venue = t.Venue
+                        ? t.Venue + (t.Location ? ' &middot; ' + t.Location : '')
+                        : 'Venue TBA';
+                    var purse = t.Purse > 0
+                        ? '<div class="purse">Purse: $' + (t.Purse).toLocaleString() + '</div>'
+                        : '';
+
+                    return '<div class="tour-card reveal visible">' +
+                        '<div class="tour-card-header">' +
+                            '<div class="tour-card-name">' + t.Name + '</div>' +
+                            '<div class="tour-card-course">' + venue + '</div>' +
+                            badge +
+                        '</div>' +
+                        '<div class="tour-card-upcoming">' +
+                            '<div class="countdown">' + countdown + '</div>' +
+                            purse +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+
+                grid.innerHTML = html;
+            }
+
+            function fetchUpcoming() {
+                fetch(PROXY_BASE + '/schedule?count=6')
+                    .then(function(res) { return res.ok ? res.json() : null; })
+                    .then(function(data) {
+                        if (data && data.Upcoming) {
+                            renderUpcoming(data.Upcoming);
+                        }
+                    })
+                    .catch(function(err) {
+                        console.warn('CartPath: upcoming schedule fetch failed.', err);
+                        var grid = document.getElementById('upcoming-grid');
+                        if (grid) {
+                            grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 0;font-family:var(--font-ui);font-size:13px;color:rgba(245,240,225,0.4);">Schedule unavailable right now.</div>';
+                        }
+                    });
+            }
+
+            // ── Kick off on load ──
+            fetchLeaderboard();
+            fetchUpcoming();
+
+        })();
+
+        // ── Scroll Reveal ──
+        document.addEventListener('DOMContentLoaded', function() {
+            var revealElements = document.querySelectorAll('.reveal');
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {
+                threshold: 0.1,
+                rootMargin: '0px 0px -40px 0px'
+            });
+
+            revealElements.forEach(function(el) {
+                observer.observe(el);
+            });
+        });
+
+        // ── Auto-calculate majors countdowns ──
+        (function() {
+            var majors = [
+                { id: 'masters-countdown', date: '2026-04-09' },
+                { id: 'pga-countdown', date: '2026-05-15' },
+                { id: 'usopen-countdown', date: '2026-06-12' },
+                { id: 'open-countdown', date: '2026-07-16' },
+            ];
+            var today = new Date();
+            today.setHours(0,0,0,0);
+            majors.forEach(function(m) {
+                var el = document.getElementById(m.id);
+                if (!el) return;
+                var target = new Date(m.date);
+                var diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+                if (diff <= 0) {
+                    el.textContent = 'NOW';
+                    var label = el.nextElementSibling;
+                    if (label) label.textContent = 'IN PROGRESS';
+                } else {
+                    el.textContent = diff;
+                    var label = el.nextElementSibling;
+                    if (label) label.textContent = diff === 1 ? 'DAY AWAY' : 'DAYS AWAY';
+                }
+            });
+        })();
+    </script>
+
+</body>
+</html>
