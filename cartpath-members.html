@@ -2318,6 +2318,7 @@
     if (tab === 'chat') {
       loadMessages();
       startChatPolling();
+      showChatAdminPanel();
     } else {
       stopChatPolling();
     }
@@ -2556,6 +2557,98 @@
     .catch(function(err) {
       console.error('Send error:', err);
     });
+  }
+
+  // ── CHAT ADMIN CONTROLS ──
+  var CHAT_ADMIN_API = 'https://ha2sinzpu3.execute-api.us-east-1.amazonaws.com/prod/chat-admin';
+
+  function isChatAdmin() {
+    var user = getUserInfo();
+    return ['dylan@williamsdigital.io', 'msowell@cartpath.com'].indexOf((user.email || '').toLowerCase()) !== -1;
+  }
+
+  function showChatAdminPanel() {
+    if (!isChatAdmin()) return;
+    var header = document.getElementById('chatHeader');
+    if (header && !document.getElementById('chatAdminBtn')) {
+      var btn = document.createElement('button');
+      btn.id = 'chatAdminBtn';
+      btn.innerHTML = '&#9881; Admin';
+      btn.style.cssText = 'background:rgba(191,155,59,0.1);border:1px solid rgba(191,155,59,0.2);color:var(--gold);font-family:Inter,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.1em;padding:6px 14px;border-radius:3px;cursor:pointer;';
+      btn.onclick = toggleAdminPanel;
+      header.appendChild(btn);
+    }
+  }
+
+  function toggleAdminPanel() {
+    var panel = document.getElementById('chatAdminPanel');
+    if (panel) { panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; return; }
+
+    panel = document.createElement('div');
+    panel.id = 'chatAdminPanel';
+    panel.style.cssText = 'position:absolute;top:60px;right:20px;z-index:100;background:#0D2A1E;border:1px solid rgba(191,155,59,0.2);border-radius:6px;padding:20px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+    panel.innerHTML = '<div style="font-family:Inter,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.2em;color:var(--gold);margin-bottom:16px;">CHAT ADMIN</div>'
+      + '<div style="margin-bottom:16px;"><div style="font-family:Inter,sans-serif;font-size:11px;color:rgba(245,240,225,0.5);margin-bottom:8px;">Create Channel</div>'
+      + '<input type="text" id="newChName" placeholder="channel-name" style="width:100%;background:#10352A;color:var(--cream);font-family:Inter,sans-serif;font-size:13px;padding:8px 12px;border:1px solid rgba(191,155,59,0.1);border-radius:3px;outline:none;margin-bottom:6px;">'
+      + '<input type="text" id="newChDesc" placeholder="Description" style="width:100%;background:#10352A;color:var(--cream);font-family:Inter,sans-serif;font-size:13px;padding:8px 12px;border:1px solid rgba(191,155,59,0.1);border-radius:3px;outline:none;margin-bottom:6px;">'
+      + '<div style="display:flex;gap:8px;margin-bottom:6px;"><select id="newChCat" style="flex:1;background:#10352A;color:var(--cream);font-family:Inter,sans-serif;font-size:12px;padding:8px;border:1px solid rgba(191,155,59,0.1);border-radius:3px;"><option value="general">General</option><option value="rounds">Rounds</option><option value="athletes">Athletes</option><option value="chairman">Chairman</option></select>'
+      + '<select id="newChTier" style="flex:1;background:#10352A;color:var(--cream);font-family:Inter,sans-serif;font-size:12px;padding:8px;border:1px solid rgba(191,155,59,0.1);border-radius:3px;"><option value="executive">All Members</option><option value="chairman">Chairman Only</option></select></div>'
+      + '<button onclick="adminCreateChannel()" style="width:100%;background:var(--gold);color:#091D14;font-family:Inter,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.15em;padding:10px;border:none;border-radius:3px;cursor:pointer;">Create Channel</button></div>'
+      + '<div style="border-top:1px solid rgba(191,155,59,0.08);padding-top:12px;"><div style="font-family:Inter,sans-serif;font-size:11px;color:rgba(245,240,225,0.5);margin-bottom:8px;">Current Channel Actions</div>'
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      + '<button onclick="adminDeleteChannel()" style="background:rgba(200,60,60,0.1);border:1px solid rgba(200,60,60,0.2);color:#E06060;font-family:Inter,sans-serif;font-size:10px;font-weight:600;padding:6px 12px;border-radius:3px;cursor:pointer;">Delete Channel</button>'
+      + '<button onclick="adminClearMessages()" style="background:rgba(200,160,50,0.1);border:1px solid rgba(200,160,50,0.2);color:#C8A832;font-family:Inter,sans-serif;font-size:10px;font-weight:600;padding:6px 12px;border-radius:3px;cursor:pointer;">Clear Messages</button>'
+      + '<button onclick="adminToggleLock()" style="background:rgba(100,180,255,0.1);border:1px solid rgba(100,180,255,0.2);color:#7CB8F0;font-family:Inter,sans-serif;font-size:10px;font-weight:600;padding:6px 12px;border-radius:3px;cursor:pointer;">Toggle Lock</button></div></div>'
+      + '<div style="margin-top:12px;font-family:Inter,sans-serif;font-size:9px;color:rgba(245,240,225,0.15);text-align:center;">Admin only</div>';
+
+    var chatGrid = document.querySelector('#tab-chat > div:nth-child(2)');
+    if (chatGrid) { chatGrid.style.position = 'relative'; chatGrid.appendChild(panel); }
+  }
+
+  function adminCreateChannel() {
+    var name = document.getElementById('newChName').value.trim();
+    var desc = document.getElementById('newChDesc').value.trim();
+    var cat = document.getElementById('newChCat').value;
+    var tier = document.getElementById('newChTier').value;
+    if (!name) { alert('Enter a channel name'); return; }
+    var chId = name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    var email = (getUserInfo().email || '').toLowerCase();
+    fetch(CHAT_ADMIN_API + '/channels', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + email }, body: JSON.stringify({ channelId: chId, name: '#' + chId, desc: desc, category: cat, minTier: tier, locked: tier === 'chairman' }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { alert('Channel #' + chId + ' created! Refresh to see it.'); document.getElementById('newChName').value = ''; document.getElementById('newChDesc').value = ''; } else { alert('Error: ' + (d.error || 'Unknown')); } });
+  }
+
+  function adminDeleteChannel() {
+    var roomId = chatChannelMap[currentChannel] || currentChannel;
+    if (!confirm('Delete #' + roomId + ' and all messages? Cannot be undone.')) return;
+    var email = (getUserInfo().email || '').toLowerCase();
+    fetch(CHAT_ADMIN_API + '/channels/' + roomId, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + email } })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) alert('Deleted. Refresh the page.'); });
+  }
+
+  function adminClearMessages() {
+    if (!confirm('Clear all messages in this channel?')) return;
+    var roomId = chatChannelMap[currentChannel] || currentChannel;
+    var email = (getUserInfo().email || '').toLowerCase();
+    fetch('https://ha2sinzpu3.execute-api.us-east-1.amazonaws.com/prod/chat/' + roomId + '/messages?limit=200')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      return Promise.all((data.messages || []).map(function(m) {
+        return fetch(CHAT_ADMIN_API + '/messages/' + roomId + '/' + m.timestamp, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + email } });
+      }));
+    })
+    .then(function() { alert('Messages cleared.'); loadMessages(); });
+  }
+
+  function adminToggleLock() {
+    var roomId = chatChannelMap[currentChannel] || currentChannel;
+    var tier = prompt('Set minimum tier:\n"executive" = all members\n"chairman" = chairman only');
+    if (!tier) return;
+    var email = (getUserInfo().email || '').toLowerCase();
+    fetch(CHAT_ADMIN_API + '/channels/' + roomId, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + email }, body: JSON.stringify({ minTier: tier, locked: tier === 'chairman' }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) alert('Permissions updated.'); });
   }
 
   // Poll for new messages every 3 seconds
