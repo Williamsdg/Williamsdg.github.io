@@ -836,6 +836,35 @@
       grid-template-columns: 1fr 1fr;
       gap: 24px;
     }
+    .course-filter-btn {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      padding: 6px 16px;
+      border-radius: 3px;
+      border: 1px solid rgba(191,155,59,0.1);
+      background: transparent;
+      color: rgba(245,240,225,0.4);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .course-filter-btn.active, .course-filter-btn:hover {
+      background: rgba(191,155,59,0.1);
+      border-color: rgba(191,155,59,0.25);
+      color: var(--gold);
+    }
+    .course-card {
+      background: rgba(16,53,42,0.35);
+      border: 1px solid rgba(191,155,59,0.08);
+      border-radius: 8px;
+      padding: 24px;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .course-card:hover {
+      border-color: rgba(191,155,59,0.2);
+      transform: translateY(-2px);
+    }
 
     .account-card {
       background: rgba(255,255,255,0.04);
@@ -1125,6 +1154,7 @@
       <button class="nav-tab" data-tab="roster">Roster</button>
       <button class="nav-tab" data-tab="livescores">Live Scores</button>
       <button class="nav-tab" data-tab="myrounds">My Rounds</button>
+      <button class="nav-tab" data-tab="courses">Courses</button>
       <button class="nav-tab chairman-only" data-tab="chat" style="display:none;">Chat</button>
       <button class="nav-tab" data-tab="account">Account</button>
     </div>
@@ -1143,6 +1173,7 @@
     <button class="nav-tab" data-tab="roster" onclick="switchTab('roster');closeMobileMenu();">Roster</button>
     <button class="nav-tab" data-tab="livescores" onclick="switchTab('livescores');closeMobileMenu();">Live Scores</button>
     <button class="nav-tab" data-tab="myrounds" onclick="switchTab('myrounds');closeMobileMenu();">My Rounds</button>
+    <button class="nav-tab" data-tab="courses" onclick="switchTab('courses');closeMobileMenu();">Courses</button>
     <button class="nav-tab chairman-only" data-tab="chat" onclick="switchTab('chat');closeMobileMenu();" style="display:none;">Chat</button>
     <button class="nav-tab" data-tab="account" onclick="switchTab('account');closeMobileMenu();">Account</button>
   </div>
@@ -1752,6 +1783,29 @@
         <div id="roundsList"></div>
       </div>
 
+    </div>
+
+    <!-- ===================== COURSES ===================== -->
+    <div class="tab-content" id="tab-courses">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2 class="section-title" style="font-size:1.6rem;margin-bottom:4px;">Course Directory</h2>
+          <p style="font-family: var(--font-body); font-size: 1rem; color: rgba(245,240,225,0.45);">Member ratings alongside Google reviews. Discover your next round.</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="course-filter-btn active" onclick="filterCourses('all')">All</button>
+          <button class="course-filter-btn" onclick="filterCourses('top')">Top Rated</button>
+          <button class="course-filter-btn" onclick="filterCourses('played')">Played</button>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div style="margin-bottom: 24px;">
+        <input type="text" id="courseDirectorySearch" placeholder="Search courses..." oninput="filterCourseList()" style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 14px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none;">
+      </div>
+
+      <!-- Course Cards -->
+      <div id="courseDirectory" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;"></div>
     </div>
 
     <!-- ===================== CHAT (Back Nine Only) ===================== -->
@@ -2638,6 +2692,156 @@
       console.error('Send error:', err);
     });
   }
+
+  // ── COURSE DIRECTORY ──
+
+  var allCourseData = [
+    { id: 'eastlake', name: 'East Lake Golf Club', location: 'Atlanta, GA', par: 72, yards: 7346, googleRating: 4.7, private: true },
+    { id: 'aac', name: 'Atlanta Athletic Club', location: 'Johns Creek, GA', par: 72, yards: 7580, googleRating: 4.6, private: true },
+    { id: 'tpc', name: 'TPC Sugarloaf', location: 'Duluth, GA', par: 72, yards: 7293, googleRating: 4.5, private: true },
+    { id: 'peachtree', name: 'Peachtree Golf Club', location: 'Atlanta, GA', par: 72, yards: 7043, googleRating: 4.8, private: true },
+    { id: 'capitalcity', name: 'Capital City Club', location: 'Milton, GA', par: 72, yards: 7100, googleRating: 4.4, private: true },
+    { id: 'atlantacc', name: 'Atlanta Country Club', location: 'Marietta, GA', par: 72, yards: 7018, googleRating: 4.3, private: true },
+    { id: 'hawksridge', name: 'Hawks Ridge Golf Club', location: 'Ball Ground, GA', par: 72, yards: 7100, googleRating: 4.5, private: false },
+    { id: 'echelon', name: 'Echelon Golf Club', location: 'Alpharetta, GA', par: 72, yards: 7150, googleRating: 4.6, private: true },
+    { id: 'augustanational', name: 'Augusta National Golf Club', location: 'Augusta, GA', par: 72, yards: 7565, googleRating: 4.9, private: true },
+    { id: 'pebblebeach', name: 'Pebble Beach Golf Links', location: 'Pebble Beach, CA', par: 72, yards: 6828, googleRating: 4.7, private: false },
+    { id: 'pinehurst', name: 'Pinehurst No. 2', location: 'Pinehurst, NC', par: 72, yards: 7588, googleRating: 4.6, private: false },
+    { id: 'tpcsawgrass', name: 'TPC Sawgrass', location: 'Ponte Vedra Beach, FL', par: 72, yards: 7245, googleRating: 4.5, private: false },
+    { id: 'quailhollow', name: 'Quail Hollow Club', location: 'Charlotte, NC', par: 72, yards: 7554, googleRating: 4.4, private: true },
+    { id: 'whistling', name: 'Whistling Straits', location: 'Haven, WI', par: 72, yards: 7790, googleRating: 4.6, private: false },
+    { id: 'oakmont', name: 'Oakmont Country Club', location: 'Oakmont, PA', par: 71, yards: 7255, googleRating: 4.5, private: true },
+  ];
+
+  var currentCourseFilter = 'all';
+
+  function getMemberCourseRatings() {
+    var rounds = typeof getSavedRounds === 'function' ? getSavedRounds() : [];
+    var ratings = {};
+    rounds.forEach(function(r) {
+      if (r.course && r.rating > 0) {
+        if (!ratings[r.course]) ratings[r.course] = { total: 0, count: 0, scores: [] };
+        ratings[r.course].total += r.rating;
+        ratings[r.course].count++;
+        ratings[r.course].scores.push(r.totalScore);
+      }
+    });
+    return ratings;
+  }
+
+  function getPlayedCourses() {
+    var rounds = typeof getSavedRounds === 'function' ? getSavedRounds() : [];
+    var played = {};
+    rounds.forEach(function(r) {
+      if (r.course) played[r.course] = true;
+    });
+    return played;
+  }
+
+  function renderCourseDirectory() {
+    var container = document.getElementById('courseDirectory');
+    var memberRatings = getMemberCourseRatings();
+    var playedCourses = getPlayedCourses();
+    var search = (document.getElementById('courseDirectorySearch')?.value || '').toLowerCase();
+
+    var filtered = allCourseData.filter(function(c) {
+      if (search && !c.name.toLowerCase().includes(search) && !c.location.toLowerCase().includes(search)) return false;
+      if (currentCourseFilter === 'played') return playedCourses[c.name];
+      if (currentCourseFilter === 'top') return c.googleRating >= 4.6;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;font-family:var(--font-ui);font-size:13px;color:rgba(245,240,225,0.2);">No courses match your filter.</div>';
+      return;
+    }
+
+    var html = '';
+    filtered.forEach(function(c) {
+      var mr = memberRatings[c.name];
+      var memberAvg = mr ? (mr.total / mr.count).toFixed(1) : null;
+      var memberCount = mr ? mr.count : 0;
+      var avgScore = mr ? Math.round(mr.scores.reduce(function(s,v){return s+v;},0) / mr.scores.length) : null;
+      var isPlayed = playedCourses[c.name];
+
+      html += '<div class="course-card">';
+
+      // Header
+      html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px;">';
+      html += '<div><div style="font-family:var(--font-display);font-size:1.15rem;font-weight:600;color:var(--cream);">' + c.name + '</div>';
+      html += '<div style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.35);margin-top:2px;">' + c.location + '</div></div>';
+      if (isPlayed) html += '<span style="font-family:var(--font-ui);font-size:9px;font-weight:600;letter-spacing:0.1em;color:#6DC86D;background:rgba(109,200,109,0.08);padding:3px 10px;border-radius:3px;">PLAYED</span>';
+      html += '</div>';
+
+      // Course info
+      html += '<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;">';
+      html += '<span style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.3);">Par ' + c.par + '</span>';
+      html += '<span style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.3);">' + c.yards.toLocaleString() + ' yards</span>';
+      html += '<span style="font-family:var(--font-ui);font-size:11px;color:rgba(245,240,225,0.3);">' + (c.private ? 'Private' : 'Public') + '</span>';
+      html += '</div>';
+
+      // Ratings row
+      html += '<div style="display:flex;gap:20px;padding-top:12px;border-top:1px solid rgba(191,155,59,0.06);">';
+
+      // Google Rating
+      html += '<div style="flex:1;">';
+      html += '<div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.25);margin-bottom:4px;">Google</div>';
+      html += '<div style="display:flex;align-items:center;gap:6px;">';
+      html += '<span style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--cream);">' + c.googleRating + '</span>';
+      html += '<span style="color:#D4A843;font-size:12px;">' + renderStars(c.googleRating) + '</span>';
+      html += '</div></div>';
+
+      // Member Rating
+      html += '<div style="flex:1;">';
+      html += '<div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(191,155,59,0.4);margin-bottom:4px;">CartPath Members</div>';
+      if (memberAvg) {
+        html += '<div style="display:flex;align-items:center;gap:6px;">';
+        html += '<span style="font-family:var(--font-display);font-size:1.2rem;font-weight:700;color:var(--gold);">' + memberAvg + '</span>';
+        html += '<span style="color:#D4A843;font-size:12px;">' + renderStars(parseFloat(memberAvg)) + '</span>';
+        html += '<span style="font-family:var(--font-ui);font-size:10px;color:rgba(245,240,225,0.2);">(' + memberCount + ')</span>';
+        html += '</div>';
+        if (avgScore) html += '<div style="font-family:var(--font-ui);font-size:10px;color:rgba(245,240,225,0.25);margin-top:4px;">Avg member score: ' + avgScore + '</div>';
+      } else {
+        html += '<div style="font-family:var(--font-ui);font-size:12px;color:rgba(245,240,225,0.15);">No ratings yet</div>';
+      }
+      html += '</div>';
+
+      html += '</div>';
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  function renderStars(rating) {
+    var full = Math.floor(rating);
+    var half = rating - full >= 0.3;
+    var stars = '';
+    for (var i = 0; i < 5; i++) {
+      if (i < full) stars += '&#9733;';
+      else if (i === full && half) stars += '&#9733;';
+      else stars += '<span style="opacity:0.2;">&#9733;</span>';
+    }
+    return stars;
+  }
+
+  function filterCourses(filter) {
+    currentCourseFilter = filter;
+    document.querySelectorAll('.course-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    event.target.classList.add('active');
+    renderCourseDirectory();
+  }
+
+  function filterCourseList() {
+    renderCourseDirectory();
+  }
+
+  // Render courses when tab is opened
+  var origSwitchTabCourses = switchTab;
+  switchTab = function(tab) {
+    origSwitchTabCourses(tab);
+    if (tab === 'courses') renderCourseDirectory();
+  };
 
   // ── COPY REFERRAL LINK ──
   function copyReferralLink() {
