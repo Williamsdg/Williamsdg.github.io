@@ -1608,15 +1608,19 @@
               </div>
             </div>
 
-            <!-- Date + Playing With -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+            <!-- Date + Playing With + Handicap -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 20px;">
               <div>
                 <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 6px;">DATE *</label>
                 <input type="date" id="roundDate" required style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 15px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none;">
               </div>
               <div>
                 <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 6px;">PLAYED WITH</label>
-                <input type="text" id="playedWith" placeholder="e.g. Charles Barkley, Guest" style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 15px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none;">
+                <input type="text" id="playedWith" placeholder="e.g. Charles Barkley" style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 15px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none;">
+              </div>
+              <div>
+                <label style="display: block; font-family: var(--font-ui); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: rgba(245,240,225,0.5); margin-bottom: 6px;">HANDICAP AT TIME OF ROUND</label>
+                <input type="number" id="handicapAtRound" min="0" max="54" step="0.1" placeholder="e.g. 12.4" style="width: 100%; background: var(--green-dark); color: var(--cream); font-family: var(--font-ui); font-size: 15px; padding: 14px 16px; border-radius: 4px; border: 1px solid rgba(191,155,59,0.1); outline: none; -moz-appearance: textfield;">
               </div>
             </div>
 
@@ -2686,6 +2690,7 @@
       scoreToPar: total - selectedCourse.par,
       holes: holes,
       playedWith: document.getElementById('playedWith').value.trim(),
+      handicap: parseFloat(document.getElementById('handicapAtRound').value) || null,
       rating: currentRating,
       notes: document.getElementById('roundNotes').value.trim(),
       createdAt: new Date().toISOString()
@@ -2722,11 +2727,32 @@
     var bestScore = Math.min.apply(null, rounds.map(function(r) { return r.totalScore; }));
     var avgToPar = (rounds.reduce(function(sum, r) { return sum + r.scoreToPar; }, 0) / totalRounds).toFixed(1);
 
-    var html = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;">';
+    // Handicap tracking
+    var roundsWithHandicap = rounds.filter(function(r) { return r.handicap !== null && r.handicap !== undefined; });
+    var currentHandicap = roundsWithHandicap.length > 0 ? roundsWithHandicap[0].handicap : null; // most recent
+    var firstHandicap = roundsWithHandicap.length > 0 ? roundsWithHandicap[roundsWithHandicap.length - 1].handicap : null;
+    var handicapChange = (currentHandicap !== null && firstHandicap !== null) ? (currentHandicap - firstHandicap).toFixed(1) : null;
+
+    var html = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;">';
     html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--gold);">' + totalRounds + '</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Rounds</div></div>';
     html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--cream);">' + avgScore + '</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Avg Score</div></div>';
     html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--cream);">' + bestScore + '</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Best Round</div></div>';
     html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:' + (parseFloat(avgToPar) <= 0 ? '#C62828' : 'rgba(245,240,225,0.5)') + ';">' + (avgToPar > 0 ? '+' + avgToPar : avgToPar) + '</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Avg to Par</div></div>';
+
+    // Current handicap stat
+    if (currentHandicap !== null) {
+      var changeStr = '';
+      var changeColor = 'rgba(245,240,225,0.3)';
+      if (handicapChange !== null && roundsWithHandicap.length > 1) {
+        var hc = parseFloat(handicapChange);
+        if (hc < 0) { changeStr = ' (' + handicapChange + ')'; changeColor = '#6DC86D'; }
+        else if (hc > 0) { changeStr = ' (+' + handicapChange + ')'; changeColor = '#C62828'; }
+        else { changeStr = ' (no change)'; }
+      }
+      html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--gold);">' + currentHandicap + '</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Handicap</div>' + (changeStr ? '<div style="font-family:var(--font-ui);font-size:10px;color:' + changeColor + ';margin-top:4px;">' + changeStr + '</div>' : '') + '</div>';
+    } else {
+      html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.08);border-radius:4px;padding:16px;text-align:center;"><div style="font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:rgba(245,240,225,0.2);">--</div><div style="font-family:var(--font-ui);font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(245,240,225,0.3);">Handicap</div></div>';
+    }
     html += '</div>';
 
     // Round cards
@@ -2741,6 +2767,8 @@
         stars += '<span style="color:' + (s < r.rating ? 'var(--gold)' : 'rgba(191,155,59,0.15)') + ';">&#9733;</span>';
       }
 
+      var handicapStr = r.handicap !== null && r.handicap !== undefined ? r.handicap.toString() : null;
+
       html += '<div style="background:rgba(16,53,42,0.3);border:1px solid rgba(191,155,59,0.06);border-radius:6px;padding:20px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">';
       html += '<div style="flex:1;min-width:200px;">';
       html += '<div style="font-family:var(--font-display);font-size:1.1rem;font-weight:600;color:var(--cream);margin-bottom:4px;">' + r.course + '</div>';
@@ -2753,6 +2781,7 @@
       html += '<div style="text-align:center;flex-shrink:0;">';
       html += '<div style="font-family:var(--font-display);font-size:2rem;font-weight:700;color:var(--cream);">' + r.totalScore + '</div>';
       html += '<div style="font-family:var(--font-ui);font-size:13px;font-weight:600;color:' + toParColor + ';">' + toParStr + '</div>';
+      if (handicapStr) html += '<div style="font-family:var(--font-ui);font-size:10px;color:rgba(191,155,59,0.5);margin-top:6px;padding:3px 10px;background:rgba(191,155,59,0.06);border-radius:3px;display:inline-block;">HCP ' + handicapStr + '</div>';
       html += '</div>';
       html += '</div>';
     });
