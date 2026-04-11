@@ -40,8 +40,17 @@ td.mono{font-family:'SF Mono',Consolas,monospace;font-size:0.78rem;color:#f59e0b
 
 <div class="header">
   <div class="logo">TB</div>
-  <h1>DNS Setup Instructions</h1>
-  <p class="subtitle">Add these records in GoDaddy for topbuttonrentals.com</p>
+  <h1>Top Button Rentals Setup</h1>
+  <p class="subtitle">DNS, Stripe webhook, and payment instructions</p>
+</div>
+
+<!-- Setup Fee Payment -->
+<div style="background:linear-gradient(135deg,#091c36,#0f3460);border:1px solid rgba(239,91,33,0.25);border-radius:14px;padding:28px;margin-bottom:40px;text-align:center;">
+  <p style="font-size:0.7rem;font-weight:700;color:#ef5b21;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">Setup Fee</p>
+  <p style="font-size:2rem;font-weight:800;color:#fff;line-height:1;margin-bottom:6px;">$700</p>
+  <p style="font-size:0.85rem;color:rgba(255,255,255,0.5);margin-bottom:20px;">One-time payment for website design, development, and deployment</p>
+  <a href="https://buy.stripe.com/00wdR9g6e6Hw6ad7zGcfK0o" target="_blank" rel="noopener" style="display:inline-block;background:#ef5b21;color:#fff;padding:14px 36px;border-radius:8px;font-weight:700;font-size:0.95rem;text-decoration:none;letter-spacing:0.5px;">Pay Setup Fee &rarr;</a>
+  <p style="font-size:0.72rem;color:rgba(255,255,255,0.3);margin-top:14px;">Secure checkout powered by Stripe</p>
 </div>
 
 <div class="section-title">Website (Vercel)</div>
@@ -164,6 +173,66 @@ td.mono{font-family:'SF Mono',Consolas,monospace;font-size:0.78rem;color:#f59e0b
 
 <div class="note">
   <strong>Note for DKIM record:</strong> The DKIM value is generated uniquely when a domain is added in Resend. Dylan will provide the full DKIM key value once the domain is added in the Resend dashboard.
+</div>
+
+<div class="section-title">Stripe Webhook Setup</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-num">!</div>
+    <div>
+      <div class="card-title">Why This is Needed</div>
+      <div class="card-desc">Automatically marks listings as paid when customers complete checkout</div>
+    </div>
+  </div>
+  <div class="card-body">
+    <p style="font-size:0.88rem;color:rgba(255,255,255,0.7);line-height:1.7;">When a property owner pays the $30/mo subscription, Stripe sends a webhook to Top Button Rentals. This webhook updates the listing status from "unpaid" to "paid" so it appears on the public site. Without this webhook, you'll have to manually mark every listing as paid in the admin dashboard.</p>
+  </div>
+</div>
+
+<div class="steps">
+  <h2>How to Set Up the Stripe Webhook</h2>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-text">Log into your <strong>Stripe Dashboard</strong> &rarr; go to <strong>Developers</strong> &rarr; <strong>Webhooks</strong></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-text">Click <strong>Add endpoint</strong> (top right)</div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-text"><strong>Endpoint URL:</strong> paste <span style="font-family:'SF Mono',Consolas,monospace;color:#f59e0b;background:rgba(0,0,0,0.3);padding:2px 8px;border-radius:4px;">https://topbuttonrentals.com/api/stripe-webhook</span></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-text"><strong>Description:</strong> "Top Button Rentals &mdash; Payment Status Updates"</div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-text">Under <strong>Select events to listen to</strong>, click <strong>+ Select events</strong> and add these two:
+      <ul style="margin-top:10px;padding-left:20px;">
+        <li style="padding:4px 0;"><span style="font-family:'SF Mono',Consolas,monospace;color:#f59e0b;">checkout.session.completed</span> &mdash; fires when someone first subscribes</li>
+        <li style="padding:4px 0;"><span style="font-family:'SF Mono',Consolas,monospace;color:#f59e0b;">invoice.paid</span> &mdash; fires every month on renewal</li>
+      </ul>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-text">Click <strong>Add endpoint</strong> to save</div>
+  </div>
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-text">Click on the webhook you just created &rarr; click <strong>Reveal signing secret</strong> &rarr; copy the value (starts with <span style="font-family:'SF Mono',Consolas,monospace;color:#f59e0b;">whsec_...</span>)</div>
+  </div>
+  <div class="step">
+    <div class="step-num">8</div>
+    <div class="step-text"><strong>Send the signing secret to Dylan</strong> at <a href="mailto:dylan@williamsdigital.io" style="color:#ef5b21;">dylan@williamsdigital.io</a> so it can be added to the Vercel environment variables. Treat it like a password &mdash; never share it publicly.</div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>What you'll also need to send Dylan:</strong> The Stripe secret key from <strong>Developers &rarr; API Keys &rarr; Secret key</strong> (starts with <span style="font-family:'SF Mono',Consolas,monospace;">sk_live_...</span>). This is required so the webhook can verify payments. Again, treat it like a password.
 </div>
 
 <div class="footer">
