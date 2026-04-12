@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Santorini Photography — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            aegean: { DEFAULT: '#1a6b8a', light: '#2a8db3', dark: '#0d4f6a' },
+            'santorini-white': '#f8f6f3',
+            'santorini-cream': '#f0ebe3',
+            'santorini-blue': '#2563eb',
+            'santorini-sky': '#87ceeb',
+            'santorini-navy': '#1e3a5f',
+            'santorini-gold': { DEFAULT: '#c8a45e', light: '#dbb978' },
+            'santorini-terracotta': '#c47a5a',
+            'santorini-stone': '#8b8178',
+            'santorini-charcoal': '#2d2926',
+          },
+          fontFamily: {
+            display: ['Cormorant Garamond', 'Georgia', 'Times New Roman', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: #f8f6f3; color: #2d2926; font-family: system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f0ebe3; }
+    ::-webkit-scrollbar-thumb { background: #c8a45e; border-radius: 3px; }
+    .santorini-gradient { background: linear-gradient(135deg, #1a6b8a 0%, #2a8db3 50%, #87ceeb 100%); }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+  <div id="app" class="flex min-h-screen">
+
+    <!-- Mobile Overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 z-40 hidden lg:hidden" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed h-full z-50 w-64 bg-santorini-navy flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0">
+      <div class="p-6 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <i data-lucide="sun" class="w-5 h-5 text-santorini-gold"></i>
+          <span class="font-display text-white text-lg tracking-wide">Dashboard</span>
+        </div>
+      </div>
+      <nav class="flex-1 p-4 space-y-1" id="sidebar-nav"></nav>
+      <div class="p-4 border-t border-white/10">
+        <a href="santorini-photography.html" class="flex items-center gap-3 px-4 py-3 text-white/50 hover:text-white/80 text-sm transition-colors">
+          <i data-lucide="eye" class="w-4 h-4"></i>
+          View Live Site
+        </a>
+        <button class="w-full flex items-center gap-3 px-4 py-3 text-white/50 hover:text-white/80 text-sm transition-colors text-left">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          Settings
+        </button>
+        <button class="w-full flex items-center gap-3 px-4 py-3 text-white/50 hover:text-white/80 text-sm transition-colors text-left">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          Log Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-64 min-h-screen">
+      <!-- Top Bar -->
+      <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center gap-4">
+          <button class="lg:hidden p-2 text-gray-600 hover:text-gray-900" onclick="toggleMobileSidebar()">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <div class="lg:hidden flex items-center gap-2">
+            <i data-lucide="sun" class="w-5 h-5 text-santorini-gold"></i>
+            <span class="font-display text-santorini-navy">Dashboard</span>
+          </div>
+          <div class="relative hidden sm:block">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input type="text" placeholder="Search bookings, clients..." class="pl-10 pr-4 py-2 bg-gray-50 rounded-xl text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-aegean/20 focus:border-aegean w-72" />
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors" id="notif-bell">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" id="notif-dot"></span>
+          </button>
+          <div class="w-8 h-8 rounded-full santorini-gradient flex items-center justify-center">
+            <i data-lucide="camera" class="w-4 h-4 text-white"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Mobile Tabs -->
+      <div class="lg:hidden flex overflow-x-auto border-b border-gray-200 bg-white px-2" id="mobile-tabs"></div>
+
+      <!-- Content Area -->
+      <div class="p-6" id="content"></div>
+    </main>
+  </div>
+
+<script>
+// ─── State ───
+let activeTab = 'overview';
+let selectedBooking = null;
+let selectedChat = null;
+let chatInput = '';
+
+const bookings = [
+  { id:'BK001', client:'Sarah & James Mitchell', email:'sarah.m@gmail.com', date:'2026-06-15', time:'Golden Hour (5-7pm)', package:'Aegean Dream', type:'Honeymoon', location:'Oia — Blue Domes & Sunset', status:'pending', groupSize:2, notes:'Just married! Want romantic, dreamy shots with lots of blue dome backgrounds.', amount:'€550', paymentStatus:'unpaid', documentStatus:'none' },
+  { id:'BK002', client:'Akiko Tanaka', email:'akiko.t@outlook.jp', date:'2026-06-18', time:'Sunrise (6-8am)', package:'Golden Hour', type:'Solo / Portrait', location:'Imerovigli — Skaros Rock', status:'pending', groupSize:1, notes:'Solo traveler, first time in Greece. Wants Instagram-ready content.', amount:'€350', paymentStatus:'unpaid', documentStatus:'none' },
+  { id:'BK003', client:'The Rodriguez Family', email:'carlos.rodriguez@gmail.com', date:'2026-06-22', time:'Golden Hour (5-7pm)', package:'Odyssey', type:'Family', location:'Multiple locations', status:'approved', groupSize:5, notes:'Family reunion! 2 adults, 3 kids (ages 3, 7, 11). Want fun, candid shots.', amount:'€850', paymentStatus:'partial', documentStatus:'sent' },
+  { id:'BK004', client:'Emily & David Chen', email:'emily.chen@icloud.com', date:'2026-05-30', time:'Sunrise (6-8am)', package:'Aegean Dream', type:'Proposal', location:'Akrotiri — Lighthouse', status:'completed', groupSize:2, notes:'SURPRISE PROPOSAL — David is proposing. She said yes!', amount:'€550', paymentStatus:'paid', documentStatus:'signed' },
+  { id:'BK005', client:'Marco & Luca Bianchi', email:'marco.b@gmail.com', date:'2026-07-01', time:'Golden Hour (5-7pm)', package:'Aegean Dream', type:'Couple', location:'Fira — Cliffside Streets', status:'pending', groupSize:2, notes:'Anniversary trip. Love moody, editorial style photography.', amount:'€550', paymentStatus:'unpaid', documentStatus:'none' },
+];
+
+const conversations = [
+  {
+    clientName:'Sarah & James Mitchell', bookingId:'BK001',
+    lastMessage:'Can we also get some shots at a wine bar?', time:'2 hours ago', unread:2,
+    messages:[
+      { id:'m1', sender:'client', text:"Hi! We're so excited for our shoot!", time:'Yesterday 3:45 PM' },
+      { id:'m2', sender:'photographer', text:"Welcome! I'm thrilled to work with you. The blue domes at sunset will be absolutely perfect for your honeymoon photos.", time:'Yesterday 4:12 PM' },
+      { id:'m3', sender:'client', text:"That sounds amazing! We were wondering about outfits — any color recommendations?", time:'Yesterday 5:30 PM' },
+      { id:'m4', sender:'photographer', text:"Earthy tones and whites photograph beautifully against the blue and white architecture. Avoid busy patterns. I'll send a full style guide!", time:'Yesterday 5:45 PM' },
+      { id:'m5', sender:'client', text:"Perfect! Also, can we also get some shots at a wine bar?", time:'Today 10:30 AM' },
+      { id:'m6', sender:'client', text:"Can we also get some shots at a wine bar?", time:'Today 10:31 AM' },
+    ],
+  },
+  {
+    clientName:'The Rodriguez Family', bookingId:'BK003',
+    lastMessage:'Great, we signed the contract!', time:'5 hours ago', unread:0,
+    messages:[
+      { id:'m7', sender:'photographer', text:"Hi Rodriguez family! I've sent over the contract for your session. Please review and sign at your convenience.", time:'Yesterday 11:00 AM' },
+      { id:'m8', sender:'client', text:"Great, we signed the contract!", time:'Today 7:15 AM' },
+    ],
+  },
+  {
+    clientName:'Marco & Luca Bianchi', bookingId:'BK005',
+    lastMessage:'We love editorial and moody tones', time:'1 day ago', unread:1,
+    messages:[
+      { id:'m9', sender:'client', text:"Ciao! We love editorial and moody tones — think Vogue Italia meets Greek sunset. Can you do that style?", time:'Yesterday 9:00 AM' },
+    ],
+  },
+];
+
+const statusColors = {
+  pending: 'bg-amber-50 text-amber-700 border-amber-200',
+  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  completed: 'bg-blue-50 text-blue-700 border-blue-200',
+  cancelled: 'bg-red-50 text-red-700 border-red-200',
+};
+const paymentColors = { unpaid:'text-red-500', partial:'text-amber-500', paid:'text-emerald-500' };
+
+const tabDefs = [
+  { id:'overview', label:'Overview', icon:'trending-up' },
+  { id:'bookings', label:'Bookings', icon:'calendar' },
+  { id:'payments', label:'Payments', icon:'dollar-sign' },
+  { id:'documents', label:'Documents', icon:'file-text' },
+  { id:'chat', label:'Messages', icon:'message-circle' },
+];
+
+// ─── Helpers ───
+function getPendingCount() { return bookings.filter(b => b.status === 'pending').length; }
+function getApprovedCount() { return bookings.filter(b => b.status === 'approved').length; }
+function getTotalRevenue() { return bookings.filter(b => b.paymentStatus === 'paid').reduce((s, b) => s + parseInt(b.amount.replace('€','')), 0); }
+function getPendingRevenue() { return bookings.filter(b => b.paymentStatus !== 'paid' && b.status !== 'cancelled').reduce((s, b) => s + parseInt(b.amount.replace('€','')), 0); }
+function getUnreadCount() { return conversations.reduce((s, c) => s + c.unread, 0); }
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function icon(name, cls='w-4 h-4') { return `<i data-lucide="${name}" class="${cls}"></i>`; }
+function fmtDate(d) { const dt = new Date(d); return dt.toLocaleDateString('en', { month:'short' }); }
+function fmtDay(d) { return new Date(d).getDate(); }
+
+function toggleMobileSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('-translate-x-full');
+  ov.classList.toggle('hidden');
+}
+
+// ─── Actions ───
+function approveBooking(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) b.status = 'approved';
+  if (selectedBooking && selectedBooking.id === id) selectedBooking = b;
+  render();
+}
+function declineBooking(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) b.status = 'cancelled';
+  if (selectedBooking && selectedBooking.id === id) selectedBooking = b;
+  render();
+}
+function sendPaymentLink(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) b.paymentStatus = 'partial';
+  if (selectedBooking && selectedBooking.id === id) selectedBooking = b;
+  render();
+  showToast('Payment link sent!');
+}
+function sendDocument(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) b.documentStatus = 'sent';
+  if (selectedBooking && selectedBooking.id === id) selectedBooking = b;
+  render();
+  showToast('Contract sent!');
+}
+function selectBooking(id) {
+  selectedBooking = bookings.find(x => x.id === id) || null;
+  activeTab = 'bookings';
+  render();
+}
+function backToBookings() { selectedBooking = null; render(); }
+function switchTab(id) { activeTab = id; selectedBooking = null; selectedChat = null; render(); }
+function selectChat(i) { selectedChat = i; conversations[i].unread = 0; render(); }
+function sendMessage() {
+  const inp = document.getElementById('chat-input');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text || selectedChat === null) return;
+  conversations[selectedChat].messages.push({ id:'m'+Date.now(), sender:'photographer', text, time:'Just now' });
+  conversations[selectedChat].lastMessage = text;
+  conversations[selectedChat].time = 'Just now';
+  inp.value = '';
+  render();
+  setTimeout(() => {
+    const area = document.getElementById('chat-messages');
+    if (area) area.scrollTop = area.scrollHeight;
+  }, 50);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'fixed bottom-6 right-6 bg-santorini-navy text-white px-5 py-3 rounded-xl text-sm shadow-lg z-50 fade-in flex items-center gap-2';
+  t.innerHTML = `${icon('check-circle','w-4 h-4 text-emerald-400')} ${msg}`;
+  document.body.appendChild(t);
+  lucide.createIcons({ attrs: { class: '' }, nameAttr: 'data-lucide' });
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
+}
+
+// ─── Render ───
+function render() {
+  renderSidebar();
+  renderMobileTabs();
+  renderContent();
+  lucide.createIcons({ attrs: { class: '' }, nameAttr: 'data-lucide' });
+  // Update notification dot
+  const dot = document.getElementById('notif-dot');
+  if (dot) dot.style.display = getPendingCount() > 0 ? '' : 'none';
+}
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = tabDefs.map(t => {
+    const active = activeTab === t.id;
+    let badge = '';
+    if (t.id === 'bookings' && getPendingCount() > 0)
+      badge = `<span class="ml-auto bg-santorini-gold text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">${getPendingCount()}</span>`;
+    if (t.id === 'chat' && getUnreadCount() > 0)
+      badge = `<span class="ml-auto bg-rose-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">${getUnreadCount()}</span>`;
+    return `<button onclick="switchTab('${t.id}')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${active ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80 hover:bg-white/5'}">
+      ${icon(t.icon)} ${t.label} ${badge}
+    </button>`;
+  }).join('');
+}
+
+function renderMobileTabs() {
+  const mt = document.getElementById('mobile-tabs');
+  mt.innerHTML = tabDefs.map(t => {
+    const active = activeTab === t.id;
+    return `<button onclick="switchTab('${t.id}')" class="flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-all ${active ? 'border-aegean text-aegean' : 'border-transparent text-gray-400'}">
+      ${icon(t.icon)} ${t.label}
+    </button>`;
+  }).join('');
+}
+
+function renderContent() {
+  const el = document.getElementById('content');
+  if (activeTab === 'overview') el.innerHTML = renderOverview();
+  else if (activeTab === 'bookings' && !selectedBooking) el.innerHTML = renderBookingsList();
+  else if (activeTab === 'bookings' && selectedBooking) el.innerHTML = renderBookingDetail();
+  else if (activeTab === 'payments') el.innerHTML = renderPayments();
+  else if (activeTab === 'documents') el.innerHTML = renderDocuments();
+  else if (activeTab === 'chat') el.innerHTML = renderChat();
+}
+
+// ─── OVERVIEW ───
+function renderOverview() {
+  const pending = getPendingCount();
+  const approved = getApprovedCount();
+  const rev = getTotalRevenue();
+  const prevRev = getPendingRevenue();
+  const stats = [
+    { label:'Pending Requests', value:pending, icon:'clock', color:'text-amber-500', bg:'bg-amber-50' },
+    { label:'Upcoming Shoots', value:approved, icon:'camera', color:'text-aegean', bg:'bg-blue-50' },
+    { label:'Revenue (Paid)', value:`€${rev}`, icon:'trending-up', color:'text-emerald-500', bg:'bg-emerald-50' },
+    { label:'Pending Revenue', value:`€${prevRev}`, icon:'dollar-sign', color:'text-santorini-gold', bg:'bg-amber-50' },
+  ];
+
+  const pendingBookings = bookings.filter(b => b.status === 'pending');
+  const approvedBookings = bookings.filter(b => b.status === 'approved');
+
+  let pendingHTML;
+  if (pendingBookings.length === 0) {
+    pendingHTML = `<div class="p-8 text-center text-gray-400 text-sm">${icon('check-circle','w-8 h-8 mx-auto mb-2 text-emerald-300')} All caught up! No pending requests.</div>`;
+  } else {
+    pendingHTML = `<div class="divide-y divide-gray-50">${pendingBookings.map(b => `
+      <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-full bg-santorini-cream flex items-center justify-center">${icon('heart','w-4 h-4 text-santorini-gold')}</div>
+          <div>
+            <div class="text-sm font-medium text-gray-900">${b.client}</div>
+            <div class="text-xs text-gray-500">${b.date} &middot; ${b.package} &middot; ${b.type}</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="approveBooking('${b.id}')" class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors" title="Approve">${icon('check')}</button>
+          <button onclick="declineBooking('${b.id}')" class="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors" title="Decline">${icon('x')}</button>
+          <button onclick="selectBooking('${b.id}')" class="p-2 bg-gray-50 text-gray-500 rounded-lg hover:bg-gray-100 transition-colors" title="View Details">${icon('eye')}</button>
+        </div>
+      </div>`).join('')}</div>`;
+  }
+
+  let upcomingHTML;
+  if (approvedBookings.length === 0) {
+    upcomingHTML = `<div class="p-8 text-center text-gray-400 text-sm">${icon('calendar','w-8 h-8 mx-auto mb-2 text-gray-300')} No upcoming shoots yet.</div>`;
+  } else {
+    upcomingHTML = `<div class="divide-y divide-gray-50">${approvedBookings.map(b => {
+      const pLabel = b.paymentStatus === 'paid' ? 'Paid' : b.paymentStatus === 'partial' ? 'Deposit Sent' : 'Unpaid';
+      return `<div class="px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="text-center"><div class="text-xs text-gray-500">${fmtDate(b.date)}</div><div class="text-lg font-semibold text-santorini-navy">${fmtDay(b.date)}</div></div>
+          <div><div class="text-sm font-medium text-gray-900">${b.client}</div><div class="text-xs text-gray-500 flex items-center gap-2">${icon('map-pin','w-3 h-3')} ${b.location}</div></div>
+        </div>
+        <span class="text-xs ${paymentColors[b.paymentStatus]}">${pLabel}</span>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  return `<div class="fade-in">
+    <h1 class="font-display text-2xl text-santorini-navy mb-6">Kalimera! Here's your overview.</h1>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      ${stats.map(s => `<div class="bg-white rounded-xl p-5 border border-gray-100">
+        <div class="w-10 h-10 ${s.bg} rounded-lg flex items-center justify-center mb-3">${icon(s.icon, 'w-5 h-5 '+s.color)}</div>
+        <div class="text-2xl font-semibold text-gray-900">${s.value}</div>
+        <div class="text-sm text-gray-500">${s.label}</div>
+      </div>`).join('')}
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="font-display text-lg text-santorini-navy">Pending Approvals</h2>
+        <button onclick="switchTab('bookings')" class="text-sm text-aegean hover:text-aegean-dark flex items-center gap-1">View All ${icon('chevron-right')}</button>
+      </div>
+      ${pendingHTML}
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100"><h2 class="font-display text-lg text-santorini-navy">Upcoming Shoots</h2></div>
+      ${upcomingHTML}
+    </div>
+  </div>`;
+}
+
+// ─── BOOKINGS LIST ───
+function renderBookingsList() {
+  return `<div class="fade-in">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="font-display text-2xl text-santorini-navy">All Bookings</h1>
+      <button class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">${icon('filter')} Filter</button>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div class="divide-y divide-gray-50">
+        ${bookings.map(b => `<button onclick="selectBooking('${b.id}')" class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors text-left">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-santorini-cream flex items-center justify-center flex-shrink-0">${icon('users','w-4 h-4 text-santorini-gold')}</div>
+            <div><div class="text-sm font-medium text-gray-900">${b.client}</div><div class="text-xs text-gray-500">${b.date} &middot; ${b.package} &middot; ${b.type}</div></div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs px-3 py-1 rounded-full border ${statusColors[b.status]}">${cap(b.status)}</span>
+            <span class="text-sm font-medium text-gray-900">${b.amount}</span>
+            ${icon('chevron-right','w-4 h-4 text-gray-400')}
+          </div>
+        </button>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── BOOKING DETAIL ───
+function renderBookingDetail() {
+  const b = selectedBooking;
+  const fields = [
+    { label:'Date', value:b.date, ic:'calendar' },
+    { label:'Time', value:b.time, ic:'clock' },
+    { label:'Package', value:b.package, ic:'camera' },
+    { label:'Session Type', value:b.type, ic:'heart' },
+    { label:'Location', value:b.location, ic:'map-pin' },
+    { label:'Group Size', value:`${b.groupSize} people`, ic:'users' },
+  ];
+
+  let approvalBlock = '';
+  if (b.status === 'pending') {
+    approvalBlock = `<div class="bg-white rounded-xl border border-gray-100 p-5">
+      <h3 class="text-sm font-medium text-gray-900 mb-4">Approval</h3>
+      <div class="space-y-2">
+        <button onclick="approveBooking('${b.id}')" class="w-full flex items-center justify-center gap-2 bg-emerald-500 text-white py-2.5 rounded-lg text-sm hover:bg-emerald-600 transition-colors">${icon('check')} Approve Session</button>
+        <button onclick="declineBooking('${b.id}')" class="w-full flex items-center justify-center gap-2 bg-white border border-red-200 text-red-500 py-2.5 rounded-lg text-sm hover:bg-red-50 transition-colors">${icon('x')} Decline</button>
+      </div>
+    </div>`;
+  }
+
+  const payLabel = b.paymentStatus === 'paid' ? 'Paid in Full' : b.paymentStatus === 'partial' ? 'Link Sent' : 'Not Sent';
+  const payBtn = b.paymentStatus !== 'paid' ? `<button onclick="sendPaymentLink('${b.id}')" class="w-full flex items-center justify-center gap-2 bg-santorini-navy text-white py-2.5 rounded-lg text-sm hover:bg-aegean-dark transition-colors">${icon('credit-card')} ${b.paymentStatus === 'partial' ? 'Resend Payment Link' : 'Send Payment Link'}</button>` : '';
+
+  let docStatusHTML, docStatusClass;
+  if (b.documentStatus === 'signed') { docStatusHTML = `${icon('check-circle','w-3.5 h-3.5')} Signed`; docStatusClass = 'text-emerald-500'; }
+  else if (b.documentStatus === 'sent') { docStatusHTML = `${icon('clock','w-3.5 h-3.5')} Awaiting Signature`; docStatusClass = 'text-amber-500'; }
+  else { docStatusHTML = 'Not Sent'; docStatusClass = 'text-gray-400'; }
+
+  const docBtn = b.documentStatus !== 'signed' ? `<button onclick="sendDocument('${b.id}')" class="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition-colors">${icon('file-signature')} ${b.documentStatus === 'sent' ? 'Resend Document' : 'Send Contract'}</button>` : '';
+
+  const chatIdx = conversations.findIndex(c => c.bookingId === b.id);
+  const msgBtn = chatIdx >= 0
+    ? `<button onclick="activeTab='chat';selectedChat=${chatIdx};render();" class="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">${icon('message-circle')} Message Client</button>`
+    : `<button class="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">${icon('message-circle')} Message Client</button>`;
+
+  return `<div class="fade-in">
+    <button onclick="backToBookings()" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6"><i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Bookings</button>
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white rounded-xl border border-gray-100 p-6">
+          <div class="flex items-start justify-between mb-6">
+            <div><h2 class="font-display text-2xl text-santorini-navy mb-1">${b.client}</h2><p class="text-sm text-gray-500">${b.email}</p></div>
+            <span class="text-xs px-3 py-1 rounded-full border ${statusColors[b.status]}">${cap(b.status)}</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            ${fields.map(f => `<div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">${icon(f.ic,'w-4 h-4 text-santorini-stone flex-shrink-0')}<div><div class="text-xs text-gray-500">${f.label}</div><div class="text-sm text-gray-900">${f.value}</div></div></div>`).join('')}
+          </div>
+          ${b.notes ? `<div class="mt-6 p-4 bg-amber-50/50 border border-amber-100 rounded-lg"><div class="text-xs text-amber-700 font-medium mb-1">Client Notes</div><p class="text-sm text-amber-900/70">${b.notes}</p></div>` : ''}
+        </div>
+      </div>
+      <div class="space-y-4">
+        ${approvalBlock}
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Payment</h3>
+          <div class="flex items-center justify-between mb-4"><span class="text-sm text-gray-500">Amount</span><span class="text-lg font-semibold text-gray-900">${b.amount}</span></div>
+          <div class="flex items-center justify-between mb-4"><span class="text-sm text-gray-500">Status</span><span class="text-sm font-medium ${paymentColors[b.paymentStatus]}">${payLabel}</span></div>
+          ${payBtn}
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Contract / Waiver</h3>
+          <div class="flex items-center justify-between mb-4"><span class="text-sm text-gray-500">Status</span><span class="text-sm font-medium flex items-center gap-1 ${docStatusClass}">${docStatusHTML}</span></div>
+          ${docBtn}
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Quick Actions</h3>
+          <div class="space-y-2">
+            ${msgBtn}
+            <button class="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">${icon('image')} Upload Gallery</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── PAYMENTS ───
+function renderPayments() {
+  const rev = getTotalRevenue();
+  const prevRev = getPendingRevenue();
+  const active = bookings.filter(b => b.status !== 'cancelled');
+  return `<div class="fade-in">
+    <h1 class="font-display text-2xl text-santorini-navy mb-6">Payments</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 p-5"><div class="text-sm text-gray-500 mb-1">Total Paid</div><div class="text-2xl font-semibold text-emerald-600">€${rev}</div></div>
+      <div class="bg-white rounded-xl border border-gray-100 p-5"><div class="text-sm text-gray-500 mb-1">Pending</div><div class="text-2xl font-semibold text-amber-500">€${prevRev}</div></div>
+      <div class="bg-white rounded-xl border border-gray-100 p-5"><div class="text-sm text-gray-500 mb-1">Total Pipeline</div><div class="text-2xl font-semibold text-santorini-navy">€${rev + prevRev}</div></div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-100">
+          <tr>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Client</th>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Package</th>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Amount</th>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
+            <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          ${active.map(b => {
+            const pLabel = b.paymentStatus === 'paid' ? 'Paid' : b.paymentStatus === 'partial' ? 'Link Sent' : 'Unpaid';
+            const btn = b.paymentStatus !== 'paid' ? `<button onclick="sendPaymentLink('${b.id}')" class="text-sm text-aegean hover:text-aegean-dark flex items-center gap-1 ml-auto">${icon('send','w-3.5 h-3.5')} Send Link</button>` : '';
+            return `<tr class="hover:bg-gray-50/50">
+              <td class="px-6 py-4 text-sm text-gray-900">${b.client}</td>
+              <td class="px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">${b.package}</td>
+              <td class="px-6 py-4 text-sm font-medium text-gray-900">${b.amount}</td>
+              <td class="px-6 py-4"><span class="text-sm font-medium ${paymentColors[b.paymentStatus]}">${pLabel}</span></td>
+              <td class="px-6 py-4 text-right">${btn}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ─── DOCUMENTS ───
+function renderDocuments() {
+  const active = bookings.filter(b => b.status !== 'cancelled');
+  return `<div class="fade-in">
+    <h1 class="font-display text-2xl text-santorini-navy mb-6">Contracts & Documents</h1>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div class="divide-y divide-gray-50">
+        ${active.map(b => {
+          let icBg, icColor;
+          if (b.documentStatus === 'signed') { icBg = 'bg-emerald-50'; icColor = 'text-emerald-500'; }
+          else if (b.documentStatus === 'sent') { icBg = 'bg-amber-50'; icColor = 'text-amber-500'; }
+          else { icBg = 'bg-gray-50'; icColor = 'text-gray-400'; }
+
+          let badge;
+          if (b.documentStatus === 'signed') badge = `<span class="text-xs px-3 py-1 rounded-full flex items-center gap-1 bg-emerald-50 text-emerald-700">${icon('check-circle','w-3 h-3')} Signed</span>`;
+          else if (b.documentStatus === 'sent') badge = `<span class="text-xs px-3 py-1 rounded-full flex items-center gap-1 bg-amber-50 text-amber-700">${icon('clock','w-3 h-3')} Pending</span>`;
+          else badge = `<span class="text-xs px-3 py-1 rounded-full bg-gray-50 text-gray-500">Not Sent</span>`;
+
+          let actionBtn;
+          if (b.documentStatus !== 'signed') {
+            actionBtn = `<button onclick="sendDocument('${b.id}')" class="flex items-center gap-1.5 px-4 py-2 bg-santorini-navy text-white rounded-lg text-sm hover:bg-aegean-dark transition-colors">${icon('send','w-3.5 h-3.5')} ${b.documentStatus === 'sent' ? 'Resend' : 'Send'}</button>`;
+          } else {
+            actionBtn = `<button class="flex items-center gap-1.5 px-4 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100 transition-colors">${icon('external-link','w-3.5 h-3.5')} View</button>`;
+          }
+
+          return `<div class="px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center ${icBg}">${icon('file-text','w-5 h-5 '+icColor)}</div>
+              <div><div class="text-sm font-medium text-gray-900">${b.client}</div><div class="text-xs text-gray-500">Photography Session Contract &middot; ${b.package}</div></div>
+            </div>
+            <div class="flex items-center gap-4 ml-14 sm:ml-0">${badge} ${actionBtn}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── CHAT ───
+function renderChat() {
+  const convoList = conversations.map((c, i) => {
+    const active = selectedChat === i;
+    const unreadBadge = c.unread > 0 ? `<span class="ml-2 bg-aegean text-white text-xs w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">${c.unread}</span>` : '';
+    return `<button onclick="selectChat(${i})" class="w-full p-4 text-left border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${active ? 'bg-aegean/5 border-l-2 border-l-aegean' : ''}">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm font-medium text-gray-900 truncate">${c.clientName}</span>
+        <span class="text-xs text-gray-400 flex-shrink-0 ml-2">${c.time}</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500 truncate">${c.lastMessage}</span>
+        ${unreadBadge}
+      </div>
+    </button>`;
+  }).join('');
+
+  let chatArea;
+  if (selectedChat !== null) {
+    const convo = conversations[selectedChat];
+    const msgs = convo.messages.map(m => {
+      const isMe = m.sender === 'photographer';
+      return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+        <div class="max-w-[70%] rounded-2xl px-4 py-3 ${isMe ? 'bg-santorini-navy text-white rounded-br-md' : 'bg-gray-100 text-gray-900 rounded-bl-md'}">
+          <p class="text-sm">${m.text}</p>
+          <p class="text-xs mt-1 ${isMe ? 'text-white/50' : 'text-gray-400'}">${m.time}</p>
+        </div>
+      </div>`;
+    }).join('');
+
+    chatArea = `<div class="flex-1 flex flex-col">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div><div class="text-sm font-medium text-gray-900">${convo.clientName}</div><div class="text-xs text-gray-500">Booking ${convo.bookingId}</div></div>
+        <button class="p-2 text-gray-400 hover:text-gray-600">${icon('more-horizontal')}</button>
+      </div>
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4">${msgs}</div>
+      <div class="px-6 py-4 border-t border-gray-100">
+        <div class="flex items-center gap-3">
+          <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors">${icon('paperclip')}</button>
+          <input id="chat-input" type="text" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-gray-50 rounded-xl text-sm border-0 focus:outline-none focus:ring-2 focus:ring-aegean/20" onkeydown="if(event.key==='Enter')sendMessage()" />
+          <button onclick="sendMessage()" class="p-2.5 bg-santorini-navy text-white rounded-xl hover:bg-aegean-dark transition-colors">${icon('send')}</button>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    chatArea = `<div class="flex-1 flex items-center justify-center text-gray-400">
+      <div class="text-center">${icon('message-circle','w-12 h-12 mx-auto mb-3 text-gray-300')}<p class="text-sm">Select a conversation to start messaging</p></div>
+    </div>`;
+  }
+
+  return `<div class="fade-in">
+    <h1 class="font-display text-2xl text-santorini-navy mb-6">Messages</h1>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden flex flex-col lg:flex-row" style="height:calc(100vh - 220px)">
+      <div class="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col lg:max-h-full max-h-48 overflow-hidden">
+        <div class="p-4 border-b border-gray-100">
+          <div class="relative">${icon('search','absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400')}<input type="text" placeholder="Search conversations..." class="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg text-sm border-0 focus:outline-none focus:ring-2 focus:ring-aegean/20" /></div>
+        </div>
+        <div class="flex-1 overflow-y-auto">${convoList}</div>
+      </div>
+      ${chatArea}
+    </div>
+  </div>`;
+}
+
+// ─── Init ───
+render();
+// Scroll chat to bottom on load if chat is active
+setTimeout(() => {
+  const area = document.getElementById('chat-messages');
+  if (area) area.scrollTop = area.scrollHeight;
+}, 100);
+</script>
+</body>
+</html>
