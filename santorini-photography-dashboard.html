@@ -165,10 +165,50 @@ const paymentColors = { unpaid:'text-red-500', partial:'text-amber-500', paid:'t
 const tabDefs = [
   { id:'overview', label:'Overview', icon:'trending-up' },
   { id:'bookings', label:'Bookings', icon:'calendar' },
+  { id:'galleries', label:'Galleries', icon:'image' },
   { id:'payments', label:'Payments', icon:'dollar-sign' },
   { id:'documents', label:'Documents', icon:'file-text' },
   { id:'chat', label:'Messages', icon:'message-circle' },
 ];
+
+// ─── Galleries State ───
+let selectedGallery = null;
+let showCreateGallery = false;
+const galleries = [
+  {
+    id: 'GAL001', client: 'Emily & David Chen', bookingId: 'BK004', title: 'Chen Proposal — Akrotiri Lighthouse',
+    status: 'delivered', password: 'chen2026', photos: 87, coverPhoto: 'https://santorinivacationphotography.com/wp-content/uploads/2019/05/engagement-photo-session-in-santorini-island-greece-2.jpg',
+    createdDate: '2026-06-02', viewCount: 34, downloadStatus: 'paid', price: '€0', favorites: 12,
+    shareLink: 'santorini-photography-gallery.html',
+    photoList: [
+      'https://santorinivacationphotography.com/wp-content/uploads/2019/05/engagement-photo-session-in-santorini-island-greece-2.jpg',
+      'https://santorinivacationphotography.com/wp-content/uploads/2017/06/santorini-honeymoon-2.jpg',
+      'https://santorinivacationphotography.com/wp-content/uploads/2019/12/santorini-honeymoon-1.jpg',
+      'https://santorinivacationphotography.com/wp-content/uploads/2020/06/santorini-photographer-anna-s-02.jpg',
+      'https://santorinivacationphotography.com/wp-content/uploads/2020/06/santorini-photographer-anna-s-03.jpg',
+      'https://santorinivacationphotography.com/wp-content/uploads/2019/09/santorini-romatic-liflestyle-photographer-candid-shoot-4.jpg',
+    ]
+  },
+  {
+    id: 'GAL002', client: 'The Rodriguez Family', bookingId: 'BK003', title: 'Rodriguez Family — Multi-Location',
+    status: 'editing', password: '', photos: 0, coverPhoto: 'https://santorinivacationphotography.com/wp-content/uploads/2020/06/santorini-photographer-anna-s-03.jpg',
+    createdDate: '2026-06-23', viewCount: 0, downloadStatus: 'unpaid', price: '€850', favorites: 0,
+    shareLink: '', photoList: []
+  },
+  {
+    id: 'GAL003', client: 'Sarah & James Mitchell', bookingId: 'BK001', title: 'Mitchell Honeymoon — Oia Sunset',
+    status: 'draft', password: '', photos: 0, coverPhoto: 'https://santorinivacationphotography.com/wp-content/uploads/2019/12/santorini-honeymoon-1.jpg',
+    createdDate: '', viewCount: 0, downloadStatus: 'unpaid', price: '€550', favorites: 0,
+    shareLink: '', photoList: []
+  },
+];
+
+const galleryStatusColors = {
+  draft: 'bg-gray-100 text-gray-600',
+  editing: 'bg-amber-50 text-amber-700',
+  delivered: 'bg-emerald-50 text-emerald-700',
+  downloaded: 'bg-blue-50 text-blue-700',
+};
 
 // ─── Helpers ───
 function getPendingCount() { return bookings.filter(b => b.status === 'pending').length; }
@@ -221,7 +261,28 @@ function selectBooking(id) {
   render();
 }
 function backToBookings() { selectedBooking = null; render(); }
-function switchTab(id) { activeTab = id; selectedBooking = null; selectedChat = null; render(); }
+function switchTab(id) { activeTab = id; selectedBooking = null; selectedChat = null; selectedGallery = null; showCreateGallery = false; render(); }
+function selectGallery(id) { selectedGallery = galleries.find(g => g.id === id) || null; render(); }
+function backToGalleries() { selectedGallery = null; showCreateGallery = false; render(); }
+function setGalleryPassword(id) {
+  const pw = prompt('Set gallery password:');
+  if (pw) { const g = galleries.find(x => x.id === id); if (g) { g.password = pw; render(); showToast('Password set!'); } }
+}
+function publishGallery(id) {
+  const g = galleries.find(x => x.id === id);
+  if (g) { g.status = 'delivered'; g.shareLink = 'santorini-photography-gallery.html'; if (!g.password) g.password = g.client.split(' ')[0].toLowerCase() + '2026'; render(); showToast('Gallery published & link ready!'); }
+}
+function copyGalleryLink(id) {
+  const g = galleries.find(x => x.id === id);
+  if (g && g.shareLink) { navigator.clipboard?.writeText?.('https://williamsdigital.io/' + g.shareLink); showToast('Gallery link copied!'); }
+}
+function sendGalleryLink(id) {
+  showToast('Gallery link sent to client via email!');
+}
+function togglePaywall(id) {
+  const g = galleries.find(x => x.id === id);
+  if (g) { g.downloadStatus = g.downloadStatus === 'paid' ? 'unpaid' : 'paid'; render(); showToast(g.downloadStatus === 'paid' ? 'Downloads unlocked!' : 'Paywall enabled — client must pay to download.'); }
+}
 function selectChat(i) { selectedChat = i; conversations[i].unread = 0; render(); }
 function sendMessage() {
   const inp = document.getElementById('chat-input');
@@ -289,6 +350,8 @@ function renderContent() {
   if (activeTab === 'overview') el.innerHTML = renderOverview();
   else if (activeTab === 'bookings' && !selectedBooking) el.innerHTML = renderBookingsList();
   else if (activeTab === 'bookings' && selectedBooking) el.innerHTML = renderBookingDetail();
+  else if (activeTab === 'galleries' && !selectedGallery) el.innerHTML = renderGalleriesList();
+  else if (activeTab === 'galleries' && selectedGallery) el.innerHTML = renderGalleryDetail();
   else if (activeTab === 'payments') el.innerHTML = renderPayments();
   else if (activeTab === 'documents') el.innerHTML = renderDocuments();
   else if (activeTab === 'chat') el.innerHTML = renderChat();
@@ -547,6 +610,225 @@ function renderDocuments() {
             <div class="flex items-center gap-4 ml-14 sm:ml-0">${badge} ${actionBtn}</div>
           </div>`;
         }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── GALLERIES LIST ───
+function renderGalleriesList() {
+  const galleryCards = galleries.map(g => {
+    const statusBadge = `<span class="text-xs px-3 py-1 rounded-full ${galleryStatusColors[g.status]}">${cap(g.status)}</span>`;
+    const hasPassword = g.password ? `<span class="text-xs text-emerald-600 flex items-center gap-1">${icon('lock','w-3 h-3')} Protected</span>` : `<span class="text-xs text-gray-400 flex items-center gap-1">${icon('lock-open','w-3 h-3')} No password</span>`;
+    const paywall = g.downloadStatus !== 'paid' && g.price !== '€0' ? `<span class="text-xs text-amber-600 flex items-center gap-1">${icon('credit-card','w-3 h-3')} Pay to download</span>` : `<span class="text-xs text-emerald-600 flex items-center gap-1">${icon('download','w-3 h-3')} Downloads open</span>`;
+
+    return `<button onclick="selectGallery('${g.id}')" class="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all text-left group">
+      <div class="h-40 bg-cover bg-center relative" style="background-image:url('${g.coverPhoto}')">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+        <div class="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+          <div>
+            <div class="text-white text-sm font-medium">${g.client}</div>
+            <div class="text-white/70 text-xs">${g.photos} photos</div>
+          </div>
+          ${statusBadge}
+        </div>
+      </div>
+      <div class="p-4">
+        <div class="text-sm font-medium text-gray-900 mb-2 truncate">${g.title}</div>
+        <div class="flex items-center gap-3 flex-wrap">
+          ${hasPassword}
+          ${paywall}
+          ${g.viewCount > 0 ? `<span class="text-xs text-gray-500 flex items-center gap-1">${icon('eye','w-3 h-3')} ${g.viewCount} views</span>` : ''}
+          ${g.favorites > 0 ? `<span class="text-xs text-rose-500 flex items-center gap-1">${icon('heart','w-3 h-3')} ${g.favorites} favorites</span>` : ''}
+        </div>
+      </div>
+    </button>`;
+  }).join('');
+
+  return `<div class="fade-in">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="font-display text-2xl text-santorini-navy">Client Galleries</h1>
+        <p class="text-sm text-gray-500 mt-1">Create password-protected galleries with pay-to-download</p>
+      </div>
+      <button onclick="showCreateGallery=true;render()" class="flex items-center gap-2 px-5 py-2.5 bg-santorini-navy text-white rounded-xl text-sm hover:bg-aegean-dark transition-colors">
+        ${icon('plus','w-4 h-4')} New Gallery
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <div class="text-2xl font-semibold text-gray-900">${galleries.length}</div>
+        <div class="text-xs text-gray-500">Total Galleries</div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <div class="text-2xl font-semibold text-emerald-600">${galleries.filter(g=>g.status==='delivered').length}</div>
+        <div class="text-xs text-gray-500">Delivered</div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <div class="text-2xl font-semibold text-amber-600">${galleries.filter(g=>g.status==='editing').length}</div>
+        <div class="text-xs text-gray-500">In Progress</div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <div class="text-2xl font-semibold text-gray-900">${galleries.reduce((s,g)=>s+g.viewCount,0)}</div>
+        <div class="text-xs text-gray-500">Total Views</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">${galleryCards}</div>
+  </div>`;
+}
+
+// ─── GALLERY DETAIL ───
+function renderGalleryDetail() {
+  const g = selectedGallery;
+  const statusBadge = `<span class="text-xs px-3 py-1 rounded-full border ${galleryStatusColors[g.status]}">${cap(g.status)}</span>`;
+
+  const photoGrid = g.photoList.length > 0 ? g.photoList.map((p, i) => `
+    <div class="aspect-[3/4] rounded-lg bg-cover bg-center relative group overflow-hidden cursor-pointer" style="background-image:url('${p}?w=400')">
+      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+        <div class="opacity-0 group-hover:opacity-100 transition-all flex gap-2">
+          <span class="bg-white/90 rounded-full p-2">${icon('heart','w-4 h-4 text-rose-500')}</span>
+          <span class="bg-white/90 rounded-full p-2">${icon('download','w-4 h-4 text-gray-700')}</span>
+        </div>
+      </div>
+    </div>
+  `).join('') : `<div class="col-span-full py-16 text-center text-gray-400">
+    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">${icon('image','w-8 h-8 text-gray-300')}</div>
+    <p class="text-sm mb-3">No photos uploaded yet</p>
+    <button class="px-5 py-2 bg-santorini-navy text-white rounded-lg text-sm hover:bg-aegean-dark transition-colors">${icon('upload','w-4 h-4 inline mr-1')} Upload Photos</button>
+  </div>`;
+
+  return `<div class="fade-in">
+    <button onclick="backToGalleries()" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6">
+      ${icon('chevron-left','w-4 h-4')} Back to Galleries
+    </button>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+      <!-- Main content -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Header card with cover -->
+        <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div class="h-48 bg-cover bg-center relative" style="background-image:url('${g.coverPhoto}')">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <div class="absolute bottom-4 left-6 right-6 flex items-end justify-between">
+              <div>
+                <h2 class="text-white font-display text-2xl">${g.title}</h2>
+                <p class="text-white/70 text-sm">${g.client} · ${g.photos} photos</p>
+              </div>
+              ${statusBadge}
+            </div>
+          </div>
+        </div>
+
+        <!-- Photo grid -->
+        <div class="bg-white rounded-xl border border-gray-100 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-medium text-gray-900">Gallery Photos</h3>
+            ${g.photoList.length > 0 ? `<button class="flex items-center gap-1.5 px-4 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100">${icon('upload','w-3.5 h-3.5')} Add More</button>` : ''}
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">${photoGrid}</div>
+        </div>
+      </div>
+
+      <!-- Sidebar controls -->
+      <div class="space-y-4">
+        <!-- Access & Security -->
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-4 flex items-center gap-2">${icon('shield','w-4 h-4 text-aegean')} Access & Security</h3>
+
+          <div class="space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs text-gray-500">Password Protection</span>
+                <span class="text-xs ${g.password ? 'text-emerald-600' : 'text-gray-400'}">${g.password ? 'Enabled' : 'Disabled'}</span>
+              </div>
+              ${g.password ? `
+                <div class="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg">
+                  <span class="text-sm font-mono text-gray-700 flex-1">${g.password}</span>
+                  <button onclick="navigator.clipboard?.writeText?.('${g.password}');showToast('Password copied!')" class="p-1.5 text-gray-400 hover:text-gray-600">${icon('copy','w-3.5 h-3.5')}</button>
+                </div>
+              ` : ''}
+              <button onclick="setGalleryPassword('${g.id}')" class="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                ${icon('lock','w-3.5 h-3.5')} ${g.password ? 'Change Password' : 'Set Password'}
+              </button>
+            </div>
+
+            <div class="border-t border-gray-100 pt-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-gray-500">Download Access</span>
+              </div>
+              <div class="flex items-center gap-2 p-3 rounded-lg ${g.downloadStatus === 'paid' ? 'bg-emerald-50' : 'bg-amber-50'}">
+                ${g.downloadStatus === 'paid'
+                  ? `${icon('download','w-4 h-4 text-emerald-600')} <span class="text-sm text-emerald-700">Downloads unlocked</span>`
+                  : `${icon('credit-card','w-4 h-4 text-amber-600')} <span class="text-sm text-amber-700">Payment required — ${g.price}</span>`
+                }
+              </div>
+              <button onclick="togglePaywall('${g.id}')" class="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                ${icon('toggle-right','w-3.5 h-3.5')} ${g.downloadStatus === 'paid' ? 'Enable Paywall' : 'Unlock Downloads'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Share & Deliver -->
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-4 flex items-center gap-2">${icon('share-2','w-4 h-4 text-aegean')} Share & Deliver</h3>
+
+          ${g.status === 'delivered' && g.shareLink ? `
+            <div class="p-3 bg-gray-50 rounded-lg mb-3">
+              <div class="text-xs text-gray-500 mb-1">Gallery Link</div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-aegean truncate flex-1">williamsdigital.io/${g.shareLink}</span>
+                <button onclick="copyGalleryLink('${g.id}')" class="p-1.5 text-gray-400 hover:text-gray-600">${icon('copy','w-3.5 h-3.5')}</button>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <button onclick="sendGalleryLink('${g.id}')" class="w-full flex items-center justify-center gap-2 bg-santorini-navy text-white py-2.5 rounded-lg text-sm hover:bg-aegean-dark transition-colors">
+                ${icon('send','w-3.5 h-3.5')} Email Gallery Link
+              </button>
+              <button onclick="copyGalleryLink('${g.id}')" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-gray-700 py-2.5 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                ${icon('link','w-3.5 h-3.5')} Copy Link
+              </button>
+            </div>
+          ` : `
+            <button onclick="publishGallery('${g.id}')" class="w-full flex items-center justify-center gap-2 ${g.photoList.length > 0 ? 'bg-santorini-navy text-white hover:bg-aegean-dark' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} py-2.5 rounded-lg text-sm transition-colors" ${g.photoList.length === 0 ? 'disabled' : ''}>
+              ${icon('globe','w-3.5 h-3.5')} Publish Gallery
+            </button>
+            ${g.photoList.length === 0 ? '<p class="text-xs text-gray-400 text-center mt-2">Upload photos first to publish</p>' : ''}
+          `}
+        </div>
+
+        <!-- Activity -->
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">${icon('activity','w-4 h-4 text-aegean')} Activity</h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-gray-500">Views</span>
+              <span class="font-medium text-gray-900">${g.viewCount}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-gray-500">Favorites</span>
+              <span class="font-medium text-rose-500">${g.favorites}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-gray-500">Created</span>
+              <span class="font-medium text-gray-900">${g.createdDate || 'Not yet'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview as client -->
+        ${g.status === 'delivered' ? `
+        <a href="santorini-photography-gallery.html" target="_blank" class="block bg-gradient-to-br from-aegean to-aegean-dark rounded-xl p-5 text-white hover:opacity-90 transition-opacity">
+          <div class="flex items-center gap-3 mb-2">
+            ${icon('external-link','w-5 h-5')}
+            <span class="text-sm font-medium">Preview as Client</span>
+          </div>
+          <p class="text-xs text-white/70">See exactly what your client sees — password page, gallery, and download experience.</p>
+        </a>
+        ` : ''}
       </div>
     </div>
   </div>`;

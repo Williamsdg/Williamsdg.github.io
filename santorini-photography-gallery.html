@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Gallery — Santorini Vacation Photography</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            aegean: { DEFAULT: '#1a6b8a', light: '#2a8db3', dark: '#0d4f6a' },
+            'santorini-white': '#f8f6f3',
+            'santorini-cream': '#f0ebe3',
+            'santorini-navy': '#1e3a5f',
+            'santorini-gold': { DEFAULT: '#c8a45e', light: '#dbb978' },
+            'santorini-stone': '#8b8178',
+            'santorini-charcoal': '#2d2926',
+          },
+          fontFamily: {
+            display: ['Cormorant Garamond', 'Georgia', 'Times New Roman', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: #f8f6f3; color: #2d2926; font-family: system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f0ebe3; }
+    ::-webkit-scrollbar-thumb { background: #c8a45e; border-radius: 3px; }
+    .fade-in { animation: fadeIn 0.6s ease-out; }
+    .fade-in-up { animation: fadeInUp 0.6s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .shake { animation: shake 0.5s ease-in-out; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+    /* Lightbox */
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .lightbox.active { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; }
+
+    /* Watermark overlay for unpaid */
+    .watermarked::after {
+      content: 'PREVIEW';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif; font-size: 2rem; letter-spacing: 0.3em;
+      color: rgba(255,255,255,0.25); pointer-events: none;
+      transform: rotate(-20deg);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-santorini-white">
+  <div id="app"></div>
+
+<script>
+// ─── State ───
+let authenticated = false;
+let paid = false;
+let favorites = new Set();
+let lightboxPhoto = null;
+
+const GALLERY = {
+  title: 'Chen Proposal — Akrotiri Lighthouse',
+  client: 'Emily & David Chen',
+  photographer: 'Anna Sulte',
+  date: 'May 30, 2026',
+  password: 'chen2026',
+  price: '€0',
+  requiresPayment: false,
+  photos: [
+    { id: 1, src: 'https://santorinivacationphotography.com/wp-content/uploads/2019/05/engagement-photo-session-in-santorini-island-greece-2.jpg', caption: 'The moment' },
+    { id: 2, src: 'https://santorinivacationphotography.com/wp-content/uploads/2017/06/santorini-honeymoon-2.jpg', caption: 'Blue dome walk' },
+    { id: 3, src: 'https://santorinivacationphotography.com/wp-content/uploads/2019/12/santorini-honeymoon-1.jpg', caption: 'Caldera sunset' },
+    { id: 4, src: 'https://santorinivacationphotography.com/wp-content/uploads/2020/06/santorini-photographer-anna-s-02.jpg', caption: 'Cliffside portrait' },
+    { id: 5, src: 'https://santorinivacationphotography.com/wp-content/uploads/2020/06/santorini-photographer-anna-s-03.jpg', caption: 'Golden hour glow' },
+    { id: 6, src: 'https://santorinivacationphotography.com/wp-content/uploads/2019/09/santorini-romatic-liflestyle-photographer-candid-shoot-4.jpg', caption: 'Candid laugh' },
+    { id: 7, src: 'https://santorinivacationphotography.com/wp-content/uploads/2020/12/santorini-photographer-anna-s-05.jpg', caption: 'The ring' },
+    { id: 8, src: 'https://santorinivacationphotography.com/wp-content/uploads/2019/03/dsc_7265-4.jpg', caption: 'She said yes' },
+    { id: 9, src: 'https://santorinivacationphotography.com/wp-content/uploads/2019/01/4-greece-photographer-engaged-vacation-photo-shoot-8.jpg', caption: 'Lighthouse love' },
+    { id: 10, src: 'https://santorinivacationphotography.com/wp-content/uploads/2020/12/featured-anna-sulte-photographer-santorini.jpg', caption: 'Final portrait' },
+    { id: 11, src: 'https://santorinivacationphotography.com/wp-content/uploads/2019/12/santorini-honeymoon-1.jpg', caption: 'Panorama view' },
+    { id: 12, src: 'https://santorinivacationphotography.com/wp-content/uploads/2019/05/engagement-photo-session-in-santorini-island-greece-2.jpg', caption: 'Together forever' },
+  ]
+};
+
+function icon(name, cls='w-4 h-4') { return `<i data-lucide="${name}" class="${cls}"></i>`; }
+
+function toggleFavorite(id) {
+  if (favorites.has(id)) favorites.delete(id);
+  else favorites.add(id);
+  render();
+}
+
+function openLightbox(id) {
+  lightboxPhoto = GALLERY.photos.find(p => p.id === id);
+  render();
+}
+
+function closeLightbox() {
+  lightboxPhoto = null;
+  render();
+}
+
+function navLightbox(dir) {
+  if (!lightboxPhoto) return;
+  const idx = GALLERY.photos.findIndex(p => p.id === lightboxPhoto.id);
+  const next = (idx + dir + GALLERY.photos.length) % GALLERY.photos.length;
+  lightboxPhoto = GALLERY.photos[next];
+  render();
+}
+
+function tryPassword() {
+  const inp = document.getElementById('pw-input');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (val === GALLERY.password) {
+    authenticated = true;
+    render();
+  } else {
+    const form = document.getElementById('pw-form');
+    if (form) form.classList.add('shake');
+    inp.value = '';
+    inp.placeholder = 'Incorrect password — try again';
+    setTimeout(() => form?.classList.remove('shake'), 500);
+  }
+}
+
+function mockPay() {
+  paid = true;
+  render();
+}
+
+function downloadAll() {
+  if (GALLERY.requiresPayment && !paid) return;
+  alert('In production, this would download a ZIP of all high-res photos.');
+}
+
+function render() {
+  const app = document.getElementById('app');
+
+  if (!authenticated) {
+    app.innerHTML = renderPasswordGate();
+  } else {
+    app.innerHTML = renderGallery();
+  }
+
+  // Lightbox
+  let lb = document.getElementById('lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'lightbox';
+    lb.className = 'lightbox';
+    lb.onclick = (e) => { if (e.target === lb) closeLightbox(); };
+    document.body.appendChild(lb);
+  }
+  if (lightboxPhoto) {
+    lb.classList.add('active');
+    lb.innerHTML = `
+      <button onclick="closeLightbox()" class="absolute top-6 right-6 text-white/70 hover:text-white z-10">${icon('x','w-6 h-6')}</button>
+      <button onclick="navLightbox(-1)" class="absolute left-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-2 bg-white/10 rounded-full">${icon('chevron-left','w-6 h-6')}</button>
+      <button onclick="navLightbox(1)" class="absolute right-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-2 bg-white/10 rounded-full">${icon('chevron-right','w-6 h-6')}</button>
+      <div class="text-center">
+        <img src="${lightboxPhoto.src}" alt="${lightboxPhoto.caption}" class="fade-in" />
+        <p class="text-white/70 text-sm mt-4 font-display text-lg">${lightboxPhoto.caption}</p>
+      </div>
+    `;
+  } else {
+    lb.classList.remove('active');
+    lb.innerHTML = '';
+  }
+
+  lucide.createIcons({ attrs: { class: '' }, nameAttr: 'data-lucide' });
+}
+
+function renderPasswordGate() {
+  return `
+  <div class="min-h-screen flex items-center justify-center px-6 fade-in">
+    <div class="max-w-md w-full text-center">
+      <!-- Cover photo -->
+      <div class="w-32 h-32 rounded-full mx-auto mb-8 bg-cover bg-center shadow-xl shadow-santorini-navy/10 border-4 border-white" style="background-image: url('${GALLERY.photos[0].src}')"></div>
+
+      <img src="https://santorinivacationphotography.com/wp-content/uploads/2019/03/cropped-simple_gold-and-black.png" alt="Logo" class="w-12 h-12 mx-auto mb-4 object-contain">
+
+      <h1 class="font-display text-3xl md:text-4xl text-santorini-navy mb-2">${GALLERY.title}</h1>
+      <p class="text-santorini-stone text-sm mb-1">Photos by ${GALLERY.photographer}</p>
+      <p class="text-santorini-stone/60 text-xs mb-8">${GALLERY.date} &middot; ${GALLERY.photos.length} photos</p>
+
+      <div id="pw-form" class="max-w-xs mx-auto">
+        <div class="relative mb-4">
+          ${icon('lock','absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-santorini-stone')}
+          <input
+            id="pw-input"
+            type="password"
+            placeholder="Enter gallery password"
+            class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-santorini-cream bg-white text-santorini-charcoal text-sm focus:outline-none focus:ring-2 focus:ring-aegean/30 focus:border-aegean transition-all"
+            onkeydown="if(event.key==='Enter')tryPassword()"
+          />
+        </div>
+        <button onclick="tryPassword()" class="w-full bg-santorini-navy text-white py-3.5 rounded-xl text-sm font-medium tracking-wide hover:bg-aegean-dark transition-colors flex items-center justify-center gap-2">
+          ${icon('arrow-right','w-4 h-4')} View Gallery
+        </button>
+      </div>
+
+      <p class="text-xs text-santorini-stone/50 mt-8">This gallery is password protected. Your photographer shared the password with you via email.</p>
+    </div>
+  </div>`;
+}
+
+function renderGallery() {
+  const favCount = favorites.size;
+  const showPaywall = GALLERY.requiresPayment && !paid;
+
+  const photoGrid = GALLERY.photos.map(p => {
+    const isFav = favorites.has(p.id);
+    return `
+    <div class="group relative overflow-hidden rounded-xl cursor-pointer ${showPaywall ? 'watermarked' : ''}" onclick="openLightbox(${p.id})">
+      <div class="aspect-[3/4] bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('${p.src}?w=600')"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+
+      <!-- Hover controls -->
+      <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+        <span class="text-white text-xs font-display">${p.caption}</span>
+        <div class="flex gap-1.5" onclick="event.stopPropagation()">
+          <button onclick="toggleFavorite(${p.id})" class="p-1.5 rounded-full ${isFav ? 'bg-rose-500 text-white' : 'bg-white/80 text-gray-700 hover:bg-white'}">
+            ${icon('heart', 'w-3.5 h-3.5' + (isFav ? ' fill-current' : ''))}
+          </button>
+          ${!showPaywall ? `<button onclick="alert('Downloading high-res photo...')" class="p-1.5 rounded-full bg-white/80 text-gray-700 hover:bg-white">${icon('download','w-3.5 h-3.5')}</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="fade-in-up">
+    <!-- Header -->
+    <div class="sticky top-0 z-40 bg-santorini-white/90 backdrop-blur-md border-b border-santorini-cream/50">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="https://santorinivacationphotography.com/wp-content/uploads/2019/03/cropped-simple_gold-and-black.png" alt="Logo" class="w-8 h-8 object-contain">
+          <div>
+            <h1 class="font-display text-lg text-santorini-navy leading-tight">${GALLERY.title}</h1>
+            <p class="text-xs text-santorini-stone">${GALLERY.photos.length} photos &middot; ${GALLERY.date}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          ${favCount > 0 ? `<span class="text-xs text-rose-500 flex items-center gap-1">${icon('heart','w-3.5 h-3.5')} ${favCount}</span>` : ''}
+          ${!showPaywall ? `
+            <button onclick="downloadAll()" class="hidden sm:flex items-center gap-2 px-5 py-2 bg-santorini-navy text-white rounded-lg text-sm hover:bg-aegean-dark transition-colors">
+              ${icon('download','w-4 h-4')} Download All
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+
+    ${showPaywall ? `
+    <!-- Paywall banner -->
+    <div class="bg-gradient-to-r from-santorini-navy to-aegean-dark text-white">
+      <div class="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          ${icon('lock','w-5 h-5 text-santorini-gold')}
+          <div>
+            <p class="text-sm font-medium">High-res downloads are locked</p>
+            <p class="text-xs text-white/60">Preview your photos below. Pay to unlock full-resolution downloads.</p>
+          </div>
+        </div>
+        <button onclick="mockPay()" class="flex items-center gap-2 bg-white text-santorini-navy px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-santorini-cream transition-colors flex-shrink-0">
+          ${icon('credit-card','w-4 h-4')} Pay ${GALLERY.price} to Download
+        </button>
+      </div>
+    </div>
+    ` : ''}
+
+    ${!showPaywall && GALLERY.requiresPayment ? `
+    <!-- Paid confirmation -->
+    <div class="bg-emerald-50 border-b border-emerald-100">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3">
+        ${icon('check-circle','w-5 h-5 text-emerald-600')}
+        <p class="text-sm text-emerald-700">Payment confirmed! You can now download all photos in full resolution.</p>
+      </div>
+    </div>
+    ` : ''}
+
+    <!-- Cover section -->
+    <div class="relative h-64 md:h-80 bg-cover bg-center" style="background-image: url('${GALLERY.photos[0].src}')">
+      <div class="absolute inset-0 bg-gradient-to-t from-santorini-white via-santorini-white/20 to-transparent"></div>
+      <div class="absolute bottom-8 left-0 right-0 text-center">
+        <h2 class="font-display text-3xl md:text-5xl text-santorini-navy mb-2 italic">${GALLERY.client}</h2>
+        <p class="text-santorini-stone text-sm">Photographed by ${GALLERY.photographer} &middot; Santorini, Greece</p>
+      </div>
+    </div>
+
+    <!-- Photo grid -->
+    <div class="max-w-7xl mx-auto px-6 py-12">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        ${photoGrid}
+      </div>
+    </div>
+
+    <!-- Bottom CTA -->
+    <div class="max-w-7xl mx-auto px-6 pb-16">
+      <div class="bg-white rounded-2xl border border-santorini-cream p-8 md:p-12 text-center">
+        <h3 class="font-display text-2xl md:text-3xl text-santorini-navy mb-3">Love your photos?</h3>
+        <p class="text-santorini-stone text-sm mb-6 max-w-md mx-auto">Share your favorites on social media and tag us! We'd love to see which moments you love most.</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          ${!showPaywall ? `
+            <button onclick="downloadAll()" class="flex items-center justify-center gap-2 bg-santorini-navy text-white px-8 py-3 rounded-full text-sm hover:bg-aegean-dark transition-colors">
+              ${icon('download','w-4 h-4')} Download All Photos
+            </button>
+          ` : `
+            <button onclick="mockPay()" class="flex items-center justify-center gap-2 bg-santorini-navy text-white px-8 py-3 rounded-full text-sm hover:bg-aegean-dark transition-colors">
+              ${icon('credit-card','w-4 h-4')} Unlock Downloads — ${GALLERY.price}
+            </button>
+          `}
+          <a href="santorini-photography-book.html" class="flex items-center justify-center gap-2 border-2 border-santorini-navy/20 text-santorini-navy px-8 py-3 rounded-full text-sm hover:bg-santorini-cream transition-colors">
+            ${icon('camera','w-4 h-4')} Book Another Session
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-santorini-cream py-8 px-6 text-center">
+      <img src="https://santorinivacationphotography.com/wp-content/uploads/2019/03/cropped-simple_gold-and-black.png" alt="Logo" class="w-8 h-8 mx-auto mb-3 object-contain">
+      <p class="text-xs text-santorini-stone">&copy; 2026 Santorini Vacation Photography. All images are copyrighted.</p>
+      <p class="text-xs text-santorini-stone/50 mt-1">Powered by <a href="santorini-photography.html" class="text-aegean hover:underline">Santorini Vacation Photography</a></p>
+    </footer>
+  </div>`;
+}
+
+// Handle keyboard for lightbox
+document.addEventListener('keydown', (e) => {
+  if (!lightboxPhoto) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') navLightbox(-1);
+  if (e.key === 'ArrowRight') navLightbox(1);
+});
+
+render();
+</script>
+</body>
+</html>
