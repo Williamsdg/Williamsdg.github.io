@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luminance Studio — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            charcoal: { DEFAULT: '#1a1a1a', light: '#2a2a2a', dark: '#111111' },
+            'lum-white': '#faf9f7',
+            'lum-cream': '#f0ece4',
+            'lum-gold': { DEFAULT: '#b8965a', light: '#caa96d', dark: '#a07d45' },
+            'lum-gray': '#6b6560',
+            'lum-warm': '#8a837d',
+          },
+          fontFamily: {
+            display: ['Cormorant Garamond', 'Georgia', 'Times New Roman', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: #faf9f7; color: #1a1a1a; font-family: system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f0ece4; }
+    ::-webkit-scrollbar-thumb { background: #b8965a; border-radius: 3px; }
+    .lum-gradient { background: linear-gradient(135deg, #1a1a1a 0%, #333 50%, #b8965a 100%); }
+    .gold-gradient { background: linear-gradient(135deg, #b8965a 0%, #caa96d 50%, #a07d45 100%); }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="app" class="flex min-h-screen">
+
+    <!-- Mobile Overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 z-40 hidden lg:hidden" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed h-full z-50 w-64 bg-charcoal flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0">
+      <div class="p-6 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <i data-lucide="aperture" class="w-5 h-5 text-lum-gold"></i>
+          <span class="font-display text-white text-lg tracking-wide">Luminance Studio</span>
+        </div>
+      </div>
+      <nav class="flex-1 p-4 space-y-1" id="sidebar-nav"></nav>
+      <div class="p-4 border-t border-white/10">
+        <a href="photographer-demo.html" class="flex items-center gap-3 px-4 py-3 text-white/50 hover:text-white/80 text-sm transition-colors">
+          <i data-lucide="eye" class="w-4 h-4"></i>
+          View Live Site
+        </a>
+        <button class="w-full flex items-center gap-3 px-4 py-3 text-white/50 hover:text-white/80 text-sm transition-colors text-left">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          Settings
+        </button>
+        <button class="w-full flex items-center gap-3 px-4 py-3 text-white/50 hover:text-white/80 text-sm transition-colors text-left">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          Log Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 lg:ml-64 min-h-screen">
+      <!-- Top Bar -->
+      <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center gap-4">
+          <button class="lg:hidden p-2 text-gray-600 hover:text-gray-900" onclick="toggleMobileSidebar()">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <div class="lg:hidden flex items-center gap-2">
+            <i data-lucide="aperture" class="w-5 h-5 text-lum-gold"></i>
+            <span class="font-display text-charcoal">Luminance Studio</span>
+          </div>
+          <div class="relative hidden sm:block">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+            <input type="text" placeholder="Search bookings, clients..." class="pl-10 pr-4 py-2 bg-gray-50 rounded-xl text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lum-gold/20 focus:border-lum-gold w-72" />
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button class="relative p-2 text-gray-400 hover:text-gray-600 transition-colors" id="notif-bell">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" id="notif-dot"></span>
+          </button>
+          <div class="w-8 h-8 rounded-full gold-gradient flex items-center justify-center">
+            <i data-lucide="camera" class="w-4 h-4 text-white"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Mobile Tabs -->
+      <div class="lg:hidden flex overflow-x-auto border-b border-gray-200 bg-white px-2" id="mobile-tabs"></div>
+
+      <!-- Content Area -->
+      <div class="p-6" id="content"></div>
+    </main>
+  </div>
+
+<script>
+// ─── State ───
+let activeTab = 'overview';
+let selectedBooking = null;
+let selectedChat = null;
+let chatInput = '';
+
+const bookings = [
+  { id:'BK001', client:'Jessica & Ryan Park', email:'jessica.park@gmail.com', date:'2026-06-20', time:'2:00 PM — 6:00 PM', package:'Premium', type:'Wedding', location:'Willowbrook Estate', status:'pending', groupSize:2, notes:'Full-day wedding coverage. Ceremony at 3pm, reception follows. Want a mix of candid and formal portraits.', amount:'$1,500', paymentStatus:'unpaid', documentStatus:'none' },
+  { id:'BK002', client:'Amanda Torres', email:'amanda.torres@outlook.com', date:'2026-06-25', time:'10:00 AM — 11:30 AM', package:'Session', type:'Portrait / Headshot', location:'Downtown Studio', status:'pending', groupSize:1, notes:'Professional headshots for LinkedIn and company website. Prefers natural lighting.', amount:'$350', paymentStatus:'unpaid', documentStatus:'none' },
+  { id:'BK003', client:'The Nakamura Family', email:'kenji.nakamura@gmail.com', date:'2026-07-03', time:'Golden Hour (6-8 PM)', package:'Collection', type:'Family', location:'Riverside Park', status:'approved', groupSize:5, notes:'Family of 5 — 2 adults, 3 kids (ages 2, 6, 10). Want relaxed, candid shots with some posed group portraits.', amount:'$750', paymentStatus:'partial', documentStatus:'sent' },
+  { id:'BK004', client:'Olivia & Ben Harper', email:'olivia.harper@icloud.com', date:'2026-05-28', time:'Sunrise (6-8 AM)', package:'Collection', type:'Engagement', location:'Lakeview Gardens', status:'completed', groupSize:2, notes:'Engagement session — recently proposed at the same location! Sentimental spot.', amount:'$750', paymentStatus:'paid', documentStatus:'signed' },
+  { id:'BK005', client:'David Kim', email:'david.kim@gmail.com', date:'2026-07-10', time:'3:00 PM — 4:30 PM', package:'Session', type:'Headshot', location:'TBD', status:'pending', groupSize:1, notes:'Actor headshots for agency submissions. Needs both commercial and theatrical looks.', amount:'$350', paymentStatus:'unpaid', documentStatus:'none' },
+];
+
+const conversations = [
+  {
+    clientName:'Jessica & Ryan Park', bookingId:'BK001',
+    lastMessage:'Would that be possible for the ceremony?', time:'2 hours ago', unread:2,
+    messages:[
+      { id:'m1', sender:'client', text:"Hi! We're so excited about the wedding shoot!", time:'Yesterday 3:45 PM' },
+      { id:'m2', sender:'photographer', text:"I'm thrilled to be part of your big day! Willowbrook Estate is one of my favorite venues — the light in the afternoon is gorgeous.", time:'Yesterday 4:12 PM' },
+      { id:'m3', sender:'client', text:"That's so great to hear! We were wondering — can we add a second photographer for the ceremony?", time:'Yesterday 5:30 PM' },
+      { id:'m4', sender:'photographer', text:"Absolutely, I work with an excellent second shooter. It's an additional $400 for the day and gives you much better coverage of both sides of the aisle.", time:'Yesterday 5:45 PM' },
+      { id:'m5', sender:'client', text:"Oh perfect, we'd love that. Can we just add it to our package?", time:'Today 10:30 AM' },
+      { id:'m6', sender:'client', text:"Would that be possible for the ceremony?", time:'Today 10:31 AM' },
+    ],
+  },
+  {
+    clientName:'The Nakamura Family', bookingId:'BK003',
+    lastMessage:'We signed the contract!', time:'5 hours ago', unread:0,
+    messages:[
+      { id:'m7', sender:'photographer', text:"Hi Nakamura family! I've sent over the contract for your family session. Please review and sign at your convenience.", time:'Yesterday 11:00 AM' },
+      { id:'m8', sender:'client', text:"We signed the contract!", time:'Today 7:15 AM' },
+    ],
+  },
+  {
+    clientName:'David Kim', bookingId:'BK005',
+    lastMessage:'Do you have a studio or is it all on-location?', time:'1 day ago', unread:1,
+    messages:[
+      { id:'m9', sender:'client', text:"Hey! Quick question — do you have a studio or is it all on-location?", time:'Yesterday 9:00 AM' },
+    ],
+  },
+];
+
+const statusColors = {
+  pending: 'bg-amber-50 text-amber-700 border-amber-200',
+  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  completed: 'bg-blue-50 text-blue-700 border-blue-200',
+  cancelled: 'bg-red-50 text-red-700 border-red-200',
+};
+const paymentColors = { unpaid:'text-red-500', partial:'text-amber-500', paid:'text-emerald-500' };
+
+const tabDefs = [
+  { id:'overview', label:'Overview', icon:'trending-up' },
+  { id:'bookings', label:'Bookings', icon:'calendar' },
+  { id:'galleries', label:'Galleries', icon:'image' },
+  { id:'payments', label:'Payments', icon:'dollar-sign' },
+  { id:'documents', label:'Documents', icon:'file-text' },
+  { id:'chat', label:'Messages', icon:'message-circle' },
+];
+
+// ─── Galleries State ───
+let selectedGallery = null;
+let showCreateGallery = false;
+const galleries = [
+  {
+    id: 'GAL001', client: 'Olivia & Ben Harper', bookingId: 'BK004', title: 'Harper Engagement — Lakeview Gardens',
+    status: 'delivered', password: 'harper2026', photos: 65, coverPhoto: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80',
+    createdDate: '2026-06-01', viewCount: 28, downloadStatus: 'paid', price: '$0', favorites: 9,
+    shareLink: 'photographer-demo-gallery.html',
+    photoList: [
+      'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80',
+      'https://images.unsplash.com/photo-1529636798458-92182e662485?w=400&q=80',
+      'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=400&q=80',
+      'https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&q=80',
+      'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&q=80',
+      'https://images.unsplash.com/photo-1460978812857-470ed1c77af0?w=400&q=80',
+    ]
+  },
+  {
+    id: 'GAL002', client: 'The Nakamura Family', bookingId: 'BK003', title: 'Nakamura Family — Riverside Park',
+    status: 'editing', password: '', photos: 0, coverPhoto: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=800&q=80',
+    createdDate: '2026-07-04', viewCount: 0, downloadStatus: 'unpaid', price: '$750', favorites: 0,
+    shareLink: '', photoList: []
+  },
+  {
+    id: 'GAL003', client: 'Jessica & Ryan Park', bookingId: 'BK001', title: 'Park Wedding — Willowbrook Estate',
+    status: 'draft', password: '', photos: 0, coverPhoto: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800&q=80',
+    createdDate: '', viewCount: 0, downloadStatus: 'unpaid', price: '$1,500', favorites: 0,
+    shareLink: '', photoList: []
+  },
+];
+
+const galleryStatusColors = {
+  draft: 'bg-gray-100 text-gray-600',
+  editing: 'bg-amber-50 text-amber-700',
+  delivered: 'bg-emerald-50 text-emerald-700',
+  downloaded: 'bg-blue-50 text-blue-700',
+};
+
+// ─── Helpers ───
+function getPendingCount() { return bookings.filter(b => b.status === 'pending').length; }
+function getApprovedCount() { return bookings.filter(b => b.status === 'approved').length; }
+function getTotalRevenue() { return bookings.filter(b => b.paymentStatus === 'paid').reduce((s, b) => s + parseInt(b.amount.replace('$','').replace(',','')), 0); }
+function getPendingRevenue() { return bookings.filter(b => b.paymentStatus !== 'paid' && b.status !== 'cancelled').reduce((s, b) => s + parseInt(b.amount.replace('$','').replace(',','')), 0); }
+function getUnreadCount() { return conversations.reduce((s, c) => s + c.unread, 0); }
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function icon(name, cls='w-4 h-4') { return `<i data-lucide="${name}" class="${cls}"></i>`; }
+function fmtDate(d) { return new Date(d).toLocaleDateString('en', { month:'short' }); }
+function fmtDay(d) { return new Date(d).getDate(); }
+function fmtMoney(n) { return '$' + n.toLocaleString(); }
+
+function toggleMobileSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('-translate-x-full');
+  ov.classList.toggle('hidden');
+}
+
+// ─── Actions ───
+function approveBooking(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) b.status = 'approved';
+  if (selectedBooking && selectedBooking.id === id) selectedBooking = b;
+  render();
+  showToast('Booking approved!');
+}
+function declineBooking(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) b.status = 'cancelled';
+  if (selectedBooking && selectedBooking.id === id) selectedBooking = b;
+  render();
+  showToast('Booking declined.');
+}
+function sendPaymentLink(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) b.paymentStatus = 'partial';
+  if (selectedBooking && selectedBooking.id === id) selectedBooking = b;
+  render();
+  showToast('Payment link sent!');
+}
+function sendDocument(id) {
+  const b = bookings.find(x => x.id === id);
+  if (b) b.documentStatus = 'sent';
+  if (selectedBooking && selectedBooking.id === id) selectedBooking = b;
+  render();
+  showToast('Contract sent!');
+}
+function selectBooking(id) {
+  selectedBooking = bookings.find(x => x.id === id) || null;
+  activeTab = 'bookings';
+  render();
+}
+function backToBookings() { selectedBooking = null; render(); }
+function switchTab(id) { activeTab = id; selectedBooking = null; selectedChat = null; selectedGallery = null; showCreateGallery = false; render(); }
+function selectGallery(id) { selectedGallery = galleries.find(g => g.id === id) || null; render(); }
+function backToGalleries() { selectedGallery = null; showCreateGallery = false; render(); }
+function setGalleryPassword(id) {
+  const pw = prompt('Set gallery password:');
+  if (pw) { const g = galleries.find(x => x.id === id); if (g) { g.password = pw; render(); showToast('Password set!'); } }
+}
+function publishGallery(id) {
+  const g = galleries.find(x => x.id === id);
+  if (g) { g.status = 'delivered'; g.shareLink = 'photographer-demo-gallery.html'; if (!g.password) g.password = g.client.split(' ')[0].toLowerCase() + '2026'; render(); showToast('Gallery published & link ready!'); }
+}
+function copyGalleryLink(id) {
+  const g = galleries.find(x => x.id === id);
+  if (g && g.shareLink) { navigator.clipboard?.writeText?.('https://williamsdigital.io/' + g.shareLink); showToast('Gallery link copied!'); }
+}
+function sendGalleryLink(id) {
+  showToast('Gallery link sent to client via email!');
+}
+function togglePaywall(id) {
+  const g = galleries.find(x => x.id === id);
+  if (g) { g.downloadStatus = g.downloadStatus === 'paid' ? 'unpaid' : 'paid'; render(); showToast(g.downloadStatus === 'paid' ? 'Downloads unlocked!' : 'Paywall enabled — client must pay to download.'); }
+}
+function selectChat(i) { selectedChat = i; conversations[i].unread = 0; render(); }
+function sendMessage() {
+  const inp = document.getElementById('chat-input');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text || selectedChat === null) return;
+  conversations[selectedChat].messages.push({ id:'m'+Date.now(), sender:'photographer', text, time:'Just now' });
+  conversations[selectedChat].lastMessage = text;
+  conversations[selectedChat].time = 'Just now';
+  inp.value = '';
+  render();
+  setTimeout(() => {
+    const area = document.getElementById('chat-messages');
+    if (area) area.scrollTop = area.scrollHeight;
+  }, 50);
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'fixed bottom-6 right-6 bg-charcoal text-white px-5 py-3 rounded-xl text-sm shadow-lg z-50 fade-in flex items-center gap-2';
+  t.innerHTML = `${icon('check-circle','w-4 h-4 text-lum-gold')} ${msg}`;
+  document.body.appendChild(t);
+  lucide.createIcons({ attrs: { class: '' }, nameAttr: 'data-lucide' });
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
+}
+
+// ─── Render ───
+function render() {
+  renderSidebar();
+  renderMobileTabs();
+  renderContent();
+  lucide.createIcons({ attrs: { class: '' }, nameAttr: 'data-lucide' });
+  const dot = document.getElementById('notif-dot');
+  if (dot) dot.style.display = getPendingCount() > 0 ? '' : 'none';
+}
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = tabDefs.map(t => {
+    const active = activeTab === t.id;
+    let badge = '';
+    if (t.id === 'bookings' && getPendingCount() > 0)
+      badge = `<span class="ml-auto bg-lum-gold text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">${getPendingCount()}</span>`;
+    if (t.id === 'chat' && getUnreadCount() > 0)
+      badge = `<span class="ml-auto bg-rose-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">${getUnreadCount()}</span>`;
+    return `<button onclick="switchTab('${t.id}')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all ${active ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80 hover:bg-white/5'}">
+      ${icon(t.icon)} ${t.label} ${badge}
+    </button>`;
+  }).join('');
+}
+
+function renderMobileTabs() {
+  const mt = document.getElementById('mobile-tabs');
+  mt.innerHTML = tabDefs.map(t => {
+    const active = activeTab === t.id;
+    return `<button onclick="switchTab('${t.id}')" class="flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-all ${active ? 'border-lum-gold text-lum-gold' : 'border-transparent text-gray-400'}">
+      ${icon(t.icon)} ${t.label}
+    </button>`;
+  }).join('');
+}
+
+function renderContent() {
+  const el = document.getElementById('content');
+  if (activeTab === 'overview') el.innerHTML = renderOverview();
+  else if (activeTab === 'bookings' && !selectedBooking) el.innerHTML = renderBookingsList();
+  else if (activeTab === 'bookings' && selectedBooking) el.innerHTML = renderBookingDetail();
+  else if (activeTab === 'galleries' && !selectedGallery) el.innerHTML = renderGalleriesList();
+  else if (activeTab === 'galleries' && selectedGallery) el.innerHTML = renderGalleryDetail();
+  else if (activeTab === 'payments') el.innerHTML = renderPayments();
+  else if (activeTab === 'documents') el.innerHTML = renderDocuments();
+  else if (activeTab === 'chat') el.innerHTML = renderChat();
+}
+
+// ─── OVERVIEW ───
+function renderOverview() {
+  const pending = getPendingCount();
+  const approved = getApprovedCount();
+  const rev = getTotalRevenue();
+  const prevRev = getPendingRevenue();
+  const stats = [
+    { label:'Pending Requests', value:pending, icon:'clock', color:'text-amber-500', bg:'bg-amber-50' },
+    { label:'Upcoming Shoots', value:approved, icon:'camera', color:'text-lum-gold', bg:'bg-amber-50/60' },
+    { label:'Revenue (Paid)', value:fmtMoney(rev), icon:'trending-up', color:'text-emerald-500', bg:'bg-emerald-50' },
+    { label:'Pending Revenue', value:fmtMoney(prevRev), icon:'dollar-sign', color:'text-lum-gold', bg:'bg-amber-50' },
+  ];
+
+  const pendingBookings = bookings.filter(b => b.status === 'pending');
+  const approvedBookings = bookings.filter(b => b.status === 'approved');
+
+  let pendingHTML;
+  if (pendingBookings.length === 0) {
+    pendingHTML = `<div class="p-8 text-center text-gray-400 text-sm">${icon('check-circle','w-8 h-8 mx-auto mb-2 text-emerald-300')} All caught up! No pending requests.</div>`;
+  } else {
+    pendingHTML = `<div class="divide-y divide-gray-50">${pendingBookings.map(b => `
+      <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-full bg-lum-cream flex items-center justify-center">${icon('camera','w-4 h-4 text-lum-gold')}</div>
+          <div>
+            <div class="text-sm font-medium text-gray-900">${b.client}</div>
+            <div class="text-xs text-gray-500">${b.date} &middot; ${b.package} &middot; ${b.type}</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="approveBooking('${b.id}')" class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors" title="Approve">${icon('check')}</button>
+          <button onclick="declineBooking('${b.id}')" class="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors" title="Decline">${icon('x')}</button>
+          <button onclick="selectBooking('${b.id}')" class="p-2 bg-gray-50 text-gray-500 rounded-lg hover:bg-gray-100 transition-colors" title="View Details">${icon('eye')}</button>
+        </div>
+      </div>`).join('')}</div>`;
+  }
+
+  let upcomingHTML;
+  if (approvedBookings.length === 0) {
+    upcomingHTML = `<div class="p-8 text-center text-gray-400 text-sm">${icon('calendar','w-8 h-8 mx-auto mb-2 text-gray-300')} No upcoming shoots yet.</div>`;
+  } else {
+    upcomingHTML = `<div class="divide-y divide-gray-50">${approvedBookings.map(b => {
+      const pLabel = b.paymentStatus === 'paid' ? 'Paid' : b.paymentStatus === 'partial' ? 'Deposit Sent' : 'Unpaid';
+      return `<div class="px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <div class="text-center"><div class="text-xs text-gray-500">${fmtDate(b.date)}</div><div class="text-lg font-semibold text-charcoal">${fmtDay(b.date)}</div></div>
+          <div><div class="text-sm font-medium text-gray-900">${b.client}</div><div class="text-xs text-gray-500 flex items-center gap-2">${icon('map-pin','w-3 h-3')} ${b.location}</div></div>
+        </div>
+        <span class="text-xs ${paymentColors[b.paymentStatus]}">${pLabel}</span>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  return `<div class="fade-in">
+    <h1 class="font-display text-2xl text-charcoal mb-6">Welcome back. Here's your overview.</h1>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      ${stats.map(s => `<div class="bg-white rounded-xl p-5 border border-gray-100">
+        <div class="w-10 h-10 ${s.bg} rounded-lg flex items-center justify-center mb-3">${icon(s.icon, 'w-5 h-5 '+s.color)}</div>
+        <div class="text-2xl font-semibold text-gray-900">${s.value}</div>
+        <div class="text-sm text-gray-500">${s.label}</div>
+      </div>`).join('')}
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="font-display text-lg text-charcoal">Pending Approvals</h2>
+        <button onclick="switchTab('bookings')" class="text-sm text-lum-gold hover:text-lum-gold-dark flex items-center gap-1">View All ${icon('chevron-right')}</button>
+      </div>
+      ${pendingHTML}
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100"><h2 class="font-display text-lg text-charcoal">Upcoming Shoots</h2></div>
+      ${upcomingHTML}
+    </div>
+  </div>`;
+}
+
+// ─── BOOKINGS LIST ───
+function renderBookingsList() {
+  return `<div class="fade-in">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="font-display text-2xl text-charcoal">All Bookings</h1>
+      <button class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">${icon('filter')} Filter</button>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div class="divide-y divide-gray-50">
+        ${bookings.map(b => `<button onclick="selectBooking('${b.id}')" class="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors text-left">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full bg-lum-cream flex items-center justify-center flex-shrink-0">${icon('users','w-4 h-4 text-lum-gold')}</div>
+            <div><div class="text-sm font-medium text-gray-900">${b.client}</div><div class="text-xs text-gray-500">${b.date} &middot; ${b.package} &middot; ${b.type}</div></div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs px-3 py-1 rounded-full border ${statusColors[b.status]}">${cap(b.status)}</span>
+            <span class="text-sm font-medium text-gray-900">${b.amount}</span>
+            ${icon('chevron-right','w-4 h-4 text-gray-400')}
+          </div>
+        </button>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── BOOKING DETAIL ───
+function renderBookingDetail() {
+  const b = selectedBooking;
+  const fields = [
+    { label:'Date', value:b.date, ic:'calendar' },
+    { label:'Time', value:b.time, ic:'clock' },
+    { label:'Package', value:b.package, ic:'camera' },
+    { label:'Session Type', value:b.type, ic:'heart' },
+    { label:'Location', value:b.location, ic:'map-pin' },
+    { label:'Group Size', value:`${b.groupSize} ${b.groupSize === 1 ? 'person' : 'people'}`, ic:'users' },
+  ];
+
+  let approvalBlock = '';
+  if (b.status === 'pending') {
+    approvalBlock = `<div class="bg-white rounded-xl border border-gray-100 p-5">
+      <h3 class="text-sm font-medium text-gray-900 mb-4">Approval</h3>
+      <div class="space-y-2">
+        <button onclick="approveBooking('${b.id}')" class="w-full flex items-center justify-center gap-2 bg-emerald-500 text-white py-2.5 rounded-lg text-sm hover:bg-emerald-600 transition-colors">${icon('check')} Approve Session</button>
+        <button onclick="declineBooking('${b.id}')" class="w-full flex items-center justify-center gap-2 bg-white border border-red-200 text-red-500 py-2.5 rounded-lg text-sm hover:bg-red-50 transition-colors">${icon('x')} Decline</button>
+      </div>
+    </div>`;
+  }
+
+  const payLabel = b.paymentStatus === 'paid' ? 'Paid in Full' : b.paymentStatus === 'partial' ? 'Link Sent' : 'Not Sent';
+  const payBtn = b.paymentStatus !== 'paid' ? `<button onclick="sendPaymentLink('${b.id}')" class="w-full flex items-center justify-center gap-2 bg-charcoal text-white py-2.5 rounded-lg text-sm hover:bg-charcoal-light transition-colors">${icon('credit-card')} ${b.paymentStatus === 'partial' ? 'Resend Payment Link' : 'Send Payment Link'}</button>` : '';
+
+  let docStatusHTML, docStatusClass;
+  if (b.documentStatus === 'signed') { docStatusHTML = `${icon('check-circle','w-3.5 h-3.5')} Signed`; docStatusClass = 'text-emerald-500'; }
+  else if (b.documentStatus === 'sent') { docStatusHTML = `${icon('clock','w-3.5 h-3.5')} Awaiting Signature`; docStatusClass = 'text-amber-500'; }
+  else { docStatusHTML = 'Not Sent'; docStatusClass = 'text-gray-400'; }
+
+  const docBtn = b.documentStatus !== 'signed' ? `<button onclick="sendDocument('${b.id}')" class="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition-colors">${icon('file-signature')} ${b.documentStatus === 'sent' ? 'Resend Document' : 'Send Contract'}</button>` : '';
+
+  const chatIdx = conversations.findIndex(c => c.bookingId === b.id);
+  const msgBtn = chatIdx >= 0
+    ? `<button onclick="activeTab='chat';selectedChat=${chatIdx};render();" class="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">${icon('message-circle')} Message Client</button>`
+    : `<button class="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">${icon('message-circle')} Message Client</button>`;
+
+  return `<div class="fade-in">
+    <button onclick="backToBookings()" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6"><i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Bookings</button>
+    <div class="grid lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white rounded-xl border border-gray-100 p-6">
+          <div class="flex items-start justify-between mb-6">
+            <div><h2 class="font-display text-2xl text-charcoal mb-1">${b.client}</h2><p class="text-sm text-gray-500">${b.email}</p></div>
+            <span class="text-xs px-3 py-1 rounded-full border ${statusColors[b.status]}">${cap(b.status)}</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            ${fields.map(f => `<div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">${icon(f.ic,'w-4 h-4 text-lum-gray flex-shrink-0')}<div><div class="text-xs text-gray-500">${f.label}</div><div class="text-sm text-gray-900">${f.value}</div></div></div>`).join('')}
+          </div>
+          ${b.notes ? `<div class="mt-6 p-4 bg-amber-50/50 border border-amber-100 rounded-lg"><div class="text-xs text-amber-700 font-medium mb-1">Client Notes</div><p class="text-sm text-amber-900/70">${b.notes}</p></div>` : ''}
+        </div>
+      </div>
+      <div class="space-y-4">
+        ${approvalBlock}
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Payment</h3>
+          <div class="flex items-center justify-between mb-4"><span class="text-sm text-gray-500">Amount</span><span class="text-lg font-semibold text-gray-900">${b.amount}</span></div>
+          <div class="flex items-center justify-between mb-4"><span class="text-sm text-gray-500">Status</span><span class="text-sm font-medium ${paymentColors[b.paymentStatus]}">${payLabel}</span></div>
+          ${payBtn}
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Contract / Waiver</h3>
+          <div class="flex items-center justify-between mb-4"><span class="text-sm text-gray-500">Status</span><span class="text-sm font-medium flex items-center gap-1 ${docStatusClass}">${docStatusHTML}</span></div>
+          ${docBtn}
+        </div>
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Quick Actions</h3>
+          <div class="space-y-2">
+            ${msgBtn}
+            <button class="w-full flex items-center gap-2 px-3 py-2.5 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">${icon('image')} Upload Gallery</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── PAYMENTS ───
+function renderPayments() {
+  const rev = getTotalRevenue();
+  const prevRev = getPendingRevenue();
+  const active = bookings.filter(b => b.status !== 'cancelled');
+  return `<div class="fade-in">
+    <h1 class="font-display text-2xl text-charcoal mb-6">Payments</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-xl border border-gray-100 p-5"><div class="text-sm text-gray-500 mb-1">Total Paid</div><div class="text-2xl font-semibold text-emerald-600">${fmtMoney(rev)}</div></div>
+      <div class="bg-white rounded-xl border border-gray-100 p-5"><div class="text-sm text-gray-500 mb-1">Pending</div><div class="text-2xl font-semibold text-amber-500">${fmtMoney(prevRev)}</div></div>
+      <div class="bg-white rounded-xl border border-gray-100 p-5"><div class="text-sm text-gray-500 mb-1">Total Pipeline</div><div class="text-2xl font-semibold text-charcoal">${fmtMoney(rev + prevRev)}</div></div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-100">
+          <tr>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Client</th>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">Package</th>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Amount</th>
+            <th class="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
+            <th class="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          ${active.map(b => {
+            const pLabel = b.paymentStatus === 'paid' ? 'Paid' : b.paymentStatus === 'partial' ? 'Link Sent' : 'Unpaid';
+            const btn = b.paymentStatus !== 'paid' ? `<button onclick="sendPaymentLink('${b.id}')" class="text-sm text-lum-gold hover:text-lum-gold-dark flex items-center gap-1 ml-auto">${icon('send','w-3.5 h-3.5')} Send Link</button>` : '';
+            return `<tr class="hover:bg-gray-50/50">
+              <td class="px-6 py-4 text-sm text-gray-900">${b.client}</td>
+              <td class="px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">${b.package}</td>
+              <td class="px-6 py-4 text-sm font-medium text-gray-900">${b.amount}</td>
+              <td class="px-6 py-4"><span class="text-sm font-medium ${paymentColors[b.paymentStatus]}">${pLabel}</span></td>
+              <td class="px-6 py-4 text-right">${btn}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ─── DOCUMENTS ───
+function renderDocuments() {
+  const active = bookings.filter(b => b.status !== 'cancelled');
+  return `<div class="fade-in">
+    <h1 class="font-display text-2xl text-charcoal mb-6">Contracts & Documents</h1>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+      <div class="divide-y divide-gray-50">
+        ${active.map(b => {
+          let icBg, icColor;
+          if (b.documentStatus === 'signed') { icBg = 'bg-emerald-50'; icColor = 'text-emerald-500'; }
+          else if (b.documentStatus === 'sent') { icBg = 'bg-amber-50'; icColor = 'text-amber-500'; }
+          else { icBg = 'bg-gray-50'; icColor = 'text-gray-400'; }
+
+          let badge;
+          if (b.documentStatus === 'signed') badge = `<span class="text-xs px-3 py-1 rounded-full flex items-center gap-1 bg-emerald-50 text-emerald-700">${icon('check-circle','w-3 h-3')} Signed</span>`;
+          else if (b.documentStatus === 'sent') badge = `<span class="text-xs px-3 py-1 rounded-full flex items-center gap-1 bg-amber-50 text-amber-700">${icon('clock','w-3 h-3')} Pending</span>`;
+          else badge = `<span class="text-xs px-3 py-1 rounded-full bg-gray-50 text-gray-500">Not Sent</span>`;
+
+          let actionBtn;
+          if (b.documentStatus !== 'signed') {
+            actionBtn = `<button onclick="sendDocument('${b.id}')" class="flex items-center gap-1.5 px-4 py-2 bg-charcoal text-white rounded-lg text-sm hover:bg-charcoal-light transition-colors">${icon('send','w-3.5 h-3.5')} ${b.documentStatus === 'sent' ? 'Resend' : 'Send'}</button>`;
+          } else {
+            actionBtn = `<button class="flex items-center gap-1.5 px-4 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100 transition-colors">${icon('external-link','w-3.5 h-3.5')} View</button>`;
+          }
+
+          return `<div class="px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 rounded-lg flex items-center justify-center ${icBg}">${icon('file-text','w-5 h-5 '+icColor)}</div>
+              <div><div class="text-sm font-medium text-gray-900">${b.client}</div><div class="text-xs text-gray-500">Photography Session Contract &middot; ${b.package}</div></div>
+            </div>
+            <div class="flex items-center gap-4 ml-14 sm:ml-0">${badge} ${actionBtn}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── GALLERIES LIST ───
+function renderGalleriesList() {
+  const galleryCards = galleries.map(g => {
+    const statusBadge = `<span class="text-xs px-3 py-1 rounded-full ${galleryStatusColors[g.status]}">${cap(g.status)}</span>`;
+    const hasPassword = g.password ? `<span class="text-xs text-emerald-600 flex items-center gap-1">${icon('lock','w-3 h-3')} Protected</span>` : `<span class="text-xs text-gray-400 flex items-center gap-1">${icon('lock-open','w-3 h-3')} No password</span>`;
+    const paywall = g.downloadStatus !== 'paid' && g.price !== '$0' ? `<span class="text-xs text-amber-600 flex items-center gap-1">${icon('credit-card','w-3 h-3')} Pay to download</span>` : `<span class="text-xs text-emerald-600 flex items-center gap-1">${icon('download','w-3 h-3')} Downloads open</span>`;
+
+    return `<button onclick="selectGallery('${g.id}')" class="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all text-left group">
+      <div class="h-40 bg-cover bg-center relative" style="background-image:url('${g.coverPhoto}')">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+        <div class="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+          <div>
+            <div class="text-white text-sm font-medium">${g.client}</div>
+            <div class="text-white/70 text-xs">${g.photos} photos</div>
+          </div>
+          ${statusBadge}
+        </div>
+      </div>
+      <div class="p-4">
+        <div class="text-sm font-medium text-gray-900 mb-2 truncate">${g.title}</div>
+        <div class="flex items-center gap-3 flex-wrap">
+          ${hasPassword}
+          ${paywall}
+          ${g.viewCount > 0 ? `<span class="text-xs text-gray-500 flex items-center gap-1">${icon('eye','w-3 h-3')} ${g.viewCount} views</span>` : ''}
+          ${g.favorites > 0 ? `<span class="text-xs text-rose-500 flex items-center gap-1">${icon('heart','w-3 h-3')} ${g.favorites} favorites</span>` : ''}
+        </div>
+      </div>
+    </button>`;
+  }).join('');
+
+  return `<div class="fade-in">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="font-display text-2xl text-charcoal">Client Galleries</h1>
+        <p class="text-sm text-gray-500 mt-1">Create password-protected galleries with pay-to-download</p>
+      </div>
+      <button onclick="showCreateGallery=true;render()" class="flex items-center gap-2 px-5 py-2.5 bg-charcoal text-white rounded-xl text-sm hover:bg-charcoal-light transition-colors">
+        ${icon('plus','w-4 h-4')} New Gallery
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <div class="text-2xl font-semibold text-gray-900">${galleries.length}</div>
+        <div class="text-xs text-gray-500">Total Galleries</div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <div class="text-2xl font-semibold text-emerald-600">${galleries.filter(g=>g.status==='delivered').length}</div>
+        <div class="text-xs text-gray-500">Delivered</div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <div class="text-2xl font-semibold text-amber-600">${galleries.filter(g=>g.status==='editing').length}</div>
+        <div class="text-xs text-gray-500">In Progress</div>
+      </div>
+      <div class="bg-white rounded-xl border border-gray-100 p-4">
+        <div class="text-2xl font-semibold text-gray-900">${galleries.reduce((s,g)=>s+g.viewCount,0)}</div>
+        <div class="text-xs text-gray-500">Total Views</div>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">${galleryCards}</div>
+  </div>`;
+}
+
+// ─── GALLERY DETAIL ───
+function renderGalleryDetail() {
+  const g = selectedGallery;
+  const statusBadge = `<span class="text-xs px-3 py-1 rounded-full border ${galleryStatusColors[g.status]}">${cap(g.status)}</span>`;
+
+  const photoGrid = g.photoList.length > 0 ? g.photoList.map((p, i) => `
+    <div class="aspect-[3/4] rounded-lg bg-cover bg-center relative group overflow-hidden cursor-pointer" style="background-image:url('${p}')">
+      <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+        <div class="opacity-0 group-hover:opacity-100 transition-all flex gap-2">
+          <span class="bg-white/90 rounded-full p-2">${icon('heart','w-4 h-4 text-rose-500')}</span>
+          <span class="bg-white/90 rounded-full p-2">${icon('download','w-4 h-4 text-gray-700')}</span>
+        </div>
+      </div>
+    </div>
+  `).join('') : `<div class="col-span-full py-16 text-center text-gray-400">
+    <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">${icon('image','w-8 h-8 text-gray-300')}</div>
+    <p class="text-sm mb-3">No photos uploaded yet</p>
+    <button class="px-5 py-2 bg-charcoal text-white rounded-lg text-sm hover:bg-charcoal-light transition-colors">${icon('upload','w-4 h-4 inline mr-1')} Upload Photos</button>
+  </div>`;
+
+  return `<div class="fade-in">
+    <button onclick="backToGalleries()" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-6">
+      ${icon('chevron-left','w-4 h-4')} Back to Galleries
+    </button>
+
+    <div class="grid lg:grid-cols-3 gap-6">
+      <!-- Main content -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Header card with cover -->
+        <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div class="h-48 bg-cover bg-center relative" style="background-image:url('${g.coverPhoto}')">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <div class="absolute bottom-4 left-6 right-6 flex items-end justify-between">
+              <div>
+                <h2 class="text-white font-display text-2xl">${g.title}</h2>
+                <p class="text-white/70 text-sm">${g.client} · ${g.photos} photos</p>
+              </div>
+              ${statusBadge}
+            </div>
+          </div>
+        </div>
+
+        <!-- Photo grid -->
+        <div class="bg-white rounded-xl border border-gray-100 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-medium text-gray-900">Gallery Photos</h3>
+            ${g.photoList.length > 0 ? `<button class="flex items-center gap-1.5 px-4 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100">${icon('upload','w-3.5 h-3.5')} Add More</button>` : ''}
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">${photoGrid}</div>
+        </div>
+      </div>
+
+      <!-- Sidebar controls -->
+      <div class="space-y-4">
+        <!-- Access & Security -->
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-4 flex items-center gap-2">${icon('shield','w-4 h-4 text-lum-gold')} Access & Security</h3>
+
+          <div class="space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs text-gray-500">Password Protection</span>
+                <span class="text-xs ${g.password ? 'text-emerald-600' : 'text-gray-400'}">${g.password ? 'Enabled' : 'Disabled'}</span>
+              </div>
+              ${g.password ? `
+                <div class="flex items-center gap-2 p-2.5 bg-gray-50 rounded-lg">
+                  <span class="text-sm font-mono text-gray-700 flex-1">${g.password}</span>
+                  <button onclick="navigator.clipboard?.writeText?.('${g.password}');showToast('Password copied!')" class="p-1.5 text-gray-400 hover:text-gray-600">${icon('copy','w-3.5 h-3.5')}</button>
+                </div>
+              ` : ''}
+              <button onclick="setGalleryPassword('${g.id}')" class="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                ${icon('lock','w-3.5 h-3.5')} ${g.password ? 'Change Password' : 'Set Password'}
+              </button>
+            </div>
+
+            <div class="border-t border-gray-100 pt-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-gray-500">Download Access</span>
+              </div>
+              <div class="flex items-center gap-2 p-3 rounded-lg ${g.downloadStatus === 'paid' ? 'bg-emerald-50' : 'bg-amber-50'}">
+                ${g.downloadStatus === 'paid'
+                  ? `${icon('download','w-4 h-4 text-emerald-600')} <span class="text-sm text-emerald-700">Downloads unlocked</span>`
+                  : `${icon('credit-card','w-4 h-4 text-amber-600')} <span class="text-sm text-amber-700">Payment required — ${g.price}</span>`
+                }
+              </div>
+              <button onclick="togglePaywall('${g.id}')" class="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                ${icon('toggle-right','w-3.5 h-3.5')} ${g.downloadStatus === 'paid' ? 'Enable Paywall' : 'Unlock Downloads'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Share & Deliver -->
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-4 flex items-center gap-2">${icon('share-2','w-4 h-4 text-lum-gold')} Share & Deliver</h3>
+
+          ${g.status === 'delivered' && g.shareLink ? `
+            <div class="p-3 bg-gray-50 rounded-lg mb-3">
+              <div class="text-xs text-gray-500 mb-1">Gallery Link</div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-lum-gold truncate flex-1">williamsdigital.io/${g.shareLink}</span>
+                <button onclick="copyGalleryLink('${g.id}')" class="p-1.5 text-gray-400 hover:text-gray-600">${icon('copy','w-3.5 h-3.5')}</button>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <button onclick="sendGalleryLink('${g.id}')" class="w-full flex items-center justify-center gap-2 bg-charcoal text-white py-2.5 rounded-lg text-sm hover:bg-charcoal-light transition-colors">
+                ${icon('send','w-3.5 h-3.5')} Email Gallery Link
+              </button>
+              <button onclick="copyGalleryLink('${g.id}')" class="w-full flex items-center justify-center gap-2 bg-gray-50 text-gray-700 py-2.5 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                ${icon('link','w-3.5 h-3.5')} Copy Link
+              </button>
+            </div>
+          ` : `
+            <button onclick="publishGallery('${g.id}')" class="w-full flex items-center justify-center gap-2 ${g.photoList.length > 0 ? 'bg-charcoal text-white hover:bg-charcoal-light' : 'bg-gray-100 text-gray-400 cursor-not-allowed'} py-2.5 rounded-lg text-sm transition-colors" ${g.photoList.length === 0 ? 'disabled' : ''}>
+              ${icon('globe','w-3.5 h-3.5')} Publish Gallery
+            </button>
+            ${g.photoList.length === 0 ? '<p class="text-xs text-gray-400 text-center mt-2">Upload photos first to publish</p>' : ''}
+          `}
+        </div>
+
+        <!-- Activity -->
+        <div class="bg-white rounded-xl border border-gray-100 p-5">
+          <h3 class="text-sm font-medium text-gray-900 mb-3 flex items-center gap-2">${icon('activity','w-4 h-4 text-lum-gold')} Activity</h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-gray-500">Views</span>
+              <span class="font-medium text-gray-900">${g.viewCount}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-gray-500">Favorites</span>
+              <span class="font-medium text-rose-500">${g.favorites}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-gray-500">Created</span>
+              <span class="font-medium text-gray-900">${g.createdDate || 'Not yet'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview as client -->
+        ${g.status === 'delivered' ? `
+        <a href="photographer-demo-gallery.html" target="_blank" class="block bg-gradient-to-br from-charcoal to-charcoal-light rounded-xl p-5 text-white hover:opacity-90 transition-opacity">
+          <div class="flex items-center gap-3 mb-2">
+            ${icon('external-link','w-5 h-5')}
+            <span class="text-sm font-medium">Preview as Client</span>
+          </div>
+          <p class="text-xs text-white/70">See exactly what your client sees — password page, gallery, and download experience.</p>
+        </a>
+        ` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── CHAT ───
+function renderChat() {
+  const convoList = conversations.map((c, i) => {
+    const active = selectedChat === i;
+    const unreadBadge = c.unread > 0 ? `<span class="ml-2 bg-lum-gold text-white text-xs w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0">${c.unread}</span>` : '';
+    return `<button onclick="selectChat(${i})" class="w-full p-4 text-left border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${active ? 'bg-lum-gold/5 border-l-2 border-l-lum-gold' : ''}">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm font-medium text-gray-900 truncate">${c.clientName}</span>
+        <span class="text-xs text-gray-400 flex-shrink-0 ml-2">${c.time}</span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-gray-500 truncate">${c.lastMessage}</span>
+        ${unreadBadge}
+      </div>
+    </button>`;
+  }).join('');
+
+  let chatArea;
+  if (selectedChat !== null) {
+    const convo = conversations[selectedChat];
+    const msgs = convo.messages.map(m => {
+      const isMe = m.sender === 'photographer';
+      return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+        <div class="max-w-[70%] rounded-2xl px-4 py-3 ${isMe ? 'bg-charcoal text-white rounded-br-md' : 'bg-gray-100 text-gray-900 rounded-bl-md'}">
+          <p class="text-sm">${m.text}</p>
+          <p class="text-xs mt-1 ${isMe ? 'text-white/50' : 'text-gray-400'}">${m.time}</p>
+        </div>
+      </div>`;
+    }).join('');
+
+    chatArea = `<div class="flex-1 flex flex-col">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div><div class="text-sm font-medium text-gray-900">${convo.clientName}</div><div class="text-xs text-gray-500">Booking ${convo.bookingId}</div></div>
+        <button class="p-2 text-gray-400 hover:text-gray-600">${icon('more-horizontal')}</button>
+      </div>
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4">${msgs}</div>
+      <div class="px-6 py-4 border-t border-gray-100">
+        <div class="flex items-center gap-3">
+          <button class="p-2 text-gray-400 hover:text-gray-600 transition-colors">${icon('paperclip')}</button>
+          <input id="chat-input" type="text" placeholder="Type a message..." class="flex-1 px-4 py-2.5 bg-gray-50 rounded-xl text-sm border-0 focus:outline-none focus:ring-2 focus:ring-lum-gold/20" onkeydown="if(event.key==='Enter')sendMessage()" />
+          <button onclick="sendMessage()" class="p-2.5 bg-charcoal text-white rounded-xl hover:bg-charcoal-light transition-colors">${icon('send')}</button>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    chatArea = `<div class="flex-1 flex items-center justify-center text-gray-400">
+      <div class="text-center">${icon('message-circle','w-12 h-12 mx-auto mb-3 text-gray-300')}<p class="text-sm">Select a conversation to start messaging</p></div>
+    </div>`;
+  }
+
+  return `<div class="fade-in">
+    <h1 class="font-display text-2xl text-charcoal mb-6">Messages</h1>
+    <div class="bg-white rounded-xl border border-gray-100 overflow-hidden flex flex-col lg:flex-row" style="height:calc(100vh - 220px)">
+      <div class="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col lg:max-h-full max-h-48 overflow-hidden">
+        <div class="p-4 border-b border-gray-100">
+          <div class="relative">${icon('search','absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400')}<input type="text" placeholder="Search conversations..." class="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg text-sm border-0 focus:outline-none focus:ring-2 focus:ring-lum-gold/20" /></div>
+        </div>
+        <div class="flex-1 overflow-y-auto">${convoList}</div>
+      </div>
+      ${chatArea}
+    </div>
+  </div>`;
+}
+
+// ─── Init ───
+render();
+setTimeout(() => {
+  const area = document.getElementById('chat-messages');
+  if (area) area.scrollTop = area.scrollHeight;
+}, 100);
+</script>
+</body>
+</html>

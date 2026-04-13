@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Gallery — Luminance Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            charcoal: { DEFAULT: '#1a1a1a', light: '#2a2a2a' },
+            'warm-white': '#faf9f7',
+            'soft-gold': { DEFAULT: '#b8965a', light: '#c9a96e', dark: '#a07d45' },
+            'warm-gray': '#6b6560',
+            cream: '#f0ece4',
+          },
+          fontFamily: {
+            display: ['Cormorant Garamond', 'Georgia', 'Times New Roman', 'serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { background: #faf9f7; color: #1a1a1a; font-family: system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f0ece4; }
+    ::-webkit-scrollbar-thumb { background: #b8965a; border-radius: 3px; }
+    .fade-in { animation: fadeIn 0.6s ease-out; }
+    .fade-in-up { animation: fadeInUp 0.6s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .shake { animation: shake 0.5s ease-in-out; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+    /* Lightbox */
+    .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: none; align-items: center; justify-content: center; }
+    .lightbox.active { display: flex; }
+    .lightbox img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; }
+
+    /* Watermark overlay for unpaid */
+    .watermarked::after {
+      content: 'PREVIEW';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Cormorant Garamond', serif; font-size: 2rem; letter-spacing: 0.3em;
+      color: rgba(255,255,255,0.25); pointer-events: none;
+      transform: rotate(-20deg);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-warm-white">
+  <div id="app"></div>
+
+<script>
+// ─── State ───
+let authenticated = false;
+let paid = false;
+let favorites = new Set();
+let lightboxPhoto = null;
+
+const GALLERY = {
+  title: 'Harper Engagement Session',
+  client: 'Olivia & Ben Harper',
+  photographer: 'Luminance Studio',
+  date: 'May 28, 2026',
+  password: 'harper2026',
+  price: '$0',
+  requiresPayment: false,
+  photos: [
+    { id: 1, src: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800', caption: 'First look' },
+    { id: 2, src: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=800', caption: 'The ring' },
+    { id: 3, src: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800', caption: 'Walking together' },
+    { id: 4, src: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800', caption: 'Golden hour' },
+    { id: 5, src: 'https://images.unsplash.com/photo-1604017011826-d3b4c23f8914?w=800', caption: 'Candid laugh' },
+    { id: 6, src: 'https://images.unsplash.com/photo-1544078751-58fee2d8a03b?w=800', caption: 'The embrace' },
+    { id: 7, src: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=800', caption: 'Portrait' },
+    { id: 8, src: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800', caption: 'Dancing' },
+    { id: 9, src: 'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800', caption: 'Together' },
+    { id: 10, src: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=800', caption: 'Close up' },
+    { id: 11, src: 'https://images.unsplash.com/photo-1609220136736-443140cffec6?w=800', caption: 'Sunset walk' },
+    { id: 12, src: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800', caption: 'Forever' },
+  ]
+};
+
+function icon(name, cls='w-4 h-4') { return `<i data-lucide="${name}" class="${cls}"></i>`; }
+
+function toggleFavorite(id) {
+  if (favorites.has(id)) favorites.delete(id);
+  else favorites.add(id);
+  render();
+}
+
+function openLightbox(id) {
+  lightboxPhoto = GALLERY.photos.find(p => p.id === id);
+  render();
+}
+
+function closeLightbox() {
+  lightboxPhoto = null;
+  render();
+}
+
+function navLightbox(dir) {
+  if (!lightboxPhoto) return;
+  const idx = GALLERY.photos.findIndex(p => p.id === lightboxPhoto.id);
+  const next = (idx + dir + GALLERY.photos.length) % GALLERY.photos.length;
+  lightboxPhoto = GALLERY.photos[next];
+  render();
+}
+
+function tryPassword() {
+  const inp = document.getElementById('pw-input');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (val === GALLERY.password) {
+    authenticated = true;
+    render();
+  } else {
+    const form = document.getElementById('pw-form');
+    if (form) form.classList.add('shake');
+    inp.value = '';
+    inp.placeholder = 'Incorrect password — try again';
+    setTimeout(() => form?.classList.remove('shake'), 500);
+  }
+}
+
+function mockPay() {
+  paid = true;
+  render();
+}
+
+function downloadAll() {
+  if (GALLERY.requiresPayment && !paid) return;
+  alert('In production, this would download a ZIP of all high-res photos.');
+}
+
+function render() {
+  const app = document.getElementById('app');
+
+  if (!authenticated) {
+    app.innerHTML = renderPasswordGate();
+  } else {
+    app.innerHTML = renderGallery();
+  }
+
+  // Lightbox
+  let lb = document.getElementById('lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'lightbox';
+    lb.className = 'lightbox';
+    lb.onclick = (e) => { if (e.target === lb) closeLightbox(); };
+    document.body.appendChild(lb);
+  }
+  if (lightboxPhoto) {
+    lb.classList.add('active');
+    lb.innerHTML = `
+      <button onclick="closeLightbox()" class="absolute top-6 right-6 text-white/70 hover:text-white z-10">${icon('x','w-6 h-6')}</button>
+      <button onclick="navLightbox(-1)" class="absolute left-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-2 bg-white/10 rounded-full">${icon('chevron-left','w-6 h-6')}</button>
+      <button onclick="navLightbox(1)" class="absolute right-6 top-1/2 -translate-y-1/2 text-white/50 hover:text-white p-2 bg-white/10 rounded-full">${icon('chevron-right','w-6 h-6')}</button>
+      <div class="text-center">
+        <img src="${lightboxPhoto.src}" alt="${lightboxPhoto.caption}" class="fade-in" />
+        <p class="text-white/70 text-sm mt-4 font-display text-lg">${lightboxPhoto.caption}</p>
+      </div>
+    `;
+  } else {
+    lb.classList.remove('active');
+    lb.innerHTML = '';
+  }
+
+  lucide.createIcons({ attrs: { class: '' }, nameAttr: 'data-lucide' });
+}
+
+function renderPasswordGate() {
+  return `
+  <div class="min-h-screen flex items-center justify-center px-6 fade-in">
+    <div class="max-w-md w-full text-center">
+      <!-- Cover photo -->
+      <div class="w-32 h-32 rounded-full mx-auto mb-8 bg-cover bg-center shadow-xl shadow-charcoal/10 border-4 border-white" style="background-image: url('${GALLERY.photos[0].src}')"></div>
+
+      <!-- Logo mark -->
+      <div class="w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+        <svg viewBox="0 0 48 48" class="w-12 h-12">
+          <circle cx="24" cy="24" r="22" fill="none" stroke="#b8965a" stroke-width="1.5"/>
+          <text x="24" y="29" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="22" font-weight="300" fill="#b8965a">L</text>
+        </svg>
+      </div>
+
+      <h1 class="font-display text-3xl md:text-4xl text-charcoal mb-2">${GALLERY.title}</h1>
+      <p class="text-warm-gray text-sm mb-1">Photos by ${GALLERY.photographer}</p>
+      <p class="text-warm-gray/60 text-xs mb-8">${GALLERY.date} &middot; ${GALLERY.photos.length} photos</p>
+
+      <div id="pw-form" class="max-w-xs mx-auto">
+        <div class="relative mb-4">
+          ${icon('lock','absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-warm-gray')}
+          <input
+            id="pw-input"
+            type="password"
+            placeholder="Enter gallery password"
+            class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-cream bg-white text-charcoal text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/30 focus:border-soft-gold transition-all"
+            onkeydown="if(event.key==='Enter')tryPassword()"
+          />
+        </div>
+        <button onclick="tryPassword()" class="w-full bg-charcoal text-white py-3.5 rounded-xl text-sm font-medium tracking-wide hover:bg-charcoal-light transition-colors flex items-center justify-center gap-2">
+          ${icon('arrow-right','w-4 h-4')} View Gallery
+        </button>
+      </div>
+
+      <p class="text-xs text-warm-gray/50 mt-8">This gallery is password protected. Your photographer shared the password with you via email.</p>
+    </div>
+  </div>`;
+}
+
+function renderGallery() {
+  const favCount = favorites.size;
+  const showPaywall = GALLERY.requiresPayment && !paid;
+
+  const photoGrid = GALLERY.photos.map(p => {
+    const isFav = favorites.has(p.id);
+    return `
+    <div class="group relative overflow-hidden rounded-xl cursor-pointer ${showPaywall ? 'watermarked' : ''}" onclick="openLightbox(${p.id})">
+      <div class="aspect-[3/4] bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('${p.src}')"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+
+      <!-- Hover controls -->
+      <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+        <span class="text-white text-xs font-display">${p.caption}</span>
+        <div class="flex gap-1.5" onclick="event.stopPropagation()">
+          <button onclick="toggleFavorite(${p.id})" class="p-1.5 rounded-full ${isFav ? 'bg-rose-500 text-white' : 'bg-white/80 text-gray-700 hover:bg-white'}">
+            ${icon('heart', 'w-3.5 h-3.5' + (isFav ? ' fill-current' : ''))}
+          </button>
+          ${!showPaywall ? `<button onclick="alert('Downloading high-res photo...')" class="p-1.5 rounded-full bg-white/80 text-gray-700 hover:bg-white">${icon('download','w-3.5 h-3.5')}</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="fade-in-up">
+    <!-- Header -->
+    <div class="sticky top-0 z-40 bg-warm-white/90 backdrop-blur-md border-b border-cream/50">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <svg viewBox="0 0 48 48" class="w-8 h-8 flex-shrink-0">
+            <circle cx="24" cy="24" r="22" fill="none" stroke="#b8965a" stroke-width="1.5"/>
+            <text x="24" y="29" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="22" font-weight="300" fill="#b8965a">L</text>
+          </svg>
+          <div>
+            <h1 class="font-display text-lg text-charcoal leading-tight">${GALLERY.title}</h1>
+            <p class="text-xs text-warm-gray">${GALLERY.photos.length} photos &middot; ${GALLERY.date}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          ${favCount > 0 ? `<span class="text-xs text-rose-500 flex items-center gap-1">${icon('heart','w-3.5 h-3.5')} ${favCount}</span>` : ''}
+          ${!showPaywall ? `
+            <button onclick="downloadAll()" class="hidden sm:flex items-center gap-2 px-5 py-2 bg-charcoal text-white rounded-lg text-sm hover:bg-charcoal-light transition-colors">
+              ${icon('download','w-4 h-4')} Download All
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    </div>
+
+    ${showPaywall ? `
+    <!-- Paywall banner -->
+    <div class="bg-gradient-to-r from-charcoal to-charcoal-light text-white">
+      <div class="max-w-7xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          ${icon('lock','w-5 h-5 text-soft-gold')}
+          <div>
+            <p class="text-sm font-medium">High-res downloads are locked</p>
+            <p class="text-xs text-white/60">Preview your photos below. Pay to unlock full-resolution downloads.</p>
+          </div>
+        </div>
+        <button onclick="mockPay()" class="flex items-center gap-2 bg-white text-charcoal px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-cream transition-colors flex-shrink-0">
+          ${icon('credit-card','w-4 h-4')} Pay ${GALLERY.price} to Download
+        </button>
+      </div>
+    </div>
+    ` : ''}
+
+    ${!showPaywall && GALLERY.requiresPayment ? `
+    <!-- Paid confirmation -->
+    <div class="bg-emerald-50 border-b border-emerald-100">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3">
+        ${icon('check-circle','w-5 h-5 text-emerald-600')}
+        <p class="text-sm text-emerald-700">Payment confirmed! You can now download all photos in full resolution.</p>
+      </div>
+    </div>
+    ` : ''}
+
+    <!-- Cover section -->
+    <div class="relative h-64 md:h-80 bg-cover bg-center" style="background-image: url('${GALLERY.photos[0].src}')">
+      <div class="absolute inset-0 bg-gradient-to-t from-warm-white via-warm-white/20 to-transparent"></div>
+      <div class="absolute bottom-8 left-0 right-0 text-center">
+        <h2 class="font-display text-3xl md:text-5xl text-charcoal mb-2 italic">${GALLERY.client}</h2>
+        <p class="text-warm-gray text-sm">Photographed by ${GALLERY.photographer}</p>
+      </div>
+    </div>
+
+    <!-- Photo grid -->
+    <div class="max-w-7xl mx-auto px-6 py-12">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        ${photoGrid}
+      </div>
+    </div>
+
+    <!-- Bottom CTA -->
+    <div class="max-w-7xl mx-auto px-6 pb-16">
+      <div class="bg-white rounded-2xl border border-cream p-8 md:p-12 text-center">
+        <h3 class="font-display text-2xl md:text-3xl text-charcoal mb-3">Love your photos?</h3>
+        <p class="text-warm-gray text-sm mb-6 max-w-md mx-auto">Share your favorites on social media and tag us! We'd love to see which moments you love most.</p>
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          ${!showPaywall ? `
+            <button onclick="downloadAll()" class="flex items-center justify-center gap-2 bg-charcoal text-white px-8 py-3 rounded-full text-sm hover:bg-charcoal-light transition-colors">
+              ${icon('download','w-4 h-4')} Download All Photos
+            </button>
+          ` : `
+            <button onclick="mockPay()" class="flex items-center justify-center gap-2 bg-charcoal text-white px-8 py-3 rounded-full text-sm hover:bg-charcoal-light transition-colors">
+              ${icon('credit-card','w-4 h-4')} Unlock Downloads — ${GALLERY.price}
+            </button>
+          `}
+          <a href="photographer-demo-book.html" class="flex items-center justify-center gap-2 border-2 border-charcoal/20 text-charcoal px-8 py-3 rounded-full text-sm hover:bg-cream transition-colors">
+            ${icon('camera','w-4 h-4')} Book Another Session
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-cream py-8 px-6 text-center">
+      <svg viewBox="0 0 48 48" class="w-8 h-8 mx-auto mb-3">
+        <circle cx="24" cy="24" r="22" fill="none" stroke="#b8965a" stroke-width="1.5"/>
+        <text x="24" y="29" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="22" font-weight="300" fill="#b8965a">L</text>
+      </svg>
+      <p class="text-xs text-warm-gray">&copy; 2026 Luminance Studio. All images are copyrighted.</p>
+      <p class="text-xs text-warm-gray/50 mt-1">Powered by <a href="photographer-demo.html" class="text-soft-gold hover:underline">Luminance Studio</a></p>
+    </footer>
+  </div>`;
+}
+
+// Handle keyboard for lightbox
+document.addEventListener('keydown', (e) => {
+  if (!lightboxPhoto) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') navLightbox(-1);
+  if (e.key === 'ArrowRight') navLightbox(1);
+});
+
+render();
+</script>
+</body>
+</html>
