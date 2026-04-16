@@ -730,17 +730,8 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-031</td><td>324 Magnolia Dr</td><td><span class="chip">The Preserve</span></td><td>Fence Installation</td><td>James Carter</td><td>Mar 5</td><td><span class="badge badge-navy">Under Review</span></td><td><button class="btn btn-sm btn-outline" onclick="document.getElementById('detailPanel').style.display='block';window.scrollTo({top:document.getElementById('detailPanel').offsetTop-100,behavior:'smooth'})">Review</button></td></tr>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-030</td><td>89 Elm St</td><td><span class="chip">Hillsboro</span></td><td>Solar Panels</td><td>Michael Torres</td><td>Mar 3</td><td><span class="badge badge-navy">Under Review</span></td><td><button class="btn btn-sm btn-outline">Review</button></td></tr>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-029</td><td>55 Pine Rd</td><td><span class="chip">Sterling Gate</span></td><td>Patio Extension</td><td>Sarah Johnson</td><td>Feb 28</td><td><span class="badge badge-success">Approved</span></td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-028</td><td>77 Maple Ct</td><td><span class="chip">Arbor Trail</span></td><td>Exterior Paint</td><td>Lisa Brown</td><td>Feb 25</td><td><span class="badge badge-teal">Conditions</span></td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-027</td><td>201 Creek View</td><td><span class="chip">Danberry</span></td><td>Shed Installation</td><td>David Kim</td><td>Feb 20</td><td><span class="badge badge-danger">Denied</span></td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-026</td><td>33 Birch Dr</td><td><span class="chip">Knox Square</span></td><td>Landscaping</td><td>Marcus Williams</td><td>Feb 15</td><td><span class="badge badge-success">Approved</span></td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-025</td><td>98 Cedar Ln</td><td><span class="chip">Park Trace</span></td><td>Roofing</td><td>Amanda Lee</td><td>Feb 10</td><td><span class="badge badge-success">Approved</span></td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-024</td><td>142 Oak Lane</td><td><span class="chip">Barimore</span></td><td>Window Replacement</td><td>Jennifer Davis</td><td>Feb 5</td><td><span class="badge badge-navy">Under Review</span></td><td><button class="btn btn-sm btn-outline">Review</button></td></tr>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-023</td><td>15 Willow Way</td><td><span class="chip">The Preserve</span></td><td>Deck Addition</td><td>Robert Chen</td><td>Jan 28</td><td><span class="badge badge-teal">Conditions</span></td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
-                <tr><td style="font-weight:600;color:var(--navy);">ARC-2024-022</td><td>44 River Rd</td><td><span class="chip">Abingdon</span></td><td>Fence — Vinyl</td><td>Emily Watson</td><td>Jan 20</td><td><span class="badge badge-success">Approved</span></td><td><button class="btn btn-sm btn-ghost">View</button></td></tr>
+              <tbody id="arcTableBody">
+                <!-- Populated from LPMS -->
               </tbody>
             </table>
           </div>
@@ -914,6 +905,54 @@
   <script src="../demo-engine.js"></script>
   <script src="../portal.js"></script>
   <script>
+    // ============================================
+    // POPULATE FROM LPMS DATA
+    // ============================================
+    (function initARC() {
+      if (!window.LPMS) return;
+
+      var tbody = document.getElementById('arcTableBody');
+      if (tbody) {
+        var html = '';
+        LPMS.arcApplications.forEach(function(a) {
+          var statusMap = {
+            'under-review': { cls: 'badge-navy', text: 'Under Review' },
+            'approved': { cls: 'badge-success', text: 'Approved' },
+            'approved-with-conditions': { cls: 'badge-teal', text: 'Conditions' },
+            'denied': { cls: 'badge-danger', text: 'Denied' }
+          };
+          var s = statusMap[a.status] || { cls: 'badge-navy', text: a.status };
+          var actionBtn = a.status === 'under-review'
+            ? '<button class=\"btn btn-sm btn-outline\" onclick=\"document.getElementById(\'detailPanel\').style.display=\'block\';window.scrollTo({top:document.getElementById(\'detailPanel\').offsetTop-100,behavior:\'smooth\'})\">Review</button>'
+            : '<button class=\"btn btn-sm btn-ghost\">View</button>';
+
+          html += '<tr data-searchable>' +
+            '<td style="font-weight:600;color:var(--navy);">' + a.id + '</td>' +
+            '<td>' + a.address + '</td>' +
+            '<td><span class="chip">' + a.community + '</span></td>' +
+            '<td>' + a.type + '</td>' +
+            '<td>' + a.resident + '</td>' +
+            '<td>' + LPMS.formatShortDate(a.submittedDate) + '</td>' +
+            '<td><span class="badge ' + s.cls + '">' + s.text + '</span></td>' +
+            '<td>' + actionBtn + '</td>' +
+          '</tr>';
+        });
+        tbody.innerHTML = html;
+      }
+
+      // Update stat badges at top
+      var pending = LPMS.arcApplications.filter(function(a) { return a.status === 'under-review'; }).length;
+      var approved = LPMS.arcApplications.filter(function(a) { return a.status === 'approved' || a.status === 'approved-with-conditions'; }).length;
+      var denied = LPMS.arcApplications.filter(function(a) { return a.status === 'denied'; }).length;
+
+      var statEls = document.querySelectorAll('.arc-stat-value');
+      if (statEls.length >= 3) {
+        statEls[0].textContent = pending;
+        statEls[1].textContent = approved;
+        statEls[2].textContent = denied;
+      }
+    })();
+
     // Tab switching for compliance page
     document.querySelectorAll('#complianceTabs .tab').forEach(tab => {
       tab.addEventListener('click', () => {

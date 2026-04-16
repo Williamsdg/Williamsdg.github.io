@@ -802,97 +802,8 @@
                       <th>Priority</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <tr data-searchable style="cursor:pointer;" onclick="document.getElementById('violationDetailPanel').style.display='block'">
-                      <td><span class="vio-id">VIO-445</span></td>
-                      <td>The Highlands</td>
-                      <td>318 Bray Cir</td>
-                      <td>Unapproved exterior paint</td>
-                      <td><span class="badge badge-warning">Notice Sent</span></td>
-                      <td>Mar 13</td>
-                      <td><span class="badge priority-medium">Medium</span></td>
-                    </tr>
-                    <tr data-searchable style="cursor:pointer;" class="selected-row" onclick="document.getElementById('violationDetailPanel').style.display='block'">
-                      <td><span class="vio-id">VIO-443</span></td>
-                      <td>Willow Creek</td>
-                      <td>267 Vestlake Dr</td>
-                      <td>Lawn maintenance</td>
-                      <td><span class="badge badge-danger">Hearing Mar 22</span></td>
-                      <td>Mar 11</td>
-                      <td><span class="badge priority-high">High</span></td>
-                    </tr>
-                    <tr data-searchable style="cursor:pointer;">
-                      <td><span class="vio-id">VIO-441</span></td>
-                      <td>Magnolia Place</td>
-                      <td>Unit 7B</td>
-                      <td>Parking violation</td>
-                      <td><span class="badge badge-success">Resolved</span></td>
-                      <td>Mar 11</td>
-                      <td><span class="badge priority-low">Low</span></td>
-                    </tr>
-                    <tr data-searchable style="cursor:pointer;">
-                      <td><span class="vio-id">VIO-439</span></td>
-                      <td>Summit View</td>
-                      <td>155 Summit Trace</td>
-                      <td>Trash cans visible</td>
-                      <td><span class="badge badge-gold">Warning</span></td>
-                      <td>Mar 9</td>
-                      <td><span class="badge priority-low">Low</span></td>
-                    </tr>
-                    <tr data-searchable style="cursor:pointer;">
-                      <td><span class="vio-id">VIO-437</span></td>
-                      <td>Brookstone</td>
-                      <td>502 Brookstone Ln</td>
-                      <td>Unapproved fence</td>
-                      <td><span class="badge badge-navy">Under Review</span></td>
-                      <td>Mar 7</td>
-                      <td><span class="badge priority-medium">Medium</span></td>
-                    </tr>
-                    <tr data-searchable style="cursor:pointer;">
-                      <td><span class="vio-id">VIO-435</span></td>
-                      <td>Magnolia Place</td>
-                      <td>Unit 3A</td>
-                      <td>Noise complaint</td>
-                      <td><span class="badge badge-warning">Notice Sent</span></td>
-                      <td>Mar 5</td>
-                      <td><span class="badge priority-medium">Medium</span></td>
-                    </tr>
-                    <tr data-searchable style="cursor:pointer;">
-                      <td><span class="vio-id">VIO-433</span></td>
-                      <td>The Highlands</td>
-                      <td>88 Ridge Way</td>
-                      <td>Holiday decorations</td>
-                      <td><span class="badge badge-gold">Warning</span></td>
-                      <td>Mar 3</td>
-                      <td><span class="badge priority-low">Low</span></td>
-                    </tr>
-                    <tr data-searchable style="cursor:pointer;">
-                      <td><span class="vio-id">VIO-431</span></td>
-                      <td>Willow Creek</td>
-                      <td>22 Valley Dr</td>
-                      <td>Commercial vehicle</td>
-                      <td><span class="badge badge-danger">2nd Notice</span></td>
-                      <td>Mar 1</td>
-                      <td><span class="badge priority-medium">Medium</span></td>
-                    </tr>
-                    <tr data-searchable style="cursor:pointer;">
-                      <td><span class="vio-id">VIO-429</span></td>
-                      <td>Summit View</td>
-                      <td>12 Birch Ct</td>
-                      <td>Exterior damage</td>
-                      <td><span class="badge badge-danger">Hearing Apr 5</span></td>
-                      <td>Feb 28</td>
-                      <td><span class="badge priority-high">High</span></td>
-                    </tr>
-                    <tr data-searchable style="cursor:pointer;">
-                      <td><span class="vio-id">VIO-427</span></td>
-                      <td>The Bray</td>
-                      <td>44 River Bend</td>
-                      <td>Pet violation</td>
-                      <td><span class="badge badge-success">Resolved</span></td>
-                      <td>Feb 25</td>
-                      <td><span class="badge priority-low">Low</span></td>
-                    </tr>
+                  <tbody id="violationsTableBody">
+                    <!-- Populated from LPMS -->
                   </tbody>
                 </table>
               </div>
@@ -1336,6 +1247,51 @@
   <script src="../demo-engine.js"></script>
   <script src="../portal.js"></script>
   <script>
+    // ============================================
+    // POPULATE FROM LPMS DATA
+    // ============================================
+    (function initCompliance() {
+      if (!window.LPMS) return;
+
+      var tbody = document.getElementById('violationsTableBody');
+      if (tbody) {
+        var html = '';
+        LPMS.violations.forEach(function(v) {
+          var statusMap = {
+            'open': { cls: 'badge-warning', text: 'Open' },
+            'resolved': { cls: 'badge-success', text: 'Resolved' },
+            'hearing-scheduled': { cls: 'badge-navy', text: 'Hearing Scheduled' },
+            'fine-issued': { cls: 'badge-danger', text: 'Fine Issued' }
+          };
+          var s = statusMap[v.status] || { cls: 'badge-warning', text: v.status };
+          var sevMap = { 'warning': 'Medium', 'notice': 'Low', 'fine': 'High' };
+
+          html += '<tr data-searchable style="cursor:pointer;">' +
+            '<td><span class="vio-id">' + v.id + '</span></td>' +
+            '<td>' + v.community + '</td>' +
+            '<td>' + v.address + '</td>' +
+            '<td>' + v.type + '</td>' +
+            '<td><span class="badge ' + s.cls + '">' + s.text + '</span></td>' +
+            '<td>' + LPMS.formatDate(v.createdDate) + '</td>' +
+            '<td>' + (sevMap[v.severity] || 'Medium') + '</td>' +
+          '</tr>';
+        });
+        tbody.innerHTML = html;
+      }
+
+      // Update stat counts
+      var active = LPMS.violations.filter(function(v) { return v.status === 'open' || v.status === 'fine-issued'; }).length;
+      var hearings = LPMS.violations.filter(function(v) { return v.status === 'hearing-scheduled'; }).length;
+      var resolved = LPMS.violations.filter(function(v) { return v.status === 'resolved'; }).length;
+
+      var el1 = document.getElementById('compActiveCount');
+      var el2 = document.getElementById('compHearingCount');
+      var el3 = document.getElementById('compResolvedCount');
+      if (el1) el1.textContent = active;
+      if (el2) el2.textContent = hearings;
+      if (el3) el3.textContent = resolved;
+    })();
+
     // Tab switching for compliance page
     document.querySelectorAll('#complianceTabs .tab').forEach(tab => {
       tab.addEventListener('click', () => {
