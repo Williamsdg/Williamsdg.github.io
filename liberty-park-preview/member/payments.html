@@ -1354,6 +1354,7 @@
   <script src="../portal.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      initFromLPMS();
       initPaymentTabs();
       initPaymentMethods();
       initAddMethodForm();
@@ -1362,6 +1363,57 @@
       initYearFilter();
       initAutopay();
     });
+
+    /* --- Populate from LPMS --- */
+    function initFromLPMS() {
+      if (!window.LPMS) return;
+      var p = LPMS.memberPersona;
+      var balance = LPMS.getMemberBalance();
+
+      // Balance card
+      var balAmt = document.querySelector('.balance-amount');
+      if (balAmt) balAmt.textContent = '$' + balance.toFixed(2);
+
+      // Next due date
+      var dueMeta = document.querySelectorAll('.balance-meta-item');
+      if (dueMeta[0]) {
+        dueMeta[0].querySelector('span').innerHTML = 'Next due: <strong>' + LPMS.formatDate(p.nextDueDate) + '</strong>';
+      }
+
+      // Payment amount default
+      var amtInput = document.getElementById('paymentAmount');
+      if (amtInput) amtInput.value = balance.toFixed(2);
+
+      // Payment history
+      var histBody = document.getElementById('paymentHistoryBody');
+      if (histBody) {
+        var payments = LPMS.getPayments();
+        var html = '';
+        var totalThisYear = 0;
+        payments.forEach(function(pay) {
+          var yr = pay.date.getFullYear ? pay.date.getFullYear() : new Date(pay.date).getFullYear();
+          html += '<tr data-year="' + yr + '">' +
+            '<td>' + LPMS.formatDate(pay.date) + '</td>' +
+            '<td>' + pay.description + '</td>' +
+            '<td><strong>$' + pay.amount.toFixed(2) + '</strong></td>' +
+            '<td><span class="badge badge-success">Paid</span></td>' +
+            '<td>' + pay.method + '</td>' +
+          '</tr>';
+          if (yr === new Date().getFullYear()) totalThisYear += pay.amount;
+        });
+        histBody.innerHTML = html;
+
+        // Update total
+        var totalEl = document.getElementById('totalYearAmount');
+        var yearLabel = document.getElementById('totalYearLabel');
+        if (totalEl) totalEl.textContent = '$' + totalThisYear.toFixed(2);
+        if (yearLabel) yearLabel.textContent = new Date().getFullYear();
+      }
+
+      // Summary assessment
+      var summaryAmt = document.getElementById('summaryAssessment');
+      if (summaryAmt) summaryAmt.textContent = '$' + balance.toFixed(2);
+    }
 
     /* --- Tab Switching --- */
     function initPaymentTabs() {
@@ -1504,9 +1556,42 @@
             btn.disabled = false;
             btn.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Submit Payment';
 
-            // Update modal amount
+            // Save payment via LPMS
+            var selectedMethod = document.querySelector('.payment-method-card.selected');
+            var methodLabel = selectedMethod ? selectedMethod.querySelector('.method-name')?.textContent || 'Card' : 'Card';
+            var payment = null;
+            if (window.LPMS) {
+              payment = LPMS.addPayment({
+                description: 'Assessment — ' + LPMS.memberPersona.community,
+                amount: amount,
+                method: methodLabel.trim()
+              });
+
+              // Update balance display
+              var newBalance = LPMS.getMemberBalance();
+              var balAmt = document.querySelector('.balance-amount');
+              if (balAmt) balAmt.textContent = '$' + newBalance.toFixed(2);
+
+              // Refresh payment history
+              initFromLPMS();
+            }
+
+            // Update modal amount and confirmation
             const modalAmt = document.getElementById('modalPaymentAmount');
             if (modalAmt) modalAmt.textContent = '$' + amount.toFixed(2);
+
+            // Add confirmation number to modal
+            var confLine = document.getElementById('modalConfirmation');
+            if (!confLine && payment) {
+              var p = document.createElement('p');
+              p.id = 'modalConfirmation';
+              p.className = 'text-sm';
+              p.style.cssText = 'font-weight:600;color:var(--teal);margin-bottom:1rem;';
+              p.textContent = 'Confirmation: ' + payment.confirmationNumber;
+              modalAmt.parentElement.after(p);
+            } else if (confLine && payment) {
+              confLine.textContent = 'Confirmation: ' + payment.confirmationNumber;
+            }
 
             // Show success modal
             const modal = document.getElementById('paymentSuccessModal');

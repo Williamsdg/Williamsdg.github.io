@@ -1204,21 +1204,43 @@
   <script src="../demo-engine.js"></script>
   <script src="../portal.js"></script>
   <script>
-    // Dynamic greeting based on time of day
+    // Dynamic greeting and LPMS data population
     (function() {
-      const hour = new Date().getHours();
-      let greeting;
-      if (hour < 12) greeting = 'Good morning, James';
-      else if (hour < 17) greeting = 'Good afternoon, James';
-      else greeting = 'Good evening, James';
-      const el = document.getElementById('greeting');
+      var hour = new Date().getHours();
+      var name = window.LPMS ? LPMS.memberPersona.firstName : 'James';
+      var greeting;
+      if (hour < 12) greeting = 'Good morning, ' + name;
+      else if (hour < 17) greeting = 'Good afternoon, ' + name;
+      else greeting = 'Good evening, ' + name;
+      var el = document.getElementById('greeting');
       if (el) el.textContent = greeting;
 
       // Today's date
-      const dateEl = document.getElementById('todayDate');
+      var dateEl = document.getElementById('todayDate');
       if (dateEl) {
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         dateEl.textContent = new Date().toLocaleDateString('en-US', options);
+      }
+
+      // Update balance from LPMS
+      if (window.LPMS) {
+        var balance = LPMS.getMemberBalance();
+        var balanceEls = document.querySelectorAll('.balance-amount');
+        balanceEls.forEach(function(el) {
+          el.textContent = '$' + balance.toFixed(2);
+        });
+
+        // Update next due date
+        var dueEls = document.querySelectorAll('.account-detail-value');
+        dueEls.forEach(function(el) {
+          if (el.textContent.trim().indexOf('April') === 0 || el.textContent.trim().indexOf('Q') === 0) {
+            el.textContent = LPMS.formatDate(LPMS.memberPersona.nextDueDate);
+          }
+        });
+
+        // Update sidebar name
+        var sidebarName = document.querySelector('.sidebar-footer .name, .sidebar-footer [style*="font-weight:600"]');
+        // The member name in the sidebar is typically in the footer
       }
     })();
 
