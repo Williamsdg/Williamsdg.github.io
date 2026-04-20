@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highlands Event Intelligence | Platform Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+    --primary: #1a1a2e;
+    --accent: #4f46e5;
+    --accent-light: #818cf8;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+}
+body {
+    font-family:'Inter',-apple-system,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+    height:100vh;
+}
+.app {
+    max-width:430px;
+    margin:0 auto;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:var(--bg);
+}
+
+/* Header */
+.header {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 20px;
+    background:var(--primary);
+    color:white;
+}
+.header h1 { font-size:17px; font-weight:600; }
+
+/* Campus Selector */
+.campus-selector {
+    padding:12px 20px;
+    background:white;
+    border-bottom:1px solid var(--border);
+}
+.campus-scroll {
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:4px;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+}
+.campus-scroll::-webkit-scrollbar { display:none; }
+.campus-chip {
+    padding:8px 16px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:500;
+    white-space:nowrap;
+    cursor:pointer;
+    background:#f1f5f9;
+    color:var(--muted);
+    border:none;
+    transition:all 0.2s;
+}
+.campus-chip.active {
+    background:var(--accent);
+    color:white;
+}
+
+/* Content */
+.content {
+    flex:1;
+    overflow-y:auto;
+    padding-bottom:80px;
+    -webkit-overflow-scrolling:touch;
+}
+.page { display:none; padding:20px; }
+.page.active { display:block; animation:fadeIn 0.2s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+
+/* Stats */
+.stats-row {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-bottom:20px;
+}
+.stat-card {
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px 10px;
+    text-align:center;
+    box-shadow:var(--shadow);
+}
+.stat-number { display:block; font-size:20px; font-weight:700; color:var(--accent); }
+.stat-label { display:block; font-size:10px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
+
+/* Section */
+.section { margin-bottom:24px; }
+.section-title { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:10px; }
+
+/* Event Cards */
+.event-card {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--card);
+    padding:14px 16px;
+    border-radius:var(--radius);
+    margin-bottom:8px;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    transition:transform 0.15s;
+}
+.event-card:active { transform:scale(0.98); }
+.event-date { display:flex; flex-direction:column; align-items:center; min-width:44px; }
+.event-day { font-size:20px; font-weight:700; color:var(--accent); }
+.event-month { font-size:10px; text-transform:uppercase; color:var(--muted); }
+.event-info { flex:1; }
+.event-info strong { font-size:14px; display:block; }
+.event-info p { font-size:12px; color:var(--muted); margin-top:2px; }
+.event-tags { display:flex; gap:6px; margin-top:6px; }
+.tag { font-size:10px; background:#eef2ff; color:var(--accent); padding:2px 8px; border-radius:10px; font-weight:500; }
+
+/* Alert Cards */
+.alert-card {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--card);
+    padding:14px 16px;
+    border-radius:var(--radius);
+    margin-bottom:8px;
+    box-shadow:var(--shadow);
+}
+.alert-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.alert-dot.red { background:var(--danger); }
+.alert-dot.yellow { background:var(--warning); }
+.alert-info { flex:1; }
+.alert-info strong { font-size:14px; display:block; }
+.alert-info p { font-size:12px; color:var(--muted); margin-top:2px; }
+
+/* Sunday bars */
+.sunday-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.sunday-date { font-size:12px; color:var(--muted); min-width:50px; }
+.sunday-bar-wrap { flex:1; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; }
+.sunday-bar { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent-light)); border-radius:4px; }
+.sunday-count { font-size:13px; font-weight:600; min-width:40px; text-align:right; }
+
+/* Event Detail */
+.page-back { font-size:16px; color:var(--accent); font-weight:500; margin-bottom:16px; cursor:pointer; }
+.event-detail-header { text-align:center; margin-bottom:20px; }
+.event-detail-header h2 { font-size:22px; font-weight:700; }
+.event-detail-meta { font-size:13px; color:var(--muted); margin-top:4px; }
+
+/* Readiness */
+.readiness-score { display:flex; flex-direction:column; align-items:center; margin-top:16px; }
+.readiness-ring { position:relative; width:72px; height:72px; }
+.readiness-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+.ring-bg { fill:none; stroke:#e2e8f0; stroke-width:3; }
+.ring-fill { fill:none; stroke:var(--accent); stroke-width:3; stroke-linecap:round; }
+.ring-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:16px; font-weight:700; color:var(--accent); }
+.readiness-label { font-size:11px; color:var(--muted); margin-top:6px; text-transform:uppercase; }
+
+/* Tabs */
+.detail-tabs { display:flex; margin-bottom:20px; background:#e2e8f0; border-radius:10px; padding:3px; }
+.tab { flex:1; padding:8px 12px; font-size:13px; font-weight:500; border:none; background:none; border-radius:8px; cursor:pointer; color:var(--muted); transition:all 0.2s; }
+.tab.active { background:white; color:var(--text); box-shadow:var(--shadow); }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+
+/* Detail sections */
+.detail-section { margin-bottom:24px; }
+.detail-section h4 { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); margin-bottom:12px; }
+.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.info-item { background:var(--card); padding:12px; border-radius:8px; box-shadow:var(--shadow); }
+.info-label { display:block; font-size:11px; color:var(--muted); text-transform:uppercase; }
+.info-value { display:block; font-size:14px; font-weight:500; margin-top:2px; }
+
+/* Attendance */
+.attendance-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.attendance-item { background:var(--card); padding:14px; border-radius:8px; text-align:center; box-shadow:var(--shadow); }
+.att-number { display:block; font-size:22px; font-weight:700; color:var(--accent); }
+.att-label { display:block; font-size:10px; color:var(--muted); text-transform:uppercase; margin-top:2px; }
+
+/* Comparison */
+.comparison-card { background:var(--card); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); }
+.comp-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:13px; }
+.comp-row+.comp-row { border-top:1px solid var(--border); }
+.comp-value { font-weight:600; }
+.comp-change { font-size:11px; font-weight:600; }
+.comp-change.up { color:var(--success); }
+
+/* Room list */
+.room-item { display:flex; align-items:center; justify-content:space-between; background:var(--card); padding:14px 16px; border-radius:var(--radius); margin-bottom:8px; box-shadow:var(--shadow); }
+.room-info strong { display:block; font-size:14px; }
+.room-cap { font-size:12px; color:var(--muted); }
+.room-count { font-size:18px; font-weight:700; color:var(--accent); }
+
+/* Team */
+.team-filters { display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.team-filters::-webkit-scrollbar { display:none; }
+.filter-pill { font-size:12px; padding:6px 14px; border-radius:20px; background:#e2e8f0; color:var(--muted); white-space:nowrap; cursor:pointer; }
+.filter-pill.active { background:var(--accent); color:white; }
+.team-list { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.team-member { display:flex; align-items:center; gap:12px; background:var(--card); padding:12px 14px; border-radius:var(--radius); box-shadow:var(--shadow); }
+.member-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent-light)); color:white; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; flex-shrink:0; }
+.member-info { flex:1; }
+.member-info strong { display:block; font-size:14px; }
+.member-info span { font-size:12px; color:var(--muted); }
+.thanked-badge { font-size:10px; padding:4px 8px; border-radius:10px; font-weight:500; white-space:nowrap; }
+.thanked-badge.yes { background:#d1fae5; color:#065f46; }
+.thanked-badge.no { background:#fef3c7; color:#92400e; }
+
+/* Notes */
+.note-card { padding:12px 16px; border-radius:8px; margin-bottom:8px; font-size:13px; line-height:1.5; }
+.note-card.green { background:#ecfdf5; border-left:3px solid var(--success); }
+.note-card.red { background:#fef2f2; border-left:3px solid var(--danger); }
+.note-card.blue { background:#eef2ff; border-left:3px solid var(--accent); }
+
+/* Bottom Nav */
+.bottom-nav {
+    position:fixed;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:100%;
+    max-width:430px;
+    display:flex;
+    background:white;
+    border-top:1px solid var(--border);
+    padding:8px 0;
+    padding-bottom:env(safe-area-inset-bottom,8px);
+    z-index:100;
+}
+.nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; border:none; background:none; cursor:pointer; padding:6px 0; color:var(--muted); }
+.nav-item.active { color:var(--accent); }
+.nav-icon { font-size:18px; }
+.nav-label { font-size:10px; font-weight:500; }
+
+/* Desktop frame */
+@media(min-width:431px) {
+    body { background:#1a1a2e; display:flex; align-items:center; justify-content:center; }
+    .app { height:90vh; max-height:920px; border-radius:24px; overflow:hidden; box-shadow:0 25px 50px rgba(0,0,0,0.3); border:8px solid #2d2d5e; }
+    .bottom-nav { position:absolute; border-radius:0 0 16px 16px; }
+}
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- Header -->
+    <header class="header">
+        <h1>Highlands Event Intelligence</h1>
+    </header>
+
+    <!-- Campus Selector -->
+    <div class="campus-selector">
+        <div class="campus-scroll" id="campus-scroll">
+            <button class="campus-chip active" data-campus="grants-mill">Grants Mill</button>
+            <button class="campus-chip" data-campus="auburn">Auburn</button>
+            <button class="campus-chip" data-campus="birmingham">Birmingham</button>
+            <button class="campus-chip" data-campus="tuscaloosa">Tuscaloosa</button>
+            <button class="campus-chip" data-campus="montgomery">Montgomery</button>
+            <button class="campus-chip" data-campus="huntsville">Huntsville</button>
+            <button class="campus-chip" data-campus="columbus">Columbus</button>
+            <button class="campus-chip" data-campus="riverchase">Riverchase</button>
+            <button class="campus-chip" data-campus="oxford">Oxford</button>
+            <button class="campus-chip" data-campus="alabaster">Alabaster</button>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <main class="content" id="main-content">
+
+        <!-- Dashboard -->
+        <div class="page active" id="page-dashboard">
+            <div class="stats-row">
+                <div class="stat-card">
+                    <span class="stat-number" id="stat-attendance">1,247</span>
+                    <span class="stat-label">Last Sunday</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="stat-volunteers">48</span>
+                    <span class="stat-label">Volunteers</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number" id="stat-readiness">94%</span>
+                    <span class="stat-label">Readiness</span>
+                </div>
+            </div>
+
+            <section class="section">
+                <h3 class="section-title">Needs Attention</h3>
+                <div class="alert-card">
+                    <span class="alert-dot red"></span>
+                    <div class="alert-info">
+                        <strong>Motion Night (Wed)</strong>
+                        <p>Missing layout &amp; room count</p>
+                    </div>
+                </div>
+                <div class="alert-card">
+                    <span class="alert-dot yellow"></span>
+                    <div class="alert-info">
+                        <strong>Sunday Service (Apr 27)</strong>
+                        <p>3 volunteer slots unfilled</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h3 class="section-title">Upcoming Events</h3>
+                <div id="events-list">
+                    <div class="event-card" onclick="showPage('page-event-detail')">
+                        <div class="event-date"><span class="event-day">20</span><span class="event-month">APR</span></div>
+                        <div class="event-info">
+                            <strong>Sunday Service</strong>
+                            <p>9:00 AM &amp; 11:00 AM &middot; Main Auditorium</p>
+                            <div class="event-tags"><span class="tag">Worship</span><span class="tag">Kids</span></div>
+                        </div>
+                    </div>
+                    <div class="event-card">
+                        <div class="event-date"><span class="event-day">22</span><span class="event-month">APR</span></div>
+                        <div class="event-info">
+                            <strong>Motion Night</strong>
+                            <p>7:00 PM &middot; Student Center</p>
+                            <div class="event-tags"><span class="tag">Students</span><span class="tag">Outdoor</span></div>
+                        </div>
+                    </div>
+                    <div class="event-card">
+                        <div class="event-date"><span class="event-day">23</span><span class="event-month">APR</span></div>
+                        <div class="event-info">
+                            <strong>Midweek Service</strong>
+                            <p>6:30 PM &middot; Chapel</p>
+                            <div class="event-tags"><span class="tag">Worship</span></div>
+                        </div>
+                    </div>
+                    <div class="event-card">
+                        <div class="event-date"><span class="event-day">26</span><span class="event-month">APR</span></div>
+                        <div class="event-info">
+                            <strong>Saturday Prayer</strong>
+                            <p>7:00 AM &middot; Prayer Room</p>
+                            <div class="event-tags"><span class="tag">Prayer</span></div>
+                        </div>
+                    </div>
+                    <div class="event-card" onclick="showPage('page-event-detail')">
+                        <div class="event-date"><span class="event-day">27</span><span class="event-month">APR</span></div>
+                        <div class="event-info">
+                            <strong>Sunday Service</strong>
+                            <p>9:00 AM &amp; 11:00 AM &middot; Main Auditorium</p>
+                            <div class="event-tags"><span class="tag">Worship</span><span class="tag">Kids</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h3 class="section-title">Recent Sundays</h3>
+                <div id="sundays-chart">
+                    <div class="sunday-row"><span class="sunday-date">Apr 13</span><div class="sunday-bar-wrap"><div class="sunday-bar" style="width:82%"></div></div><span class="sunday-count">1,189</span></div>
+                    <div class="sunday-row"><span class="sunday-date">Apr 6</span><div class="sunday-bar-wrap"><div class="sunday-bar" style="width:91%"></div></div><span class="sunday-count">1,312</span></div>
+                    <div class="sunday-row"><span class="sunday-date">Mar 30</span><div class="sunday-bar-wrap"><div class="sunday-bar" style="width:78%"></div></div><span class="sunday-count">1,134</span></div>
+                    <div class="sunday-row"><span class="sunday-date">Mar 23</span><div class="sunday-bar-wrap"><div class="sunday-bar" style="width:100%"></div></div><span class="sunday-count">1,445</span></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Event Detail -->
+        <div class="page" id="page-event-detail">
+            <div class="page-back" onclick="showPage('page-dashboard')">&lsaquo; Back</div>
+            <div class="event-detail-header">
+                <h2>Sunday Service</h2>
+                <p class="event-detail-meta">April 20, 2026 &middot; Grants Mill</p>
+                <div class="readiness-score">
+                    <div class="readiness-ring">
+                        <svg viewBox="0 0 36 36"><path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="ring-fill" stroke-dasharray="88, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                        <span class="ring-text">88%</span>
+                    </div>
+                    <span class="readiness-label">Event Readiness</span>
+                </div>
+            </div>
+            <div class="detail-tabs">
+                <button class="tab active" onclick="showTab(this,'tab-overview')">Overview</button>
+                <button class="tab" onclick="showTab(this,'tab-rooms')">Rooms</button>
+                <button class="tab" onclick="showTab(this,'tab-team')">Team</button>
+                <button class="tab" onclick="showTab(this,'tab-notes')">Notes</button>
+            </div>
+
+            <div class="tab-content active" id="tab-overview">
+                <div class="detail-section">
+                    <h4>Event Info</h4>
+                    <div class="info-grid">
+                        <div class="info-item"><span class="info-label">Type</span><span class="info-value">Sunday Service</span></div>
+                        <div class="info-item"><span class="info-label">Times</span><span class="info-value">9 AM &amp; 11 AM</span></div>
+                        <div class="info-item"><span class="info-label">Ministry</span><span class="info-value">Worship</span></div>
+                        <div class="info-item"><span class="info-label">Owner</span><span class="info-value">Pastor Chris</span></div>
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <h4>Attendance</h4>
+                    <div class="attendance-grid">
+                        <div class="attendance-item"><span class="att-number">1,247</span><span class="att-label">Total</span></div>
+                        <div class="attendance-item"><span class="att-number">186</span><span class="att-label">Kids</span></div>
+                        <div class="attendance-item"><span class="att-number">48</span><span class="att-label">Volunteers</span></div>
+                        <div class="attendance-item"><span class="att-number">312</span><span class="att-label">Parking</span></div>
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <h4>vs. Previous</h4>
+                    <div class="comparison-card">
+                        <div class="comp-row"><span>Last Week</span><span class="comp-value">1,189 <span class="comp-change up">+4.9%</span></span></div>
+                        <div class="comp-row"><span>Last Year</span><span class="comp-value">1,098 <span class="comp-change up">+13.6%</span></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-rooms">
+                <div class="detail-section">
+                    <h4>Room Usage</h4>
+                    <div class="room-item"><div class="room-info"><strong>Main Auditorium</strong><span class="room-cap">Cap: 2,000</span></div><span class="room-count">847</span></div>
+                    <div class="room-item"><div class="room-info"><strong>Overflow A</strong><span class="room-cap">Cap: 200</span></div><span class="room-count">142</span></div>
+                    <div class="room-item"><div class="room-info"><strong>Kids Wing</strong><span class="room-cap">Cap: 150</span></div><span class="room-count">118</span></div>
+                    <div class="room-item"><div class="room-info"><strong>Nursery</strong><span class="room-cap">Cap: 80</span></div><span class="room-count">68</span></div>
+                    <div class="room-item"><div class="room-info"><strong>Student Room</strong><span class="room-cap">Cap: 100</span></div><span class="room-count">72</span></div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-team">
+                <div class="detail-section">
+                    <h4>Serving Team (48)</h4>
+                    <div class="team-filters">
+                        <span class="filter-pill active">All</span>
+                        <span class="filter-pill">Production</span>
+                        <span class="filter-pill">Worship</span>
+                        <span class="filter-pill">Guest Svc</span>
+                        <span class="filter-pill">Kids</span>
+                    </div>
+                    <div class="team-list">
+                        <div class="team-member"><div class="member-avatar">JW</div><div class="member-info"><strong>Jake Williams</strong><span>Camera 1 &middot; Production</span></div><span class="thanked-badge yes">Thanked</span></div>
+                        <div class="team-member"><div class="member-avatar">SM</div><div class="member-info"><strong>Sarah Mitchell</strong><span>Worship Leader</span></div><span class="thanked-badge yes">Thanked</span></div>
+                        <div class="team-member"><div class="member-avatar">DR</div><div class="member-info"><strong>David Rodriguez</strong><span>Audio &middot; Production</span></div><span class="thanked-badge no">Not Yet</span></div>
+                        <div class="team-member"><div class="member-avatar">KJ</div><div class="member-info"><strong>Kim Johnson</strong><span>Check-in &middot; Kids</span></div><span class="thanked-badge yes">Thanked</span></div>
+                        <div class="team-member"><div class="member-avatar">MT</div><div class="member-info"><strong>Marcus Thompson</strong><span>Greeter &middot; Guest Services</span></div><span class="thanked-badge no">Not Yet</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="tab-notes">
+                <div class="detail-section">
+                    <h4>What Went Well</h4>
+                    <div class="note-card green"><p>Transition between worship sets was seamless. New lighting cue worked perfectly.</p></div>
+                    <div class="note-card green"><p>Kids check-in had zero wait time thanks to added kiosk.</p></div>
+                </div>
+                <div class="detail-section">
+                    <h4>Needs Improvement</h4>
+                    <div class="note-card red"><p>Parking overflow wasn't directed early enough. Start 15 min earlier.</p></div>
+                    <div class="note-card red"><p>Audio feedback in overflow room during 2nd service.</p></div>
+                </div>
+                <div class="detail-section">
+                    <h4>Next Time</h4>
+                    <div class="note-card blue"><p>Start parking team at 8:15 AM instead of 8:30.</p></div>
+                    <div class="note-card blue"><p>Add second camera angle for overflow feed.</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Events Showcase Page -->
+        <div class="page" id="page-events">
+            <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">All Events</h2>
+            <div class="team-filters" style="margin-bottom:16px;">
+                <span class="filter-pill active">All</span>
+                <span class="filter-pill">Sundays</span>
+                <span class="filter-pill">Midweek</span>
+                <span class="filter-pill">Students</span>
+                <span class="filter-pill">Special</span>
+                <span class="filter-pill">Prayer</span>
+            </div>
+            <div class="event-card" onclick="showPage('page-event-detail')">
+                <div class="event-date"><span class="event-day">20</span><span class="event-month">APR</span></div>
+                <div class="event-info"><strong>Sunday Service</strong><p>9:00 AM &amp; 11:00 AM &middot; Main Auditorium</p><div class="event-tags"><span class="tag">Worship</span><span class="tag">Kids</span></div></div>
+            </div>
+            <div class="event-card">
+                <div class="event-date"><span class="event-day">22</span><span class="event-month">APR</span></div>
+                <div class="event-info"><strong>Motion Night</strong><p>7:00 PM &middot; Student Center</p><div class="event-tags"><span class="tag">Students</span><span class="tag">Outdoor</span></div></div>
+            </div>
+            <div class="event-card">
+                <div class="event-date"><span class="event-day">23</span><span class="event-month">APR</span></div>
+                <div class="event-info"><strong>Midweek Service</strong><p>6:30 PM &middot; Chapel</p><div class="event-tags"><span class="tag">Worship</span></div></div>
+            </div>
+            <div class="event-card">
+                <div class="event-date"><span class="event-day">26</span><span class="event-month">APR</span></div>
+                <div class="event-info"><strong>Saturday Prayer</strong><p>7:00 AM &middot; Prayer Room</p><div class="event-tags"><span class="tag">Prayer</span></div></div>
+            </div>
+            <div class="event-card" onclick="showPage('page-event-detail')">
+                <div class="event-date"><span class="event-day">27</span><span class="event-month">APR</span></div>
+                <div class="event-info"><strong>Sunday Service</strong><p>9:00 AM &amp; 11:00 AM</p><div class="event-tags"><span class="tag">Worship</span><span class="tag">Kids</span></div></div>
+            </div>
+            <div class="event-card">
+                <div class="event-date"><span class="event-day">30</span><span class="event-month">APR</span></div>
+                <div class="event-info"><strong>Midweek Service</strong><p>6:30 PM &middot; Chapel</p><div class="event-tags"><span class="tag">Worship</span></div></div>
+            </div>
+            <div class="event-card">
+                <div class="event-date"><span class="event-day">3</span><span class="event-month">MAY</span></div>
+                <div class="event-info"><strong>First Wednesday</strong><p>7:00 PM &middot; Main Auditorium</p><div class="event-tags"><span class="tag">Special</span><span class="tag">All Campus</span></div></div>
+            </div>
+            <div class="event-card" onclick="showPage('page-event-detail')">
+                <div class="event-date"><span class="event-day">4</span><span class="event-month">MAY</span></div>
+                <div class="event-info"><strong>Sunday Service</strong><p>9:00 AM &amp; 11:00 AM</p><div class="event-tags"><span class="tag">Worship</span><span class="tag">Kids</span></div></div>
+            </div>
+        </div>
+
+        <!-- Members Page -->
+        <div class="page" id="page-members">
+            <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">Serving Members</h2>
+            <div class="team-filters" style="margin-bottom:16px;">
+                <span class="filter-pill active">All</span>
+                <span class="filter-pill">Production</span>
+                <span class="filter-pill">Worship</span>
+                <span class="filter-pill">Guest Svc</span>
+                <span class="filter-pill">Kids</span>
+                <span class="filter-pill">Parking</span>
+            </div>
+            <div class="team-list">
+                <div class="team-member"><div class="member-avatar">JW</div><div class="member-info"><strong>Jake Williams</strong><span>Production &middot; 24 events</span></div></div>
+                <div class="team-member"><div class="member-avatar">SM</div><div class="member-info"><strong>Sarah Mitchell</strong><span>Worship &middot; 31 events</span></div></div>
+                <div class="team-member"><div class="member-avatar">DR</div><div class="member-info"><strong>David Rodriguez</strong><span>Production &middot; 18 events</span></div></div>
+                <div class="team-member"><div class="member-avatar">KJ</div><div class="member-info"><strong>Kim Johnson</strong><span>Kids &middot; 22 events</span></div></div>
+                <div class="team-member"><div class="member-avatar">MT</div><div class="member-info"><strong>Marcus Thompson</strong><span>Guest Services &middot; 15 events</span></div></div>
+                <div class="team-member"><div class="member-avatar">AL</div><div class="member-info"><strong>Ashley Lewis</strong><span>Production &middot; 27 events</span></div></div>
+                <div class="team-member"><div class="member-avatar">BH</div><div class="member-info"><strong>Brian Harris</strong><span>Parking &middot; 20 events</span></div></div>
+                <div class="team-member"><div class="member-avatar">RP</div><div class="member-info"><strong>Rachel Park</strong><span>Kids &middot; 19 events</span></div></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="showPage('page-dashboard')"><span class="nav-icon">&#9679;</span><span class="nav-label">Home</span></button>
+        <button class="nav-item" onclick="showPage('page-events')"><span class="nav-icon">&#128197;</span><span class="nav-label">Events</span></button>
+        <button class="nav-item" onclick="showPage('page-members')"><span class="nav-icon">&#128101;</span><span class="nav-label">Members</span></button>
+    </nav>
+</div>
+
+<script>
+// Campus data for switching
+const campusData = {
+    'grants-mill': { attendance:'1,247', volunteers:'48', readiness:'94%' },
+    'auburn': { attendance:'634', volunteers:'22', readiness:'89%' },
+    'birmingham': { attendance:'892', volunteers:'35', readiness:'91%' },
+    'tuscaloosa': { attendance:'721', volunteers:'28', readiness:'87%' },
+    'montgomery': { attendance:'543', volunteers:'19', readiness:'92%' },
+    'huntsville': { attendance:'678', volunteers:'26', readiness:'88%' },
+    'columbus': { attendance:'389', volunteers:'14', readiness:'85%' },
+    'riverchase': { attendance:'456', volunteers:'18', readiness:'90%' },
+    'oxford': { attendance:'312', volunteers:'12', readiness:'86%' },
+    'alabaster': { attendance:'401', volunteers:'16', readiness:'91%' }
+};
+
+// Campus selector
+document.getElementById('campus-scroll').addEventListener('click', function(e) {
+    if (e.target.classList.contains('campus-chip')) {
+        document.querySelectorAll('.campus-chip').forEach(c => c.classList.remove('active'));
+        e.target.classList.add('active');
+        const campus = e.target.dataset.campus;
+        const data = campusData[campus];
+        if (data) {
+            document.getElementById('stat-attendance').textContent = data.attendance;
+            document.getElementById('stat-volunteers').textContent = data.volunteers;
+            document.getElementById('stat-readiness').textContent = data.readiness;
+        }
+    }
+});
+
+// Page navigation
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navMap = { 'page-dashboard':0, 'page-events':1, 'page-members':2, 'page-event-detail':-1 };
+    const idx = navMap[pageId];
+    if (idx >= 0) document.querySelectorAll('.nav-item')[idx].classList.add('active');
+    document.getElementById('main-content').scrollTop = 0;
+}
+
+// Tab navigation
+function showTab(btn, tabId) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+}
+
+// Filter pills
+document.querySelectorAll('.team-filters').forEach(container => {
+    container.addEventListener('click', (e) => {
+        if (e.target.classList.contains('filter-pill')) {
+            container.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            e.target.classList.add('active');
+        }
+    });
+});
+</script>
+</body>
+</html>
