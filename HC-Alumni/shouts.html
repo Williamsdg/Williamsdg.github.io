@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Student Shouts — HC Alumni Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .shouts-hero {
+    background: linear-gradient(135deg, var(--ink) 0%, #1c1410 100%);
+    color: var(--cream);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  @media (max-width: 640px) {
+    .shouts-hero { padding: 22px; }
+    .shouts-hero h2 { font-size: 1.35rem; }
+  }
+  .shouts-hero::before {
+    content: '';
+    position: absolute;
+    top: -30%; right: -10%;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(201, 162, 74, 0.18) 0%, transparent 60%);
+  }
+  .shouts-hero .eyebrow { color: var(--gold); position: relative; }
+  .shouts-hero h2 {
+    font-family: var(--font-display);
+    color: var(--cream);
+    font-size: 1.8rem;
+    margin-top: 14px;
+    margin-bottom: 10px;
+    max-width: 500px;
+    position: relative;
+  }
+  .shouts-hero h2 em { color: var(--gold); font-style: italic; font-weight: 400; }
+  .shouts-hero p { color: #b9b3a4; font-size: 15px; max-width: 520px; position: relative; }
+
+  .shout-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 24px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  @media (max-width: 860px) {
+    .shout-layout { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .filter-card {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 88px;
+  }
+  .filter-card h4 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .filter-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--graphite);
+    cursor: pointer;
+    margin-bottom: 2px;
+  }
+  .filter-item:hover { background: var(--cream); color: var(--ink); }
+  .filter-item.active { background: var(--cream); color: var(--ink); border-left: 3px solid var(--gold); padding-left: 7px; font-weight: 700; }
+  .filter-item .count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--cream-deep);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .filter-item.active .count { background: var(--ink); color: var(--cream); }
+
+  .shout-composer {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    margin-bottom: 18px;
+  }
+  .shout-composer textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    min-height: 60px;
+    resize: none;
+    background: transparent;
+  }
+  .shout-composer-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    margin-top: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tag-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--line-strong);
+    color: var(--graphite);
+    background: var(--white);
+  }
+  .tag:hover { border-color: var(--ink); }
+  .tag.on {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+  }
+  .tag-prayer { color: var(--info); border-color: rgba(45,93,138,0.3); background: rgba(45,93,138,0.05); }
+  .tag-praise { color: var(--gold-deep); border-color: rgba(201,162,74,0.3); background: rgba(201,162,74,0.06); }
+  .tag-question { color: var(--graphite); }
+  .tag-testimony { color: var(--success); border-color: rgba(61,122,78,0.3); background: rgba(61,122,78,0.05); }
+
+  .shout {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    margin-bottom: 14px;
+    display: flex;
+    gap: 16px;
+  }
+  .shout:hover { border-color: var(--line-strong); }
+  .vote-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    padding-top: 4px;
+  }
+  .vote-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 16px;
+    transition: var(--transition-fast);
+  }
+  .vote-btn:hover { border-color: var(--gold); color: var(--gold-deep); background: rgba(201,162,74,0.08); }
+  .vote-btn.on {
+    border-color: var(--gold);
+    color: var(--gold-deep);
+    background: rgba(201,162,74,0.12);
+  }
+  .vote-count {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 15px;
+  }
+  .vote-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+
+  .shout-body-col { flex: 1; min-width: 0; }
+  .shout-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .shout-head .post-avatar { width: 34px; height: 34px; font-size: 12px; }
+  .shout-head .pn { font-weight: 700; color: var(--ink); font-size: 14px; }
+  .shout-head .pm { font-size: 12px; color: var(--text-muted); }
+
+  .shout-text { font-size: 15.5px; color: var(--text-body); line-height: 1.65; }
+  .shout-text .highlight { background: rgba(201,162,74,0.12); padding: 1px 5px; border-radius: 4px; color: var(--gold-deep); font-weight: 600; }
+
+  .shout-footer {
+    display: flex;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .shout-footer .action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-radius: 6px;
+    font-weight: 500;
+  }
+  .shout-footer .action:hover { background: var(--cream); color: var(--ink); }
+  .shout-footer .action.on { color: var(--gold-deep); }
+</style>
+</head>
+<body data-page="shouts">
+
+<div class="app-backdrop"></div>
+
+<div class="mobile-topbar">
+  <button class="menu-btn" data-toggle-sidebar aria-label="Menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="brand-text">
+    <div class="brand-title">Student Shouts</div>
+    <div class="brand-sub">Prayer · praise · questions</div>
+  </div>
+</div>
+
+<div class="app-shell">
+  <aside class="app-sidebar"></aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <h1>Student Shouts</h1>
+      <span class="topbar-sub">The wall for prayer, praise, and asks</span>
+      <div class="topbar-right">
+        <div class="search-wrap">
+          <input class="search" placeholder="Search shouts…">
+        </div>
+      </div>
+    </div>
+
+    <div class="app-content">
+      <div class="shouts-hero">
+        <span class="eyebrow">Student Shouts</span>
+        <h2>Ask for prayer. <em>Share a win.</em> Confess a struggle.</h2>
+        <p>A wall of the HC family doing ministry alongside one another. No algorithm. No vanity metrics. Just iron sharpening iron.</p>
+      </div>
+
+      <div class="shout-layout">
+        <aside>
+          <div class="filter-card">
+            <h4>Filter</h4>
+            <div class="filter-item active">All Shouts <span class="count">247</span></div>
+            <div class="filter-item">🙏 Prayer Requests <span class="count">84</span></div>
+            <div class="filter-item">🙌 Praise Reports <span class="count">62</span></div>
+            <div class="filter-item">❓ Questions <span class="count">41</span></div>
+            <div class="filter-item">✨ Testimonies <span class="count">38</span></div>
+            <div class="filter-item">📢 Wins <span class="count">22</span></div>
+            <h4 style="margin-top: 20px;">From</h4>
+            <div class="filter-item">Current Students</div>
+            <div class="filter-item">Alumni</div>
+            <div class="filter-item">My Class</div>
+            <div class="filter-item">My School</div>
+          </div>
+        </aside>
+
+        <div>
+          <div class="shout-composer">
+            <div style="display:flex; gap: 12px; margin-bottom: 8px; align-items: center;">
+              <div class="post-avatar">MJ</div>
+              <div>
+                <div style="font-weight: 700; font-size: 14px; color: var(--ink);">Shout into the family</div>
+                <div style="font-size: 12px; color: var(--text-muted);">Tag your shout so others can find it.</div>
+              </div>
+            </div>
+            <textarea placeholder="What's happening? Need prayer, want to celebrate, or just ask the family something…"></textarea>
+            <div class="shout-composer-footer">
+              <div class="tag-picker">
+                <button class="tag tag-prayer">🙏 Prayer</button>
+                <button class="tag tag-praise on">🙌 Praise</button>
+                <button class="tag tag-question">❓ Question</button>
+                <button class="tag tag-testimony">✨ Testimony</button>
+              </div>
+              <button class="btn btn-primary btn-sm">Post Shout</button>
+            </div>
+          </div>
+
+          <!-- Shout 1 -->
+          <article class="shout">
+            <div class="vote-col">
+              <button class="vote-btn on">🙏</button>
+              <span class="vote-count">128</span>
+              <span class="vote-label">prayers</span>
+            </div>
+            <div class="shout-body-col">
+              <div class="shout-head">
+                <div class="post-avatar">LP</div>
+                <div>
+                  <div class="pn">Lauren Price</div>
+                  <div class="pm">Current Student · Ministry · 2h ago</div>
+                </div>
+                <span class="tag tag-prayer" style="margin-left: auto;">🙏 Prayer</span>
+              </div>
+              <div class="shout-text">
+                Preaching my first-ever sermon at my internship church tonight in Montgomery. Would love prayer — nervous is an understatement. The passage is <span class="highlight">Galatians 6:9</span> and I'm asking the Spirit to speak through me, not just my notes.
+              </div>
+              <div class="shout-footer">
+                <button class="action on">🙏 Praying</button>
+                <button class="action">💬 34 encouragements</button>
+                <button class="action">🔔 Notify me</button>
+                <button class="action" style="margin-left:auto;">Share</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Shout 2 -->
+          <article class="shout">
+            <div class="vote-col">
+              <button class="vote-btn">🙌</button>
+              <span class="vote-count">89</span>
+              <span class="vote-label">amens</span>
+            </div>
+            <div class="shout-body-col">
+              <div class="shout-head">
+                <div class="post-avatar a4">RT</div>
+                <div>
+                  <div class="pn">Ryan Tate</div>
+                  <div class="pm">Class of 2022 · Worship · 5h ago</div>
+                </div>
+                <span class="tag tag-praise" style="margin-left: auto;">🙌 Praise</span>
+              </div>
+              <div class="shout-text">
+                3 years ago I sat in a Highlands College freshman seminar wondering if I'd ever get a paid ministry job. <strong>Tonight we baptized 47 people at Church of the Highlands Tuscaloosa</strong> — I'm on staff there as Worship Pastor. The Lord is kind beyond words.
+              </div>
+              <div class="shout-footer">
+                <button class="action">🙌 Amen</button>
+                <button class="action">💬 28 comments</button>
+                <button class="action">🔖 Save</button>
+                <button class="action" style="margin-left:auto;">Share</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Shout 3 -->
+          <article class="shout">
+            <div class="vote-col">
+              <button class="vote-btn">❓</button>
+              <span class="vote-count">44</span>
+              <span class="vote-label">answers</span>
+            </div>
+            <div class="shout-body-col">
+              <div class="shout-head">
+                <div class="post-avatar a2">JS</div>
+                <div>
+                  <div class="pn">Jordan Sims</div>
+                  <div class="pm">Class of 2024 · Media · 1d ago</div>
+                </div>
+                <span class="tag tag-question" style="margin-left: auto;">❓ Question</span>
+              </div>
+              <div class="shout-text">
+                For any alumni who went into video production after HC — how did you pitch yourself to churches as a <span class="highlight">solo creative</span>? I can shoot, edit, and direct but I'm trying to figure out how to communicate the value. Books, podcasts, anything you'd recommend?
+              </div>
+              <div class="shout-footer">
+                <button class="action">💡 Answer</button>
+                <button class="action">💬 18 replies</button>
+                <button class="action">🔔 Follow</button>
+                <button class="action" style="margin-left:auto;">Share</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Shout 4 -->
+          <article class="shout">
+            <div class="vote-col">
+              <button class="vote-btn on">✨</button>
+              <span class="vote-count">204</span>
+              <span class="vote-label">amens</span>
+            </div>
+            <div class="shout-body-col">
+              <div class="shout-head">
+                <div class="post-avatar a5">ME</div>
+                <div>
+                  <div class="pn">Maria Escobar</div>
+                  <div class="pm">Class of 2020 · Ministry · 1d ago</div>
+                </div>
+                <span class="tag tag-testimony" style="margin-left: auto;">✨ Testimony</span>
+              </div>
+              <div class="shout-text">
+                Five years ago I almost dropped out of HC in the first semester. Today I led my 100th Bible study at our church plant in São Paulo. <strong>To whoever is reading this in your dorm room at 2am wondering if you should stay</strong> — stay. It gets clearer. God is writing something you can't see yet.
+              </div>
+              <div class="shout-footer">
+                <button class="action on">🙌 Amen</button>
+                <button class="action">💬 76 comments</button>
+                <button class="action">💌 DM</button>
+                <button class="action" style="margin-left:auto;">Share</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Shout 5 -->
+          <article class="shout">
+            <div class="vote-col">
+              <button class="vote-btn">🙏</button>
+              <span class="vote-count">67</span>
+              <span class="vote-label">prayers</span>
+            </div>
+            <div class="shout-body-col">
+              <div class="shout-head">
+                <div class="post-avatar a3">CK</div>
+                <div>
+                  <div class="pn">Caleb Kim</div>
+                  <div class="pm">Class of 2023 · Business · 2d ago</div>
+                </div>
+                <span class="tag tag-prayer" style="margin-left: auto;">🙏 Prayer</span>
+              </div>
+              <div class="shout-text">
+                Praying through a big decision this week — church I grew up in is asking me to come on as Ops Director. Would mean leaving my job in Atlanta. Anyone who's made a "leave a good thing for a God thing" move, would love to hear what confirmation looked like for you. 🙏
+              </div>
+              <div class="shout-footer">
+                <button class="action">🙏 Praying</button>
+                <button class="action">💬 22 encouragements</button>
+                <button class="action">🔔 Notify me</button>
+                <button class="action" style="margin-left:auto;">Share</button>
+              </div>
+            </div>
+          </article>
+
+          <div style="text-align: center; padding: 20px 0;">
+            <button class="btn btn-ghost">Load more shouts</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="sidebar.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

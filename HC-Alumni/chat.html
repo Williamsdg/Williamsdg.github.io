@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Chat — HC Alumni Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  html, body { height: 100%; }
+  body { overflow: hidden; }
+  .app-shell { height: 100vh; }
+  .app-main { height: 100vh; overflow: hidden; }
+  .app-content {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .chat-topbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .chat-topbar .ch-hash { color: var(--text-muted); font-size: 22px; font-weight: 400; }
+  .chat-topbar .ch-name {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 17px;
+    white-space: nowrap;
+  }
+  .chat-topbar .ch-topic {
+    padding-left: 14px;
+    border-left: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .chat-topbar .ch-right { margin-left: auto; display: flex; gap: 4px; }
+  .chat-topbar .icon-btn {
+    width: 34px; height: 34px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+  }
+  .chat-topbar .icon-btn:hover { background: var(--cream); color: var(--ink); }
+
+  .chat-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px 12px;
+    background: var(--paper);
+  }
+
+  .chat-day {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 20px 0 14px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .chat-day::before, .chat-day::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .msg {
+    display: flex;
+    gap: 14px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 2px 0;
+  }
+  .msg:hover { background: var(--cream); }
+  .msg-grouped {
+    padding: 2px 12px 2px 68px;
+  }
+  .msg-grouped:hover { background: var(--cream); }
+
+  .msg-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+    color: var(--ink);
+  }
+  .msg-avatar.a2 { background: linear-gradient(135deg, #d4dde8, #8ba1c2); color: var(--white); }
+  .msg-avatar.a3 { background: linear-gradient(135deg, #e8dcd0, #8a6a4f); color: var(--white); }
+  .msg-avatar.a4 { background: linear-gradient(135deg, #dee8dc, #6a8a6e); color: var(--white); }
+  .msg-avatar.a5 { background: linear-gradient(135deg, #e8d4d4, #b97777); color: var(--white); }
+
+  .msg-body { flex: 1; min-width: 0; }
+  .msg-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 2px; }
+  .msg-name { font-weight: 700; color: var(--ink); font-size: 14.5px; }
+  .msg-role {
+    font-size: 10px;
+    color: var(--gold-deep);
+    background: var(--cream);
+    padding: 1.5px 7px;
+    border-radius: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .msg-time { font-size: 11px; color: var(--text-muted); }
+  .msg-text { font-size: 14.5px; color: var(--text-body); line-height: 1.55; word-wrap: break-word; }
+  .msg-text code {
+    background: var(--cream-deep);
+    padding: 1.5px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--gold-deep);
+    font-family: ui-monospace, 'Cascadia Mono', Menlo, monospace;
+  }
+
+  .msg-mention {
+    background: rgba(201,162,74,0.18);
+    color: var(--gold-deep);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .msg-reactions {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+  }
+  .reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--white);
+    border: 1px solid var(--line-strong);
+    padding: 3px 9px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--graphite);
+    cursor: pointer;
+  }
+  .reaction.mine { background: rgba(201,162,74,0.12); border-color: var(--gold); color: var(--gold-deep); }
+  .reaction:hover { border-color: var(--ink); }
+
+  .thread-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 4px 10px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--gold-deep);
+    font-weight: 600;
+  }
+  .thread-link:hover { background: var(--cream); }
+
+  .msg-image {
+    margin-top: 8px;
+    width: 100%;
+    max-width: 380px;
+    height: 180px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #c9a24a 0%, #1e2a3a 100%);
+    position: relative;
+    overflow: hidden;
+    color: var(--cream);
+  }
+  .msg-image::after {
+    content: 'chord-chart-live-sunday.png';
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+    background: rgba(0,0,0,0.3);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .presence-line {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 10px 0 0;
+    font-style: italic;
+  }
+
+  .chat-composer {
+    background: var(--paper);
+    padding: 12px 24px 20px;
+    border-top: 1px solid var(--line);
+  }
+  .chat-composer-box {
+    background: var(--white);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 4px 4px 4px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: var(--transition-fast);
+  }
+  .chat-composer-box:focus-within {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(201,162,74,0.2);
+  }
+  .chat-composer-box input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 12px 0;
+    font-size: 14.5px;
+    background: transparent;
+    color: var(--ink);
+  }
+  .chat-composer-box .icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chat-composer-box .icon-btn:hover { background: var(--cream); color: var(--ink); }
+  .chat-composer-box .send {
+    background: var(--ink);
+    color: var(--cream);
+    margin-left: 2px;
+  }
+  .chat-composer-box .send:hover { background: var(--black); color: var(--cream); }
+  .chat-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    padding-left: 4px;
+  }
+
+  /* Member list panel (desktop) */
+  .member-panel {
+    width: 240px;
+    background: var(--paper);
+    border-left: 1px solid var(--line);
+    padding: 18px 14px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .member-panel h5 {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 8px 8px;
+    margin: 12px 0 4px;
+  }
+  .member-panel h5:first-child { margin-top: 0; }
+  .m-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 6px;
+  }
+  .m-item:hover { background: var(--white); }
+  .m-item .m-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #4caf50;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .m-item .m-dot.off { background: var(--text-subtle); }
+  .m-item .msg-avatar { width: 28px; height: 28px; font-size: 11px; }
+  .m-item .m-name { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+
+  .chat-wrap {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .chat-body-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+  .msg-body { overflow: hidden; word-wrap: break-word; overflow-wrap: break-word; }
+
+  @media (max-width: 1024px) {
+    .member-panel { display: none; }
+  }
+  @media (max-width: 820px) {
+    .chat-topbar .ch-topic { display: none; }
+    .chat-composer { padding: 10px 16px 16px; }
+    .chat-scroll { padding: 14px 14px 4px; }
+    .msg-grouped { padding-left: 62px; }
+  }
+</style>
+</head>
+<body data-page="class-2023">
+
+<div class="app-backdrop"></div>
+
+<div class="mobile-topbar">
+  <button class="menu-btn" data-toggle-sidebar aria-label="Menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="brand-text">
+    <div class="brand-title"># class-of-2023</div>
+    <div class="brand-sub">42 members · 14 online</div>
+  </div>
+</div>
+
+<div class="app-shell">
+  <aside class="app-sidebar"></aside>
+
+  <main class="app-main">
+    <div class="app-content">
+      <div class="chat-wrap">
+        <div class="chat-body-wrap">
+          <div class="chat-topbar">
+            <span class="ch-hash">#</span>
+            <div>
+              <div class="ch-name">class-of-2023</div>
+            </div>
+            <div class="ch-topic">Our graduating class · iron sharpens iron · moderated by Dean Thomas</div>
+            <div class="ch-right">
+              <button class="icon-btn" title="Pin">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>
+              </button>
+              <button class="icon-btn" title="Members">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </button>
+              <button class="icon-btn" title="Search">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="chat-scroll" id="chatScroll">
+            <div class="chat-day">Yesterday</div>
+
+            <div class="msg">
+              <div class="msg-avatar a3">DT</div>
+              <div class="msg-body">
+                <div class="msg-head">
+                  <span class="msg-name">Dean Thomas</span>
+                  <span class="msg-role">HC STAFF</span>
+                  <span class="msg-time">Yesterday at 4:12 PM</span>
+                </div>
+                <div class="msg-text">
+                  Class of 2023 — the two-year reunion dinner for Homecoming is confirmed. Friday night, April 17, Grandview Hall. Save your spot 🔗
+                </div>
+                <div class="msg-reactions">
+                  <span class="reaction mine">🙌 18</span>
+                  <span class="reaction">❤️ 12</span>
+                  <span class="reaction">🔥 7</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="chat-day">Today</div>
+
+            <div class="msg">
+              <div class="msg-avatar">MJ</div>
+              <div class="msg-body">
+                <div class="msg-head">
+                  <span class="msg-name">Marcus Jordan</span>
+                  <span class="msg-time">11:24 AM</span>
+                </div>
+                <div class="msg-text">Launch team mtg tonight at 7 CT. Everyone in? Bringing chord charts for Sunday 🎸</div>
+              </div>
+            </div>
+
+            <div class="msg-grouped">
+              <div class="msg-text">Also — if anyone in Nashville wants to swing by, we're meeting at <span class="msg-mention">@Sarah Okafor</span>'s place.</div>
+            </div>
+
+            <div class="msg">
+              <div class="msg-avatar a2">SO</div>
+              <div class="msg-body">
+                <div class="msg-head">
+                  <span class="msg-name">Sarah Okafor</span>
+                  <span class="msg-time">11:26 AM</span>
+                </div>
+                <div class="msg-text">In 🙌 bringing notes from the core team retreat. Also making coffee.</div>
+                <div class="msg-reactions">
+                  <span class="reaction">☕ 5</span>
+                  <span class="reaction">🙏 3</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="msg">
+              <div class="msg-avatar a4">TB</div>
+              <div class="msg-body">
+                <div class="msg-head">
+                  <span class="msg-name">Taylor Brooks</span>
+                  <span class="msg-time">11:31 AM</span>
+                </div>
+                <div class="msg-text">Y'all this group has genuinely changed my first year of full-time ministry. Didn't realize how lonely it'd be out here in Boise without you.</div>
+                <div class="msg-reactions">
+                  <span class="reaction mine">❤️ 24</span>
+                  <span class="reaction">🫂 11</span>
+                </div>
+                <a href="#" class="thread-link">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>
+                  9 replies · last by Lauren 2m ago
+                </a>
+              </div>
+            </div>
+
+            <div class="msg">
+              <div class="msg-avatar">MJ</div>
+              <div class="msg-body">
+                <div class="msg-head">
+                  <span class="msg-name">Marcus Jordan</span>
+                  <span class="msg-time">11:42 AM</span>
+                </div>
+                <div class="msg-text">Dropping Sunday's set here — feedback welcome before Friday rehearsal. Key changes in "Goodness of God" after the bridge.</div>
+                <div class="msg-image"></div>
+                <div class="msg-reactions">
+                  <span class="reaction">🎸 8</span>
+                  <span class="reaction">👀 4</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="msg">
+              <div class="msg-avatar a5">EP</div>
+              <div class="msg-body">
+                <div class="msg-head">
+                  <span class="msg-name">Emma Pratt</span>
+                  <span class="msg-time">12:05 PM</span>
+                </div>
+                <div class="msg-text">Hey <span class="msg-mention">@Marcus Jordan</span> — chord 3 in the pre-chorus looks off, should that be a <code>Bm7</code> instead of <code>Bm</code>? Also <em>finally</em> moving to Birmingham next month, lunch soon? ☕</div>
+                <div class="msg-reactions">
+                  <span class="reaction">🎶 6</span>
+                  <span class="reaction mine">🙌 9</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="presence-line"><em>3 people are typing…</em></div>
+          </div>
+
+          <div class="chat-composer">
+            <div class="chat-composer-box">
+              <button class="icon-btn" title="Add">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+              <input type="text" placeholder="Message #class-of-2023">
+              <button class="icon-btn" title="Emoji">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+              </button>
+              <button class="icon-btn send" title="Send">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+            <div class="chat-hint">Shift + Return for new line · <span class="msg-mention" style="font-size:11px;">@</span> to mention</div>
+          </div>
+        </div>
+
+        <aside class="member-panel">
+          <h5>Staff · 1</h5>
+          <div class="m-item">
+            <div class="msg-avatar a3">DT</div>
+            <div class="m-name">Dean Thomas</div>
+            <div class="m-dot"></div>
+          </div>
+
+          <h5>Online · 14</h5>
+          <div class="m-item">
+            <div class="msg-avatar">MJ</div>
+            <div class="m-name">Marcus Jordan</div>
+            <div class="m-dot"></div>
+          </div>
+          <div class="m-item">
+            <div class="msg-avatar a2">SO</div>
+            <div class="m-name">Sarah Okafor</div>
+            <div class="m-dot"></div>
+          </div>
+          <div class="m-item">
+            <div class="msg-avatar a4">TB</div>
+            <div class="m-name">Taylor Brooks</div>
+            <div class="m-dot"></div>
+          </div>
+          <div class="m-item">
+            <div class="msg-avatar a5">EP</div>
+            <div class="m-name">Emma Pratt</div>
+            <div class="m-dot"></div>
+          </div>
+          <div class="m-item">
+            <div class="msg-avatar">JH</div>
+            <div class="m-name">Jake Hill</div>
+            <div class="m-dot"></div>
+          </div>
+          <div class="m-item">
+            <div class="msg-avatar a3">RP</div>
+            <div class="m-name">Rachel Patel</div>
+            <div class="m-dot"></div>
+          </div>
+
+          <h5>Offline · 28</h5>
+          <div class="m-item">
+            <div class="msg-avatar a4" style="opacity:0.65;">AM</div>
+            <div class="m-name" style="color:var(--text-muted);">Andrew Martinez</div>
+            <div class="m-dot off"></div>
+          </div>
+          <div class="m-item">
+            <div class="msg-avatar a2" style="opacity:0.65;">KC</div>
+            <div class="m-name" style="color:var(--text-muted);">Kayla Chen</div>
+            <div class="m-dot off"></div>
+          </div>
+          <div class="m-item">
+            <div class="msg-avatar a5" style="opacity:0.65;">BF</div>
+            <div class="m-name" style="color:var(--text-muted);">Brian Foster</div>
+            <div class="m-dot off"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="sidebar.js"></script>
+<script src="app.js"></script>
+<script>
+  // Auto-scroll to bottom on load
+  const sc = document.getElementById('chatScroll');
+  if (sc) sc.scrollTop = sc.scrollHeight;
+</script>
+</body>
+</html>
