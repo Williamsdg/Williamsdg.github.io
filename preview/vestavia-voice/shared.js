@@ -205,7 +205,7 @@ function renderFooter(){
 /* Helper: render a story card from an article id */
 function storyCard(id){
   const a=articles[id];if(!a)return'';
-  const firstSentence=(a.body.match(/<p>([^<]+)<\/p>/)||[,'])[1].replace(/<[^>]+>/g,'').slice(0,160);
+  const firstSentence=(a.body.match(/<p>([^<]+)<\/p>/)||[,''])[1].replace(/<[^>]+>/g,'').slice(0,160);
   return `<article class="story-card" data-article="${id}">
     <div class="story-card-img">
       <img src="${a.hero.replace('w=1600','w=800')}" alt="${a.headline.replace(/"/g,'')}" loading="lazy">
