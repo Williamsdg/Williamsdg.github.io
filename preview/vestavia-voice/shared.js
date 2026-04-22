@@ -1,4 +1,20 @@
 /* THE VESTAVIA VOICE — article reader data + overlay */
+const authors={
+  "James Mitchell":{photo:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",bio:"Editor in Chief · City Hall"},
+  "Rebecca Hollis":{photo:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80",bio:"Managing Editor · Development"},
+  "Priya Chandra":{photo:"https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",bio:"Schools Reporter"},
+  "Chris Donovan":{photo:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",bio:"Rebels Sports"},
+  "Tom Alvarez":{photo:"https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",bio:"Public Safety"},
+  "Elena Park":{photo:"https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=200&q=80",bio:"Dining &amp; Business"},
+  "David Kim":{photo:"https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80",bio:"Business"},
+  "Monica Price":{photo:"https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=crop&w=200&q=80",bio:"Community"},
+  "Aisha Warren":{photo:"https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",bio:"Environment &amp; Features"},
+  "Harold Keene":{photo:"https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=80",bio:"Columnist"},
+  "Linda Ferrara":{photo:"https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",bio:"Guest Contributor"},
+  "The Editorial Board":{photo:"https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=200&q=80",bio:"Voice Editorial Board"},
+  "Eleanor Whitaker":{photo:"",bio:"Cahaba Heights Reader"},
+  "The Voice":{photo:"",bio:"Obituaries"}
+};
 const articles={
   corridor:{category:"Government · Exclusive",headline:"Council green-lights $14M Cahaba Heights corridor overhaul after two years of hearings",deck:"The long-debated plan will widen sidewalks, add a protected bike lane, and reroute truck traffic — but residents on Dolly Ridge Road say they're still waiting on a promised traffic study.",author:"James Mitchell",initials:"JM",date:"April 22, 2026 · 4 hours ago",readTime:"8 min read",hero:"https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?auto=format&fit=crop&w=1600&q=85",caption:"Mayor Cunningham addresses residents at Tuesday's council session.",tags:["Cahaba Heights","City Council","Infrastructure"],
     body:`<p>The Vestavia Hills City Council voted 4-1 Tuesday night to approve the long-debated Cahaba Heights corridor improvement plan, clearing the way for $14 million in roadwork, pedestrian upgrades, and truck rerouting along the busy commercial stretch.</p><p>The approval caps nearly two years of public hearings, revised designs, and pushback from residents whose homes back up to the corridor. Mayor Ashley Cunningham called the vote "a victory for walkability and for the neighborhoods we've heard from."</p><blockquote>We're not against the project. We just want the data the city promised.</blockquote><p>But residents on Dolly Ridge Road, who spoke again Tuesday, say the plan still hasn't addressed the traffic study they were promised at last fall's listening session.</p><h3>What's in the plan</h3><p>The approved design widens sidewalks to 8 feet along Cahaba Heights Road, installs a protected bike lane on the north side, and designates alternative truck routes through the industrial access road. Construction is expected to begin in late fall 2026 and phase over 18 months.</p><h3>Funding and next steps</h3><p>Roughly 60% of the $14 million will come from the city's general infrastructure fund, with the balance split between state DOT match and a federal Complete Streets grant secured in late 2025.</p><p>A community information session is scheduled for May 7 at the Cahaba Heights branch library.</p>`},
@@ -81,7 +97,10 @@ function openReader(id){
   document.getElementById('reader-deck').textContent=a.deck||'';
   document.getElementById('reader-author').textContent=a.author;
   document.getElementById('reader-date').textContent=a.date;
-  document.getElementById('reader-avatar').textContent=a.initials;
+  const avatar=document.getElementById('reader-avatar');
+  const aPhoto=(authors[a.author]||{}).photo;
+  if(aPhoto){avatar.innerHTML='<img src="'+aPhoto+'" alt="'+a.author+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';avatar.style.padding='0'}
+  else{avatar.textContent=a.initials;avatar.style.padding=''}
   document.getElementById('reader-hero-img').src=a.hero;
   document.getElementById('reader-hero-img').alt=a.headline;
   document.getElementById('reader-hero-caption').textContent=a.caption||'';
