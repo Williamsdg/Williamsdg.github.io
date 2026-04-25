@@ -23,10 +23,12 @@ TRADES = [
         "primary": "#2563eb",
         "primary_dark": "#1a2a5e",
         "hero": "HVAC Operations Dashboard",
-        "stat_pending_label": "Pending Estimates",
-        "stat_sent_label": "Jobs Quoted",
-        "stat_scheduled_label": "Service Calls This Week",
-        "stat_team_label": "Technicians",
+        "kpis": [
+            {"label": "Service Calls This Week", "value": "12", "sub": "5 emergency"},
+            {"label": "Tons Installed (MTD)", "value": "47", "sub": "AC + heat pump"},
+            {"label": "Filters / Coils Replaced", "value": "84", "sub": "This month"},
+            {"label": "Active Maintenance Plans", "value": "126", "sub": "Recurring revenue"},
+        ],
         "job_types": [
             "AC Maintenance", "AC Installation", "AC Repair",
             "Furnace Install", "Furnace Repair", "Heat Pump Install",
@@ -54,10 +56,12 @@ TRADES = [
         "primary": "#0d9488",
         "primary_dark": "#134e4a",
         "hero": "Plumbing & Gas Operations",
-        "stat_pending_label": "Open Quotes",
-        "stat_sent_label": "Jobs Quoted",
-        "stat_scheduled_label": "Calls This Week",
-        "stat_team_label": "Plumbers",
+        "kpis": [
+            {"label": "Service Calls This Week", "value": "18", "sub": "4 emergency"},
+            {"label": "Drains Cleared (MTD)", "value": "42", "sub": "Avg 2.1 hrs each"},
+            {"label": "Water Heaters Installed", "value": "11", "sub": "This month"},
+            {"label": "Gas Line Permits Pulled", "value": "6", "sub": "Active jobs"},
+        ],
         "job_types": [
             "Leak Repair", "Drain Cleaning", "Water Heater Install",
             "Gas Line Install", "Gas Line Repair", "Sewer Line Service",
@@ -85,10 +89,12 @@ TRADES = [
         "primary": "#059669",
         "primary_dark": "#064e3b",
         "hero": "Home Services Dashboard",
-        "stat_pending_label": "Service Requests",
-        "stat_sent_label": "Quotes Sent",
-        "stat_scheduled_label": "Visits This Week",
-        "stat_team_label": "Service Pros",
+        "kpis": [
+            {"label": "Visits This Week", "value": "22", "sub": "Across 18 customers"},
+            {"label": "Service Requests Open", "value": "9", "sub": "Awaiting schedule"},
+            {"label": "Avg Job Length", "value": "1.8 hrs", "sub": "On-site time"},
+            {"label": "Repeat Customers (MTD)", "value": "63%", "sub": "+8% vs last month"},
+        ],
         "job_types": [
             "Handyman Repair", "Appliance Install", "Drywall Patch",
             "Painting", "Fixture Swap", "Door / Lock Repair",
@@ -116,10 +122,12 @@ TRADES = [
         "primary": "#0891b2",
         "primary_dark": "#155e75",
         "hero": "Water Systems Dashboard",
-        "stat_pending_label": "Pending Quotes",
-        "stat_sent_label": "Quotes Sent",
-        "stat_scheduled_label": "Install / Service Calls",
-        "stat_team_label": "Water Techs",
+        "kpis": [
+            {"label": "Wells Serviced (MTD)", "value": "14", "sub": "Inspect + filter"},
+            {"label": "Pumps Installed", "value": "6", "sub": "This month"},
+            {"label": "Filtration Systems Live", "value": "82", "sub": "Under contract"},
+            {"label": "Emergency Calls", "value": "3", "sub": "This week"},
+        ],
         "job_types": [
             "Well Drilling", "Pump Installation", "Water Filtration",
             "Softener Install", "Water Line Repair", "Pressure Test",
@@ -147,10 +155,12 @@ TRADES = [
         "primary": "#d97706",
         "primary_dark": "#7c2d12",
         "hero": "Electrical Operations Dashboard",
-        "stat_pending_label": "Pending Quotes",
-        "stat_sent_label": "Jobs Quoted",
-        "stat_scheduled_label": "Service Calls This Week",
-        "stat_team_label": "Electricians",
+        "kpis": [
+            {"label": "Service Calls This Week", "value": "16", "sub": "2 emergency"},
+            {"label": "Panel Upgrades (MTD)", "value": "8", "sub": "200A avg"},
+            {"label": "Permits Pending", "value": "5", "sub": "Awaiting inspection"},
+            {"label": "EV Chargers Installed", "value": "12", "sub": "This year"},
+        ],
         "job_types": [
             "Panel Upgrade", "New Circuit Install", "Outlet Install",
             "Lighting Install", "Generator Install", "EV Charger Install",
@@ -178,10 +188,12 @@ TRADES = [
         "primary": "#92400e",
         "primary_dark": "#451a03",
         "hero": "Flooring Install Dashboard",
-        "stat_pending_label": "Pending Estimates",
-        "stat_sent_label": "Proposals Out",
-        "stat_scheduled_label": "Installs This Week",
-        "stat_team_label": "Installers",
+        "kpis": [
+            {"label": "Sqft Installed (MTD)", "value": "8,420", "sub": "Hardwood + carpet"},
+            {"label": "Active Job Sites", "value": "5", "sub": "Crews dispatched"},
+            {"label": "Material Lead Time", "value": "9 days", "sub": "Avg from order"},
+            {"label": "Refinish Jobs Booked", "value": "7", "sub": "Next 30 days"},
+        ],
         "job_types": [
             "Hardwood Install", "Hardwood Refinish", "Carpet Install",
             "Carpet Repair", "Subfloor Prep", "Tile Transition",
@@ -209,10 +221,12 @@ TRADES = [
         "primary": "#1e40af",
         "primary_dark": "#1e3a8a",
         "hero": "Window Install Dashboard",
-        "stat_pending_label": "Open Estimates",
-        "stat_sent_label": "Proposals Sent",
-        "stat_scheduled_label": "Installs This Week",
-        "stat_team_label": "Installers",
+        "kpis": [
+            {"label": "Windows Installed (MTD)", "value": "184", "sub": "Across 22 homes"},
+            {"label": "Pending Measurements", "value": "8", "sub": "Awaiting site visit"},
+            {"label": "Full-Home Projects", "value": "3", "sub": "Active this week"},
+            {"label": "Avg Project Size", "value": "9 windows", "sub": "Per home"},
+        ],
         "job_types": [
             "Window Measurement", "Single Window Install", "Full-Home Install",
             "Glass Replacement", "Frame Repair", "Seal / Weatherize",
@@ -240,10 +254,12 @@ TRADES = [
         "primary": "#991b1b",
         "primary_dark": "#7f1d1d",
         "hero": "Roofing Operations Dashboard",
-        "stat_pending_label": "Pending Inspections",
-        "stat_sent_label": "Proposals Sent",
-        "stat_scheduled_label": "Installs This Week",
-        "stat_team_label": "Roofers",
+        "kpis": [
+            {"label": "Squares Installed (MTD)", "value": "286", "sub": "Across 14 homes"},
+            {"label": "Pending Inspections", "value": "9", "sub": "Storm damage claims"},
+            {"label": "Active Job Sites", "value": "4", "sub": "Crews dispatched"},
+            {"label": "Insurance Claims Open", "value": "12", "sub": "Awaiting adjuster"},
+        ],
         "job_types": [
             "Roof Inspection", "Shingle Replacement", "Full Roof Install",
             "Metal Roof Install", "Leak Repair", "Flashing Repair",
@@ -271,10 +287,12 @@ TRADES = [
         "primary": "#4338ca",
         "primary_dark": "#312e81",
         "hero": "Drywall Dashboard",
-        "stat_pending_label": "Pending Bids",
-        "stat_sent_label": "Bids Sent",
-        "stat_scheduled_label": "Jobs This Week",
-        "stat_team_label": "Drywall Crew",
+        "kpis": [
+            {"label": "Sheets Hung (MTD)", "value": "1,240", "sub": "Across 8 jobs"},
+            {"label": "Active Job Sites", "value": "6", "sub": "Crews dispatched"},
+            {"label": "Patch Jobs This Week", "value": "11", "sub": "Avg 2 hrs each"},
+            {"label": "Sqft Finished (MTD)", "value": "39,680", "sub": "Tape + texture"},
+        ],
         "job_types": [
             "Hang Sheetrock", "Tape & Mud", "Texture / Finish",
             "Patch Repair", "Ceiling Repair", "Full Room Install",
@@ -302,10 +320,12 @@ TRADES = [
         "primary": "#166534",
         "primary_dark": "#14532d",
         "hero": "Framing Operations Dashboard",
-        "stat_pending_label": "Pending Bids",
-        "stat_sent_label": "Bids Sent",
-        "stat_scheduled_label": "Jobs This Week",
-        "stat_team_label": "Framers",
+        "kpis": [
+            {"label": "Linear Ft Framed (MTD)", "value": "12,640", "sub": "Walls + floor"},
+            {"label": "Active Builds", "value": "5", "sub": "New + addition"},
+            {"label": "Inspections Pending", "value": "3", "sub": "Rough-in framing"},
+            {"label": "Sqft Under Roof (MTD)", "value": "8,940", "sub": "Closed-in this month"},
+        ],
         "job_types": [
             "Framing Estimate", "Wall Framing", "Floor Framing",
             "Roof Framing", "Addition Frame", "Remodel Frame",
@@ -333,10 +353,12 @@ TRADES = [
         "primary": "#b45309",
         "primary_dark": "#78350f",
         "hero": "Masonry Operations Dashboard",
-        "stat_pending_label": "Pending Bids",
-        "stat_sent_label": "Bids Sent",
-        "stat_scheduled_label": "Jobs This Week",
-        "stat_team_label": "Masons",
+        "kpis": [
+            {"label": "Bricks Laid (MTD)", "value": "18,420", "sub": "Across 6 jobs"},
+            {"label": "Active Job Sites", "value": "4", "sub": "Crews dispatched"},
+            {"label": "Tuckpointing Jobs", "value": "7", "sub": "This week"},
+            {"label": "Chimney Repairs (MTD)", "value": "9", "sub": "Inspect + repair"},
+        ],
         "job_types": [
             "Brick Install", "Brick Repair", "Tuckpointing",
             "Chimney Repair", "Retaining Wall", "Patio Install",
@@ -386,6 +408,12 @@ def build_html(t):
         f'<td>{cost}</td>'
         f'<td>{"<span class=\"badge badge-completed\">In Stock</span>" if qty > reorder else "<span class=\"badge badge-pending\">Reorder</span>"}</td></tr>'
         for (name, unit, qty, reorder, cost) in t["inventory"]
+    )
+    kpi_cards_html = "".join(
+        f'<div class="stat-card"><div class="stat-label">{k["label"]}</div>'
+        f'<div class="stat-value">{k["value"]}</div>'
+        f'<div class="stat-sub">{k["sub"]}</div></div>'
+        for k in t["kpis"]
     )
 
     return f"""<!DOCTYPE html>
@@ -497,8 +525,23 @@ def build_html(t):
         .bar-track{{flex:1;height:10px;background:var(--g100);border-radius:50px;overflow:hidden}}
         .bar-fill{{height:100%;background:var(--primary);border-radius:50px}}
         .bar-value{{width:64px;text-align:right;font-size:.85rem;font-weight:700;color:var(--primary-dark)}}
+        .photo-strip{{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}}
+        .photo-thumb{{width:48px;height:48px;border-radius:6px;object-fit:cover;border:1px solid var(--g200);cursor:pointer}}
+        .photo-empty{{font-size:.75rem;color:var(--g400)}}
         @media(max-width:1024px){{.stats-row,.report-grid{{grid-template-columns:repeat(2,1fr)}}.form-row-3{{grid-template-columns:1fr}}}}
         @media(max-width:768px){{.sidebar{{transform:translateX(-100%)}}.sidebar.open{{transform:translateX(0)}}.sidebar-close,.sidebar-toggle{{display:block}}.main{{margin-left:0}}.content{{padding:20px}}.topbar{{padding:14px 20px}}.stats-row,.report-grid{{grid-template-columns:1fr}}.form-row{{grid-template-columns:1fr}}}}
+        @media print{{
+            body{{background:var(--white)}}
+            .sidebar,.topbar,.btn,.btn-group,.card-header button,#estPreviewArea .card-header .btn-group{{display:none !important}}
+            .main{{margin-left:0}}
+            .content{{padding:0}}
+            .page{{display:none !important}}
+            .page#page-estimates{{display:block !important}}
+            .page#page-estimates > div:not(#estPreviewArea){{display:none}}
+            #estPreviewArea{{display:block !important;margin:0}}
+            #estPreviewArea .card{{box-shadow:none;border:none}}
+            .estimate-preview{{border:none;padding:0}}
+        }}
     </style>
 </head>
 <body>
@@ -530,14 +573,11 @@ def build_html(t):
         <!-- DASHBOARD -->
         <div class="page active" id="page-dashboard">
             <div class="stats-row">
-                <div class="stat-card"><div class="stat-label">{t["stat_pending_label"]}</div><div class="stat-value">3</div><div class="stat-sub">Awaiting approval</div></div>
-                <div class="stat-card"><div class="stat-label">{t["stat_sent_label"]}</div><div class="stat-value">8</div><div class="stat-sub">This month</div></div>
-                <div class="stat-card"><div class="stat-label">{t["stat_scheduled_label"]}</div><div class="stat-value">5</div><div class="stat-sub">This week</div></div>
-                <div class="stat-card"><div class="stat-label">{t["stat_team_label"]}</div><div class="stat-value">4</div><div class="stat-sub">Active staff</div></div>
+                {kpi_cards_html}
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
-                <div class="card"><div class="card-header"><h2>Recent Estimates</h2></div><table><thead><tr><th>Client</th><th>Amount</th><th>Status</th></tr></thead><tbody><tr><td>Sample Client A</td><td>$2,400</td><td><span class="badge badge-sent">Sent</span></td></tr><tr><td>Sample Client B</td><td>$1,200</td><td><span class="badge badge-pending">Pending</span></td></tr><tr><td>Sample Client C</td><td>$5,800</td><td><span class="badge badge-pending">Pending</span></td></tr></tbody></table></div>
-                <div class="card"><div class="card-header"><h2>Today's Schedule</h2></div><div class="card-body"><div class="schedule-list"><div class="schedule-card"><div class="schedule-time">9:00 AM</div><div class="schedule-info"><h4>{job_default1}</h4><p>123 Main St, {AREA}</p><span class="schedule-employee">Employee 1</span></div></div><div class="schedule-card"><div class="schedule-time">1:00 PM</div><div class="schedule-info"><h4>{job_default2}</h4><p>456 Oak Ave, {AREA}</p><span class="schedule-employee">Employee 2</span></div></div></div></div></div>
+                <div class="card"><div class="card-header"><h2>Recent Estimates</h2></div><table><thead><tr><th>Client</th><th>Amount</th><th>Status</th></tr></thead><tbody id="recentEstBody"></tbody></table></div>
+                <div class="card"><div class="card-header"><h2>Today's Schedule</h2></div><div class="card-body"><div class="schedule-list" id="todayScheduleBody"></div></div></div>
             </div>
         </div>
         <!-- ESTIMATES -->
@@ -545,11 +585,8 @@ def build_html(t):
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
                 <div></div><button class="btn btn-primary" onclick="openModal('estimateModal')">+ New Estimate</button>
             </div>
-            <div class="card"><div class="card-header"><h2>All Estimates</h2></div><table><thead><tr><th>#</th><th>Client</th><th>Service</th><th>Amount</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="estBody">
-                <tr><td>#EST-001</td><td>Sample Client A<br><span style="font-size:.8rem;color:var(--g400)">clienta@email.com</span></td><td>{job_default1}</td><td>$2,400.00</td><td>Jan 28, 2026</td><td><span class="badge badge-sent">Sent</span></td><td><button class="btn btn-outline btn-sm" onclick="previewEst('EST-001')">View</button></td></tr>
-                <tr><td>#EST-002</td><td>Sample Client B<br><span style="font-size:.8rem;color:var(--g400)">clientb@email.com</span></td><td>{job_default2}</td><td>$1,200.00</td><td>Jan 29, 2026</td><td><span class="badge badge-pending">Pending</span></td><td><button class="btn btn-outline btn-sm" onclick="previewEst('EST-002')">View</button></td></tr>
-            </tbody></table></div>
-            <div id="estPreviewArea" style="margin-top:24px;display:none"><div class="card"><div class="card-header"><h2>Estimate Preview</h2><div class="btn-group"><button class="btn btn-primary btn-sm" onclick="sendEst('client')">Email to Client</button><button class="btn btn-outline btn-sm" onclick="sendEst('company')">Copy to Company</button></div></div><div class="card-body"><div class="estimate-preview" id="estPreviewContent"></div></div></div></div>
+            <div class="card"><div class="card-header"><h2>All Estimates</h2><button class="btn btn-outline btn-sm" onclick="resetDemo()" title="Clear local data">Reset Demo Data</button></div><table><thead><tr><th>#</th><th>Client</th><th>Service</th><th>Amount</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="estBody"></tbody></table></div>
+            <div id="estPreviewArea" style="margin-top:24px;display:none"><div class="card"><div class="card-header"><h2>Estimate Preview</h2><div class="btn-group"><button class="btn btn-primary btn-sm" onclick="sendEst('client')">Email to Client</button><button class="btn btn-outline btn-sm" onclick="sendEst('company')">Copy to Company</button><button class="btn btn-outline btn-sm" onclick="window.print()">Print / PDF</button></div></div><div class="card-body"><div class="estimate-preview" id="estPreviewContent"></div></div></div></div>
         </div>
         <!-- SCHEDULING -->
         <div class="page" id="page-scheduling">
@@ -637,26 +674,82 @@ def build_html(t):
 <div class="toast" id="toast"></div>
 
 <script>
-const BIZ="{biz}",AREA="{AREA}",PHONE="{phone}";
+const BIZ="{biz}",AREA="{AREA}",PHONE="{phone}",SLUG="{t["slug"]}";
+const STORAGE_KEY="wd-dash-"+SLUG;
+const SEED_ESTIMATES={{
+    'EST-001':{{num:'EST-001',client:'Sample Client A',email:'clienta@email.com',addr:'123 Main St, '+AREA,items:[{{desc:'{job_default1}',qty:1,price:2400}}],notes:'Payment due upon completion.',date:'Jan 28, 2026',status:'Sent'}},
+    'EST-002':{{num:'EST-002',client:'Sample Client B',email:'clientb@email.com',addr:'456 Oak Ave, '+AREA,items:[{{desc:'{job_default2}',qty:1,price:1200}}],notes:'Financing available.',date:'Jan 29, 2026',status:'Pending'}}
+}};
+const SEED_SCHED=[
+    {{id:'JOB-001',date:'2026-04-26',time:'09:00',job:'{job_default1}',addr:'123 Main St, '+AREA,emp:'Employee One',email:'emp1@{domain}',client:'Client A',status:'Scheduled',photos:[]}},
+    {{id:'JOB-002',date:'2026-04-26',time:'13:00',job:'{job_default2}',addr:'456 Oak Ave, '+AREA,emp:'Employee Two',email:'emp2@{domain}',client:'Client B',status:'Scheduled',photos:[]}},
+    {{id:'JOB-003',date:'2026-04-27',time:'10:00',job:'{job_default3}',addr:'789 Pine Rd, '+AREA,emp:'Employee Three',email:'emp3@{domain}',client:'Client C',status:'Scheduled',photos:[]}}
+];
+
+let estimates={{}},sched=[],ec=2,jc=3;
+function load(){{
+    try{{
+        const raw=localStorage.getItem(STORAGE_KEY);
+        if(raw){{
+            const d=JSON.parse(raw);
+            estimates=d.estimates||{{}};sched=d.sched||[];ec=d.ec||2;jc=d.jc||3;
+            return;
+        }}
+    }}catch(e){{}}
+    estimates=JSON.parse(JSON.stringify(SEED_ESTIMATES));sched=JSON.parse(JSON.stringify(SEED_SCHED));ec=2;jc=3;
+}}
+function save(){{try{{localStorage.setItem(STORAGE_KEY,JSON.stringify({{estimates,sched,ec,jc}}));}}catch(e){{}}}}
+function resetDemo(){{if(confirm('Reset demo data? Estimates and scheduled jobs will be cleared.')){{localStorage.removeItem(STORAGE_KEY);load();renderAll();showToast('Demo reset.','success');}}}}
+
 function switchPage(p,el){{document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('pageTitle').textContent={{dashboard:'Dashboard',estimates:'Estimates',scheduling:'Scheduling',employees:'Employees',inventory:'Inventory',reports:'Reports'}}[p];document.getElementById('sidebar').classList.remove('open')}}
 function openModal(id){{document.getElementById(id).classList.add('open')}}
 function closeModal(id){{document.getElementById(id).classList.remove('open')}}
 function showToast(m,t){{const e=document.getElementById('toast');e.textContent=m;e.className='toast show'+(t?' '+t:'');setTimeout(()=>e.className='toast',3500)}}
 
-// Estimates
-const estimates={{'EST-001':{{num:'EST-001',client:'Sample Client A',email:'clienta@email.com',addr:'123 Main St, '+AREA,items:[{{desc:'{job_default1}',qty:1,price:2400}}],notes:'Payment due upon completion.',date:'Jan 28, 2026',status:'Sent'}},'EST-002':{{num:'EST-002',client:'Sample Client B',email:'clientb@email.com',addr:'456 Oak Ave, '+AREA,items:[{{desc:'{job_default2}',qty:1,price:1200}}],notes:'Financing available.',date:'Jan 29, 2026',status:'Pending'}}}};
-let ec=2;
+function fmtTime(t){{let h=parseInt(t.split(':')[0]),m=t.split(':')[1],ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+m+' '+ap}}
+function fmtDate(d,style){{const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-US',style||{{month:'short',day:'numeric'}})}}
+
+function renderEstimates(){{
+    const list=Object.values(estimates).sort((a,b)=>(b.num>a.num?1:-1));
+    const tb=document.getElementById('estBody');
+    tb.innerHTML=list.map(e=>{{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);const badge=e.status==='Sent'?'badge-sent':e.status==='Paid'?'badge-completed':'badge-pending';return`<tr><td>#${{e.num}}</td><td>${{e.client}}<br><span style="font-size:.8rem;color:var(--g400)">${{e.email}}</span></td><td>${{e.items[0]?.desc||'Service'}}</td><td>$${{tot.toFixed(2)}}</td><td>${{e.date}}</td><td><span class="badge ${{badge}}">${{e.status}}</span></td><td><button class="btn btn-outline btn-sm" onclick="previewEst('${{e.num}}')">View</button></td></tr>`}}).join('');
+    const recent=document.getElementById('recentEstBody');
+    if(recent)recent.innerHTML=list.slice(0,3).map(e=>{{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);const badge=e.status==='Sent'?'badge-sent':e.status==='Paid'?'badge-completed':'badge-pending';return`<tr><td>${{e.client}}</td><td>$${{tot.toLocaleString()}}</td><td><span class="badge ${{badge}}">${{e.status}}</span></td></tr>`}}).join('');
+}}
+
 function previewEst(id){{const e=estimates[id];if(!e)return;const sub=e.items.reduce((s,i)=>s+i.qty*i.price,0),tax=sub*0.09,tot=sub+tax;document.getElementById('estPreviewContent').innerHTML=`<div class="ep-header"><div class="ep-company"><h3>${{BIZ}}</h3><p>${{AREA}}</p><p>${{PHONE}}</p></div><div class="ep-est-num"><h4>Estimate #${{e.num}}</h4><p>${{e.date}}</p></div></div><div class="ep-parties"><div><h5>From</h5><p><strong>${{BIZ}}</strong><br>${{AREA}}</p></div><div><h5>To</h5><p><strong>${{e.client}}</strong><br>${{e.addr}}<br>${{e.email}}</p></div></div><table class="ep-table"><thead><tr><th>Description</th><th>Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${{e.items.map(i=>`<tr><td>${{i.desc}}</td><td>${{i.qty}}</td><td class="right">$${{i.price.toFixed(2)}}</td><td class="right">$${{(i.qty*i.price).toFixed(2)}}</td></tr>`).join('')}}</tbody></table><div class="ep-totals"><div class="line"><span>Subtotal</span><span>$${{sub.toFixed(2)}}</span></div><div class="line"><span>Tax (9%)</span><span>$${{tax.toFixed(2)}}</span></div><div class="line total"><span>Total</span><span>$${{tot.toFixed(2)}}</span></div></div><div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--g100)"><p style="font-size:.8rem;color:var(--g400)">${{e.notes}}</p></div>`;document.getElementById('estPreviewArea').style.display='block';document.getElementById('estPreviewArea').scrollIntoView({{behavior:'smooth'}})}}
 function sendEst(t){{showToast(t==='client'?'Estimate emailed to client (placeholder)':'Estimate copy sent to company (placeholder)','success')}}
 function addLine(){{const c=document.getElementById('lineItems'),r=document.createElement('div');r.className='form-row-3 li-row';r.innerHTML='<div class="form-group"><label>Description</label><input type="text" placeholder="Service item"></div><div class="form-group"><label>Qty</label><input type="number" value="1" min="1"></div><div class="form-group"><label>Unit Price ($)</label><input type="number" placeholder="0.00" step="0.01"></div>';c.appendChild(r)}}
-function createEst(){{const n=document.getElementById('ecName').value.trim(),em=document.getElementById('ecEmail').value.trim(),ad=document.getElementById('ecAddr').value.trim();if(!n||!em){{showToast('Please fill in client name and email.');return}}ec++;const id='EST-'+String(ec).padStart(3,'0'),rows=document.querySelectorAll('#lineItems .li-row'),items=[];rows.forEach(r=>{{const inp=r.querySelectorAll('input');items.push({{desc:inp[0].value.trim()||'Service',qty:parseInt(inp[1].value)||1,price:parseFloat(inp[2].value)||0}})}});const tot=items.reduce((s,i)=>s+i.qty*i.price,0),today=new Date().toLocaleDateString('en-US',{{month:'short',day:'numeric',year:'numeric'}});estimates[id]={{num:id,client:n,email:em,addr:ad,items,notes:'',date:today,status:'Pending'}};const tb=document.getElementById('estBody'),tr=document.createElement('tr');tr.innerHTML=`<td>#${{id}}</td><td>${{n}}<br><span style="font-size:.8rem;color:var(--g400)">${{em}}</span></td><td>${{items[0]?.desc||'Service'}}</td><td>$${{tot.toFixed(2)}}</td><td>${{today}}</td><td><span class="badge badge-pending">Pending</span></td><td><button class="btn btn-outline btn-sm" onclick="previewEst('${{id}}')">View</button></td>`;tb.prepend(tr);closeModal('estimateModal');showToast('Estimate #'+id+' created!','success');document.getElementById('ecName').value='';document.getElementById('ecEmail').value='';document.getElementById('ecAddr').value='';document.getElementById('lineItems').innerHTML='<div class="form-row-3 li-row"><div class="form-group"><label>Description</label><input type="text" placeholder="Service item"></div><div class="form-group"><label>Qty</label><input type="number" value="1" min="1"></div><div class="form-group"><label>Unit Price ($)</label><input type="number" placeholder="0.00" step="0.01"></div></div>'}}
+function createEst(){{const n=document.getElementById('ecName').value.trim(),em=document.getElementById('ecEmail').value.trim(),ad=document.getElementById('ecAddr').value.trim();if(!n||!em){{showToast('Please fill in client name and email.');return}}ec++;const id='EST-'+String(ec).padStart(3,'0'),rows=document.querySelectorAll('#lineItems .li-row'),items=[];rows.forEach(r=>{{const inp=r.querySelectorAll('input');items.push({{desc:inp[0].value.trim()||'Service',qty:parseInt(inp[1].value)||1,price:parseFloat(inp[2].value)||0}})}});const today=new Date().toLocaleDateString('en-US',{{month:'short',day:'numeric',year:'numeric'}});estimates[id]={{num:id,client:n,email:em,addr:ad,items,notes:document.getElementById('ecNotes').value.trim(),date:today,status:'Pending'}};save();renderEstimates();closeModal('estimateModal');showToast('Estimate #'+id+' created!','success');document.getElementById('ecName').value='';document.getElementById('ecEmail').value='';document.getElementById('ecAddr').value='';document.getElementById('ecNotes').value='';document.getElementById('lineItems').innerHTML='<div class="form-row-3 li-row"><div class="form-group"><label>Description</label><input type="text" placeholder="Service item"></div><div class="form-group"><label>Qty</label><input type="number" value="1" min="1"></div><div class="form-group"><label>Unit Price ($)</label><input type="number" placeholder="0.00" step="0.01"></div></div>'}}
 
-// Scheduling
-const sched=[{{date:'2026-01-29',time:'09:00',job:'{job_default1}',addr:'123 Main St, '+AREA,emp:'Employee One',email:'emp1@{domain}',client:'Client A',status:'Scheduled'}},{{date:'2026-01-29',time:'13:00',job:'{job_default2}',addr:'456 Oak Ave, '+AREA,emp:'Employee Two',email:'emp2@{domain}',client:'Client B',status:'Scheduled'}},{{date:'2026-01-30',time:'10:00',job:'{job_default3}',addr:'789 Pine Rd, '+AREA,emp:'Employee Three',email:'emp3@{domain}',client:'Client C',status:'Scheduled'}}];
-function renderSched(){{const tb=document.getElementById('schedBody');tb.innerHTML=sched.map((s,i)=>{{const d=new Date(s.date+'T00:00:00'),ds=d.toLocaleDateString('en-US',{{month:'short',day:'numeric'}}),url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.addr);let h=parseInt(s.time.split(':')[0]),m=s.time.split(':')[1],ap=h>=12?'PM':'AM';h=h%12||12;return`<tr><td>${{ds}}</td><td>${{h}}:${{m}} ${{ap}}</td><td style="font-weight:600">${{s.job}}</td><td><a href="${{url}}" target="_blank" style="color:var(--primary);text-decoration:none">${{s.addr}}</a></td><td>${{s.emp}}</td><td><span class="badge badge-scheduled">${{s.status}}</span></td><td>${{s.status!=='Completed'?`<button class="btn btn-outline btn-sm" onclick="resend(${{i}})">Resend</button>`:''}}</td></tr>`}}).join('')}}
-function scheduleJob(){{const type=document.getElementById('sjType').value,empSel=document.getElementById('sjEmp'),empEmail=empSel.value,empName=empSel.options[empSel.selectedIndex].text,addr=document.getElementById('sjAddr').value.trim(),date=document.getElementById('sjDate').value,time=document.getElementById('sjTime').value,client=document.getElementById('sjClient').value.trim(),notes=document.getElementById('sjNotes').value.trim();if(!addr||!date||!time){{showToast('Please fill in address, date, and time.');return}}sched.push({{date,time,job:type,addr,emp:empName,email:empEmail,client:client||'Client',status:'Scheduled'}});const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(addr),d=new Date(date+'T00:00:00'),ds=d.toLocaleDateString('en-US',{{weekday:'long',month:'long',day:'numeric',year:'numeric'}});let h=parseInt(time.split(':')[0]),m=time.split(':')[1],ap=h>=12?'PM':'AM';h=h%12||12;const ts=h+':'+m+' '+ap,subj=encodeURIComponent('Job Assignment: '+type+' - '+ds),body=encodeURIComponent('Hi '+empName.split(' ')[0]+',\\n\\nYou have been scheduled:\\n\\nJob: '+type+'\\nClient: '+(client||'N/A')+'\\nDate: '+ds+'\\nTime: '+ts+'\\nAddress: '+addr+'\\n\\nGoogle Maps Directions:\\n'+url+'\\n\\n'+(notes?'Notes: '+notes+'\\n\\n':'')+'Thank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:'+empEmail+'?subject='+subj+'&body='+body,'_self');renderSched();closeModal('schedModal');showToast('Job scheduled! Email opened for '+empName.split(' ')[0]+'.','success');document.getElementById('sjAddr').value='';document.getElementById('sjClient').value='';document.getElementById('sjNotes').value=''}}
-function resend(i){{const s=sched[i];if(!s)return;const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.addr),d=new Date(s.date+'T00:00:00'),ds=d.toLocaleDateString('en-US',{{weekday:'long',month:'long',day:'numeric',year:'numeric'}});let h=parseInt(s.time.split(':')[0]),m=s.time.split(':')[1],ap=h>=12?'PM':'AM';h=h%12||12;const ts=h+':'+m+' '+ap,subj=encodeURIComponent('Reminder: '+s.job+' - '+ds),body=encodeURIComponent('Hi '+s.emp.split(' ')[0]+',\\n\\nReminder:\\n\\nJob: '+s.job+'\\nClient: '+s.client+'\\nDate: '+ds+'\\nTime: '+ts+'\\nAddress: '+s.addr+'\\n\\nGoogle Maps Directions:\\n'+url+'\\n\\nThank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:'+s.email+'?subject='+subj+'&body='+body,'_self');showToast('Reminder opened for '+s.emp.split(' ')[0],'success')}}
-renderSched();
+function trackerUrl(jobId){{return new URL('../job-tracker/?id='+encodeURIComponent(jobId)+'&trade='+encodeURIComponent(SLUG),location.href).toString()}}
+
+function renderSched(){{
+    const tb=document.getElementById('schedBody');
+    tb.innerHTML=sched.map((s,i)=>{{
+        const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.addr);
+        const photoCount=(s.photos||[]).length;
+        const photoLabel=photoCount?photoCount+' photo'+(photoCount===1?'':'s'):'Add photos';
+        const badge=s.status==='Completed'?'badge-completed':s.status==='En Route'?'badge-sent':'badge-scheduled';
+        return`<tr><td>${{fmtDate(s.date)}}</td><td>${{fmtTime(s.time)}}</td><td style="font-weight:600">${{s.job}}</td><td><a href="${{url}}" target="_blank" style="color:var(--primary);text-decoration:none">${{s.addr}}</a></td><td>${{s.emp}}</td><td><select onchange="setStatus(${{i}},this.value)" style="border:1px solid var(--g200);border-radius:8px;padding:4px 8px;font-size:.8rem;background:var(--white)"><option ${{s.status==='Scheduled'?'selected':''}}>Scheduled</option><option ${{s.status==='En Route'?'selected':''}}>En Route</option><option ${{s.status==='Completed'?'selected':''}}>Completed</option></select></td><td><div class="btn-group" style="margin-top:0;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="sendTracker(${{i}})">Send Tracker</button><label class="btn btn-outline btn-sm" style="cursor:pointer">${{photoLabel}}<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(${{i}},this)"></label><button class="btn btn-outline btn-sm" onclick="resend(${{i}})">Resend</button></div></td></tr>`;
+    }}).join('');
+    const today=new Date().toISOString().slice(0,10);
+    const todayList=document.getElementById('todayScheduleBody');
+    if(todayList){{
+        const todays=sched.filter(s=>s.date===today).sort((a,b)=>a.time.localeCompare(b.time));
+        const display=todays.length?todays:sched.slice(0,2);
+        todayList.innerHTML=display.map(s=>`<div class="schedule-card"><div class="schedule-time">${{fmtTime(s.time)}}</div><div class="schedule-info"><h4>${{s.job}}</h4><p>${{s.addr}}</p><span class="schedule-employee">${{s.emp}}</span></div></div>`).join('')||'<p style="color:var(--g400);font-size:.85rem">No jobs scheduled today.</p>';
+    }}
+}}
+function setStatus(i,v){{if(!sched[i])return;sched[i].status=v;save();renderSched();showToast('Status updated to '+v,'success')}}
+function addPhotos(i,inp){{const files=Array.from(inp.files||[]);if(!files.length)return;sched[i].photos=sched[i].photos||[];let pending=files.length;files.forEach(f=>{{const r=new FileReader();r.onload=ev=>{{sched[i].photos.push({{src:ev.target.result,ts:Date.now(),name:f.name}});if(--pending===0){{save();renderSched();showToast(files.length+' photo(s) added','success')}}}};r.readAsDataURL(f)}});inp.value=''}}
+function sendTracker(i){{const s=sched[i];if(!s)return;const link=trackerUrl(s.id);const subj=encodeURIComponent(BIZ+': Track your '+s.job+' appointment'),body=encodeURIComponent('Hi '+s.client+',\\n\\nYou can track your upcoming '+s.job+' appointment with '+BIZ+' here:\\n'+link+'\\n\\nWe will text you updates as our team gets closer to arrival.\\n\\nThank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:?subject='+subj+'&body='+body,'_self');showToast('Tracker link ready to send to '+s.client,'success')}}
+
+function scheduleJob(){{const type=document.getElementById('sjType').value,empSel=document.getElementById('sjEmp'),empEmail=empSel.value,empName=empSel.options[empSel.selectedIndex].text,addr=document.getElementById('sjAddr').value.trim(),date=document.getElementById('sjDate').value,time=document.getElementById('sjTime').value,client=document.getElementById('sjClient').value.trim(),notes=document.getElementById('sjNotes').value.trim();if(!addr||!date||!time){{showToast('Please fill in address, date, and time.');return}}jc++;const id='JOB-'+String(jc).padStart(3,'0');sched.push({{id,date,time,job:type,addr,emp:empName,email:empEmail,client:client||'Client',status:'Scheduled',photos:[]}});save();const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(addr),ds=fmtDate(date,{{weekday:'long',month:'long',day:'numeric',year:'numeric'}}),ts=fmtTime(time);const subj=encodeURIComponent('Job Assignment: '+type+' - '+ds),body=encodeURIComponent('Hi '+empName.split(' ')[0]+',\\n\\nYou have been scheduled:\\n\\nJob: '+type+'\\nClient: '+(client||'N/A')+'\\nDate: '+ds+'\\nTime: '+ts+'\\nAddress: '+addr+'\\n\\nGoogle Maps Directions:\\n'+url+'\\n\\n'+(notes?'Notes: '+notes+'\\n\\n':'')+'Thank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:'+empEmail+'?subject='+subj+'&body='+body,'_self');renderSched();closeModal('schedModal');showToast('Job scheduled! Email opened for '+empName.split(' ')[0]+'.','success');document.getElementById('sjAddr').value='';document.getElementById('sjClient').value='';document.getElementById('sjNotes').value=''}}
+function resend(i){{const s=sched[i];if(!s)return;const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.addr),ds=fmtDate(s.date,{{weekday:'long',month:'long',day:'numeric',year:'numeric'}}),ts=fmtTime(s.time);const subj=encodeURIComponent('Reminder: '+s.job+' - '+ds),body=encodeURIComponent('Hi '+s.emp.split(' ')[0]+',\\n\\nReminder:\\n\\nJob: '+s.job+'\\nClient: '+s.client+'\\nDate: '+ds+'\\nTime: '+ts+'\\nAddress: '+s.addr+'\\n\\nGoogle Maps Directions:\\n'+url+'\\n\\nThank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:'+s.email+'?subject='+subj+'&body='+body,'_self');showToast('Reminder opened for '+s.emp.split(' ')[0],'success')}}
+
+function renderAll(){{renderEstimates();renderSched();}}
+load();renderAll();
 try{{document.getElementById('sjDate').valueAsDate=new Date()}}catch(e){{}}
 document.querySelectorAll('.modal-overlay').forEach(m=>{{m.addEventListener('click',e=>{{if(e.target===m)m.classList.remove('open')}})}});
 </script>
