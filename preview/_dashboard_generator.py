@@ -4,6 +4,7 @@
 Produces preview/<slug>/index.html for each trade in TRADES below.
 Run: python3 preview/_dashboard_generator.py
 """
+import json
 import os
 from pathlib import Path
 
@@ -45,6 +46,17 @@ TRADES = [
             ("Furnace Ignitor", "Units", 14, 8, "$42"),
             ("Thermostat (Smart)", "Units", 9, 5, "$180"),
         ],
+        "estimates_seed": [
+            {"client": "Patterson Family", "email": "patterson@email.com", "addr": "412 Brookwood Dr, Vestavia Hills, AL", "service": "AC Installation - 3 Ton", "amount": 5840, "status": "Sent", "date": "Apr 22, 2026", "notes": "Includes new condenser, evaporator coil, and 10-year warranty."},
+            {"client": "Henderson Residence", "email": "k.henderson@email.com", "addr": "188 Oakdale Ln, Mountain Brook, AL", "service": "Furnace Replacement", "amount": 3290, "status": "Pending", "date": "Apr 24, 2026", "notes": "Existing furnace is 22 years old. Replacing with high-efficiency 96% AFUE unit."},
+            {"client": "Riverside Apartments", "email": "manager@riversideapts.com", "addr": "2300 Cahaba Rd, Birmingham, AL", "service": "Annual Maintenance Contract (12 units)", "amount": 4800, "status": "Sent", "date": "Apr 19, 2026", "notes": "Quarterly maintenance for all 12 HVAC units. Net 30."},
+        ],
+        "jobs_seed": [
+            {"client": "Mrs. Patterson", "service": "AC Installation - 3 Ton", "addr": "412 Brookwood Dr, Vestavia Hills, AL", "emp": "Marcus Reed", "time": "08:00", "offset_days": 0},
+            {"client": "Greg Sanders", "service": "Emergency Service - No Cool", "addr": "75 Mountain Park Rd, Hoover, AL", "emp": "Tony Vasquez", "time": "11:30", "offset_days": 0},
+            {"client": "Riverside Apts Unit 4B", "service": "Quarterly Maintenance", "addr": "2300 Cahaba Rd, Birmingham, AL", "emp": "Devon Carter", "time": "09:00", "offset_days": 1},
+        ],
+        "extras": ["maintenance"],
     },
     {
         "slug": "plumbing-dashboard",
@@ -78,6 +90,17 @@ TRADES = [
             ("Wax Ring Seal", "Units", 36, 20, "$5"),
             ("Copper Fittings Kit", "Cases", 9, 6, "$85"),
         ],
+        "estimates_seed": [
+            {"client": "Patricia Lawson", "email": "p.lawson@email.com", "addr": "1820 Glen Iris Dr, Birmingham, AL", "service": "Water Heater Install (50gal)", "amount": 1840, "status": "Sent", "date": "Apr 23, 2026", "notes": "Old tank leaking. Includes haul-away and 6-year warranty."},
+            {"client": "Henderson Kitchen Remodel", "email": "k.henderson@email.com", "addr": "188 Oakdale Ln, Mountain Brook, AL", "service": "Repipe + Gas Line for Range", "amount": 4720, "status": "Pending", "date": "Apr 24, 2026", "notes": "Coordinating with general contractor. Inspector visit scheduled May 5."},
+            {"client": "Cahaba Bistro", "email": "manager@cahababistro.com", "addr": "1100 28th St S, Birmingham, AL", "service": "Commercial Sewer Line Service", "amount": 1280, "status": "Pending", "date": "Apr 22, 2026", "notes": "Recurring quarterly. Net 15 terms."},
+        ],
+        "jobs_seed": [
+            {"client": "Mrs. Lawson", "service": "Water Heater Install", "addr": "1820 Glen Iris Dr, Birmingham, AL", "emp": "Brian Mitchell", "time": "07:30", "offset_days": 0},
+            {"client": "John Walker", "service": "Emergency Leak Repair", "addr": "44 Indian Hill Rd, Mountain Brook, AL", "emp": "Dale Robertson", "time": "10:00", "offset_days": 0},
+            {"client": "Henderson Residence", "service": "Gas Line Install - Range", "addr": "188 Oakdale Ln, Mountain Brook, AL", "emp": "Brian Mitchell", "time": "08:00", "offset_days": 1},
+        ],
+        "extras": [],
     },
     {
         "slug": "home-services-dashboard",
@@ -111,6 +134,17 @@ TRADES = [
             ("Door Hardware Kit", "Sets", 22, 12, "$38"),
             ("Cleaning Supplies Kit", "Cases", 8, 4, "$65"),
         ],
+        "estimates_seed": [
+            {"client": "Diane Whitmore", "email": "d.whitmore@email.com", "addr": "55 Crestline Park, Birmingham, AL", "service": "Spring Maintenance Bundle", "amount": 480, "status": "Sent", "date": "Apr 21, 2026", "notes": "Gutter clean, deck pressure wash, deck stain. Bundled at 15% off."},
+            {"client": "The Walkers", "email": "walkers@email.com", "addr": "320 Camp Horner Rd, Mountain Brook, AL", "service": "Interior Painting (3 rooms)", "amount": 1620, "status": "Pending", "date": "Apr 23, 2026", "notes": "Sherwin-Williams Emerald, includes prep and 2 coats."},
+            {"client": "Carter Family", "email": "carters@email.com", "addr": "780 Cherokee Rd, Vestavia Hills, AL", "service": "Door Hardware + Fixture Swap", "amount": 320, "status": "Sent", "date": "Apr 24, 2026", "notes": "Replace 6 door knobs, 4 light fixtures. Customer-supplied parts."},
+        ],
+        "jobs_seed": [
+            {"client": "Diane Whitmore", "service": "Pressure Washing - Deck", "addr": "55 Crestline Park, Birmingham, AL", "emp": "Robert Pearson", "time": "08:00", "offset_days": 0},
+            {"client": "Lisa Thompson", "service": "Drywall Patch + Paint Touch-up", "addr": "210 Oak Ridge Cir, Hoover, AL", "emp": "Carla Mendoza", "time": "10:30", "offset_days": 0},
+            {"client": "Carter Family", "service": "Fixture Swap (4 lights)", "addr": "780 Cherokee Rd, Vestavia Hills, AL", "emp": "Robert Pearson", "time": "13:00", "offset_days": 1},
+        ],
+        "extras": [],
     },
     {
         "slug": "water-dashboard",
@@ -144,6 +178,17 @@ TRADES = [
             ("Pressure Tank 20gal", "Units", 4, 2, "$340"),
             ("Well Seal Kit", "Units", 9, 5, "$55"),
         ],
+        "estimates_seed": [
+            {"client": "Bartlett Farm", "email": "bartlett@email.com", "addr": "4400 Hwy 280, Chelsea, AL", "service": "Pump Replacement (1HP Submersible)", "amount": 2840, "status": "Sent", "date": "Apr 22, 2026", "notes": "Existing pump 14 years old, intermittent failures. Includes pull, install, pressure test."},
+            {"client": "Cooper Property", "email": "j.cooper@email.com", "addr": "1820 Hwy 119, Alabaster, AL", "service": "Whole-Home Filtration + Softener", "amount": 3680, "status": "Pending", "date": "Apr 24, 2026", "notes": "Hard water issues. Includes annual filter service plan."},
+            {"client": "Reynolds Family", "email": "reynolds@email.com", "addr": "295 Lake Ridge Dr, Pelham, AL", "service": "Annual Well Inspection + Test", "amount": 320, "status": "Sent", "date": "Apr 18, 2026", "notes": "Recurring annual contract. Water quality test included."},
+        ],
+        "jobs_seed": [
+            {"client": "Bartlett Farm", "service": "Pump Pull + Replace", "addr": "4400 Hwy 280, Chelsea, AL", "emp": "Eli Marshall", "time": "07:00", "offset_days": 0},
+            {"client": "Reynolds Family", "service": "Filter Service - 6mo", "addr": "295 Lake Ridge Dr, Pelham, AL", "emp": "Jamal Chen", "time": "10:30", "offset_days": 0},
+            {"client": "Cooper Property", "service": "Filtration System Install", "addr": "1820 Hwy 119, Alabaster, AL", "emp": "Eli Marshall", "time": "08:00", "offset_days": 1},
+        ],
+        "extras": ["maintenance"],
     },
     {
         "slug": "power-dashboard",
@@ -177,6 +222,17 @@ TRADES = [
             ("EV Charger Hardware", "Units", 4, 2, "$640"),
             ("LED Recessed Light", "Units", 38, 20, "$22"),
         ],
+        "estimates_seed": [
+            {"client": "Smith Residence", "email": "smith@email.com", "addr": "612 Highland Park Dr, Birmingham, AL", "service": "200A Panel Upgrade + EV Charger", "amount": 4280, "status": "Sent", "date": "Apr 23, 2026", "notes": "Tesla Wall Connector. Permit pulled, inspection May 1."},
+            {"client": "Bishop Building Co.", "email": "ops@bishopbuild.com", "addr": "1810 1st Ave N, Birmingham, AL", "service": "Commercial Lighting Retrofit", "amount": 8640, "status": "Pending", "date": "Apr 24, 2026", "notes": "60 LED recessed fixtures, 3 circuits. Net 30."},
+            {"client": "Greenwood Home", "email": "greenwood@email.com", "addr": "44 Brookhaven Cir, Vestavia Hills, AL", "service": "Whole-Home Surge + Generator Connect", "amount": 2160, "status": "Sent", "date": "Apr 21, 2026", "notes": "Includes 22kW Generac transfer switch installation."},
+        ],
+        "jobs_seed": [
+            {"client": "Smith Residence", "service": "Panel Upgrade Day 1", "addr": "612 Highland Park Dr, Birmingham, AL", "emp": "Frank Delgado", "time": "07:00", "offset_days": 0},
+            {"client": "Wilson Property", "service": "Emergency - Power Out", "addr": "330 Mountain Brook Pkwy, Mountain Brook, AL", "emp": "Sarah Knox", "time": "11:00", "offset_days": 0},
+            {"client": "Greenwood Home", "service": "Generator Transfer Switch", "addr": "44 Brookhaven Cir, Vestavia Hills, AL", "emp": "Frank Delgado", "time": "08:30", "offset_days": 1},
+        ],
+        "extras": ["maintenance"],
     },
     {
         "slug": "flooring-dashboard",
@@ -210,6 +266,19 @@ TRADES = [
             ("Floor Finish (Poly)", "Gallons", 22, 12, "$58"),
             ("Tack Strip Bundle", "Bundles", 12, 6, "$34"),
         ],
+        "estimates_seed": [
+            {"client": "The Murphy Residence", "email": "murphy@email.com", "addr": "1240 Cherokee Bend, Mountain Brook, AL", "service": "Hardwood Install - 1,200 sqft Main Floor", "amount": 14640, "status": "Sent", "date": "Apr 21, 2026", "notes": "Red oak 3/4\". Includes subfloor prep, demo of existing carpet, install, and finish."},
+            {"client": "Henderson Renovation", "email": "k.henderson@email.com", "addr": "188 Oakdale Ln, Mountain Brook, AL", "service": "Hardwood Refinish - Whole House", "amount": 4820, "status": "Pending", "date": "Apr 24, 2026", "notes": "Sand and refinish 1,400 sqft existing oak. 4-day project."},
+            {"client": "Lakeside Townhomes", "email": "manager@lakesidetownhomes.com", "addr": "750 Inverness Pkwy, Hoover, AL", "service": "Carpet Replacement - Unit 12", "amount": 1840, "status": "Sent", "date": "Apr 23, 2026", "notes": "Mid-grade carpet, 320 sqyd. Move-out turnover."},
+        ],
+        "jobs_seed": [
+            {"client": "Murphy Residence", "service": "Hardwood Install Day 2", "addr": "1240 Cherokee Bend, Mountain Brook, AL", "emp": "Vince Holloway", "time": "07:30", "offset_days": 0},
+            {"client": "Lakeside Unit 12", "service": "Carpet Install", "addr": "750 Inverness Pkwy, Hoover, AL", "emp": "Marco Rivera", "time": "09:00", "offset_days": 0},
+            {"client": "Henderson Renovation", "service": "Refinish Day 1 - Sand", "addr": "188 Oakdale Ln, Mountain Brook, AL", "emp": "Vince Holloway", "time": "08:00", "offset_days": 1},
+        ],
+        "takeoff_unit": "sqft",
+        "takeoff_waste_default": 12,
+        "extras": ["takeoff"],
     },
     {
         "slug": "windows-dashboard",
@@ -243,6 +312,17 @@ TRADES = [
             ("Window Caulk", "Tubes", 60, 30, "$9"),
             ("Fiberglass Insulation", "Rolls", 14, 8, "$48"),
         ],
+        "estimates_seed": [
+            {"client": "The Beaumont Family", "email": "beaumont@email.com", "addr": "920 Roebuck Dr, Birmingham, AL", "service": "Full-Home Replacement (14 windows)", "amount": 8960, "status": "Sent", "date": "Apr 22, 2026", "notes": "Energy-efficient double-hung. Includes haul-away, lifetime warranty."},
+            {"client": "Hartwell Renovation", "email": "hartwell@email.com", "addr": "210 Lakeshore Dr, Vestavia Hills, AL", "service": "5-Window Replacement (Front Elevation)", "amount": 3240, "status": "Pending", "date": "Apr 24, 2026", "notes": "Custom casement on living room. 6-week lead time on units."},
+            {"client": "Crestwood HOA", "email": "board@crestwoodhoa.com", "addr": "Multiple addresses, Crestwood, AL", "service": "Storm Window Audit (40 units)", "amount": 1200, "status": "Sent", "date": "Apr 19, 2026", "notes": "Recurring annual seal/weatherize check across HOA."},
+        ],
+        "jobs_seed": [
+            {"client": "Beaumont Family", "service": "Full-Home Install Day 1", "addr": "920 Roebuck Dr, Birmingham, AL", "emp": "Wade Harrison", "time": "07:00", "offset_days": 0},
+            {"client": "Owens Property", "service": "Glass Replacement (storm damage)", "addr": "412 Cahaba Heights Rd, Birmingham, AL", "emp": "Tomas Gallardo", "time": "10:00", "offset_days": 0},
+            {"client": "Hartwell Renovation", "service": "Window Measurement", "addr": "210 Lakeshore Dr, Vestavia Hills, AL", "emp": "Wade Harrison", "time": "08:30", "offset_days": 1},
+        ],
+        "extras": [],
     },
     {
         "slug": "roofing-dashboard",
@@ -268,6 +348,16 @@ TRADES = [
         "employee_role_senior": "Lead Roofer",
         "employee_role_mid": "Roofing Installer",
         "employee_role_junior": "Roofing Assistant",
+        "estimates_seed": [
+            {"client": "The Calloway Family", "email": "calloway@email.com", "addr": "1820 Riverchase Pkwy, Hoover, AL", "service": "Full Roof Replacement (Storm Damage)", "amount": 18420, "status": "Pending", "date": "Apr 23, 2026", "notes": "Hail damage from March 2026 storm. Insurance claim #SF-44872 — Allstate."},
+            {"client": "Whitfield Residence", "email": "whitfield@email.com", "addr": "640 Cahaba River Rd, Birmingham, AL", "service": "Shingle Replacement (south slope)", "amount": 4280, "status": "Sent", "date": "Apr 22, 2026", "notes": "30-year architectural shingles. 3-day project."},
+            {"client": "Mt. Laurel Church", "email": "office@mtlaurel.org", "addr": "100 Church Hill Dr, Birmingham, AL", "service": "Metal Roof Install (Sanctuary)", "amount": 28640, "status": "Pending", "date": "Apr 18, 2026", "notes": "Standing seam, 22-gauge. Capital project — board approval pending."},
+        ],
+        "jobs_seed": [
+            {"client": "Calloway Family", "service": "Storm Damage Inspection", "addr": "1820 Riverchase Pkwy, Hoover, AL", "emp": "Cole Bennett", "time": "08:00", "offset_days": 0},
+            {"client": "Whitfield Residence", "service": "Shingle Replacement Day 1", "addr": "640 Cahaba River Rd, Birmingham, AL", "emp": "Drew Phillips", "time": "06:30", "offset_days": 0},
+            {"client": "Anderson Property", "service": "Emergency Tarp - Active Leak", "addr": "55 Brookwood Trail, Vestavia Hills, AL", "emp": "Cole Bennett", "time": "13:00", "offset_days": 0},
+        ],
         "inventory": [
             ("Architectural Shingles", "Squares", 68, 30, "$110"),
             ("Metal Roof Panels", "Panels", 42, 20, "$85"),
@@ -276,6 +366,7 @@ TRADES = [
             ("Flashing (Aluminum)", "Rolls", 14, 8, "$52"),
             ("Ridge Vent", "Sticks", 22, 12, "$28"),
         ],
+        "extras": ["aerial", "claims"],
     },
     {
         "slug": "sheetrock-dashboard",
@@ -309,6 +400,19 @@ TRADES = [
             ("Corner Bead", "Sticks", 60, 30, "$4"),
             ("Drywall Screws 1-1/4\"", "Boxes", 18, 10, "$28"),
         ],
+        "estimates_seed": [
+            {"client": "Brookhaven Custom Homes", "email": "build@brookhavenhomes.com", "addr": "Lot 14, Brookhaven Estates, Hoover, AL", "service": "New Construction Drywall (4,200 sqft)", "amount": 12480, "status": "Sent", "date": "Apr 22, 2026", "notes": "Hang, tape, mud, knockdown texture. Coordinated with framer schedule."},
+            {"client": "Henderson Renovation", "email": "k.henderson@email.com", "addr": "188 Oakdale Ln, Mountain Brook, AL", "service": "Kitchen + Living Room (820 sqft)", "amount": 3640, "status": "Pending", "date": "Apr 24, 2026", "notes": "Includes ceiling skim coat to remove popcorn texture."},
+            {"client": "Riverview Apts B-202", "email": "manager@riverviewapts.com", "addr": "2300 Cahaba Rd, Birmingham, AL", "service": "Water Damage Repair (ceiling + wall)", "amount": 980, "status": "Sent", "date": "Apr 23, 2026", "notes": "Insurance work — Liberty Mutual claim."},
+        ],
+        "jobs_seed": [
+            {"client": "Brookhaven Lot 14", "service": "Hang Day 2 - Upstairs", "addr": "Lot 14, Brookhaven Estates, Hoover, AL", "emp": "Hector Salinas", "time": "07:00", "offset_days": 0},
+            {"client": "Riverview Apts B-202", "service": "Patch + Mud", "addr": "2300 Cahaba Rd, Birmingham, AL", "emp": "Wes Cardona", "time": "10:00", "offset_days": 0},
+            {"client": "Henderson Renovation", "service": "Skim Coat - Kitchen Ceiling", "addr": "188 Oakdale Ln, Mountain Brook, AL", "emp": "Hector Salinas", "time": "08:00", "offset_days": 1},
+        ],
+        "takeoff_unit": "sqft",
+        "takeoff_waste_default": 10,
+        "extras": ["takeoff"],
     },
     {
         "slug": "framing-dashboard",
@@ -342,6 +446,19 @@ TRADES = [
             ("LVL Beam 11-7/8\"", "Pieces", 14, 8, "$180"),
             ("Framing Nails 16d", "Boxes", 28, 12, "$48"),
         ],
+        "estimates_seed": [
+            {"client": "Brookhaven Lot 14", "email": "build@brookhavenhomes.com", "addr": "Lot 14, Brookhaven Estates, Hoover, AL", "service": "Full Frame - 3,200 sqft New Construction", "amount": 38400, "status": "Sent", "date": "Apr 21, 2026", "notes": "Wall + floor + roof framing. Includes engineered LVL beams. 3-week schedule."},
+            {"client": "The Garrick Addition", "email": "garrick@email.com", "addr": "455 Mountain Brook Pkwy, Mountain Brook, AL", "service": "440 sqft Addition Frame", "amount": 9200, "status": "Pending", "date": "Apr 24, 2026", "notes": "Tying into existing structure. Requires structural inspection."},
+            {"client": "Tucker Custom Deck", "email": "tucker@email.com", "addr": "1812 Cliff Rd, Birmingham, AL", "service": "Deck Frame (16x20)", "amount": 4640, "status": "Sent", "date": "Apr 22, 2026", "notes": "Pressure-treated. Permit pulled. Inspection scheduled May 8."},
+        ],
+        "jobs_seed": [
+            {"client": "Brookhaven Lot 14", "service": "Wall Framing - First Floor", "addr": "Lot 14, Brookhaven Estates, Hoover, AL", "emp": "Cliff Bowman", "time": "06:30", "offset_days": 0},
+            {"client": "Tucker Deck", "service": "Deck Frame - Set Posts", "addr": "1812 Cliff Rd, Birmingham, AL", "emp": "Mike Tanaka", "time": "09:00", "offset_days": 0},
+            {"client": "Garrick Addition", "service": "Demo + Tie-In Prep", "addr": "455 Mountain Brook Pkwy, Mountain Brook, AL", "emp": "Cliff Bowman", "time": "07:30", "offset_days": 1},
+        ],
+        "takeoff_unit": "sqft",
+        "takeoff_waste_default": 15,
+        "extras": ["takeoff"],
     },
     {
         "slug": "brick-dashboard",
@@ -375,13 +492,75 @@ TRADES = [
             ("Rebar #4", "Sticks", 140, 60, "$8"),
             ("Brick Ties", "Boxes", 32, 16, "$24"),
         ],
+        "estimates_seed": [
+            {"client": "Brookhaven Lot 14", "email": "build@brookhavenhomes.com", "addr": "Lot 14, Brookhaven Estates, Hoover, AL", "service": "Full Brick Veneer (3,200 sqft)", "amount": 26880, "status": "Sent", "date": "Apr 21, 2026", "notes": "Standard red brick. Coordinated with framer schedule. 4-week project."},
+            {"client": "The Atherton Patio", "email": "atherton@email.com", "addr": "920 Country Club Dr, Mountain Brook, AL", "service": "Brick Patio (480 sqft) + Retaining Wall", "amount": 11240, "status": "Pending", "date": "Apr 23, 2026", "notes": "Includes 32 ft retaining wall, 24\" tall. Permit submitted."},
+            {"client": "Henderson Chimney", "email": "k.henderson@email.com", "addr": "188 Oakdale Ln, Mountain Brook, AL", "service": "Chimney Tuckpointing + Cap Repair", "amount": 1840, "status": "Sent", "date": "Apr 22, 2026", "notes": "Failing mortar joints. New stainless cap. 2-day job."},
+        ],
+        "jobs_seed": [
+            {"client": "Brookhaven Lot 14", "service": "Brick Veneer Day 3 - Front", "addr": "Lot 14, Brookhaven Estates, Hoover, AL", "emp": "Antonio Pereira", "time": "06:30", "offset_days": 0},
+            {"client": "Henderson Chimney", "service": "Tuckpointing - Day 1", "addr": "188 Oakdale Ln, Mountain Brook, AL", "emp": "Reggie Tate", "time": "08:00", "offset_days": 0},
+            {"client": "Atherton Patio", "service": "Footing Pour - Retaining Wall", "addr": "920 Country Club Dr, Mountain Brook, AL", "emp": "Antonio Pereira", "time": "07:00", "offset_days": 1},
+        ],
+        "takeoff_unit": "sqft",
+        "takeoff_waste_default": 8,
+        "extras": ["takeoff"],
     },
 ]
 
 AREA = "Birmingham Metro, AL"
 
+
 # ------------------------------------------------------------------------------
-# Template (one big f-string built at render time from trade config)
+# Helpers
+# ------------------------------------------------------------------------------
+def js_escape(s):
+    """Embed a Python string into a JS string literal safely."""
+    return s.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n")
+
+
+def jobs_seed_js(t):
+    """Build a JS array literal of seed jobs with offset_days resolved at load time."""
+    items = []
+    for i, j in enumerate(t["jobs_seed"]):
+        items.append({
+            "id": f"JOB-{i+1:03d}",
+            "offsetDays": j["offset_days"],
+            "time": j["time"],
+            "job": j["service"],
+            "addr": j["addr"],
+            "emp": j["emp"],
+            "client": j["client"],
+        })
+    return json.dumps(items)
+
+
+def estimates_seed_js(t):
+    items = {}
+    for i, e in enumerate(t["estimates_seed"]):
+        eid = f"EST-{i+1:03d}"
+        items[eid] = {
+            "num": eid,
+            "client": e["client"],
+            "email": e["email"],
+            "addr": e["addr"],
+            "items": [{"desc": e["service"], "qty": 1, "price": e["amount"]}],
+            "notes": e["notes"],
+            "date": e["date"],
+            "status": e["status"],
+        }
+    return json.dumps(items)
+
+
+def employee_options(domain):
+    return "".join(
+        f'<option value="emp{i}@{domain}">Employee {name}</option>'
+        for i, name in enumerate(["One", "Two", "Three", "Four"], start=1)
+    )
+
+
+# ------------------------------------------------------------------------------
+# Build the HTML
 # ------------------------------------------------------------------------------
 def build_html(t):
     biz = t["biz"]
@@ -391,17 +570,14 @@ def build_html(t):
     initials = t["initials"]
     phone = t["phone"]
     domain = t["domain"]
-    hero = t["hero"]
+    slug = t["slug"]
     roles = {
         "senior": t["employee_role_senior"],
         "mid": t["employee_role_mid"],
         "junior": t["employee_role_junior"],
     }
-    jobs = t["job_types"]
-    job_default1 = jobs[0]
-    job_default2 = jobs[1] if len(jobs) > 1 else jobs[0]
-    job_default3 = jobs[2] if len(jobs) > 2 else jobs[0]
-    job_options_html = "".join(f"<option>{j}</option>" for j in jobs)
+    jobs_list = t["job_types"]
+    job_options_html = "".join(f"<option>{j}</option>" for j in jobs_list)
     inv_rows = "".join(
         f'<tr><td style="font-weight:600">{name}</td><td>{unit}</td>'
         f'<td>{qty}</td><td>{reorder}</td>'
@@ -415,6 +591,69 @@ def build_html(t):
         f'<div class="stat-sub">{k["sub"]}</div></div>'
         for k in t["kpis"]
     )
+    seed_estimates_json = estimates_seed_js(t)
+    seed_jobs_json = jobs_seed_js(t)
+    extras = t.get("extras", [])
+
+    # Conditional nav items + pages
+    nav_extras = ""
+    page_extras = ""
+    if "maintenance" in extras:
+        nav_extras += (
+            '<button class="nav-item" data-page="maintenance" onclick="switchPage(\'maintenance\',this)">'
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
+            '<path d="M21 12a9 9 0 1 1-9-9c2.485 0 4.736.998 6.364 2.636L21 8"/>'
+            '<polyline points="21 3 21 8 16 8"/></svg>Maintenance Plans</button>'
+        )
+        page_extras += MAINTENANCE_PAGE_HTML
+    if "takeoff" in extras:
+        unit = t.get("takeoff_unit", "sqft")
+        waste = t.get("takeoff_waste_default", 10)
+        nav_extras += (
+            '<button class="nav-item" data-page="takeoff" onclick="switchPage(\'takeoff\',this)">'
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
+            '<rect x="3" y="3" width="18" height="18" rx="2"/>'
+            '<line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>'
+            '<line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>Takeoff Calculator</button>'
+        )
+        page_extras += takeoff_page_html(t, unit, waste)
+    if "claims" in extras:
+        nav_extras += (
+            '<button class="nav-item" data-page="claims" onclick="switchPage(\'claims\',this)">'
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
+            '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
+            '<polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/>'
+            '<line x1="9" y1="17" x2="15" y2="17"/></svg>Insurance Claims</button>'
+        )
+        page_extras += CLAIMS_PAGE_HTML
+    if "aerial" in extras:
+        nav_extras += (
+            '<button class="nav-item" data-page="aerial" onclick="switchPage(\'aerial\',this)">'
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
+            '<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>'
+            '<line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Aerial Measure</button>'
+        )
+        page_extras += AERIAL_PAGE_HTML
+
+    page_titles_extra = ""
+    for extra, title in [
+        ("maintenance", "Maintenance Plans"),
+        ("takeoff", "Takeoff Calculator"),
+        ("claims", "Insurance Claims"),
+        ("aerial", "Aerial Measurement"),
+    ]:
+        if extra in extras:
+            page_titles_extra += f",{extra}:'{title}'"
+
+    # Leaflet only on aerial-enabled dashboards
+    aerial_libs = ""
+    if "aerial" in extras:
+        aerial_libs = (
+            '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>\n'
+            '<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>\n'
+            '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>\n'
+            '<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>\n'
+        )
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -423,116 +662,154 @@ def build_html(t):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title>{biz} | Operations Dashboard</title>
+    <meta property="og:title" content="{biz} — Operations Dashboard">
+    <meta property="og:description" content="{t['hero']} powered by Williams Digital">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="{primary}">
+    <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='{primary}'/><text x='32' y='42' font-family='Inter,sans-serif' font-size='28' font-weight='800' fill='white' text-anchor='middle'>{initials}</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
+    {aerial_libs}<style>
         *,*::before,*::after{{margin:0;padding:0;box-sizing:border-box}}
-        :root{{--primary:{primary};--primary-dark:{primary_dark};--white:#fff;--g50:#f8fafc;--g100:#f1f5f9;--g200:#e2e8f0;--g300:#cbd5e1;--g400:#94a3b8;--g500:#64748b;--g700:#334155;--g800:#1e293b;--g900:#0f172a;--green:#16a34a;--green-l:#dcfce7;--orange:#f97316;--orange-l:#fff3e0;--red:#ef4444;--r:12px}}
+        :root{{--primary:{primary};--primary-dark:{primary_dark};--white:#fff;--g50:#f8fafc;--g100:#f1f5f9;--g200:#e2e8f0;--g300:#cbd5e1;--g400:#94a3b8;--g500:#64748b;--g700:#334155;--g800:#1e293b;--g900:#0f172a;--green:#16a34a;--green-l:#dcfce7;--orange:#f97316;--orange-l:#fff3e0;--red:#ef4444;--red-l:#fee2e2;--r:12px;
+            --bg:var(--g100);--surface:var(--white);--text:var(--g900);--text-mute:var(--g500);--border:var(--g200);--border-soft:var(--g100);--row-hover:var(--g50)}}
+        [data-theme="dark"]{{--bg:#0b1120;--surface:#111c2e;--text:#e2e8f0;--text-mute:#94a3b8;--border:#1f2c47;--border-soft:#162038;--row-hover:#162038;--g50:#162038;--g100:#1f2c47;--g200:#2d3a5c;--white:#111c2e;--g900:#e2e8f0;--g800:#cbd5e1;--g700:#cbd5e1;--g500:#94a3b8;--g400:#64748b}}
         html{{scroll-behavior:smooth}}
-        body{{font-family:'Inter',system-ui,sans-serif;background:var(--g100);color:var(--g900);line-height:1.5;min-height:100vh}}
+        body{{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}}
         .layout{{display:flex;min-height:100vh}}
         .sidebar{{width:260px;background:var(--primary-dark);color:var(--white);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50;transition:transform .3s}}
         .sidebar-header{{padding:24px 24px 20px;border-bottom:1px solid rgba(255,255,255,0.08)}}
-        .sidebar-logo{{font-size:1.1rem;font-weight:800;color:var(--white);text-decoration:none}}
-        .sidebar-sub{{font-size:.7rem;color:var(--g400);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}}
+        .sidebar-logo{{font-size:1.1rem;font-weight:800;color:#fff;text-decoration:none}}
+        .sidebar-sub{{font-size:.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}}
         .sidebar-nav{{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}}
-        .nav-item{{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:10px;color:var(--g400);text-decoration:none;font-size:.9rem;font-weight:500;transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left}}
-        .nav-item:hover{{background:rgba(255,255,255,0.06);color:var(--white)}}
-        .nav-item.active{{background:color-mix(in srgb, var(--primary) 30%, transparent);color:var(--white)}}
+        .nav-item{{display:flex;align-items:center;gap:12px;padding:11px 16px;border-radius:10px;color:#94a3b8;text-decoration:none;font-size:.9rem;font-weight:500;transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left}}
+        .nav-item:hover{{background:rgba(255,255,255,0.06);color:#fff}}
+        .nav-item.active{{background:color-mix(in srgb, var(--primary) 30%, transparent);color:#fff}}
         .nav-item svg{{width:20px;height:20px;flex-shrink:0}}
-        .sidebar-footer{{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.08);font-size:.75rem;color:var(--g500)}}
+        .sidebar-footer{{padding:16px 24px;border-top:1px solid rgba(255,255,255,0.08);font-size:.75rem;color:#64748b;display:flex;align-items:center;justify-content:space-between;gap:8px}}
+        .theme-toggle{{background:rgba(255,255,255,0.08);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.75rem;font-family:inherit}}
+        .theme-toggle:hover{{background:rgba(255,255,255,0.14)}}
         .main{{margin-left:260px;flex:1}}
-        .topbar{{background:var(--white);border-bottom:1px solid var(--g200);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}}
-        .topbar h1{{font-size:1.25rem;font-weight:700;color:var(--primary-dark)}}
-        .avatar{{width:36px;height:36px;border-radius:50%;background:var(--primary);color:var(--white);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}}
-        .content{{padding:32px}}
-        .card{{background:var(--white);border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.04);overflow:hidden}}
-        .card-header{{padding:20px 24px;border-bottom:1px solid var(--g100);display:flex;align-items:center;justify-content:space-between}}
+        .topbar{{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;gap:12px;flex-wrap:wrap}}
+        .topbar h1{{font-size:1.2rem;font-weight:700;color:var(--primary-dark)}}
+        [data-theme="dark"] .topbar h1{{color:var(--white)}}
+        .topbar-right{{display:flex;align-items:center;gap:10px;flex-wrap:wrap}}
+        .avatar{{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}}
+        .content{{padding:28px}}
+        .card{{background:var(--surface);border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04);overflow:hidden;border:1px solid var(--border-soft)}}
+        .card-header{{padding:18px 22px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}}
         .card-header h2{{font-size:1.05rem;font-weight:700;color:var(--primary-dark)}}
-        .card-body{{padding:24px}}
-        .stats-row{{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:28px}}
-        .stat-card{{background:var(--white);border-radius:var(--r);padding:20px 24px;box-shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 16px rgba(0,0,0,0.04)}}
-        .stat-label{{font-size:.8rem;font-weight:600;color:var(--g500);text-transform:uppercase;letter-spacing:.5px}}
-        .stat-value{{font-size:1.8rem;font-weight:800;color:var(--primary-dark);margin-top:4px}}
-        .stat-sub{{font-size:.8rem;color:var(--g400);margin-top:2px}}
-        .form-group{{margin-bottom:20px}}
+        [data-theme="dark"] .card-header h2{{color:var(--text)}}
+        .card-body{{padding:22px}}
+        .stats-row{{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:24px}}
+        .stat-card{{background:var(--surface);border-radius:var(--r);padding:18px 22px;box-shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04);border:1px solid var(--border-soft)}}
+        .stat-label{{font-size:.78rem;font-weight:600;color:var(--text-mute);text-transform:uppercase;letter-spacing:.5px}}
+        .stat-value{{font-size:1.7rem;font-weight:800;color:var(--primary-dark);margin-top:4px}}
+        [data-theme="dark"] .stat-value{{color:var(--text)}}
+        .stat-sub{{font-size:.78rem;color:var(--text-mute);margin-top:2px}}
+        .form-group{{margin-bottom:18px}}
         .form-group label{{display:block;font-size:.85rem;font-weight:600;color:var(--g700);margin-bottom:6px}}
-        .form-group input,.form-group select,.form-group textarea{{width:100%;padding:10px 14px;border:1.5px solid var(--g200);border-radius:10px;font-size:.9rem;font-family:inherit;color:var(--g900);background:var(--white);transition:border-color .2s,box-shadow .2s}}
+        .form-group input,.form-group select,.form-group textarea{{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:.9rem;font-family:inherit;color:var(--text);background:var(--surface);transition:border-color .2s,box-shadow .2s}}
         .form-group input:focus,.form-group select:focus,.form-group textarea:focus{{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent)}}
         .form-group textarea{{resize:vertical;min-height:80px}}
-        .form-row{{display:grid;grid-template-columns:1fr 1fr;gap:16px}}
-        .form-row-3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}}
-        .btn{{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:10px;font-weight:600;font-size:.9rem;font-family:inherit;text-decoration:none;transition:all .2s;cursor:pointer;border:none}}
-        .btn-primary{{background:var(--primary);color:var(--white)}}
-        .btn-primary:hover{{filter:brightness(0.9)}}
-        .btn-success{{background:var(--green);color:var(--white)}}
-        .btn-success:hover{{filter:brightness(0.9)}}
-        .btn-outline{{background:transparent;color:var(--g700);border:1.5px solid var(--g200)}}
+        .form-row{{display:grid;grid-template-columns:1fr 1fr;gap:14px}}
+        .form-row-3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}}
+        .btn{{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:10px;font-weight:600;font-size:.88rem;font-family:inherit;text-decoration:none;transition:all .2s;cursor:pointer;border:none;white-space:nowrap}}
+        .btn-primary{{background:var(--primary);color:#fff}}
+        .btn-primary:hover{{filter:brightness(0.92)}}
+        .btn-success{{background:var(--green);color:#fff}}
+        .btn-success:hover{{filter:brightness(0.92)}}
+        .btn-outline{{background:transparent;color:var(--g700);border:1.5px solid var(--border)}}
         .btn-outline:hover{{border-color:var(--primary);color:var(--primary)}}
-        .btn-sm{{padding:7px 14px;font-size:.8rem;border-radius:8px}}
-        .btn-group{{display:flex;gap:10px;margin-top:8px}}
+        .btn-ghost{{background:transparent;color:var(--text-mute);border:none;padding:6px 10px}}
+        .btn-ghost:hover{{color:var(--primary)}}
+        .btn-sm{{padding:6px 12px;font-size:.78rem;border-radius:8px}}
+        .btn-group{{display:flex;gap:8px;flex-wrap:wrap}}
         table{{width:100%;border-collapse:collapse}}
-        th{{text-align:left;padding:10px 16px;font-size:.75rem;font-weight:600;color:var(--g500);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--g100);background:var(--g50)}}
-        td{{padding:14px 16px;font-size:.9rem;border-bottom:1px solid var(--g100);vertical-align:middle}}
-        tr:hover td{{background:var(--g50)}}
-        .badge{{display:inline-block;padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:600}}
+        th{{text-align:left;padding:10px 14px;font-size:.72rem;font-weight:600;color:var(--text-mute);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-soft);background:var(--g50)}}
+        td{{padding:12px 14px;font-size:.88rem;border-bottom:1px solid var(--border-soft);vertical-align:middle;color:var(--text)}}
+        tr:hover td{{background:var(--row-hover)}}
+        .badge{{display:inline-block;padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:600;white-space:nowrap}}
         .badge-pending{{background:var(--orange-l);color:var(--orange)}}
         .badge-sent{{background:var(--green-l);color:var(--green)}}
         .badge-scheduled{{background:color-mix(in srgb, var(--primary) 15%, transparent);color:var(--primary)}}
         .badge-completed{{background:var(--green-l);color:var(--green)}}
+        .badge-claim{{background:var(--red-l);color:var(--red)}}
         .page{{display:none}}.page.active{{display:block}}
-        .modal-overlay{{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px}}
+        .modal-overlay{{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px}}
         .modal-overlay.open{{display:flex}}
-        .modal{{background:var(--white);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.1);width:100%;max-width:600px;max-height:90vh;overflow-y:auto}}
-        .modal-header{{padding:20px 24px;border-bottom:1px solid var(--g100);display:flex;align-items:center;justify-content:space-between}}
-        .modal-header h2{{font-size:1.1rem;font-weight:700;color:var(--primary-dark)}}
-        .modal-close{{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--g400);line-height:1}}
-        .modal-body{{padding:24px}}
-        .modal-footer{{padding:16px 24px;border-top:1px solid var(--g100);display:flex;justify-content:flex-end;gap:10px}}
+        .modal{{background:var(--surface);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:100%;max-width:600px;max-height:90vh;overflow-y:auto}}
+        .modal.modal-lg{{max-width:880px}}
+        .modal-header{{padding:18px 22px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between}}
+        .modal-header h2{{font-size:1.05rem;font-weight:700;color:var(--primary-dark)}}
+        [data-theme="dark"] .modal-header h2{{color:var(--text)}}
+        .modal-close{{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-mute);line-height:1}}
+        .modal-body{{padding:22px}}
+        .modal-footer{{padding:14px 22px;border-top:1px solid var(--border-soft);display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}}
         .schedule-list{{display:flex;flex-direction:column;gap:12px}}
-        .schedule-card{{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;background:var(--g50);border-radius:var(--r);border-left:4px solid var(--primary)}}
-        .schedule-time{{font-size:.85rem;font-weight:700;color:var(--primary-dark);white-space:nowrap;min-width:70px}}
+        .schedule-card{{display:flex;align-items:flex-start;gap:14px;padding:14px 18px;background:var(--g50);border-radius:var(--r);border-left:4px solid var(--primary)}}
+        .schedule-time{{font-size:.85rem;font-weight:700;color:var(--primary-dark);white-space:nowrap;min-width:64px}}
+        [data-theme="dark"] .schedule-time{{color:var(--text)}}
         .schedule-info{{flex:1}}
-        .schedule-info h4{{font-size:.95rem;font-weight:600;color:var(--g800)}}
-        .schedule-info p{{font-size:.85rem;color:var(--g500);margin-top:2px}}
-        .schedule-employee{{display:inline-flex;align-items:center;gap:6px;background:color-mix(in srgb, var(--primary) 15%, transparent);color:var(--primary);padding:3px 10px;border-radius:50px;font-size:.75rem;font-weight:600;margin-top:6px}}
-        .ep-header{{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--primary-dark)}}
+        .schedule-info h4{{font-size:.95rem;font-weight:600;color:var(--text)}}
+        .schedule-info p{{font-size:.85rem;color:var(--text-mute);margin-top:2px}}
+        .schedule-employee{{display:inline-flex;align-items:center;gap:6px;background:color-mix(in srgb, var(--primary) 15%, transparent);color:var(--primary);padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:600;margin-top:6px}}
+        .ep-header{{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid var(--primary-dark)}}
         .ep-company h3{{font-size:1.2rem;font-weight:800;color:var(--primary-dark)}}
-        .ep-company p{{font-size:.8rem;color:var(--g500)}}
+        .ep-company p{{font-size:.8rem;color:var(--text-mute)}}
         .ep-est-num{{text-align:right}}
         .ep-est-num h4{{font-size:.85rem;font-weight:700;color:var(--primary-dark);text-transform:uppercase;letter-spacing:1px}}
-        .ep-est-num p{{font-size:.85rem;color:var(--g500)}}
-        .ep-parties{{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}}
-        .ep-parties h5{{font-size:.7rem;font-weight:700;color:var(--g400);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}}
+        .ep-est-num p{{font-size:.85rem;color:var(--text-mute)}}
+        .ep-parties{{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px}}
+        .ep-parties h5{{font-size:.7rem;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}}
         .ep-parties p{{font-size:.9rem;color:var(--g700)}}
-        .ep-table{{width:100%;border-collapse:collapse;margin-bottom:16px}}
-        .ep-table th{{background:var(--primary-dark);color:var(--white);padding:10px 14px;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;text-align:left}}
-        .ep-table td{{padding:10px 14px;font-size:.9rem;border-bottom:1px solid var(--g100)}}
+        .ep-table{{width:100%;border-collapse:collapse;margin-bottom:14px}}
+        .ep-table th{{background:var(--primary-dark);color:#fff;padding:10px 14px;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;text-align:left}}
+        .ep-table td{{padding:10px 14px;font-size:.9rem;border-bottom:1px solid var(--border-soft)}}
         .ep-table .right{{text-align:right}}
         .ep-totals{{text-align:right;margin-top:8px}}
         .ep-totals .line{{display:flex;justify-content:flex-end;gap:32px;padding:4px 0;font-size:.9rem;color:var(--g700)}}
-        .ep-totals .line.total{{font-weight:800;font-size:1.1rem;color:var(--primary-dark);border-top:2px solid var(--g200);padding-top:8px;margin-top:4px}}
-        .estimate-preview{{border:1.5px solid var(--g200);border-radius:var(--r);padding:28px;background:var(--white);margin-top:16px}}
-        .toast{{position:fixed;bottom:32px;right:32px;z-index:200;background:var(--g900);color:var(--white);padding:14px 24px;border-radius:var(--r);font-size:.9rem;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,0.1);transform:translateY(100px);opacity:0;transition:all .3s}}
+        .ep-totals .line.total{{font-weight:800;font-size:1.1rem;color:var(--primary-dark);border-top:2px solid var(--border);padding-top:8px;margin-top:4px}}
+        .estimate-preview{{border:1.5px solid var(--border);border-radius:var(--r);padding:26px;background:var(--surface);margin-top:14px}}
+        .toast{{position:fixed;bottom:28px;right:28px;z-index:200;background:var(--g900);color:#fff;padding:13px 22px;border-radius:var(--r);font-size:.88rem;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,0.18);transform:translateY(100px);opacity:0;transition:all .3s;max-width:340px}}
+        [data-theme="dark"] .toast{{background:#fff;color:#0b1120}}
         .toast.show{{transform:translateY(0);opacity:1}}
-        .toast.success{{background:var(--green)}}
+        .toast.success{{background:var(--green);color:#fff}}
         .sidebar-toggle{{display:none;background:none;border:none;cursor:pointer;padding:4px}}
         .sidebar-toggle svg{{width:24px;height:24px;color:var(--primary-dark)}}
-        .sidebar-close{{display:none;position:absolute;top:16px;right:16px;background:none;border:none;color:var(--g400);font-size:1.5rem;cursor:pointer}}
-        .report-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px}}
-        .bar-row{{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--g100)}}
+        [data-theme="dark"] .sidebar-toggle svg{{color:var(--text)}}
+        .sidebar-close{{display:none;position:absolute;top:14px;right:14px;background:none;border:none;color:#94a3b8;font-size:1.5rem;cursor:pointer}}
+        .report-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px}}
+        .bar-row{{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-soft)}}
         .bar-row:last-child{{border-bottom:none}}
         .bar-label{{width:140px;font-size:.85rem;font-weight:600;color:var(--g700)}}
         .bar-track{{flex:1;height:10px;background:var(--g100);border-radius:50px;overflow:hidden}}
         .bar-fill{{height:100%;background:var(--primary);border-radius:50px}}
         .bar-value{{width:64px;text-align:right;font-size:.85rem;font-weight:700;color:var(--primary-dark)}}
-        .photo-strip{{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}}
-        .photo-thumb{{width:48px;height:48px;border-radius:6px;object-fit:cover;border:1px solid var(--g200);cursor:pointer}}
-        .photo-empty{{font-size:.75rem;color:var(--g400)}}
+        [data-theme="dark"] .bar-value{{color:var(--text)}}
+        .photo-strip{{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}}
+        .photo-thumb{{width:44px;height:44px;border-radius:6px;object-fit:cover;border:1px solid var(--border);cursor:pointer}}
+        .empty-state{{text-align:center;padding:30px 20px;color:var(--text-mute);font-size:.9rem}}
+        .tour-overlay{{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:24px}}
+        .tour-overlay.open{{display:flex}}
+        .tour-card{{background:var(--surface);border-radius:16px;max-width:480px;width:100%;padding:28px;box-shadow:0 12px 40px rgba(0,0,0,0.22)}}
+        .tour-card h3{{font-size:1.3rem;font-weight:800;color:var(--primary-dark);margin-bottom:8px}}
+        [data-theme="dark"] .tour-card h3{{color:var(--text)}}
+        .tour-card p{{color:var(--text-mute);font-size:.95rem;line-height:1.6;margin-bottom:8px}}
+        .tour-step-counter{{font-size:.75rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px}}
+        .tour-actions{{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:10px}}
+        .topbar-action{{background:var(--surface);border:1.5px solid var(--border);color:var(--g700);border-radius:8px;padding:7px 12px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px}}
+        .topbar-action:hover{{border-color:var(--primary);color:var(--primary)}}
+        .recording-pulse{{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red);animation:pulse 1s infinite;margin-right:8px}}
+        @keyframes pulse{{0%,100%{{opacity:1}}50%{{opacity:0.4}}}}
+        .annotation-tools{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;padding:10px;background:var(--g50);border-radius:10px}}
+        .ann-btn{{padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--g700);cursor:pointer;font-size:.8rem;font-family:inherit;font-weight:600}}
+        .ann-btn.active{{background:var(--primary);color:#fff;border-color:var(--primary)}}
+        #aerialMap{{height:520px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}}
         @media(max-width:1024px){{.stats-row,.report-grid{{grid-template-columns:repeat(2,1fr)}}.form-row-3{{grid-template-columns:1fr}}}}
-        @media(max-width:768px){{.sidebar{{transform:translateX(-100%)}}.sidebar.open{{transform:translateX(0)}}.sidebar-close,.sidebar-toggle{{display:block}}.main{{margin-left:0}}.content{{padding:20px}}.topbar{{padding:14px 20px}}.stats-row,.report-grid{{grid-template-columns:1fr}}.form-row{{grid-template-columns:1fr}}}}
+        @media(max-width:768px){{.sidebar{{transform:translateX(-100%)}}.sidebar.open{{transform:translateX(0)}}.sidebar-close,.sidebar-toggle{{display:block}}.main{{margin-left:0}}.content{{padding:18px}}.topbar{{padding:12px 16px}}.stats-row,.report-grid{{grid-template-columns:1fr}}.form-row{{grid-template-columns:1fr}}.btn{{padding:8px 14px;font-size:.84rem}}.btn-sm{{padding:6px 10px;font-size:.74rem}}}}
         @media print{{
-            body{{background:var(--white)}}
-            .sidebar,.topbar,.btn,.btn-group,.card-header button,#estPreviewArea .card-header .btn-group{{display:none !important}}
+            body{{background:#fff;color:#000}}
+            .sidebar,.topbar,.btn,.btn-group,.card-header button{{display:none !important}}
             .main{{margin-left:0}}
             .content{{padding:0}}
             .page{{display:none !important}}
@@ -541,6 +818,7 @@ def build_html(t):
             #estPreviewArea{{display:block !important;margin:0}}
             #estPreviewArea .card{{box-shadow:none;border:none}}
             .estimate-preview{{border:none;padding:0}}
+            .toast,.tour-overlay,.modal-overlay{{display:none !important}}
         }}
     </style>
 </head>
@@ -552,14 +830,18 @@ def build_html(t):
         <div class="sidebar-sub">{sub} Dashboard</div>
     </div>
     <nav class="sidebar-nav">
-        <button class="nav-item active" onclick="switchPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
-        <button class="nav-item" onclick="switchPage('estimates',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Estimates</button>
-        <button class="nav-item" onclick="switchPage('scheduling',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Scheduling</button>
-        <button class="nav-item" onclick="switchPage('employees',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Employees</button>
-        <button class="nav-item" onclick="switchPage('inventory',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Inventory</button>
-        <button class="nav-item" onclick="switchPage('reports',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Reports</button>
+        <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
+        <button class="nav-item" data-page="estimates" onclick="switchPage('estimates',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Estimates</button>
+        <button class="nav-item" data-page="scheduling" onclick="switchPage('scheduling',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Scheduling</button>
+        <button class="nav-item" data-page="employees" onclick="switchPage('employees',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Employees</button>
+        <button class="nav-item" data-page="inventory" onclick="switchPage('inventory',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Inventory</button>
+        <button class="nav-item" data-page="reports" onclick="switchPage('reports',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Reports</button>
+        {nav_extras}
     </nav>
-    <div class="sidebar-footer">&copy; 2026 {biz}</div>
+    <div class="sidebar-footer">
+        <span>&copy; 2026 {biz}</span>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle dark mode">🌓</button>
+    </div>
 </aside>
 <div class="main">
     <div class="topbar">
@@ -567,7 +849,12 @@ def build_html(t):
             <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
             <h1 id="pageTitle">Dashboard</h1>
         </div>
-        <div style="display:flex;align-items:center;gap:16px"><span style="font-size:.85rem;color:var(--g500)">Owner</span><div class="avatar">{initials}</div></div>
+        <div class="topbar-right">
+            <button class="topbar-action" onclick="shareDemo()" title="Share this demo with current data">↗ Share Demo</button>
+            <button class="topbar-action" onclick="startTour()" title="Take the tour">? Tour</button>
+            <span style="font-size:.85rem;color:var(--text-mute);display:none" class="hide-mobile">Owner</span>
+            <div class="avatar">{initials}</div>
+        </div>
     </div>
     <div class="content">
         <!-- DASHBOARD -->
@@ -575,35 +862,39 @@ def build_html(t):
             <div class="stats-row">
                 {kpi_cards_html}
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
                 <div class="card"><div class="card-header"><h2>Recent Estimates</h2></div><table><thead><tr><th>Client</th><th>Amount</th><th>Status</th></tr></thead><tbody id="recentEstBody"></tbody></table></div>
                 <div class="card"><div class="card-header"><h2>Today's Schedule</h2></div><div class="card-body"><div class="schedule-list" id="todayScheduleBody"></div></div></div>
             </div>
         </div>
         <!-- ESTIMATES -->
         <div class="page" id="page-estimates">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
-                <div></div><button class="btn btn-primary" onclick="openModal('estimateModal')">+ New Estimate</button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:10px;flex-wrap:wrap">
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="openModal('estimateModal')">+ New Estimate</button>
+                    <button class="btn btn-outline" onclick="startVoiceEstimate()" title="Voice-to-estimate (demo)">🎙 Voice Estimate</button>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="resetDemo()" title="Clear local data">Reset Demo Data</button>
             </div>
-            <div class="card"><div class="card-header"><h2>All Estimates</h2><button class="btn btn-outline btn-sm" onclick="resetDemo()" title="Clear local data">Reset Demo Data</button></div><table><thead><tr><th>#</th><th>Client</th><th>Service</th><th>Amount</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="estBody"></tbody></table></div>
-            <div id="estPreviewArea" style="margin-top:24px;display:none"><div class="card"><div class="card-header"><h2>Estimate Preview</h2><div class="btn-group"><button class="btn btn-primary btn-sm" onclick="sendEst('client')">Email to Client</button><button class="btn btn-outline btn-sm" onclick="sendEst('company')">Copy to Company</button><button class="btn btn-outline btn-sm" onclick="window.print()">Print / PDF</button></div></div><div class="card-body"><div class="estimate-preview" id="estPreviewContent"></div></div></div></div>
+            <div class="card"><div class="card-header"><h2>All Estimates</h2></div><table><thead><tr><th>#</th><th>Client</th><th>Service</th><th>Amount</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="estBody"></tbody></table></div>
+            <div id="estPreviewArea" style="margin-top:22px;display:none"><div class="card"><div class="card-header"><h2>Estimate Preview</h2><div class="btn-group"><button class="btn btn-primary btn-sm" onclick="sendEst('client')">Email to Client</button><button class="btn btn-outline btn-sm" onclick="aiFollowup()">AI Follow-up Draft</button><button class="btn btn-outline btn-sm" onclick="window.print()">Print / PDF</button></div></div><div class="card-body"><div class="estimate-preview" id="estPreviewContent"></div></div></div></div>
         </div>
         <!-- SCHEDULING -->
         <div class="page" id="page-scheduling">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:10px">
                 <span style="font-weight:700;color:var(--primary-dark)">This Week</span>
                 <button class="btn btn-primary" onclick="openModal('schedModal')">+ Schedule Job</button>
             </div>
-            <div class="card"><div class="card-header"><h2>Scheduled Jobs</h2></div><table><thead><tr><th>Date</th><th>Time</th><th>Job</th><th>Address</th><th>Assigned</th><th>Status</th><th></th></tr></thead><tbody id="schedBody"></tbody></table></div>
+            <div class="card"><div class="card-header"><h2>Scheduled Jobs</h2></div><div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Time</th><th>Job</th><th>Address</th><th>Assigned</th><th>Status</th><th></th></tr></thead><tbody id="schedBody"></tbody></table></div></div>
         </div>
         <!-- EMPLOYEES -->
         <div class="page" id="page-employees">
-            <div class="card"><div class="card-header"><h2>Team Members</h2></div><table><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Status</th></tr></thead><tbody>
+            <div class="card"><div class="card-header"><h2>Team Members</h2></div><div style="overflow-x:auto"><table><thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Status</th></tr></thead><tbody>
                 <tr><td style="font-weight:600">Employee One</td><td>{roles["senior"]}</td><td>emp1@{domain}</td><td>(205) 555-0001</td><td><span class="badge badge-completed">Active</span></td></tr>
                 <tr><td style="font-weight:600">Employee Two</td><td>{roles["mid"]}</td><td>emp2@{domain}</td><td>(205) 555-0002</td><td><span class="badge badge-completed">Active</span></td></tr>
                 <tr><td style="font-weight:600">Employee Three</td><td>{roles["mid"]}</td><td>emp3@{domain}</td><td>(205) 555-0003</td><td><span class="badge badge-completed">Active</span></td></tr>
                 <tr><td style="font-weight:600">Employee Four</td><td>{roles["junior"]}</td><td>emp4@{domain}</td><td>(205) 555-0004</td><td><span class="badge badge-completed">Active</span></td></tr>
-            </tbody></table></div>
+            </tbody></table></div></div>
         </div>
         <!-- INVENTORY -->
         <div class="page" id="page-inventory">
@@ -612,22 +903,22 @@ def build_html(t):
                 <div class="stat-card"><div class="stat-label">Reorder Needed</div><div class="stat-value">0</div><div class="stat-sub">Below threshold</div></div>
                 <div class="stat-card"><div class="stat-label">Est. Inventory Value</div><div class="stat-value">$24.8k</div><div class="stat-sub">On hand</div></div>
             </div>
-            <div class="card"><div class="card-header"><h2>Materials & Equipment</h2><button class="btn btn-primary btn-sm">+ Add Item</button></div><table><thead><tr><th>Item</th><th>Unit</th><th>On Hand</th><th>Reorder Level</th><th>Unit Cost</th><th>Status</th></tr></thead><tbody>
+            <div class="card"><div class="card-header"><h2>Materials &amp; Equipment</h2><button class="btn btn-primary btn-sm">+ Add Item</button></div><div style="overflow-x:auto"><table><thead><tr><th>Item</th><th>Unit</th><th>On Hand</th><th>Reorder Level</th><th>Unit Cost</th><th>Status</th></tr></thead><tbody>
                 {inv_rows}
-            </tbody></table></div>
+            </tbody></table></div></div>
         </div>
         <!-- REPORTS -->
         <div class="page" id="page-reports">
             <div class="report-grid">
-                <div class="stat-card"><div class="stat-label">Revenue (MTD)</div><div class="stat-value">$42.8k</div><div class="stat-sub">+12% vs last month</div></div>
+                <div class="stat-card"><div class="stat-label">Revenue (MTD)</div><div class="stat-value">$42,800</div><div class="stat-sub">+12% vs last month</div></div>
                 <div class="stat-card"><div class="stat-label">Jobs Completed</div><div class="stat-value">27</div><div class="stat-sub">This month</div></div>
                 <div class="stat-card"><div class="stat-label">Avg Ticket Size</div><div class="stat-value">$1,587</div><div class="stat-sub">Per completed job</div></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
                 <div class="card"><div class="card-header"><h2>Revenue by Service</h2></div><div class="card-body">
-                    <div class="bar-row"><div class="bar-label">{jobs[0]}</div><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><div class="bar-value">$18.4k</div></div>
-                    <div class="bar-row"><div class="bar-label">{job_default2}</div><div class="bar-track"><div class="bar-fill" style="width:64%"></div></div><div class="bar-value">$12.1k</div></div>
-                    <div class="bar-row"><div class="bar-label">{job_default3}</div><div class="bar-track"><div class="bar-fill" style="width:46%"></div></div><div class="bar-value">$7.8k</div></div>
+                    <div class="bar-row"><div class="bar-label">{jobs_list[0]}</div><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><div class="bar-value">$18.4k</div></div>
+                    <div class="bar-row"><div class="bar-label">{jobs_list[1] if len(jobs_list)>1 else jobs_list[0]}</div><div class="bar-track"><div class="bar-fill" style="width:64%"></div></div><div class="bar-value">$12.1k</div></div>
+                    <div class="bar-row"><div class="bar-label">{jobs_list[2] if len(jobs_list)>2 else jobs_list[0]}</div><div class="bar-track"><div class="bar-fill" style="width:46%"></div></div><div class="bar-value">$7.8k</div></div>
                     <div class="bar-row"><div class="bar-label">Other</div><div class="bar-track"><div class="bar-fill" style="width:28%"></div></div><div class="bar-value">$4.5k</div></div>
                 </div></div>
                 <div class="card"><div class="card-header"><h2>Crew Productivity</h2></div><div class="card-body">
@@ -638,6 +929,7 @@ def build_html(t):
                 </div></div>
             </div>
         </div>
+        {page_extras}
     </div>
 </div>
 
@@ -648,7 +940,7 @@ def build_html(t):
         <div class="form-row"><div class="form-group"><label>Client Name</label><input type="text" id="ecName" placeholder="Client name"></div><div class="form-group"><label>Client Email</label><input type="email" id="ecEmail" placeholder="client@email.com"></div></div>
         <div class="form-group"><label>Client Address</label><input type="text" id="ecAddr" placeholder="Address"></div>
         <div id="lineItems"><div class="form-row-3 li-row"><div class="form-group"><label>Description</label><input type="text" placeholder="Service item"></div><div class="form-group"><label>Qty</label><input type="number" value="1" min="1"></div><div class="form-group"><label>Unit Price ($)</label><input type="number" placeholder="0.00" step="0.01"></div></div></div>
-        <button class="btn btn-outline btn-sm" onclick="addLine()" style="margin-bottom:16px">+ Add Line</button>
+        <button class="btn btn-outline btn-sm" onclick="addLine()" style="margin-bottom:14px">+ Add Line</button>
         <div class="form-group"><label>Notes</label><textarea id="ecNotes" placeholder="Payment terms, special instructions..."></textarea></div>
     </div>
     <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('estimateModal')">Cancel</button><button class="btn btn-primary" onclick="createEst()">Create Estimate</button></div>
@@ -660,102 +952,521 @@ def build_html(t):
     <div class="modal-body">
         <div class="form-row">
             <div class="form-group"><label>Job Type</label><select id="sjType">{job_options_html}</select></div>
-            <div class="form-group"><label>Assign Team Member</label><select id="sjEmp"><option value="emp1@{domain}">Employee One</option><option value="emp2@{domain}">Employee Two</option><option value="emp3@{domain}">Employee Three</option><option value="emp4@{domain}">Employee Four</option></select></div>
+            <div class="form-group"><label>Assign Team Member</label><select id="sjEmp">{employee_options(domain)}</select></div>
         </div>
         <div class="form-group"><label>Job Address</label><input type="text" id="sjAddr" placeholder="Full address"></div>
         <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="sjDate"></div><div class="form-group"><label>Time</label><input type="time" id="sjTime" value="09:00"></div></div>
         <div class="form-group"><label>Client Name</label><input type="text" id="sjClient" placeholder="Client name"></div>
         <div class="form-group"><label>Notes</label><textarea id="sjNotes" placeholder="Special instructions..."></textarea></div>
-        <div style="background:color-mix(in srgb, var(--primary) 12%, transparent);border-radius:10px;padding:14px 18px;margin-top:8px"><p style="font-size:.85rem;color:var(--primary);font-weight:600;margin-bottom:4px">Team Notification</p><p style="font-size:.8rem;color:var(--g700)">The assigned team member will receive an email with job details and a Google Maps link with directions.</p></div>
+        <div style="background:color-mix(in srgb, var(--primary) 12%, transparent);border-radius:10px;padding:13px 16px;margin-top:6px"><p style="font-size:.85rem;color:var(--primary);font-weight:600;margin-bottom:4px">Team Notification</p><p style="font-size:.8rem;color:var(--text-mute)">The assigned team member will receive an email with job details and a Google Maps link with directions.</p></div>
     </div>
     <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('schedModal')">Cancel</button><button class="btn btn-success" onclick="scheduleJob()">Schedule &amp; Notify</button></div>
 </div></div>
 
+<!-- VOICE MODAL -->
+<div class="modal-overlay" id="voiceModal"><div class="modal">
+    <div class="modal-header"><h2>Voice-to-Estimate</h2><button class="modal-close" onclick="closeModal('voiceModal')">&times;</button></div>
+    <div class="modal-body">
+        <div id="voiceStage1">
+            <p style="font-size:.9rem;color:var(--text-mute);margin-bottom:14px">Tap below and describe the job out loud — your voice gets parsed into a draft estimate.</p>
+            <div style="text-align:center;padding:24px">
+                <button class="btn btn-primary" onclick="simulateVoice()" style="font-size:1rem;padding:14px 28px">🎙 Start Recording</button>
+            </div>
+        </div>
+        <div id="voiceStage2" style="display:none">
+            <p><span class="recording-pulse"></span><span style="font-size:.9rem;color:var(--text-mute)">Listening... say "stop" when done</span></p>
+            <div style="margin-top:18px;padding:18px;background:var(--g50);border-radius:10px;font-style:italic;color:var(--g700)" id="voiceTranscript">"..."</div>
+        </div>
+        <div id="voiceStage3" style="display:none">
+            <p style="font-size:.85rem;color:var(--text-mute);margin-bottom:6px">Transcript:</p>
+            <div style="padding:14px;background:var(--g50);border-radius:10px;font-style:italic;color:var(--g700);margin-bottom:18px" id="voiceFinalTranscript"></div>
+            <p style="font-size:.85rem;color:var(--text-mute);margin-bottom:6px">Parsed estimate:</p>
+            <div id="voiceParsedEst"></div>
+        </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('voiceModal')">Cancel</button><button class="btn btn-primary" id="voiceCreateBtn" onclick="createFromVoice()" style="display:none">Create Estimate</button></div>
+</div></div>
+
+<!-- AI FOLLOW-UP MODAL -->
+<div class="modal-overlay" id="aiModal"><div class="modal">
+    <div class="modal-header"><h2>AI Follow-up Draft</h2><button class="modal-close" onclick="closeModal('aiModal')">&times;</button></div>
+    <div class="modal-body">
+        <p style="font-size:.85rem;color:var(--text-mute);margin-bottom:10px">Generated draft — edit before sending.</p>
+        <div class="form-group"><label>Subject</label><input type="text" id="aiSubject"></div>
+        <div class="form-group"><label>Body</label><textarea id="aiBody" rows="10" style="min-height:240px"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('aiModal')">Cancel</button><button class="btn btn-primary" onclick="aiSend()">Open in Email</button></div>
+</div></div>
+
+<!-- PHOTO ANNOTATION MODAL -->
+<div class="modal-overlay" id="annModal"><div class="modal modal-lg">
+    <div class="modal-header"><h2>Annotate Photo</h2><button class="modal-close" onclick="closeModal('annModal')">&times;</button></div>
+    <div class="modal-body">
+        <div class="annotation-tools">
+            <button class="ann-btn active" onclick="setAnnTool('arrow',this)">↗ Arrow</button>
+            <button class="ann-btn" onclick="setAnnTool('circle',this)">○ Circle</button>
+            <button class="ann-btn" onclick="setAnnTool('pen',this)">✎ Pen</button>
+            <button class="ann-btn" onclick="undoAnn()" style="margin-left:auto">Undo</button>
+            <button class="ann-btn" onclick="clearAnn()">Clear</button>
+        </div>
+        <div style="position:relative;text-align:center;background:var(--g50);border-radius:10px;overflow:hidden">
+            <canvas id="annCanvas" style="max-width:100%;cursor:crosshair"></canvas>
+        </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('annModal')">Cancel</button><button class="btn btn-primary" onclick="saveAnnotation()">Save Annotated Copy</button></div>
+</div></div>
+
+<!-- SHARE MODAL -->
+<div class="modal-overlay" id="shareModal"><div class="modal">
+    <div class="modal-header"><h2>Share This Demo</h2><button class="modal-close" onclick="closeModal('shareModal')">&times;</button></div>
+    <div class="modal-body">
+        <p style="font-size:.9rem;color:var(--text-mute);margin-bottom:14px">This link includes your current estimates and scheduled jobs. Open it on any device to see the demo with your data.</p>
+        <textarea id="shareLink" rows="3" readonly style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:.8rem;font-family:monospace;color:var(--text);background:var(--g50)"></textarea>
+        <div class="btn-group" style="margin-top:14px"><button class="btn btn-primary btn-sm" onclick="copyShareLink()">Copy Link</button><a class="btn btn-outline btn-sm" id="shareSmsLink" href="#">Open in SMS</a></div>
+    </div>
+</div></div>
+
+<!-- TOUR -->
+<div class="tour-overlay" id="tourOverlay">
+    <div class="tour-card">
+        <div class="tour-step-counter" id="tourStep">Step 1 of 5</div>
+        <h3 id="tourTitle"></h3>
+        <p id="tourBody"></p>
+        <div class="tour-actions">
+            <button class="btn btn-ghost btn-sm" onclick="endTour()">Skip tour</button>
+            <div class="btn-group">
+                <button class="btn btn-outline btn-sm" id="tourPrev" onclick="tourPrev()">Back</button>
+                <button class="btn btn-primary btn-sm" id="tourNext" onclick="tourNext()">Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const BIZ="{biz}",AREA="{AREA}",PHONE="{phone}",SLUG="{t["slug"]}";
+const BIZ="{js_escape(biz)}",AREA="{AREA}",PHONE="{phone}",SLUG="{slug}";
 const STORAGE_KEY="wd-dash-"+SLUG;
-const SEED_ESTIMATES={{
-    'EST-001':{{num:'EST-001',client:'Sample Client A',email:'clienta@email.com',addr:'123 Main St, '+AREA,items:[{{desc:'{job_default1}',qty:1,price:2400}}],notes:'Payment due upon completion.',date:'Jan 28, 2026',status:'Sent'}},
-    'EST-002':{{num:'EST-002',client:'Sample Client B',email:'clientb@email.com',addr:'456 Oak Ave, '+AREA,items:[{{desc:'{job_default2}',qty:1,price:1200}}],notes:'Financing available.',date:'Jan 29, 2026',status:'Pending'}}
-}};
-const SEED_SCHED=[
-    {{id:'JOB-001',date:'2026-04-26',time:'09:00',job:'{job_default1}',addr:'123 Main St, '+AREA,emp:'Employee One',email:'emp1@{domain}',client:'Client A',status:'Scheduled',photos:[]}},
-    {{id:'JOB-002',date:'2026-04-26',time:'13:00',job:'{job_default2}',addr:'456 Oak Ave, '+AREA,emp:'Employee Two',email:'emp2@{domain}',client:'Client B',status:'Scheduled',photos:[]}},
-    {{id:'JOB-003',date:'2026-04-27',time:'10:00',job:'{job_default3}',addr:'789 Pine Rd, '+AREA,emp:'Employee Three',email:'emp3@{domain}',client:'Client C',status:'Scheduled',photos:[]}}
-];
+const SEED_ESTIMATES={seed_estimates_json};
+const SEED_JOB_TEMPLATES={seed_jobs_json};
+const PAGE_TITLES={{dashboard:'Dashboard',estimates:'Estimates',scheduling:'Scheduling',employees:'Employees',inventory:'Inventory',reports:'Reports'{page_titles_extra}}};
 
-let estimates={{}},sched=[],ec=2,jc=3;
+let estimates={{}},sched=[],ec=3,jc=3,annPhotoCtx={{}};
+
+// ---------- format helpers ----------
+const FMT_USD=new Intl.NumberFormat('en-US',{{style:'currency',currency:'USD',maximumFractionDigits:2}});
+const FMT_USD0=new Intl.NumberFormat('en-US',{{style:'currency',currency:'USD',maximumFractionDigits:0}});
+const FMT_NUM=new Intl.NumberFormat('en-US');
+function fmtUsd(v){{return FMT_USD.format(v||0)}}
+function fmtUsd0(v){{return FMT_USD0.format(v||0)}}
+function fmtNum(v){{return FMT_NUM.format(v||0)}}
+function fmtTime(t){{let h=parseInt(t.split(':')[0]),m=t.split(':')[1],ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+m+' '+ap}}
+function fmtDate(d,style){{const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-US',style||{{month:'short',day:'numeric'}})}}
+function todayISO(off){{const d=new Date();d.setDate(d.getDate()+(off||0));return d.toISOString().slice(0,10)}}
+
+// ---------- persistence ----------
+function buildSeedJobs(){{
+    return SEED_JOB_TEMPLATES.map(j=>({{...j,date:todayISO(j.offsetDays),email:'emp'+(['Employee One','Employee Two','Employee Three','Employee Four'].indexOf(j.emp)+1)+'@'+'{domain}',status:'Scheduled',photos:[]}}));
+}}
 function load(){{
+    // Check URL fragment for shared state
+    if(location.hash.startsWith('#d=')){{
+        try{{
+            const d=JSON.parse(atob(decodeURIComponent(location.hash.slice(3))));
+            estimates=d.estimates||{{}};sched=d.sched||[];ec=d.ec||3;jc=d.jc||3;
+            save();
+            history.replaceState(null,'',location.pathname+location.search);
+            showToast('Demo data loaded from share link','success');
+            return;
+        }}catch(e){{console.warn('share decode failed',e)}}
+    }}
     try{{
         const raw=localStorage.getItem(STORAGE_KEY);
         if(raw){{
             const d=JSON.parse(raw);
-            estimates=d.estimates||{{}};sched=d.sched||[];ec=d.ec||2;jc=d.jc||3;
+            estimates=d.estimates||{{}};sched=d.sched||[];ec=d.ec||3;jc=d.jc||3;
             return;
         }}
     }}catch(e){{}}
-    estimates=JSON.parse(JSON.stringify(SEED_ESTIMATES));sched=JSON.parse(JSON.stringify(SEED_SCHED));ec=2;jc=3;
+    estimates=JSON.parse(JSON.stringify(SEED_ESTIMATES));sched=buildSeedJobs();ec=Object.keys(estimates).length;jc=sched.length;
 }}
 function save(){{try{{localStorage.setItem(STORAGE_KEY,JSON.stringify({{estimates,sched,ec,jc}}));}}catch(e){{}}}}
 function resetDemo(){{if(confirm('Reset demo data? Estimates and scheduled jobs will be cleared.')){{localStorage.removeItem(STORAGE_KEY);load();renderAll();showToast('Demo reset.','success');}}}}
 
-function switchPage(p,el){{document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('pageTitle').textContent={{dashboard:'Dashboard',estimates:'Estimates',scheduling:'Scheduling',employees:'Employees',inventory:'Inventory',reports:'Reports'}}[p];document.getElementById('sidebar').classList.remove('open')}}
+// ---------- share ----------
+function shareDemo(){{
+    const payload=btoa(JSON.stringify({{estimates,sched,ec,jc}}));
+    const url=location.origin+location.pathname+'#d='+encodeURIComponent(payload);
+    document.getElementById('shareLink').value=url;
+    document.getElementById('shareSmsLink').href='sms:?body='+encodeURIComponent('Check out the demo: '+url);
+    openModal('shareModal');
+}}
+function copyShareLink(){{const t=document.getElementById('shareLink');t.select();document.execCommand('copy');showToast('Link copied to clipboard','success')}}
+
+// ---------- theme ----------
+function toggleTheme(){{const cur=document.documentElement.getAttribute('data-theme')==='dark'?'':'dark';if(cur)document.documentElement.setAttribute('data-theme','dark');else document.documentElement.removeAttribute('data-theme');try{{localStorage.setItem('wd-theme',cur)}}catch(e){{}}}}
+(function applyTheme(){{try{{if(localStorage.getItem('wd-theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}}catch(e){{}}}})();
+
+// ---------- nav ----------
+function switchPage(p,el){{document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));const target=document.getElementById('page-'+p);if(target)target.classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');else{{const navBtn=document.querySelector('.nav-item[data-page="'+p+'"]');if(navBtn)navBtn.classList.add('active')}}document.getElementById('pageTitle').textContent=PAGE_TITLES[p]||'Dashboard';document.getElementById('sidebar').classList.remove('open');if(p==='aerial'&&typeof initAerialMap==='function')initAerialMap()}}
 function openModal(id){{document.getElementById(id).classList.add('open')}}
 function closeModal(id){{document.getElementById(id).classList.remove('open')}}
 function showToast(m,t){{const e=document.getElementById('toast');e.textContent=m;e.className='toast show'+(t?' '+t:'');setTimeout(()=>e.className='toast',3500)}}
 
-function fmtTime(t){{let h=parseInt(t.split(':')[0]),m=t.split(':')[1],ap=h>=12?'PM':'AM';h=h%12||12;return h+':'+m+' '+ap}}
-function fmtDate(d,style){{const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-US',style||{{month:'short',day:'numeric'}})}}
-
+// ---------- estimates ----------
 function renderEstimates(){{
     const list=Object.values(estimates).sort((a,b)=>(b.num>a.num?1:-1));
     const tb=document.getElementById('estBody');
-    tb.innerHTML=list.map(e=>{{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);const badge=e.status==='Sent'?'badge-sent':e.status==='Paid'?'badge-completed':'badge-pending';return`<tr><td>#${{e.num}}</td><td>${{e.client}}<br><span style="font-size:.8rem;color:var(--g400)">${{e.email}}</span></td><td>${{e.items[0]?.desc||'Service'}}</td><td>$${{tot.toFixed(2)}}</td><td>${{e.date}}</td><td><span class="badge ${{badge}}">${{e.status}}</span></td><td><button class="btn btn-outline btn-sm" onclick="previewEst('${{e.num}}')">View</button></td></tr>`}}).join('');
+    tb.innerHTML=list.length?list.map(e=>{{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);const badge=e.status==='Sent'?'badge-sent':e.status==='Paid'?'badge-completed':'badge-pending';return`<tr><td>#${{e.num}}</td><td>${{e.client}}<br><span style="font-size:.78rem;color:var(--text-mute)">${{e.email}}</span></td><td>${{e.items[0]?.desc||'Service'}}</td><td>${{fmtUsd(tot)}}</td><td>${{e.date}}</td><td><span class="badge ${{badge}}">${{e.status}}</span></td><td><button class="btn btn-outline btn-sm" onclick="previewEst('${{e.num}}')">View</button></td></tr>`}}).join(''):'<tr><td colspan="7" class="empty-state">No estimates yet. Click "+ New Estimate" to create one.</td></tr>';
     const recent=document.getElementById('recentEstBody');
-    if(recent)recent.innerHTML=list.slice(0,3).map(e=>{{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);const badge=e.status==='Sent'?'badge-sent':e.status==='Paid'?'badge-completed':'badge-pending';return`<tr><td>${{e.client}}</td><td>$${{tot.toLocaleString()}}</td><td><span class="badge ${{badge}}">${{e.status}}</span></td></tr>`}}).join('');
+    if(recent)recent.innerHTML=list.slice(0,3).map(e=>{{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);const badge=e.status==='Sent'?'badge-sent':e.status==='Paid'?'badge-completed':'badge-pending';return`<tr><td>${{e.client}}</td><td>${{fmtUsd0(tot)}}</td><td><span class="badge ${{badge}}">${{e.status}}</span></td></tr>`}}).join('')||'<tr><td colspan="3" class="empty-state">No estimates yet</td></tr>';
 }}
-
-function previewEst(id){{const e=estimates[id];if(!e)return;const sub=e.items.reduce((s,i)=>s+i.qty*i.price,0),tax=sub*0.09,tot=sub+tax;document.getElementById('estPreviewContent').innerHTML=`<div class="ep-header"><div class="ep-company"><h3>${{BIZ}}</h3><p>${{AREA}}</p><p>${{PHONE}}</p></div><div class="ep-est-num"><h4>Estimate #${{e.num}}</h4><p>${{e.date}}</p></div></div><div class="ep-parties"><div><h5>From</h5><p><strong>${{BIZ}}</strong><br>${{AREA}}</p></div><div><h5>To</h5><p><strong>${{e.client}}</strong><br>${{e.addr}}<br>${{e.email}}</p></div></div><table class="ep-table"><thead><tr><th>Description</th><th>Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${{e.items.map(i=>`<tr><td>${{i.desc}}</td><td>${{i.qty}}</td><td class="right">$${{i.price.toFixed(2)}}</td><td class="right">$${{(i.qty*i.price).toFixed(2)}}</td></tr>`).join('')}}</tbody></table><div class="ep-totals"><div class="line"><span>Subtotal</span><span>$${{sub.toFixed(2)}}</span></div><div class="line"><span>Tax (9%)</span><span>$${{tax.toFixed(2)}}</span></div><div class="line total"><span>Total</span><span>$${{tot.toFixed(2)}}</span></div></div><div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--g100)"><p style="font-size:.8rem;color:var(--g400)">${{e.notes}}</p></div>`;document.getElementById('estPreviewArea').style.display='block';document.getElementById('estPreviewArea').scrollIntoView({{behavior:'smooth'}})}}
+function previewEst(id){{const e=estimates[id];if(!e)return;currentEst=id;const sub=e.items.reduce((s,i)=>s+i.qty*i.price,0),tax=sub*0.09,tot=sub+tax;document.getElementById('estPreviewContent').innerHTML=`<div class="ep-header"><div class="ep-company"><h3>${{BIZ}}</h3><p>${{AREA}}</p><p>${{PHONE}}</p></div><div class="ep-est-num"><h4>Estimate #${{e.num}}</h4><p>${{e.date}}</p></div></div><div class="ep-parties"><div><h5>From</h5><p><strong>${{BIZ}}</strong><br>${{AREA}}</p></div><div><h5>To</h5><p><strong>${{e.client}}</strong><br>${{e.addr}}<br>${{e.email}}</p></div></div><table class="ep-table"><thead><tr><th>Description</th><th>Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${{e.items.map(i=>`<tr><td>${{i.desc}}</td><td>${{i.qty}}</td><td class="right">${{fmtUsd(i.price)}}</td><td class="right">${{fmtUsd(i.qty*i.price)}}</td></tr>`).join('')}}</tbody></table><div class="ep-totals"><div class="line"><span>Subtotal</span><span>${{fmtUsd(sub)}}</span></div><div class="line"><span>Tax (9%)</span><span>${{fmtUsd(tax)}}</span></div><div class="line total"><span>Total</span><span>${{fmtUsd(tot)}}</span></div></div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-soft)"><p style="font-size:.8rem;color:var(--text-mute)">${{e.notes}}</p></div>`;document.getElementById('estPreviewArea').style.display='block';document.getElementById('estPreviewArea').scrollIntoView({{behavior:'smooth'}})}}
+let currentEst=null;
 function sendEst(t){{showToast(t==='client'?'Estimate emailed to client (placeholder)':'Estimate copy sent to company (placeholder)','success')}}
 function addLine(){{const c=document.getElementById('lineItems'),r=document.createElement('div');r.className='form-row-3 li-row';r.innerHTML='<div class="form-group"><label>Description</label><input type="text" placeholder="Service item"></div><div class="form-group"><label>Qty</label><input type="number" value="1" min="1"></div><div class="form-group"><label>Unit Price ($)</label><input type="number" placeholder="0.00" step="0.01"></div>';c.appendChild(r)}}
 function createEst(){{const n=document.getElementById('ecName').value.trim(),em=document.getElementById('ecEmail').value.trim(),ad=document.getElementById('ecAddr').value.trim();if(!n||!em){{showToast('Please fill in client name and email.');return}}ec++;const id='EST-'+String(ec).padStart(3,'0'),rows=document.querySelectorAll('#lineItems .li-row'),items=[];rows.forEach(r=>{{const inp=r.querySelectorAll('input');items.push({{desc:inp[0].value.trim()||'Service',qty:parseInt(inp[1].value)||1,price:parseFloat(inp[2].value)||0}})}});const today=new Date().toLocaleDateString('en-US',{{month:'short',day:'numeric',year:'numeric'}});estimates[id]={{num:id,client:n,email:em,addr:ad,items,notes:document.getElementById('ecNotes').value.trim(),date:today,status:'Pending'}};save();renderEstimates();closeModal('estimateModal');showToast('Estimate #'+id+' created!','success');document.getElementById('ecName').value='';document.getElementById('ecEmail').value='';document.getElementById('ecAddr').value='';document.getElementById('ecNotes').value='';document.getElementById('lineItems').innerHTML='<div class="form-row-3 li-row"><div class="form-group"><label>Description</label><input type="text" placeholder="Service item"></div><div class="form-group"><label>Qty</label><input type="number" value="1" min="1"></div><div class="form-group"><label>Unit Price ($)</label><input type="number" placeholder="0.00" step="0.01"></div></div>'}}
 
-function trackerUrl(jobId){{return new URL('../job-tracker/?id='+encodeURIComponent(jobId)+'&trade='+encodeURIComponent(SLUG),location.href).toString()}}
+// ---------- voice estimate (faked) ----------
+const VOICE_SAMPLES=[
+    {{transcript:"Need to quote a 3-ton AC installation for the Henderson property at 188 Oakdale Lane. Includes a new condenser, evaporator coil, and the standard 10-year warranty.",client:"Henderson Property",email:"client@email.com",addr:"188 Oakdale Lane",lines:[{{d:"3-Ton AC Installation - Condenser + Coil",q:1,p:5840}},{{d:"10-Year Warranty Coverage",q:1,p:0}}]}},
+    {{transcript:"Quote for the Smith job — panel upgrade to 200 amp plus a Tesla wall connector. Permit's already pulled, inspection is scheduled.",client:"Smith Residence",email:"smith@email.com",addr:"Job site address",lines:[{{d:"200A Panel Upgrade",q:1,p:2680}},{{d:"Tesla Wall Connector Install",q:1,p:1280}},{{d:"Permit Fee",q:1,p:320}}]}},
+    {{transcript:"Patterson family wants a quote for a full hardwood install — about 1200 square feet of red oak on the main floor, including subfloor prep and finish.",client:"Patterson Family",email:"client@email.com",addr:"Job site address",lines:[{{d:"Red Oak Hardwood 1200 sqft @ $9.20/sqft",q:1,p:11040}},{{d:"Subfloor Prep + Demo",q:1,p:1800}},{{d:"Finish Coat (Poly)",q:1,p:1800}}]}}
+];
+let voicePick=null;
+function startVoiceEstimate(){{
+    document.getElementById('voiceStage1').style.display='block';
+    document.getElementById('voiceStage2').style.display='none';
+    document.getElementById('voiceStage3').style.display='none';
+    document.getElementById('voiceCreateBtn').style.display='none';
+    openModal('voiceModal');
+}}
+function simulateVoice(){{
+    document.getElementById('voiceStage1').style.display='none';
+    document.getElementById('voiceStage2').style.display='block';
+    voicePick=VOICE_SAMPLES[Math.floor(Math.random()*VOICE_SAMPLES.length)];
+    let i=0;const t=voicePick.transcript;
+    const tEl=document.getElementById('voiceTranscript');tEl.textContent='"';
+    const interval=setInterval(()=>{{
+        if(i>=t.length){{clearInterval(interval);finishVoice()}}
+        else{{tEl.textContent='"'+t.slice(0,i+1)+'..."';i+=Math.max(2,Math.floor(Math.random()*4))}}
+    }},35);
+}}
+function finishVoice(){{
+    setTimeout(()=>{{
+        document.getElementById('voiceStage2').style.display='none';
+        document.getElementById('voiceStage3').style.display='block';
+        document.getElementById('voiceCreateBtn').style.display='inline-flex';
+        document.getElementById('voiceFinalTranscript').textContent='"'+voicePick.transcript+'"';
+        const tot=voicePick.lines.reduce((s,l)=>s+l.q*l.p,0);
+        document.getElementById('voiceParsedEst').innerHTML=`<div style="border:1.5px solid var(--border);border-radius:10px;padding:14px"><div style="font-weight:700;margin-bottom:6px">${{voicePick.client}}</div><div style="font-size:.85rem;color:var(--text-mute);margin-bottom:10px">${{voicePick.addr}}</div>${{voicePick.lines.map(l=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-soft);font-size:.88rem"><span>${{l.d}}</span><span style="font-weight:600">${{fmtUsd(l.q*l.p)}}</span></div>`).join('')}}<div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:800"><span>Total</span><span>${{fmtUsd(tot)}}</span></div></div>`;
+    }},700);
+}}
+function createFromVoice(){{
+    if(!voicePick)return;
+    ec++;const id='EST-'+String(ec).padStart(3,'0');
+    const today=new Date().toLocaleDateString('en-US',{{month:'short',day:'numeric',year:'numeric'}});
+    estimates[id]={{num:id,client:voicePick.client,email:voicePick.email,addr:voicePick.addr,items:voicePick.lines.map(l=>({{desc:l.d,qty:l.q,price:l.p}})),notes:'Created via voice — review before sending.',date:today,status:'Pending'}};
+    save();renderEstimates();closeModal('voiceModal');showToast('Voice estimate #'+id+' created — review and send','success');
+}}
 
+// ---------- AI follow-up (canned) ----------
+function aiFollowup(){{
+    if(!currentEst){{showToast('Open an estimate first.');return}}
+    const e=estimates[currentEst];const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);
+    const subj=`Following up on your estimate from ${{BIZ}}`;
+    const body=`Hi ${{(e.client||'').split(' ')[0]||'there'}},
+
+I wanted to circle back on the estimate I sent over for ${{e.items[0]?.desc||'your project'}} (Estimate #${{e.num}}, ${{fmtUsd(tot)}}).
+
+A few things worth knowing as you weigh next steps:
+• We can typically schedule the work within 2 weeks once you give us the green light.
+• The estimate is valid for 30 days — material costs have been steady but I want to lock in your pricing if you're ready.
+• If anything in the scope needs to change (smaller, larger, or different timing), happy to revise — just reply with what you're thinking.
+
+Would early next week work to get this on the calendar, or would you rather chat through any of the line items first? Either way is fine — whichever helps you decide.
+
+Thanks,
+${{BIZ}}
+${{PHONE}}`;
+    document.getElementById('aiSubject').value=subj;
+    document.getElementById('aiBody').value=body;
+    openModal('aiModal');
+}}
+function aiSend(){{
+    if(!currentEst)return;const e=estimates[currentEst];
+    const subj=encodeURIComponent(document.getElementById('aiSubject').value);
+    const body=encodeURIComponent(document.getElementById('aiBody').value);
+    window.open('mailto:'+e.email+'?subject='+subj+'&body='+body,'_self');
+    closeModal('aiModal');showToast('Follow-up draft opened in email','success');
+}}
+
+// ---------- scheduling ----------
+function trackerUrl(job){{
+    const base=new URL('../job-tracker/?id='+encodeURIComponent(job.id)+'&trade='+encodeURIComponent(SLUG),location.href).toString();
+    // Inline minimal job data so the link works on any device, not just the contractor's
+    const slim={{id:job.id,date:job.date,time:job.time,job:job.job,addr:job.addr,emp:job.emp,client:job.client,status:job.status,photos:(job.photos||[]).slice(0,4)}};
+    try{{return base+'#j='+encodeURIComponent(btoa(JSON.stringify(slim)))}}catch(e){{return base}}
+}}
 function renderSched(){{
     const tb=document.getElementById('schedBody');
-    tb.innerHTML=sched.map((s,i)=>{{
+    tb.innerHTML=sched.length?sched.map((s,i)=>{{
         const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.addr);
         const photoCount=(s.photos||[]).length;
-        const photoLabel=photoCount?photoCount+' photo'+(photoCount===1?'':'s'):'Add photos';
-        const badge=s.status==='Completed'?'badge-completed':s.status==='En Route'?'badge-sent':'badge-scheduled';
-        return`<tr><td>${{fmtDate(s.date)}}</td><td>${{fmtTime(s.time)}}</td><td style="font-weight:600">${{s.job}}</td><td><a href="${{url}}" target="_blank" style="color:var(--primary);text-decoration:none">${{s.addr}}</a></td><td>${{s.emp}}</td><td><select onchange="setStatus(${{i}},this.value)" style="border:1px solid var(--g200);border-radius:8px;padding:4px 8px;font-size:.8rem;background:var(--white)"><option ${{s.status==='Scheduled'?'selected':''}}>Scheduled</option><option ${{s.status==='En Route'?'selected':''}}>En Route</option><option ${{s.status==='Completed'?'selected':''}}>Completed</option></select></td><td><div class="btn-group" style="margin-top:0;flex-wrap:wrap"><button class="btn btn-outline btn-sm" onclick="sendTracker(${{i}})">Send Tracker</button><label class="btn btn-outline btn-sm" style="cursor:pointer">${{photoLabel}}<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(${{i}},this)"></label><button class="btn btn-outline btn-sm" onclick="resend(${{i}})">Resend</button></div></td></tr>`;
-    }}).join('');
-    const today=new Date().toISOString().slice(0,10);
+        const photoLabel=photoCount?photoCount+' photo'+(photoCount===1?'':'s'):'+ Photos';
+        return`<tr><td>${{fmtDate(s.date)}}</td><td>${{fmtTime(s.time)}}</td><td style="font-weight:600">${{s.job}}</td><td><a href="${{url}}" target="_blank" style="color:var(--primary);text-decoration:none">${{s.addr}}</a></td><td>${{s.emp}}</td><td><select onchange="setStatus(${{i}},this.value)" style="border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:.78rem;background:var(--surface);color:var(--text)"><option ${{s.status==='Scheduled'?'selected':''}}>Scheduled</option><option ${{s.status==='En Route'?'selected':''}}>En Route</option><option ${{s.status==='Completed'?'selected':''}}>Completed</option></select></td><td><div class="btn-group"><button class="btn btn-outline btn-sm" onclick="sendTracker(${{i}})">Tracker</button><label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">${{photoLabel}}<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(${{i}},this)"></label>${{photoCount?`<button class="btn btn-outline btn-sm" onclick="viewPhotos(${{i}})">View</button>`:''}}<button class="btn btn-outline btn-sm" onclick="resend(${{i}})">Resend</button></div></td></tr>`;
+    }}).join(''):'<tr><td colspan="7" class="empty-state">No jobs scheduled. Click "+ Schedule Job".</td></tr>';
+    const today=todayISO();
     const todayList=document.getElementById('todayScheduleBody');
     if(todayList){{
         const todays=sched.filter(s=>s.date===today).sort((a,b)=>a.time.localeCompare(b.time));
         const display=todays.length?todays:sched.slice(0,2);
-        todayList.innerHTML=display.map(s=>`<div class="schedule-card"><div class="schedule-time">${{fmtTime(s.time)}}</div><div class="schedule-info"><h4>${{s.job}}</h4><p>${{s.addr}}</p><span class="schedule-employee">${{s.emp}}</span></div></div>`).join('')||'<p style="color:var(--g400);font-size:.85rem">No jobs scheduled today.</p>';
+        todayList.innerHTML=display.length?display.map(s=>`<div class="schedule-card"><div class="schedule-time">${{fmtTime(s.time)}}</div><div class="schedule-info"><h4>${{s.job}}</h4><p>${{s.addr}}</p><span class="schedule-employee">${{s.emp}}</span></div></div>`).join(''):'<p class="empty-state">No jobs scheduled today.</p>';
     }}
 }}
 function setStatus(i,v){{if(!sched[i])return;sched[i].status=v;save();renderSched();showToast('Status updated to '+v,'success')}}
 function addPhotos(i,inp){{const files=Array.from(inp.files||[]);if(!files.length)return;sched[i].photos=sched[i].photos||[];let pending=files.length;files.forEach(f=>{{const r=new FileReader();r.onload=ev=>{{sched[i].photos.push({{src:ev.target.result,ts:Date.now(),name:f.name}});if(--pending===0){{save();renderSched();showToast(files.length+' photo(s) added','success')}}}};r.readAsDataURL(f)}});inp.value=''}}
-function sendTracker(i){{const s=sched[i];if(!s)return;const link=trackerUrl(s.id);const subj=encodeURIComponent(BIZ+': Track your '+s.job+' appointment'),body=encodeURIComponent('Hi '+s.client+',\\n\\nYou can track your upcoming '+s.job+' appointment with '+BIZ+' here:\\n'+link+'\\n\\nWe will text you updates as our team gets closer to arrival.\\n\\nThank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:?subject='+subj+'&body='+body,'_self');showToast('Tracker link ready to send to '+s.client,'success')}}
+function viewPhotos(i){{const s=sched[i];if(!s||!s.photos||!s.photos.length)return;const w=window.open('','_blank');w.document.write(`<title>${{s.job}} — Photos</title><body style="margin:0;background:#000;font-family:system-ui">${{s.photos.map((p,idx)=>`<div style="text-align:center;padding:16px"><img src="${{p.src}}" style="max-width:100%;max-height:90vh;cursor:pointer" onclick="annotatePhoto(${{idx}})"><div style="color:#fff;margin-top:8px"><button style="padding:8px 16px;border:none;background:#fff;color:#000;border-radius:6px;cursor:pointer" onclick="window.opener.startAnnotate(${{i}},${{idx}});">Annotate</button></div></div>`).join('')}}</body>`)}}
+function sendTracker(i){{const s=sched[i];if(!s)return;const link=trackerUrl(s);const subj=encodeURIComponent(BIZ+': Track your '+s.job+' appointment'),body=encodeURIComponent('Hi '+s.client+',\\n\\nYou can track your upcoming '+s.job+' appointment with '+BIZ+' here:\\n'+link+'\\n\\nWe will text you updates as our team gets closer to arrival.\\n\\nThank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:?subject='+subj+'&body='+body,'_self');showToast('Tracker link ready to send to '+s.client,'success')}}
+function scheduleJob(){{const type=document.getElementById('sjType').value,empSel=document.getElementById('sjEmp'),empEmail=empSel.value,empName=empSel.options[empSel.selectedIndex].text,addr=document.getElementById('sjAddr').value.trim(),date=document.getElementById('sjDate').value,time=document.getElementById('sjTime').value,client=document.getElementById('sjClient').value.trim(),notes=document.getElementById('sjNotes').value.trim();if(!addr||!date||!time){{showToast('Please fill in address, date, and time.');return}}jc++;const id='JOB-'+String(jc).padStart(3,'0');sched.push({{id,date,time,job:type,addr,emp:empName,email:empEmail,client:client||'Client',status:'Scheduled',photos:[]}});save();const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(addr),ds=fmtDate(date,{{weekday:'long',month:'long',day:'numeric',year:'numeric'}}),ts=fmtTime(time);const subj=encodeURIComponent('Job Assignment: '+type+' - '+ds),body=encodeURIComponent('Hi '+empName.replace('Employee ','').split(' ')[0]+',\\n\\nYou have been scheduled:\\n\\nJob: '+type+'\\nClient: '+(client||'N/A')+'\\nDate: '+ds+'\\nTime: '+ts+'\\nAddress: '+addr+'\\n\\nGoogle Maps Directions:\\n'+url+'\\n\\n'+(notes?'Notes: '+notes+'\\n\\n':'')+'Thank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:'+empEmail+'?subject='+subj+'&body='+body,'_self');renderSched();closeModal('schedModal');showToast('Job scheduled. Email opened.','success');document.getElementById('sjAddr').value='';document.getElementById('sjClient').value='';document.getElementById('sjNotes').value=''}}
+function resend(i){{const s=sched[i];if(!s)return;const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.addr),ds=fmtDate(s.date,{{weekday:'long',month:'long',day:'numeric',year:'numeric'}}),ts=fmtTime(s.time);const subj=encodeURIComponent('Reminder: '+s.job+' - '+ds),body=encodeURIComponent('Hi '+s.emp.split(' ')[0]+',\\n\\nReminder:\\n\\nJob: '+s.job+'\\nClient: '+s.client+'\\nDate: '+ds+'\\nTime: '+ts+'\\nAddress: '+s.addr+'\\n\\nGoogle Maps Directions:\\n'+url+'\\n\\nThank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:'+s.email+'?subject='+subj+'&body='+body,'_self');showToast('Reminder opened for '+s.emp,'success')}}
 
-function scheduleJob(){{const type=document.getElementById('sjType').value,empSel=document.getElementById('sjEmp'),empEmail=empSel.value,empName=empSel.options[empSel.selectedIndex].text,addr=document.getElementById('sjAddr').value.trim(),date=document.getElementById('sjDate').value,time=document.getElementById('sjTime').value,client=document.getElementById('sjClient').value.trim(),notes=document.getElementById('sjNotes').value.trim();if(!addr||!date||!time){{showToast('Please fill in address, date, and time.');return}}jc++;const id='JOB-'+String(jc).padStart(3,'0');sched.push({{id,date,time,job:type,addr,emp:empName,email:empEmail,client:client||'Client',status:'Scheduled',photos:[]}});save();const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(addr),ds=fmtDate(date,{{weekday:'long',month:'long',day:'numeric',year:'numeric'}}),ts=fmtTime(time);const subj=encodeURIComponent('Job Assignment: '+type+' - '+ds),body=encodeURIComponent('Hi '+empName.split(' ')[0]+',\\n\\nYou have been scheduled:\\n\\nJob: '+type+'\\nClient: '+(client||'N/A')+'\\nDate: '+ds+'\\nTime: '+ts+'\\nAddress: '+addr+'\\n\\nGoogle Maps Directions:\\n'+url+'\\n\\n'+(notes?'Notes: '+notes+'\\n\\n':'')+'Thank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:'+empEmail+'?subject='+subj+'&body='+body,'_self');renderSched();closeModal('schedModal');showToast('Job scheduled! Email opened for '+empName.split(' ')[0]+'.','success');document.getElementById('sjAddr').value='';document.getElementById('sjClient').value='';document.getElementById('sjNotes').value=''}}
-function resend(i){{const s=sched[i];if(!s)return;const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.addr),ds=fmtDate(s.date,{{weekday:'long',month:'long',day:'numeric',year:'numeric'}}),ts=fmtTime(s.time);const subj=encodeURIComponent('Reminder: '+s.job+' - '+ds),body=encodeURIComponent('Hi '+s.emp.split(' ')[0]+',\\n\\nReminder:\\n\\nJob: '+s.job+'\\nClient: '+s.client+'\\nDate: '+ds+'\\nTime: '+ts+'\\nAddress: '+s.addr+'\\n\\nGoogle Maps Directions:\\n'+url+'\\n\\nThank you,\\n'+BIZ+'\\n'+PHONE);window.open('mailto:'+s.email+'?subject='+subj+'&body='+body,'_self');showToast('Reminder opened for '+s.emp.split(' ')[0],'success')}}
+// ---------- photo annotation ----------
+let annJobIdx=null,annPhotoIdx=null,annTool='arrow',annHistory=[];
+function startAnnotate(jobIdx,photoIdx){{
+    annJobIdx=jobIdx;annPhotoIdx=photoIdx;annHistory=[];
+    const s=sched[jobIdx];if(!s||!s.photos[photoIdx])return;
+    const img=new Image();img.onload=()=>{{
+        const cv=document.getElementById('annCanvas');const ctx=cv.getContext('2d');
+        const maxW=800;const scale=Math.min(1,maxW/img.width);
+        cv.width=img.width*scale;cv.height=img.height*scale;
+        ctx.drawImage(img,0,0,cv.width,cv.height);
+        annPhotoCtx={{img,scale,baseImageData:ctx.getImageData(0,0,cv.width,cv.height)}};
+    }};img.src=s.photos[photoIdx].src;
+    openModal('annModal');
+}}
+function setAnnTool(tool,btn){{annTool=tool;document.querySelectorAll('.ann-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}}
+let annDrawing=false,annStartX=0,annStartY=0;
+(function attachCanvas(){{
+    const cv=document.getElementById('annCanvas');if(!cv)return;
+    cv.addEventListener('mousedown',e=>{{annDrawing=true;const r=cv.getBoundingClientRect();annStartX=e.clientX-r.left;annStartY=e.clientY-r.top;const ctx=cv.getContext('2d');annHistory.push(ctx.getImageData(0,0,cv.width,cv.height));if(annTool==='pen'){{ctx.strokeStyle='#ef4444';ctx.lineWidth=3;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(annStartX,annStartY)}}}});
+    cv.addEventListener('mousemove',e=>{{if(!annDrawing)return;const r=cv.getBoundingClientRect();const x=e.clientX-r.left,y=e.clientY-r.top;const ctx=cv.getContext('2d');if(annTool==='pen'){{ctx.lineTo(x,y);ctx.stroke()}}else{{const last=annHistory[annHistory.length-1];if(last){{ctx.putImageData(last,0,0);ctx.strokeStyle='#ef4444';ctx.lineWidth=3;if(annTool==='arrow'){{ctx.beginPath();ctx.moveTo(annStartX,annStartY);ctx.lineTo(x,y);ctx.stroke();const dx=x-annStartX,dy=y-annStartY,a=Math.atan2(dy,dx),len=14;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-len*Math.cos(a-Math.PI/6),y-len*Math.sin(a-Math.PI/6));ctx.lineTo(x-len*Math.cos(a+Math.PI/6),y-len*Math.sin(a+Math.PI/6));ctx.closePath();ctx.fillStyle='#ef4444';ctx.fill()}}else if(annTool==='circle'){{const r2=Math.hypot(x-annStartX,y-annStartY);ctx.beginPath();ctx.arc(annStartX,annStartY,r2,0,Math.PI*2);ctx.stroke()}}}}}}}});
+    cv.addEventListener('mouseup',()=>{{annDrawing=false}});
+    cv.addEventListener('mouseleave',()=>{{annDrawing=false}});
+}})();
+function undoAnn(){{const cv=document.getElementById('annCanvas');const ctx=cv.getContext('2d');if(annHistory.length){{ctx.putImageData(annHistory.pop(),0,0)}}}}
+function clearAnn(){{const cv=document.getElementById('annCanvas');const ctx=cv.getContext('2d');if(annPhotoCtx.baseImageData){{ctx.putImageData(annPhotoCtx.baseImageData,0,0);annHistory=[]}}}}
+function saveAnnotation(){{if(annJobIdx===null)return;const cv=document.getElementById('annCanvas');const data=cv.toDataURL('image/jpeg',0.85);sched[annJobIdx].photos.push({{src:data,ts:Date.now(),name:'annotated.jpg',annotated:true}});save();renderSched();closeModal('annModal');showToast('Annotated copy saved to job photos','success')}}
 
+// ---------- onboarding tour ----------
+const TOUR=[
+    {{title:'Welcome to your dashboard',body:'This is the Owner view of '+BIZ+'. You\\'ll see jobs, estimates, scheduling, and reports here. The whole demo runs in your browser — try anything.'}},
+    {{title:'Create estimates fast',body:'Click "+ New Estimate" — or try voice-to-estimate ("🎙 Voice Estimate") to dictate a quote and have it auto-parsed into line items.'}},
+    {{title:'Schedule and dispatch',body:'On the Scheduling tab, every job has a tracker link you can text the customer, photo upload for before/after, and a status dropdown that updates the customer\\'s view in real time.'}},
+    {{title:'Customer-facing tracker',body:'Click "Tracker" on any job and your customer gets a phone-friendly page with live status, your tech\\'s ETA, and call/directions buttons. They never have to call you for an update.'}},
+    {{title:'Share this demo',body:'Hit "↗ Share Demo" up top — your current data gets baked into a link. Send it to a contractor, they open it, see exactly what you set up. The demo travels.'}},
+];
+let tourIdx=0;
+function startTour(){{tourIdx=0;showTour();document.getElementById('tourOverlay').classList.add('open')}}
+function showTour(){{const s=TOUR[tourIdx];document.getElementById('tourStep').textContent='Step '+(tourIdx+1)+' of '+TOUR.length;document.getElementById('tourTitle').textContent=s.title;document.getElementById('tourBody').textContent=s.body;document.getElementById('tourPrev').style.visibility=tourIdx===0?'hidden':'visible';document.getElementById('tourNext').textContent=tourIdx===TOUR.length-1?'Got it':'Next'}}
+function tourNext(){{if(tourIdx<TOUR.length-1){{tourIdx++;showTour()}}else endTour()}}
+function tourPrev(){{if(tourIdx>0){{tourIdx--;showTour()}}}}
+function endTour(){{document.getElementById('tourOverlay').classList.remove('open');try{{localStorage.setItem('wd-tour-seen-'+SLUG,'1')}}catch(e){{}}}}
+
+// ---------- keyboard shortcuts ----------
+document.addEventListener('keydown',e=>{{
+    if(e.target.matches('input,textarea,select'))return;
+    if(e.key==='n'){{openModal('estimateModal');e.preventDefault()}}
+    else if(e.key==='s'){{openModal('schedModal');e.preventDefault()}}
+    else if(e.key==='g'){{switchPage('dashboard');e.preventDefault()}}
+    else if(e.key==='?'){{startTour();e.preventDefault()}}
+    else if(e.key==='Escape'){{document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));document.getElementById('tourOverlay').classList.remove('open')}}
+}});
+
+// ---------- init ----------
 function renderAll(){{renderEstimates();renderSched();}}
 load();renderAll();
 try{{document.getElementById('sjDate').valueAsDate=new Date()}}catch(e){{}}
 document.querySelectorAll('.modal-overlay').forEach(m=>{{m.addEventListener('click',e=>{{if(e.target===m)m.classList.remove('open')}})}});
+// First-visit auto-tour
+try{{if(!localStorage.getItem('wd-tour-seen-'+SLUG))setTimeout(startTour,800)}}catch(e){{}}
 </script>
+{extra_scripts(t, extras)}
 </body>
 </html>
 """
+
+
+# ------------------------------------------------------------------------------
+# Extra page HTML (string constants — no f-string interpolation needed inside)
+# ------------------------------------------------------------------------------
+MAINTENANCE_PAGE_HTML = """
+        <!-- MAINTENANCE PLANS -->
+        <div class="page" id="page-maintenance">
+            <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+                <div class="stat-card"><div class="stat-label">Active Plans</div><div class="stat-value">126</div><div class="stat-sub">Recurring revenue</div></div>
+                <div class="stat-card"><div class="stat-label">MRR (Monthly)</div><div class="stat-value">$8,420</div><div class="stat-sub">+$340 vs last month</div></div>
+                <div class="stat-card"><div class="stat-label">Due This Week</div><div class="stat-value">11</div><div class="stat-sub">Service visits</div></div>
+            </div>
+            <div class="card"><div class="card-header"><h2>Customers Under Contract</h2><button class="btn btn-primary btn-sm">+ New Plan</button></div><div style="overflow-x:auto"><table><thead><tr><th>Customer</th><th>Plan</th><th>Last Service</th><th>Next Due</th><th>Annual</th><th>Status</th></tr></thead><tbody>
+                <tr><td style="font-weight:600">Patterson Family</td><td>Premium Annual</td><td>Jan 15, 2026</td><td>Jul 15, 2026</td><td>$420</td><td><span class="badge badge-completed">Active</span></td></tr>
+                <tr><td style="font-weight:600">Henderson Residence</td><td>Standard Bi-Annual</td><td>Mar 22, 2026</td><td>Sep 22, 2026</td><td>$240</td><td><span class="badge badge-completed">Active</span></td></tr>
+                <tr><td style="font-weight:600">Riverside Apts (12 units)</td><td>Commercial Quarterly</td><td>Apr 02, 2026</td><td>Jul 02, 2026</td><td>$4,800</td><td><span class="badge badge-completed">Active</span></td></tr>
+                <tr><td style="font-weight:600">Mountain Brook Office Suites</td><td>Commercial Quarterly</td><td>Mar 18, 2026</td><td>Jun 18, 2026</td><td>$3,200</td><td><span class="badge badge-completed">Active</span></td></tr>
+                <tr><td style="font-weight:600">The Walkers</td><td>Standard Annual</td><td>May 04, 2025</td><td>May 04, 2026</td><td>$180</td><td><span class="badge badge-pending">Due Soon</span></td></tr>
+                <tr><td style="font-weight:600">Brookhaven HOA Common Areas</td><td>Premium Quarterly</td><td>Jan 28, 2026</td><td>Apr 28, 2026</td><td>$2,400</td><td><span class="badge badge-pending">Due Soon</span></td></tr>
+            </tbody></table></div></div>
+        </div>
+"""
+
+CLAIMS_PAGE_HTML = """
+        <!-- INSURANCE CLAIMS -->
+        <div class="page" id="page-claims">
+            <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+                <div class="stat-card"><div class="stat-label">Open Claims</div><div class="stat-value">12</div><div class="stat-sub">In progress</div></div>
+                <div class="stat-card"><div class="stat-label">Awaiting Adjuster</div><div class="stat-value">5</div><div class="stat-sub">Bottleneck</div></div>
+                <div class="stat-card"><div class="stat-label">Approved Total</div><div class="stat-value">$87,200</div><div class="stat-sub">YTD claim payouts</div></div>
+            </div>
+            <div class="card"><div class="card-header"><h2>Claims Pipeline</h2><button class="btn btn-primary btn-sm">+ Log Claim</button></div><div style="overflow-x:auto"><table><thead><tr><th>Customer</th><th>Carrier</th><th>Claim #</th><th>Adjuster</th><th>Deductible</th><th>Approved</th><th>Stage</th></tr></thead><tbody>
+                <tr><td style="font-weight:600">Calloway Family</td><td>Allstate</td><td>SF-44872</td><td>R. Daniels — (205) 555-2210</td><td>$2,500</td><td>$18,420</td><td><span class="badge badge-claim">Adjuster Review</span></td></tr>
+                <tr><td style="font-weight:600">Anderson Property</td><td>State Farm</td><td>SF-29103</td><td>L. Park — (205) 555-3340</td><td>$1,000</td><td>—</td><td><span class="badge badge-pending">Tarp In Place</span></td></tr>
+                <tr><td style="font-weight:600">Walters Residence</td><td>USAA</td><td>USAA-77810</td><td>J. Brewer — (800) 555-9090</td><td>$1,500</td><td>$12,840</td><td><span class="badge badge-sent">Approved</span></td></tr>
+                <tr><td style="font-weight:600">Burke Family</td><td>Liberty Mutual</td><td>LM-66421</td><td>M. Tomlin — (205) 555-4711</td><td>$2,000</td><td>$8,200</td><td><span class="badge badge-sent">Supplement Sent</span></td></tr>
+                <tr><td style="font-weight:600">McKenzie Property</td><td>Travelers</td><td>TR-19288</td><td>—</td><td>$2,500</td><td>—</td><td><span class="badge badge-claim">Awaiting Adjuster</span></td></tr>
+                <tr><td style="font-weight:600">Owens Property</td><td>Farmers</td><td>FAR-50912</td><td>D. Walsh — (205) 555-7720</td><td>$1,500</td><td>$4,640</td><td><span class="badge badge-completed">Paid</span></td></tr>
+            </tbody></table></div></div>
+        </div>
+"""
+
+AERIAL_PAGE_HTML = """
+        <!-- AERIAL MEASURE -->
+        <div class="page" id="page-aerial">
+            <div class="card" style="margin-bottom:18px"><div class="card-body">
+                <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+                    <div class="form-group" style="flex:1;min-width:240px;margin-bottom:0"><label>Property Address</label><input type="text" id="aerialAddress" placeholder="412 Brookwood Dr, Vestavia Hills, AL" value="1820 Riverchase Pkwy, Hoover, AL"></div>
+                    <button class="btn btn-primary" onclick="aerialGo()">Locate</button>
+                    <button class="btn btn-outline" onclick="aerialClear()">Clear Polygon</button>
+                </div>
+                <div id="aerialResult" style="margin-top:14px;display:none;padding:14px;background:var(--g50);border-radius:10px"><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px"><div><div class="stat-label">Area (sqft)</div><div class="stat-value" id="aerialSqft" style="font-size:1.2rem">—</div></div><div><div class="stat-label">Squares</div><div class="stat-value" id="aerialSquares" style="font-size:1.2rem">—</div></div><div><div class="stat-label">Material Est.</div><div class="stat-value" id="aerialMaterial" style="font-size:1.2rem">—</div></div><div><div class="stat-label">Labor Est.</div><div class="stat-value" id="aerialLabor" style="font-size:1.2rem">—</div></div></div></div>
+            </div></div>
+            <div id="aerialMap"></div>
+            <p style="margin-top:10px;font-size:.8rem;color:var(--text-mute)">Use the polygon tool (top right) to outline the roof. Sqft, squares (1 sq = 100 sqft), and rough cost are calculated from the polygon area.</p>
+        </div>
+"""
+
+
+def takeoff_page_html(t, unit, waste_default):
+    biz = t["biz"]
+    inv = t["inventory"]
+    inv_options = "".join(
+        f'<option value=\'{json.dumps({"name": name, "unit": iunit, "cost": cost})}\'>{name} — {cost} per {iunit}</option>'
+        for (name, iunit, qty, reorder, cost) in inv
+    )
+    return f"""
+        <!-- TAKEOFF -->
+        <div class="page" id="page-takeoff">
+            <div class="card"><div class="card-body">
+                <p style="font-size:.9rem;color:var(--text-mute);margin-bottom:14px">Enter project area + waste %, get a materials list pulled from your inventory.</p>
+                <div class="form-row-3" style="grid-template-columns:1fr 1fr 1fr">
+                    <div class="form-group"><label>Project Area ({unit})</label><input type="number" id="toArea" placeholder="1200" min="0"></div>
+                    <div class="form-group"><label>Waste Allowance (%)</label><input type="number" id="toWaste" value="{waste_default}" min="0" max="50"></div>
+                    <div class="form-group"><label>Primary Material</label><select id="toMaterial">{inv_options}</select></div>
+                </div>
+                <button class="btn btn-primary" onclick="runTakeoff()">Calculate Takeoff</button>
+            </div></div>
+            <div id="takeoffResult" style="margin-top:18px;display:none"></div>
+        </div>
+        <script>
+        function runTakeoff(){{
+            const area=parseFloat(document.getElementById('toArea').value)||0;
+            const waste=(parseFloat(document.getElementById('toWaste').value)||0)/100;
+            const mat=JSON.parse(document.getElementById('toMaterial').value);
+            const adjusted=area*(1+waste);
+            const costPerUnit=parseFloat(mat.cost.replace(/[^0-9.]/g,''))||0;
+            const matCost=adjusted*costPerUnit/(mat.unit==='Sqft'?1:32);
+            const laborCost=area*1.85;
+            const total=matCost+laborCost;
+            document.getElementById('takeoffResult').innerHTML=`<div class="card"><div class="card-header"><h2>Takeoff for ${{fmtNum(area)}} {unit}</h2></div><div class="card-body">
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px">
+                    <div class="stat-card"><div class="stat-label">Adjusted Area</div><div class="stat-value" style="font-size:1.2rem">${{fmtNum(Math.round(adjusted))}}</div><div class="stat-sub">Includes ${{Math.round(waste*100)}}% waste</div></div>
+                    <div class="stat-card"><div class="stat-label">Material Cost</div><div class="stat-value" style="font-size:1.2rem">${{fmtUsd0(matCost)}}</div><div class="stat-sub">${{mat.name}}</div></div>
+                    <div class="stat-card"><div class="stat-label">Labor Est.</div><div class="stat-value" style="font-size:1.2rem">${{fmtUsd0(laborCost)}}</div><div class="stat-sub">$1.85/{unit}</div></div>
+                    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" style="font-size:1.2rem">${{fmtUsd0(total)}}</div><div class="stat-sub">Material + labor</div></div>
+                </div>
+                <div class="btn-group"><button class="btn btn-primary btn-sm" onclick="takeoffToEstimate(${{area}},${{adjusted}},${{costPerUnit}},${{matCost}},${{laborCost}},'${{mat.name}}')">Convert to Estimate</button><button class="btn btn-outline btn-sm" onclick="window.print()">Print</button></div>
+            </div></div>`;
+            document.getElementById('takeoffResult').style.display='block';
+            document.getElementById('takeoffResult').scrollIntoView({{behavior:'smooth'}});
+        }}
+        function takeoffToEstimate(area,adjusted,costPerUnit,matCost,laborCost,matName){{
+            ec++;const id='EST-'+String(ec).padStart(3,'0');
+            const today=new Date().toLocaleDateString('en-US',{{month:'short',day:'numeric',year:'numeric'}});
+            estimates[id]={{num:id,client:'New Project',email:'client@email.com',addr:'TBD',items:[
+                {{desc:matName+' — '+fmtNum(Math.round(adjusted))+' {unit} (with waste)',qty:1,price:Math.round(matCost)}},
+                {{desc:'Installation Labor — '+fmtNum(area)+' {unit}',qty:1,price:Math.round(laborCost)}}
+            ],notes:'Generated from Takeoff Calculator. Update client info before sending.',date:today,status:'Pending'}};
+            save();renderEstimates();showToast('Estimate #'+id+' created from takeoff','success');
+            switchPage('estimates',document.querySelector('.nav-item[data-page="estimates"]'));
+        }}
+        </script>
+"""
+
+
+def extra_scripts(t, extras):
+    out = ""
+    if "aerial" in extras:
+        out += """
+<script>
+let aerialMap=null,aerialDrawn=null,aerialMarker=null;
+function initAerialMap(){
+    if(aerialMap)return;
+    aerialMap=L.map('aerialMap').setView([33.4044,-86.7944],18);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Imagery © Esri'}).addTo(aerialMap);
+    const drawn=new L.FeatureGroup();aerialMap.addLayer(drawn);aerialDrawn=drawn;
+    const drawControl=new L.Control.Draw({draw:{polygon:{shapeOptions:{color:'#ef4444',weight:3}},marker:false,circle:false,rectangle:false,polyline:false,circlemarker:false},edit:{featureGroup:drawn}});
+    aerialMap.addControl(drawControl);
+    aerialMap.on(L.Draw.Event.CREATED,e=>{drawn.clearLayers();drawn.addLayer(e.layer);computeArea(e.layer)});
+    aerialMap.on(L.Draw.Event.EDITED,e=>{e.layers.eachLayer(l=>computeArea(l))});
+    setTimeout(()=>aerialMap.invalidateSize(),120);
+    aerialGo();
+}
+function computeArea(layer){
+    const latlngs=layer.getLatLngs()[0];
+    let area=0;const R=6378137;
+    for(let i=0;i<latlngs.length;i++){
+        const j=(i+1)%latlngs.length;
+        const xi=latlngs[i].lng*Math.PI/180,yi=latlngs[i].lat*Math.PI/180;
+        const xj=latlngs[j].lng*Math.PI/180,yj=latlngs[j].lat*Math.PI/180;
+        area+=(xj-xi)*(2+Math.sin(yi)+Math.sin(yj));
+    }
+    area=Math.abs(area*R*R/2);
+    const sqft=Math.round(area*10.7639);
+    const squares=(sqft/100).toFixed(1);
+    const matCost=sqft*1.10;
+    const laborCost=sqft*2.40;
+    document.getElementById('aerialSqft').textContent=fmtNum(sqft);
+    document.getElementById('aerialSquares').textContent=squares;
+    document.getElementById('aerialMaterial').textContent=fmtUsd0(matCost);
+    document.getElementById('aerialLabor').textContent=fmtUsd0(laborCost);
+    document.getElementById('aerialResult').style.display='block';
+}
+async function aerialGo(){
+    const addr=document.getElementById('aerialAddress').value.trim();if(!addr)return;
+    try{
+        const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(addr));
+        const data=await r.json();
+        if(data&&data.length){
+            const lat=parseFloat(data[0].lat),lon=parseFloat(data[0].lon);
+            aerialMap.setView([lat,lon],19);
+            if(aerialMarker)aerialMap.removeLayer(aerialMarker);
+            aerialMarker=L.marker([lat,lon]).addTo(aerialMap);
+        }else showToast('Address not found.','');
+    }catch(e){showToast('Geocoding failed — check connection.','')}
+}
+function aerialClear(){if(aerialDrawn)aerialDrawn.clearLayers();document.getElementById('aerialResult').style.display='none'}
+</script>
+"""
+    return out
 
 
 def main():

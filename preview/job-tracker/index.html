@@ -114,13 +114,22 @@ document.documentElement.style.setProperty('--primary-dark',theme.primaryDark);
 
 // Lookup job
 let job=null;
-try{
-    const raw=localStorage.getItem('wd-dash-'+tradeSlug);
-    if(raw){
-        const data=JSON.parse(raw);
-        if(data.sched)job=data.sched.find(s=>s.id===jobId);
-    }
-}catch(e){}
+// 1. Inline job data via URL fragment (#j=base64-json) — works on any device
+if(location.hash.startsWith('#j=')){
+    try{
+        job=JSON.parse(atob(decodeURIComponent(location.hash.slice(3))));
+    }catch(e){console.warn('inline job decode failed',e)}
+}
+// 2. Local dashboard storage (contractor's own device)
+if(!job){
+    try{
+        const raw=localStorage.getItem('wd-dash-'+tradeSlug);
+        if(raw){
+            const data=JSON.parse(raw);
+            if(data.sched)job=data.sched.find(s=>s.id===jobId);
+        }
+    }catch(e){}
+}
 
 // Demo fallback if not found (e.g. customer on different device)
 if(!job){
