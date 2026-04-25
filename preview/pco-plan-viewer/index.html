@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunday Service · Plan Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d10;
+    --bg-elev: #14181e;
+    --bg-card: #1a1f27;
+    --border: #232a33;
+    --border-soft: #1d232b;
+    --text: #f4f6f8;
+    --text-dim: #8b95a3;
+    --text-faint: #5a6573;
+    --accent: #ff5b35;
+    --accent-soft: rgba(255, 91, 53, 0.12);
+    --song: #4ea1ff;
+    --song-soft: rgba(78, 161, 255, 0.12);
+    --media: #b388ff;
+    --media-soft: rgba(179, 136, 255, 0.12);
+    --header: #ffd166;
+    --success: #4ade80;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Top bar */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(11, 13, 16, 0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, var(--accent), #ff8a35);
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    color: #fff;
+  }
+  .view-toggle {
+    display: flex;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+    font-size: 13px;
+  }
+  .view-toggle button {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    padding: 6px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .view-toggle button.active {
+    background: var(--bg-card);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .view-toggle button:hover:not(.active) { color: var(--text); }
+
+  /* Hero */
+  .hero {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px 32px;
+  }
+  .hero-eyebrow {
+    color: var(--text-dim);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .hero-title {
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .hero-meta {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    color: var(--text-dim);
+    font-size: 15px;
+  }
+  .hero-meta span strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* Main */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--bg-elev);
+  }
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .section-head:hover { background: #20262f; }
+  .section-title-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-chevron {
+    color: var(--text-faint);
+    transition: transform 0.2s;
+    font-size: 12px;
+  }
+  .section.collapsed .section-chevron { transform: rotate(-90deg); }
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+  }
+  .section-time {
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .section-duration {
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .section-body { display: block; }
+  .section.collapsed .section-body { display: none; }
+
+  /* Item */
+  .item {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 18px;
+    align-items: center;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border-soft);
+    transition: background 0.1s;
+  }
+  .item:last-child { border-bottom: none; }
+  .item:hover { background: rgba(255, 255, 255, 0.015); }
+
+  .item-length {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-align: right;
+  }
+  .item-length.zero { color: var(--text-faint); }
+
+  .item-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .item-type {
+    width: 4px;
+    align-self: stretch;
+    border-radius: 2px;
+    background: var(--text-faint);
+    flex-shrink: 0;
+  }
+  .item-type.song { background: var(--song); }
+  .item-type.media { background: var(--media); }
+  .item-type.message { background: var(--accent); }
+
+  .item-content {
+    min-width: 0;
+    flex: 1;
+  }
+  .item-title {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .item-sub {
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+
+  .item-side {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .key-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    background: var(--song-soft);
+    color: var(--song);
+    padding: 4px 10px;
+    border-radius: 6px;
+    min-width: 38px;
+    text-align: center;
+  }
+  .person-tag {
+    font-size: 13px;
+    color: var(--text-dim);
+    background: var(--bg-card);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-weight: 500;
+  }
+
+  /* CP / Host notes block */
+  .cp-notes {
+    padding: 14px 22px 18px 44px;
+    background: rgba(255, 209, 102, 0.04);
+    border-top: 1px dashed rgba(255, 209, 102, 0.18);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .cp-notes:last-child { border-bottom: none; }
+  .cp-notes-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--header);
+    margin-bottom: 8px;
+  }
+  .cp-notes-head::before {
+    content: "🎤";
+    font-size: 13px;
+  }
+  .cp-notes-body {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--text);
+    white-space: pre-line;
+  }
+  .cp-notes-body em {
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  body.stage .cp-notes { padding: 24px 28px 28px 56px; }
+  body.stage .cp-notes-head { font-size: 14px; }
+  body.stage .cp-notes-body { font-size: 20px; line-height: 1.6; }
+  body.compact .cp-notes { padding: 10px 22px 12px 44px; }
+  body.compact .cp-notes-body { font-size: 13px; }
+
+  /* Compact / run-sheet view */
+  body.compact .hero { padding: 32px 24px 20px; }
+  body.compact .hero-title { font-size: 32px; }
+  body.compact .item { padding: 10px 22px; }
+  body.compact .item-title { font-size: 14px; }
+  body.compact .section-head { padding: 12px 22px; }
+  body.compact .section-title { font-size: 14px; }
+
+  /* Stage view */
+  body.stage { background: #000; }
+  body.stage .topbar { background: rgba(0,0,0,0.9); }
+  body.stage .hero { padding: 60px 24px 40px; text-align: center; }
+  body.stage .hero-title { font-size: 56px; }
+  body.stage .section { background: #0a0a0a; border-color: #222; }
+  body.stage .section-head { background: #111; border-color: #222; padding: 22px 28px; }
+  body.stage .section-title { font-size: 22px; }
+  body.stage .section-time, body.stage .section-duration { font-size: 16px; }
+  body.stage .item { padding: 22px 28px; grid-template-columns: 100px 1fr auto; gap: 24px; }
+  body.stage .item-length { font-size: 20px; }
+  body.stage .item-title { font-size: 24px; }
+  body.stage .item-sub { font-size: 14px; }
+  body.stage .key-badge { font-size: 18px; padding: 8px 16px; min-width: 50px; }
+  body.stage .person-tag { font-size: 16px; padding: 6px 14px; }
+
+  /* Footer */
+  .footer {
+    max-width: 1100px;
+    margin: 40px auto 0;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-faint);
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .footer a { color: var(--text-dim); text-decoration: none; }
+  .footer a:hover { color: var(--text); }
+
+  @media (max-width: 640px) {
+    .hero-title { font-size: 32px; }
+    .item { grid-template-columns: 60px 1fr; gap: 12px; padding: 14px 16px; }
+    .item-side { grid-column: 1 / -1; padding-left: 76px; }
+    .section-head { padding: 14px 16px; }
+    .topbar-inner { padding: 12px 16px; }
+    .hero { padding: 32px 16px 20px; }
+    .container { padding: 0 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark">▶</div>
+      <span>Plan Viewer</span>
+    </div>
+    <div class="view-toggle" id="viewToggle">
+      <button class="active" data-view="default">Default</button>
+      <button data-view="compact">Run Sheet</button>
+      <button data-view="stage">Stage</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-eyebrow">Sunday Service</div>
+  <h1 class="hero-title">Highlands Worship · Weekend Service</h1>
+  <div class="hero-meta">
+    <span><strong>Total Runtime</strong> · 1h 35m</span>
+    <span><strong>Items</strong> · 16</span>
+    <span><strong>Songs</strong> · 4</span>
+  </div>
+</section>
+
+<main class="container" id="planContainer"></main>
+
+<footer class="footer">
+  <span>Built on Planning Center Services API · Preview mock</span>
+  <a href="https://williamsdigital.io">williamsdigital.io</a>
+</footer>
+
+<script>
+  const plan = [
+    {
+      title: "Pre-Service",
+      time: "-30:00 – 00:00",
+      items: [
+        { length: "25:00", title: "Walk In", type: "media", person: "Production" },
+        { length: "5:00",  title: "Pre-Roll", type: "media", person: "Production" }
+      ]
+    },
+    {
+      title: "Worship Set",
+      time: "00:00 – 00:15",
+      items: [
+        { length: "4:33", title: "I Know That I Know", type: "song", key: "A",  person: "Daniel" },
+        { length: "5:00", title: "None Like You",      type: "song", key: "F#", person: "Caitlin" },
+        { length: "5:00", title: "No One Beside",      type: "song", key: "E",  person: "Kennedy" }
+      ]
+    },
+    {
+      title: "Flow Time // Meet and Greet",
+      time: "00:15 – 00:20",
+      items: [
+        {
+          length: "5:00",
+          title: "Welcome / Meet and Greet / Ministry Moment",
+          type: "item",
+          person: "CP's",
+          cpNotes: `Welcome to Church of the Highlands! We're so glad you're here this morning — whether it's your first time or you've been part of our family for years.
+
+Take a moment to greet the people around you. Tell them your name, where you're from, and one thing you're believing God for this week.
+
+*Ministry moment: brief story or testimony — keep under 90 seconds. Hand off to worship.*`
+        }
+      ]
+    },
+    {
+      title: "Video",
+      time: "00:21 – 00:24 · Live 00:21",
+      items: [
+        { length: "3:00", title: "Video", type: "media", person: "Production" }
+      ]
+    },
+    {
+      title: "News // Message",
+      time: "00:24 – 01:00",
+      items: [
+        { length: "37:00", title: "Message", type: "message", person: "PC" }
+      ]
+    },
+    {
+      title: "Announcements / Offering",
+      time: "01:00 – 01:05",
+      items: [
+        {
+          length: "2:00",
+          title: "Announcements",
+          type: "item",
+          person: "CP's",
+          cpNotes: `1. **Growth Track** — Next Sunday at 11am in the Conference Room. Four sessions, one Sunday. Sign up at the Connect Center or text GROWTH to 24234.
+
+2. **Serve Day** — Saturday, May 9th. We're partnering with the city to serve our neighborhoods. Register at highlands.church/serveday.
+
+3. **Offering** — As we receive today's offering, you can give in the buckets, online at highlands.church/give, or text any amount to 77977.
+
+*Lead into offering song — hand off to worship team.*`
+        },
+        { length: "3:00", title: "No One Beside", type: "song", key: "E", person: "Kennedy" },
+        {
+          length: "0:00",
+          title: "Benediction",
+          type: "item",
+          person: "CP's",
+          cpNotes: `May the Lord bless you and keep you. May His face shine upon you and be gracious to you. May He turn His face toward you and give you peace.
+
+Go in peace to love and serve the Lord. We'll see you next Sunday.
+
+*Cue Walk Out music.*`
+        },
+        { length: "0:00", title: "Walk Out", type: "media", person: "Production" }
+      ]
+    },
+    {
+      title: "Resources",
+      time: "Reference material",
+      items: [
+        { length: "0:00", title: "Vocal Warm-Ups (Female)", type: "media" },
+        { length: "0:00", title: "Vocal Warm-Ups (Male)",   type: "media" },
+        { length: "0:00", title: "*DRESS CODE",             type: "item" }
+      ]
+    }
+  ];
+
+  const subLabel = {
+    song: "Song",
+    media: "Media",
+    message: "Message",
+    item: "Item"
+  };
+
+  const container = document.getElementById('planContainer');
+
+  plan.forEach((section, idx) => {
+    const sectionEl = document.createElement('div');
+    sectionEl.className = 'section';
+
+    const head = document.createElement('div');
+    head.className = 'section-head';
+    head.innerHTML = `
+      <div class="section-title-group">
+        <span class="section-chevron">▼</span>
+        <span class="section-title">${section.title}</span>
+      </div>
+      <div style="display:flex; gap:18px; align-items:center;">
+        <span class="section-time mono">${section.time}</span>
+      </div>
+    `;
+    head.addEventListener('click', () => sectionEl.classList.toggle('collapsed'));
+    sectionEl.appendChild(head);
+
+    const body = document.createElement('div');
+    body.className = 'section-body';
+
+    section.items.forEach(item => {
+      const isZero = item.length === "0:00";
+      const itemEl = document.createElement('div');
+      itemEl.className = 'item';
+      itemEl.innerHTML = `
+        <div class="item-length ${isZero ? 'zero' : ''}">${item.length}</div>
+        <div class="item-main">
+          <div class="item-type ${item.type}"></div>
+          <div class="item-content">
+            <div class="item-title">${item.title}</div>
+            <div class="item-sub">${subLabel[item.type] || 'Item'}${item.cpNotes ? ' · CP Notes' : ''}</div>
+          </div>
+        </div>
+        <div class="item-side">
+          ${item.key ? `<span class="key-badge">${item.key}</span>` : ''}
+          ${item.person ? `<span class="person-tag">${item.person}</span>` : ''}
+        </div>
+      `;
+      body.appendChild(itemEl);
+
+      if (item.cpNotes) {
+        const notesEl = document.createElement('div');
+        notesEl.className = 'cp-notes';
+        const formatted = item.cpNotes
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.+?)\*/g, '<em>$1</em>');
+        notesEl.innerHTML = `
+          <div class="cp-notes-head">CP / Host Notes</div>
+          <div class="cp-notes-body">${formatted}</div>
+        `;
+        body.appendChild(notesEl);
+      }
+    });
+
+    sectionEl.appendChild(body);
+    container.appendChild(sectionEl);
+  });
+
+  // View toggle
+  const toggle = document.getElementById('viewToggle');
+  toggle.addEventListener('click', e => {
+    if (e.target.tagName !== 'BUTTON') return;
+    toggle.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    document.body.classList.remove('compact', 'stage');
+    const view = e.target.dataset.view;
+    if (view !== 'default') document.body.classList.add(view);
+  });
+</script>
+
+</body>
+</html>
