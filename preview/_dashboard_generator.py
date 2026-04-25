@@ -506,6 +506,52 @@ TRADES = [
         "takeoff_waste_default": 8,
         "extras": ["takeoff"],
     },
+    {
+        "slug": "landscaping-dashboard",
+        "biz": "Greenline Landscape Co.",
+        "sub": "Landscaping",
+        "initials": "GL",
+        "phone": "(205) 555-LAWN",
+        "domain": "greenlinelandscape.com",
+        "primary": "#15803d",
+        "primary_dark": "#14532d",
+        "hero": "Landscaping Operations Dashboard",
+        "kpis": [
+            {"label": "Active Mow Routes", "value": "8", "sub": "126 weekly stops"},
+            {"label": "Installs This Week", "value": "5", "sub": "Sod, mulch, plants"},
+            {"label": "MRR (Maintenance)", "value": "$18,420", "sub": "+$640 vs last month"},
+            {"label": "Crews in Field Today", "value": "4", "sub": "22 stops total"},
+        ],
+        "job_types": [
+            "Mow & Edge", "Fertilization", "Mulch Install",
+            "Sod Install", "Tree / Shrub Install", "Hedge Trim",
+            "Leaf Cleanup", "Aeration / Overseed", "Landscape Design",
+        ],
+        "employee_role_senior": "Crew Lead",
+        "employee_role_mid": "Landscape Tech",
+        "employee_role_junior": "Crew Member",
+        "inventory": [
+            ("Hardwood Mulch (Brown)", "Yards", 28, 15, "$42"),
+            ("Pine Straw Bales", "Bales", 240, 100, "$5.50"),
+            ("Centipede Sod", "Pallets", 14, 8, "$220"),
+            ("Bermuda Sod", "Pallets", 9, 5, "$240"),
+            ("13-13-13 Fertilizer", "Bags", 38, 20, "$28"),
+            ("Trimmer Line .095", "Spools", 22, 12, "$18"),
+        ],
+        "estimates_seed": [
+            {"client": "The Atherton Residence", "email": "atherton@email.com", "addr": "920 Country Club Dr, Mountain Brook, AL", "service": "Landscape Refresh — Mulch + Plant Install", "amount": 4280, "status": "Sent", "date": "Apr 23, 2026", "notes": "16 yards hardwood mulch, 24 azaleas, 8 boxwoods. Front bed redesign."},
+            {"client": "Ridgewood HOA", "email": "board@ridgewoodhoa.com", "addr": "Ridgewood Subdivision, Hoover, AL", "service": "Annual Maintenance Contract (42 lots)", "amount": 38640, "status": "Pending", "date": "Apr 24, 2026", "notes": "Weekly mow, monthly fertilizer, leaf cleanup x2/yr. Net 30 quarterly billing."},
+            {"client": "The Henderson Backyard", "email": "k.henderson@email.com", "addr": "188 Oakdale Ln, Mountain Brook, AL", "service": "Sod Install — 4,200 sqft", "amount": 6440, "status": "Sent", "date": "Apr 22, 2026", "notes": "Bermuda sod. Includes soil prep, irrigation tie-in, 30-day water plan."},
+        ],
+        "jobs_seed": [
+            {"client": "Mountain Brook Route 3", "service": "Mow & Edge — 6 stops", "addr": "Mountain Brook (Route 3)", "emp": "Diego Vega", "time": "07:00", "offset_days": 0},
+            {"client": "Atherton Residence", "service": "Mulch + Plant Install Day 1", "addr": "920 Country Club Dr, Mountain Brook, AL", "emp": "Sam Whitfield", "time": "08:30", "offset_days": 0},
+            {"client": "Henderson Backyard", "service": "Sod Install", "addr": "188 Oakdale Ln, Mountain Brook, AL", "emp": "Diego Vega", "time": "07:00", "offset_days": 1},
+        ],
+        "takeoff_unit": "sqft",
+        "takeoff_waste_default": 10,
+        "extras": ["maintenance", "takeoff", "aerial", "route"],
+    },
 ]
 
 AREA = "Birmingham Metro, AL"
@@ -634,6 +680,14 @@ def build_html(t):
             '<line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Aerial Measure</button>'
         )
         page_extras += AERIAL_PAGE_HTML
+    if "route" in extras:
+        nav_extras += (
+            '<button class="nav-item" data-page="route" onclick="switchPage(\'route\',this)">'
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
+            '<circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/>'
+            '<path d="M6 16V8a4 4 0 0 1 4-4h8"/></svg>Today\'s Route</button>'
+        )
+        page_extras += ROUTE_PAGE_HTML
 
     page_titles_extra = ""
     for extra, title in [
@@ -641,17 +695,21 @@ def build_html(t):
         ("takeoff", "Takeoff Calculator"),
         ("claims", "Insurance Claims"),
         ("aerial", "Aerial Measurement"),
+        ("route", "Today's Route"),
     ]:
         if extra in extras:
-            page_titles_extra += f",{extra}:'{title}'"
+            page_titles_extra += f",{extra}:'{js_escape(title)}'"
 
-    # Leaflet only on aerial-enabled dashboards
+    # Leaflet on dashboards that have a map page (aerial or route)
     aerial_libs = ""
-    if "aerial" in extras:
+    if "aerial" in extras or "route" in extras:
         aerial_libs = (
             '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>\n'
-            '<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>\n'
             '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>\n'
+        )
+    if "aerial" in extras:
+        aerial_libs += (
+            '<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>\n'
             '<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>\n'
         )
 
@@ -1108,7 +1166,7 @@ function toggleTheme(){{const cur=document.documentElement.getAttribute('data-th
 (function applyTheme(){{try{{if(localStorage.getItem('wd-theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}}catch(e){{}}}})();
 
 // ---------- nav ----------
-function switchPage(p,el){{document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));const target=document.getElementById('page-'+p);if(target)target.classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');else{{const navBtn=document.querySelector('.nav-item[data-page="'+p+'"]');if(navBtn)navBtn.classList.add('active')}}document.getElementById('pageTitle').textContent=PAGE_TITLES[p]||'Dashboard';document.getElementById('sidebar').classList.remove('open');if(p==='aerial'&&typeof initAerialMap==='function')initAerialMap()}}
+function switchPage(p,el){{document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));const target=document.getElementById('page-'+p);if(target)target.classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');else{{const navBtn=document.querySelector('.nav-item[data-page="'+p+'"]');if(navBtn)navBtn.classList.add('active')}}document.getElementById('pageTitle').textContent=PAGE_TITLES[p]||'Dashboard';document.getElementById('sidebar').classList.remove('open');if(p==='aerial'&&typeof initAerialMap==='function')initAerialMap();if(p==='route'&&typeof initRouteMap==='function')initRouteMap()}}
 function openModal(id){{document.getElementById(id).classList.add('open')}}
 function closeModal(id){{document.getElementById(id).classList.remove('open')}}
 function showToast(m,t){{const e=document.getElementById('toast');e.textContent=m;e.className='toast show'+(t?' '+t:'');setTimeout(()=>e.className='toast',3500)}}
@@ -1338,6 +1396,38 @@ CLAIMS_PAGE_HTML = """
         </div>
 """
 
+ROUTE_PAGE_HTML = """
+        <!-- ROUTE -->
+        <div class="page" id="page-route">
+            <div class="card" style="margin-bottom:18px"><div class="card-body">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+                    <div>
+                        <div class="stat-label">Today's Stops</div>
+                        <div id="routeStopCount" style="font-size:1.4rem;font-weight:800;color:var(--primary-dark);margin-top:4px">—</div>
+                    </div>
+                    <div>
+                        <div class="stat-label">Total Drive Time</div>
+                        <div id="routeDriveTime" style="font-size:1.4rem;font-weight:800;color:var(--primary-dark);margin-top:4px">—</div>
+                    </div>
+                    <div>
+                        <div class="stat-label">Estimated Finish</div>
+                        <div id="routeFinish" style="font-size:1.4rem;font-weight:800;color:var(--primary-dark);margin-top:4px">—</div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="optimizeRoute()">Optimize Order</button>
+                        <button class="btn btn-outline" onclick="exportRoute()">Send to Crew</button>
+                    </div>
+                </div>
+            </div></div>
+            <div style="display:grid;grid-template-columns:1fr 360px;gap:18px" class="route-grid">
+                <div id="routeMap" style="height:520px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)"></div>
+                <div class="card" style="overflow:hidden"><div class="card-header"><h2>Stop Order</h2></div><div id="routeList" style="max-height:480px;overflow-y:auto"></div></div>
+            </div>
+            <p style="margin-top:10px;font-size:.8rem;color:var(--text-mute)">Stops are pulled from today's scheduled jobs. "Optimize Order" runs a quick nearest-neighbor sort from the depot.</p>
+        </div>
+        <style>@media(max-width:900px){.route-grid{grid-template-columns:1fr !important}}</style>
+"""
+
 AERIAL_PAGE_HTML = """
         <!-- AERIAL MEASURE -->
         <div class="page" id="page-aerial">
@@ -1415,11 +1505,27 @@ def takeoff_page_html(t, unit, waste_default):
 def extra_scripts(t, extras):
     out = ""
     if "aerial" in extras:
+        if t["slug"] == "landscaping-dashboard":
+            aerial_cfg = (
+                "{label1:'Lawn Sqft',label2:'Mow Time',label3:'Sod Cost',label4:'Mow Job Price',"
+                "fmt2:s=>Math.round(s/2200*60)+' min',"
+                "calc3:s=>s*0.85,calc4:s=>Math.max(45,s*0.012)}"
+            )
+        else:
+            aerial_cfg = (
+                "{label1:'Area (sqft)',label2:'Squares',label3:'Material Est.',label4:'Labor Est.',"
+                "fmt2:s=>(s/100).toFixed(1),"
+                "calc3:s=>s*1.10,calc4:s=>s*2.40}"
+            )
         out += """
 <script>
+const AERIAL_CFG=""" + aerial_cfg + """;
 let aerialMap=null,aerialDrawn=null,aerialMarker=null;
 function initAerialMap(){
     if(aerialMap)return;
+    // Set labels from cfg
+    const lbls=document.querySelectorAll('#aerialResult .stat-label');
+    if(lbls.length>=4){lbls[0].textContent=AERIAL_CFG.label1;lbls[1].textContent=AERIAL_CFG.label2;lbls[2].textContent=AERIAL_CFG.label3;lbls[3].textContent=AERIAL_CFG.label4}
     aerialMap=L.map('aerialMap').setView([33.4044,-86.7944],18);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Imagery © Esri'}).addTo(aerialMap);
     const drawn=new L.FeatureGroup();aerialMap.addLayer(drawn);aerialDrawn=drawn;
@@ -1441,13 +1547,10 @@ function computeArea(layer){
     }
     area=Math.abs(area*R*R/2);
     const sqft=Math.round(area*10.7639);
-    const squares=(sqft/100).toFixed(1);
-    const matCost=sqft*1.10;
-    const laborCost=sqft*2.40;
     document.getElementById('aerialSqft').textContent=fmtNum(sqft);
-    document.getElementById('aerialSquares').textContent=squares;
-    document.getElementById('aerialMaterial').textContent=fmtUsd0(matCost);
-    document.getElementById('aerialLabor').textContent=fmtUsd0(laborCost);
+    document.getElementById('aerialSquares').textContent=AERIAL_CFG.fmt2(sqft);
+    document.getElementById('aerialMaterial').textContent=fmtUsd0(AERIAL_CFG.calc3(sqft));
+    document.getElementById('aerialLabor').textContent=fmtUsd0(AERIAL_CFG.calc4(sqft));
     document.getElementById('aerialResult').style.display='block';
 }
 async function aerialGo(){
@@ -1464,6 +1567,111 @@ async function aerialGo(){
     }catch(e){showToast('Geocoding failed — check connection.','')}
 }
 function aerialClear(){if(aerialDrawn)aerialDrawn.clearLayers();document.getElementById('aerialResult').style.display='none'}
+</script>
+"""
+    if "route" in extras:
+        out += """
+<script>
+let routeMap=null,routeMarkers=[],routeLine=null,routeStops=[];
+const ROUTE_DEPOT=[33.4870,-86.7733]; // Birmingham metro depot
+async function geocodeOnce(addr){
+    try{
+        const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(addr));
+        const d=await r.json();
+        if(d&&d.length)return[parseFloat(d[0].lat),parseFloat(d[0].lon)];
+    }catch(e){}
+    // Fallback: spread fake points around the depot so the demo still draws
+    const seed=addr.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+    const dx=((seed%17)-8)*0.008,dy=(((seed*7)%19)-9)*0.008;
+    return[ROUTE_DEPOT[0]+dx,ROUTE_DEPOT[1]+dy];
+}
+async function initRouteMap(){
+    if(routeMap){setTimeout(()=>routeMap.invalidateSize(),60);await drawRoute();return}
+    routeMap=L.map('routeMap').setView(ROUTE_DEPOT,12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(routeMap);
+    L.marker(ROUTE_DEPOT,{title:'Depot'}).addTo(routeMap).bindPopup('Depot — '+BIZ);
+    setTimeout(()=>routeMap.invalidateSize(),120);
+    await drawRoute();
+}
+async function drawRoute(){
+    routeMarkers.forEach(m=>routeMap.removeLayer(m));routeMarkers=[];
+    if(routeLine){routeMap.removeLayer(routeLine);routeLine=null}
+    const today=todayISO();
+    routeStops=sched.filter(s=>s.date===today).sort((a,b)=>a.time.localeCompare(b.time));
+    if(!routeStops.length){
+        document.getElementById('routeStopCount').textContent='0';
+        document.getElementById('routeDriveTime').textContent='—';
+        document.getElementById('routeFinish').textContent='—';
+        document.getElementById('routeList').innerHTML='<div class="empty-state">No jobs scheduled today.</div>';
+        return;
+    }
+    // Geocode all stops in parallel
+    const coords=await Promise.all(routeStops.map(s=>geocodeOnce(s.addr)));
+    routeStops.forEach((s,i)=>s._coord=coords[i]);
+    // Draw markers
+    routeStops.forEach((s,i)=>{
+        const icon=L.divIcon({html:`<div style="background:var(--primary,#15803d);color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3)">${i+1}</div>`,iconSize:[30,30],iconAnchor:[15,15],className:''});
+        const m=L.marker(s._coord,{icon}).addTo(routeMap).bindPopup(`<strong>${i+1}. ${s.client}</strong><br>${s.job}<br><span style="color:#666;font-size:.85em">${s.addr}</span>`);
+        routeMarkers.push(m);
+    });
+    // Draw polyline depot -> stops -> depot
+    const path=[ROUTE_DEPOT,...routeStops.map(s=>s._coord),ROUTE_DEPOT];
+    routeLine=L.polyline(path,{color:'#15803d',weight:4,opacity:0.7,dashArray:'8,8'}).addTo(routeMap);
+    routeMap.fitBounds(routeLine.getBounds(),{padding:[40,40]});
+    // Calculate drive time (rough: avg 25mph in metro)
+    let totalMiles=0;
+    for(let i=0;i<path.length-1;i++){
+        const [a,b]=[path[i],path[i+1]];
+        const dx=(b[0]-a[0])*69,dy=(b[1]-a[1])*54.6;
+        totalMiles+=Math.sqrt(dx*dx+dy*dy);
+    }
+    const driveMin=Math.round(totalMiles/25*60);
+    const onSiteMin=routeStops.length*45;
+    const totalMin=driveMin+onSiteMin;
+    document.getElementById('routeStopCount').textContent=routeStops.length+' stops';
+    document.getElementById('routeDriveTime').textContent=Math.floor(driveMin/60)+'h '+(driveMin%60)+'m';
+    const start=routeStops[0]?routeStops[0].time:'07:00';
+    const sh=parseInt(start.split(':')[0])*60+parseInt(start.split(':')[1])+totalMin;
+    const fh=Math.floor(sh/60)%24,fm=sh%60;
+    document.getElementById('routeFinish').textContent=fmtTime(String(fh).padStart(2,'0')+':'+String(fm).padStart(2,'0'));
+    // Stop list
+    const list=document.getElementById('routeList');
+    list.innerHTML=routeStops.map((s,i)=>`<div style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border-soft);align-items:center"><div style="background:var(--primary);color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">${i+1}</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.9rem">${s.client}</div><div style="font-size:.78rem;color:var(--text-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.job} · ${fmtTime(s.time)}</div></div></div>`).join('');
+}
+function optimizeRoute(){
+    if(!routeStops.length){showToast('No stops to optimize');return}
+    // Nearest-neighbor from depot
+    const remaining=routeStops.slice();
+    const ordered=[];let current=ROUTE_DEPOT;
+    while(remaining.length){
+        let bestIdx=0,bestDist=Infinity;
+        remaining.forEach((s,i)=>{
+            const dx=(s._coord[0]-current[0]),dy=(s._coord[1]-current[1]);
+            const d=dx*dx+dy*dy;
+            if(d<bestDist){bestDist=d;bestIdx=i}
+        });
+        const next=remaining.splice(bestIdx,1)[0];
+        ordered.push(next);current=next._coord;
+    }
+    // Reassign times in 45-min increments starting from earliest scheduled
+    const earliest=routeStops.reduce((m,s)=>s.time<m?s.time:m,'23:59');
+    let mins=parseInt(earliest.split(':')[0])*60+parseInt(earliest.split(':')[1]);
+    ordered.forEach(s=>{
+        const t=String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0');
+        const idx=sched.findIndex(x=>x.id===s.id);
+        if(idx>=0)sched[idx].time=t;
+        mins+=45;
+    });
+    save();renderSched();drawRoute();showToast('Route optimized — times updated','success');
+}
+function exportRoute(){
+    if(!routeStops.length){showToast('No stops today');return}
+    const lines=routeStops.map((s,i)=>`${i+1}. ${fmtTime(s.time)} — ${s.client}\\n   ${s.job}\\n   ${s.addr}`).join('\\n\\n');
+    const subj=encodeURIComponent(BIZ+': Today\\'s route');
+    const body=encodeURIComponent(`Today's route, ${routeStops.length} stops:\\n\\n${lines}\\n\\nDepot: ${BIZ}\\n${PHONE}`);
+    window.open('mailto:?subject='+subj+'&body='+body,'_self');
+    showToast('Route opened in email','success');
+}
 </script>
 """
     return out

@@ -12,8 +12,8 @@
     <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='#991b1b'/><text x='32' y='42' font-family='Inter,sans-serif' font-size='28' font-weight='800' fill='white' text-anchor='middle'>SR</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 <style>
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -486,7 +486,7 @@ function toggleTheme(){const cur=document.documentElement.getAttribute('data-the
 (function applyTheme(){try{if(localStorage.getItem('wd-theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}})();
 
 // ---------- nav ----------
-function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));const target=document.getElementById('page-'+p);if(target)target.classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');else{const navBtn=document.querySelector('.nav-item[data-page="'+p+'"]');if(navBtn)navBtn.classList.add('active')}document.getElementById('pageTitle').textContent=PAGE_TITLES[p]||'Dashboard';document.getElementById('sidebar').classList.remove('open');if(p==='aerial'&&typeof initAerialMap==='function')initAerialMap()}
+function switchPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));const target=document.getElementById('page-'+p);if(target)target.classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');else{const navBtn=document.querySelector('.nav-item[data-page="'+p+'"]');if(navBtn)navBtn.classList.add('active')}document.getElementById('pageTitle').textContent=PAGE_TITLES[p]||'Dashboard';document.getElementById('sidebar').classList.remove('open');if(p==='aerial'&&typeof initAerialMap==='function')initAerialMap();if(p==='route'&&typeof initRouteMap==='function')initRouteMap()}
 function openModal(id){document.getElementById(id).classList.add('open')}
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 function showToast(m,t){const e=document.getElementById('toast');e.textContent=m;e.className='toast show'+(t?' '+t:'');setTimeout(()=>e.className='toast',3500)}
@@ -671,9 +671,13 @@ try{if(!localStorage.getItem('wd-tour-seen-'+SLUG))setTimeout(startTour,800)}cat
 </script>
 
 <script>
+const AERIAL_CFG={label1:'Area (sqft)',label2:'Squares',label3:'Material Est.',label4:'Labor Est.',fmt2:s=>(s/100).toFixed(1),calc3:s=>s*1.10,calc4:s=>s*2.40};
 let aerialMap=null,aerialDrawn=null,aerialMarker=null;
 function initAerialMap(){
     if(aerialMap)return;
+    // Set labels from cfg
+    const lbls=document.querySelectorAll('#aerialResult .stat-label');
+    if(lbls.length>=4){lbls[0].textContent=AERIAL_CFG.label1;lbls[1].textContent=AERIAL_CFG.label2;lbls[2].textContent=AERIAL_CFG.label3;lbls[3].textContent=AERIAL_CFG.label4}
     aerialMap=L.map('aerialMap').setView([33.4044,-86.7944],18);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,attribution:'Imagery © Esri'}).addTo(aerialMap);
     const drawn=new L.FeatureGroup();aerialMap.addLayer(drawn);aerialDrawn=drawn;
@@ -695,13 +699,10 @@ function computeArea(layer){
     }
     area=Math.abs(area*R*R/2);
     const sqft=Math.round(area*10.7639);
-    const squares=(sqft/100).toFixed(1);
-    const matCost=sqft*1.10;
-    const laborCost=sqft*2.40;
     document.getElementById('aerialSqft').textContent=fmtNum(sqft);
-    document.getElementById('aerialSquares').textContent=squares;
-    document.getElementById('aerialMaterial').textContent=fmtUsd0(matCost);
-    document.getElementById('aerialLabor').textContent=fmtUsd0(laborCost);
+    document.getElementById('aerialSquares').textContent=AERIAL_CFG.fmt2(sqft);
+    document.getElementById('aerialMaterial').textContent=fmtUsd0(AERIAL_CFG.calc3(sqft));
+    document.getElementById('aerialLabor').textContent=fmtUsd0(AERIAL_CFG.calc4(sqft));
     document.getElementById('aerialResult').style.display='block';
 }
 async function aerialGo(){
