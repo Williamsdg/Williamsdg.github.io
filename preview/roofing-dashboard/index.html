@@ -336,9 +336,9 @@
         <div class="form-row"><div class="form-group"><label>Date</label><input type="date" id="sjDate"></div><div class="form-group"><label>Time</label><input type="time" id="sjTime" value="09:00"></div></div>
         <div class="form-group"><label>Client Name</label><input type="text" id="sjClient" placeholder="Client name"></div>
         <div class="form-group"><label>Notes</label><textarea id="sjNotes" placeholder="Special instructions..."></textarea></div>
-        <div style="background:color-mix(in srgb, var(--primary) 12%, transparent);border-radius:10px;padding:13px 16px;margin-top:6px"><p style="font-size:.85rem;color:var(--primary);font-weight:600;margin-bottom:4px">Team Notification</p><p style="font-size:.8rem;color:var(--text-mute)">The assigned team member will receive an email with job details and a Google Maps link with directions.</p></div>
+        <div style="background:color-mix(in srgb, var(--primary) 12%, transparent);border-radius:10px;padding:13px 16px;margin-top:6px"><p style="font-size:.85rem;color:var(--primary);font-weight:600;margin-bottom:4px">Turn-by-Turn from Current Location</p><p style="font-size:.8rem;color:var(--text-mute)">The notification includes a Google Maps deep-link that opens turn-by-turn navigation from wherever your tech is right now — no manual address entry on their end.</p></div>
     </div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('schedModal')">Cancel</button><button class="btn btn-success" onclick="scheduleJob()">Schedule &amp; Notify</button></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('schedModal')">Cancel</button><button class="btn btn-outline" onclick="scheduleJob('sms')">Schedule + SMS</button><button class="btn btn-success" onclick="scheduleJob('email')">Schedule + Email</button></div>
 </div></div>
 
 <!-- VOICE MODAL -->
@@ -586,13 +586,31 @@ function trackerUrl(job){
     const slim={id:job.id,date:job.date,time:job.time,job:job.job,addr:job.addr,emp:job.emp,client:job.client,status:job.status,photos:(job.photos||[]).slice(0,4)};
     try{return base+'#j='+encodeURIComponent(btoa(JSON.stringify(slim)))}catch(e){return base}
 }
+// Builds a Google Maps URL that opens turn-by-turn navigation FROM THE EMPLOYEE'S CURRENT LOCATION
+// to the destination address. Origin is omitted so Maps uses the device's GPS.
+function navUrl(addr){return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&dir_action=navigate&destination='+encodeURIComponent(addr)}
+function dispatchEmail(empEmail,empName,job,client,date,time,addr,notes){
+    const ds=fmtDate(date,{weekday:'long',month:'long',day:'numeric',year:'numeric'}),ts=fmtTime(time);
+    const url=navUrl(addr);
+    const firstName=empName.replace(/^Employee /,'').split(' ')[0];
+    const subj=encodeURIComponent('Job Assignment: '+job+' — '+ds);
+    const body=encodeURIComponent('Hi '+firstName+',\n\nYou have been scheduled:\n\nJob: '+job+'\nClient: '+(client||'N/A')+'\nDate: '+ds+'\nTime: '+ts+'\nAddress: '+addr+'\n\nTap to navigate from your current location:\n'+url+'\n\n'+(notes?'Notes: '+notes+'\n\n':'')+'Thank you,\n'+BIZ+'\n'+PHONE);
+    window.open('mailto:'+empEmail+'?subject='+subj+'&body='+body,'_self');
+}
+function dispatchSms(empName,job,client,date,time,addr){
+    const ds=fmtDate(date,{weekday:'short',month:'short',day:'numeric'}),ts=fmtTime(time);
+    const url=navUrl(addr);
+    const firstName=empName.replace(/^Employee /,'').split(' ')[0];
+    const body=encodeURIComponent(BIZ+': New job for '+firstName+'.\n'+job+(client?' for '+client:'')+'\n'+ds+' at '+ts+'\n'+addr+'\nNavigate: '+url);
+    window.open('sms:?&body='+body,'_self');
+}
 function renderSched(){
     const tb=document.getElementById('schedBody');
     tb.innerHTML=sched.length?sched.map((s,i)=>{
         const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.addr);
         const photoCount=(s.photos||[]).length;
         const photoLabel=photoCount?photoCount+' photo'+(photoCount===1?'':'s'):'+ Photos';
-        return`<tr><td>${fmtDate(s.date)}</td><td>${fmtTime(s.time)}</td><td style="font-weight:600">${s.job}</td><td><a href="${url}" target="_blank" style="color:var(--primary);text-decoration:none">${s.addr}</a></td><td>${s.emp}</td><td><select onchange="setStatus(${i},this.value)" style="border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:.78rem;background:var(--surface);color:var(--text)"><option ${s.status==='Scheduled'?'selected':''}>Scheduled</option><option ${s.status==='En Route'?'selected':''}>En Route</option><option ${s.status==='Completed'?'selected':''}>Completed</option></select></td><td><div class="btn-group"><button class="btn btn-outline btn-sm" onclick="sendTracker(${i})">Tracker</button><label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">${photoLabel}<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(${i},this)"></label>${photoCount?`<button class="btn btn-outline btn-sm" onclick="viewPhotos(${i})">View</button>`:''}<button class="btn btn-outline btn-sm" onclick="resend(${i})">Resend</button></div></td></tr>`;
+        return`<tr><td>${fmtDate(s.date)}</td><td>${fmtTime(s.time)}</td><td style="font-weight:600">${s.job}</td><td><a href="${url}" target="_blank" style="color:var(--primary);text-decoration:none">${s.addr}</a></td><td>${s.emp}</td><td><select onchange="setStatus(${i},this.value)" style="border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:.78rem;background:var(--surface);color:var(--text)"><option ${s.status==='Scheduled'?'selected':''}>Scheduled</option><option ${s.status==='En Route'?'selected':''}>En Route</option><option ${s.status==='Completed'?'selected':''}>Completed</option></select></td><td><div class="btn-group"><button class="btn btn-outline btn-sm" onclick="sendTracker(${i})" title="Send tracker link to customer">Tracker</button><label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">${photoLabel}<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(${i},this)"></label>${photoCount?`<button class="btn btn-outline btn-sm" onclick="viewPhotos(${i})">View</button>`:''}<button class="btn btn-outline btn-sm" onclick="resend(${i},'email')" title="Resend dispatch email with navigate-from-current-location link">Email</button><button class="btn btn-outline btn-sm" onclick="resend(${i},'sms')" title="Send SMS with navigate-from-current-location link">SMS</button></div></td></tr>`;
     }).join(''):'<tr><td colspan="7" class="empty-state">No jobs scheduled. Click "+ Schedule Job".</td></tr>';
     const today=todayISO();
     const todayList=document.getElementById('todayScheduleBody');
@@ -606,8 +624,27 @@ function setStatus(i,v){if(!sched[i])return;sched[i].status=v;save();renderSched
 function addPhotos(i,inp){const files=Array.from(inp.files||[]);if(!files.length)return;sched[i].photos=sched[i].photos||[];let pending=files.length;files.forEach(f=>{const r=new FileReader();r.onload=ev=>{sched[i].photos.push({src:ev.target.result,ts:Date.now(),name:f.name});if(--pending===0){save();renderSched();showToast(files.length+' photo(s) added','success')}};r.readAsDataURL(f)});inp.value=''}
 function viewPhotos(i){const s=sched[i];if(!s||!s.photos||!s.photos.length)return;const w=window.open('','_blank');w.document.write(`<title>${s.job} — Photos</title><body style="margin:0;background:#000;font-family:system-ui">${s.photos.map((p,idx)=>`<div style="text-align:center;padding:16px"><img src="${p.src}" style="max-width:100%;max-height:90vh;cursor:pointer" onclick="annotatePhoto(${idx})"><div style="color:#fff;margin-top:8px"><button style="padding:8px 16px;border:none;background:#fff;color:#000;border-radius:6px;cursor:pointer" onclick="window.opener.startAnnotate(${i},${idx});">Annotate</button></div></div>`).join('')}</body>`)}
 function sendTracker(i){const s=sched[i];if(!s)return;const link=trackerUrl(s);const subj=encodeURIComponent(BIZ+': Track your '+s.job+' appointment'),body=encodeURIComponent('Hi '+s.client+',\n\nYou can track your upcoming '+s.job+' appointment with '+BIZ+' here:\n'+link+'\n\nWe will text you updates as our team gets closer to arrival.\n\nThank you,\n'+BIZ+'\n'+PHONE);window.open('mailto:?subject='+subj+'&body='+body,'_self');showToast('Tracker link ready to send to '+s.client,'success')}
-function scheduleJob(){const type=document.getElementById('sjType').value,empSel=document.getElementById('sjEmp'),empEmail=empSel.value,empName=empSel.options[empSel.selectedIndex].text,addr=document.getElementById('sjAddr').value.trim(),date=document.getElementById('sjDate').value,time=document.getElementById('sjTime').value,client=document.getElementById('sjClient').value.trim(),notes=document.getElementById('sjNotes').value.trim();if(!addr||!date||!time){showToast('Please fill in address, date, and time.');return}jc++;const id='JOB-'+String(jc).padStart(3,'0');sched.push({id,date,time,job:type,addr,emp:empName,email:empEmail,client:client||'Client',status:'Scheduled',photos:[]});save();const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(addr),ds=fmtDate(date,{weekday:'long',month:'long',day:'numeric',year:'numeric'}),ts=fmtTime(time);const subj=encodeURIComponent('Job Assignment: '+type+' - '+ds),body=encodeURIComponent('Hi '+empName.replace('Employee ','').split(' ')[0]+',\n\nYou have been scheduled:\n\nJob: '+type+'\nClient: '+(client||'N/A')+'\nDate: '+ds+'\nTime: '+ts+'\nAddress: '+addr+'\n\nGoogle Maps Directions:\n'+url+'\n\n'+(notes?'Notes: '+notes+'\n\n':'')+'Thank you,\n'+BIZ+'\n'+PHONE);window.open('mailto:'+empEmail+'?subject='+subj+'&body='+body,'_self');renderSched();closeModal('schedModal');showToast('Job scheduled. Email opened.','success');document.getElementById('sjAddr').value='';document.getElementById('sjClient').value='';document.getElementById('sjNotes').value=''}
-function resend(i){const s=sched[i];if(!s)return;const url='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(s.addr),ds=fmtDate(s.date,{weekday:'long',month:'long',day:'numeric',year:'numeric'}),ts=fmtTime(s.time);const subj=encodeURIComponent('Reminder: '+s.job+' - '+ds),body=encodeURIComponent('Hi '+s.emp.split(' ')[0]+',\n\nReminder:\n\nJob: '+s.job+'\nClient: '+s.client+'\nDate: '+ds+'\nTime: '+ts+'\nAddress: '+s.addr+'\n\nGoogle Maps Directions:\n'+url+'\n\nThank you,\n'+BIZ+'\n'+PHONE);window.open('mailto:'+s.email+'?subject='+subj+'&body='+body,'_self');showToast('Reminder opened for '+s.emp,'success')}
+function scheduleJob(method){
+    method=method||'email';
+    const type=document.getElementById('sjType').value,empSel=document.getElementById('sjEmp'),empEmail=empSel.value,empName=empSel.options[empSel.selectedIndex].text,addr=document.getElementById('sjAddr').value.trim(),date=document.getElementById('sjDate').value,time=document.getElementById('sjTime').value,client=document.getElementById('sjClient').value.trim(),notes=document.getElementById('sjNotes').value.trim();
+    if(!addr||!date||!time){showToast('Please fill in address, date, and time.');return}
+    jc++;const id='JOB-'+String(jc).padStart(3,'0');
+    sched.push({id,date,time,job:type,addr,emp:empName,email:empEmail,client:client||'Client',status:'Scheduled',photos:[]});save();
+    if(method==='sms')dispatchSms(empName,type,client,date,time,addr);
+    else dispatchEmail(empEmail,empName,type,client,date,time,addr,notes);
+    renderSched();closeModal('schedModal');
+    const firstName=empName.replace(/^Employee /,'').split(' ')[0];
+    showToast('Job scheduled — '+(method==='sms'?'SMS':'email')+' opened for '+firstName+' (Maps will navigate from their current location)','success');
+    document.getElementById('sjAddr').value='';document.getElementById('sjClient').value='';document.getElementById('sjNotes').value='';
+}
+function resend(i,method){
+    const s=sched[i];if(!s)return;
+    method=method||'email';
+    if(method==='sms')dispatchSms(s.emp,s.job,s.client,s.date,s.time,s.addr);
+    else dispatchEmail(s.email,s.emp,s.job,s.client,s.date,s.time,s.addr,'');
+    const firstName=s.emp.replace(/^Employee /,'').split(' ')[0];
+    showToast('Reminder opened for '+firstName+' (turn-by-turn from current location)','success');
+}
 
 // ---------- photo annotation ----------
 let annJobIdx=null,annPhotoIdx=null,annTool='arrow',annHistory=[];
@@ -640,7 +677,7 @@ function saveAnnotation(){if(annJobIdx===null)return;const cv=document.getElemen
 const TOUR=[
     {title:'Welcome to your dashboard',body:'This is the Owner view of '+BIZ+'. You\'ll see jobs, estimates, scheduling, and reports here. The whole demo runs in your browser — try anything.'},
     {title:'Create estimates fast',body:'Click "+ New Estimate" — or try voice-to-estimate ("🎙 Voice Estimate") to dictate a quote and have it auto-parsed into line items.'},
-    {title:'Schedule and dispatch',body:'On the Scheduling tab, every job has a tracker link you can text the customer, photo upload for before/after, and a status dropdown that updates the customer\'s view in real time.'},
+    {title:'Schedule and dispatch',body:'On the Scheduling tab, dispatch by Email or SMS — each notification includes a Google Maps link that opens turn-by-turn from your tech\'s CURRENT location (no manual address entry). Plus tracker links, photo upload, and live status updates.'},
     {title:'Customer-facing tracker',body:'Click "Tracker" on any job and your customer gets a phone-friendly page with live status, your tech\'s ETA, and call/directions buttons. They never have to call you for an update.'},
     {title:'Share this demo',body:'Hit "↗ Share Demo" up top — your current data gets baked into a link. Send it to a contractor, they open it, see exactly what you set up. The demo travels.'},
 ];
