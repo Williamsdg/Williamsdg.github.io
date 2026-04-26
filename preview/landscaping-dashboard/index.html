@@ -141,6 +141,11 @@
         .badge-scheduled{background:color-mix(in srgb, var(--primary) 18%, transparent);color:color-mix(in srgb, var(--primary) 60%, white);border-color:color-mix(in srgb, var(--primary) 35%, transparent)}
         .badge-completed{background:var(--green-l);color:var(--green);border-color:rgba(52,211,153,0.3)}
         .badge-claim{background:var(--red-l);color:var(--red);border-color:rgba(248,113,113,0.3)}
+        .badge-accepted{background:var(--gold-glow);color:var(--gold);border-color:rgba(212,175,55,0.4);box-shadow:0 0 12px rgba(212,175,55,0.2)}
+        .acceptance-strip{display:flex;align-items:center;gap:12px;margin-top:14px;padding:14px 16px;background:var(--gold-glow);border:1px solid rgba(212,175,55,0.3);border-radius:10px;font-size:.85rem;color:var(--text-soft)}
+        .acceptance-strip strong{color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;font-size:.7rem}
+        .acceptance-strip img{max-height:48px;background:rgba(255,255,255,0.04);border-radius:6px;padding:4px;border:1px solid var(--border-soft)}
+        .acceptance-strip .accept-name{font-family:var(--serif);font-size:1.1rem;color:var(--text);letter-spacing:-0.005em;font-weight:500}
         /* PAGES */
         .page{display:none}.page.active{display:block;animation:fadeIn .3s ease-out}
         @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -332,6 +337,7 @@
                 <div class="btn-group">
                     <button class="btn btn-primary" onclick="openModal('estimateModal')">+ New Estimate</button>
                     <button class="btn btn-outline" onclick="startVoiceEstimate()" title="Voice-to-estimate (demo)">🎙 Voice Estimate</button>
+                    <button class="btn btn-outline" onclick="importAcceptance()" title="Paste a client receipt code to mark accepted (cross-device)">Import Acceptance</button>
                 </div>
                 <button class="btn btn-ghost btn-sm" onclick="resetDemo()" title="Clear local data">Reset Demo Data</button>
             </div>
@@ -339,13 +345,14 @@
                 <span class="bb-count" id="estBulkCount">0 selected</span>
                 <div class="btn-group">
                     <button class="btn btn-sm" onclick="bulkEstStatus('Sent')">Mark Sent</button>
+                    <button class="btn btn-sm" onclick="bulkEstStatus('Accepted')">Mark Accepted</button>
                     <button class="btn btn-sm" onclick="bulkEstStatus('Paid')">Mark Paid</button>
                     <button class="btn btn-sm" onclick="bulkEstDelete()">Delete</button>
                     <button class="btn btn-sm" onclick="clearSelection('est')">Clear</button>
                 </div>
             </div>
             <div class="card"><div class="card-header"><h2>All Estimates</h2></div><div class="desktop-only" style="overflow-x:auto"><table><thead><tr><th style="width:36px"><input type="checkbox" class="row-check" id="estSelectAll" onchange="toggleSelectAll('est',this.checked)"></th><th>#</th><th>Client</th><th>Service</th><th>Amount</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="estBody"></tbody></table></div><div class="mobile-only" id="estMobileBody" style="padding:12px"></div></div>
-            <div id="estPreviewArea" style="margin-top:22px;display:none"><div class="card"><div class="card-header"><h2>Estimate Preview</h2><div class="btn-group"><button class="btn btn-primary btn-sm" onclick="sendEst('client')">Email to Client</button><button class="btn btn-outline btn-sm" onclick="aiFollowup()">AI Follow-up Draft</button><button class="btn btn-outline btn-sm" onclick="window.print()">Print / PDF</button></div></div><div class="card-body"><div class="estimate-preview" id="estPreviewContent"></div></div></div></div>
+            <div id="estPreviewArea" style="margin-top:22px;display:none"><div class="card"><div class="card-header"><h2>Estimate Preview</h2><div class="btn-group"><button class="btn btn-primary btn-sm" onclick="sendEst('client')">Email to Client</button><button class="btn btn-outline btn-sm" onclick="openClientView()">Preview as Client</button><button class="btn btn-outline btn-sm" onclick="aiFollowup()">AI Follow-up Draft</button><button class="btn btn-outline btn-sm" onclick="window.print()">Print / PDF</button></div></div><div class="card-body"><div class="estimate-preview" id="estPreviewContent"></div></div></div></div>
         </div>
         <!-- SCHEDULING -->
         <div class="page" id="page-scheduling">
@@ -733,24 +740,74 @@ function renderEstimates(){
     const mob=document.getElementById('estMobileBody');
     tb.innerHTML=list.length?list.map(e=>{
         const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);
-        const badge=e.status==='Sent'?'badge-sent':e.status==='Paid'?'badge-completed':'badge-pending';
+        const badge=badgeForStatus(e.status);
         const checked=selection.est.has(e.num)?'checked':'';
         return`<tr><td><input type="checkbox" class="row-check" ${checked} onchange="toggleSelect('est','${e.num}',this.checked)"></td><td>#${e.num}</td><td>${e.client}<br><span style="font-size:.78rem;color:var(--text-mute)">${e.email}</span></td><td>${e.items[0]?.desc||'Service'}</td><td>${fmtUsd(tot)}</td><td>${e.date}</td><td><span class="badge ${badge}">${e.status}</span></td><td><button class="btn btn-outline btn-sm" onclick="previewEst('${e.num}')">View</button></td></tr>`;
     }).join(''):'<tr><td colspan="8" class="empty-state">No estimates yet. Click "+ New Estimate" to create one.</td></tr>';
     if(mob){
         mob.innerHTML=list.length?list.map(e=>{
             const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);
-            const badge=e.status==='Sent'?'badge-sent':e.status==='Paid'?'badge-completed':'badge-pending';
+            const badge=badgeForStatus(e.status);
             return`<div class="sched-card" onclick="previewEst('${e.num}')" style="cursor:pointer"><div class="sched-card-head"><div><div class="sched-card-title">${e.client}</div><div class="sched-card-meta">#${e.num} · ${e.date}</div></div><span class="badge ${badge}">${e.status}</span></div><div class="sched-card-body">${e.items[0]?.desc||'Service'}<div style="font-size:1.1rem;font-weight:800;color:var(--primary-dark);margin-top:6px">${fmtUsd(tot)}</div></div></div>`;
         }).join(''):'<div class="empty-state">No estimates yet. Tap "+ New Estimate" to create one.</div>';
     }
     const recent=document.getElementById('recentEstBody');
-    if(recent)recent.innerHTML=list.slice(0,3).map(e=>{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);const badge=e.status==='Sent'?'badge-sent':e.status==='Paid'?'badge-completed':'badge-pending';return`<tr><td>${e.client}</td><td>${fmtUsd0(tot)}</td><td><span class="badge ${badge}">${e.status}</span></td></tr>`}).join('')||'<tr><td colspan="3" class="empty-state">No estimates yet</td></tr>';
+    if(recent)recent.innerHTML=list.slice(0,3).map(e=>{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);const badge=badgeForStatus(e.status);return`<tr><td>${e.client}</td><td>${fmtUsd0(tot)}</td><td><span class="badge ${badge}">${e.status}</span></td></tr>`}).join('')||'<tr><td colspan="3" class="empty-state">No estimates yet</td></tr>';
     refreshBulkBar('est');
 }
-function previewEst(id){const e=estimates[id];if(!e)return;currentEst=id;const sub=e.items.reduce((s,i)=>s+i.qty*i.price,0),tax=sub*0.09,tot=sub+tax;document.getElementById('estPreviewContent').innerHTML=`<div class="ep-header"><div class="ep-company"><h3>${BIZ}</h3><p>${AREA}</p><p>${PHONE}</p></div><div class="ep-est-num"><h4>Estimate #${e.num}</h4><p>${e.date}</p></div></div><div class="ep-parties"><div><h5>From</h5><p><strong>${BIZ}</strong><br>${AREA}</p></div><div><h5>To</h5><p><strong>${e.client}</strong><br>${e.addr}<br>${e.email}</p></div></div><table class="ep-table"><thead><tr><th>Description</th><th>Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${e.items.map(i=>`<tr><td>${i.desc}</td><td>${i.qty}</td><td class="right">${fmtUsd(i.price)}</td><td class="right">${fmtUsd(i.qty*i.price)}</td></tr>`).join('')}</tbody></table><div class="ep-totals"><div class="line"><span>Subtotal</span><span>${fmtUsd(sub)}</span></div><div class="line"><span>Tax (9%)</span><span>${fmtUsd(tax)}</span></div><div class="line total"><span>Total</span><span>${fmtUsd(tot)}</span></div></div><div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-soft)"><p style="font-size:.8rem;color:var(--text-mute)">${e.notes}</p></div>`;document.getElementById('estPreviewArea').style.display='block';document.getElementById('estPreviewArea').scrollIntoView({behavior:'smooth'})}
+function badgeForStatus(s){return s==='Accepted'?'badge-accepted':s==='Sent'?'badge-sent':s==='Paid'?'badge-completed':'badge-pending'}
+function previewEst(id){
+    const e=estimates[id];if(!e)return;currentEst=id;
+    const sub=e.items.reduce((s,i)=>s+i.qty*i.price,0),tax=sub*0.09,tot=sub+tax;
+    let acceptanceHtml='';
+    if(e.acceptance){
+        const ts=new Date(e.acceptance.ts);
+        const stamp=ts.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+' at '+ts.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+        const sigBlock=e.acceptance.method==='drawn'&&e.acceptance.signature
+            ? `<img src="${e.acceptance.signature}" alt="Signature">`
+            : `<span class="accept-name">${e.acceptance.name||'Approved'}</span>`;
+        acceptanceHtml=`<div class="acceptance-strip"><div style="flex:1"><strong>Approved by client</strong><div style="margin-top:6px">${sigBlock}${e.acceptance.method==='drawn'&&e.acceptance.name?'<div style="margin-top:6px;font-size:.85rem;color:var(--text-soft)">— '+e.acceptance.name+'</div>':''}</div><div style="margin-top:8px;font-size:.78rem;color:var(--text-mute)">${stamp} · ${e.acceptance.method==='drawn'?'Drawn signature':'Typed signature'}</div></div></div>`;
+    }
+    document.getElementById('estPreviewContent').innerHTML=`<div class="ep-header"><div class="ep-company"><h3>${BIZ}</h3><p>${AREA}</p><p>${PHONE}</p></div><div class="ep-est-num"><h4>Estimate #${e.num}</h4><p>${e.date}</p></div></div><div class="ep-parties"><div><h5>From</h5><p><strong>${BIZ}</strong><br>${AREA}</p></div><div><h5>To</h5><p><strong>${e.client}</strong><br>${e.addr}<br>${e.email}</p></div></div><table class="ep-table"><thead><tr><th>Description</th><th>Qty</th><th class="right">Price</th><th class="right">Total</th></tr></thead><tbody>${e.items.map(i=>`<tr><td>${i.desc}</td><td>${i.qty}</td><td class="right">${fmtUsd(i.price)}</td><td class="right">${fmtUsd(i.qty*i.price)}</td></tr>`).join('')}</tbody></table><div class="ep-totals"><div class="line"><span>Subtotal</span><span>${fmtUsd(sub)}</span></div><div class="line"><span>Tax (9%)</span><span>${fmtUsd(tax)}</span></div><div class="line total"><span>Total</span><span>${fmtUsd(tot)}</span></div></div>${e.notes?`<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-soft)"><p style="font-size:.8rem;color:var(--text-mute)">${e.notes}</p></div>`:''}${acceptanceHtml}`;
+    document.getElementById('estPreviewArea').style.display='block';
+    document.getElementById('estPreviewArea').scrollIntoView({behavior:'smooth'});
+}
 let currentEst=null;
-function sendEst(t){showToast(t==='client'?'Estimate emailed to client (placeholder)':'Estimate copy sent to company (placeholder)','success')}
+function approveUrl(e){
+    const base=new URL('../estimate-view/?id='+encodeURIComponent(e.num)+'&trade='+encodeURIComponent(SLUG),location.href).toString();
+    const slim={num:e.num,client:e.client,email:e.email,addr:e.addr,items:e.items,notes:e.notes||'',date:e.date,status:e.status||'Pending'};
+    try{return base+'#e='+encodeURIComponent(btoa(JSON.stringify(slim)))}catch(err){return base}
+}
+function openClientView(){if(!currentEst){showToast('Open an estimate first.');return}window.open(approveUrl(estimates[currentEst]),'_blank')}
+function sendEst(target){
+    if(!currentEst){showToast('Open an estimate first.');return}
+    const e=estimates[currentEst];if(!e)return;
+    const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);
+    const totWithTax=tot*1.09;
+    const link=approveUrl(e);
+    const firstName=(e.client||'').split(' ')[0]||'there';
+    const lineSummary=e.items.map(i=>'• '+i.desc+' — '+fmtUsd(i.qty*i.price)).join('\n');
+    const subj=encodeURIComponent(BIZ+' — Estimate #'+e.num+' for your review');
+    const body=encodeURIComponent('Hi '+firstName+',\n\nYour estimate from '+BIZ+' is ready for your review.\n\nESTIMATE #'+e.num+'\n'+lineSummary+'\n\nTotal (incl. 9% tax): '+fmtUsd(totWithTax)+'\n\nApprove & sign:\n'+link+'\n\nThe link above takes you to a private page where you can review every detail and approve with a typed name or signature. No account or app required.\n\nQuestions? Reply to this email or call '+PHONE+'.\n\nThank you,\n'+BIZ);
+    const to=target==='client'?(e.email||''):'';
+    window.open('mailto:'+to+'?subject='+subj+'&body='+body,'_self');
+    // Mark as Sent if it wasn't already
+    if(target==='client'&&e.status==='Pending'){e.status='Sent';save();renderEstimates();previewEst(e.num)}
+    showToast(target==='client'?'Estimate emailed to '+(e.client||'client')+' with Approve & Sign link':'Estimate copy emailed to company','success');
+}
+// Allow client to import an acceptance receipt manually (cross-device fallback)
+function importAcceptance(){
+    const code=prompt('Paste the acceptance receipt code from your client:');
+    if(!code)return;
+    try{
+        const data=JSON.parse(atob(code.trim()));
+        const target=estimates[data.id];
+        if(!target){showToast('No matching estimate (#'+data.id+') in this dashboard.');return}
+        target.status='Accepted';
+        target.acceptance={ts:data.ts,method:data.method||'typed',name:data.name||''};
+        save();renderEstimates();showToast('Acceptance imported for #'+data.id,'success');
+    }catch(e){showToast('Invalid receipt code.')}
+}
 function addLine(){const c=document.getElementById('lineItems'),r=document.createElement('div');r.className='form-row-3 li-row';r.innerHTML='<div class="form-group"><label>Description</label><input type="text" placeholder="Service item"></div><div class="form-group"><label>Qty</label><input type="number" value="1" min="1"></div><div class="form-group"><label>Unit Price ($)</label><input type="number" placeholder="0.00" step="0.01"></div>';c.appendChild(r)}
 function createEst(){const n=document.getElementById('ecName').value.trim(),em=document.getElementById('ecEmail').value.trim(),ad=document.getElementById('ecAddr').value.trim();if(!n||!em){showToast('Please fill in client name and email.');return}ec++;const id='EST-'+String(ec).padStart(3,'0'),rows=document.querySelectorAll('#lineItems .li-row'),items=[];rows.forEach(r=>{const inp=r.querySelectorAll('input');items.push({desc:inp[0].value.trim()||'Service',qty:parseInt(inp[1].value)||1,price:parseFloat(inp[2].value)||0})});const today=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});estimates[id]={num:id,client:n,email:em,addr:ad,items,notes:document.getElementById('ecNotes').value.trim(),date:today,status:'Pending'};save();renderEstimates();closeModal('estimateModal');showToast('Estimate #'+id+' created!','success');document.getElementById('ecName').value='';document.getElementById('ecEmail').value='';document.getElementById('ecAddr').value='';document.getElementById('ecNotes').value='';document.getElementById('lineItems').innerHTML='<div class="form-row-3 li-row"><div class="form-group"><label>Description</label><input type="text" placeholder="Service item"></div><div class="form-group"><label>Qty</label><input type="number" value="1" min="1"></div><div class="form-group"><label>Unit Price ($)</label><input type="number" placeholder="0.00" step="0.01"></div></div>'}
 
@@ -939,6 +996,7 @@ const TOUR=[
     {title:'Create estimates fast',body:'Click "+ New Estimate" — or try voice-to-estimate ("🎙 Voice Estimate") to dictate a quote and have it auto-parsed into line items.'},
     {title:'Schedule and dispatch',body:'On the Scheduling tab, dispatch by Email or SMS — each notification includes a Google Maps link that opens turn-by-turn from your tech\'s CURRENT location (no manual address entry). Plus tracker links, photo upload, and live status updates.'},
     {title:'Customer-facing tracker',body:'Click "Tracker" on any job and your customer gets a phone-friendly page with live status, your tech\'s ETA, and call/directions buttons. They never have to call you for an update.'},
+    {title:'Clients can sign on the spot',body:'On any estimate, hit "Email to Client" — they receive an Approve & Sign link. They review, type their name (or draw a signature), and your dashboard updates to "Accepted" instantly.'},
     {title:'Search anything (⌘K)',body:'Press ⌘K (or "/" on a keyboard, "Search" tab on mobile) to jump to any client, estimate, job, or page in seconds. The fastest way to navigate.'},
     {title:'Share this demo',body:'Hit "↗ Share" up top — your current data gets baked into a link. Send it to a contractor, they open it, see exactly what you set up. The demo travels.'},
 ];
@@ -1056,6 +1114,26 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 // ---------- bottom tab bar sync ----------
 function syncBottomTabs(page){document.querySelectorAll('.bottom-tabs button[data-page]').forEach(b=>{b.classList.toggle('active',b.dataset.page===page)})}
+
+// ---------- live sync from estimate-view tab ----------
+window.addEventListener('storage',e=>{
+    if(e.key===STORAGE_KEY&&e.newValue){
+        try{
+            const d=JSON.parse(e.newValue);
+            // Find newly accepted estimates
+            const newlyAccepted=[];
+            Object.values(d.estimates||{}).forEach(ne=>{
+                const old=estimates[ne.num];
+                if(ne.status==='Accepted'&&(!old||old.status!=='Accepted'))newlyAccepted.push(ne);
+            });
+            estimates=d.estimates||{};sched=d.sched||sched;ec=d.ec||ec;jc=d.jc||jc;
+            renderEstimates();renderSched();
+            newlyAccepted.forEach(e=>{
+                showToast('✓ '+e.client+' approved Estimate #'+e.num,'success');
+            });
+        }catch(err){}
+    }
+});
 
 // ---------- init ----------
 function renderAll(){renderEstimates();renderSched();}
