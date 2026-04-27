@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soar — Staff Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0b0d;--surface:#141418;--surface-2:#1d1d22;
+  --ink:#f7f3ec;--ink-dim:#b5b1aa;
+  --pink:#ff3d8a;--pink-soft:#ffb1cc;--coral:#ff6a3d;--lime:#d6ff5a;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.font-display{font-family:'Archivo Black',sans-serif;letter-spacing:-0.01em}
+.mono{font-family:'JetBrains Mono',monospace}
+.preview-banner{background:var(--pink);color:#000;text-align:center;padding:8px;font-size:12px;font-weight:600;letter-spacing:.05em}
+.preview-banner a{text-decoration:underline}
+
+/* ===== AUTH GATE ===== */
+.gate{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;padding:20px;z-index:100}
+.gate-inner{width:100%;max-width:380px;background:var(--surface);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:36px}
+.gate h1{font-family:'Archivo Black';font-size:22px}
+.gate h1 span{color:var(--pink)}
+.gate p{color:var(--ink-dim);font-size:14px;margin-top:6px}
+.gate input{width:100%;margin-top:24px;background:var(--bg);border:1px solid rgba(255,255,255,.1);color:var(--ink);padding:14px;border-radius:8px;font-size:18px;text-align:center;letter-spacing:.4em;outline:none}
+.gate input:focus{border-color:var(--pink)}
+.gate-err{color:var(--pink);font-size:13px;margin-top:8px;min-height:18px}
+.gate button{margin-top:8px;width:100%;background:var(--pink);color:#000;padding:14px;border-radius:999px;font-weight:600}
+.gate button:hover{background:var(--pink-soft)}
+.gate-hint{margin-top:18px;text-align:center;font-size:12px;color:var(--ink-dim)}
+.gate-back{display:block;text-align:center;font-size:12px;color:var(--ink-dim);margin-top:20px}
+
+/* ===== APP SHELL ===== */
+.app{display:none;min-height:100vh;grid-template-columns:240px 1fr}
+.app.open{display:grid}
+@media(max-width:880px){.app.open{grid-template-columns:1fr}}
+aside{border-right:1px solid rgba(255,255,255,.05);background:var(--surface);position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+@media(max-width:880px){aside{position:static;height:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.05)}}
+.aside-head{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between}
+.aside-logo{font-family:'Archivo Black';font-size:18px}
+.aside-logo span{color:var(--pink)}
+.aside-tag{font-size:10px;text-transform:uppercase;letter-spacing:.18em;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:3px 8px;color:var(--ink-dim)}
+.tabs{flex:1;padding:12px;display:flex;flex-direction:column;gap:2px}
+@media(max-width:880px){.tabs{flex-direction:row;overflow-x:auto;padding:8px;gap:6px}}
+.tab{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;color:var(--ink-dim);font-size:14px;text-align:left;transition:background .15s,color .15s;white-space:nowrap}
+.tab .ti{width:20px;text-align:center;color:var(--pink);font-family:'Archivo Black'}
+.tab:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+.tab.active{background:var(--pink);color:#000;font-weight:600}
+.tab.active .ti{color:#000}
+.aside-foot{padding:12px;border-top:1px solid rgba(255,255,255,.05)}
+@media(max-width:880px){.aside-foot{display:none}}
+.aside-foot button{width:100%;font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--ink-dim);padding:8px}
+.aside-foot button:hover{color:var(--ink)}
+
+main{min-width:0}
+.page-header{border-bottom:1px solid rgba(255,255,255,.05);padding:32px 24px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+@media(min-width:880px){.page-header{padding:32px 40px}}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.2em;color:var(--pink)}
+.page-header h1{font-family:'Archivo Black';font-size:32px;margin-top:8px;line-height:1.1}
+.page-header p{font-size:14px;color:var(--ink-dim);margin-top:8px;max-width:560px}
+.page-body{padding:32px 24px}
+@media(min-width:880px){.page-body{padding:32px 40px}}
+
+/* card primitives */
+.card{border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:18px;padding:20px}
+.card-pink{border-color:rgba(255,61,138,.4);background:rgba(255,61,138,.05)}
+.card-warn{border-color:rgba(255,106,61,.4);background:rgba(255,106,61,.05)}
+
+/* stat grid */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:920px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--ink-dim)}
+.stat-val{font-family:'Archivo Black';font-size:28px;margin-top:8px}
+.stat-hint{font-size:12px;color:var(--ink-dim);margin-top:4px}
+
+.section-h{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.section-h h2{font-family:'Archivo Black';font-size:22px}
+.section-h .more{font-size:13px;color:var(--ink-dim)}
+.section-h .more:hover{color:var(--pink)}
+
+/* class card list */
+.cs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+@media(max-width:840px){.cs-grid{grid-template-columns:1fr}}
+.cs{padding:18px;border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:16px;cursor:pointer;transition:border-color .15s}
+.cs:hover{border-color:rgba(255,61,138,.4)}
+.cs-row{display:flex;justify-content:space-between;align-items:center}
+.cs-name{font-family:'Archivo Black';font-size:18px}
+.cs-time{color:var(--pink);font-weight:600}
+.cs-meta{font-size:12px;color:var(--ink-dim);margin-top:4px}
+.cs-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.pill{font-size:11px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.05);color:var(--ink)}
+.pill-pink{background:rgba(255,61,138,.12);color:var(--pink)}
+.pill-coral{background:rgba(255,106,61,.12);color:var(--coral)}
+
+/* divider list */
+.div-list{display:flex;flex-direction:column}
+.div-list li{padding:12px 0;border-top:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;gap:10px;list-style:none;flex-wrap:wrap}
+.div-list li:first-child{border-top:none;padding-top:0}
+.muted{color:var(--ink-dim);font-size:12px}
+.amt{color:var(--pink);font-weight:600;white-space:nowrap}
+.tag-warn{font-size:10px;text-transform:uppercase;letter-spacing:.18em;border:1px solid rgba(255,106,61,.4);color:var(--coral);border-radius:999px;padding:2px 8px}
+.tag-pink{font-size:10px;text-transform:uppercase;letter-spacing:.18em;border:1px solid rgba(255,61,138,.4);color:var(--pink);border-radius:999px;padding:2px 8px}
+.tag-good{font-size:10px;text-transform:uppercase;letter-spacing:.18em;border:1px solid rgba(255,255,255,.15);color:var(--ink-dim);border-radius:999px;padding:2px 8px}
+
+/* roster page */
+.roster-grid{display:grid;grid-template-columns:280px 1fr;gap:24px}
+@media(max-width:920px){.roster-grid{grid-template-columns:1fr}}
+.session-list{display:flex;flex-direction:column;gap:8px}
+.session-card{text-align:left;width:100%;padding:14px;border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:12px;transition:border-color .15s}
+.session-card:hover{border-color:rgba(255,255,255,.2)}
+.session-card.active{border-color:var(--pink);background:rgba(255,61,138,.08)}
+.session-card .top{display:flex;justify-content:space-between;align-items:center}
+.session-card .name{font-family:'Archivo Black';font-size:15px}
+.session-card .tm{color:var(--pink);font-size:13px}
+.roster-list{border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:18px;overflow:hidden}
+.roster-row{padding:16px;border-top:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.roster-row:first-child{border-top:none}
+.member-cell{display:flex;align-items:center;gap:12px;min-width:0}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--coral));color:#000;font-family:'Archivo Black';font-size:13px;display:grid;place-items:center;flex-shrink:0}
+.m-name{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.m-meta{font-size:12px;color:var(--ink-dim)}
+.status-btns{display:flex;gap:6px;flex-wrap:wrap}
+.sbtn{font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.15);font-weight:600;transition:all .15s}
+.sbtn:hover{border-color:rgba(255,255,255,.3)}
+.sbtn.active.checkin{background:var(--pink);color:#000;border-color:transparent}
+.sbtn.active.no-show{background:var(--coral);color:#000;border-color:transparent}
+.sbtn.active.booked{background:rgba(255,255,255,.1)}
+.session-head{padding:18px;border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px}
+
+/* inputs */
+.input{background:var(--surface);border:1px solid rgba(255,255,255,.1);color:var(--ink);padding:10px 14px;border-radius:8px;font-size:14px;outline:none}
+.input:focus{border-color:var(--pink)}
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.toolbar .input{flex:1;min-width:240px}
+.tabs-pill{display:flex;gap:4px;padding:4px;border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:8px}
+.tabs-pill button{padding:6px 12px;font-size:12px;font-weight:600;border-radius:6px;color:var(--ink-dim)}
+.tabs-pill button.active{background:var(--pink);color:#000}
+.tabs-pill button:hover:not(.active){color:var(--ink)}
+
+/* table */
+.table-wrap{border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:18px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead{background:rgba(255,255,255,.02)}
+th{text-align:left;padding:14px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-dim);border-bottom:1px solid rgba(255,255,255,.05)}
+td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,.03)}
+.row-click{cursor:pointer}
+.cap-bar{width:64px;height:6px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:8px}
+.cap-fill{height:100%;background:var(--pink)}
+.date-row td{background:rgba(255,61,138,.04);font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--pink);padding:10px 16px}
+
+/* schedule instructor cards */
+.inst-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:920px){.inst-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.inst-grid{grid-template-columns:1fr}}
+.inst{padding:18px;border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:16px}
+.inst .top{display:flex;justify-content:space-between;align-items:flex-start}
+.inst h3{font-family:'Archivo Black';font-size:16px}
+.inst .role{font-size:12px;color:var(--ink-dim)}
+.inst .rate{font-size:12px;color:var(--ink-dim)}
+.inst-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:14px}
+.inst-stat{padding:10px;background:rgba(255,255,255,.04);border-radius:10px;text-align:center}
+.inst-stat.pink{background:rgba(255,61,138,.1)}
+.inst-stat .v{font-family:'Archivo Black';font-size:18px}
+.inst-stat.pink .v{color:var(--pink)}
+.inst-stat .l{font-size:9px;text-transform:uppercase;letter-spacing:.18em;color:var(--ink-dim);margin-top:2px}
+.cert-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.cert{font-size:10px;text-transform:uppercase;letter-spacing:.18em;border:1px solid rgba(255,255,255,.1);color:var(--ink-dim);border-radius:999px;padding:2px 8px}
+
+/* revenue chart */
+.bar-chart{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;align-items:end;height:200px;margin-top:14px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:8px;height:100%}
+.bar-fill-wrap{flex:1;width:100%;display:flex;align-items:flex-end}
+.bar-fill{width:100%;border-radius:6px 6px 0 0;background:rgba(255,61,138,.35);transition:height .3s}
+.bar-fill.today{background:var(--pink)}
+.bar-amt{font-family:'JetBrains Mono',monospace;font-size:11px}
+.bar-day{font-size:10px;text-transform:uppercase;letter-spacing:.18em;color:var(--ink-dim)}
+.legend{height:10px;display:flex;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.05)}
+.legend > div{height:100%}
+
+/* parties grid */
+.parties-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:1100px){.parties-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){.parties-grid{grid-template-columns:1fr}}
+.party-card{text-align:left;padding:18px;border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:16px;cursor:pointer;transition:border-color .15s}
+.party-card:hover{border-color:rgba(255,61,138,.4)}
+.party-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.party-host{font-family:'Archivo Black';font-size:18px;margin-top:12px}
+.party-meta{font-size:13px;color:var(--ink-dim);margin-top:4px}
+.party-foot{display:flex;justify-content:space-between;margin-top:14px;font-size:13px}
+.tone-inquiry{border:1px solid rgba(255,106,61,.4);color:var(--coral)}
+.tone-confirmed{border:1px solid rgba(255,61,138,.4);color:var(--pink)}
+.tone-completed{border:1px solid rgba(255,255,255,.15);color:var(--ink-dim)}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal.open{display:flex}
+.modal-inner{background:var(--surface);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:28px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.modal-head h3{font-family:'Archivo Black';font-size:22px;margin-top:6px}
+.modal-close{color:var(--ink-dim);font-size:20px;line-height:1}
+.modal-close:hover{color:var(--ink)}
+dl.detail{margin-top:22px;display:grid;grid-template-columns:repeat(2,1fr);gap:18px;font-size:14px}
+dl.detail dt{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--ink-dim);margin-bottom:4px}
+.modal-actions{margin-top:24px;display:flex;flex-wrap:wrap;gap:8px}
+.btn-pink{background:var(--pink);color:#000;border-radius:999px;padding:10px 20px;font-weight:600;font-size:13px;display:inline-block;transition:background .15s}
+.btn-pink:hover{background:var(--pink-soft)}
+.btn-ghost{border:1px solid rgba(255,255,255,.15);border-radius:999px;padding:10px 20px;font-weight:600;font-size:13px;display:inline-block}
+
+.note{margin-top:14px;border:1px solid rgba(255,106,61,.3);background:rgba(255,106,61,.05);border-radius:10px;padding:12px;font-size:13px}
+.note strong{color:var(--coral)}
+
+.tab-section{display:none}
+.tab-section.active{display:block}
+
+.gap-stack > * + *{margin-top:32px}
+
+.empty{padding:32px;text-align:center;color:var(--ink-dim);font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="preview-banner">
+  PREVIEW · designed by <a href="https://williamsdigital.io" target="_blank">Williams Digital</a> for Soar Bungee Fitness · <a href="index.html">View public site</a>
+</div>
+
+<!-- ===== AUTH GATE ===== -->
+<div class="gate" id="gate">
+  <form class="gate-inner" id="gateForm" onsubmit="return signIn(event)">
+    <h1>SOAR<span>.</span> Staff</h1>
+    <p>Enter your studio PIN to continue.</p>
+    <input type="password" inputmode="numeric" id="pin" placeholder="PIN" autocomplete="off" autofocus>
+    <div class="gate-err" id="gateErr"></div>
+    <button type="submit">Sign in</button>
+    <div class="gate-hint">Demo PIN: <span style="color:var(--ink)">1234</span></div>
+    <a href="index.html" class="gate-back">← Back to site</a>
+  </form>
+</div>
+
+<!-- ===== APP ===== -->
+<div class="app" id="app">
+  <aside>
+    <div class="aside-head">
+      <a href="index.html" class="aside-logo">SOAR<span>.</span></a>
+      <span class="aside-tag">Staff</span>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="today"><span class="ti">◐</span>Today</button>
+      <button class="tab" data-tab="roster"><span class="ti">✦</span>Roster &amp; Check-in</button>
+      <button class="tab" data-tab="members"><span class="ti">◇</span>Members</button>
+      <button class="tab" data-tab="schedule"><span class="ti">▤</span>Schedule</button>
+      <button class="tab" data-tab="revenue"><span class="ti">$</span>Revenue</button>
+      <button class="tab" data-tab="parties"><span class="ti">✿</span>Parties</button>
+    </nav>
+    <div class="aside-foot">
+      <button onclick="signOut()">Sign out</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- ===== TODAY ===== -->
+    <div class="tab-section active" id="t-today">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow" id="todayDate"></div>
+          <h1>Today at Soar</h1>
+          <p>Quick snapshot of classes, check-ins, revenue, and what needs attention.</p>
+        </div>
+      </div>
+      <div class="page-body gap-stack">
+        <div class="stat-grid" id="todayStats"></div>
+
+        <section>
+          <div class="section-h">
+            <h2>Classes today</h2>
+            <a href="#" class="more" onclick="switchTab('roster');return false">Open roster →</a>
+          </div>
+          <div class="cs-grid" id="todayClasses"></div>
+        </section>
+
+        <section style="display:grid;grid-template-columns:1fr 1fr;gap:20px" class="grid-resp">
+          <div class="card">
+            <div class="section-h"><h2 style="font-size:18px">Waiver attention</h2><a href="#" class="more" onclick="switchTab('members');return false">All members →</a></div>
+            <ul class="div-list" id="waiverList"></ul>
+          </div>
+          <div class="card">
+            <div class="section-h"><h2 style="font-size:18px">Upcoming parties</h2><a href="#" class="more" onclick="switchTab('parties');return false">Manage →</a></div>
+            <ul class="div-list" id="upcomingParties"></ul>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-h"><h2 style="font-size:18px">Recent activity</h2></div>
+          <ul class="div-list" id="recentActivity"></ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- ===== ROSTER ===== -->
+    <div class="tab-section" id="t-roster">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow">Roster</div>
+          <h1>Roster &amp; Check-in</h1>
+          <p>Tap each member to mark them checked in or no-show. Waiver flags appear next to anyone with missing or expired waivers.</p>
+        </div>
+        <select class="input" id="rosterDate"></select>
+      </div>
+      <div class="page-body">
+        <div class="roster-grid">
+          <aside>
+            <div class="eyebrow" style="margin-bottom:12px">Sessions</div>
+            <div class="session-list" id="sessionList"></div>
+          </aside>
+          <section id="rosterPanel"></section>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MEMBERS ===== -->
+    <div class="tab-section" id="t-members">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow">Members</div>
+          <h1>Members</h1>
+          <p>Search, filter, and view balances. Click a member for full details.</p>
+        </div>
+      </div>
+      <div class="page-body gap-stack">
+        <div class="stat-grid" id="memberStats"></div>
+        <div class="toolbar">
+          <input class="input" id="memberSearch" placeholder="Search by name or email">
+          <div class="tabs-pill" id="memberFilters">
+            <button class="active" data-f="all">All</button>
+            <button data-f="active">Active</button>
+            <button data-f="expiring">Expiring</button>
+            <button data-f="waiver">Waiver</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Member</th><th>Membership</th><th>Balance</th><th>Waiver</th><th style="text-align:right">Status</th></tr>
+            </thead>
+            <tbody id="memberTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SCHEDULE ===== -->
+    <div class="tab-section" id="t-schedule">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow">Schedule</div>
+          <h1>Schedule &amp; Instructors</h1>
+          <p>Class grid, instructor assignments, and projected pay for the upcoming week.</p>
+        </div>
+        <button class="btn-pink">+ New session</button>
+      </div>
+      <div class="page-body gap-stack">
+        <div class="stat-grid" id="scheduleStats"></div>
+        <section>
+          <div class="section-h"><h2>Week at a glance</h2></div>
+          <div class="table-wrap" style="overflow-x:auto">
+            <table style="min-width:640px">
+              <thead>
+                <tr><th>Time</th><th>Class</th><th>Instructor</th><th style="text-align:right">Bookings</th><th style="text-align:right">Capacity</th></tr>
+              </thead>
+              <tbody id="schedTbody"></tbody>
+            </table>
+          </div>
+        </section>
+        <section>
+          <div class="section-h"><h2>Instructor load</h2></div>
+          <div class="inst-grid" id="instGrid"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ===== REVENUE ===== -->
+    <div class="tab-section" id="t-revenue">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow">Revenue</div>
+          <h1>Revenue</h1>
+          <p>Sales, packages, memberships, parties, and retail. Snapshot of the last 7 days.</p>
+        </div>
+      </div>
+      <div class="page-body gap-stack">
+        <div class="stat-grid" id="revStats"></div>
+        <section class="card">
+          <div class="section-h"><h2>Last 7 days</h2><span class="muted">Bars scale to peak day</span></div>
+          <div class="bar-chart" id="barChart"></div>
+        </section>
+        <section style="display:grid;grid-template-columns:1.1fr 2fr;gap:20px" class="grid-resp">
+          <div class="card">
+            <div class="section-h"><h2 style="font-size:18px">By type</h2></div>
+            <div class="legend" id="typeLegend"></div>
+            <ul class="div-list" id="typeList" style="margin-top:14px"></ul>
+          </div>
+          <div class="card">
+            <div class="section-h"><h2 style="font-size:18px">Recent transactions</h2></div>
+            <ul class="div-list" id="txList"></ul>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ===== PARTIES ===== -->
+    <div class="tab-section" id="t-parties">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow">Parties</div>
+          <h1>Parties &amp; Private Events</h1>
+          <p>Track inquiries, deposits, and outstanding balances. Click an event for the full brief.</p>
+        </div>
+        <button class="btn-pink">+ New event</button>
+      </div>
+      <div class="page-body gap-stack">
+        <div class="stat-grid" id="partyStats"></div>
+        <div class="tabs-pill" id="partyFilters" style="width:fit-content">
+          <button class="active" data-f="all">All</button>
+          <button data-f="inquiry">Inquiry</button>
+          <button data-f="confirmed">Confirmed</button>
+          <button data-f="completed">Completed</button>
+        </div>
+        <div class="parties-grid" id="partyGrid"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal" id="modal" onclick="closeModal(event)">
+  <div class="modal-inner" onclick="event.stopPropagation()" id="modalBody"></div>
+</div>
+
+<style>
+@media(max-width:920px){
+  .grid-resp{grid-template-columns:1fr !important}
+}
+</style>
+
+<script>
+/* ============================================================
+   MOCK DATA
+   ============================================================ */
+const today = new Date();
+const isoDay = d => d.toISOString().slice(0,10);
+const offset = n => { const d=new Date(today); d.setDate(d.getDate()+n); return isoDay(d); };
+const TODAY = isoDay(today);
+
+const instructors = [
+  {id:'i1',name:'Coach Aly',role:'Founder · Head Instructor',rate:45,certs:['AFAA-CGFI','Bungee L2']},
+  {id:'i2',name:'Coach Marcus',role:'Personal Trainer',rate:60,certs:['NASM-CPT','CES']},
+  {id:'i3',name:'Coach Jenna',role:'Bungee Instructor',rate:38,certs:['AFAA-GFI','Bungee L2']},
+  {id:'i4',name:'Coach Tasha',role:'Nutrition Coach',rate:50,certs:['PN1']},
+  {id:'i5',name:'Coach Riley',role:'Bungee Instructor',rate:35,certs:['AFAA-GFI','Bungee L1']},
+  {id:'i6',name:'Coach Devon',role:'Personal Trainer',rate:65,certs:['NSCA-CSCS']},
+];
+const instById = id => instructors.find(i=>i.id===id);
+
+const members = [
+  {id:'m1',name:'Madison Bryant',email:'madison.b@example.com',phone:'228-555-0142',joined:'2024-08-12',membership:'Unlimited',classesRemaining:null,packageExpires:null,waiverSigned:'2025-02-04',waiverExpires:'2026-02-04'},
+  {id:'m2',name:'Sarah Lee',email:'sarahl@example.com',phone:'228-555-0188',joined:'2025-01-22',membership:'8-Pack',classesRemaining:3,packageExpires:offset(11),waiverSigned:'2025-01-22',waiverExpires:'2026-01-22'},
+  {id:'m3',name:'Jordan Pierce',email:'jordan.p@example.com',phone:'228-555-0107',joined:'2025-09-10',membership:'Unlimited',classesRemaining:null,packageExpires:null,waiverSigned:'2025-09-10',waiverExpires:'2026-09-10'},
+  {id:'m4',name:'Brittany Cole',email:'bcole@example.com',phone:'228-555-0163',joined:'2026-04-01',membership:'Drop-In',classesRemaining:null,packageExpires:null,waiverSigned:null,waiverExpires:null,notes:'First class today — needs waiver signed in person'},
+  {id:'m5',name:'Tasha Williams',email:'tashaw@example.com',phone:'228-555-0119',joined:'2024-03-05',membership:'8-Pack',classesRemaining:1,packageExpires:offset(4),waiverSigned:'2024-03-05',waiverExpires:'2025-03-05',notes:'Waiver expired — needs re-sign'},
+  {id:'m6',name:'Lauren Sykes',email:'lsykes@example.com',phone:'228-555-0124',joined:'2025-11-20',membership:'Unlimited',classesRemaining:null,packageExpires:null,waiverSigned:'2025-11-20',waiverExpires:'2026-11-20'},
+  {id:'m7',name:'Kelly Ramirez',email:'kramirez@example.com',phone:'228-555-0145',joined:'2025-06-14',membership:'8-Pack',classesRemaining:6,packageExpires:offset(28),waiverSigned:'2025-06-14',waiverExpires:'2026-06-14'},
+  {id:'m8',name:'Erin Donovan',email:'edonovan@example.com',phone:'228-555-0177',joined:'2024-12-02',membership:'Inactive',classesRemaining:0,packageExpires:'2025-08-02',waiverSigned:'2024-12-02',waiverExpires:'2025-12-02'},
+  {id:'m9',name:'Maya Patel',email:'maya.p@example.com',phone:'228-555-0191',joined:'2026-02-19',membership:'Unlimited',classesRemaining:null,packageExpires:null,waiverSigned:'2026-02-19',waiverExpires:'2027-02-19'},
+  {id:'m10',name:'Devon Hayes',email:'dhayes@example.com',phone:'228-555-0156',joined:'2025-10-08',membership:'Drop-In',classesRemaining:null,packageExpires:null,waiverSigned:'2025-10-08',waiverExpires:'2026-10-08'},
+  {id:'m11',name:'Hannah Chen',email:'hannahc@example.com',phone:'228-555-0166',joined:'2026-03-30',membership:'8-Pack',classesRemaining:7,packageExpires:offset(45),waiverSigned:'2026-03-30',waiverExpires:'2027-03-30'},
+  {id:'m12',name:'Riley Thompson',email:'rthompson@example.com',phone:'228-555-0133',joined:'2025-07-21',membership:'Unlimited',classesRemaining:null,packageExpires:null,waiverSigned:'2025-07-21',waiverExpires:'2026-07-21'},
+];
+const memById = id => members.find(m=>m.id===id);
+
+const sessions = [
+  {id:'c1',date:TODAY,time:'06:00',type:'Bungee Burn',instId:'i1',cap:10,bookings:[{m:'m1',s:'checked-in'},{m:'m3',s:'checked-in'},{m:'m6',s:'booked'},{m:'m9',s:'booked'},{m:'m12',s:'no-show'}]},
+  {id:'c2',date:TODAY,time:'09:00',type:'Bungee 101',instId:'i5',cap:8,bookings:[{m:'m4',s:'booked'},{m:'m10',s:'booked'},{m:'m11',s:'booked'}]},
+  {id:'c3',date:TODAY,time:'17:30',type:'Bungee Sculpt',instId:'i3',cap:10,bookings:[{m:'m1',s:'booked'},{m:'m2',s:'booked'},{m:'m5',s:'booked'},{m:'m6',s:'booked'},{m:'m7',s:'booked'},{m:'m9',s:'booked'}]},
+  {id:'c4',date:TODAY,time:'18:30',type:'Bungee Burn',instId:'i1',cap:10,bookings:[{m:'m3',s:'booked'},{m:'m12',s:'booked'},{m:'m11',s:'booked'},{m:'m9',s:'booked'}]},
+  {id:'c5',date:offset(1),time:'06:00',type:'Bungee Burn',instId:'i1',cap:10,bookings:[{m:'m1',s:'booked'},{m:'m6',s:'booked'}]},
+  {id:'c6',date:offset(1),time:'17:30',type:'Bungee HIIT',instId:'i3',cap:10,bookings:[{m:'m2',s:'booked'},{m:'m7',s:'booked'}]},
+  {id:'c7',date:offset(2),time:'06:00',type:'Bungee Burn',instId:'i1',cap:10,bookings:[{m:'m3',s:'booked'}]},
+  {id:'c8',date:offset(2),time:'18:30',type:'Glow Fly',instId:'i3',cap:12,bookings:[{m:'m1',s:'booked'},{m:'m6',s:'booked'},{m:'m9',s:'booked'},{m:'m11',s:'booked'},{m:'m12',s:'booked'}]},
+];
+
+const parties = [
+  {id:'p1',hostName:'Amber Roberts',email:'amber.r@example.com',phone:'228-555-0211',date:offset(8),time:'14:00',type:'Birthday',guests:7,total:300,deposit:100,depositPaid:true,balanceDue:200,notes:'Daughter turning 12. Pink + black theme. Cake at 3:15.',status:'confirmed'},
+  {id:'p2',hostName:'Vanessa Fields',email:'vfields@example.com',phone:'228-555-0223',date:offset(15),time:'19:00',type:'Bachelorette',guests:11,total:425,deposit:150,depositPaid:true,balanceDue:275,notes:'Bringing prosecco. Glow Fly theme. Sashes provided by host.',status:'confirmed'},
+  {id:'p3',hostName:'Coastal Realty Group',email:'events@coastalrealty.example',phone:'228-555-0244',date:offset(22),time:'17:30',type:'Corporate',guests:14,total:525,deposit:0,depositPaid:false,balanceDue:525,notes:'Annual team event. Need invoice — will pay full on day-of.',status:'inquiry'},
+  {id:'p4',hostName:'Megan Doyle',email:'mdoyle@example.com',phone:'228-555-0259',date:offset(-6),time:'14:00',type:'Birthday',guests:6,total:300,deposit:100,depositPaid:true,balanceDue:0,notes:'Paid in full. 5-star review left.',status:'completed'},
+];
+
+const sales = [
+  {id:'s1',date:TODAY,memId:'m4',item:'Drop-In',amount:25,type:'drop-in'},
+  {id:'s2',date:TODAY,memId:'m11',item:'8-Pack',amount:160,type:'package'},
+  {id:'s3',date:TODAY,memId:null,item:'Branded tank top',amount:28,type:'retail'},
+  {id:'s4',date:TODAY,memId:'m10',item:'Drop-In',amount:25,type:'drop-in'},
+  {id:'s5',date:offset(-1),memId:'m1',item:'Unlimited (renewal)',amount:159,type:'membership'},
+  {id:'s6',date:offset(-1),memId:'m6',item:'PT 4-pack',amount:280,type:'pt'},
+  {id:'s7',date:offset(-2),memId:'m3',item:'Unlimited (renewal)',amount:159,type:'membership'},
+  {id:'s8',date:offset(-2),memId:'m7',item:'Drop-In',amount:25,type:'drop-in'},
+  {id:'s9',date:offset(-3),memId:'m9',item:'Unlimited (new)',amount:159,type:'membership'},
+  {id:'s10',date:offset(-4),memId:'m2',item:'8-Pack',amount:160,type:'package'},
+  {id:'s11',date:offset(-4),memId:null,item:'Birthday party (Doyle)',amount:300,type:'party'},
+  {id:'s12',date:offset(-5),memId:'m12',item:'Unlimited (renewal)',amount:159,type:'membership'},
+  {id:'s13',date:offset(-6),memId:'m5',item:'Nutrition coaching',amount:149,type:'nutrition'},
+  {id:'s14',date:offset(-6),memId:'m6',item:'PT single',amount:75,type:'pt'},
+];
+
+const typeMeta = {
+  'drop-in':{lbl:'Drop-in',c:'#b5b1aa'},
+  'package':{lbl:'Package',c:'#ff3d8a'},
+  'membership':{lbl:'Membership',c:'#ffb1cc'},
+  'pt':{lbl:'Personal Training',c:'#ff6a3d'},
+  'nutrition':{lbl:'Nutrition',c:'#d6ff5a'},
+  'party':{lbl:'Party',c:'#9d6bff'},
+  'retail':{lbl:'Retail',c:'#ffd66b'},
+};
+
+/* in-memory overrides for check-in toggle */
+const overrides = {};
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+function showApp(){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').classList.add('open');
+  initAll();
+}
+function signIn(e){
+  e.preventDefault();
+  const v = document.getElementById('pin').value;
+  if(v==='1234'){
+    try{localStorage.setItem('soar-staff-auth','1')}catch(_){};
+    showApp();
+  } else {
+    document.getElementById('gateErr').textContent='Wrong PIN. Try 1234 (demo).';
+  }
+  return false;
+}
+function signOut(){
+  try{localStorage.removeItem('soar-staff-auth')}catch(_){};
+  location.reload();
+}
+try{ if(localStorage.getItem('soar-staff-auth')==='1') showApp(); }catch(_){};
+
+/* ============================================================
+   TABS
+   ============================================================ */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.querySelectorAll('.tab-section').forEach(s=>s.classList.toggle('active',s.id==='t-'+name));
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(b) switchTab(b.dataset.tab);
+});
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const initials = name => name.split(' ').map(p=>p[0]).join('').slice(0,2);
+const waiverIssue = m => !m.waiverSigned || !m.waiverExpires || new Date(m.waiverExpires) < new Date();
+const lowBalance = m => typeof m.classesRemaining==='number' && m.classesRemaining<=2 && m.membership!=='Inactive';
+const expiringSoon = m => m.packageExpires && new Date(m.packageExpires) < new Date(Date.now()+14*86400000);
+const getStatus = (sId,mId) => overrides[`${sId}:${mId}`] ?? sessions.find(c=>c.id===sId).bookings.find(b=>b.m===mId).s;
+const setStatus = (sId,mId,s) => { overrides[`${sId}:${mId}`]=s; renderRoster(); renderToday(); };
+
+/* ============================================================
+   TODAY
+   ============================================================ */
+function renderToday(){
+  document.getElementById('todayDate').textContent = today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const todays = sessions.filter(c=>c.date===TODAY);
+  const totalBookings = todays.reduce((s,c)=>s+c.bookings.length,0);
+  const checkedIn = todays.reduce((s,c)=>s+c.bookings.filter(b=>getStatus(c.id,b.m)==='checked-in').length,0);
+  const todaySales = sales.filter(s=>s.date===TODAY);
+  const todayRev = todaySales.reduce((s,x)=>s+x.amount,0);
+  const waivers = members.filter(waiverIssue);
+
+  document.getElementById('todayStats').innerHTML = `
+    <div class="card card-pink"><div class="stat-lbl">Classes today</div><div class="stat-val">${todays.length}</div><div class="stat-hint">${totalBookings} total bookings</div></div>
+    <div class="card"><div class="stat-lbl">Checked in</div><div class="stat-val">${checkedIn} / ${totalBookings}</div><div class="stat-hint">So far today</div></div>
+    <div class="card"><div class="stat-lbl">Today's revenue</div><div class="stat-val">$${todayRev.toLocaleString()}</div><div class="stat-hint">${todaySales.length} transactions</div></div>
+    <div class="card ${waivers.length?'card-warn':''}"><div class="stat-lbl">Waiver attention</div><div class="stat-val">${waivers.length}</div><div class="stat-hint">Missing or expired</div></div>
+  `;
+
+  document.getElementById('todayClasses').innerHTML = todays.length === 0
+    ? '<div class="empty">Nothing on the schedule today.</div>'
+    : todays.map(c=>{
+      const inst=instById(c.instId);
+      const checked=c.bookings.filter(b=>getStatus(c.id,b.m)==='checked-in').length;
+      const noShow=c.bookings.filter(b=>getStatus(c.id,b.m)==='no-show').length;
+      return `<div class="cs" onclick="switchTab('roster');setTimeout(()=>selectSession('${c.id}','${c.date}'),50)">
+        <div class="cs-row">
+          <div class="cs-name">${c.type}</div>
+          <div class="cs-time">${c.time}</div>
+        </div>
+        <div class="cs-meta">${inst.name} · cap ${c.cap}</div>
+        <div class="cs-pills">
+          <span class="pill">${c.bookings.length} booked</span>
+          <span class="pill pill-pink">${checked} checked in</span>
+          ${noShow ? `<span class="pill pill-coral">${noShow} no-show</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+
+  document.getElementById('waiverList').innerHTML = waivers.length === 0
+    ? '<div class="empty" style="padding:14px 0">Everyone\\'s good to fly. ✦</div>'
+    : waivers.map(m=>`<li><div><div>${m.name}</div><div class="muted">${!m.waiverSigned?'Waiver missing':`Expired ${m.waiverExpires}`}</div></div><span class="tag-warn">Action</span></li>`).join('');
+
+  const upcoming = parties.filter(p=>p.status!=='completed' && p.date>=TODAY).sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('upcomingParties').innerHTML = upcoming.length === 0
+    ? '<div class="empty" style="padding:14px 0">No parties on the books.</div>'
+    : upcoming.slice(0,4).map(p=>`<li>
+        <div><div>${p.hostName}</div><div class="muted">${p.type} · ${p.guests} guests · ${p.date} ${p.time}</div></div>
+        <div style="text-align:right"><div class="amt">$${p.balanceDue} due</div><div class="muted" style="color:${p.depositPaid?'var(--ink-dim)':'var(--coral)'}">${p.depositPaid?'Deposit paid':'Deposit unpaid'}</div></div>
+      </li>`).join('');
+
+  document.getElementById('recentActivity').innerHTML = sales.slice(0,6).map(s=>{
+    const m = s.memId ? memById(s.memId) : null;
+    return `<li><div><div>${s.item}${m?` <span class="muted">· ${m.name}</span>`:''}</div><div class="muted">${s.date}</div></div><div class="amt">+$${s.amount}</div></li>`;
+  }).join('');
+}
+
+/* ============================================================
+   ROSTER
+   ============================================================ */
+let selectedDate = TODAY;
+let selectedSession = null;
+function renderRoster(){
+  // date selector
+  const dates = [...new Set(sessions.map(c=>c.date))].sort();
+  const sel = document.getElementById('rosterDate');
+  if(!sel.options.length){
+    sel.innerHTML = dates.map(d=>`<option value="${d}">${d===TODAY?`Today (${d})`:d}</option>`).join('');
+    sel.value = selectedDate;
+    sel.addEventListener('change',e=>{ selectedDate=e.target.value; selectedSession=null; renderRoster(); });
+  }
+
+  const dayClasses = sessions.filter(c=>c.date===selectedDate).sort((a,b)=>a.time.localeCompare(b.time));
+  if(!selectedSession || !dayClasses.find(c=>c.id===selectedSession)) selectedSession = dayClasses[0]?.id;
+
+  document.getElementById('sessionList').innerHTML = dayClasses.length === 0
+    ? '<div class="empty" style="padding:14px 0;text-align:left">No classes on this date.</div>'
+    : dayClasses.map(c=>{
+      const checked = c.bookings.filter(b=>getStatus(c.id,b.m)==='checked-in').length;
+      return `<button class="session-card ${c.id===selectedSession?'active':''}" onclick="selectSession('${c.id}')">
+        <div class="top"><div class="name">${c.type}</div><div class="tm">${c.time}</div></div>
+        <div class="muted" style="margin-top:4px">${instById(c.instId).name}</div>
+        <div style="margin-top:10px;font-size:13px">${checked} / ${c.bookings.length} checked in</div>
+      </button>`;
+    }).join('');
+
+  const panel = document.getElementById('rosterPanel');
+  const c = sessions.find(x=>x.id===selectedSession);
+  if(!c){ panel.innerHTML = '<div class="empty">Pick a session.</div>'; return; }
+  const inst = instById(c.instId);
+
+  panel.innerHTML = `
+    <div class="session-head">
+      <div>
+        <div class="font-display" style="font-size:22px">${c.type}</div>
+        <div class="muted" style="margin-top:4px">${c.date} · ${c.time} · ${inst.name}</div>
+      </div>
+      <div style="font-size:14px"><span class="muted">Capacity:</span> ${c.bookings.length} / ${c.cap}</div>
+    </div>
+    <div class="roster-list">
+      ${c.bookings.length === 0 ? '<div class="empty">No one has booked this class yet.</div>' :
+        c.bookings.map(b=>{
+          const m = memById(b.m); if(!m) return '';
+          const st = getStatus(c.id, m.id);
+          const wi = waiverIssue(m);
+          const lb = m.membership==='8-Pack' && typeof m.classesRemaining==='number' && m.classesRemaining<=1;
+          return `<div class="roster-row">
+            <div class="member-cell">
+              <div class="avatar">${initials(m.name)}</div>
+              <div>
+                <div class="m-name">
+                  <span>${m.name}</span>
+                  ${wi?'<span class="tag-warn">Waiver</span>':''}
+                  ${lb?`<span class="tag-pink">${m.classesRemaining} left</span>`:''}
+                </div>
+                <div class="m-meta">${m.membership} · ${m.phone}</div>
+              </div>
+            </div>
+            <div class="status-btns">
+              <button class="sbtn checkin ${st==='checked-in'?'active':''}" onclick="setStatus('${c.id}','${m.id}','checked-in')">Check in</button>
+              <button class="sbtn booked ${st==='booked'?'active':''}" onclick="setStatus('${c.id}','${m.id}','booked')">Booked</button>
+              <button class="sbtn no-show ${st==='no-show'?'active':''}" onclick="setStatus('${c.id}','${m.id}','no-show')">No-show</button>
+            </div>
+          </div>`;
+        }).join('')}
+    </div>
+  `;
+}
+function selectSession(id, date){
+  if(date && date !== selectedDate){ selectedDate = date; document.getElementById('rosterDate').value = date; }
+  selectedSession = id;
+  renderRoster();
+}
+
+/* ============================================================
+   MEMBERS
+   ============================================================ */
+let memberFilter = 'all';
+let memberQuery = '';
+function renderMembers(){
+  const active = members.filter(m=>m.membership!=='Inactive').length;
+  const unlimited = members.filter(m=>m.membership==='Unlimited').length;
+  const lows = members.filter(lowBalance).length;
+  const waivers = members.filter(waiverIssue).length;
+  document.getElementById('memberStats').innerHTML = `
+    <div class="card card-pink"><div class="stat-lbl">Active members</div><div class="stat-val">${active}</div></div>
+    <div class="card"><div class="stat-lbl">Unlimited subs</div><div class="stat-val">${unlimited}</div></div>
+    <div class="card"><div class="stat-lbl">Low package balance</div><div class="stat-val">${lows}</div><div class="stat-hint">≤ 2 classes left</div></div>
+    <div class="card ${waivers?'card-warn':''}"><div class="stat-lbl">Waiver attention</div><div class="stat-val">${waivers}</div></div>
+  `;
+
+  const filtered = members.filter(m=>{
+    if(memberQuery && !`${m.name} ${m.email}`.toLowerCase().includes(memberQuery.toLowerCase())) return false;
+    if(memberFilter==='active' && m.membership==='Inactive') return false;
+    if(memberFilter==='expiring' && !(expiringSoon(m) || lowBalance(m))) return false;
+    if(memberFilter==='waiver' && !waiverIssue(m)) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('memberTbody');
+  tbody.innerHTML = filtered.length === 0
+    ? `<tr><td colspan="5" class="empty">No members match.</td></tr>`
+    : filtered.map(m=>{
+      const wi = waiverIssue(m);
+      return `<tr class="row-click" onclick="openMemberModal('${m.id}')">
+        <td>
+          <div class="member-cell">
+            <div class="avatar">${initials(m.name)}</div>
+            <div><div>${m.name}</div><div class="muted">${m.email}</div></div>
+          </div>
+        </td>
+        <td>${m.membership}</td>
+        <td>${m.membership==='Unlimited' ? '—' : (typeof m.classesRemaining==='number' ? m.classesRemaining+' left' : 'Drop-in')}</td>
+        <td>${wi ? `<span style="color:var(--coral)">${!m.waiverSigned?'Missing':'Expired '+m.waiverExpires}</span>` : `<span class="muted">Until ${m.waiverExpires}</span>`}</td>
+        <td style="text-align:right">${m.membership==='Inactive' ? '<span class="tag-good">Inactive</span>' : (wi ? '<span class="tag-warn">Action</span>' : '<span class="tag-pink">Good</span>')}</td>
+      </tr>`;
+    }).join('');
+}
+document.getElementById('memberSearch').addEventListener('input',e=>{memberQuery=e.target.value;renderMembers();});
+document.getElementById('memberFilters').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#memberFilters button').forEach(x=>x.classList.toggle('active',x===b));
+  memberFilter=b.dataset.f; renderMembers();
+});
+
+function openMemberModal(id){
+  const m = memById(id);
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-head">
+      <div>
+        <div class="muted" style="font-size:13px">Joined ${m.joined}</div>
+        <h3>${m.name}</h3>
+      </div>
+      <button class="modal-close" onclick="closeModal(true)">✕</button>
+    </div>
+    <dl class="detail">
+      <div><dt>Email</dt><dd>${m.email}</dd></div>
+      <div><dt>Phone</dt><dd>${m.phone}</dd></div>
+      <div><dt>Membership</dt><dd>${m.membership}</dd></div>
+      <div><dt>Classes left</dt><dd>${m.membership==='Unlimited'?'Unlimited':(typeof m.classesRemaining==='number'?m.classesRemaining:'—')}</dd></div>
+      <div><dt>Package expires</dt><dd>${m.packageExpires ?? '—'}</dd></div>
+      <div><dt>Waiver</dt><dd>${m.waiverSigned ? `Signed ${m.waiverSigned}, expires ${m.waiverExpires}` : 'Not signed'}</dd></div>
+    </dl>
+    ${m.notes ? `<div class="note"><strong>Note · </strong>${m.notes}</div>` : ''}
+    <div class="modal-actions">
+      <button class="btn-pink">Charge package</button>
+      <button class="btn-ghost">Send waiver</button>
+      <button class="btn-ghost">Add note</button>
+    </div>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+/* ============================================================
+   SCHEDULE
+   ============================================================ */
+const classLength = {'Bungee Burn':0.75,'Bungee Sculpt':0.75,'Bungee 101':1,'Bungee HIIT':0.5,'Glow Fly':0.75,'Bungee Stretch':0.5};
+function renderSchedule(){
+  const instLoad = instructors.map(i=>{
+    const sess = sessions.filter(c=>c.instId===i.id);
+    const hours = sess.reduce((s,c)=>s+(classLength[c.type]||0.75),0);
+    return {...i, sess:sess.length, hours, pay:hours*i.rate};
+  }).sort((a,b)=>b.hours-a.hours);
+  const totalH = instLoad.reduce((s,i)=>s+i.hours,0);
+  const totalPay = instLoad.reduce((s,i)=>s+i.pay,0);
+  const activeInst = instLoad.filter(i=>i.sess>0).length;
+
+  document.getElementById('scheduleStats').innerHTML = `
+    <div class="card card-pink"><div class="stat-lbl">Sessions on books</div><div class="stat-val">${sessions.length}</div></div>
+    <div class="card"><div class="stat-lbl">Instructor hours</div><div class="stat-val">${totalH.toFixed(1)}</div><div class="stat-hint">Across upcoming week</div></div>
+    <div class="card"><div class="stat-lbl">Projected payroll</div><div class="stat-val">$${totalPay.toLocaleString()}</div><div class="stat-hint">At current rates</div></div>
+    <div class="card"><div class="stat-lbl">Instructors active</div><div class="stat-val">${activeInst}</div><div class="stat-hint">of ${instructors.length} total</div></div>
+  `;
+
+  const dates = [...new Set(sessions.map(c=>c.date))].sort();
+  document.getElementById('schedTbody').innerHTML = dates.map(d=>{
+    const day = sessions.filter(c=>c.date===d).sort((a,b)=>a.time.localeCompare(b.time));
+    return `<tr class="date-row"><td colspan="5">${d}${d===TODAY?' · Today':''}</td></tr>` + day.map(c=>{
+      const fill = (c.bookings.length/c.cap)*100;
+      return `<tr><td class="mono">${c.time}</td><td class="font-display">${c.type}</td><td>${instById(c.instId).name}</td><td style="text-align:right">${c.bookings.length}</td><td style="text-align:right"><span class="muted">${c.cap}</span><span class="cap-bar"><span class="cap-fill" style="width:${Math.min(fill,100)}%"></span></span></td></tr>`;
+    }).join('');
+  }).join('');
+
+  document.getElementById('instGrid').innerHTML = instLoad.map(i=>`
+    <div class="inst">
+      <div class="top">
+        <div><h3>${i.name}</h3><div class="role">${i.role}</div></div>
+        <div class="rate">$${i.rate}/hr</div>
+      </div>
+      <div class="inst-stats">
+        <div class="inst-stat"><div class="v">${i.sess}</div><div class="l">sessions</div></div>
+        <div class="inst-stat"><div class="v">${i.hours.toFixed(1)}</div><div class="l">hours</div></div>
+        <div class="inst-stat pink"><div class="v">$${i.pay.toFixed(0)}</div><div class="l">payroll</div></div>
+      </div>
+      <div class="cert-row">${i.certs.map(c=>`<span class="cert">${c}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   REVENUE
+   ============================================================ */
+function renderRevenue(){
+  const last7 = Array.from({length:7},(_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(6-i)); return isoDay(d); });
+  const daily = last7.map(date=>({date,total:sales.filter(s=>s.date===date).reduce((s,x)=>s+x.amount,0)}));
+  const max = Math.max(...daily.map(d=>d.total),1);
+  const week = daily.reduce((s,d)=>s+d.total,0);
+  const todayRev = sales.filter(s=>s.date===TODAY).reduce((s,x)=>s+x.amount,0);
+  const avgTicket = sales.reduce((s,x)=>s+x.amount,0)/sales.length;
+
+  document.getElementById('revStats').innerHTML = `
+    <div class="card card-pink"><div class="stat-lbl">Today</div><div class="stat-val">$${todayRev.toLocaleString()}</div></div>
+    <div class="card"><div class="stat-lbl">Last 7 days</div><div class="stat-val">$${week.toLocaleString()}</div><div class="stat-hint">${sales.length} transactions</div></div>
+    <div class="card"><div class="stat-lbl">Avg / day</div><div class="stat-val">$${(week/7).toFixed(0)}</div></div>
+    <div class="card"><div class="stat-lbl">Avg ticket</div><div class="stat-val">$${avgTicket.toFixed(0)}</div></div>
+  `;
+
+  document.getElementById('barChart').innerHTML = daily.map(d=>{
+    const h = (d.total/max)*100;
+    const todayCls = d.date===TODAY?'today':'';
+    const dayLbl = new Date(d.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short'});
+    return `<div class="bar-col">
+      <div class="bar-fill-wrap"><div class="bar-fill ${todayCls}" style="height:${Math.max(h,4)}%" title="$${d.total}"></div></div>
+      <div class="bar-amt">$${d.total}</div>
+      <div class="bar-day">${dayLbl}</div>
+    </div>`;
+  }).join('');
+
+  const byType = Object.keys(typeMeta).map(t=>({t,total:sales.filter(s=>s.type===t).reduce((s,x)=>s+x.amount,0)}));
+  const byTotal = byType.reduce((s,b)=>s+b.total,0)||1;
+  document.getElementById('typeLegend').innerHTML = byType.filter(b=>b.total>0).map(b=>`<div style="width:${(b.total/byTotal)*100}%;background:${typeMeta[b.t].c}" title="${typeMeta[b.t].lbl}: $${b.total}"></div>`).join('');
+  document.getElementById('typeList').innerHTML = byType.sort((a,b)=>b.total-a.total).map(b=>`<li><span style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:${typeMeta[b.t].c};display:inline-block"></span>${typeMeta[b.t].lbl}</span><span class="muted">$${b.total.toLocaleString()}</span></li>`).join('');
+
+  document.getElementById('txList').innerHTML = sales.map(s=>{
+    const m = s.memId ? memById(s.memId) : null;
+    return `<li><div><div>${s.item}${m?` <span class="muted">· ${m.name}</span>`:''}</div><div class="muted">${s.date} · <span style="color:${typeMeta[s.type].c}">${typeMeta[s.type].lbl}</span></div></div><div class="amt">+$${s.amount}</div></li>`;
+  }).join('');
+}
+
+/* ============================================================
+   PARTIES
+   ============================================================ */
+let partyFilter = 'all';
+function renderParties(){
+  const upcoming = parties.filter(p=>p.status!=='completed');
+  const balanceDue = upcoming.reduce((s,p)=>s+p.balanceDue,0);
+  const depositsOut = upcoming.filter(p=>!p.depositPaid).reduce((s,p)=>s+p.deposit,0);
+  const guests = upcoming.reduce((s,p)=>s+p.guests,0);
+
+  document.getElementById('partyStats').innerHTML = `
+    <div class="card card-pink"><div class="stat-lbl">Upcoming events</div><div class="stat-val">${upcoming.length}</div></div>
+    <div class="card"><div class="stat-lbl">Total guests</div><div class="stat-val">${guests}</div><div class="stat-hint">Across upcoming</div></div>
+    <div class="card"><div class="stat-lbl">Balance due</div><div class="stat-val">$${balanceDue.toLocaleString()}</div><div class="stat-hint">From confirmed events</div></div>
+    <div class="card ${depositsOut?'card-warn':''}"><div class="stat-lbl">Deposits unpaid</div><div class="stat-val">$${depositsOut.toLocaleString()}</div></div>
+  `;
+
+  const list = parties.filter(p=>partyFilter==='all'||p.status===partyFilter).sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('partyGrid').innerHTML = list.length === 0
+    ? '<div class="empty">No events match.</div>'
+    : list.map(p=>`
+      <button class="party-card" onclick="openPartyModal('${p.id}')">
+        <div class="party-top">
+          <span class="tag-${p.status==='inquiry'?'warn':p.status==='confirmed'?'pink':'good'}">${p.status}</span>
+          <span class="muted">${p.type}</span>
+        </div>
+        <div class="party-host">${p.hostName}</div>
+        <div class="party-meta">${p.date} · ${p.time} · ${p.guests} guests</div>
+        <div class="party-foot">
+          <span class="amt">$${p.total}</span>
+          <span style="color:${p.depositPaid?'var(--ink-dim)':'var(--coral)'}">${p.depositPaid?'Deposit paid':'Deposit unpaid'}</span>
+        </div>
+        ${p.balanceDue>0 && p.status!=='completed' ? `<div class="muted" style="margin-top:6px;font-size:12px">$${p.balanceDue} balance due day-of</div>`:''}
+      </button>
+    `).join('');
+}
+document.getElementById('partyFilters').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#partyFilters button').forEach(x=>x.classList.toggle('active',x===b));
+  partyFilter=b.dataset.f; renderParties();
+});
+
+function openPartyModal(id){
+  const p = parties.find(x=>x.id===id);
+  document.getElementById('modalBody').innerHTML = `
+    <div class="modal-head">
+      <div>
+        <span class="tag-${p.status==='inquiry'?'warn':p.status==='confirmed'?'pink':'good'}">${p.status}</span>
+        <h3 style="margin-top:8px">${p.hostName}</h3>
+        <div class="muted" style="font-size:13px">${p.type} · ${p.guests} guests</div>
+      </div>
+      <button class="modal-close" onclick="closeModal(true)">✕</button>
+    </div>
+    <dl class="detail">
+      <div><dt>Date / Time</dt><dd>${p.date} · ${p.time}</dd></div>
+      <div><dt>Contact</dt><dd>${p.email}<br>${p.phone}</dd></div>
+      <div><dt>Total</dt><dd class="font-display" style="font-size:20px">$${p.total}</dd></div>
+      <div><dt>Deposit</dt><dd>$${p.deposit} <span style="color:${p.depositPaid?'var(--pink)':'var(--coral)'}">(${p.depositPaid?'paid':'unpaid'})</span></dd></div>
+      <div style="grid-column:1/-1"><dt>Balance due</dt><dd class="font-display" style="font-size:20px;color:var(--pink)">$${p.balanceDue}</dd></div>
+    </dl>
+    <div style="margin-top:14px;background:rgba(255,255,255,.04);border-radius:10px;padding:12px;font-size:13px">
+      <div class="muted" style="margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.18em">Notes</div>
+      ${p.notes}
+    </div>
+    <div class="modal-actions">
+      ${!p.depositPaid?'<button class="btn-pink">Mark deposit paid</button>':''}
+      <button class="btn-ghost">Send waivers</button>
+      <button class="btn-ghost">Email host</button>
+    </div>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+function closeModal(force){
+  if(force===true || force===undefined || (force.target && force.target.id==='modal')){
+    document.getElementById('modal').classList.remove('open');
+  }
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(true); });
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function initAll(){
+  renderToday();
+  renderRoster();
+  renderMembers();
+  renderSchedule();
+  renderRevenue();
+  renderParties();
+}
+</script>
+</body>
+</html>
