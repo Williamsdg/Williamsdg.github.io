@@ -364,7 +364,7 @@ dl.detail dt{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:
           <h1>Schedule &amp; Instructors</h1>
           <p>Class grid, instructor assignments, and projected pay for the upcoming week.</p>
         </div>
-        <button class="btn-pink">+ New session</button>
+        <button class="btn-pink" onclick="demoAction('Open new session form')">+ New session</button>
       </div>
       <div class="page-body gap-stack">
         <div class="stat-grid" id="scheduleStats"></div>
@@ -423,7 +423,7 @@ dl.detail dt{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:
           <h1>Parties &amp; Private Events</h1>
           <p>Track inquiries, deposits, and outstanding balances. Click an event for the full brief.</p>
         </div>
-        <button class="btn-pink">+ New event</button>
+        <button class="btn-pink" onclick="demoAction('Open new event form')">+ New event</button>
       </div>
       <div class="page-body gap-stack">
         <div class="stat-grid" id="partyStats"></div>
@@ -574,7 +574,29 @@ const waiverIssue = m => !m.waiverSigned || !m.waiverExpires || new Date(m.waive
 const lowBalance = m => typeof m.classesRemaining==='number' && m.classesRemaining<=2 && m.membership!=='Inactive';
 const expiringSoon = m => m.packageExpires && new Date(m.packageExpires) < new Date(Date.now()+14*86400000);
 const getStatus = (sId,mId) => overrides[`${sId}:${mId}`] ?? sessions.find(c=>c.id===sId).bookings.find(b=>b.m===mId).s;
-const setStatus = (sId,mId,s) => { overrides[`${sId}:${mId}`]=s; renderRoster(); renderToday(); };
+function setStatus(sId,mId,s){ overrides[`${sId}:${mId}`]=s; renderRoster(); renderToday(); }
+
+/* Toast for demo-only buttons */
+let toastTimer;
+function notify(msg){
+  let t = document.getElementById('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;left:50%;bottom:32px;transform:translateX(-50%);background:var(--pink);color:#000;padding:12px 22px;border-radius:999px;font-weight:600;font-size:14px;z-index:200;box-shadow:0 12px 30px -10px rgba(255,61,138,.6);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  requestAnimationFrame(()=>{ t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)'; });
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.style.opacity='0'; }, 2400);
+}
+function demoAction(label){ notify(label + ' — demo only'); }
+function markDepositPaid(id){
+  const p = parties.find(x=>x.id===id); if(!p) return;
+  p.depositPaid = true; p.deposit = p.deposit || Math.round(p.total/3); p.balanceDue = Math.max(0, p.total - p.deposit);
+  notify('Deposit marked paid'); closeModal(true); renderParties(); renderToday();
+}
 
 /* ============================================================
    TODAY
@@ -781,9 +803,9 @@ function openMemberModal(id){
     </dl>
     ${m.notes ? `<div class="note"><strong>Note · </strong>${m.notes}</div>` : ''}
     <div class="modal-actions">
-      <button class="btn-pink">Charge package</button>
-      <button class="btn-ghost">Send waiver</button>
-      <button class="btn-ghost">Add note</button>
+      <button class="btn-pink" onclick="demoAction('Charge package — Stripe modal would open')">Charge package</button>
+      <button class="btn-ghost" onclick="demoAction('Waiver email queued')">Send waiver</button>
+      <button class="btn-ghost" onclick="demoAction('Note saved')">Add note</button>
     </div>
   `;
   document.getElementById('modal').classList.add('open');
@@ -940,9 +962,9 @@ function openPartyModal(id){
       ${p.notes}
     </div>
     <div class="modal-actions">
-      ${!p.depositPaid?'<button class="btn-pink">Mark deposit paid</button>':''}
-      <button class="btn-ghost">Send waivers</button>
-      <button class="btn-ghost">Email host</button>
+      ${!p.depositPaid?`<button class="btn-pink" onclick="markDepositPaid('${p.id}')">Mark deposit paid</button>`:''}
+      <button class="btn-ghost" onclick="demoAction('Waiver links emailed to host')">Send waivers</button>
+      <a class="btn-ghost" href="mailto:${p.email}?subject=Your%20event%20at%20Soar">Email host</a>
     </div>
   `;
   document.getElementById('modal').classList.add('open');
