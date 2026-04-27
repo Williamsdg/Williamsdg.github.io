@@ -641,21 +641,31 @@ def build_html(t):
     seed_jobs_json = jobs_seed_js(t)
     extras = t.get("extras", [])
 
-    # Conditional nav items + pages
-    nav_extras = ""
+    # Conditional extras get assigned to their natural section
+    ops_extras = ""  # Operations group
+    sales_extras = ""  # Sales group
     page_extras = ""
-    if "maintenance" in extras:
-        nav_extras += (
-            '<button class="nav-item" data-page="maintenance" onclick="switchPage(\'maintenance\',this)">'
+
+    if "route" in extras:
+        ops_extras += (
+            '<button class="nav-item" data-page="route" onclick="switchPage(\'route\',this)">'
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
-            '<path d="M21 12a9 9 0 1 1-9-9c2.485 0 4.736.998 6.364 2.636L21 8"/>'
-            '<polyline points="21 3 21 8 16 8"/></svg>Maintenance Plans</button>'
+            '<circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/>'
+            '<path d="M6 16V8a4 4 0 0 1 4-4h8"/></svg>Today\'s Route</button>'
         )
-        page_extras += MAINTENANCE_PAGE_HTML
+        page_extras += ROUTE_PAGE_HTML
+    if "aerial" in extras:
+        ops_extras += (
+            '<button class="nav-item" data-page="aerial" onclick="switchPage(\'aerial\',this)">'
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
+            '<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>'
+            '<line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Aerial Measure</button>'
+        )
+        page_extras += AERIAL_PAGE_HTML
     if "takeoff" in extras:
         unit = t.get("takeoff_unit", "sqft")
         waste = t.get("takeoff_waste_default", 10)
-        nav_extras += (
+        sales_extras += (
             '<button class="nav-item" data-page="takeoff" onclick="switchPage(\'takeoff\',this)">'
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
             '<rect x="3" y="3" width="18" height="18" rx="2"/>'
@@ -663,8 +673,16 @@ def build_html(t):
             '<line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>Takeoff Calculator</button>'
         )
         page_extras += takeoff_page_html(t, unit, waste)
+    if "maintenance" in extras:
+        sales_extras += (
+            '<button class="nav-item" data-page="maintenance" onclick="switchPage(\'maintenance\',this)">'
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
+            '<path d="M21 12a9 9 0 1 1-9-9c2.485 0 4.736.998 6.364 2.636L21 8"/>'
+            '<polyline points="21 3 21 8 16 8"/></svg>Maintenance Plans</button>'
+        )
+        page_extras += MAINTENANCE_PAGE_HTML
     if "claims" in extras:
-        nav_extras += (
+        sales_extras += (
             '<button class="nav-item" data-page="claims" onclick="switchPage(\'claims\',this)">'
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
             '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'
@@ -672,24 +690,12 @@ def build_html(t):
             '<line x1="9" y1="17" x2="15" y2="17"/></svg>Insurance Claims</button>'
         )
         page_extras += CLAIMS_PAGE_HTML
-    if "aerial" in extras:
-        nav_extras += (
-            '<button class="nav-item" data-page="aerial" onclick="switchPage(\'aerial\',this)">'
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
-            '<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>'
-            '<line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Aerial Measure</button>'
-        )
-        page_extras += AERIAL_PAGE_HTML
-    if "route" in extras:
-        nav_extras += (
-            '<button class="nav-item" data-page="route" onclick="switchPage(\'route\',this)">'
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
-            '<circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/>'
-            '<path d="M6 16V8a4 4 0 0 1 4-4h8"/></svg>Today\'s Route</button>'
-        )
-        page_extras += ROUTE_PAGE_HTML
 
-    page_titles_extra = ""
+    # Always-on additions: Customers + Settings
+    page_extras += customers_page_html(t)
+    page_extras += settings_page_html(t)
+
+    page_titles_extra = ",customers:'Customers',settings:'Settings'"
     for extra, title in [
         ("maintenance", "Maintenance Plans"),
         ("takeoff", "Takeoff Calculator"),
@@ -785,7 +791,9 @@ def build_html(t):
         .sidebar-header{{padding:30px 24px 22px;border-bottom:1px solid rgba(255,255,255,0.06)}}
         .sidebar-logo{{font-family:var(--serif);font-weight:500;font-size:1.4rem;letter-spacing:-0.01em;color:#fff;text-decoration:none;line-height:1.1;display:block}}
         .sidebar-sub{{font-size:.66rem;color:var(--gold);text-transform:uppercase;letter-spacing:2.5px;margin-top:8px;font-weight:600}}
-        .sidebar-nav{{flex:1;padding:18px 14px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}}
+        .sidebar-nav{{flex:1;padding:14px 14px 18px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}}
+        .nav-group-label{{font-size:.62rem;font-weight:700;color:#6b7588;text-transform:uppercase;letter-spacing:2.5px;padding:14px 16px 6px;margin-top:4px}}
+        .nav-group-label:first-child{{margin-top:0;padding-top:6px}}
         .nav-item{{display:flex;align-items:center;gap:14px;padding:11px 16px;border-radius:10px;color:#9ca3b0;text-decoration:none;font-size:.88rem;font-weight:500;letter-spacing:0.01em;transition:all .2s;cursor:pointer;border:none;background:none;width:100%;text-align:left;position:relative}}
         .nav-item:hover{{background:rgba(255,255,255,0.04);color:#fff}}
         .nav-item.active{{background:rgba(255,255,255,0.06);color:#fff}}
@@ -1086,13 +1094,20 @@ def build_html(t):
         <div class="sidebar-sub">{sub} Dashboard</div>
     </div>
     <nav class="sidebar-nav">
+        <div class="nav-group-label">Operations</div>
         <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</button>
-        <button class="nav-item" data-page="estimates" onclick="switchPage('estimates',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Estimates</button>
         <button class="nav-item" data-page="scheduling" onclick="switchPage('scheduling',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Scheduling</button>
-        <button class="nav-item" data-page="employees" onclick="switchPage('employees',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Employees</button>
         <button class="nav-item" data-page="inventory" onclick="switchPage('inventory',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Inventory</button>
+        {ops_extras}
+        <div class="nav-group-label">Sales</div>
+        <button class="nav-item" data-page="estimates" onclick="switchPage('estimates',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Estimates</button>
+        <button class="nav-item" data-page="customers" onclick="switchPage('customers',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Customers</button>
+        {sales_extras}
         <button class="nav-item" data-page="reports" onclick="switchPage('reports',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Reports</button>
-        {nav_extras}
+        <div class="nav-group-label">Team</div>
+        <button class="nav-item" data-page="employees" onclick="switchPage('employees',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Employees</button>
+        <div class="nav-group-label">Setup</div>
+        <button class="nav-item" data-page="settings" onclick="switchPage('settings',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings</button>
     </nav>
     <div class="sidebar-footer">
         <span>&copy; 2026 {biz}</span>
@@ -1733,11 +1748,13 @@ function bulkSchedDelete(){{if(!confirm('Delete '+selection.sched.size+' job(s)?
 let palItems=[],palIdx=0;
 const PAL_PAGES=[
     {{title:'Dashboard',sub:'Overview + KPIs',page:'dashboard',icon:'⌂'}},
-    {{title:'Estimates',sub:'Quotes & invoices',page:'estimates',icon:'$'}},
     {{title:'Scheduling',sub:'Jobs & dispatch',page:'scheduling',icon:'📅'}},
-    {{title:'Employees',sub:'Team',page:'employees',icon:'👥'}},
     {{title:'Inventory',sub:'Materials & equipment',page:'inventory',icon:'📦'}},
+    {{title:'Estimates',sub:'Quotes & invoices',page:'estimates',icon:'$'}},
+    {{title:'Customers',sub:'CRM — clients & history',page:'customers',icon:'👤'}},
     {{title:'Reports',sub:'Revenue + crew metrics',page:'reports',icon:'📊'}},
+    {{title:'Employees',sub:'Team',page:'employees',icon:'👥'}},
+    {{title:'Settings',sub:'Business info + preferences',page:'settings',icon:'⚙'}},
 ];
 function openPalette(){{
     document.getElementById('paletteOverlay').classList.add('open');
@@ -1820,7 +1837,39 @@ window.addEventListener('storage',e=>{{
 }});
 
 // ---------- init ----------
-function renderAll(){{renderEstimates();renderSched();}}
+function renderCustomers(){{
+    const tb=document.getElementById('custBody');if(!tb)return;
+    const q=(document.getElementById('custSearch')?.value||'').toLowerCase().trim();
+    const map={{}};
+    Object.values(estimates).forEach(e=>{{
+        const k=(e.client||'Unknown').trim();if(!k)return;
+        if(!map[k])map[k]={{name:k,email:e.email||'',addr:e.addr||'',estCount:0,jobCount:0,total:0,lastTs:0}};
+        const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);
+        map[k].estCount++;map[k].total+=tot;
+        if(e.email&&!map[k].email)map[k].email=e.email;
+        if(e.addr&&!map[k].addr)map[k].addr=e.addr;
+        const ts=Date.parse(e.date)||0;if(ts>map[k].lastTs)map[k].lastTs=ts;
+    }});
+    sched.forEach(s=>{{
+        const k=(s.client||'Unknown').trim();if(!k)return;
+        if(!map[k])map[k]={{name:k,email:s.email||'',addr:s.addr||'',estCount:0,jobCount:0,total:0,lastTs:0}};
+        map[k].jobCount++;
+        if(s.addr&&!map[k].addr)map[k].addr=s.addr;
+        const ts=Date.parse(s.date)||0;if(ts>map[k].lastTs)map[k].lastTs=ts;
+    }});
+    let list=Object.values(map);
+    if(q)list=list.filter(c=>c.name.toLowerCase().includes(q)||c.addr.toLowerCase().includes(q));
+    list.sort((a,b)=>b.lastTs-a.lastTs);
+    document.getElementById('custCount').textContent=list.length+' customer'+(list.length===1?'':'s');
+    tb.innerHTML=list.length?list.map(c=>{{
+        const last=c.lastTs?new Date(c.lastTs).toLocaleDateString('en-US',{{month:'short',day:'numeric',year:'numeric'}}):'—';
+        return `<tr><td><div style="font-weight:600">${{c.name}}</div>${{c.email?`<div style="font-size:.74rem;color:var(--text-mute)">${{c.email}}</div>`:''}}</td><td style="color:var(--text-mute);font-size:.84rem">${{c.addr||'—'}}</td><td>${{c.estCount}}</td><td>${{c.jobCount}}</td><td style="font-family:var(--serif);font-size:1rem;color:var(--gold);font-weight:500">${{fmtUsd0(c.total)}}</td><td style="color:var(--text-mute);font-size:.82rem">${{last}}</td></tr>`;
+    }}).join(''):'<tr><td colspan="6" class="empty-state">No customers yet — they\\'ll appear here as you create estimates and schedule jobs.</td></tr>';
+}}
+function saveSettings(){{
+    showToast('Settings saved (demo — values would persist in a real backend)','success');
+}}
+function renderAll(){{renderEstimates();renderSched();renderCustomers();}}
 load();renderAll();
 try{{document.getElementById('sjDate').valueAsDate=new Date()}}catch(e){{}}
 document.querySelectorAll('.modal-overlay').forEach(m=>{{m.addEventListener('click',e=>{{if(e.target===m)m.classList.remove('open')}})}});
@@ -1986,6 +2035,66 @@ def takeoff_page_html(t, unit, waste_default):
             switchPage('estimates',document.querySelector('.nav-item[data-page="estimates"]'));
         }}
         </script>
+"""
+
+
+def customers_page_html(t):
+    """Customers page derived from estimate + job seed clients."""
+    return """
+        <!-- CUSTOMERS -->
+        <div class="page" id="page-customers">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:10px">
+                <span style="font-family:var(--serif);font-weight:500;color:var(--gold);font-size:1.1rem;letter-spacing:-0.01em" id="custCount">0 customers</span>
+                <div class="form-group" style="margin:0;flex:1;max-width:320px"><input type="text" id="custSearch" placeholder="Search by name or address" oninput="renderCustomers()"></div>
+            </div>
+            <div class="card"><div style="overflow-x:auto"><table><thead><tr><th>Customer</th><th>Address</th><th>Estimates</th><th>Jobs</th><th>Total Quoted</th><th>Last Activity</th></tr></thead><tbody id="custBody"></tbody></table></div></div>
+        </div>
+"""
+
+
+def settings_page_html(t):
+    """Settings page populated from trade config."""
+    biz = t["biz"]
+    sub = t["sub"]
+    phone = t["phone"]
+    domain = t["domain"]
+    return f"""
+        <!-- SETTINGS -->
+        <div class="page" id="page-settings">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px" class="settings-grid">
+                <div class="card"><div class="card-header"><h2>Business Information</h2></div><div class="card-body">
+                    <div class="form-group"><label>Business Name</label><input type="text" id="setBiz" value="{biz}"></div>
+                    <div class="form-group"><label>Trade / Industry</label><input type="text" value="{sub}" disabled style="opacity:0.6"></div>
+                    <div class="form-row"><div class="form-group"><label>Phone</label><input type="text" id="setPhone" value="{phone}"></div><div class="form-group"><label>Domain</label><input type="text" id="setDomain" value="{domain}"></div></div>
+                    <div class="form-group"><label>Service Area</label><input type="text" id="setArea" value="Birmingham Metro, AL"></div>
+                    <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save Changes</button>
+                </div></div>
+                <div class="card"><div class="card-header"><h2>Hours of Operation</h2></div><div class="card-body">
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:10px;align-items:center"><span style="font-size:.78rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600">Mon–Fri</span><input type="time" value="07:00"><input type="time" value="18:00"></div>
+                        <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:10px;align-items:center"><span style="font-size:.78rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600">Saturday</span><input type="time" value="08:00"><input type="time" value="14:00"></div>
+                        <div style="display:grid;grid-template-columns:80px 1fr 1fr;gap:10px;align-items:center"><span style="font-size:.78rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600">Sunday</span><input type="text" value="Closed" disabled style="grid-column:2/-1;opacity:0.6"></div>
+                    </div>
+                    <div class="form-group" style="margin-top:18px"><label>Emergency After-Hours</label><select><option>Available 24/7 (premium fee)</option><option>By appointment only</option><option>Not available</option></select></div>
+                </div></div>
+                <div class="card" style="grid-column:1/-1"><div class="card-header"><h2>Notifications &amp; Defaults</h2></div><div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group"><label>Default Estimate Tax (%)</label><input type="number" value="9" step="0.5"></div>
+                        <div class="form-group"><label>Default Estimate Validity (days)</label><input type="number" value="30"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>SMS Notifications</label><select><option selected>On — for dispatches and reminders</option><option>Owner only</option><option>Off</option></select></div>
+                        <div class="form-group"><label>Customer Tracker Links</label><select><option selected>Enabled</option><option>Disabled</option></select></div>
+                    </div>
+                    <div class="form-group"><label>Branding Note (shown on customer-facing pages)</label><textarea rows="2">Trusted local service since 2008. Family-owned and operated.</textarea></div>
+                    <button class="btn btn-primary btn-sm" onclick="showToast('Settings saved (demo)','success')">Save Changes</button>
+                </div></div>
+                <div class="card" style="grid-column:1/-1"><div class="card-header"><h2>Danger Zone</h2></div><div class="card-body">
+                    <p style="font-size:.86rem;color:var(--text-mute);margin-bottom:14px">Reset wipes the local demo state — estimates, scheduled jobs, photos, all of it. Cannot be undone.</p>
+                    <button class="btn btn-outline" onclick="resetDemo()" style="border-color:var(--red);color:var(--red)">Reset Demo Data</button>
+                </div></div>
+            </div>
+        </div>
 """
 
 
