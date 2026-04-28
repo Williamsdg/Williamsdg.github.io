@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mercier Orchards — Operations Dashboard</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a1f15">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='36' r='20' fill='%23a8322d'/><ellipse cx='38' cy='14' rx='5' ry='3' fill='%237eb691' transform='rotate(30 38 14)'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+    --bg:#10130d;
+    --bg-soft:#171c12;
+    --canvas:radial-gradient(1400px 900px at 80% -10%, rgba(168,50,45,0.07), transparent 60%), radial-gradient(900px 700px at -10% 100%, rgba(126,182,145,0.05), transparent 70%), #10130d;
+    --surface:rgba(255,255,255,0.025);
+    --surface-strong:rgba(255,255,255,0.05);
+    --surface-hover:rgba(255,255,255,0.04);
+    --apple:#d76863;
+    --apple-bright:#e88884;
+    --apple-soft:rgba(215,104,99,0.14);
+    --green:#7eb691;
+    --green-l:rgba(126,182,145,0.14);
+    --honey:#c89758;
+    --honey-bright:#daa970;
+    --honey-soft:rgba(200,151,88,0.14);
+    --red:#d99090;
+    --red-l:rgba(217,144,144,0.14);
+    --orange:#e0b070;
+    --orange-l:rgba(224,176,112,0.14);
+    --blue:#9bb4d9;
+    --blue-l:rgba(155,180,217,0.14);
+    --purple:#b39bd9;
+    --purple-l:rgba(179,155,217,0.14);
+    --text:#f1ede4;
+    --text-soft:#b8b3a6;
+    --text-mute:#7a7568;
+    --border:rgba(255,255,255,0.07);
+    --border-soft:rgba(255,255,255,0.04);
+    --border-strong:rgba(200,151,88,0.3);
+    --serif:'Fraunces',Georgia,serif;
+    --mono:'JetBrains Mono',monospace;
+    --r:6px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas) fixed;color:var(--text);line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-0.005em;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--honey-soft);color:var(--text)}
+
+.layout{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:248px;background:linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.2));border-right:1px solid var(--border-soft);backdrop-filter:blur(24px);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50;transition:transform .3s}
+.sidebar-header{padding:26px 22px 22px;border-bottom:1px solid var(--border-soft)}
+.sidebar-brand{font-family:var(--serif);font-weight:500;font-size:1.35rem;letter-spacing:-0.01em;color:var(--text);line-height:1.1;display:flex;align-items:center;gap:.6rem}
+.sidebar-brand .mark{width:26px;height:26px;background:var(--apple);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.65rem;position:relative}
+.sidebar-brand .mark::after{content:'';position:absolute;width:6px;height:4px;background:var(--green);border-radius:50%;top:-1px;right:5px;transform:rotate(25deg)}
+.sidebar-sub{font-size:.58rem;color:var(--honey);text-transform:uppercase;letter-spacing:3px;margin-top:6px;font-weight:600}
+.sidebar-nav{flex:1;padding:18px 12px;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.nav-group{font-size:.56rem;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:2.5px;padding:14px 14px 8px}
+.nav-group:first-child{padding-top:0}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:var(--r);font-size:.82rem;color:var(--text-soft);cursor:pointer;transition:all .15s;font-weight:500;position:relative}
+.nav-item i{font-size:.82rem;width:14px;color:var(--text-mute);transition:color .15s}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item:hover i{color:var(--text)}
+.nav-item.active{background:var(--apple-soft);color:var(--apple-bright);font-weight:600}
+.nav-item.active i{color:var(--apple-bright)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--apple);border-radius:0 2px 2px 0}
+.nav-badge{margin-left:auto;background:var(--apple);color:#fff;font-size:.62rem;padding:1px 6px;border-radius:8px;font-weight:600}
+.sidebar-foot{padding:14px;border-top:1px solid var(--border-soft)}
+.user-card{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);transition:background .15s;cursor:pointer}
+.user-card:hover{background:var(--surface)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--honey),var(--apple));display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:600;color:#fff}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+
+/* MAIN */
+.main{flex:1;margin-left:248px;min-width:0}
+
+/* TOP BAR */
+.topbar{position:sticky;top:0;background:rgba(16,19,13,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-soft);padding:14px 32px;display:flex;align-items:center;gap:20px;z-index:40}
+.topbar-title{font-family:var(--serif);font-size:1.15rem;font-weight:500;color:var(--text)}
+.topbar-title small{color:var(--text-mute);font-size:.7rem;font-family:var(--mono);font-weight:500;margin-left:.6rem;letter-spacing:.05em}
+.topbar-search{flex:1;max-width:380px;margin-left:auto;position:relative}
+.topbar-search input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 14px 8px 38px;border-radius:8px;font-size:.82rem;font-family:inherit;transition:all .15s}
+.topbar-search input::placeholder{color:var(--text-mute)}
+.topbar-search input:focus{outline:none;border-color:var(--honey);background:var(--surface-strong)}
+.topbar-search i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-mute);font-size:.78rem}
+.topbar-actions{display:flex;align-items:center;gap:6px}
+.icon-btn{width:36px;height:36px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text-soft);cursor:pointer;font-size:.85rem;transition:all .15s;display:flex;align-items:center;justify-content:center;position:relative}
+.icon-btn:hover{background:var(--surface-strong);color:var(--text)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:7px;height:7px;background:var(--apple);border-radius:50%;border:1.5px solid var(--bg)}
+
+/* CONTENT */
+.content{padding:28px 32px 60px}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.page-head h1{font-family:var(--serif);font-size:1.95rem;font-weight:500;letter-spacing:-0.02em;line-height:1.1;margin-bottom:6px}
+.page-head .breadcrumb{font-size:.7rem;color:var(--text-mute);font-family:var(--mono);letter-spacing:.05em;margin-bottom:8px;text-transform:uppercase;font-weight:600}
+.page-head .breadcrumb span{color:var(--honey)}
+.page-actions{display:flex;gap:8px;align-items:center}
+.btn{padding:9px 16px;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .15s;display:inline-flex;align-items:center;gap:7px;font-family:inherit;letter-spacing:.01em}
+.btn:hover{background:var(--surface-strong);border-color:var(--honey-soft)}
+.btn.primary{background:var(--apple);border-color:var(--apple);color:#fff}
+.btn.primary:hover{background:var(--apple-bright)}
+.btn.ghost{background:transparent}
+.btn i{font-size:.75rem}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;transition:all .2s}
+.kpi:hover{border-color:var(--border-strong);background:var(--surface-strong)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--honey);opacity:.5}
+.kpi.apple::before{background:var(--apple)}
+.kpi.green::before{background:var(--green)}
+.kpi.blue::before{background:var(--blue)}
+.kpi-label{font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.kpi-label i{font-size:.78rem;color:var(--text-mute)}
+.kpi-value{font-family:var(--serif);font-size:2rem;font-weight:500;line-height:1;letter-spacing:-0.02em;margin-bottom:6px}
+.kpi-value small{font-size:.95rem;color:var(--text-mute);font-weight:400;margin-left:4px}
+.kpi-trend{font-size:.7rem;color:var(--text-soft);display:flex;align-items:center;gap:5px;font-family:var(--mono)}
+.kpi-trend.up{color:var(--green)}
+.kpi-trend.down{color:var(--red)}
+.kpi-trend i{font-size:.65rem}
+
+/* GRID LAYOUTS */
+.dash-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;margin-bottom:18px}
+.dash-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.card-head h3{font-family:var(--serif);font-size:1.05rem;font-weight:500;letter-spacing:-0.01em}
+.card-head .meta{font-size:.7rem;color:var(--text-mute);font-family:var(--mono);letter-spacing:.04em}
+.card-head-actions{display:flex;gap:6px;align-items:center}
+.card-body{padding:18px 20px}
+.card-body.flush{padding:0}
+.card-foot{padding:12px 20px;border-top:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:var(--text-mute)}
+.card-foot a{color:var(--honey);font-weight:600;font-size:.74rem}
+
+.tab-row{display:flex;gap:2px;margin:-4px 0 -4px}
+.tab{padding:6px 12px;border-radius:6px;font-size:.72rem;color:var(--text-mute);cursor:pointer;font-weight:600;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--honey-soft);color:var(--honey-bright)}
+
+/* FIELD MAP */
+.field-map{aspect-ratio:1.7/1;background:linear-gradient(135deg,#1a2517,#0e140c);border-radius:0 0 12px 12px;position:relative;overflow:hidden;border-top:1px solid var(--border-soft)}
+.field-map svg{width:100%;height:100%;display:block}
+.block{cursor:pointer;transition:all .2s}
+.block:hover{filter:brightness(1.3)}
+.block-label{font-family:var(--mono);font-size:.6rem;fill:rgba(255,255,255,0.85);font-weight:600;pointer-events:none;letter-spacing:.05em}
+.block-label.dark{fill:rgba(0,0,0,0.65)}
+.map-legend{position:absolute;bottom:14px;left:14px;background:rgba(16,19,13,0.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;gap:14px;font-size:.68rem;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;color:var(--text-soft);font-weight:500}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+.map-zoom{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;background:rgba(16,19,13,0.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.map-zoom button{width:30px;height:30px;background:transparent;border:none;color:var(--text);cursor:pointer;font-size:.85rem;border-bottom:1px solid var(--border-soft)}
+.map-zoom button:last-child{border-bottom:none}
+.map-zoom button:hover{background:var(--surface)}
+
+/* WEATHER STRIP */
+.weather-strip{background:linear-gradient(135deg,rgba(126,182,145,0.08),rgba(155,180,217,0.05));border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.weather-now{display:flex;align-items:center;gap:14px}
+.weather-icon{width:46px;height:46px;border-radius:10px;background:var(--honey-soft);display:flex;align-items:center;justify-content:center;color:var(--honey-bright);font-size:1.4rem}
+.weather-temp{font-family:var(--serif);font-size:1.6rem;font-weight:500;line-height:1}
+.weather-desc{font-size:.72rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.weather-sep{width:1px;height:32px;background:var(--border)}
+.weather-stat{display:flex;flex-direction:column;gap:2px;font-size:.78rem}
+.weather-stat-label{font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.2px;font-weight:600}
+.weather-stat-val{font-weight:600;color:var(--text)}
+.weather-stat-val.warn{color:var(--orange)}
+.weather-stat-val.good{color:var(--green)}
+.weather-alert{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--orange-l);border:1px solid rgba(224,176,112,0.3);padding:7px 14px;border-radius:8px;font-size:.74rem;color:var(--orange);font-weight:600}
+.weather-alert i{font-size:.78rem}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:.6rem;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface)}
+.tbl td{padding:11px 16px;border-bottom:1px solid var(--border-soft);font-size:.82rem;vertical-align:middle}
+.tbl tbody tr{transition:background .12s;cursor:pointer}
+.tbl tbody tr:hover{background:var(--surface)}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl-tag{display:inline-flex;align-items:center;gap:5px;font-size:.66rem;font-weight:600;padding:3px 9px;border-radius:5px;letter-spacing:.04em;text-transform:uppercase}
+.tag-green{background:var(--green-l);color:var(--green)}
+.tag-honey{background:var(--honey-soft);color:var(--honey-bright)}
+.tag-red{background:var(--red-l);color:var(--red)}
+.tag-orange{background:var(--orange-l);color:var(--orange)}
+.tag-blue{background:var(--blue-l);color:var(--blue)}
+.tag-purple{background:var(--purple-l);color:var(--purple)}
+.tag-mute{background:var(--surface);color:var(--text-mute);border:1px solid var(--border)}
+.tbl-pri{font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+.tbl-pri small{display:block;font-weight:400;color:var(--text-mute);font-size:.7rem;margin-top:2px;font-family:var(--mono)}
+.avatar-mini{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--honey),var(--apple));display:inline-flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:600;color:#fff;flex-shrink:0}
+.avatar-mini.b{background:linear-gradient(135deg,var(--green),#5a8e6e)}
+.avatar-mini.c{background:linear-gradient(135deg,var(--blue),#6e8ab9)}
+.avatar-mini.d{background:linear-gradient(135deg,var(--purple),#8e76b9)}
+
+/* TICKETS — Kanban-style */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:18px 20px}
+.kan-col{background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;padding:12px;min-height:280px}
+.kan-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 4px}
+.kan-title{font-size:.62rem;text-transform:uppercase;letter-spacing:1.8px;font-weight:700;color:var(--text-soft);display:flex;align-items:center;gap:6px}
+.kan-title .pill{background:var(--surface);color:var(--text-mute);font-size:.6rem;padding:2px 7px;border-radius:8px;font-weight:600;letter-spacing:.04em}
+.kan-add{width:22px;height:22px;background:transparent;border:1px solid var(--border);color:var(--text-mute);border-radius:5px;cursor:pointer;font-size:.7rem;transition:all .15s}
+.kan-add:hover{background:var(--surface-strong);color:var(--text)}
+.tkt{background:var(--surface-strong);border:1px solid var(--border);border-radius:8px;padding:11px 12px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.tkt:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.tkt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.tkt-id{font-family:var(--mono);font-size:.62rem;color:var(--text-mute);font-weight:600;letter-spacing:.04em}
+.tkt-pri{width:7px;height:7px;border-radius:50%}
+.tkt-pri.high{background:var(--apple);box-shadow:0 0 0 2px rgba(215,104,99,0.2)}
+.tkt-pri.med{background:var(--orange)}
+.tkt-pri.low{background:var(--text-mute)}
+.tkt-title{font-size:.82rem;font-weight:600;line-height:1.35;margin-bottom:8px}
+.tkt-meta{display:flex;justify-content:space-between;align-items:center;font-size:.66rem;color:var(--text-mute)}
+.tkt-tag{font-size:.6rem;background:var(--surface);padding:2px 7px;border-radius:5px;font-weight:600;letter-spacing:.04em}
+.tkt-foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-soft)}
+
+/* CALENDAR / SLOTS */
+.slots{padding:0}
+.slot{display:flex;align-items:center;gap:14px;padding:13px 20px;border-bottom:1px solid var(--border-soft);transition:background .15s;cursor:pointer}
+.slot:hover{background:var(--surface)}
+.slot:last-child{border-bottom:none}
+.slot-time{font-family:var(--mono);font-size:.85rem;font-weight:600;color:var(--honey);width:78px;flex-shrink:0;letter-spacing:-.02em}
+.slot-time small{display:block;font-size:.6rem;color:var(--text-mute);font-weight:500;letter-spacing:.05em;margin-top:2px;text-transform:uppercase}
+.slot-info{flex:1;min-width:0}
+.slot-name{font-size:.85rem;font-weight:600;margin-bottom:3px}
+.slot-detail{font-size:.7rem;color:var(--text-mute);display:flex;gap:10px;flex-wrap:wrap}
+.slot-detail span{display:flex;align-items:center;gap:4px}
+.slot-detail i{font-size:.65rem}
+.slot-fill{width:90px;flex-shrink:0;text-align:right}
+.fill-bar{width:100%;height:6px;background:var(--surface-strong);border-radius:3px;overflow:hidden;margin-top:5px}
+.fill-bar-inner{height:100%;background:linear-gradient(90deg,var(--green),var(--honey));border-radius:3px}
+.fill-text{font-size:.7rem;font-weight:600;color:var(--text-soft);font-family:var(--mono)}
+
+/* INVENTORY */
+.inv-row{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border-soft)}
+.inv-row:last-child{border-bottom:none}
+.inv-name{font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:10px}
+.inv-name .dot{width:9px;height:9px;border-radius:50%}
+.inv-name small{display:block;font-size:.66rem;color:var(--text-mute);font-weight:400;margin-top:2px}
+.inv-qty{font-family:var(--mono);font-size:.85rem;font-weight:600;color:var(--text);text-align:right}
+.inv-qty small{display:block;font-size:.66rem;color:var(--text-mute);font-weight:500;margin-top:2px;font-family:inherit}
+.inv-bar{width:100px;height:5px;background:var(--surface-strong);border-radius:3px;overflow:hidden;margin-top:5px}
+.inv-bar-inner{height:100%;border-radius:3px}
+
+/* REVENUE CHART */
+.chart-wrap{padding:16px 20px 22px;height:240px;position:relative}
+.chart-bars{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;height:170px;padding-top:10px}
+.chart-bar{flex:1;background:linear-gradient(to top,var(--apple) 0%,var(--apple) 60%,var(--honey) 100%);border-radius:3px 3px 0 0;position:relative;min-width:0;opacity:.85;transition:all .2s;cursor:pointer}
+.chart-bar:hover{opacity:1}
+.chart-bar.dim{opacity:.35}
+.chart-labels{display:flex;justify-content:space-between;gap:6px;margin-top:8px;font-family:var(--mono);font-size:.62rem;color:var(--text-mute);font-weight:500}
+.chart-labels span{flex:1;text-align:center}
+.chart-tot{position:absolute;top:18px;right:20px;text-align:right}
+.chart-tot-val{font-family:var(--serif);font-size:1.7rem;font-weight:500;line-height:1}
+.chart-tot-lbl{font-size:.64rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-top:4px}
+
+/* RESPONSIVE */
+@media(max-width:1180px){
+    .kpi-row{grid-template-columns:1fr 1fr}
+    .dash-grid{grid-template-columns:1fr}
+    .dash-grid-3{grid-template-columns:1fr}
+    .kanban{grid-template-columns:1fr 1fr}
+}
+@media(max-width:780px){
+    .sidebar{transform:translateX(-100%)}
+    .main{margin-left:0}
+    .topbar{padding:12px 18px}
+    .content{padding:18px 18px 40px}
+    .kpi-row{grid-template-columns:1fr}
+    .kanban{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="mark"><i class="fa-solid fa-apple-whole" style="font-size:.7rem"></i></div>
+                Mercier Ops
+            </div>
+            <div class="sidebar-sub">Owner Dashboard</div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">Overview</div>
+            <a class="nav-item active"><i class="fa-solid fa-gauge"></i> Today</a>
+            <a class="nav-item"><i class="fa-solid fa-chart-line"></i> Revenue</a>
+            <a class="nav-item"><i class="fa-solid fa-people-group"></i> Visitors</a>
+
+            <div class="nav-group">Farm</div>
+            <a class="nav-item"><i class="fa-solid fa-map-location-dot"></i> Fields & Blocks</a>
+            <a class="nav-item"><i class="fa-solid fa-droplet"></i> Irrigation</a>
+            <a class="nav-item"><i class="fa-solid fa-bug"></i> Pest Scouting</a>
+            <a class="nav-item"><i class="fa-solid fa-truck-ramp-box"></i> Harvest Log</a>
+
+            <div class="nav-group">Guests</div>
+            <a class="nav-item"><i class="fa-solid fa-ticket"></i> U-Pick Reservations</a>
+            <a class="nav-item"><i class="fa-solid fa-bus"></i> Tours & Groups</a>
+            <a class="nav-item"><i class="fa-solid fa-glass-water"></i> Cidery Tastings</a>
+            <a class="nav-item"><i class="fa-solid fa-calendar-days"></i> Events</a>
+
+            <div class="nav-group">Operations</div>
+            <a class="nav-item"><i class="fa-solid fa-clipboard-list"></i> Maintenance Tickets <span class="nav-badge">7</span></a>
+            <a class="nav-item"><i class="fa-solid fa-boxes-stacked"></i> Bakery & Inventory</a>
+            <a class="nav-item"><i class="fa-solid fa-user-clock"></i> Staff & Schedule</a>
+
+            <div class="nav-group">Admin</div>
+            <a class="nav-item"><i class="fa-solid fa-store"></i> Online Shop</a>
+            <a class="nav-item"><i class="fa-solid fa-gear"></i> Settings</a>
+        </nav>
+        <div class="sidebar-foot">
+            <div class="user-card">
+                <div class="user-avatar">TM</div>
+                <div class="user-info">
+                    <div class="user-name">Tim Mercier Jr.</div>
+                    <div class="user-role">Owner</div>
+                </div>
+                <i class="fa-solid fa-ellipsis-vertical" style="color:var(--text-mute);font-size:.7rem"></i>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div class="topbar-title">Today's Operations <small>WED · OCT 22</small></div>
+            <div class="topbar-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Search blocks, tours, tickets, staff…">
+            </div>
+            <div class="topbar-actions">
+                <button class="icon-btn" aria-label="Notifications"><i class="fa-solid fa-bell"></i><span class="dot"></span></button>
+                <button class="icon-btn" aria-label="Help"><i class="fa-solid fa-circle-question"></i></button>
+                <a href="index.html" class="btn ghost"><i class="fa-solid fa-arrow-up-right-from-square"></i> Public Site</a>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="page-head">
+                <div>
+                    <div class="breadcrumb">Overview · <span>Today</span></div>
+                    <h1>Good morning, Tim.</h1>
+                    <div style="color:var(--text-soft);font-size:.88rem">Apple harvest peak week — 12 blocks open, 4 tours booked, 7 maintenance tickets in queue.</div>
+                </div>
+                <div class="page-actions">
+                    <button class="btn"><i class="fa-solid fa-calendar"></i> Oct 22, 2026</button>
+                    <button class="btn"><i class="fa-solid fa-arrow-down"></i> Export</button>
+                    <button class="btn primary"><i class="fa-solid fa-plus"></i> New Ticket</button>
+                </div>
+            </div>
+
+            <!-- WEATHER STRIP -->
+            <div class="weather-strip">
+                <div class="weather-now">
+                    <div class="weather-icon"><i class="fa-solid fa-sun"></i></div>
+                    <div>
+                        <div class="weather-temp">68°<small style="font-size:1rem;color:var(--text-mute)">F</small></div>
+                        <div class="weather-desc">Sunny · Blue Ridge</div>
+                    </div>
+                </div>
+                <div class="weather-sep"></div>
+                <div class="weather-stat"><span class="weather-stat-label">Rain (24h)</span><span class="weather-stat-val good">0%</span></div>
+                <div class="weather-stat"><span class="weather-stat-label">Wind</span><span class="weather-stat-val">8mph NW</span></div>
+                <div class="weather-stat"><span class="weather-stat-label">Frost Risk Tonight</span><span class="weather-stat-val warn">Low (38°)</span></div>
+                <div class="weather-stat"><span class="weather-stat-label">Picking Window</span><span class="weather-stat-val good">9a–6p ideal</span></div>
+                <div class="weather-alert"><i class="fa-solid fa-triangle-exclamation"></i> Frost watch Sat night — review Block C7</div>
+            </div>
+
+            <!-- KPI ROW -->
+            <div class="kpi-row">
+                <div class="kpi apple">
+                    <div class="kpi-label">Today's Revenue <i class="fa-solid fa-dollar-sign"></i></div>
+                    <div class="kpi-value">$24,820</div>
+                    <div class="kpi-trend up"><i class="fa-solid fa-arrow-up"></i> 18% vs same Wed last yr</div>
+                </div>
+                <div class="kpi green">
+                    <div class="kpi-label">Gate Count <i class="fa-solid fa-people-arrows"></i></div>
+                    <div class="kpi-value">1,847<small>visitors</small></div>
+                    <div class="kpi-trend up"><i class="fa-solid fa-arrow-up"></i> Tracking 8% above forecast</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-label">U-Pick Reservations <i class="fa-solid fa-ticket"></i></div>
+                    <div class="kpi-value">312<small>/ 400 cap</small></div>
+                    <div class="kpi-trend"><i class="fa-solid fa-clock"></i> 78% of daily capacity</div>
+                </div>
+                <div class="kpi blue">
+                    <div class="kpi-label">Open Tickets <i class="fa-solid fa-clipboard-list"></i></div>
+                    <div class="kpi-value">7</div>
+                    <div class="kpi-trend down"><i class="fa-solid fa-arrow-down"></i> 2 high priority</div>
+                </div>
+            </div>
+
+            <!-- ROW 1: FIELD MAP + REVENUE -->
+            <div class="dash-grid">
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Orchard Map</h3>
+                            <div class="meta">300 acres · 24 blocks · live status</div>
+                        </div>
+                        <div class="card-head-actions">
+                            <div class="tab-row">
+                                <span class="tab active">Status</span>
+                                <span class="tab">Yield</span>
+                                <span class="tab">Irrigation</span>
+                                <span class="tab">Pest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field-map">
+                        <svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                            <!-- Background -->
+                            <defs>
+                                <pattern id="grass" patternUnits="userSpaceOnUse" width="20" height="20">
+                                    <rect width="20" height="20" fill="#1a2517"/>
+                                    <circle cx="5" cy="5" r=".6" fill="#2a3f28"/>
+                                    <circle cx="15" cy="15" r=".6" fill="#2a3f28"/>
+                                </pattern>
+                            </defs>
+                            <rect width="800" height="460" fill="url(#grass)"/>
+
+                            <!-- River/road -->
+                            <path d="M 0 380 Q 200 360 400 370 Q 600 380 800 350" stroke="#3a4a6a" stroke-width="3" fill="none" opacity="0.5"/>
+                            <path d="M 380 0 Q 390 100 380 200 Q 370 300 380 460" stroke="#5a4a3a" stroke-width="2" fill="none" opacity="0.4" stroke-dasharray="4 4"/>
+
+                            <!-- Buildings -->
+                            <rect x="350" y="180" width="60" height="40" fill="#5a4a3a" rx="2"/>
+                            <text x="380" y="205" text-anchor="middle" class="block-label" fill="#fff">MARKET</text>
+                            <rect x="420" y="195" width="35" height="25" fill="#5a4a3a" rx="2"/>
+                            <text x="437" y="211" text-anchor="middle" class="block-label" fill="#fff" style="font-size:.5rem">CIDER</text>
+
+                            <!-- Apple blocks (peak) -->
+                            <g class="block">
+                                <rect x="40" y="40" width="120" height="80" fill="#7d2422" stroke="#a8322d" stroke-width="1.5" rx="3"/>
+                                <text x="100" y="76" text-anchor="middle" class="block-label">A1 · Honeycrisp</text>
+                                <text x="100" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.6)" style="font-size:.5rem">PEAK · 18ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="170" y="40" width="100" height="80" fill="#7d2422" stroke="#a8322d" stroke-width="1.5" rx="3"/>
+                                <text x="220" y="76" text-anchor="middle" class="block-label">A2 · Gala</text>
+                                <text x="220" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.6)" style="font-size:.5rem">PEAK · 14ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="280" y="40" width="90" height="80" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="325" y="76" text-anchor="middle" class="block-label">A3 · Fuji</text>
+                                <text x="325" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 11ac</text>
+                            </g>
+
+                            <!-- Open apple blocks -->
+                            <g class="block">
+                                <rect x="420" y="40" width="100" height="80" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="470" y="76" text-anchor="middle" class="block-label">A4 · Pink Lady</text>
+                                <text x="470" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 12ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="530" y="40" width="100" height="80" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="580" y="76" text-anchor="middle" class="block-label">A5 · Granny S.</text>
+                                <text x="580" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 9ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="640" y="40" width="120" height="80" fill="#c89758" stroke="#daa970" stroke-width="1.5" rx="3"/>
+                                <text x="700" y="76" text-anchor="middle" class="block-label dark">A6 · Rome</text>
+                                <text x="700" y="92" text-anchor="middle" class="block-label dark" style="font-size:.5rem">RIPENING · 10ac</text>
+                            </g>
+
+                            <!-- Closed/recovering -->
+                            <g class="block">
+                                <rect x="40" y="130" width="100" height="60" fill="#3d3a3a" stroke="#6a6a6a" stroke-width="1.5" rx="3" stroke-dasharray="4 3"/>
+                                <text x="90" y="158" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.5)">B1 · Peach</text>
+                                <text x="90" y="172" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.4)" style="font-size:.5rem">SEASON OVER</text>
+                            </g>
+                            <g class="block">
+                                <rect x="150" y="130" width="100" height="60" fill="#3d3a3a" stroke="#6a6a6a" stroke-width="1.5" rx="3" stroke-dasharray="4 3"/>
+                                <text x="200" y="158" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.5)">B2 · Strawb.</text>
+                                <text x="200" y="172" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.4)" style="font-size:.5rem">DORMANT</text>
+                            </g>
+
+                            <!-- Cidery row -->
+                            <g class="block">
+                                <rect x="260" y="130" width="80" height="60" fill="#7eb691" stroke="#9bcfa8" stroke-width="1.5" rx="3"/>
+                                <text x="300" y="158" text-anchor="middle" class="block-label dark">C1 · Cider</text>
+                                <text x="300" y="172" text-anchor="middle" class="block-label dark" style="font-size:.5rem">PRESSING</text>
+                            </g>
+
+                            <!-- Bottom blocks -->
+                            <g class="block">
+                                <rect x="40" y="240" width="130" height="100" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="105" y="285" text-anchor="middle" class="block-label">A7 · Mutsu</text>
+                                <text x="105" y="302" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 16ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="180" y="240" width="100" height="100" fill="#7d2422" stroke="#a8322d" stroke-width="1.5" rx="3"/>
+                                <text x="230" y="285" text-anchor="middle" class="block-label">A8 · Crispin</text>
+                                <text x="230" y="302" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">PEAK · 13ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="290" y="240" width="80" height="100" fill="#c89758" stroke="#daa970" stroke-width="1.5" rx="3"/>
+                                <text x="330" y="285" text-anchor="middle" class="block-label dark">B3</text>
+                                <text x="330" y="302" text-anchor="middle" class="block-label dark" style="font-size:.5rem">RIPENING</text>
+                            </g>
+
+                            <g class="block">
+                                <rect x="420" y="240" width="100" height="60" fill="#7eb691" stroke="#9bcfa8" stroke-width="1.5" rx="3"/>
+                                <text x="470" y="268" text-anchor="middle" class="block-label dark">M1 · Market</text>
+                                <text x="470" y="284" text-anchor="middle" class="block-label dark" style="font-size:.5rem">PARKING</text>
+                            </g>
+                            <g class="block">
+                                <rect x="530" y="240" width="100" height="60" fill="#7eb691" stroke="#9bcfa8" stroke-width="1.5" rx="3"/>
+                                <text x="580" y="268" text-anchor="middle" class="block-label dark">M2 · Bakery</text>
+                                <text x="580" y="284" text-anchor="middle" class="block-label dark" style="font-size:.5rem">OPEN</text>
+                            </g>
+                            <g class="block">
+                                <rect x="640" y="240" width="120" height="100" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="700" y="285" text-anchor="middle" class="block-label">A9 · Stayman</text>
+                                <text x="700" y="302" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 14ac</text>
+                            </g>
+
+                            <g class="block">
+                                <rect x="420" y="310" width="210" height="55" fill="#3d3a3a" stroke="#d99090" stroke-width="1.5" rx="3" stroke-dasharray="3 3"/>
+                                <text x="525" y="332" text-anchor="middle" class="block-label" fill="#e88884">⚠ C7 · Frost Watch</text>
+                                <text x="525" y="348" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.5)" style="font-size:.5rem">RECOVERING — FAN ON STANDBY</text>
+                            </g>
+                        </svg>
+
+                        <div class="map-legend">
+                            <div class="legend-item"><div class="legend-dot" style="background:#7d2422"></div> Peak</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#a8322d"></div> Open</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#c89758"></div> Ripening</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#7eb691"></div> Service</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#3d3a3a"></div> Dormant</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#3d3a3a;border:1px solid #d99090"></div> Alert</div>
+                        </div>
+                        <div class="map-zoom">
+                            <button aria-label="Zoom in"><i class="fa-solid fa-plus"></i></button>
+                            <button aria-label="Zoom out"><i class="fa-solid fa-minus"></i></button>
+                            <button aria-label="Reset"><i class="fa-solid fa-expand"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <span><strong style="color:var(--text)">12 blocks</strong> open · <strong style="color:var(--apple)">4 at peak</strong> · 1 alert</span>
+                        <a href="#">View all blocks →</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Revenue · 7 Days</h3>
+                            <div class="meta">All channels combined</div>
+                        </div>
+                        <div class="tab-row">
+                            <span class="tab">7d</span>
+                            <span class="tab active">30d</span>
+                            <span class="tab">YTD</span>
+                        </div>
+                    </div>
+                    <div class="chart-wrap">
+                        <div class="chart-tot">
+                            <div class="chart-tot-val">$148,420</div>
+                            <div class="chart-tot-lbl">Last 7 Days</div>
+                        </div>
+                        <div class="chart-bars">
+                            <div class="chart-bar" style="height:42%"></div>
+                            <div class="chart-bar" style="height:55%"></div>
+                            <div class="chart-bar" style="height:48%"></div>
+                            <div class="chart-bar" style="height:62%"></div>
+                            <div class="chart-bar" style="height:58%"></div>
+                            <div class="chart-bar" style="height:88%"></div>
+                            <div class="chart-bar" style="height:95%"></div>
+                            <div class="chart-bar" style="height:72%"></div>
+                            <div class="chart-bar" style="height:64%"></div>
+                            <div class="chart-bar" style="height:78%"></div>
+                            <div class="chart-bar" style="height:90%"></div>
+                            <div class="chart-bar" style="height:85%"></div>
+                            <div class="chart-bar" style="height:100%"></div>
+                            <div class="chart-bar dim" style="height:48%"></div>
+                        </div>
+                        <div class="chart-labels">
+                            <span>10/9</span><span>10/11</span><span>10/13</span><span>10/15</span><span>10/17</span><span>10/19</span><span>10/22</span>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border-soft)">
+                        <div style="padding:14px 20px;border-right:1px solid var(--border-soft)">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px">U-Pick</div>
+                            <div style="font-family:var(--serif);font-size:1.2rem;font-weight:500">$62,310</div>
+                            <div style="font-size:.7rem;color:var(--green);font-family:var(--mono)">+22% wow</div>
+                        </div>
+                        <div style="padding:14px 20px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px">Bakery + Market</div>
+                            <div style="font-family:var(--serif);font-size:1.2rem;font-weight:500">$48,950</div>
+                            <div style="font-size:.7rem;color:var(--green);font-family:var(--mono)">+14% wow</div>
+                        </div>
+                        <div style="padding:14px 20px;border-right:1px solid var(--border-soft);border-top:1px solid var(--border-soft)">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px">Cidery</div>
+                            <div style="font-family:var(--serif);font-size:1.2rem;font-weight:500">$22,140</div>
+                            <div style="font-size:.7rem;color:var(--green);font-family:var(--mono)">+9% wow</div>
+                        </div>
+                        <div style="padding:14px 20px;border-top:1px solid var(--border-soft)">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px">Online Ship</div>
+                            <div style="font-family:var(--serif);font-size:1.2rem;font-weight:500">$15,020</div>
+                            <div style="font-size:.7rem;color:var(--green);font-family:var(--mono)">+38% wow</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 2: TOURS + INVENTORY + STAFF -->
+            <div class="dash-grid-3">
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Today's Tours</h3>
+                            <div class="meta">4 booked · 92 guests</div>
+                        </div>
+                        <button class="btn ghost"><i class="fa-solid fa-plus"></i> Add</button>
+                    </div>
+                    <div class="slots">
+                        <div class="slot">
+                            <div class="slot-time">10:00<small>AM · 45m</small></div>
+                            <div class="slot-info">
+                                <div class="slot-name">Tractor Tour · Family Group</div>
+                                <div class="slot-detail">
+                                    <span><i class="fa-solid fa-user"></i> Guide: Marcus</span>
+                                    <span><i class="fa-solid fa-users"></i> 24 / 30</span>
+                                </div>
+                            </div>
+                            <div class="slot-fill">
+                                <span class="fill-text">80%</span>
+                                <div class="fill-bar"><div class="fill-bar-inner" style="width:80%"></div></div>
+                            </div>
+                        </div>
+                        <div class="slot">
+                            <div class="slot-time">11:30<small>AM · 2.5h</small></div>
+                            <div class="slot-info">
+                                <div class="slot-name">School Tour · Fannin Co. Elem.</div>
+                                <div class="slot-detail">
+                                    <span><i class="fa-solid fa-user"></i> Guide: Sarah</span>
+                                    <span><i class="fa-solid fa-users"></i> 38 / 40</span>
+                                    <span><span class="tbl-tag tag-honey">SCHOOL</span></span>
+                                </div>
+                            </div>
+                            <div class="slot-fill">
+                                <span class="fill-text">95%</span>
+                                <div class="fill-bar"><div class="fill-bar-inner" style="width:95%"></div></div>
+                            </div>
+                        </div>
+                        <div class="slot">
+                            <div class="slot-time">2:00<small>PM · 1h</small></div>
+                            <div class="slot-info">
+                                <div class="slot-name">Cider Tasting Flight</div>
+                                <div class="slot-detail">
+                                    <span><i class="fa-solid fa-user"></i> Lead: Hannah</span>
+                                    <span><i class="fa-solid fa-users"></i> 18 / 20</span>
+                                    <span><span class="tbl-tag tag-purple">21+</span></span>
+                                </div>
+                            </div>
+                            <div class="slot-fill">
+                                <span class="fill-text">90%</span>
+                                <div class="fill-bar"><div class="fill-bar-inner" style="width:90%"></div></div>
+                            </div>
+                        </div>
+                        <div class="slot">
+                            <div class="slot-time">3:30<small>PM · 45m</small></div>
+                            <div class="slot-info">
+                                <div class="slot-name">Tractor Tour · Bus Group</div>
+                                <div class="slot-detail">
+                                    <span><i class="fa-solid fa-user"></i> Guide: Marcus</span>
+                                    <span><i class="fa-solid fa-users"></i> 12 / 30</span>
+                                </div>
+                            </div>
+                            <div class="slot-fill">
+                                <span class="fill-text">40%</span>
+                                <div class="fill-bar"><div class="fill-bar-inner" style="width:40%;background:linear-gradient(90deg,var(--orange),var(--apple))"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <span>Capacity 88% · 4 of 4 slots have guides</span>
+                        <a href="#">View week →</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Bakery Inventory</h3>
+                            <div class="meta">Live · last 30 min</div>
+                        </div>
+                        <button class="btn ghost"><i class="fa-solid fa-rotate"></i></button>
+                    </div>
+                    <div class="card-body flush">
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--green)"></span>
+                                <div>
+                                    Cider Donuts
+                                    <small>Fryer #1 · running</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                340<small>on counter · 280 sold/hr</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:78%;background:var(--green)"></div></div>
+                            </div>
+                        </div>
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--orange)"></span>
+                                <div>
+                                    Apple Fried Pies
+                                    <small>Restock in 18 min</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                42<small>low · reorder soon</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:30%;background:var(--orange)"></div></div>
+                            </div>
+                        </div>
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--apple)"></span>
+                                <div>
+                                    Apple Butter (16oz)
+                                    <small>Below par level</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                12<small>jars · par 60</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:20%;background:var(--apple)"></div></div>
+                            </div>
+                        </div>
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--green)"></span>
+                                <div>
+                                    Hard Cider · Tank 3
+                                    <small>Honeycrisp Reserve</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                86%<small>full · ready Nov 5</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:86%;background:var(--green)"></div></div>
+                            </div>
+                        </div>
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--green)"></span>
+                                <div>
+                                    Cider Slush
+                                    <small>Counter 2</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                Full<small>both machines</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:100%;background:var(--green)"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <span><strong style="color:var(--orange)">2 items</strong> below par</span>
+                        <a href="#">Restock list →</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Staff On Today</h3>
+                            <div class="meta">38 clocked in · 4 stations</div>
+                        </div>
+                        <button class="btn ghost"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                    </div>
+                    <div class="card-body flush">
+                        <div style="padding:0 20px 14px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:600;margin:14px 0 10px">Field Crew · 12</div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                                <div class="avatar-mini">JM</div>
+                                <div class="avatar-mini b">RP</div>
+                                <div class="avatar-mini c">DC</div>
+                                <div class="avatar-mini d">LH</div>
+                                <div class="avatar-mini">MR</div>
+                                <div class="avatar-mini b">AT</div>
+                                <div class="avatar-mini c">SK</div>
+                                <div class="avatar-mini" style="background:var(--surface);color:var(--text-mute);border:1px solid var(--border)">+5</div>
+                            </div>
+                        </div>
+                        <div style="padding:0 20px 14px;border-top:1px solid var(--border-soft);padding-top:14px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:600;margin-bottom:10px">Bakery & Market · 14</div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                                <div class="avatar-mini b">EM</div>
+                                <div class="avatar-mini c">KW</div>
+                                <div class="avatar-mini d">PB</div>
+                                <div class="avatar-mini">NR</div>
+                                <div class="avatar-mini b">CM</div>
+                                <div class="avatar-mini c">JL</div>
+                                <div class="avatar-mini" style="background:var(--surface);color:var(--text-mute);border:1px solid var(--border)">+8</div>
+                            </div>
+                        </div>
+                        <div style="padding:0 20px 14px;border-top:1px solid var(--border-soft);padding-top:14px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:600;margin-bottom:10px">Tours & Cidery · 8</div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                                <div class="avatar-mini">MC</div>
+                                <div class="avatar-mini b">SH</div>
+                                <div class="avatar-mini c">HJ</div>
+                                <div class="avatar-mini d">TG</div>
+                                <div class="avatar-mini">BD</div>
+                                <div class="avatar-mini" style="background:var(--surface);color:var(--text-mute);border:1px solid var(--border)">+3</div>
+                            </div>
+                        </div>
+                        <div style="padding:0 20px 18px;border-top:1px solid var(--border-soft);padding-top:14px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:600;margin-bottom:10px">Maintenance · 4</div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                                <div class="avatar-mini b">RG</div>
+                                <div class="avatar-mini c">VK</div>
+                                <div class="avatar-mini d">FT</div>
+                                <div class="avatar-mini">WB</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <span>Payroll today: $4,820 (38 staff)</span>
+                        <a href="#">Schedule →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TICKETS KANBAN -->
+            <div class="card" style="margin-bottom:18px">
+                <div class="card-head">
+                    <div>
+                        <h3>Maintenance & Operations Tickets</h3>
+                        <div class="meta">7 open · 2 high priority · avg time-to-close 4.2h</div>
+                    </div>
+                    <div class="card-head-actions">
+                        <div class="tab-row">
+                            <span class="tab active">All</span>
+                            <span class="tab">Field</span>
+                            <span class="tab">Bakery</span>
+                            <span class="tab">Cidery</span>
+                            <span class="tab">Guest</span>
+                        </div>
+                        <button class="btn primary"><i class="fa-solid fa-plus"></i> New Ticket</button>
+                    </div>
+                </div>
+                <div class="card-body flush">
+                    <div class="kanban">
+                        <div class="kan-col">
+                            <div class="kan-head">
+                                <div class="kan-title">Open <span class="pill">2</span></div>
+                                <button class="kan-add"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1042</span>
+                                    <span class="tkt-pri high" title="High priority"></span>
+                                </div>
+                                <div class="tkt-title">Tractor #2 won't start — needed for 3:30pm tour</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">FIELD</span>
+                                    <span><i class="fa-solid fa-clock"></i> 12m ago</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Reported by Marcus</span>
+                                    <div class="avatar-mini" style="width:20px;height:20px;font-size:.55rem;background:var(--surface);color:var(--text-mute);border:1px dashed var(--border)">?</div>
+                                </div>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1041</span>
+                                    <span class="tkt-pri med"></span>
+                                </div>
+                                <div class="tkt-title">Restroom B paper towel dispenser empty</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">GUEST</span>
+                                    <span><i class="fa-solid fa-clock"></i> 28m ago</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Reported by guest</span>
+                                    <div class="avatar-mini" style="width:20px;height:20px;font-size:.55rem;background:var(--surface);color:var(--text-mute);border:1px dashed var(--border)">?</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kan-col">
+                            <div class="kan-head">
+                                <div class="kan-title">In Progress <span class="pill">3</span></div>
+                                <button class="kan-add"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1039</span>
+                                    <span class="tkt-pri high"></span>
+                                </div>
+                                <div class="tkt-title">Block C7 frost fan — verify fuel & rotation before Saturday</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">FIELD</span>
+                                    <span><i class="fa-solid fa-calendar"></i> Due Sat</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Tim Mercier Jr.</span>
+                                    <div class="avatar-mini b" style="width:20px;height:20px;font-size:.55rem">RG</div>
+                                </div>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1038</span>
+                                    <span class="tkt-pri med"></span>
+                                </div>
+                                <div class="tkt-title">Register #3 receipt printer paper jam — bypassing for now</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">BAKERY</span>
+                                    <span><i class="fa-solid fa-clock"></i> 1.5h</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Front of house</span>
+                                    <div class="avatar-mini c" style="width:20px;height:20px;font-size:.55rem">VK</div>
+                                </div>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1036</span>
+                                    <span class="tkt-pri low"></span>
+                                </div>
+                                <div class="tkt-title">U-pick gate scanner intermittent — try cable swap</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">GUEST</span>
+                                    <span><i class="fa-solid fa-clock"></i> 3h</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Gate ops</span>
+                                    <div class="avatar-mini d" style="width:20px;height:20px;font-size:.55rem">FT</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kan-col">
+                            <div class="kan-head">
+                                <div class="kan-title">Awaiting Parts <span class="pill">2</span></div>
+                                <button class="kan-add"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1031</span>
+                                    <span class="tkt-pri med"></span>
+                                </div>
+                                <div class="tkt-title">Cidery pump seal — replacement ETA Thu</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">CIDERY</span>
+                                    <span><i class="fa-solid fa-truck"></i> Ships Thu</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Workaround: tank 4</span>
+                                    <div class="avatar-mini" style="width:20px;height:20px;font-size:.55rem">WB</div>
+                                </div>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1024</span>
+                                    <span class="tkt-pri low"></span>
+                                </div>
+                                <div class="tkt-title">Tasting room AC unit thermostat — ordered</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">CIDERY</span>
+                                    <span><i class="fa-solid fa-truck"></i> Ships Mon</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Non-urgent</span>
+                                    <div class="avatar-mini b" style="width:20px;height:20px;font-size:.55rem">RG</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kan-col">
+                            <div class="kan-head">
+                                <div class="kan-title">Closed Today <span class="pill">5</span></div>
+                                <button class="kan-add"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="tkt" style="opacity:.6">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1040</span>
+                                    <span class="tkt-pri low"></span>
+                                </div>
+                                <div class="tkt-title">Parking lot trash bin overflow — cleared</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">GUEST</span>
+                                    <span><i class="fa-solid fa-check"></i> 18m</span>
+                                </div>
+                            </div>
+                            <div class="tkt" style="opacity:.6">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1037</span>
+                                    <span class="tkt-pri med"></span>
+                                </div>
+                                <div class="tkt-title">Fryer #2 thermostat recalibrated</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">BAKERY</span>
+                                    <span><i class="fa-solid fa-check"></i> 1h</span>
+                                </div>
+                            </div>
+                            <div class="tkt" style="opacity:.5">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1035</span>
+                                    <span class="tkt-pri low"></span>
+                                </div>
+                                <div class="tkt-title">Block A4 irrigation timer reset</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">FIELD</span>
+                                    <span><i class="fa-solid fa-check"></i> 2.5h</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-foot">
+                    <span>Avg resolution time this week: <strong style="color:var(--green)">4.2 hrs</strong> · 23 closed · 1 SLA breach</span>
+                    <a href="#">Open ticket queue →</a>
+                </div>
+            </div>
+
+            <!-- BOTTOM ROW: U-PICK + RESERVATIONS -->
+            <div class="dash-grid">
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>U-Pick Reservations · Next 7 Days</h3>
+                            <div class="meta">312 today · 2,840 across week</div>
+                        </div>
+                        <button class="btn ghost"><i class="fa-solid fa-filter"></i> Filter</button>
+                    </div>
+                    <div class="card-body flush">
+                        <table class="tbl">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Slot</th>
+                                    <th>Booked</th>
+                                    <th>Capacity</th>
+                                    <th>Crop Focus</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Today</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">WED 10/22</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>312</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">Fuji</span></td>
+                                    <td><span class="tbl-tag tag-green">Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Thursday</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/23</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>248</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">Pink Lady</span></td>
+                                    <td><span class="tbl-tag tag-green">Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Friday</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/24</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>356</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">Mutsu</span></td>
+                                    <td><span class="tbl-tag tag-orange">Filling fast</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Saturday</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/25</span></td>
+                                    <td>9a · 11a · 1p · 3p</td>
+                                    <td><strong>612</strong></td>
+                                    <td>650</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">All</span></td>
+                                    <td><span class="tbl-tag tag-red">Nearly full</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sunday</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/26</span></td>
+                                    <td>11a · 1p · 3p</td>
+                                    <td><strong>478</strong></td>
+                                    <td>500</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">Stayman</span></td>
+                                    <td><span class="tbl-tag tag-orange">Filling fast</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Monday<br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/27</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>184</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-honey">Open varieties</span></td>
+                                    <td><span class="tbl-tag tag-green">Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Tuesday<br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/28</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>156</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-honey">Open varieties</span></td>
+                                    <td><span class="tbl-tag tag-green">Open</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Recent Activity</h3>
+                            <div class="meta">Live feed</div>
+                        </div>
+                    </div>
+                    <div class="card-body flush" style="padding:8px 0">
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--green-l);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-ticket"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>14 new u-pick reservations</strong> for Saturday</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">2m ago · saturday is 94% full</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--apple-soft);color:var(--apple);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>High priority ticket</strong> opened — Tractor #2</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">12m ago · marcus needs by 3:30pm</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--honey-soft);color:var(--honey-bright);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-bus"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>Fannin Co. Elementary</strong> arrived (38 students)</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">22m ago · sarah leading tour</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--blue-l);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-box"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>Online ship orders</strong> — 18 shipped today</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">38m ago · cider club preorders</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--green-l);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-circle-check"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>Block A4 irrigation</strong> reset — ticket closed</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">2.5h ago · ricky g.</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--purple-l);color:var(--purple);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-glass-water"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>Tank 3</strong> Honeycrisp Reserve hit 86% — ready Nov 5</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">3h ago · cidery</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <a href="#" style="margin:0 auto">View all activity →</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+</body>
+</html>
