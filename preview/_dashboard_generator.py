@@ -14,50 +14,9 @@ ROOT = Path(__file__).resolve().parent  # .../preview
 # Trade configs
 # ------------------------------------------------------------------------------
 TRADES = [
-    {
-        "slug": "hvac-dashboard",
-        "biz": "Climate Air Pros",
-        "sub": "HVAC",
-        "initials": "CA",
-        "phone": "(205) 555-COOL",
-        "domain": "climateairpros.com",
-        "primary": "#2563eb",
-        "primary_dark": "#1a2a5e",
-        "hero": "HVAC Operations Dashboard",
-        "kpis": [
-            {"label": "Service Calls This Week", "value": "12", "sub": "5 emergency"},
-            {"label": "Tons Installed (MTD)", "value": "47", "sub": "AC + heat pump"},
-            {"label": "Filters / Coils Replaced", "value": "84", "sub": "This month"},
-            {"label": "Active Maintenance Plans", "value": "126", "sub": "Recurring revenue"},
-        ],
-        "job_types": [
-            "AC Maintenance", "AC Installation", "AC Repair",
-            "Furnace Install", "Furnace Repair", "Heat Pump Install",
-            "Duct Cleaning", "Emergency Service", "Energy Audit",
-        ],
-        "employee_role_senior": "Senior Technician",
-        "employee_role_mid": "HVAC Technician",
-        "employee_role_junior": "Apprentice Tech",
-        "inventory": [
-            ("AC Condenser 3-Ton", "Units", 4, 2, "$1,850"),
-            ("16x25 Air Filter", "Cases", 12, 10, "$38"),
-            ("Refrigerant R-410A", "Cylinders", 6, 4, "$220"),
-            ("Copper Line Set 3/8\"", "Rolls", 8, 5, "$145"),
-            ("Furnace Ignitor", "Units", 14, 8, "$42"),
-            ("Thermostat (Smart)", "Units", 9, 5, "$180"),
-        ],
-        "estimates_seed": [
-            {"client": "Patterson Family", "email": "patterson@email.com", "addr": "412 Brookwood Dr, Vestavia Hills, AL", "service": "AC Installation - 3 Ton", "amount": 5840, "status": "Sent", "date": "Apr 22, 2026", "notes": "Includes new condenser, evaporator coil, and 10-year warranty."},
-            {"client": "Henderson Residence", "email": "k.henderson@email.com", "addr": "188 Oakdale Ln, Mountain Brook, AL", "service": "Furnace Replacement", "amount": 3290, "status": "Pending", "date": "Apr 24, 2026", "notes": "Existing furnace is 22 years old. Replacing with high-efficiency 96% AFUE unit."},
-            {"client": "Riverside Apartments", "email": "manager@riversideapts.com", "addr": "2300 Cahaba Rd, Birmingham, AL", "service": "Annual Maintenance Contract (12 units)", "amount": 4800, "status": "Sent", "date": "Apr 19, 2026", "notes": "Quarterly maintenance for all 12 HVAC units. Net 30."},
-        ],
-        "jobs_seed": [
-            {"client": "Mrs. Patterson", "service": "AC Installation - 3 Ton", "addr": "412 Brookwood Dr, Vestavia Hills, AL", "emp": "Marcus Reed", "time": "08:00", "offset_days": 0},
-            {"client": "Greg Sanders", "service": "Emergency Service - No Cool", "addr": "75 Mountain Park Rd, Hoover, AL", "emp": "Tony Vasquez", "time": "11:30", "offset_days": 0},
-            {"client": "Riverside Apts Unit 4B", "service": "Quarterly Maintenance", "addr": "2300 Cahaba Rd, Birmingham, AL", "emp": "Devon Carter", "time": "09:00", "offset_days": 1},
-        ],
-        "extras": ["maintenance"],
-    },
+    # NOTE: hvac-dashboard is NOT in this list — it's a standalone hand-built file at
+    # preview/hvac-dashboard/index.html with HVAC-specific features (equipment registry,
+    # service tickets, refrigerant log, EPA compliance, truck stock, etc.)
     {
         "slug": "plumbing-dashboard",
         "biz": "FlowRight Plumbing & Gas",
