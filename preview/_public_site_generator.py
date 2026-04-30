@@ -714,12 +714,12 @@ SITES = [
         "story_p1": "Sandbar opened in 2014 with one Cape Hatteras-built catamaran and a list of friends willing to come along on the test runs. A decade later we run six experiences across the Outer Banks — sunset sails, dolphin watches, kayak tours through the sound, wild horse trips up to Carova, surf lessons for first-timers, and the lighthouse climb at Bodie Island.",
         "story_p2": "Our captains hold USCG Master licenses. Our naturalist guides know the migrations. We run small groups by design — six on a kayak tour, fourteen on a sunset sail. You don't have to fight for the rail.",
         "story_p3": "We don't run when the conditions don't run. If a squall rolls through and we have to push your sunset sail by a day, we'll do it. The water won't apologize, but we will.",
-        "hero_img": "https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=1800&q=85",
-        "hero_alt": "Sailboat on the water at sunset with golden light",
+        "hero_img": "https://images.unsplash.com/photo-1715706107718-4a0cc4f0335c?w=1800&q=85",
+        "hero_alt": "Tall ship silhouette at sunset on the ocean",
         "story_img": "https://images.unsplash.com/photo-1727279746368-b86792396fda?w=900&q=85",
         "story_alt": "Sailboat under full sail on open water",
         "services": [
-            {"name": "Sunset Sail · 2hr", "desc": "Cocktail-hour sail aboard our 28′ cat. Bring your own bottle, we provide ice and the view.", "img": "https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=900&q=85"},
+            {"name": "Sunset Sail · 2hr", "desc": "Cocktail-hour sail aboard our 28′ cat. Bring your own bottle, we provide ice and the view.", "img": "https://images.unsplash.com/photo-1715706107718-4a0cc4f0335c?w=900&q=85"},
             {"name": "Dolphin Watch", "desc": "90-minute cruise through Roanoke Sound. We see them on 9 of 10 trips. Calm-water boat, kid-friendly.", "img": "https://images.unsplash.com/photo-1686080187357-4304f983638f?w=900&q=85"},
             {"name": "Kayak the Sound", "desc": "Three-hour guided kayak through the marsh and back-bay islands. Lunch at a hidden sandbar.", "img": "https://images.unsplash.com/photo-1545579133-99bb5ab189bd?w=900&q=85"},
             {"name": "Wild Horse Beach Tour", "desc": "Four-wheel-drive trip up to Carova to find the Banker horses. 2.5 hours, small groups, naturalist on board.", "img": "https://images.unsplash.com/photo-1689870448942-c34b1baf8960?w=900&q=85"},
@@ -819,9 +819,9 @@ SITES = [
         "story_p2": "Our instructor school is PSIA-certified across all three disciplines — alpine, snowboard, and adaptive. We teach kids who have never seen snow and we teach grandparents who haven't been on a board in thirty years. Both work out fine.",
         "story_p3": "We make snow when the sky doesn't. We groom every night. And the lifties show up at 7am even when the wind is honking, because that's how you keep a mountain running.",
         "hero_img": "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=1800&q=85",
-        "hero_alt": "Snowy mountain ridge under a blue dusk sky",
-        "story_img": "https://images.unsplash.com/photo-1741332966361-f242276f9430?w=900&q=85",
-        "story_alt": "Ski lift over snowy mountain trees",
+        "hero_alt": "Skier carving down a snowy slope",
+        "story_img": "https://images.unsplash.com/photo-1605540436563-5bca919ae766?w=900&q=85",
+        "story_alt": "Three skiers carving down a snowy slope above mountains",
         "services": [
             {"name": "Day Lift Ticket", "desc": "All-day access to Eagle Express, Summit Six, and the Beginner Carpet. Adult and child rates. Save online.", "img": "https://images.unsplash.com/photo-1741332966361-f242276f9430?w=900&q=85"},
             {"name": "Group Ski Lesson", "desc": "Two-hour group lesson, ages 7+. Eight max per class. Equipment rental can be bundled.", "img": "https://images.unsplash.com/photo-1631779202803-7f1415c87a9d?w=900&q=85"},
@@ -834,7 +834,7 @@ SITES = [
             "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=1200&q=85",
             "https://images.unsplash.com/photo-1755554857887-935f8a49f635?w=600&q=85",
             "https://images.unsplash.com/photo-1741332966361-f242276f9430?w=600&q=85",
-            "https://images.unsplash.com/photo-1631779202803-7f1415c87a9d?w=600&q=85",
+            "https://images.unsplash.com/photo-1605540436563-5bca919ae766?w=600&q=85",
             "https://images.unsplash.com/photo-1641933002278-6afabf74d394?w=600&q=85",
         ],
         "press": [
@@ -1118,7 +1118,7 @@ footer .legal a{{color:var(--gold)}}
 <section class="hero" id="top" style="padding-top:0;padding-bottom:0;max-width:none;margin:0">
     <div class="hero-bg"><img src="{c['hero_img']}&auto=format&fit=crop&w=1800&q=85" alt="{c['hero_alt']}"></div>
     <div class="hero-content">
-        <div class="eye">{c['eyebrow']} · Birmingham, AL</div>
+        <div class="eye">{c['eyebrow']}{'' if c.get('slug') == 'tourism' else ' · Birmingham, AL'}</div>
         <h1>{c['brand_short']}<br><em>{c['brand_em']}</em></h1>
         <p class="tagline">{c['tagline']}</p>
         <div class="hero-actions">
