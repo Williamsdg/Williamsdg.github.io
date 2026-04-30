@@ -23,6 +23,7 @@ LINKS = {
     'aurora-coffee':          ('aurora-coffee-site', 'Aurora Coffee'),
     'maisonverre':            ('maisonverre-site', 'Maison Verre'),
     'verbatim':               ('verbatim-site', 'Verbatim & Co.'),
+    # Tourism — sticky link is dynamic in JS (changes with brand switcher), skip injection
 }
 
 MARKER = 'wd-sticky-public'  # idempotency marker
