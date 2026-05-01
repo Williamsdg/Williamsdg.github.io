@@ -1,0 +1,1971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hilltop Family Orchards — Operations Dashboard</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a1f15">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='36' r='20' fill='%23a8322d'/><ellipse cx='38' cy='14' rx='5' ry='3' fill='%237eb691' transform='rotate(30 38 14)'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+    --bg:#10130d;
+    --bg-soft:#171c12;
+    --canvas:radial-gradient(1400px 900px at 80% -10%, rgba(168,50,45,0.07), transparent 60%), radial-gradient(900px 700px at -10% 100%, rgba(126,182,145,0.05), transparent 70%), #10130d;
+    --surface:rgba(255,255,255,0.025);
+    --surface-strong:rgba(255,255,255,0.05);
+    --surface-hover:rgba(255,255,255,0.04);
+    --apple:#d76863;
+    --apple-bright:#e88884;
+    --apple-soft:rgba(215,104,99,0.14);
+    --green:#7eb691;
+    --green-l:rgba(126,182,145,0.14);
+    --honey:#c89758;
+    --honey-bright:#daa970;
+    --honey-soft:rgba(200,151,88,0.14);
+    --red:#d99090;
+    --red-l:rgba(217,144,144,0.14);
+    --orange:#e0b070;
+    --orange-l:rgba(224,176,112,0.14);
+    --blue:#9bb4d9;
+    --blue-l:rgba(155,180,217,0.14);
+    --purple:#b39bd9;
+    --purple-l:rgba(179,155,217,0.14);
+    --text:#f1ede4;
+    --text-soft:#b8b3a6;
+    --text-mute:#7a7568;
+    --border:rgba(255,255,255,0.07);
+    --border-soft:rgba(255,255,255,0.04);
+    --border-strong:rgba(200,151,88,0.3);
+    --serif:'Fraunces',Georgia,serif;
+    --mono:'JetBrains Mono',monospace;
+    --r:6px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas) fixed;color:var(--text);line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-0.005em;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--honey-soft);color:var(--text)}
+
+.layout{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:248px;background:linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.2));border-right:1px solid var(--border-soft);backdrop-filter:blur(24px);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50;transition:transform .3s}
+.sidebar-header{padding:26px 22px 22px;border-bottom:1px solid var(--border-soft)}
+.sidebar-brand{font-family:var(--serif);font-weight:500;font-size:1.35rem;letter-spacing:-0.01em;color:var(--text);line-height:1.1;display:flex;align-items:center;gap:.6rem}
+.sidebar-brand .mark{width:26px;height:26px;background:var(--apple);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.65rem;position:relative}
+.sidebar-brand .mark::after{content:'';position:absolute;width:6px;height:4px;background:var(--green);border-radius:50%;top:-1px;right:5px;transform:rotate(25deg)}
+.sidebar-sub{font-size:.58rem;color:var(--honey);text-transform:uppercase;letter-spacing:3px;margin-top:6px;font-weight:600}
+.sidebar-nav{flex:1;padding:18px 12px;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.nav-group{font-size:.56rem;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:2.5px;padding:14px 14px 8px}
+.nav-group:first-child{padding-top:0}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:var(--r);font-size:.82rem;color:var(--text-soft);cursor:pointer;transition:all .15s;font-weight:500;position:relative}
+.nav-item i{font-size:.82rem;width:14px;color:var(--text-mute);transition:color .15s}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item:hover i{color:var(--text)}
+.nav-item.active{background:var(--apple-soft);color:var(--apple-bright);font-weight:600}
+.nav-item.active i{color:var(--apple-bright)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--apple);border-radius:0 2px 2px 0}
+.nav-badge{margin-left:auto;background:var(--apple);color:#fff;font-size:.62rem;padding:1px 6px;border-radius:8px;font-weight:600}
+.sidebar-foot{padding:14px;border-top:1px solid var(--border-soft)}
+.user-card{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);transition:background .15s;cursor:pointer}
+.user-card:hover{background:var(--surface)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--honey),var(--apple));display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:600;color:#fff}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+
+/* MAIN */
+.main{flex:1;margin-left:248px;min-width:0}
+
+/* TOP BAR */
+.topbar{position:sticky;top:0;background:rgba(16,19,13,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-soft);padding:14px 32px;display:flex;align-items:center;gap:20px;z-index:40}
+.topbar-title{font-family:var(--serif);font-size:1.15rem;font-weight:500;color:var(--text)}
+.topbar-title small{color:var(--text-mute);font-size:.7rem;font-family:var(--mono);font-weight:500;margin-left:.6rem;letter-spacing:.05em}
+.topbar-search{flex:1;max-width:380px;margin-left:auto;position:relative}
+.topbar-search input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 14px 8px 38px;border-radius:8px;font-size:.82rem;font-family:inherit;transition:all .15s}
+.topbar-search input::placeholder{color:var(--text-mute)}
+.topbar-search input:focus{outline:none;border-color:var(--honey);background:var(--surface-strong)}
+.topbar-search i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-mute);font-size:.78rem}
+.topbar-actions{display:flex;align-items:center;gap:6px}
+.icon-btn{width:36px;height:36px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text-soft);cursor:pointer;font-size:.85rem;transition:all .15s;display:flex;align-items:center;justify-content:center;position:relative}
+.icon-btn:hover{background:var(--surface-strong);color:var(--text)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:7px;height:7px;background:var(--apple);border-radius:50%;border:1.5px solid var(--bg)}
+
+/* CONTENT */
+.content{padding:28px 32px 60px}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.page-head h1{font-family:var(--serif);font-size:1.95rem;font-weight:500;letter-spacing:-0.02em;line-height:1.1;margin-bottom:6px}
+.page-head .breadcrumb{font-size:.7rem;color:var(--text-mute);font-family:var(--mono);letter-spacing:.05em;margin-bottom:8px;text-transform:uppercase;font-weight:600}
+.page-head .breadcrumb span{color:var(--honey)}
+.page-actions{display:flex;gap:8px;align-items:center}
+.btn{padding:9px 16px;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .15s;display:inline-flex;align-items:center;gap:7px;font-family:inherit;letter-spacing:.01em}
+.btn:hover{background:var(--surface-strong);border-color:var(--honey-soft)}
+.btn.primary{background:var(--apple);border-color:var(--apple);color:#fff}
+.btn.primary:hover{background:var(--apple-bright)}
+.btn.ghost{background:transparent}
+.btn i{font-size:.75rem}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;transition:all .2s}
+.kpi:hover{border-color:var(--border-strong);background:var(--surface-strong)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--honey);opacity:.5}
+.kpi.apple::before{background:var(--apple)}
+.kpi.green::before{background:var(--green)}
+.kpi.blue::before{background:var(--blue)}
+.kpi-label{font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.kpi-label i{font-size:.78rem;color:var(--text-mute)}
+.kpi-value{font-family:var(--serif);font-size:2rem;font-weight:500;line-height:1;letter-spacing:-0.02em;margin-bottom:6px}
+.kpi-value small{font-size:.95rem;color:var(--text-mute);font-weight:400;margin-left:4px}
+.kpi-trend{font-size:.7rem;color:var(--text-soft);display:flex;align-items:center;gap:5px;font-family:var(--mono)}
+.kpi-trend.up{color:var(--green)}
+.kpi-trend.down{color:var(--red)}
+.kpi-trend i{font-size:.65rem}
+
+/* GRID LAYOUTS */
+.dash-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;margin-bottom:18px}
+.dash-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+.card-head h3{font-family:var(--serif);font-size:1.05rem;font-weight:500;letter-spacing:-0.01em}
+.card-head .meta{font-size:.7rem;color:var(--text-mute);font-family:var(--mono);letter-spacing:.04em}
+.card-head-actions{display:flex;gap:6px;align-items:center}
+.card-body{padding:18px 20px}
+.card-body.flush{padding:0}
+.card-foot{padding:12px 20px;border-top:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:var(--text-mute)}
+.card-foot a{color:var(--honey);font-weight:600;font-size:.74rem}
+
+.tab-row{display:flex;gap:2px;margin:-4px 0 -4px}
+.tab{padding:6px 12px;border-radius:6px;font-size:.72rem;color:var(--text-mute);cursor:pointer;font-weight:600;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--honey-soft);color:var(--honey-bright)}
+
+/* FIELD MAP */
+.field-map{aspect-ratio:1.7/1;background:linear-gradient(135deg,#1a2517,#0e140c);border-radius:0 0 12px 12px;position:relative;overflow:hidden;border-top:1px solid var(--border-soft)}
+.field-map svg{width:100%;height:100%;display:block}
+.block{cursor:pointer;transition:all .2s}
+.block:hover{filter:brightness(1.3)}
+.block-label{font-family:var(--mono);font-size:.6rem;fill:rgba(255,255,255,0.85);font-weight:600;pointer-events:none;letter-spacing:.05em}
+.block-label.dark{fill:rgba(0,0,0,0.65)}
+.map-legend{position:absolute;bottom:14px;left:14px;background:rgba(16,19,13,0.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;gap:14px;font-size:.68rem;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;color:var(--text-soft);font-weight:500}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+.map-zoom{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;background:rgba(16,19,13,0.85);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.map-zoom button{width:30px;height:30px;background:transparent;border:none;color:var(--text);cursor:pointer;font-size:.85rem;border-bottom:1px solid var(--border-soft)}
+.map-zoom button:last-child{border-bottom:none}
+.map-zoom button:hover{background:var(--surface)}
+
+/* WEATHER STRIP */
+.weather-strip{background:linear-gradient(135deg,rgba(126,182,145,0.08),rgba(155,180,217,0.05));border:1px solid var(--border);border-radius:12px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.weather-now{display:flex;align-items:center;gap:14px}
+.weather-icon{width:46px;height:46px;border-radius:10px;background:var(--honey-soft);display:flex;align-items:center;justify-content:center;color:var(--honey-bright);font-size:1.4rem}
+.weather-temp{font-family:var(--serif);font-size:1.6rem;font-weight:500;line-height:1}
+.weather-desc{font-size:.72rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.weather-sep{width:1px;height:32px;background:var(--border)}
+.weather-stat{display:flex;flex-direction:column;gap:2px;font-size:.78rem}
+.weather-stat-label{font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.2px;font-weight:600}
+.weather-stat-val{font-weight:600;color:var(--text)}
+.weather-stat-val.warn{color:var(--orange)}
+.weather-stat-val.good{color:var(--green)}
+.weather-alert{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--orange-l);border:1px solid rgba(224,176,112,0.3);padding:7px 14px;border-radius:8px;font-size:.74rem;color:var(--orange);font-weight:600}
+.weather-alert i{font-size:.78rem}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:.6rem;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;padding:10px 16px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface)}
+.tbl td{padding:11px 16px;border-bottom:1px solid var(--border-soft);font-size:.82rem;vertical-align:middle}
+.tbl tbody tr{transition:background .12s;cursor:pointer}
+.tbl tbody tr:hover{background:var(--surface)}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl-tag{display:inline-flex;align-items:center;gap:5px;font-size:.66rem;font-weight:600;padding:3px 9px;border-radius:5px;letter-spacing:.04em;text-transform:uppercase}
+.tag-green{background:var(--green-l);color:var(--green)}
+.tag-honey{background:var(--honey-soft);color:var(--honey-bright)}
+.tag-red{background:var(--red-l);color:var(--red)}
+.tag-orange{background:var(--orange-l);color:var(--orange)}
+.tag-blue{background:var(--blue-l);color:var(--blue)}
+.tag-purple{background:var(--purple-l);color:var(--purple)}
+.tag-mute{background:var(--surface);color:var(--text-mute);border:1px solid var(--border)}
+.tbl-pri{font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+.tbl-pri small{display:block;font-weight:400;color:var(--text-mute);font-size:.7rem;margin-top:2px;font-family:var(--mono)}
+.avatar-mini{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--honey),var(--apple));display:inline-flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:600;color:#fff;flex-shrink:0}
+.avatar-mini.b{background:linear-gradient(135deg,var(--green),#5a8e6e)}
+.avatar-mini.c{background:linear-gradient(135deg,var(--blue),#6e8ab9)}
+.avatar-mini.d{background:linear-gradient(135deg,var(--purple),#8e76b9)}
+
+/* TICKETS — Kanban-style */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:18px 20px}
+.kan-col{background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:10px;padding:12px;min-height:280px}
+.kan-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 4px}
+.kan-title{font-size:.62rem;text-transform:uppercase;letter-spacing:1.8px;font-weight:700;color:var(--text-soft);display:flex;align-items:center;gap:6px}
+.kan-title .pill{background:var(--surface);color:var(--text-mute);font-size:.6rem;padding:2px 7px;border-radius:8px;font-weight:600;letter-spacing:.04em}
+.kan-add{width:22px;height:22px;background:transparent;border:1px solid var(--border);color:var(--text-mute);border-radius:5px;cursor:pointer;font-size:.7rem;transition:all .15s}
+.kan-add:hover{background:var(--surface-strong);color:var(--text)}
+.tkt{background:var(--surface-strong);border:1px solid var(--border);border-radius:8px;padding:11px 12px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.tkt:hover{border-color:var(--border-strong);transform:translateY(-1px)}
+.tkt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.tkt-id{font-family:var(--mono);font-size:.62rem;color:var(--text-mute);font-weight:600;letter-spacing:.04em}
+.tkt-pri{width:7px;height:7px;border-radius:50%}
+.tkt-pri.high{background:var(--apple);box-shadow:0 0 0 2px rgba(215,104,99,0.2)}
+.tkt-pri.med{background:var(--orange)}
+.tkt-pri.low{background:var(--text-mute)}
+.tkt-title{font-size:.82rem;font-weight:600;line-height:1.35;margin-bottom:8px}
+.tkt-meta{display:flex;justify-content:space-between;align-items:center;font-size:.66rem;color:var(--text-mute)}
+.tkt-tag{font-size:.6rem;background:var(--surface);padding:2px 7px;border-radius:5px;font-weight:600;letter-spacing:.04em}
+.tkt-foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-soft)}
+
+/* CALENDAR / SLOTS */
+.slots{padding:0}
+.slot{display:flex;align-items:center;gap:14px;padding:13px 20px;border-bottom:1px solid var(--border-soft);transition:background .15s;cursor:pointer}
+.slot:hover{background:var(--surface)}
+.slot:last-child{border-bottom:none}
+.slot-time{font-family:var(--mono);font-size:.85rem;font-weight:600;color:var(--honey);width:78px;flex-shrink:0;letter-spacing:-.02em}
+.slot-time small{display:block;font-size:.6rem;color:var(--text-mute);font-weight:500;letter-spacing:.05em;margin-top:2px;text-transform:uppercase}
+.slot-info{flex:1;min-width:0}
+.slot-name{font-size:.85rem;font-weight:600;margin-bottom:3px}
+.slot-detail{font-size:.7rem;color:var(--text-mute);display:flex;gap:10px;flex-wrap:wrap}
+.slot-detail span{display:flex;align-items:center;gap:4px}
+.slot-detail i{font-size:.65rem}
+.slot-fill{width:90px;flex-shrink:0;text-align:right}
+.fill-bar{width:100%;height:6px;background:var(--surface-strong);border-radius:3px;overflow:hidden;margin-top:5px}
+.fill-bar-inner{height:100%;background:linear-gradient(90deg,var(--green),var(--honey));border-radius:3px}
+.fill-text{font-size:.7rem;font-weight:600;color:var(--text-soft);font-family:var(--mono)}
+
+/* INVENTORY */
+.inv-row{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border-soft)}
+.inv-row:last-child{border-bottom:none}
+.inv-name{font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:10px}
+.inv-name .dot{width:9px;height:9px;border-radius:50%}
+.inv-name small{display:block;font-size:.66rem;color:var(--text-mute);font-weight:400;margin-top:2px}
+.inv-qty{font-family:var(--mono);font-size:.85rem;font-weight:600;color:var(--text);text-align:right}
+.inv-qty small{display:block;font-size:.66rem;color:var(--text-mute);font-weight:500;margin-top:2px;font-family:inherit}
+.inv-bar{width:100px;height:5px;background:var(--surface-strong);border-radius:3px;overflow:hidden;margin-top:5px}
+.inv-bar-inner{height:100%;border-radius:3px}
+
+/* REVENUE CHART */
+.chart-wrap{padding:16px 20px 22px;height:240px;position:relative}
+.chart-bars{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;height:170px;padding-top:10px}
+.chart-bar{flex:1;background:linear-gradient(to top,var(--apple) 0%,var(--apple) 60%,var(--honey) 100%);border-radius:3px 3px 0 0;position:relative;min-width:0;opacity:.85;transition:all .2s;cursor:pointer}
+.chart-bar:hover{opacity:1}
+.chart-bar.dim{opacity:.35}
+.chart-labels{display:flex;justify-content:space-between;gap:6px;margin-top:8px;font-family:var(--mono);font-size:.62rem;color:var(--text-mute);font-weight:500}
+.chart-labels span{flex:1;text-align:center}
+.chart-tot{position:absolute;top:18px;right:20px;text-align:right}
+.chart-tot-val{font-family:var(--serif);font-size:1.7rem;font-weight:500;line-height:1}
+.chart-tot-lbl{font-size:.64rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-top:4px}
+
+/* RESPONSIVE */
+@media(max-width:1180px){
+    .kpi-row{grid-template-columns:1fr 1fr}
+    .dash-grid{grid-template-columns:1fr}
+    .dash-grid-3{grid-template-columns:1fr}
+    .kanban{grid-template-columns:1fr 1fr}
+}
+@media(max-width:780px){
+    .sidebar{transform:translateX(-100%)}
+    .sidebar.open{transform:translateX(0)}
+    .main{margin-left:0}
+    .topbar{padding:12px 18px}
+    .content{padding:18px 18px 40px}
+    .kpi-row{grid-template-columns:1fr}
+    .kanban{grid-template-columns:1fr}
+}
+
+/* ────── MODAL ────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(8,10,7,0.7);backdrop-filter:blur(8px);z-index:200;display:none;align-items:center;justify-content:center;padding:2rem;animation:fadeIn .15s ease}
+.modal-overlay.open{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal{background:#191e15;border:1px solid var(--border);border-radius:14px;width:100%;max-width:560px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;animation:slideUp .2s ease;box-shadow:0 30px 80px rgba(0,0,0,0.5)}
+.modal.lg{max-width:760px}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--border-soft);display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.modal-head h3{font-family:var(--serif);font-size:1.2rem;font-weight:500}
+.modal-head .meta{font-size:.7rem;color:var(--text-mute);font-family:var(--mono);letter-spacing:.04em;margin-top:3px}
+.modal-close{width:30px;height:30px;background:var(--surface);border:1px solid var(--border);border-radius:7px;color:var(--text-soft);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;transition:all .15s}
+.modal-close:hover{background:var(--apple-soft);color:var(--apple-bright);border-color:var(--apple)}
+.modal-body{padding:22px;overflow-y:auto;flex:1}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border-soft);display:flex;justify-content:flex-end;gap:8px;background:rgba(0,0,0,0.15)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:600;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:7px;font-size:.85rem;font-family:inherit;transition:all .15s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--honey);background:var(--surface-strong)}
+.field textarea{resize:vertical;min-height:80px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.detail-item{background:var(--surface);border:1px solid var(--border-soft);border-radius:8px;padding:12px 14px}
+.detail-label{font-size:.6rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:5px}
+.detail-val{font-family:var(--serif);font-size:1.1rem;font-weight:500;color:var(--text)}
+.detail-val.sm{font-size:.92rem;font-family:var(--sans);font-weight:600}
+.detail-val.tag{font-family:var(--sans);font-size:.74rem;font-weight:600}
+.note-box{background:var(--surface);border:1px solid var(--border-soft);border-left:3px solid var(--honey);border-radius:8px;padding:12px 14px;margin-bottom:10px;font-size:.85rem;line-height:1.6}
+.note-box .note-meta{font-size:.66rem;color:var(--text-mute);font-family:var(--mono);margin-top:6px}
+
+/* DROPDOWN */
+.dropdown{position:absolute;top:calc(100% + 6px);right:0;background:#191e15;border:1px solid var(--border);border-radius:10px;min-width:240px;box-shadow:0 12px 40px rgba(0,0,0,0.4);z-index:60;display:none;overflow:hidden}
+.dropdown.open{display:block;animation:slideUp .15s ease}
+.dropdown-item{padding:10px 14px;font-size:.82rem;color:var(--text-soft);cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-soft);transition:background .12s}
+.dropdown-item:hover{background:var(--surface);color:var(--text)}
+.dropdown-item:last-child{border-bottom:none}
+.dropdown-item i{width:14px;font-size:.78rem;color:var(--text-mute)}
+.dropdown-item.unread i{color:var(--apple)}
+.dropdown-head{padding:10px 14px;font-size:.6rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:700;background:rgba(0,0,0,0.2);border-bottom:1px solid var(--border-soft)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#191e15;border:1px solid var(--green);border-left:3px solid var(--green);color:var(--text);padding:12px 18px;border-radius:10px;font-size:.85rem;z-index:300;box-shadow:0 12px 40px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px;transform:translateX(120%);transition:transform .25s ease;max-width:340px}
+.toast.show{transform:translateX(0)}
+.toast.error{border-color:var(--apple);border-left-color:var(--apple)}
+.toast i{font-size:1rem;color:var(--green)}
+.toast.error i{color:var(--apple)}
+
+/* SECTION VIEW (for sidebar nav) */
+.section-view{display:none}
+.section-view.active{display:block}
+.section-view-back{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--text-soft);cursor:pointer;margin-bottom:14px;font-weight:500;transition:color .15s}
+.section-view-back:hover{color:var(--apple-bright)}
+
+/* TICKET DRAGGABLE */
+.tkt{user-select:none}
+.tkt.dragging{opacity:.4;transform:rotate(2deg)}
+.kan-col.drag-over{background:var(--honey-soft);border-color:var(--honey)}
+
+/* MOBILE MENU */
+.menu-toggle-btn{display:none;background:var(--surface);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:.85rem;align-items:center;justify-content:center;margin-right:8px}
+@media(max-width:780px){.menu-toggle-btn{display:flex}}
+
+/* HOVER cursors for clickables */
+.tab,.kpi,.slot,.inv-row,.tbl tbody tr,.dropdown-item,.nav-item,.icon-btn,.btn,.kan-add,.tkt,.modal-close{cursor:pointer}
+
+/* PREVIEW BAR (shared) */
+.preview-bar{position:fixed;bottom:0;left:0;right:0;z-index:250;background:rgba(10,15,8,0.95);backdrop-filter:blur(14px);border-top:1px solid rgba(200,151,88,0.3);color:#f1ede4;padding:.75rem 1.25rem calc(.75rem + env(safe-area-inset-bottom, 0px));display:flex;align-items:center;gap:1rem;flex-wrap:wrap;justify-content:center;transition:transform .3s ease;font-family:'Inter',system-ui,sans-serif}
+.preview-bar.collapsed{transform:translateY(calc(100% - 32px))}
+.preview-bar-handle{position:absolute;top:-26px;left:50%;transform:translateX(-50%);background:rgba(10,15,8,0.95);border:1px solid rgba(200,151,88,0.3);border-bottom:none;color:#f1ede4;padding:.3rem 1rem;border-radius:10px 10px 0 0;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:.5rem;backdrop-filter:blur(14px)}
+.preview-bar-handle .chev{transition:transform .25s}
+.preview-bar.collapsed .preview-bar-handle .chev{transform:rotate(180deg)}
+.preview-bar-label{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#c89758;font-weight:700;white-space:nowrap}
+.preview-bar-label strong{color:#f1ede4;font-weight:700}
+.preview-bar-btns{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
+.preview-bar-btn{padding:.55rem 1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);color:#f1ede4;border-radius:30px;font-size:.78rem;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;white-space:nowrap}
+.preview-bar-btn:hover{background:rgba(255,255,255,0.12);border-color:rgba(200,151,88,0.4);transform:translateY(-1px)}
+.preview-bar-btn.active{background:#c89758;border-color:#c89758;color:#0a0f08;cursor:default}
+.preview-bar-btn.active:hover{transform:none}
+.preview-bar-btn i{font-size:.74rem}
+.preview-bar-hint{font-style:italic;font-weight:500;font-size:.65rem;letter-spacing:0;color:rgba(200,151,88,0.95);margin-left:.4rem;padding-left:.5rem;border-left:1px solid rgba(255,255,255,0.18);text-transform:none}
+.preview-bar-close{margin-left:auto;background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:.85rem;padding:.4rem;border-radius:6px}
+.preview-bar-close:hover{color:#f1ede4}
+
+/* Push dashboard content up so the bar doesn't cover the bottom row */
+.content{padding-bottom:120px !important}
+
+@media(max-width:640px){
+  .preview-bar{padding:.6rem .75rem calc(.6rem + env(safe-area-inset-bottom, 0px));gap:.5rem}
+  .preview-bar-label{font-size:.62rem;letter-spacing:.08em;width:100%;text-align:center}
+  .preview-bar-btn{padding:.5rem .85rem;font-size:.7rem}
+  .preview-bar-btn span{display:none}
+  .preview-bar-hint{display:none}
+  .preview-bar-close{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="mark"><i class="fa-solid fa-apple-whole" style="font-size:.7rem"></i></div>
+                Hilltop Ops
+            </div>
+            <div class="sidebar-sub">Owner Dashboard</div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-group">Overview</div>
+            <a class="nav-item active" data-section="today"><i class="fa-solid fa-gauge"></i> Today</a>
+            <a class="nav-item" data-section="revenue"><i class="fa-solid fa-chart-line"></i> Revenue</a>
+            <a class="nav-item" data-section="visitors"><i class="fa-solid fa-people-group"></i> Visitors</a>
+
+            <div class="nav-group">Farm</div>
+            <a class="nav-item" data-section="fields"><i class="fa-solid fa-map-location-dot"></i> Fields & Blocks</a>
+            <a class="nav-item" data-section="irrigation"><i class="fa-solid fa-droplet"></i> Irrigation</a>
+            <a class="nav-item" data-section="pest"><i class="fa-solid fa-bug"></i> Pest Scouting</a>
+            <a class="nav-item" data-section="harvest"><i class="fa-solid fa-truck-ramp-box"></i> Harvest Log</a>
+
+            <div class="nav-group">Guests</div>
+            <a class="nav-item" data-section="reservations"><i class="fa-solid fa-ticket"></i> U-Pick Reservations</a>
+            <a class="nav-item" data-section="tours"><i class="fa-solid fa-bus"></i> Tours & Groups</a>
+            <a class="nav-item" data-section="cidery"><i class="fa-solid fa-glass-water"></i> Cidery Tastings</a>
+            <a class="nav-item" data-section="events"><i class="fa-solid fa-calendar-days"></i> Events</a>
+
+            <div class="nav-group">Operations</div>
+            <a class="nav-item" data-section="tickets"><i class="fa-solid fa-clipboard-list"></i> Maintenance Tickets <span class="nav-badge" id="ticketBadge">7</span></a>
+            <a class="nav-item" data-section="inventory"><i class="fa-solid fa-boxes-stacked"></i> Bakery & Inventory</a>
+            <a class="nav-item" data-section="staff"><i class="fa-solid fa-user-clock"></i> Staff & Schedule</a>
+
+            <div class="nav-group">Admin</div>
+            <a class="nav-item" data-section="shop"><i class="fa-solid fa-store"></i> Online Shop</a>
+            <a class="nav-item" data-section="settings"><i class="fa-solid fa-gear"></i> Settings</a>
+        </nav>
+        <div class="sidebar-foot">
+            <div class="user-card">
+                <div class="user-avatar">TM</div>
+                <div class="user-info">
+                    <div class="user-name">Henry Hilltop</div>
+                    <div class="user-role">Owner</div>
+                </div>
+                <i class="fa-solid fa-ellipsis-vertical" style="color:var(--text-mute);font-size:.7rem"></i>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <button class="menu-toggle-btn" id="menuToggle" aria-label="Menu"><i class="fa-solid fa-bars"></i></button>
+            <div class="topbar-title" id="pageTitle">Today's Operations <small>WED · OCT 22</small></div>
+            <div class="topbar-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="globalSearch" placeholder="Search blocks, tours, tickets, staff…">
+            </div>
+            <div class="topbar-actions">
+                <div style="position:relative">
+                    <button class="icon-btn" id="notifBtn" aria-label="Notifications"><i class="fa-solid fa-bell"></i><span class="dot"></span></button>
+                    <div class="dropdown" id="notifDropdown">
+                        <div class="dropdown-head">Notifications · 3 New</div>
+                        <div class="dropdown-item unread" data-action="open-ticket" data-ticket="OP-1042"><i class="fa-solid fa-triangle-exclamation"></i><div><div style="color:var(--text);font-weight:600">High priority ticket</div><div style="font-size:.7rem;color:var(--text-mute)">Tractor #2 — 12m ago</div></div></div>
+                        <div class="dropdown-item unread"><i class="fa-solid fa-ticket"></i><div><div style="color:var(--text);font-weight:600">14 new u-pick reservations</div><div style="font-size:.7rem;color:var(--text-mute)">Saturday — 2m ago</div></div></div>
+                        <div class="dropdown-item unread"><i class="fa-solid fa-bus"></i><div><div style="color:var(--text);font-weight:600">Yancey Co. Elementary arrived</div><div style="font-size:.7rem;color:var(--text-mute)">22m ago</div></div></div>
+                        <div class="dropdown-item" style="justify-content:center;color:var(--honey)">Mark all read</div>
+                    </div>
+                </div>
+                <div style="position:relative">
+                    <button class="icon-btn" id="helpBtn" aria-label="Help"><i class="fa-solid fa-circle-question"></i></button>
+                    <div class="dropdown" id="helpDropdown">
+                        <div class="dropdown-head">Help & Support</div>
+                        <div class="dropdown-item"><i class="fa-solid fa-book"></i> Documentation</div>
+                        <div class="dropdown-item"><i class="fa-solid fa-keyboard"></i> Keyboard shortcuts</div>
+                        <div class="dropdown-item"><i class="fa-solid fa-circle-play"></i> Video tutorials</div>
+                        <div class="dropdown-item"><i class="fa-solid fa-headset"></i> Contact support</div>
+                    </div>
+                </div>
+                <a href="index.html" class="btn ghost"><i class="fa-solid fa-arrow-up-right-from-square"></i> Public Site</a>
+            </div>
+        </header>
+
+        <div class="content">
+        <div class="section-view active" data-view="today">
+            <div class="page-head">
+                <div>
+                    <div class="breadcrumb">Overview · <span>Today</span></div>
+                    <h1>Good morning, Tim.</h1>
+                    <div style="color:var(--text-soft);font-size:.88rem">Apple harvest peak week — 12 blocks open, 4 tours booked, <span id="openTicketHeading">7</span> maintenance tickets in queue.</div>
+                </div>
+                <div class="page-actions">
+                    <div style="position:relative">
+                        <button class="btn" id="dateBtn"><i class="fa-solid fa-calendar"></i> Oct 22, 2026</button>
+                        <div class="dropdown" id="dateDropdown">
+                            <div class="dropdown-item" data-date="today"><i class="fa-solid fa-calendar-day"></i> Today</div>
+                            <div class="dropdown-item" data-date="yesterday"><i class="fa-solid fa-rotate-left"></i> Yesterday</div>
+                            <div class="dropdown-item" data-date="week"><i class="fa-solid fa-calendar-week"></i> This Week</div>
+                            <div class="dropdown-item" data-date="month"><i class="fa-solid fa-calendar"></i> This Month</div>
+                            <div class="dropdown-item" data-date="custom"><i class="fa-solid fa-calendar-plus"></i> Custom Range</div>
+                        </div>
+                    </div>
+                    <button class="btn" data-action="export"><i class="fa-solid fa-arrow-down"></i> Export</button>
+                    <button class="btn primary" data-action="new-ticket"><i class="fa-solid fa-plus"></i> New Ticket</button>
+                </div>
+            </div>
+
+            <!-- WEATHER STRIP -->
+            <div class="weather-strip">
+                <div class="weather-now">
+                    <div class="weather-icon"><i class="fa-solid fa-sun"></i></div>
+                    <div>
+                        <div class="weather-temp">68°<small style="font-size:1rem;color:var(--text-mute)">F</small></div>
+                        <div class="weather-desc">Sunny · Apple Hollow</div>
+                    </div>
+                </div>
+                <div class="weather-sep"></div>
+                <div class="weather-stat"><span class="weather-stat-label">Rain (24h)</span><span class="weather-stat-val good">0%</span></div>
+                <div class="weather-stat"><span class="weather-stat-label">Wind</span><span class="weather-stat-val">8mph NW</span></div>
+                <div class="weather-stat"><span class="weather-stat-label">Frost Risk Tonight</span><span class="weather-stat-val warn">Low (38°)</span></div>
+                <div class="weather-stat"><span class="weather-stat-label">Picking Window</span><span class="weather-stat-val good">9a–6p ideal</span></div>
+                <div class="weather-alert"><i class="fa-solid fa-triangle-exclamation"></i> Frost watch Sat night — review Block C7</div>
+            </div>
+
+            <!-- KPI ROW -->
+            <div class="kpi-row">
+                <div class="kpi apple" data-section="revenue">
+                    <div class="kpi-label">Today's Revenue <i class="fa-solid fa-dollar-sign"></i></div>
+                    <div class="kpi-value">$24,820</div>
+                    <div class="kpi-trend up"><i class="fa-solid fa-arrow-up"></i> 18% vs same Wed last yr</div>
+                </div>
+                <div class="kpi green" data-section="visitors">
+                    <div class="kpi-label">Gate Count <i class="fa-solid fa-people-arrows"></i></div>
+                    <div class="kpi-value">1,847<small>visitors</small></div>
+                    <div class="kpi-trend up"><i class="fa-solid fa-arrow-up"></i> Tracking 8% above forecast</div>
+                </div>
+                <div class="kpi" data-section="reservations">
+                    <div class="kpi-label">U-Pick Reservations <i class="fa-solid fa-ticket"></i></div>
+                    <div class="kpi-value">312<small>/ 400 cap</small></div>
+                    <div class="kpi-trend"><i class="fa-solid fa-clock"></i> 78% of daily capacity</div>
+                </div>
+                <div class="kpi blue" data-section="tickets">
+                    <div class="kpi-label">Open Tickets <i class="fa-solid fa-clipboard-list"></i></div>
+                    <div class="kpi-value" id="kpiOpenTickets">7</div>
+                    <div class="kpi-trend down"><i class="fa-solid fa-arrow-down"></i> 2 high priority</div>
+                </div>
+            </div>
+
+            <!-- ROW 1: FIELD MAP + REVENUE -->
+            <div class="dash-grid">
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Orchard Map</h3>
+                            <div class="meta">300 acres · 24 blocks · live status</div>
+                        </div>
+                        <div class="card-head-actions">
+                            <div class="tab-row">
+                                <span class="tab active">Status</span>
+                                <span class="tab">Yield</span>
+                                <span class="tab">Irrigation</span>
+                                <span class="tab">Pest</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field-map">
+                        <svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                            <!-- Background -->
+                            <defs>
+                                <pattern id="grass" patternUnits="userSpaceOnUse" width="20" height="20">
+                                    <rect width="20" height="20" fill="#1a2517"/>
+                                    <circle cx="5" cy="5" r=".6" fill="#2a3f28"/>
+                                    <circle cx="15" cy="15" r=".6" fill="#2a3f28"/>
+                                </pattern>
+                            </defs>
+                            <rect width="800" height="460" fill="url(#grass)"/>
+
+                            <!-- River/road -->
+                            <path d="M 0 380 Q 200 360 400 370 Q 600 380 800 350" stroke="#3a4a6a" stroke-width="3" fill="none" opacity="0.5"/>
+                            <path d="M 380 0 Q 390 100 380 200 Q 370 300 380 460" stroke="#5a4a3a" stroke-width="2" fill="none" opacity="0.4" stroke-dasharray="4 4"/>
+
+                            <!-- Buildings -->
+                            <rect x="350" y="180" width="60" height="40" fill="#5a4a3a" rx="2"/>
+                            <text x="380" y="205" text-anchor="middle" class="block-label" fill="#fff">MARKET</text>
+                            <rect x="420" y="195" width="35" height="25" fill="#5a4a3a" rx="2"/>
+                            <text x="437" y="211" text-anchor="middle" class="block-label" fill="#fff" style="font-size:.5rem">CIDER</text>
+
+                            <!-- Apple blocks (peak) -->
+                            <g class="block">
+                                <rect x="40" y="40" width="120" height="80" fill="#7d2422" stroke="#a8322d" stroke-width="1.5" rx="3"/>
+                                <text x="100" y="76" text-anchor="middle" class="block-label">A1 · Honeycrisp</text>
+                                <text x="100" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.6)" style="font-size:.5rem">PEAK · 18ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="170" y="40" width="100" height="80" fill="#7d2422" stroke="#a8322d" stroke-width="1.5" rx="3"/>
+                                <text x="220" y="76" text-anchor="middle" class="block-label">A2 · Gala</text>
+                                <text x="220" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.6)" style="font-size:.5rem">PEAK · 14ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="280" y="40" width="90" height="80" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="325" y="76" text-anchor="middle" class="block-label">A3 · Fuji</text>
+                                <text x="325" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 11ac</text>
+                            </g>
+
+                            <!-- Open apple blocks -->
+                            <g class="block">
+                                <rect x="420" y="40" width="100" height="80" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="470" y="76" text-anchor="middle" class="block-label">A4 · Pink Lady</text>
+                                <text x="470" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 12ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="530" y="40" width="100" height="80" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="580" y="76" text-anchor="middle" class="block-label">A5 · Granny S.</text>
+                                <text x="580" y="92" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 9ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="640" y="40" width="120" height="80" fill="#c89758" stroke="#daa970" stroke-width="1.5" rx="3"/>
+                                <text x="700" y="76" text-anchor="middle" class="block-label dark">A6 · Rome</text>
+                                <text x="700" y="92" text-anchor="middle" class="block-label dark" style="font-size:.5rem">RIPENING · 10ac</text>
+                            </g>
+
+                            <!-- Closed/recovering -->
+                            <g class="block">
+                                <rect x="40" y="130" width="100" height="60" fill="#3d3a3a" stroke="#6a6a6a" stroke-width="1.5" rx="3" stroke-dasharray="4 3"/>
+                                <text x="90" y="158" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.5)">B1 · Peach</text>
+                                <text x="90" y="172" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.4)" style="font-size:.5rem">SEASON OVER</text>
+                            </g>
+                            <g class="block">
+                                <rect x="150" y="130" width="100" height="60" fill="#3d3a3a" stroke="#6a6a6a" stroke-width="1.5" rx="3" stroke-dasharray="4 3"/>
+                                <text x="200" y="158" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.5)">B2 · Strawb.</text>
+                                <text x="200" y="172" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.4)" style="font-size:.5rem">DORMANT</text>
+                            </g>
+
+                            <!-- Cidery row -->
+                            <g class="block">
+                                <rect x="260" y="130" width="80" height="60" fill="#7eb691" stroke="#9bcfa8" stroke-width="1.5" rx="3"/>
+                                <text x="300" y="158" text-anchor="middle" class="block-label dark">C1 · Cider</text>
+                                <text x="300" y="172" text-anchor="middle" class="block-label dark" style="font-size:.5rem">PRESSING</text>
+                            </g>
+
+                            <!-- Bottom blocks -->
+                            <g class="block">
+                                <rect x="40" y="240" width="130" height="100" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="105" y="285" text-anchor="middle" class="block-label">A7 · Mutsu</text>
+                                <text x="105" y="302" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 16ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="180" y="240" width="100" height="100" fill="#7d2422" stroke="#a8322d" stroke-width="1.5" rx="3"/>
+                                <text x="230" y="285" text-anchor="middle" class="block-label">A8 · Crispin</text>
+                                <text x="230" y="302" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">PEAK · 13ac</text>
+                            </g>
+                            <g class="block">
+                                <rect x="290" y="240" width="80" height="100" fill="#c89758" stroke="#daa970" stroke-width="1.5" rx="3"/>
+                                <text x="330" y="285" text-anchor="middle" class="block-label dark">B3</text>
+                                <text x="330" y="302" text-anchor="middle" class="block-label dark" style="font-size:.5rem">RIPENING</text>
+                            </g>
+
+                            <g class="block">
+                                <rect x="420" y="240" width="100" height="60" fill="#7eb691" stroke="#9bcfa8" stroke-width="1.5" rx="3"/>
+                                <text x="470" y="268" text-anchor="middle" class="block-label dark">M1 · Market</text>
+                                <text x="470" y="284" text-anchor="middle" class="block-label dark" style="font-size:.5rem">PARKING</text>
+                            </g>
+                            <g class="block">
+                                <rect x="530" y="240" width="100" height="60" fill="#7eb691" stroke="#9bcfa8" stroke-width="1.5" rx="3"/>
+                                <text x="580" y="268" text-anchor="middle" class="block-label dark">M2 · Bakery</text>
+                                <text x="580" y="284" text-anchor="middle" class="block-label dark" style="font-size:.5rem">OPEN</text>
+                            </g>
+                            <g class="block">
+                                <rect x="640" y="240" width="120" height="100" fill="#a8322d" stroke="#d76863" stroke-width="1.5" rx="3"/>
+                                <text x="700" y="285" text-anchor="middle" class="block-label">A9 · Stayman</text>
+                                <text x="700" y="302" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.7)" style="font-size:.5rem">OPEN · 14ac</text>
+                            </g>
+
+                            <g class="block">
+                                <rect x="420" y="310" width="210" height="55" fill="#3d3a3a" stroke="#d99090" stroke-width="1.5" rx="3" stroke-dasharray="3 3"/>
+                                <text x="525" y="332" text-anchor="middle" class="block-label" fill="#e88884">⚠ C7 · Frost Watch</text>
+                                <text x="525" y="348" text-anchor="middle" class="block-label" fill="rgba(255,255,255,0.5)" style="font-size:.5rem">RECOVERING — FAN ON STANDBY</text>
+                            </g>
+                        </svg>
+
+                        <div class="map-legend">
+                            <div class="legend-item"><div class="legend-dot" style="background:#7d2422"></div> Peak</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#a8322d"></div> Open</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#c89758"></div> Ripening</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#7eb691"></div> Service</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#3d3a3a"></div> Dormant</div>
+                            <div class="legend-item"><div class="legend-dot" style="background:#3d3a3a;border:1px solid #d99090"></div> Alert</div>
+                        </div>
+                        <div class="map-zoom">
+                            <button aria-label="Zoom in"><i class="fa-solid fa-plus"></i></button>
+                            <button aria-label="Zoom out"><i class="fa-solid fa-minus"></i></button>
+                            <button aria-label="Reset"><i class="fa-solid fa-expand"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <span><strong style="color:var(--text)">12 blocks</strong> open · <strong style="color:var(--apple)">4 at peak</strong> · 1 alert</span>
+                        <a href="#">View all blocks →</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Revenue · 7 Days</h3>
+                            <div class="meta">All channels combined</div>
+                        </div>
+                        <div class="tab-row">
+                            <span class="tab">7d</span>
+                            <span class="tab active">30d</span>
+                            <span class="tab">YTD</span>
+                        </div>
+                    </div>
+                    <div class="chart-wrap">
+                        <div class="chart-tot">
+                            <div class="chart-tot-val">$148,420</div>
+                            <div class="chart-tot-lbl">Last 7 Days</div>
+                        </div>
+                        <div class="chart-bars">
+                            <div class="chart-bar" style="height:42%"></div>
+                            <div class="chart-bar" style="height:55%"></div>
+                            <div class="chart-bar" style="height:48%"></div>
+                            <div class="chart-bar" style="height:62%"></div>
+                            <div class="chart-bar" style="height:58%"></div>
+                            <div class="chart-bar" style="height:88%"></div>
+                            <div class="chart-bar" style="height:95%"></div>
+                            <div class="chart-bar" style="height:72%"></div>
+                            <div class="chart-bar" style="height:64%"></div>
+                            <div class="chart-bar" style="height:78%"></div>
+                            <div class="chart-bar" style="height:90%"></div>
+                            <div class="chart-bar" style="height:85%"></div>
+                            <div class="chart-bar" style="height:100%"></div>
+                            <div class="chart-bar dim" style="height:48%"></div>
+                        </div>
+                        <div class="chart-labels">
+                            <span>10/9</span><span>10/11</span><span>10/13</span><span>10/15</span><span>10/17</span><span>10/19</span><span>10/22</span>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border-soft)">
+                        <div style="padding:14px 20px;border-right:1px solid var(--border-soft)">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px">U-Pick</div>
+                            <div style="font-family:var(--serif);font-size:1.2rem;font-weight:500">$62,310</div>
+                            <div style="font-size:.7rem;color:var(--green);font-family:var(--mono)">+22% wow</div>
+                        </div>
+                        <div style="padding:14px 20px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px">Bakery + Market</div>
+                            <div style="font-family:var(--serif);font-size:1.2rem;font-weight:500">$48,950</div>
+                            <div style="font-size:.7rem;color:var(--green);font-family:var(--mono)">+14% wow</div>
+                        </div>
+                        <div style="padding:14px 20px;border-right:1px solid var(--border-soft);border-top:1px solid var(--border-soft)">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px">Cidery</div>
+                            <div style="font-family:var(--serif);font-size:1.2rem;font-weight:500">$22,140</div>
+                            <div style="font-size:.7rem;color:var(--green);font-family:var(--mono)">+9% wow</div>
+                        </div>
+                        <div style="padding:14px 20px;border-top:1px solid var(--border-soft)">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:4px">Online Ship</div>
+                            <div style="font-family:var(--serif);font-size:1.2rem;font-weight:500">$15,020</div>
+                            <div style="font-size:.7rem;color:var(--green);font-family:var(--mono)">+38% wow</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 2: TOURS + INVENTORY + STAFF -->
+            <div class="dash-grid-3">
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Today's Tours</h3>
+                            <div class="meta">4 booked · 92 guests</div>
+                        </div>
+                        <button class="btn ghost"><i class="fa-solid fa-plus"></i> Add</button>
+                    </div>
+                    <div class="slots">
+                        <div class="slot">
+                            <div class="slot-time">10:00<small>AM · 45m</small></div>
+                            <div class="slot-info">
+                                <div class="slot-name">Tractor Tour · Family Group</div>
+                                <div class="slot-detail">
+                                    <span><i class="fa-solid fa-user"></i> Guide: Marcus</span>
+                                    <span><i class="fa-solid fa-users"></i> 24 / 30</span>
+                                </div>
+                            </div>
+                            <div class="slot-fill">
+                                <span class="fill-text">80%</span>
+                                <div class="fill-bar"><div class="fill-bar-inner" style="width:80%"></div></div>
+                            </div>
+                        </div>
+                        <div class="slot">
+                            <div class="slot-time">11:30<small>AM · 2.5h</small></div>
+                            <div class="slot-info">
+                                <div class="slot-name">School Tour · Yancey Co. Elem.</div>
+                                <div class="slot-detail">
+                                    <span><i class="fa-solid fa-user"></i> Guide: Sarah</span>
+                                    <span><i class="fa-solid fa-users"></i> 38 / 40</span>
+                                    <span><span class="tbl-tag tag-honey">SCHOOL</span></span>
+                                </div>
+                            </div>
+                            <div class="slot-fill">
+                                <span class="fill-text">95%</span>
+                                <div class="fill-bar"><div class="fill-bar-inner" style="width:95%"></div></div>
+                            </div>
+                        </div>
+                        <div class="slot">
+                            <div class="slot-time">2:00<small>PM · 1h</small></div>
+                            <div class="slot-info">
+                                <div class="slot-name">Cider Tasting Flight</div>
+                                <div class="slot-detail">
+                                    <span><i class="fa-solid fa-user"></i> Lead: Hannah</span>
+                                    <span><i class="fa-solid fa-users"></i> 18 / 20</span>
+                                    <span><span class="tbl-tag tag-purple">21+</span></span>
+                                </div>
+                            </div>
+                            <div class="slot-fill">
+                                <span class="fill-text">90%</span>
+                                <div class="fill-bar"><div class="fill-bar-inner" style="width:90%"></div></div>
+                            </div>
+                        </div>
+                        <div class="slot">
+                            <div class="slot-time">3:30<small>PM · 45m</small></div>
+                            <div class="slot-info">
+                                <div class="slot-name">Tractor Tour · Bus Group</div>
+                                <div class="slot-detail">
+                                    <span><i class="fa-solid fa-user"></i> Guide: Marcus</span>
+                                    <span><i class="fa-solid fa-users"></i> 12 / 30</span>
+                                </div>
+                            </div>
+                            <div class="slot-fill">
+                                <span class="fill-text">40%</span>
+                                <div class="fill-bar"><div class="fill-bar-inner" style="width:40%;background:linear-gradient(90deg,var(--orange),var(--apple))"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <span>Capacity 88% · 4 of 4 slots have guides</span>
+                        <a href="#">View week →</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Bakery Inventory</h3>
+                            <div class="meta">Live · last 30 min</div>
+                        </div>
+                        <button class="btn ghost"><i class="fa-solid fa-rotate"></i></button>
+                    </div>
+                    <div class="card-body flush">
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--green)"></span>
+                                <div>
+                                    Cider Donuts
+                                    <small>Fryer #1 · running</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                340<small>on counter · 280 sold/hr</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:78%;background:var(--green)"></div></div>
+                            </div>
+                        </div>
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--orange)"></span>
+                                <div>
+                                    Apple Fried Pies
+                                    <small>Restock in 18 min</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                42<small>low · reorder soon</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:30%;background:var(--orange)"></div></div>
+                            </div>
+                        </div>
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--apple)"></span>
+                                <div>
+                                    Apple Butter (16oz)
+                                    <small>Below par level</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                12<small>jars · par 60</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:20%;background:var(--apple)"></div></div>
+                            </div>
+                        </div>
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--green)"></span>
+                                <div>
+                                    Hard Cider · Tank 3
+                                    <small>Honeycrisp Reserve</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                86%<small>full · ready Nov 5</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:86%;background:var(--green)"></div></div>
+                            </div>
+                        </div>
+                        <div class="inv-row">
+                            <div class="inv-name">
+                                <span class="dot" style="background:var(--green)"></span>
+                                <div>
+                                    Cider Slush
+                                    <small>Counter 2</small>
+                                </div>
+                            </div>
+                            <div class="inv-qty">
+                                Full<small>both machines</small>
+                                <div class="inv-bar"><div class="inv-bar-inner" style="width:100%;background:var(--green)"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <span><strong style="color:var(--orange)">2 items</strong> below par</span>
+                        <a href="#">Restock list →</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Staff On Today</h3>
+                            <div class="meta">38 clocked in · 4 stations</div>
+                        </div>
+                        <button class="btn ghost"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+                    </div>
+                    <div class="card-body flush">
+                        <div style="padding:0 20px 14px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:600;margin:14px 0 10px">Field Crew · 12</div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                                <div class="avatar-mini">JM</div>
+                                <div class="avatar-mini b">RP</div>
+                                <div class="avatar-mini c">DC</div>
+                                <div class="avatar-mini d">LH</div>
+                                <div class="avatar-mini">MR</div>
+                                <div class="avatar-mini b">AT</div>
+                                <div class="avatar-mini c">SK</div>
+                                <div class="avatar-mini" style="background:var(--surface);color:var(--text-mute);border:1px solid var(--border)">+5</div>
+                            </div>
+                        </div>
+                        <div style="padding:0 20px 14px;border-top:1px solid var(--border-soft);padding-top:14px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:600;margin-bottom:10px">Bakery & Market · 14</div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                                <div class="avatar-mini b">EM</div>
+                                <div class="avatar-mini c">KW</div>
+                                <div class="avatar-mini d">PB</div>
+                                <div class="avatar-mini">NR</div>
+                                <div class="avatar-mini b">CM</div>
+                                <div class="avatar-mini c">JL</div>
+                                <div class="avatar-mini" style="background:var(--surface);color:var(--text-mute);border:1px solid var(--border)">+8</div>
+                            </div>
+                        </div>
+                        <div style="padding:0 20px 14px;border-top:1px solid var(--border-soft);padding-top:14px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:600;margin-bottom:10px">Tours & Cidery · 8</div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                                <div class="avatar-mini">MC</div>
+                                <div class="avatar-mini b">SH</div>
+                                <div class="avatar-mini c">HJ</div>
+                                <div class="avatar-mini d">TG</div>
+                                <div class="avatar-mini">BD</div>
+                                <div class="avatar-mini" style="background:var(--surface);color:var(--text-mute);border:1px solid var(--border)">+3</div>
+                            </div>
+                        </div>
+                        <div style="padding:0 20px 18px;border-top:1px solid var(--border-soft);padding-top:14px">
+                            <div style="font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;font-weight:600;margin-bottom:10px">Maintenance · 4</div>
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                                <div class="avatar-mini b">RG</div>
+                                <div class="avatar-mini c">VK</div>
+                                <div class="avatar-mini d">FT</div>
+                                <div class="avatar-mini">WB</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <span>Payroll today: $4,820 (38 staff)</span>
+                        <a href="#">Schedule →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TICKETS KANBAN -->
+            <div class="card" style="margin-bottom:18px">
+                <div class="card-head">
+                    <div>
+                        <h3>Maintenance & Operations Tickets</h3>
+                        <div class="meta">7 open · 2 high priority · avg time-to-close 4.2h</div>
+                    </div>
+                    <div class="card-head-actions">
+                        <div class="tab-row">
+                            <span class="tab active">All</span>
+                            <span class="tab">Field</span>
+                            <span class="tab">Bakery</span>
+                            <span class="tab">Cidery</span>
+                            <span class="tab">Guest</span>
+                        </div>
+                        <button class="btn primary"><i class="fa-solid fa-plus"></i> New Ticket</button>
+                    </div>
+                </div>
+                <div class="card-body flush">
+                    <div class="kanban">
+                        <div class="kan-col">
+                            <div class="kan-head">
+                                <div class="kan-title">Open <span class="pill">2</span></div>
+                                <button class="kan-add"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1042</span>
+                                    <span class="tkt-pri high" title="High priority"></span>
+                                </div>
+                                <div class="tkt-title">Tractor #2 won't start — needed for 3:30pm tour</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">FIELD</span>
+                                    <span><i class="fa-solid fa-clock"></i> 12m ago</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Reported by Marcus</span>
+                                    <div class="avatar-mini" style="width:20px;height:20px;font-size:.55rem;background:var(--surface);color:var(--text-mute);border:1px dashed var(--border)">?</div>
+                                </div>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1041</span>
+                                    <span class="tkt-pri med"></span>
+                                </div>
+                                <div class="tkt-title">Restroom B paper towel dispenser empty</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">GUEST</span>
+                                    <span><i class="fa-solid fa-clock"></i> 28m ago</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Reported by guest</span>
+                                    <div class="avatar-mini" style="width:20px;height:20px;font-size:.55rem;background:var(--surface);color:var(--text-mute);border:1px dashed var(--border)">?</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kan-col">
+                            <div class="kan-head">
+                                <div class="kan-title">In Progress <span class="pill">3</span></div>
+                                <button class="kan-add"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1039</span>
+                                    <span class="tkt-pri high"></span>
+                                </div>
+                                <div class="tkt-title">Block C7 frost fan — verify fuel & rotation before Saturday</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">FIELD</span>
+                                    <span><i class="fa-solid fa-calendar"></i> Due Sat</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Henry Hilltop</span>
+                                    <div class="avatar-mini b" style="width:20px;height:20px;font-size:.55rem">RG</div>
+                                </div>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1038</span>
+                                    <span class="tkt-pri med"></span>
+                                </div>
+                                <div class="tkt-title">Register #3 receipt printer paper jam — bypassing for now</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">BAKERY</span>
+                                    <span><i class="fa-solid fa-clock"></i> 1.5h</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Front of house</span>
+                                    <div class="avatar-mini c" style="width:20px;height:20px;font-size:.55rem">VK</div>
+                                </div>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1036</span>
+                                    <span class="tkt-pri low"></span>
+                                </div>
+                                <div class="tkt-title">U-pick gate scanner intermittent — try cable swap</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">GUEST</span>
+                                    <span><i class="fa-solid fa-clock"></i> 3h</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Gate ops</span>
+                                    <div class="avatar-mini d" style="width:20px;height:20px;font-size:.55rem">FT</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kan-col">
+                            <div class="kan-head">
+                                <div class="kan-title">Awaiting Parts <span class="pill">2</span></div>
+                                <button class="kan-add"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1031</span>
+                                    <span class="tkt-pri med"></span>
+                                </div>
+                                <div class="tkt-title">Cidery pump seal — replacement ETA Thu</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">CIDERY</span>
+                                    <span><i class="fa-solid fa-truck"></i> Ships Thu</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Workaround: tank 4</span>
+                                    <div class="avatar-mini" style="width:20px;height:20px;font-size:.55rem">WB</div>
+                                </div>
+                            </div>
+                            <div class="tkt">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1024</span>
+                                    <span class="tkt-pri low"></span>
+                                </div>
+                                <div class="tkt-title">Tasting room AC unit thermostat — ordered</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">CIDERY</span>
+                                    <span><i class="fa-solid fa-truck"></i> Ships Mon</span>
+                                </div>
+                                <div class="tkt-foot">
+                                    <span style="color:var(--text-mute);font-size:.66rem">Non-urgent</span>
+                                    <div class="avatar-mini b" style="width:20px;height:20px;font-size:.55rem">RG</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kan-col">
+                            <div class="kan-head">
+                                <div class="kan-title">Closed Today <span class="pill">5</span></div>
+                                <button class="kan-add"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div class="tkt" style="opacity:.6">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1040</span>
+                                    <span class="tkt-pri low"></span>
+                                </div>
+                                <div class="tkt-title">Parking lot trash bin overflow — cleared</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">GUEST</span>
+                                    <span><i class="fa-solid fa-check"></i> 18m</span>
+                                </div>
+                            </div>
+                            <div class="tkt" style="opacity:.6">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1037</span>
+                                    <span class="tkt-pri med"></span>
+                                </div>
+                                <div class="tkt-title">Fryer #2 thermostat recalibrated</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">BAKERY</span>
+                                    <span><i class="fa-solid fa-check"></i> 1h</span>
+                                </div>
+                            </div>
+                            <div class="tkt" style="opacity:.5">
+                                <div class="tkt-head">
+                                    <span class="tkt-id">#OP-1035</span>
+                                    <span class="tkt-pri low"></span>
+                                </div>
+                                <div class="tkt-title">Block A4 irrigation timer reset</div>
+                                <div class="tkt-meta">
+                                    <span class="tkt-tag">FIELD</span>
+                                    <span><i class="fa-solid fa-check"></i> 2.5h</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-foot">
+                    <span>Avg resolution time this week: <strong style="color:var(--green)">4.2 hrs</strong> · 23 closed · 1 SLA breach</span>
+                    <a href="#">Open ticket queue →</a>
+                </div>
+            </div>
+
+            <!-- BOTTOM ROW: U-PICK + RESERVATIONS -->
+            <div class="dash-grid">
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>U-Pick Reservations · Next 7 Days</h3>
+                            <div class="meta">312 today · 2,840 across week</div>
+                        </div>
+                        <button class="btn ghost"><i class="fa-solid fa-filter"></i> Filter</button>
+                    </div>
+                    <div class="card-body flush">
+                        <table class="tbl">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Slot</th>
+                                    <th>Booked</th>
+                                    <th>Capacity</th>
+                                    <th>Crop Focus</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Today</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">WED 10/22</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>312</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">Fuji</span></td>
+                                    <td><span class="tbl-tag tag-green">Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Thursday</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/23</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>248</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">Pink Lady</span></td>
+                                    <td><span class="tbl-tag tag-green">Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Friday</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/24</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>356</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">Mutsu</span></td>
+                                    <td><span class="tbl-tag tag-orange">Filling fast</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Saturday</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/25</span></td>
+                                    <td>9a · 11a · 1p · 3p</td>
+                                    <td><strong>612</strong></td>
+                                    <td>650</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">All</span></td>
+                                    <td><span class="tbl-tag tag-red">Nearly full</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sunday</strong><br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/26</span></td>
+                                    <td>11a · 1p · 3p</td>
+                                    <td><strong>478</strong></td>
+                                    <td>500</td>
+                                    <td><span class="tbl-tag tag-red">Honeycrisp</span> <span class="tbl-tag tag-honey">Stayman</span></td>
+                                    <td><span class="tbl-tag tag-orange">Filling fast</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Monday<br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/27</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>184</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-honey">Open varieties</span></td>
+                                    <td><span class="tbl-tag tag-green">Open</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Tuesday<br><span style="color:var(--text-mute);font-size:.7rem;font-family:var(--mono)">10/28</span></td>
+                                    <td>9a · 12p · 3p</td>
+                                    <td><strong>156</strong></td>
+                                    <td>400</td>
+                                    <td><span class="tbl-tag tag-honey">Open varieties</span></td>
+                                    <td><span class="tbl-tag tag-green">Open</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <div>
+                            <h3>Recent Activity</h3>
+                            <div class="meta">Live feed</div>
+                        </div>
+                    </div>
+                    <div class="card-body flush" style="padding:8px 0">
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--green-l);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-ticket"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>14 new u-pick reservations</strong> for Saturday</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">2m ago · saturday is 94% full</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--apple-soft);color:var(--apple);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>High priority ticket</strong> opened — Tractor #2</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">12m ago · marcus needs by 3:30pm</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--honey-soft);color:var(--honey-bright);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-bus"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>Yancey Co. Elementary</strong> arrived (38 students)</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">22m ago · sarah leading tour</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--blue-l);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-box"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>Online ship orders</strong> — 18 shipped today</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">38m ago · cider club preorders</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--green-l);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-circle-check"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>Block A4 irrigation</strong> reset — ticket closed</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">2.5h ago · ricky g.</div>
+                            </div>
+                        </div>
+                        <div style="padding:11px 20px;display:flex;gap:12px;align-items:flex-start">
+                            <div style="width:30px;height:30px;border-radius:8px;background:var(--purple-l);color:var(--purple);display:flex;align-items:center;justify-content:center;font-size:.78rem;flex-shrink:0"><i class="fa-solid fa-glass-water"></i></div>
+                            <div style="flex:1">
+                                <div style="font-size:.82rem"><strong>Tank 3</strong> Honeycrisp Reserve hit 86% — ready Nov 5</div>
+                                <div style="font-size:.7rem;color:var(--text-mute);margin-top:2px;font-family:var(--mono)">3h ago · cidery</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-foot">
+                        <a href="#" style="margin:0 auto">View all activity →</a>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /section-view today -->
+
+        <!-- OTHER SECTION VIEWS -->
+        <div class="section-view" data-view="tickets">
+            <a class="section-view-back" data-action="back-to-today"><i class="fa-solid fa-arrow-left"></i> Back to Today</a>
+            <div class="page-head">
+                <div>
+                    <div class="breadcrumb">Operations · <span>Maintenance Tickets</span></div>
+                    <h1>Ticket Queue</h1>
+                    <div style="color:var(--text-soft);font-size:.88rem">All maintenance and operations tickets across the farm.</div>
+                </div>
+                <div class="page-actions">
+                    <button class="btn" data-action="filter"><i class="fa-solid fa-filter"></i> Filter</button>
+                    <button class="btn primary" data-action="new-ticket"><i class="fa-solid fa-plus"></i> New Ticket</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-head">
+                    <div><h3>All Open Tickets</h3><div class="meta" id="ticketSummary">7 open · 2 high priority</div></div>
+                </div>
+                <div class="card-body flush" id="ticketFullList"></div>
+            </div>
+        </div>
+
+        <div class="section-view" data-view="fields">
+            <a class="section-view-back" data-action="back-to-today"><i class="fa-solid fa-arrow-left"></i> Back to Today</a>
+            <div class="page-head">
+                <div>
+                    <div class="breadcrumb">Farm · <span>Fields & Blocks</span></div>
+                    <h1>Orchard Blocks</h1>
+                    <div style="color:var(--text-soft);font-size:.88rem">300 acres across 24 blocks. Click any block for details.</div>
+                </div>
+            </div>
+            <div class="card"><div class="card-body" id="blocksList"></div></div>
+        </div>
+
+        <div class="section-view" data-view="reservations">
+            <a class="section-view-back" data-action="back-to-today"><i class="fa-solid fa-arrow-left"></i> Back to Today</a>
+            <div class="page-head">
+                <div>
+                    <div class="breadcrumb">Guests · <span>U-Pick Reservations</span></div>
+                    <h1>U-Pick Reservations</h1>
+                    <div style="color:var(--text-soft);font-size:.88rem">All upcoming reservations and capacity by day.</div>
+                </div>
+                <div class="page-actions"><button class="btn primary" data-action="export"><i class="fa-solid fa-arrow-down"></i> Export CSV</button></div>
+            </div>
+            <div class="card"><div class="card-body" style="padding:18px 20px"><p style="color:var(--text-soft)">Detailed reservation manager — search guests, modify slots, send reminders. (Full view in production.)</p></div></div>
+        </div>
+
+        <div class="section-view" data-view="tours">
+            <a class="section-view-back" data-action="back-to-today"><i class="fa-solid fa-arrow-left"></i> Back to Today</a>
+            <div class="page-head"><div><div class="breadcrumb">Guests · <span>Tours & Groups</span></div><h1>Tour Schedule</h1><div style="color:var(--text-soft);font-size:.88rem">All tour bookings, guides, and group inquiries.</div></div></div>
+            <div class="card"><div class="card-body" id="toursFullList"></div></div>
+        </div>
+
+        <div class="section-view" data-view="generic"><a class="section-view-back" data-action="back-to-today"><i class="fa-solid fa-arrow-left"></i> Back to Today</a><div class="page-head"><div><div class="breadcrumb" id="genericBreadcrumb"></div><h1 id="genericTitle"></h1><div style="color:var(--text-soft);font-size:.88rem" id="genericDesc"></div></div></div><div class="card"><div class="card-body" style="padding:40px;text-align:center"><div style="font-size:3rem;color:var(--text-mute);margin-bottom:14px"><i class="fa-solid fa-screwdriver-wrench"></i></div><h3 style="font-family:var(--serif);font-size:1.3rem;margin-bottom:8px">Module preview</h3><p style="color:var(--text-soft);max-width:420px;margin:0 auto;font-size:.9rem">This module is part of the dashboard build. The Today view shows the live KPIs for this section.</p><button class="btn" data-action="back-to-today" style="margin-top:18px"><i class="fa-solid fa-arrow-left"></i> Back to Today</button></div></div></div>
+        </div><!-- /content -->
+    </main>
+</div>
+
+<!-- ─── MODAL ─── -->
+<div class="modal-overlay" id="modal">
+    <div class="modal" id="modalBox">
+        <div class="modal-head"><div><h3 id="modalTitle">—</h3><div class="meta" id="modalMeta"></div></div><button class="modal-close" data-action="close-modal"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-foot" id="modalFoot"></div>
+    </div>
+</div>
+
+<!-- ─── TOAST ─── -->
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg">—</span></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+const state = {
+  tickets: [
+    { id:'OP-1042', title:"Tractor #2 won't start — needed for 3:30pm tour", category:'FIELD', priority:'high', status:'open', reporter:'Marcus', assignee:null, created:'12m ago', notes:'Battery checked, may need starter. Marcus needs by 3:30pm.' },
+    { id:'OP-1041', title:'Restroom B paper towel dispenser empty', category:'GUEST', priority:'med', status:'open', reporter:'Guest', assignee:null, created:'28m ago', notes:'Reported via gate scanner feedback.' },
+    { id:'OP-1039', title:'Block C7 frost fan — verify fuel & rotation before Saturday', category:'FIELD', priority:'high', status:'progress', reporter:'Henry Hilltop', assignee:'RG', created:'Due Sat', notes:'Sat night frost watch. Run fans 2am-6am if temp drops below 32.' },
+    { id:'OP-1038', title:'Register #3 receipt printer paper jam — bypassing for now', category:'BAKERY', priority:'med', status:'progress', reporter:'Front of house', assignee:'VK', created:'1.5h', notes:'Paper roll feed mechanism likely needs cleaning.' },
+    { id:'OP-1036', title:'U-pick gate scanner intermittent — try cable swap', category:'GUEST', priority:'low', status:'progress', reporter:'Gate ops', assignee:'FT', created:'3h', notes:'Tested replacement cable from spare kit. Monitoring.' },
+    { id:'OP-1031', title:'Cidery pump seal — replacement ETA Thu', category:'CIDERY', priority:'med', status:'parts', reporter:'Cidery', assignee:'WB', created:'Ships Thu', notes:'Workaround: routing through tank 4. Part on order from supplier.' },
+    { id:'OP-1024', title:'Tasting room AC unit thermostat — ordered', category:'CIDERY', priority:'low', status:'parts', reporter:'Cidery', assignee:'RG', created:'Ships Mon', notes:'Non-urgent. Backup unit running.' },
+    { id:'OP-1040', title:'Parking lot trash bin overflow — cleared', category:'GUEST', priority:'low', status:'closed', reporter:'Lot crew', assignee:'WB', created:'18m', notes:'Cleared and serviced.' },
+    { id:'OP-1037', title:'Fryer #2 thermostat recalibrated', category:'BAKERY', priority:'med', status:'closed', reporter:'Bakery', assignee:'VK', created:'1h', notes:'Recalibrated to 365°F. Running normal.' },
+    { id:'OP-1035', title:'Block A4 irrigation timer reset', category:'FIELD', priority:'low', status:'closed', reporter:'Field crew', assignee:'RG', created:'2.5h', notes:'Reset and tested. Schedule normal.' }
+  ],
+  blocks: [
+    { id:'A1', name:'A1 · Honeycrisp', status:'PEAK', acres:18, yield:'92%', irrigation:'Auto · 4am cycle', lastScout:'2d ago · Sarah · clean', notes:'Peak harvest — most popular u-pick variety.' },
+    { id:'A2', name:'A2 · Gala', status:'PEAK', acres:14, yield:'88%', irrigation:'Auto · 4am', lastScout:'2d ago · clean', notes:'Heavy yield this year.' },
+    { id:'A3', name:'A3 · Fuji', status:'OPEN', acres:11, yield:'76%', irrigation:'Auto · 4am', lastScout:'3d ago · clean', notes:'Ripening late this year.' },
+    { id:'A4', name:'A4 · Pink Lady', status:'OPEN', acres:12, yield:'70%', irrigation:'Auto · 4am', lastScout:'2d ago · trace aphids · monitoring', notes:'Late variety. Do not let guests pick yet.' },
+    { id:'A5', name:'A5 · Granny Smith', status:'OPEN', acres:9, yield:'82%', irrigation:'Auto · 4am', lastScout:'2d ago · clean' },
+    { id:'A6', name:'A6 · Rome', status:'RIPENING', acres:10, yield:'48%', irrigation:'Auto · 4am', lastScout:'2d ago · clean', notes:'Cooking apple — pie demo opportunity.' },
+    { id:'A7', name:'A7 · Mutsu', status:'OPEN', acres:16, yield:'85%', irrigation:'Auto · 4am', lastScout:'2d ago · clean' },
+    { id:'A8', name:'A8 · Crispin', status:'PEAK', acres:13, yield:'90%', irrigation:'Auto · 4am', lastScout:'2d ago · clean' },
+    { id:'A9', name:'A9 · Stayman', status:'OPEN', acres:14, yield:'72%', irrigation:'Auto · 4am', lastScout:'2d ago · clean' },
+    { id:'B1', name:'B1 · Peach', status:'SEASON OVER', acres:6, yield:'100% (closed)', irrigation:'Off-season', lastScout:'7d ago' },
+    { id:'B2', name:'B2 · Strawberries', status:'DORMANT', acres:5, yield:'—', irrigation:'Drip · maintenance only', lastScout:'14d ago' },
+    { id:'B3', name:'B3 · Mixed Late', status:'RIPENING', acres:7, yield:'52%', irrigation:'Auto · 4am', lastScout:'2d ago · clean' },
+    { id:'C1', name:'C1 · Cider Block', status:'PRESSING', acres:8, yield:'95%', irrigation:'N/A · processing', lastScout:'1d ago · clean' },
+    { id:'C7', name:'C7 · Late Apples', status:'FROST WATCH', acres:5, yield:'30%', irrigation:'Auto · 4am', lastScout:'1d ago · check fans!', notes:'⚠ Frost watch for Saturday. Fans on standby.' }
+  ],
+  tours: [
+    { time:'10:00 AM', dur:'45 min', name:'Tractor Tour · Family Group', guide:'Marcus', booked:24, cap:30, type:'tractor' },
+    { time:'11:30 AM', dur:'2.5h', name:'School Tour · Yancey Co. Elem.', guide:'Sarah', booked:38, cap:40, type:'school' },
+    { time:'2:00 PM', dur:'1h', name:'Cider Tasting Flight', guide:'Hannah', booked:18, cap:20, type:'cider' },
+    { time:'3:30 PM', dur:'45 min', name:'Tractor Tour · Bus Group', guide:'Marcus', booked:12, cap:30, type:'tractor' }
+  ],
+  reservations: [
+    { date:'Today · Wed 10/22', slots:'9a · 12p · 3p', booked:312, cap:400, focus:'Honeycrisp, Fuji', status:'Open' },
+    { date:'Thu 10/23', slots:'9a · 12p · 3p', booked:248, cap:400, focus:'Honeycrisp, Pink Lady', status:'Open' },
+    { date:'Fri 10/24', slots:'9a · 12p · 3p', booked:356, cap:400, focus:'Honeycrisp, Mutsu', status:'Filling fast' },
+    { date:'Sat 10/25', slots:'9a · 11a · 1p · 3p', booked:612, cap:650, focus:'All varieties', status:'Nearly full' },
+    { date:'Sun 10/26', slots:'11a · 1p · 3p', booked:478, cap:500, focus:'Honeycrisp, Stayman', status:'Filling fast' },
+    { date:'Mon 10/27', slots:'9a · 12p · 3p', booked:184, cap:400, focus:'Open varieties', status:'Open' },
+    { date:'Tue 10/28', slots:'9a · 12p · 3p', booked:156, cap:400, focus:'Open varieties', status:'Open' }
+  ]
+};
+
+const sectionMeta = {
+  today:        { title:"Today's Operations", crumb:'Overview · <span>Today</span>' },
+  revenue:      { title:'Revenue', crumb:'Overview · <span>Revenue</span>', desc:'Sales by channel — u-pick, bakery, cidery, online ship.' },
+  visitors:     { title:'Visitors', crumb:'Overview · <span>Visitors</span>', desc:'Gate count, dwell time, demographics, repeat visit rate.' },
+  fields:       { title:'Fields & Blocks', crumb:'Farm · <span>Fields & Blocks</span>' },
+  irrigation:   { title:'Irrigation', crumb:'Farm · <span>Irrigation</span>', desc:'Schedule, run history, soil moisture, valve diagnostics.' },
+  pest:         { title:'Pest Scouting', crumb:'Farm · <span>Pest Scouting</span>', desc:'Scout reports, IPM thresholds, treatment log.' },
+  harvest:      { title:'Harvest Log', crumb:'Farm · <span>Harvest Log</span>', desc:'Daily yield by block, packing house throughput, cold storage.' },
+  reservations: { title:'U-Pick Reservations', crumb:'Guests · <span>U-Pick Reservations</span>' },
+  tours:        { title:'Tours & Groups', crumb:'Guests · <span>Tours & Groups</span>' },
+  cidery:       { title:'Cidery Tastings', crumb:'Guests · <span>Cidery Tastings</span>', desc:'Tasting reservations, flight inventory, room utilization.' },
+  events:       { title:'Events', crumb:'Guests · <span>Events</span>', desc:'Apple Festival, Santa, Customer Appreciation, weddings.' },
+  tickets:      { title:'Maintenance Tickets', crumb:'Operations · <span>Maintenance Tickets</span>' },
+  inventory:    { title:'Bakery & Inventory', crumb:'Operations · <span>Bakery & Inventory</span>', desc:'Bakery output, par levels, vendor orders, cidery tank levels.' },
+  staff:        { title:'Staff & Schedule', crumb:'Operations · <span>Staff & Schedule</span>', desc:'Shift schedule, time-off requests, payroll, training.' },
+  shop:         { title:'Online Shop', crumb:'Admin · <span>Online Shop</span>', desc:'Web orders, shipping queue, abandoned carts, fulfillment.' },
+  settings:     { title:'Settings', crumb:'Admin · <span>Settings</span>', desc:'Users, integrations, branding, notification rules.' }
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════════════════════ */
+function openModal(opts){
+  document.getElementById('modalTitle').textContent = opts.title || '';
+  document.getElementById('modalMeta').innerHTML = opts.meta || '';
+  document.getElementById('modalBody').innerHTML = opts.body || '';
+  document.getElementById('modalFoot').innerHTML = opts.foot || '';
+  document.getElementById('modalBox').classList.toggle('lg', !!opts.lg);
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click',e=>{ if(e.target.id==='modal') closeModal(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+
+/* ═══════════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg, type){
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.toggle('error', type==='error');
+  t.querySelector('i').className = type==='error' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAV / SECTION SWITCHING
+═══════════════════════════════════════════════════════════════ */
+function showSection(name){
+  document.querySelectorAll('.nav-item[data-section]').forEach(n=>n.classList.toggle('active', n.dataset.section===name));
+  const knownViews = ['today','tickets','fields','reservations','tours'];
+  document.querySelectorAll('.section-view').forEach(v=>v.classList.remove('active'));
+  if(knownViews.includes(name)){
+    document.querySelector(`.section-view[data-view="${name}"]`).classList.add('active');
+  }else{
+    const v = document.querySelector('.section-view[data-view="generic"]');
+    v.classList.add('active');
+    const meta = sectionMeta[name];
+    document.getElementById('genericBreadcrumb').innerHTML = meta.crumb;
+    document.getElementById('genericTitle').textContent = meta.title;
+    document.getElementById('genericDesc').textContent = meta.desc || '';
+  }
+  // Update topbar title
+  const meta = sectionMeta[name] || sectionMeta.today;
+  document.getElementById('pageTitle').innerHTML = meta.title + ' <small>WED · OCT 22</small>';
+  // Render dynamic views
+  if(name==='tickets') renderTicketsList();
+  if(name==='fields') renderBlocksList();
+  if(name==='tours') renderToursList();
+  // Close mobile sidebar
+  document.querySelector('.sidebar').classList.remove('open');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+document.querySelectorAll('.nav-item[data-section]').forEach(n=>{
+  n.addEventListener('click', e=>{ e.preventDefault(); showSection(n.dataset.section); });
+});
+document.querySelectorAll('.kpi[data-section]').forEach(k=>{
+  k.addEventListener('click', ()=> showSection(k.dataset.section));
+});
+
+/* Back action */
+document.addEventListener('click', e=>{
+  const back = e.target.closest('[data-action="back-to-today"]');
+  if(back){ showSection('today'); }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   DROPDOWNS
+═══════════════════════════════════════════════════════════════ */
+function toggleDropdown(id){
+  document.querySelectorAll('.dropdown.open').forEach(d=>{ if(d.id!==id) d.classList.remove('open'); });
+  document.getElementById(id).classList.toggle('open');
+}
+document.getElementById('notifBtn').addEventListener('click', e=>{ e.stopPropagation(); toggleDropdown('notifDropdown'); });
+document.getElementById('helpBtn').addEventListener('click', e=>{ e.stopPropagation(); toggleDropdown('helpDropdown'); });
+document.getElementById('dateBtn').addEventListener('click', e=>{ e.stopPropagation(); toggleDropdown('dateDropdown'); });
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.dropdown') && !e.target.closest('#notifBtn,#helpBtn,#dateBtn')){
+    document.querySelectorAll('.dropdown.open').forEach(d=>d.classList.remove('open'));
+  }
+});
+
+/* Date dropdown */
+document.querySelectorAll('#dateDropdown .dropdown-item').forEach(it=>{
+  it.addEventListener('click', ()=>{
+    const labels = { today:'Oct 22, 2026', yesterday:'Oct 21, 2026', week:'This Week', month:'October 2026', custom:'Custom Range' };
+    document.getElementById('dateBtn').innerHTML = `<i class="fa-solid fa-calendar"></i> ${labels[it.dataset.date]}`;
+    document.getElementById('dateDropdown').classList.remove('open');
+    toast('Date range updated to ' + labels[it.dataset.date]);
+  });
+});
+
+/* Notification → ticket open */
+document.querySelectorAll('#notifDropdown .dropdown-item[data-action="open-ticket"]').forEach(it=>{
+  it.addEventListener('click', ()=>{
+    document.getElementById('notifDropdown').classList.remove('open');
+    showTicketModal(it.dataset.ticket);
+  });
+});
+document.querySelectorAll('#notifDropdown .dropdown-item:not([data-action])').forEach(it=>{
+  it.addEventListener('click', e=>{ e.stopPropagation(); document.getElementById('notifDropdown').classList.remove('open'); toast('Notifications cleared'); document.querySelector('#notifBtn .dot').style.display='none'; });
+});
+
+document.querySelectorAll('#helpDropdown .dropdown-item').forEach(it=>{
+  it.addEventListener('click', ()=>{ document.getElementById('helpDropdown').classList.remove('open'); toast(it.textContent.trim() + ' · coming soon'); });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   TABS (visual only — switch active class & toast)
+═══════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.tab-row').forEach(row=>{
+  row.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      row.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      toast(`Filter: ${tab.textContent.trim()}`);
+    });
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   TICKETS
+═══════════════════════════════════════════════════════════════ */
+const STATUS_COLS = [
+  { id:'open',     label:'Open' },
+  { id:'progress', label:'In Progress' },
+  { id:'parts',    label:'Awaiting Parts' },
+  { id:'closed',   label:'Closed Today' }
+];
+const PRI_LBL = { high:'High', med:'Medium', low:'Low' };
+const PRI_COLOR = { high:'apple', med:'orange', low:'mute' };
+const CAT_TAG = { FIELD:'tag-green', BAKERY:'tag-honey', CIDERY:'tag-purple', GUEST:'tag-blue' };
+
+function renderKanban(){
+  const kanban = document.querySelector('.kanban');
+  if(!kanban) return;
+  kanban.innerHTML = '';
+  STATUS_COLS.forEach(col=>{
+    const items = state.tickets.filter(t=>t.status===col.id);
+    const wrap = document.createElement('div');
+    wrap.className = 'kan-col';
+    wrap.dataset.status = col.id;
+    wrap.innerHTML = `
+      <div class="kan-head">
+        <div class="kan-title">${col.label} <span class="pill">${items.length}</span></div>
+        <button class="kan-add" data-action="new-ticket-status" data-status="${col.id}"><i class="fa-solid fa-plus"></i></button>
+      </div>
+      ${items.map(t=>tktCardHTML(t)).join('')}
+    `;
+    kanban.appendChild(wrap);
+  });
+  // Wire ticket clicks
+  kanban.querySelectorAll('.tkt').forEach(c=>c.addEventListener('click',()=>showTicketModal(c.dataset.id)));
+  // Wire +
+  kanban.querySelectorAll('.kan-add').forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); showNewTicketModal(b.dataset.status); }));
+  // Drag & drop
+  enableTicketDragDrop();
+  // Update counts
+  const open = state.tickets.filter(t=>t.status!=='closed').length;
+  const high = state.tickets.filter(t=>t.status!=='closed' && t.priority==='high').length;
+  document.getElementById('kpiOpenTickets').textContent = open;
+  document.getElementById('ticketBadge').textContent = open;
+  document.getElementById('openTicketHeading').textContent = open;
+  const sum = document.getElementById('ticketSummary');
+  if(sum) sum.textContent = `${open} open · ${high} high priority`;
+}
+
+function tktCardHTML(t){
+  const dim = t.status==='closed' ? 'style="opacity:.6"' : '';
+  const reporterLine = t.status==='closed'
+    ? `<span><i class="fa-solid fa-check"></i> ${t.created}</span>`
+    : `<span><i class="fa-solid fa-clock"></i> ${t.created}</span>`;
+  return `
+    <div class="tkt" data-id="${t.id}" draggable="true" ${dim}>
+      <div class="tkt-head">
+        <span class="tkt-id">#${t.id}</span>
+        <span class="tkt-pri ${t.priority}" title="${PRI_LBL[t.priority]} priority"></span>
+      </div>
+      <div class="tkt-title">${t.title}</div>
+      <div class="tkt-meta">
+        <span class="tkt-tag">${t.category}</span>
+        ${reporterLine}
+      </div>
+      ${t.status==='closed' ? '' : `
+      <div class="tkt-foot">
+        <span style="color:var(--text-mute);font-size:.66rem">${t.assignee ? 'Assigned' : 'Reported by ' + (t.reporter||'—')}</span>
+        ${t.assignee
+          ? `<div class="avatar-mini" style="width:20px;height:20px;font-size:.55rem">${t.assignee}</div>`
+          : `<div class="avatar-mini" style="width:20px;height:20px;font-size:.55rem;background:var(--surface);color:var(--text-mute);border:1px dashed var(--border)">?</div>`}
+      </div>`}
+    </div>`;
+}
+
+function renderTicketsList(){
+  const root = document.getElementById('ticketFullList');
+  if(!root) return;
+  root.innerHTML = `
+    <table class="tbl">
+      <thead><tr><th>ID</th><th>Title</th><th>Category</th><th>Priority</th><th>Status</th><th>Assignee</th><th>Time</th></tr></thead>
+      <tbody>
+        ${state.tickets.filter(t=>t.status!=='closed').map(t=>`
+          <tr data-id="${t.id}">
+            <td><strong style="font-family:var(--mono);font-size:.75rem">#${t.id}</strong></td>
+            <td><div class="tbl-pri">${t.title}<small>${t.notes ? t.notes.slice(0,60) + (t.notes.length>60?'…':'') : ''}</small></div></td>
+            <td><span class="tbl-tag ${CAT_TAG[t.category]||'tag-mute'}">${t.category}</span></td>
+            <td><span class="tbl-tag ${t.priority==='high'?'tag-red':t.priority==='med'?'tag-orange':'tag-mute'}">${PRI_LBL[t.priority]}</span></td>
+            <td><span class="tbl-tag tag-mute">${STATUS_COLS.find(s=>s.id===t.status).label}</span></td>
+            <td>${t.assignee ? `<div class="avatar-mini" style="width:24px;height:24px;font-size:.6rem">${t.assignee}</div>` : '<span style="color:var(--text-mute);font-size:.78rem">Unassigned</span>'}</td>
+            <td style="color:var(--text-mute);font-size:.78rem">${t.created}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+  root.querySelectorAll('tr[data-id]').forEach(tr=>tr.addEventListener('click',()=>showTicketModal(tr.dataset.id)));
+}
+
+function showTicketModal(id){
+  const t = state.tickets.find(x=>x.id===id);
+  if(!t) return;
+  openModal({
+    title: t.title,
+    meta: `#${t.id} · ${t.category} · ${PRI_LBL[t.priority]} priority`,
+    body: `
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Status</div><div class="detail-val sm">${STATUS_COLS.find(s=>s.id===t.status).label}</div></div>
+        <div class="detail-item"><div class="detail-label">Priority</div><div class="detail-val sm" style="color:${t.priority==='high'?'var(--apple)':t.priority==='med'?'var(--orange)':'var(--text-mute)'}">${PRI_LBL[t.priority]}</div></div>
+        <div class="detail-item"><div class="detail-label">Reporter</div><div class="detail-val sm">${t.reporter||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Assignee</div><div class="detail-val sm">${t.assignee||'Unassigned'}</div></div>
+        <div class="detail-item"><div class="detail-label">Created</div><div class="detail-val sm">${t.created}</div></div>
+        <div class="detail-item"><div class="detail-label">Category</div><div class="detail-val sm">${t.category}</div></div>
+      </div>
+      <div class="field"><label>Notes & history</label><div class="note-box">${t.notes||'No notes yet.'}<div class="note-meta">— ${t.reporter||'system'} · ${t.created}</div></div></div>
+      <div class="field"><label>Add update</label><textarea placeholder="Type an update or assign someone…" id="ticketUpdate"></textarea></div>
+    `,
+    foot: `
+      ${t.status!=='closed' ? `<button class="btn" data-action="advance-ticket" data-id="${t.id}"><i class="fa-solid fa-forward"></i> Advance Status</button>` : ''}
+      ${t.status!=='closed' ? `<button class="btn" data-action="close-ticket" data-id="${t.id}"><i class="fa-solid fa-check"></i> Close</button>` : ''}
+      <button class="btn primary" data-action="save-ticket-update" data-id="${t.id}"><i class="fa-solid fa-floppy-disk"></i> Save Update</button>
+    `
+  });
+}
+
+function showNewTicketModal(status){
+  openModal({
+    title: 'New Ticket',
+    meta: 'Create a maintenance or operations ticket',
+    body: `
+      <div class="field"><label>Title</label><input type="text" id="ntTitle" placeholder="e.g., Tractor #2 won't start"></div>
+      <div class="field-row">
+        <div class="field"><label>Category</label><select id="ntCat"><option>FIELD</option><option>BAKERY</option><option>CIDERY</option><option>GUEST</option></select></div>
+        <div class="field"><label>Priority</label><select id="ntPri"><option value="high">High</option><option value="med" selected>Medium</option><option value="low">Low</option></select></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="ntNotes" placeholder="Detail, location, what's needed…"></textarea></div>
+    `,
+    foot: `
+      <button class="btn" data-action="close-modal">Cancel</button>
+      <button class="btn primary" data-action="save-new-ticket" data-status="${status||'open'}"><i class="fa-solid fa-plus"></i> Create Ticket</button>
+    `
+  });
+  setTimeout(()=>document.getElementById('ntTitle')?.focus(), 100);
+}
+
+document.addEventListener('click', e=>{
+  const closeEl = e.target.closest('[data-action="close-modal"]');
+  if(closeEl) closeModal();
+  const newT = e.target.closest('[data-action="new-ticket"]');
+  if(newT) showNewTicketModal('open');
+  const newTS = e.target.closest('[data-action="new-ticket-status"]');
+  if(newTS) showNewTicketModal(newTS.dataset.status);
+  const saveNew = e.target.closest('[data-action="save-new-ticket"]');
+  if(saveNew){
+    const title = document.getElementById('ntTitle').value.trim();
+    if(!title){ toast('Title is required','error'); return; }
+    const id = 'OP-' + (1043 + state.tickets.filter(t=>t.id.startsWith('OP-')).length - 9);
+    state.tickets.unshift({
+      id, title,
+      category: document.getElementById('ntCat').value,
+      priority: document.getElementById('ntPri').value,
+      status: saveNew.dataset.status,
+      reporter: 'Henry Hilltop',
+      assignee: null,
+      created: 'just now',
+      notes: document.getElementById('ntNotes').value.trim() || ''
+    });
+    closeModal(); renderKanban(); renderTicketsList();
+    toast('Ticket #' + id + ' created');
+  }
+  const advance = e.target.closest('[data-action="advance-ticket"]');
+  if(advance){
+    const t = state.tickets.find(x=>x.id===advance.dataset.id);
+    const flow = ['open','progress','parts','closed'];
+    const next = flow[Math.min(flow.indexOf(t.status)+1, flow.length-1)];
+    t.status = next; if(!t.assignee && next!=='open') t.assignee='TM';
+    closeModal(); renderKanban(); renderTicketsList();
+    toast(`#${t.id} → ${STATUS_COLS.find(s=>s.id===next).label}`);
+  }
+  const closeT = e.target.closest('[data-action="close-ticket"]');
+  if(closeT){
+    const t = state.tickets.find(x=>x.id===closeT.dataset.id);
+    t.status='closed'; t.created='just now';
+    closeModal(); renderKanban(); renderTicketsList();
+    toast(`#${t.id} closed`);
+  }
+  const saveUpd = e.target.closest('[data-action="save-ticket-update"]');
+  if(saveUpd){
+    const t = state.tickets.find(x=>x.id===saveUpd.dataset.id);
+    const upd = document.getElementById('ticketUpdate').value.trim();
+    if(upd) t.notes = (t.notes ? t.notes + '\n— ' : '') + upd;
+    closeModal(); toast(`#${t.id} updated`);
+  }
+  const exp = e.target.closest('[data-action="export"]');
+  if(exp) toast('Export queued · CSV will email to henry@hilltopfamilyorchards.com');
+  const filt = e.target.closest('[data-action="filter"]');
+  if(filt) toast('Filter panel — coming in production');
+});
+
+/* DRAG & DROP TICKETS */
+function enableTicketDragDrop(){
+  let dragId = null;
+  document.querySelectorAll('.tkt').forEach(card=>{
+    card.addEventListener('dragstart', e=>{ dragId = card.dataset.id; card.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+    card.addEventListener('dragend', ()=>{ card.classList.remove('dragging'); document.querySelectorAll('.kan-col').forEach(c=>c.classList.remove('drag-over')); });
+  });
+  document.querySelectorAll('.kan-col').forEach(col=>{
+    col.addEventListener('dragover', e=>{ e.preventDefault(); col.classList.add('drag-over'); });
+    col.addEventListener('dragleave', ()=>col.classList.remove('drag-over'));
+    col.addEventListener('drop', e=>{
+      e.preventDefault(); col.classList.remove('drag-over');
+      if(!dragId) return;
+      const t = state.tickets.find(x=>x.id===dragId);
+      if(t && t.status !== col.dataset.status){
+        t.status = col.dataset.status;
+        if(!t.assignee && t.status!=='open') t.assignee='TM';
+        renderKanban();
+        toast(`#${t.id} → ${STATUS_COLS.find(s=>s.id===col.dataset.status).label}`);
+      }
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FIELD MAP CLICKS
+═══════════════════════════════════════════════════════════════ */
+function showBlockModal(blockId){
+  const b = state.blocks.find(x=>x.id===blockId) || state.blocks[0];
+  openModal({
+    title: b.name,
+    meta: `${b.acres} acres · Status: ${b.status}`,
+    body: `
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Status</div><div class="detail-val sm">${b.status}</div></div>
+        <div class="detail-item"><div class="detail-label">Acres</div><div class="detail-val sm">${b.acres}</div></div>
+        <div class="detail-item"><div class="detail-label">Yield Estimate</div><div class="detail-val sm">${b.yield}</div></div>
+        <div class="detail-item"><div class="detail-label">Irrigation</div><div class="detail-val sm">${b.irrigation}</div></div>
+        <div class="detail-item" style="grid-column:span 2"><div class="detail-label">Last Pest Scout</div><div class="detail-val sm">${b.lastScout}</div></div>
+      </div>
+      ${b.notes ? `<div class="note-box">${b.notes}</div>` : ''}
+      <div class="field"><label>Add field note</label><textarea placeholder="Observation, treatment, harvest update…"></textarea></div>
+    `,
+    foot: `
+      <button class="btn" data-action="close-modal">Cancel</button>
+      <button class="btn" onclick="toast('Irrigation cycle scheduled')"><i class="fa-solid fa-droplet"></i> Schedule Irrigation</button>
+      <button class="btn primary" onclick="toast('Note saved to ${b.id}'); closeModal();"><i class="fa-solid fa-floppy-disk"></i> Save Note</button>
+    `
+  });
+}
+
+// Attach to SVG block groups by their visible label
+document.querySelectorAll('.field-map .block').forEach(g=>{
+  const label = g.querySelector('text')?.textContent || '';
+  const m = label.match(/^([A-C]\d+)/);
+  if(m){
+    g.style.cursor='pointer';
+    g.addEventListener('click', ()=>showBlockModal(m[1]));
+  }
+});
+
+function renderBlocksList(){
+  const root = document.getElementById('blocksList');
+  if(!root) return;
+  root.innerHTML = `
+    <table class="tbl">
+      <thead><tr><th>Block</th><th>Status</th><th>Acres</th><th>Yield</th><th>Irrigation</th><th>Last Scout</th></tr></thead>
+      <tbody>${state.blocks.map(b=>`
+        <tr data-id="${b.id}">
+          <td><strong>${b.name}</strong></td>
+          <td><span class="tbl-tag ${b.status==='PEAK'?'tag-red':b.status==='OPEN'?'tag-orange':b.status==='RIPENING'?'tag-honey':b.status.includes('FROST')?'tag-red':'tag-mute'}">${b.status}</span></td>
+          <td>${b.acres}</td>
+          <td style="font-family:var(--mono)">${b.yield}</td>
+          <td style="color:var(--text-soft);font-size:.78rem">${b.irrigation}</td>
+          <td style="color:var(--text-soft);font-size:.78rem">${b.lastScout}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  root.querySelectorAll('tr[data-id]').forEach(tr=>tr.addEventListener('click',()=>showBlockModal(tr.dataset.id)));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TOURS
+═══════════════════════════════════════════════════════════════ */
+function showTourModal(tour){
+  const pct = Math.round(tour.booked/tour.cap*100);
+  openModal({
+    title: tour.name,
+    meta: `${tour.time} · ${tour.dur} · Guide: ${tour.guide}`,
+    body: `
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Time</div><div class="detail-val sm">${tour.time}</div></div>
+        <div class="detail-item"><div class="detail-label">Duration</div><div class="detail-val sm">${tour.dur}</div></div>
+        <div class="detail-item"><div class="detail-label">Booked</div><div class="detail-val sm">${tour.booked} / ${tour.cap} (${pct}%)</div></div>
+        <div class="detail-item"><div class="detail-label">Guide</div><div class="detail-val sm">${tour.guide}</div></div>
+      </div>
+      <div class="field"><label>Quick actions</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="toast('Roster sent to ${tour.guide}')"><i class="fa-solid fa-paper-plane"></i> Send Roster</button>
+          <button class="btn" onclick="toast('Reminder texts queued')"><i class="fa-solid fa-message"></i> Text Reminder</button>
+          <button class="btn" onclick="toast('Capacity opened')"><i class="fa-solid fa-plus"></i> Add Capacity</button>
+        </div>
+      </div>
+    `,
+    foot: `<button class="btn" data-action="close-modal">Close</button><button class="btn primary" onclick="toast('Tour saved'); closeModal();"><i class="fa-solid fa-floppy-disk"></i> Save</button>`
+  });
+}
+document.querySelectorAll('.slot').forEach(s=>{
+  const name = s.querySelector('.slot-name')?.textContent.trim();
+  s.addEventListener('click',()=>{
+    const t = state.tours.find(x=>x.name===name) || state.tours[0];
+    showTourModal(t);
+  });
+});
+
+function renderToursList(){
+  const root = document.getElementById('toursFullList');
+  if(!root) return;
+  root.innerHTML = `<table class="tbl"><thead><tr><th>Time</th><th>Tour</th><th>Guide</th><th>Booked</th><th>Capacity</th><th>Fill</th></tr></thead><tbody>
+    ${state.tours.map(t=>{
+      const pct=Math.round(t.booked/t.cap*100);
+      return `<tr data-name="${t.name}">
+        <td><strong style="font-family:var(--mono)">${t.time}</strong><br><small style="color:var(--text-mute)">${t.dur}</small></td>
+        <td><strong>${t.name}</strong></td>
+        <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar-mini" style="width:24px;height:24px;font-size:.6rem">${t.guide.slice(0,2).toUpperCase()}</div>${t.guide}</div></td>
+        <td><strong>${t.booked}</strong></td>
+        <td>${t.cap}</td>
+        <td><span class="tbl-tag ${pct>=90?'tag-red':pct>=70?'tag-orange':'tag-green'}">${pct}%</span></td>
+      </tr>`;
+    }).join('')}
+  </tbody></table>`;
+  root.querySelectorAll('tr[data-name]').forEach(tr=>tr.addEventListener('click',()=>{
+    const t = state.tours.find(x=>x.name===tr.dataset.name); showTourModal(t);
+  }));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INVENTORY ROWS
+═══════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.inv-row').forEach(row=>{
+  row.addEventListener('click',()=>{
+    const name = row.querySelector('.inv-name div div, .inv-name div')?.firstChild?.textContent?.trim() || row.querySelector('.inv-name')?.textContent.trim();
+    const qty = row.querySelector('.inv-qty')?.firstChild?.textContent?.trim();
+    openModal({
+      title: name,
+      meta: 'Inventory item',
+      body: `<div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Current Qty</div><div class="detail-val">${qty}</div></div>
+        <div class="detail-item"><div class="detail-label">Par Level</div><div class="detail-val sm">60</div></div>
+      </div>
+      <div class="field"><label>Reorder quantity</label><input type="number" placeholder="e.g., 100" value="50"></div>
+      <div class="field"><label>Vendor</label><select><option>House (in-house production)</option><option>Sysco</option><option>Local supplier</option></select></div>`,
+      foot: `<button class="btn" data-action="close-modal">Cancel</button><button class="btn primary" onclick="toast('Reorder placed for ${name.replace(/'/g,'')}'); closeModal();"><i class="fa-solid fa-cart-plus"></i> Place Reorder</button>`
+    });
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════════════════════════════ */
+document.getElementById('globalSearch').addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase().trim();
+  document.querySelectorAll('.tkt').forEach(t=>{
+    const txt = (t.textContent||'').toLowerCase();
+    t.style.display = !q || txt.includes(q) ? '' : 'none';
+  });
+  document.querySelectorAll('.slot').forEach(s=>{
+    const txt = (s.textContent||'').toLowerCase();
+    s.style.display = !q || txt.includes(q) ? '' : 'none';
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE SIDEBAR
+═══════════════════════════════════════════════════════════════ */
+document.getElementById('menuToggle').addEventListener('click', ()=>{
+  document.querySelector('.sidebar').classList.toggle('open');
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   USER MENU
+═══════════════════════════════════════════════════════════════ */
+document.querySelector('.user-card').addEventListener('click', ()=>{
+  openModal({
+    title: 'Henry Hilltop',
+    meta: 'Owner · henry@hilltopfamilyorchards.com',
+    body: `<div class="detail-grid">
+      <div class="detail-item"><div class="detail-label">Role</div><div class="detail-val sm">Owner</div></div>
+      <div class="detail-item"><div class="detail-label">Last login</div><div class="detail-val sm">Today, 7:02am</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="btn" style="justify-content:flex-start" onclick="toast('Profile editor coming soon')"><i class="fa-solid fa-user"></i> Edit Profile</button>
+      <button class="btn" style="justify-content:flex-start" onclick="toast('Notification prefs coming soon')"><i class="fa-solid fa-bell"></i> Notification Preferences</button>
+      <button class="btn" style="justify-content:flex-start" onclick="toast('Theme switcher — light mode preview')"><i class="fa-solid fa-palette"></i> Appearance</button>
+      <button class="btn" style="justify-content:flex-start;border-color:rgba(217,144,144,0.3);color:var(--red)" onclick="window.location.href='index.html'"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+    </div>`,
+    foot: `<button class="btn" data-action="close-modal">Close</button>`
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+renderKanban();
+</script>
+
+<!-- ───── PREVIEW BAR ───── -->
+<div class="preview-bar" id="previewBar">
+    <button class="preview-bar-handle" onclick="document.getElementById('previewBar').classList.toggle('collapsed')">
+        <i class="fa-solid fa-chevron-down chev"></i> Preview
+    </button>
+    <span class="preview-bar-label">This is a <strong>preview</strong> · view other sites:</span>
+    <div class="preview-bar-btns">
+        <a href="https://williamsdigital.io/preview/blue-ridge-orchards/" class="preview-bar-btn"><i class="fa-solid fa-globe"></i> <span>Public Site</span></a>
+        <a href="https://williamsdigital.io/preview/blue-ridge-orchards/dashboard.html" class="preview-bar-btn active"><i class="fa-solid fa-gauge"></i> <span>Admin Dashboard</span></a>
+        <a href="https://williamsdigital.io/preview/blue-ridge-orchards/staff-portal.html" class="preview-bar-btn" title="On the staff portal: just click Clock In — no PIN needed"><i class="fa-solid fa-id-badge"></i> <span>Staff Portal</span> <em class="preview-bar-hint">just click log in</em></a>
+    </div>
+    <button class="preview-bar-close" onclick="document.getElementById('previewBar').classList.add('collapsed')" aria-label="Hide"><i class="fa-solid fa-xmark"></i></button>
+</div>
+</body>
+</html>
