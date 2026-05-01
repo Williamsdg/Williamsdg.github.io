@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lilly Pad Village — Operations Dashboard</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f1d16">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle cx='32' cy='34' r='22' fill='%233f7a52'/><ellipse cx='40' cy='14' rx='5' ry='3' fill='%23e87a8e' transform='rotate(20 40 14)'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1612;
+  --bg-soft:#13201a;
+  --canvas:radial-gradient(1400px 900px at 80% -10%, rgba(232,122,142,0.06), transparent 60%), radial-gradient(900px 700px at -10% 100%, rgba(91,155,181,0.05), transparent 70%), #0d1612;
+  --surface:rgba(255,255,255,0.025);
+  --surface-strong:rgba(255,255,255,0.05);
+  --surface-hover:rgba(255,255,255,0.04);
+  --pond:#7eb691;
+  --pond-bright:#9bd0ad;
+  --pond-soft:rgba(126,182,145,0.14);
+  --lily:#e87a8e;
+  --lily-bright:#f29ab0;
+  --lily-soft:rgba(232,122,142,0.14);
+  --water:#7cb1c8;
+  --water-soft:rgba(124,177,200,0.14);
+  --gold:#daa970;
+  --gold-soft:rgba(218,169,112,0.14);
+  --red:#e09090;
+  --red-l:rgba(224,144,144,0.14);
+  --orange:#e0b070;
+  --orange-l:rgba(224,176,112,0.14);
+  --purple:#b39bd9;
+  --purple-l:rgba(179,155,217,0.14);
+  --text:#eef0e8;
+  --text-soft:#b3b8ad;
+  --text-mute:#787c70;
+  --border:rgba(255,255,255,0.07);
+  --border-soft:rgba(255,255,255,0.04);
+  --border-strong:rgba(232,122,142,0.3);
+  --serif:'Fraunces',Georgia,serif;
+  --mono:'JetBrains Mono',monospace;
+  --r:6px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas) fixed;color:var(--text);line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-0.005em;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--lily-soft);color:var(--text)}
+
+.layout{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:248px;background:linear-gradient(180deg,rgba(0,0,0,0.45),rgba(0,0,0,0.2));border-right:1px solid var(--border-soft);backdrop-filter:blur(24px);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50;transition:transform .3s}
+.sidebar-header{padding:26px 22px 22px;border-bottom:1px solid var(--border-soft)}
+.sidebar-brand{font-family:var(--serif);font-weight:500;font-size:1.3rem;color:var(--text);line-height:1.1;display:flex;align-items:center;gap:.6rem}
+.sidebar-brand .mark{width:28px;height:28px;background:var(--pond);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;position:relative;flex-shrink:0}
+.sidebar-brand .mark::after{content:'';position:absolute;width:7px;height:5px;background:var(--lily);border-radius:50% 50% 50% 0;top:3px;right:5px;transform:rotate(20deg)}
+.sidebar-sub{font-size:.58rem;color:var(--lily-bright);text-transform:uppercase;letter-spacing:3px;margin-top:6px;font-weight:600}
+.sidebar-nav{flex:1;padding:18px 12px;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.nav-group{font-size:.56rem;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:2.5px;padding:14px 14px 8px}
+.nav-group:first-child{padding-top:0}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:var(--r);font-size:.82rem;color:var(--text-soft);cursor:pointer;transition:all .15s;font-weight:500;position:relative}
+.nav-item i{font-size:.82rem;width:14px;color:var(--text-mute);transition:color .15s}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item:hover i{color:var(--text)}
+.nav-item.active{background:var(--lily-soft);color:var(--lily-bright);font-weight:600}
+.nav-item.active i{color:var(--lily-bright)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--lily);border-radius:0 2px 2px 0}
+.nav-badge{margin-left:auto;background:var(--lily);color:#fff;font-size:.62rem;padding:1px 6px;border-radius:8px;font-weight:600}
+.nav-badge.green{background:var(--pond)}
+.sidebar-foot{padding:14px;border-top:1px solid var(--border-soft)}
+.user-card{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r);transition:background .15s;cursor:pointer}
+.user-card:hover{background:var(--surface)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--lily));display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:600;color:#fff}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+
+/* MAIN */
+.main{flex:1;margin-left:248px;min-width:0}
+
+/* TOP BAR */
+.topbar{position:sticky;top:0;background:rgba(13,22,18,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-soft);padding:14px 32px;display:flex;align-items:center;gap:20px;z-index:40}
+.topbar-title{font-family:var(--serif);font-size:1.15rem;font-weight:500;color:var(--text)}
+.topbar-title small{color:var(--text-mute);font-size:.7rem;font-family:var(--mono);font-weight:500;margin-left:.6rem;letter-spacing:.05em}
+.weather-pill{display:flex;align-items:center;gap:.5rem;background:var(--surface);border:1px solid var(--border);padding:6px 12px;border-radius:8px;font-size:.78rem;color:var(--text-soft)}
+.weather-pill i{color:var(--gold)}
+.weather-pill strong{color:var(--text);font-weight:600}
+.topbar-search{flex:1;max-width:340px;margin-left:auto;position:relative}
+.topbar-search input{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 14px 8px 38px;border-radius:8px;font-size:.82rem;font-family:inherit;transition:all .15s}
+.topbar-search input::placeholder{color:var(--text-mute)}
+.topbar-search input:focus{outline:none;border-color:var(--lily);background:var(--surface-strong)}
+.topbar-search i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-mute);font-size:.78rem}
+.topbar-actions{display:flex;align-items:center;gap:6px}
+.icon-btn{width:36px;height:36px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text-soft);cursor:pointer;font-size:.85rem;transition:all .15s;display:flex;align-items:center;justify-content:center;position:relative}
+.icon-btn:hover{background:var(--surface-strong);color:var(--text)}
+.icon-btn .dot{position:absolute;top:7px;right:7px;width:7px;height:7px;background:var(--lily);border-radius:50%;border:1.5px solid var(--bg)}
+
+/* CONTENT */
+.content{padding:28px 32px 60px}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.page-head h1{font-family:var(--serif);font-size:1.95rem;font-weight:500;letter-spacing:-0.02em;line-height:1.1;margin-bottom:6px}
+.page-head .breadcrumb{font-size:.7rem;color:var(--text-mute);font-family:var(--mono);letter-spacing:.05em;margin-bottom:8px;text-transform:uppercase;font-weight:600}
+.page-head .breadcrumb span{color:var(--lily-bright)}
+.page-head p.lead{color:var(--text-soft);font-size:.88rem;max-width:560px;line-height:1.6}
+.page-actions{display:flex;gap:8px;align-items:center}
+.btn{padding:9px 16px;border-radius:8px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .15s;display:inline-flex;align-items:center;gap:7px;font-family:inherit;letter-spacing:.01em}
+.btn:hover{background:var(--surface-strong);border-color:var(--lily-soft)}
+.btn.primary{background:var(--lily);border-color:var(--lily);color:#fff}
+.btn.primary:hover{background:var(--lily-bright)}
+.btn.ghost{background:transparent}
+.btn i{font-size:.75rem}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;transition:all .2s}
+.kpi:hover{border-color:var(--border-strong);background:var(--surface-strong)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);opacity:.55}
+.kpi.lily::before{background:var(--lily)}
+.kpi.pond::before{background:var(--pond)}
+.kpi.water::before{background:var(--water)}
+.kpi-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.kpi-label{font-size:.65rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:.18em;font-weight:700}
+.kpi-icon{width:30px;height:30px;border-radius:8px;background:var(--surface-strong);color:var(--lily-bright);display:flex;align-items:center;justify-content:center;font-size:.78rem}
+.kpi.pond .kpi-icon{color:var(--pond-bright)}
+.kpi.water .kpi-icon{color:var(--water)}
+.kpi.gold .kpi-icon{color:var(--gold)}
+.kpi-value{font-family:var(--serif);font-size:2rem;font-weight:500;color:var(--text);line-height:1;margin-bottom:8px;letter-spacing:-0.01em}
+.kpi-value small{font-family:var(--sans);font-size:.85rem;color:var(--text-mute);font-weight:500;margin-left:.25rem}
+.kpi-delta{font-size:.72rem;color:var(--pond-bright);font-weight:600;display:flex;align-items:center;gap:.35rem}
+.kpi-delta i{font-size:.62rem}
+.kpi-delta.down{color:var(--red)}
+.kpi-delta.flat{color:var(--text-mute)}
+.kpi-spark{position:absolute;bottom:0;left:0;right:0;height:32px;opacity:.5}
+
+/* GRID LAYOUT */
+.grid-12{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-bottom:24px}
+.col-8{grid-column:span 8}
+.col-6{grid-column:span 6}
+.col-4{grid-column:span 4}
+.col-12{grid-column:span 12}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-head{padding:18px 22px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-soft)}
+.card-head h3{font-family:var(--serif);font-size:1.05rem;font-weight:500;color:var(--text)}
+.card-head .meta{font-size:.7rem;color:var(--text-mute);font-family:var(--mono);letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+.card-head-actions{display:flex;gap:6px;align-items:center}
+.card-head-actions .pill{font-size:.7rem;background:var(--surface-strong);color:var(--text-soft);padding:3px 9px;border-radius:20px;font-weight:600;cursor:pointer;border:1px solid var(--border)}
+.card-head-actions .pill.active{background:var(--lily-soft);color:var(--lily-bright);border-color:var(--lily-soft)}
+.card-body{padding:22px}
+
+/* TODAY SCHEDULE */
+.schedule{display:grid;gap:8px}
+.sched-row{display:grid;grid-template-columns:80px 1fr auto;gap:14px;align-items:center;padding:12px 14px;background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;transition:all .15s}
+.sched-row:hover{background:var(--surface-strong);border-color:var(--border)}
+.sched-time{font-family:var(--mono);font-size:.78rem;color:var(--text-soft);font-weight:600}
+.sched-time small{display:block;font-size:.64rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:.1em;font-family:'Inter',sans-serif;margin-top:2px;font-weight:600}
+.sched-info{display:flex;align-items:center;gap:12px}
+.sched-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.sched-icon.gem{background:var(--lily-soft);color:var(--lily-bright)}
+.sched-icon.fish{background:var(--water-soft);color:var(--water)}
+.sched-icon.golf{background:var(--pond-soft);color:var(--pond-bright)}
+.sched-icon.party{background:var(--gold-soft);color:var(--gold)}
+.sched-detail strong{display:block;font-size:.85rem;color:var(--text);font-weight:600;margin-bottom:2px}
+.sched-detail small{font-size:.72rem;color:var(--text-mute)}
+.sched-status{font-size:.7rem;padding:4px 10px;border-radius:20px;font-weight:600;letter-spacing:.04em}
+.status-confirmed{background:var(--pond-soft);color:var(--pond-bright)}
+.status-checked{background:var(--surface-strong);color:var(--text-soft)}
+.status-pending{background:var(--gold-soft);color:var(--gold)}
+.status-vip{background:var(--lily-soft);color:var(--lily-bright)}
+
+/* CHART */
+.chart-wrap{padding:8px 0 0}
+.chart-axis{display:flex;justify-content:space-between;font-size:.65rem;color:var(--text-mute);font-family:var(--mono);font-weight:600;margin-bottom:4px;letter-spacing:.05em;text-transform:uppercase}
+.chart{height:220px;display:flex;align-items:flex-end;gap:6px;padding:8px 0;border-bottom:1px solid var(--border-soft);position:relative}
+.bar{flex:1;background:linear-gradient(180deg,var(--lily),var(--lily-soft));border-radius:6px 6px 0 0;position:relative;cursor:pointer;transition:opacity .2s;min-height:8px}
+.bar:hover{opacity:.85}
+.bar.alt{background:linear-gradient(180deg,var(--water),var(--water-soft))}
+.bar.gold{background:linear-gradient(180deg,var(--gold),var(--gold-soft))}
+.bar-tooltip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg-soft);border:1px solid var(--border);padding:5px 10px;border-radius:6px;font-size:.7rem;font-weight:600;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s;margin-bottom:6px;color:var(--text)}
+.bar:hover .bar-tooltip{opacity:1}
+.chart-foot{display:flex;justify-content:space-between;font-size:.62rem;color:var(--text-mute);font-family:var(--mono);font-weight:500;margin-top:8px;letter-spacing:.05em;text-transform:uppercase}
+.chart-legend{display:flex;gap:18px;font-size:.7rem;color:var(--text-soft);margin-top:14px}
+.chart-legend span{display:flex;align-items:center;gap:.45rem}
+.chart-legend .sw{width:10px;height:10px;border-radius:3px}
+.sw.lily{background:var(--lily)}
+.sw.water{background:var(--water)}
+.sw.gold{background:var(--gold)}
+
+/* INVENTORY */
+.inv-list{display:flex;flex-direction:column;gap:10px}
+.inv-row{display:flex;align-items:center;gap:14px;padding:10px 12px;background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;transition:all .15s}
+.inv-row:hover{border-color:var(--border)}
+.inv-stone{width:36px;height:36px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#fff,#f4b8c2)}
+.inv-stone.q{background:linear-gradient(135deg,#fff,#d6e0f0)}
+.inv-stone.a{background:linear-gradient(135deg,#a05cb5,#5a2870)}
+.inv-stone.r{background:linear-gradient(135deg,#e87a8e,#9c2a40)}
+.inv-stone.e{background:linear-gradient(135deg,#7ed3a1,#1f6f48)}
+.inv-stone.s{background:linear-gradient(135deg,#7ec8e8,#1f5a8e)}
+.inv-stone.f{background:linear-gradient(135deg,#d4b88b,#7a5a3a)}
+.inv-info{flex:1;min-width:0}
+.inv-info strong{display:block;font-size:.85rem;color:var(--text);font-weight:600;margin-bottom:3px}
+.inv-info small{font-size:.7rem;color:var(--text-mute)}
+.inv-bar-wrap{flex:1;max-width:130px;display:flex;flex-direction:column;gap:4px}
+.inv-bar{height:5px;background:var(--surface-strong);border-radius:3px;overflow:hidden}
+.inv-bar-fill{height:100%;background:var(--pond);border-radius:3px;transition:width .3s}
+.inv-bar-fill.low{background:var(--gold)}
+.inv-bar-fill.crit{background:var(--red)}
+.inv-pct{font-size:.7rem;color:var(--text-mute);font-family:var(--mono);font-weight:600;text-align:right}
+.inv-act{font-size:.75rem;color:var(--text-mute);width:24px;text-align:center;cursor:pointer;transition:color .15s}
+.inv-act:hover{color:var(--lily-bright)}
+
+/* WEATHER */
+.weather-card{background:linear-gradient(135deg,var(--water-soft),var(--pond-soft));border:1px solid var(--border)}
+.weather-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.weather-day{padding:12px;background:var(--surface);border:1px solid var(--border-soft);border-radius:10px;text-align:center}
+.weather-day-label{font-size:.65rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:.15em;font-weight:700;margin-bottom:8px}
+.weather-day-icon{font-size:1.6rem;color:var(--gold);margin-bottom:8px}
+.weather-day-icon.cloud{color:var(--text-soft)}
+.weather-day-icon.rain{color:var(--water)}
+.weather-day-temp{font-family:var(--serif);font-size:1.4rem;font-weight:600;color:var(--text);line-height:1}
+.weather-day-temp small{font-size:.85rem;color:var(--text-mute);font-weight:500;margin-left:4px;font-family:var(--sans)}
+.weather-day-meta{font-size:.7rem;color:var(--text-soft);margin-top:6px}
+
+/* REVENUE BREAKDOWN */
+.rev-mix{display:flex;flex-direction:column;gap:14px;margin-top:8px}
+.rev-row{display:flex;align-items:center;gap:14px}
+.rev-label{font-size:.78rem;color:var(--text-soft);font-weight:600;width:110px;display:flex;align-items:center;gap:.55rem}
+.rev-label .dot{width:8px;height:8px;border-radius:50%}
+.dot.lily{background:var(--lily)}
+.dot.water{background:var(--water)}
+.dot.pond{background:var(--pond)}
+.dot.gold{background:var(--gold)}
+.dot.purple{background:var(--purple)}
+.rev-bar{flex:1;height:8px;background:var(--surface-strong);border-radius:4px;overflow:hidden;position:relative}
+.rev-bar-fill{height:100%;border-radius:4px}
+.rev-bar-fill.lily{background:linear-gradient(90deg,var(--lily),var(--lily-bright))}
+.rev-bar-fill.water{background:linear-gradient(90deg,var(--water),#a3cad9)}
+.rev-bar-fill.pond{background:linear-gradient(90deg,var(--pond),var(--pond-bright))}
+.rev-bar-fill.gold{background:linear-gradient(90deg,var(--gold),#e8c08e)}
+.rev-bar-fill.purple{background:linear-gradient(90deg,var(--purple),#cab6e6)}
+.rev-amount{font-family:var(--mono);font-size:.78rem;color:var(--text);font-weight:600;width:78px;text-align:right}
+.rev-pct{font-size:.7rem;color:var(--text-mute);width:42px;text-align:right;font-family:var(--mono);font-weight:500}
+
+/* PARTY TABLE */
+.party-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.party-table th{text-align:left;padding:10px 14px;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--text-mute);font-weight:700;border-bottom:1px solid var(--border-soft)}
+.party-table td{padding:14px;border-bottom:1px solid var(--border-soft);color:var(--text-soft);vertical-align:middle}
+.party-table tbody tr{transition:background .15s}
+.party-table tbody tr:hover{background:var(--surface)}
+.party-table tbody tr:last-child td{border-bottom:none}
+.party-name{display:flex;align-items:center;gap:10px}
+.party-emoji{width:32px;height:32px;border-radius:9px;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.party-emoji.bday{background:var(--lily-soft);color:var(--lily-bright)}
+.party-emoji.school{background:var(--water-soft);color:var(--water)}
+.party-emoji.reunion{background:var(--pond-soft);color:var(--pond-bright)}
+.party-name strong{color:var(--text);font-weight:600;display:block;font-size:.86rem}
+.party-name small{font-size:.7rem;color:var(--text-mute)}
+.party-amount{font-family:var(--mono);color:var(--text);font-weight:600;font-size:.85rem}
+
+/* REVIEWS PANEL */
+.review-panel{display:flex;flex-direction:column;gap:12px}
+.review-item{padding:14px;background:var(--surface);border:1px solid var(--border-soft);border-radius:10px}
+.review-item-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.review-item-author{display:flex;align-items:center;gap:.55rem;font-size:.8rem;color:var(--text);font-weight:600}
+.review-item-author .av{width:24px;height:24px;border-radius:50%;background:var(--pond-soft);color:var(--pond-bright);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700}
+.review-item-stars{color:var(--gold);font-size:.72rem;letter-spacing:.05em}
+.review-item p{font-size:.78rem;color:var(--text-soft);line-height:1.55;margin-bottom:8px}
+.review-item-foot{display:flex;justify-content:space-between;align-items:center}
+.review-source-tag{font-size:.66rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:.12em;font-weight:600}
+.review-respond{font-size:.7rem;color:var(--lily-bright);font-weight:600;cursor:pointer}
+
+/* ALERTS */
+.alert-card{background:linear-gradient(135deg,rgba(232,122,142,0.08),rgba(218,169,112,0.05));border:1px solid var(--border-strong)}
+.alert-row{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-soft)}
+.alert-row:last-child{border-bottom:none}
+.alert-icon{width:32px;height:32px;border-radius:8px;background:var(--lily-soft);color:var(--lily-bright);display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
+.alert-icon.warn{background:var(--gold-soft);color:var(--gold)}
+.alert-info strong{display:block;font-size:.82rem;color:var(--text);font-weight:600;margin-bottom:3px}
+.alert-info p{font-size:.75rem;color:var(--text-soft);line-height:1.5;margin:0}
+.alert-info .ts{font-size:.66rem;color:var(--text-mute);font-family:var(--mono);font-weight:600;margin-top:4px;letter-spacing:.05em}
+
+/* RESPONSIVE */
+@media (max-width: 1100px){
+  .grid-12 .col-8{grid-column:span 12}
+  .grid-12 .col-4{grid-column:span 12}
+  .grid-12 .col-6{grid-column:span 12}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width: 800px){
+  .sidebar{transform:translateX(-100%)}
+  .main{margin-left:0}
+  .kpi-row{grid-template-columns:1fr}
+  .content{padding:20px}
+  .topbar{padding:14px 20px}
+  .topbar-search,.weather-pill{display:none}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand"><div class="mark"></div>Lilly Pad</div>
+      <div class="sidebar-sub">Operations · Live</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">Today</div>
+      <div class="nav-item active"><i class="fa-solid fa-chart-pie"></i> Dashboard</div>
+      <div class="nav-item"><i class="fa-solid fa-calendar-check"></i> Bookings <span class="nav-badge">23</span></div>
+      <div class="nav-item"><i class="fa-solid fa-cake-candles"></i> Parties <span class="nav-badge green">4</span></div>
+      <div class="nav-item"><i class="fa-solid fa-clipboard-list"></i> Check-in queue</div>
+
+      <div class="nav-group">Operations</div>
+      <div class="nav-item"><i class="fa-solid fa-gem"></i> Gem inventory</div>
+      <div class="nav-item"><i class="fa-solid fa-fish"></i> Pond stocking</div>
+      <div class="nav-item"><i class="fa-solid fa-golf-ball-tee"></i> Course status</div>
+      <div class="nav-item"><i class="fa-solid fa-store"></i> Gift shop</div>
+
+      <div class="nav-group">Insights</div>
+      <div class="nav-item"><i class="fa-solid fa-dollar-sign"></i> Revenue</div>
+      <div class="nav-item"><i class="fa-solid fa-people-group"></i> Guests</div>
+      <div class="nav-item"><i class="fa-solid fa-star"></i> Reviews</div>
+      <div class="nav-item"><i class="fa-solid fa-bullhorn"></i> Marketing</div>
+
+      <div class="nav-group">Account</div>
+      <div class="nav-item"><i class="fa-solid fa-users"></i> Staff</div>
+      <div class="nav-item"><i class="fa-solid fa-gear"></i> Settings</div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="user-card">
+        <div class="user-avatar">LP</div>
+        <div class="user-info">
+          <div class="user-name">Lori Patterson</div>
+          <div class="user-role">Owner</div>
+        </div>
+        <i class="fa-solid fa-ellipsis" style="color:var(--text-mute);font-size:.78rem"></i>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title">Dashboard <small>· Thu, Apr 30</small></div>
+      <div class="weather-pill"><i class="fa-solid fa-sun"></i> <strong>74°F</strong> · Partly cloudy</div>
+      <div class="topbar-search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Search bookings, guests, parties…">
+      </div>
+      <div class="topbar-actions">
+        <button class="icon-btn"><i class="fa-solid fa-plus"></i></button>
+        <button class="icon-btn"><i class="fa-solid fa-bell"></i><span class="dot"></span></button>
+        <button class="icon-btn"><i class="fa-solid fa-question"></i></button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="page-head">
+        <div>
+          <div class="breadcrumb">Operations <span>/ Today</span></div>
+          <h1>Good morning, Lori.</h1>
+          <p class="lead">23 reservations on the books, 4 parties, and a forecasted 318 guests today. Mini golf course just reopened — hole 7 was patched at 9:14a.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn ghost"><i class="fa-solid fa-download"></i> Export day</button>
+          <button class="btn"><i class="fa-solid fa-print"></i> Print sheet</button>
+          <button class="btn primary"><i class="fa-solid fa-plus"></i> New reservation</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-row">
+        <div class="kpi lily">
+          <div class="kpi-head">
+            <div class="kpi-label">Today's Revenue</div>
+            <div class="kpi-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+          </div>
+          <div class="kpi-value">$3,847<small>so far</small></div>
+          <div class="kpi-delta"><i class="fa-solid fa-arrow-up"></i> 18.4% vs. last Thursday</div>
+        </div>
+        <div class="kpi pond">
+          <div class="kpi-head">
+            <div class="kpi-label">Reservations</div>
+            <div class="kpi-icon"><i class="fa-solid fa-calendar-check"></i></div>
+          </div>
+          <div class="kpi-value">23<small>· 8 pending</small></div>
+          <div class="kpi-delta"><i class="fa-solid fa-arrow-up"></i> +6 since yesterday</div>
+        </div>
+        <div class="kpi water">
+          <div class="kpi-head">
+            <div class="kpi-label">Guests on site</div>
+            <div class="kpi-icon"><i class="fa-solid fa-people-group"></i></div>
+          </div>
+          <div class="kpi-value">87<small>/ 220 cap</small></div>
+          <div class="kpi-delta flat"><i class="fa-solid fa-arrows-left-right"></i> 40% capacity</div>
+        </div>
+        <div class="kpi gold">
+          <div class="kpi-head">
+            <div class="kpi-label">Avg. review (30d)</div>
+            <div class="kpi-icon"><i class="fa-solid fa-star"></i></div>
+          </div>
+          <div class="kpi-value">4.86<small>/ 5.0</small></div>
+          <div class="kpi-delta"><i class="fa-solid fa-arrow-up"></i> 14 new reviews</div>
+        </div>
+      </div>
+
+      <!-- ROW 1 -->
+      <div class="grid-12">
+
+        <div class="col-8">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Today's schedule</h3>
+                <div class="meta">23 bookings · 8 awaiting check-in</div>
+              </div>
+              <div class="card-head-actions">
+                <span class="pill active">Today</span>
+                <span class="pill">Tomorrow</span>
+                <span class="pill">Week</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="schedule">
+
+                <div class="sched-row">
+                  <div class="sched-time">10:00a<small>30 min</small></div>
+                  <div class="sched-info">
+                    <div class="sched-icon gem"><i class="fa-solid fa-gem"></i></div>
+                    <div class="sched-detail"><strong>Henderson family · 4 guests</strong><small>Gem mining · 2 starter buckets · paid online</small></div>
+                  </div>
+                  <span class="sched-status status-checked">Checked in</span>
+                </div>
+
+                <div class="sched-row">
+                  <div class="sched-time">10:30a<small>2 hrs</small></div>
+                  <div class="sched-info">
+                    <div class="sched-icon fish"><i class="fa-solid fa-fish"></i></div>
+                    <div class="sched-detail"><strong>Booker, Tom · 2 guests</strong><small>Fishing · 2 rods · catch & keep</small></div>
+                  </div>
+                  <span class="sched-status status-checked">Checked in</span>
+                </div>
+
+                <div class="sched-row">
+                  <div class="sched-time">11:00a<small>2 hrs</small></div>
+                  <div class="sched-info">
+                    <div class="sched-icon party"><i class="fa-solid fa-cake-candles"></i></div>
+                    <div class="sched-detail"><strong>Mia's 7th birthday · 14 guests</strong><small>Pavilion B · gem buckets + golf · cake at noon</small></div>
+                  </div>
+                  <span class="sched-status status-vip">VIP party</span>
+                </div>
+
+                <div class="sched-row">
+                  <div class="sched-time">11:30a<small>45 min</small></div>
+                  <div class="sched-info">
+                    <div class="sched-icon golf"><i class="fa-solid fa-golf-ball-tee"></i></div>
+                    <div class="sched-detail"><strong>Owens, Marcus · 5 guests</strong><small>Mini golf · 5 rounds · prepaid</small></div>
+                  </div>
+                  <span class="sched-status status-confirmed">Confirmed</span>
+                </div>
+
+                <div class="sched-row">
+                  <div class="sched-time">12:00p<small>30 min</small></div>
+                  <div class="sched-info">
+                    <div class="sched-icon gem"><i class="fa-solid fa-gem"></i></div>
+                    <div class="sched-detail"><strong>Patel family · 5 guests</strong><small>Gem mining · 1 deluxe + 2 starter buckets</small></div>
+                  </div>
+                  <span class="sched-status status-confirmed">Confirmed</span>
+                </div>
+
+                <div class="sched-row">
+                  <div class="sched-time">1:00p<small>3 hrs</small></div>
+                  <div class="sched-info">
+                    <div class="sched-icon party"><i class="fa-solid fa-school"></i></div>
+                    <div class="sched-detail"><strong>Fannin Co. 3rd grade · 28 guests</strong><small>School field trip · gem mining + lesson · invoice on file</small></div>
+                  </div>
+                  <span class="sched-status status-pending">Awaiting roster</span>
+                </div>
+
+                <div class="sched-row">
+                  <div class="sched-time">1:30p<small>2 hrs</small></div>
+                  <div class="sched-info">
+                    <div class="sched-icon fish"><i class="fa-solid fa-fish"></i></div>
+                    <div class="sched-detail"><strong>Reid, Jonas · 3 guests</strong><small>Fishing · 3 rods · first-time lesson requested</small></div>
+                  </div>
+                  <span class="sched-status status-confirmed">Confirmed</span>
+                </div>
+
+                <div class="sched-row">
+                  <div class="sched-time">2:30p<small>45 min</small></div>
+                  <div class="sched-info">
+                    <div class="sched-icon golf"><i class="fa-solid fa-golf-ball-tee"></i></div>
+                    <div class="sched-detail"><strong>Walker, Aly · 6 guests</strong><small>Mini golf · 6 rounds + 1 starter bucket</small></div>
+                  </div>
+                  <span class="sched-status status-confirmed">Confirmed</span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-4">
+          <div class="card alert-card">
+            <div class="card-head">
+              <div>
+                <h3>Needs attention</h3>
+                <div class="meta">3 active items</div>
+              </div>
+            </div>
+            <div class="card-body" style="padding-top:6px">
+              <div class="alert-row">
+                <div class="alert-icon warn"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div class="alert-info">
+                  <strong>Amethyst rough running low</strong>
+                  <p>Deluxe bucket inventory at 18% — supplier ETA 6 days. Consider switching weekend feature.</p>
+                  <div class="ts">9:42a · inventory</div>
+                </div>
+              </div>
+              <div class="alert-row">
+                <div class="alert-icon"><i class="fa-solid fa-comment-dots"></i></div>
+                <div class="alert-info">
+                  <strong>Google review needs response</strong>
+                  <p>3-star from Jenny K. about wait times. Drafted reply ready to send.</p>
+                  <div class="ts">8:16a · reviews</div>
+                </div>
+              </div>
+              <div class="alert-row">
+                <div class="alert-icon warn"><i class="fa-solid fa-cloud-rain"></i></div>
+                <div class="alert-info">
+                  <strong>Sat afternoon rain forecast</strong>
+                  <p>60% chance 2–4p. 12 outdoor reservations to text — auto-reschedule template ready.</p>
+                  <div class="ts">7:55a · weather</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card weather-card" style="margin-top:16px">
+            <div class="card-head">
+              <div>
+                <h3>5-day forecast</h3>
+                <div class="meta">Blue Ridge · NWS</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="weather-grid">
+                <div class="weather-day">
+                  <div class="weather-day-label">Fri</div>
+                  <div class="weather-day-icon"><i class="fa-solid fa-sun"></i></div>
+                  <div class="weather-day-temp">76°<small>/ 54°</small></div>
+                  <div class="weather-day-meta">Sunny</div>
+                </div>
+                <div class="weather-day">
+                  <div class="weather-day-label">Sat</div>
+                  <div class="weather-day-icon rain"><i class="fa-solid fa-cloud-rain"></i></div>
+                  <div class="weather-day-temp">68°<small>/ 52°</small></div>
+                  <div class="weather-day-meta">PM showers</div>
+                </div>
+                <div class="weather-day">
+                  <div class="weather-day-label">Sun</div>
+                  <div class="weather-day-icon cloud"><i class="fa-solid fa-cloud-sun"></i></div>
+                  <div class="weather-day-temp">71°<small>/ 49°</small></div>
+                  <div class="weather-day-meta">Partly cloudy</div>
+                </div>
+                <div class="weather-day">
+                  <div class="weather-day-label">Mon</div>
+                  <div class="weather-day-icon"><i class="fa-solid fa-sun"></i></div>
+                  <div class="weather-day-temp">78°<small>/ 53°</small></div>
+                  <div class="weather-day-meta">Sunny</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 2 -->
+      <div class="grid-12">
+
+        <div class="col-8">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Revenue · last 14 days</h3>
+                <div class="meta">$42,318 total · $3,022 avg / day</div>
+              </div>
+              <div class="card-head-actions">
+                <span class="pill">7d</span>
+                <span class="pill active">14d</span>
+                <span class="pill">30d</span>
+                <span class="pill">90d</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-wrap">
+                <div class="chart">
+                  <div class="bar" style="height:42%"><div class="bar-tooltip">Apr 17 · $1,890</div></div>
+                  <div class="bar" style="height:55%"><div class="bar-tooltip">Apr 18 · $2,450</div></div>
+                  <div class="bar gold" style="height:78%"><div class="bar-tooltip">Apr 19 · Sat · $3,510</div></div>
+                  <div class="bar gold" style="height:71%"><div class="bar-tooltip">Apr 20 · Sun · $3,180</div></div>
+                  <div class="bar" style="height:30%"><div class="bar-tooltip">Apr 21 · $1,340</div></div>
+                  <div class="bar" style="height:48%"><div class="bar-tooltip">Apr 22 · $2,140</div></div>
+                  <div class="bar" style="height:52%"><div class="bar-tooltip">Apr 23 · $2,330</div></div>
+                  <div class="bar" style="height:60%"><div class="bar-tooltip">Apr 24 · $2,690</div></div>
+                  <div class="bar gold" style="height:88%"><div class="bar-tooltip">Apr 25 · Sat · $3,940</div></div>
+                  <div class="bar gold" style="height:82%"><div class="bar-tooltip">Apr 26 · Sun · $3,680</div></div>
+                  <div class="bar" style="height:38%"><div class="bar-tooltip">Apr 27 · $1,710</div></div>
+                  <div class="bar" style="height:51%"><div class="bar-tooltip">Apr 28 · $2,290</div></div>
+                  <div class="bar" style="height:58%"><div class="bar-tooltip">Apr 29 · $2,610</div></div>
+                  <div class="bar alt" style="height:85%"><div class="bar-tooltip">Today · $3,847 (so far)</div></div>
+                </div>
+                <div class="chart-foot">
+                  <span>Apr 17</span>
+                  <span>Apr 23</span>
+                  <span>Today</span>
+                </div>
+                <div class="chart-legend">
+                  <span><span class="sw lily"></span> Weekday</span>
+                  <span><span class="sw gold"></span> Weekend</span>
+                  <span><span class="sw water"></span> Today (live)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-4">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Revenue mix · MTD</h3>
+                <div class="meta">$42,318 total</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="rev-mix">
+                <div class="rev-row">
+                  <div class="rev-label"><span class="dot lily"></span> Gem mining</div>
+                  <div class="rev-bar"><div class="rev-bar-fill lily" style="width:46%"></div></div>
+                  <div class="rev-amount">$19,461</div>
+                  <div class="rev-pct">46%</div>
+                </div>
+                <div class="rev-row">
+                  <div class="rev-label"><span class="dot pond"></span> Mini golf</div>
+                  <div class="rev-bar"><div class="rev-bar-fill pond" style="width:23%"></div></div>
+                  <div class="rev-amount">$9,733</div>
+                  <div class="rev-pct">23%</div>
+                </div>
+                <div class="rev-row">
+                  <div class="rev-label"><span class="dot water"></span> Fishing</div>
+                  <div class="rev-bar"><div class="rev-bar-fill water" style="width:14%"></div></div>
+                  <div class="rev-amount">$5,924</div>
+                  <div class="rev-pct">14%</div>
+                </div>
+                <div class="rev-row">
+                  <div class="rev-label"><span class="dot gold"></span> Parties</div>
+                  <div class="rev-bar"><div class="rev-bar-fill gold" style="width:11%"></div></div>
+                  <div class="rev-amount">$4,655</div>
+                  <div class="rev-pct">11%</div>
+                </div>
+                <div class="rev-row">
+                  <div class="rev-label"><span class="dot purple"></span> Gift shop</div>
+                  <div class="rev-bar"><div class="rev-bar-fill purple" style="width:6%"></div></div>
+                  <div class="rev-amount">$2,545</div>
+                  <div class="rev-pct">6%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 3 -->
+      <div class="grid-12">
+
+        <div class="col-6">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Gem rough inventory</h3>
+                <div class="meta">6 stones tracked · 1 critical · 1 low</div>
+              </div>
+              <div class="card-head-actions">
+                <span class="pill"><i class="fa-solid fa-plus" style="margin-right:4px"></i> Reorder</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="inv-list">
+
+                <div class="inv-row">
+                  <div class="inv-stone q"></div>
+                  <div class="inv-info"><strong>Quartz & Citrine</strong><small>Brazilian rough · base bucket</small></div>
+                  <div class="inv-bar-wrap"><div class="inv-bar"><div class="inv-bar-fill" style="width:84%"></div></div></div>
+                  <div class="inv-pct">84%</div>
+                  <i class="fa-solid fa-ellipsis inv-act"></i>
+                </div>
+
+                <div class="inv-row">
+                  <div class="inv-stone a"></div>
+                  <div class="inv-info"><strong>Amethyst</strong><small>Deluxe bucket feature · reorder pending</small></div>
+                  <div class="inv-bar-wrap"><div class="inv-bar"><div class="inv-bar-fill crit" style="width:18%"></div></div></div>
+                  <div class="inv-pct">18%</div>
+                  <i class="fa-solid fa-ellipsis inv-act"></i>
+                </div>
+
+                <div class="inv-row">
+                  <div class="inv-stone r"></div>
+                  <div class="inv-info"><strong>Ruby & Garnet</strong><small>NC mines · party bucket add-on</small></div>
+                  <div class="inv-bar-wrap"><div class="inv-bar"><div class="inv-bar-fill low" style="width:38%"></div></div></div>
+                  <div class="inv-pct">38%</div>
+                  <i class="fa-solid fa-ellipsis inv-act"></i>
+                </div>
+
+                <div class="inv-row">
+                  <div class="inv-stone e"></div>
+                  <div class="inv-info"><strong>Emerald</strong><small>Hiddenite belt · deluxe bucket</small></div>
+                  <div class="inv-bar-wrap"><div class="inv-bar"><div class="inv-bar-fill" style="width:71%"></div></div></div>
+                  <div class="inv-pct">71%</div>
+                  <i class="fa-solid fa-ellipsis inv-act"></i>
+                </div>
+
+                <div class="inv-row">
+                  <div class="inv-stone s"></div>
+                  <div class="inv-info"><strong>Sapphire</strong><small>Premium add-on · seasonal</small></div>
+                  <div class="inv-bar-wrap"><div class="inv-bar"><div class="inv-bar-fill" style="width:62%"></div></div></div>
+                  <div class="inv-pct">62%</div>
+                  <i class="fa-solid fa-ellipsis inv-act"></i>
+                </div>
+
+                <div class="inv-row">
+                  <div class="inv-stone f"></div>
+                  <div class="inv-info"><strong>Fossils & Arrowheads</strong><small>Salt mix · all buckets</small></div>
+                  <div class="inv-bar-wrap"><div class="inv-bar"><div class="inv-bar-fill" style="width:79%"></div></div></div>
+                  <div class="inv-pct">79%</div>
+                  <i class="fa-solid fa-ellipsis inv-act"></i>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Upcoming parties</h3>
+                <div class="meta">11 booked next 30 days · $4,655 booked</div>
+              </div>
+              <div class="card-head-actions">
+                <span class="pill active">All</span>
+              </div>
+            </div>
+            <table class="party-table">
+              <thead>
+                <tr>
+                  <th>Group</th>
+                  <th>Date</th>
+                  <th>Guests</th>
+                  <th style="text-align:right">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><div class="party-name"><div class="party-emoji bday"><i class="fa-solid fa-cake-candles"></i></div><div><strong>Mia's 7th</strong><small>Birthday · pavilion B</small></div></div></td>
+                  <td>Today · 11a</td>
+                  <td>14</td>
+                  <td class="party-amount">$321</td>
+                </tr>
+                <tr>
+                  <td><div class="party-name"><div class="party-emoji school"><i class="fa-solid fa-school"></i></div><div><strong>Fannin Co. 3rd grade</strong><small>Field trip · invoice net-30</small></div></div></td>
+                  <td>Today · 1p</td>
+                  <td>28</td>
+                  <td class="party-amount">$520</td>
+                </tr>
+                <tr>
+                  <td><div class="party-name"><div class="party-emoji bday"><i class="fa-solid fa-cake-candles"></i></div><div><strong>Owen turns 9</strong><small>Birthday + golf</small></div></div></td>
+                  <td>Sat · 12p</td>
+                  <td>12</td>
+                  <td class="party-amount">$298</td>
+                </tr>
+                <tr>
+                  <td><div class="party-name"><div class="party-emoji reunion"><i class="fa-solid fa-people-group"></i></div><div><strong>Connors family reunion</strong><small>Pavilion A · all-day</small></div></div></td>
+                  <td>Sun · 11a</td>
+                  <td>32</td>
+                  <td class="party-amount">$795</td>
+                </tr>
+                <tr>
+                  <td><div class="party-name"><div class="party-emoji bday"><i class="fa-solid fa-cake-candles"></i></div><div><strong>Jordan's 5th</strong><small>Toddler-friendly setup</small></div></div></td>
+                  <td>May 8 · 10a</td>
+                  <td>10</td>
+                  <td class="party-amount">$249</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ROW 4 -->
+      <div class="grid-12">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Recent reviews</h3>
+                <div class="meta">Google · TripAdvisor · Yelp · pulled hourly</div>
+              </div>
+              <div class="card-head-actions">
+                <span class="pill active">All</span>
+                <span class="pill">Need response (1)</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="review-panel" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+
+                <div class="review-item">
+                  <div class="review-item-head">
+                    <div class="review-item-author"><div class="av">DM</div> Diane M.</div>
+                    <div class="review-item-stars">★★★★★</div>
+                  </div>
+                  <p>Spent the whole afternoon here with our four grandkids. Gem mining was the hit — staff sat down and helped sort the youngest one's bucket. We'll be back every trip.</p>
+                  <div class="review-item-foot">
+                    <span class="review-source-tag"><i class="fa-brands fa-google"></i> Google · 2 hr ago</span>
+                    <span class="review-respond">Respond →</span>
+                  </div>
+                </div>
+
+                <div class="review-item">
+                  <div class="review-item-head">
+                    <div class="review-item-author"><div class="av">JR</div> Jay R.</div>
+                    <div class="review-item-stars">★★★★★</div>
+                  </div>
+                  <p>Best mini golf course I've played outside of the beach. Genuinely beautiful — built right into the woods. Pond at hole 12 is a stunner. Pet-friendly too, which sealed it for us.</p>
+                  <div class="review-item-foot">
+                    <span class="review-source-tag"><i class="fa-brands fa-google"></i> Google · yesterday</span>
+                    <span class="review-respond">Respond →</span>
+                  </div>
+                </div>
+
+                <div class="review-item" style="border-color:var(--gold-soft);background:linear-gradient(135deg,rgba(218,169,112,0.05),transparent)">
+                  <div class="review-item-head">
+                    <div class="review-item-author"><div class="av" style="background:var(--gold-soft);color:var(--gold)">JK</div> Jenny K.</div>
+                    <div class="review-item-stars">★★★☆☆</div>
+                  </div>
+                  <p>Fun spot but a 35-minute wait for the gem flume on a Saturday felt long with a 4-year-old. Front desk was lovely. Maybe more capacity on weekends?</p>
+                  <div class="review-item-foot">
+                    <span class="review-source-tag"><i class="fa-brands fa-google"></i> Google · 2 days ago</span>
+                    <span class="review-respond" style="color:var(--gold)">Draft ready · Send →</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
