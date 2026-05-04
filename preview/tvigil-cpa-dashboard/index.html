@@ -1175,9 +1175,10 @@
         tbody.innerHTML = rows || '<tr><td colspan="6" class="empty-state">No clients match.</td></tr>';
     }
 
+    const ENG_STAGES = ['Awaiting Docs','In Progress','In Review','Filed'];
     function renderEngagements(){
-        document.getElementById('engagementGrid').innerHTML = ENGAGEMENTS.map(e => `
-            <div class="engagement-card" onclick="navigateTo('returns'); showToast('Opened ${e.client}')">
+        document.getElementById('engagementGrid').innerHTML = ENGAGEMENTS.map((e,idx) => `
+            <div class="engagement-card" onclick="openEngagement(${idx})">
                 <div class="ec-head">
                     <div class="ec-client">${e.client}</div>
                     <span class="badge badge-progress">${e.stage}</span>
@@ -1188,6 +1189,41 @@
                 <div class="ec-meta"><span>Owner <strong>${e.owner}</strong></span><span>Due <strong>${e.due}</strong></span></div>
             </div>`).join('');
     }
+    function openEngagement(idx){
+        const e = ENGAGEMENTS[idx]; if(!e) return;
+        const stages = ENG_STAGES;
+        const currentIdx = stages.indexOf(e.stage);
+        const m = document.getElementById('engModal');
+        if(!m){
+            // Build modal lazily on first open
+            const html = `<div class="modal-overlay" id="engModal" onclick="if(event.target===this)closeEng()"><div class="modal" style="max-width:560px"><div class="modal-header"><h2 id="engTitle"></h2><button class="modal-close" onclick="closeEng()">&times;</button></div><div class="modal-body" id="engBody"></div></div></div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+        document.getElementById('engTitle').textContent = e.client;
+        document.getElementById('engBody').innerHTML = `
+            <div style="margin-bottom:18px"><div class="stat-label" style="margin-bottom:6px">Engagement</div><div style="font-size:1rem;color:var(--text)">${e.type}</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+                <div><div class="stat-label" style="margin-bottom:6px">Owner</div><div style="font-weight:600">${e.owner}</div></div>
+                <div><div class="stat-label" style="margin-bottom:6px">Due</div><div style="font-weight:600">${e.due}</div></div>
+            </div>
+            <div style="margin-bottom:14px"><div class="stat-label" style="margin-bottom:6px">Progress · ${e.progress}%</div><div class="progress-track"><div class="progress-fill" style="width:${e.progress}%"></div></div></div>
+            <div style="margin-bottom:6px"><div class="stat-label" style="margin-bottom:8px">Pipeline Stage</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">${stages.map((s,i)=>`<button class="btn btn-sm ${s===e.stage?'btn-primary':'btn-outline'}" onclick="setEngStage(${idx},'${s}')">${s}</button>`).join('')}</div>
+            </div>
+            <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border-soft);font-size:.82rem;color:var(--text-mute);font-style:italic">Stage progression auto-updates the progress bar — moving to "Filed" sets it to 100%.</div>
+        `;
+        document.getElementById('engModal').classList.add('open');
+    }
+    function setEngStage(idx, stage){
+        const e = ENGAGEMENTS[idx]; if(!e) return;
+        e.stage = stage;
+        const sIdx = ENG_STAGES.indexOf(stage);
+        e.progress = stage==='Filed'?100:Math.round(((sIdx+1)/ENG_STAGES.length)*100);
+        renderEngagements();
+        openEngagement(idx);
+        if(typeof showToast==='function')showToast(e.client+' → '+stage);
+    }
+    function closeEng(){const m=document.getElementById('engModal');if(m)m.classList.remove('open')}
 
     function renderReturnChecklist(){
         document.getElementById('returnChecklist').innerHTML = RETURN_TASKS.map((t,i) => `

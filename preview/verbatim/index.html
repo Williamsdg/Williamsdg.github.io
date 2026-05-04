@@ -1231,6 +1231,14 @@ function transcriptById(id){return state.transcripts.find(t=>t.id===id)}
 
 // --- DASHBOARD ---
 function renderDashboard(){
+    // Live hero KPIs
+    const openJobs=state.jobs.filter(j=>j.status!=='Completed').length;
+    const inProd=state.transcripts.filter(t=>t.stage!=='Certified'&&t.stage!=='Delivered').length;
+    const totalPages=state.transcripts.reduce((s,t)=>s+(t.pages||0),0);
+    const certified=state.transcripts.filter(t=>t.cert?.signed).length;
+    const setKpi=(id,v,sub)=>{const el=document.getElementById(id);if(el)el.textContent=v;if(sub){const s=document.getElementById(id+'Sub');if(s)s.textContent=sub}};
+    setKpi('kpiJobs',openJobs,inProd+' transcripts in production');
+    setKpi('kpiPages',totalPages.toLocaleString());
     const tj=state.jobs.filter(j=>j.date===todayDateISO()).sort((a,b)=>a.time.localeCompare(b.time));
     document.getElementById('todayJobsBody').innerHTML=tj.length?tj.map(j=>{const r=reporterById(j.reporter);const sb=j.status==='Live'?'badge-completed':j.status==='Scheduled'?'badge-info':'badge-pending';return `<tr><td><strong style="font-family:var(--serif);color:var(--gold)">${fmtTime(j.time)}</strong></td><td><strong>${j.caseName}</strong><div style="font-size:.74rem;color:var(--text-mute)">${j.witness} · ${j.type}</div></td><td>${r?r.name:'—'}</td><td style="font-size:.82rem;color:var(--text-mute)">${j.loc}</td><td><span class="badge ${sb}">${j.status}</span></td></tr>`}).join(''):'<tr><td colspan="5" class="empty-state">No jobs scheduled today.</td></tr>';
     // Read & sign mini

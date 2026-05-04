@@ -517,6 +517,10 @@ tr:hover td{background:var(--row-hover);cursor:pointer}
         <div class="card"><div class="card-header"><h2>Revenue by Day Part</h2></div><div class="card-body" id="dayPart"></div></div>
         <div class="card"><div class="card-header"><h2>Server Sales (MTD)</h2></div><div class="card-body" id="serverSales"></div></div>
     </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:22px" class="dash-grid">
+        <div class="card"><div class="card-header"><h2>Margin by Menu Category</h2><span style="font-size:.72rem;color:var(--text-mute);font-style:italic">Live from your menu</span></div><div class="card-body" id="marginByCategory"></div></div>
+        <div class="card"><div class="card-header"><h2>Floor Plan Right Now</h2><span style="font-size:.72rem;color:var(--text-mute);font-style:italic">Live from table states</span></div><div class="card-body" id="floorStatusBars"></div></div>
+    </div>
 </div>
 
 <!-- SCHEDULE -->
@@ -1023,7 +1027,7 @@ function cycleTable(id){
     const t=TABLES.find(x=>x.id===id);
     const seats=t?t.seats:1;
     state.tableStates[id]={status:next,meta:next==='open'?'':next==='reserved'?'Reserved':next==='seated'?(seats+(seats===1?' guest':' top')):'Cleared'};
-    save();renderFloor();
+    save();renderFloor();renderReports();
 }
 
 // ---------- RESERVATIONS ----------
@@ -1152,10 +1156,36 @@ function renderRegulars(){
 function renderReports(){
     const dp=[{name:'Aperitivo (5-7)',rev:38420,covers:340},{name:'Early dinner (7-8)',rev:62200,covers:520},{name:'Prime (8-10)',rev:74800,covers:980},{name:'Late (10-close)',rev:9000,covers:340}];
     const max=Math.max(...dp.map(d=>d.rev));
-    document.getElementById('dayPart').innerHTML=dp.map(d=>`<div class="bar-row"><div class="bar-label">${d.name}<div style="font-size:.72rem;color:var(--text-mute);margin-top:1px">${d.covers} covers</div></div><div class="bar-track"><div class="bar-fill" style="width:${d.rev/max*100}%"></div></div><div class="bar-value">${fmtUsd0(d.rev)}</div></div>`).join('');
+    const dpEl=document.getElementById('dayPart');
+    if(dpEl)dpEl.innerHTML=dp.map(d=>`<div class="bar-row"><div class="bar-label">${d.name}<div style="font-size:.72rem;color:var(--text-mute);margin-top:1px">${d.covers} covers</div></div><div class="bar-track"><div class="bar-fill" style="width:${d.rev/max*100}%"></div></div><div class="bar-value">${fmtUsd0(d.rev)}</div></div>`).join('');
     const ss=[{name:'Margaux',sales:48620,covers:480},{name:'Theo',sales:42180,covers:420},{name:'Camille',sales:38400,covers:380},{name:'Pascal',sales:32100,covers:340}];
     const smax=Math.max(...ss.map(s=>s.sales));
-    document.getElementById('serverSales').innerHTML=ss.map((s,i)=>`<div class="bar-row"><div class="bar-label">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'  '}${s.name}<div style="font-size:.72rem;color:var(--text-mute);margin-top:1px">${s.covers} covers · ${fmtUsd0(s.sales/s.covers)} avg</div></div><div class="bar-track"><div class="bar-fill" style="width:${s.sales/smax*100}%"></div></div><div class="bar-value">${fmtUsd0(s.sales)}</div></div>`).join('');
+    const ssEl=document.getElementById('serverSales');
+    if(ssEl)ssEl.innerHTML=ss.map((s,i)=>`<div class="bar-row"><div class="bar-label">${i===0?'🥇 ':i===1?'🥈 ':i===2?'🥉 ':'  '}${s.name}<div style="font-size:.72rem;color:var(--text-mute);margin-top:1px">${s.covers} covers · ${fmtUsd0(s.sales/s.covers)} avg</div></div><div class="bar-track"><div class="bar-fill" style="width:${s.sales/smax*100}%"></div></div><div class="bar-value">${fmtUsd0(s.sales)}</div></div>`).join('');
+    // Live margin distribution by menu category (computed from current menu)
+    const catEl=document.getElementById('marginByCategory');
+    if(catEl){
+        const byCat={};
+        state.menu.forEach(m=>{
+            if(!m.cogs)return;
+            const margin=m.price-m.cogs;
+            const pct=margin/m.price;
+            if(!byCat[m.cat])byCat[m.cat]={count:0,pctSum:0};
+            byCat[m.cat].count++;byCat[m.cat].pctSum+=pct;
+        });
+        const cats=Object.entries(byCat).map(([cat,d])=>({cat,avg:d.pctSum/d.count,count:d.count})).sort((a,b)=>b.avg-a.avg);
+        catEl.innerHTML=cats.length?cats.map(c=>`<div class="bar-row"><div class="bar-label">${c.cat}<div style="font-size:.72rem;color:var(--text-mute);margin-top:1px">${c.count} item${c.count===1?'':'s'}</div></div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c.avg*100)}%"></div></div><div class="bar-value">${Math.round(c.avg*100)}%</div></div>`).join(''):'<div class="empty-state">Add items to the menu with COGS to see category margin.</div>';
+    }
+    // Live tables-by-status from floor plan
+    const tsEl=document.getElementById('floorStatusBars');
+    if(tsEl){
+        const tally={open:0,reserved:0,seated:0,cleared:0};
+        if(typeof TABLES!=='undefined')TABLES.forEach(t=>{const s=(state.tableStates[t.id]||{}).status||'open';tally[s]=(tally[s]||0)+1});
+        const total=Object.values(tally).reduce((a,b)=>a+b,0)||1;
+        const order=['open','reserved','seated','cleared'];
+        const cols={open:'var(--text-mute)',reserved:'var(--gold)',seated:'var(--green)',cleared:'#7da6ff'};
+        tsEl.innerHTML=order.map(s=>`<div class="bar-row"><div class="bar-label" style="text-transform:capitalize">${s}</div><div class="bar-track"><div class="bar-fill" style="width:${tally[s]/total*100}%;background:${cols[s]}"></div></div><div class="bar-value">${tally[s]}</div></div>`).join('');
+    }
 }
 
 // ---------- SCHEDULE ----------

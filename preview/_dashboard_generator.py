@@ -1093,9 +1093,17 @@ def build_html(t):
             <div class="stats-row">
                 {kpi_cards_html}
             </div>
+            <div class="quick-actions" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;align-items:center">
+                <span style="font-size:.7rem;font-weight:600;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.8px;margin-right:6px">Quick actions</span>
+                <button class="btn btn-primary btn-sm" onclick="openModal('estimateModal')">+ New Estimate</button>
+                <button class="btn btn-outline btn-sm" onclick="openModal('schedModal')">+ Schedule Job</button>
+                <button class="btn btn-outline btn-sm" onclick="convertTopEstimate()" title="Pre-fill schedule modal from the most recent open estimate">→ Convert Top Estimate</button>
+                <button class="btn btn-outline btn-sm" onclick="startVoiceEstimate()" title="Voice-to-estimate (demo)">🎙 Voice Estimate</button>
+                <button class="btn btn-ghost btn-sm" onclick="resetDemo()" title="Clear local demo data" style="margin-left:auto">Reset Demo</button>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
-                <div class="card"><div class="card-header"><h2>Recent Estimates</h2></div><table><thead><tr><th>Client</th><th>Amount</th><th>Status</th></tr></thead><tbody id="recentEstBody"></tbody></table></div>
-                <div class="card"><div class="card-header"><h2>Today's Schedule</h2></div><div class="card-body"><div class="schedule-list" id="todayScheduleBody"></div></div></div>
+                <div class="card"><div class="card-header"><h2>Recent Estimates</h2><a href="#" onclick="event.preventDefault();switchPage('estimates')" style="font-size:.74rem;color:var(--gold);text-decoration:none;font-weight:600;letter-spacing:0.02em">View all →</a></div><table><thead><tr><th>Client</th><th>Amount</th><th>Status</th></tr></thead><tbody id="recentEstBody"></tbody></table></div>
+                <div class="card"><div class="card-header"><h2>Today's Schedule</h2><a href="#" onclick="event.preventDefault();switchPage('scheduling')" style="font-size:.74rem;color:var(--gold);text-decoration:none;font-weight:600;letter-spacing:0.02em">All jobs →</a></div><div class="card-body"><div class="schedule-list" id="todayScheduleBody"></div></div></div>
             </div>
         </div>
         <!-- ESTIMATES -->
@@ -1119,7 +1127,7 @@ def build_html(t):
                 </div>
             </div>
             <div class="card"><div class="card-header"><h2>All Estimates</h2></div><div class="desktop-only" style="overflow-x:auto"><table><thead><tr><th style="width:36px"><input type="checkbox" class="row-check" id="estSelectAll" onchange="toggleSelectAll('est',this.checked)"></th><th>#</th><th>Client</th><th>Service</th><th>Amount</th><th>Date</th><th>Status</th><th></th></tr></thead><tbody id="estBody"></tbody></table></div><div class="mobile-only" id="estMobileBody" style="padding:12px"></div></div>
-            <div id="estPreviewArea" style="margin-top:22px;display:none"><div class="card"><div class="card-header"><h2>Estimate Preview</h2><div class="btn-group"><button class="btn btn-primary btn-sm" onclick="sendEst('client')">Email to Client</button><button class="btn btn-outline btn-sm" onclick="openClientView()">Preview as Client</button><button class="btn btn-outline btn-sm" onclick="aiFollowup()">AI Follow-up Draft</button><button class="btn btn-outline btn-sm" onclick="window.print()">Print / PDF</button></div></div><div class="card-body"><div class="estimate-preview" id="estPreviewContent"></div></div></div></div>
+            <div id="estPreviewArea" style="margin-top:22px;display:none"><div class="card"><div class="card-header"><h2>Estimate Preview</h2><div class="btn-group"><button class="btn btn-success btn-sm" onclick="convertCurrentToJob()" title="Schedule this estimate as a job">→ Convert to Job</button><button class="btn btn-primary btn-sm" onclick="sendEst('client')">Email to Client</button><button class="btn btn-outline btn-sm" onclick="openClientView()">Preview as Client</button><button class="btn btn-outline btn-sm" onclick="aiFollowup()">AI Follow-up Draft</button><button class="btn btn-outline btn-sm" onclick="window.print()">Print / PDF</button></div></div><div class="card-body"><div class="estimate-preview" id="estPreviewContent"></div></div></div></div>
         </div>
         <!-- SCHEDULING -->
         <div class="page" id="page-scheduling">
@@ -1161,24 +1169,15 @@ def build_html(t):
         <!-- REPORTS -->
         <div class="page" id="page-reports">
             <div class="report-grid">
-                <div class="stat-card"><div class="stat-label">Revenue (MTD)</div><div class="stat-value">$42,800</div><div class="stat-sub">+12% vs last month</div></div>
-                <div class="stat-card"><div class="stat-label">Jobs Completed</div><div class="stat-value">27</div><div class="stat-sub">This month</div></div>
-                <div class="stat-card"><div class="stat-label">Avg Ticket Size</div><div class="stat-value">$1,587</div><div class="stat-sub">Per completed job</div></div>
+                <div class="stat-card"><div class="stat-label">Pipeline Value</div><div class="stat-value" id="rptPipeline">—</div><div class="stat-sub" id="rptPipelineSub">Sent + Accepted estimates</div></div>
+                <div class="stat-card"><div class="stat-label">Jobs Scheduled</div><div class="stat-value" id="rptJobs">—</div><div class="stat-sub" id="rptJobsSub">All time</div></div>
+                <div class="stat-card"><div class="stat-label">Avg Ticket Size</div><div class="stat-value" id="rptAvg">—</div><div class="stat-sub">Across all estimates</div></div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
-                <div class="card"><div class="card-header"><h2>Revenue by Service</h2></div><div class="card-body">
-                    <div class="bar-row"><div class="bar-label">{jobs_list[0]}</div><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><div class="bar-value">$18.4k</div></div>
-                    <div class="bar-row"><div class="bar-label">{jobs_list[1] if len(jobs_list)>1 else jobs_list[0]}</div><div class="bar-track"><div class="bar-fill" style="width:64%"></div></div><div class="bar-value">$12.1k</div></div>
-                    <div class="bar-row"><div class="bar-label">{jobs_list[2] if len(jobs_list)>2 else jobs_list[0]}</div><div class="bar-track"><div class="bar-fill" style="width:46%"></div></div><div class="bar-value">$7.8k</div></div>
-                    <div class="bar-row"><div class="bar-label">Other</div><div class="bar-track"><div class="bar-fill" style="width:28%"></div></div><div class="bar-value">$4.5k</div></div>
-                </div></div>
-                <div class="card"><div class="card-header"><h2>Crew Productivity</h2></div><div class="card-body">
-                    <div class="bar-row"><div class="bar-label">Employee One</div><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><div class="bar-value">12 jobs</div></div>
-                    <div class="bar-row"><div class="bar-label">Employee Two</div><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><div class="bar-value">9 jobs</div></div>
-                    <div class="bar-row"><div class="bar-label">Employee Three</div><div class="bar-track"><div class="bar-fill" style="width:58%"></div></div><div class="bar-value">7 jobs</div></div>
-                    <div class="bar-row"><div class="bar-label">Employee Four</div><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><div class="bar-value">5 jobs</div></div>
-                </div></div>
+                <div class="card"><div class="card-header"><h2>Pipeline by Status</h2><span style="font-size:.72rem;color:var(--text-mute);font-style:italic">Live from your estimates</span></div><div class="card-body" id="rptByStatus">—</div></div>
+                <div class="card"><div class="card-header"><h2>Crew Schedule Load</h2><span style="font-size:.72rem;color:var(--text-mute);font-style:italic">Live from scheduled jobs</span></div><div class="card-body" id="rptByCrew">—</div></div>
             </div>
+            <div class="card" style="margin-top:22px"><div class="card-header"><h2>Recent Activity</h2></div><div class="card-body" id="rptActivity" style="display:flex;flex-direction:column;gap:10px"></div></div>
         </div>
         {page_extras}
     </div>
@@ -1412,6 +1411,8 @@ function renderEstimates(){{
     const recent=document.getElementById('recentEstBody');
     if(recent)recent.innerHTML=list.slice(0,3).map(e=>{{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);const badge=badgeForStatus(e.status);return`<tr><td>${{e.client}}</td><td>${{fmtUsd0(tot)}}</td><td><span class="badge ${{badge}}">${{e.status}}</span></td></tr>`}}).join('')||'<tr><td colspan="3" class="empty-state">No estimates yet</td></tr>';
     refreshBulkBar('est');
+    if(typeof renderReports==='function')renderReports();
+    if(typeof renderHeroKpis==='function')renderHeroKpis();
 }}
 function badgeForStatus(s){{return s==='Accepted'?'badge-accepted':s==='Sent'?'badge-sent':s==='Paid'?'badge-completed':'badge-pending'}}
 function previewEst(id){{
@@ -1594,6 +1595,8 @@ function renderSched(){{
         todayList.innerHTML=display.length?display.map(s=>`<div class="schedule-card"><div class="schedule-time">${{fmtTime(s.time)}}</div><div class="schedule-info"><h4>${{s.job}}</h4><p>${{s.addr}}</p><span class="schedule-employee">${{s.emp}}</span></div></div>`).join(''):'<p class="empty-state">No jobs scheduled today.</p>';
     }}
     refreshBulkBar('sched');
+    if(typeof renderReports==='function')renderReports();
+    if(typeof renderHeroKpis==='function')renderHeroKpis();
 }}
 function setStatus(i,v){{if(!sched[i])return;sched[i].status=v;save();renderSched();showToast('Status updated to '+v,'success')}}
 function addPhotos(i,inp){{const files=Array.from(inp.files||[]);if(!files.length)return;sched[i].photos=sched[i].photos||[];let pending=files.length;files.forEach(f=>{{const r=new FileReader();r.onload=ev=>{{sched[i].photos.push({{src:ev.target.result,ts:Date.now(),name:f.name}});if(--pending===0){{save();renderSched();showToast(files.length+' photo(s) added','success')}}}};r.readAsDataURL(f)}});inp.value=''}}
@@ -1828,7 +1831,128 @@ function renderCustomers(){{
 function saveSettings(){{
     showToast('Settings saved (demo — values would persist in a real backend)','success');
 }}
-function renderAll(){{renderEstimates();renderSched();renderCustomers();}}
+// ---------- live reports + KPIs (computed from current state) ----------
+function renderReports(){{
+    const list=Object.values(estimates);
+    let pipeline=0,total=0,n=list.length;
+    const byStatus={{}};
+    list.forEach(e=>{{
+        const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);
+        total+=tot;
+        if(['Sent','Pending','Accepted'].includes(e.status))pipeline+=tot;
+        byStatus[e.status]=(byStatus[e.status]||0)+tot;
+    }});
+    const avg=n?total/n:0;
+    const set=(id,v)=>{{const el=document.getElementById(id);if(el)el.textContent=v}};
+    set('rptPipeline',fmtUsd0(pipeline));
+    set('rptPipelineSub',n+' total estimate'+(n===1?'':'s'));
+    set('rptJobs',sched.length);
+    const completed=sched.filter(j=>j.status==='Completed').length;
+    set('rptJobsSub',completed+' completed');
+    set('rptAvg',fmtUsd0(avg));
+    // Pipeline by status
+    const statusOrder=['Pending','Sent','Accepted','Paid'];
+    const statusMax=Math.max(1,...Object.values(byStatus));
+    const byStatusEl=document.getElementById('rptByStatus');
+    if(byStatusEl){{
+        const rows=statusOrder.filter(s=>byStatus[s]).map(s=>{{
+            const v=byStatus[s];const pct=Math.round(v/statusMax*100);
+            return '<div class="bar-row"><div class="bar-label">'+s+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div><div class="bar-value">'+fmtUsd0(v)+'</div></div>';
+        }}).join('');
+        byStatusEl.innerHTML=rows||'<div class="empty-state">No estimates yet — create one on the Estimates page.</div>';
+    }}
+    // Crew schedule load
+    const byCrew={{}};
+    sched.forEach(j=>{{byCrew[j.emp]=(byCrew[j.emp]||0)+1}});
+    const crewMax=Math.max(1,...Object.values(byCrew));
+    const byCrewEl=document.getElementById('rptByCrew');
+    if(byCrewEl){{
+        const rows=Object.entries(byCrew).sort((a,b)=>b[1]-a[1]).map(([name,count])=>{{
+            const pct=Math.round(count/crewMax*100);
+            return '<div class="bar-row"><div class="bar-label">'+name+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div><div class="bar-value">'+count+' job'+(count===1?'':'s')+'</div></div>';
+        }}).join('');
+        byCrewEl.innerHTML=rows||'<div class="empty-state">No jobs scheduled yet.</div>';
+    }}
+    // Recent activity timeline
+    const activityEl=document.getElementById('rptActivity');
+    if(activityEl){{
+        const events=[];
+        list.forEach(e=>{{const tot=e.items.reduce((s,i)=>s+i.qty*i.price,0);events.push({{type:'est',label:'Estimate #'+e.num+' · '+e.client,sub:(e.items[0]?.desc||'Service')+' · '+fmtUsd0(tot),status:e.status,date:e.date}})}});
+        sched.slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,5).forEach(j=>{{events.push({{type:'job',label:j.job+' · '+j.client,sub:j.emp+' · '+fmtDate(j.date),status:j.status,date:j.date}})}});
+        events.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+        const top=events.slice(0,8);
+        activityEl.innerHTML=top.length?top.map(ev=>{{
+            const badge=badgeForStatus(ev.status);
+            const ic=ev.type==='est'?'📄':'🔧';
+            return '<div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border-soft)"><span style="font-size:1.1rem">'+ic+'</span><div style="flex:1"><div style="font-weight:600;font-size:.9rem">'+ev.label+'</div><div style="font-size:.78rem;color:var(--text-mute);margin-top:2px">'+ev.sub+'</div></div><span class="badge '+badge+'">'+ev.status+'</span></div>';
+        }}).join(''):'<div class="empty-state">Activity will appear as you create estimates and schedule jobs.</div>';
+    }}
+}}
+function renderHeroKpis(){{
+    // Replace the value of any KPI card whose label matches a known live metric.
+    // This is additive: hardcoded KPIs that don't match keep their seeded values.
+    const list=Object.values(estimates);
+    const open=list.filter(e=>['Pending','Sent'].includes(e.status)).length;
+    const accepted=list.filter(e=>e.status==='Accepted').length;
+    const scheduled=sched.filter(j=>j.status==='Scheduled').length;
+    const completed=sched.filter(j=>j.status==='Completed').length;
+    const pipeline=list.filter(e=>['Pending','Sent','Accepted'].includes(e.status)).reduce((s,e)=>s+e.items.reduce((t,i)=>t+i.qty*i.price,0),0);
+    const liveBadge='<span style="display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;margin-left:8px;vertical-align:middle;animation:pulse 2s infinite"></span>';
+    document.querySelectorAll('#page-dashboard .stat-card').forEach(card=>{{
+        const labelEl=card.querySelector('.stat-label');
+        const valEl=card.querySelector('.stat-value');
+        const subEl=card.querySelector('.stat-sub');
+        if(!labelEl||!valEl)return;
+        const lbl=labelEl.textContent.toLowerCase();
+        // Replace one card with live "Open Estimates" if not already done
+        if(!card.dataset.liveKpi){{
+            // First card always becomes live "Open Estimates"
+            if(card===document.querySelector('#page-dashboard .stat-card')){{
+                card.dataset.liveKpi='open';
+                labelEl.innerHTML='Open Estimates'+liveBadge;
+                valEl.textContent=open;
+                if(subEl)subEl.textContent=accepted+' accepted, ready to schedule';
+            }}
+            // Last card becomes live "Pipeline Value"
+            else if(card===document.querySelectorAll('#page-dashboard .stat-card')[document.querySelectorAll('#page-dashboard .stat-card').length-1]){{
+                card.dataset.liveKpi='pipeline';
+                labelEl.innerHTML='Pipeline Value'+liveBadge;
+                valEl.textContent=fmtUsd0(pipeline);
+                if(subEl)subEl.textContent='Sent + accepted estimates';
+            }}
+        }}else if(card.dataset.liveKpi==='open'){{
+            valEl.textContent=open;
+            if(subEl)subEl.textContent=accepted+' accepted, ready to schedule';
+        }}else if(card.dataset.liveKpi==='pipeline'){{
+            valEl.textContent=fmtUsd0(pipeline);
+            if(subEl)subEl.textContent='Sent + accepted estimates';
+        }}
+    }});
+}}
+// ---------- Estimate -> Schedule conversion ----------
+function convertCurrentToJob(){{if(!currentEst){{showToast('Open an estimate first.');return}}convertToJob(currentEst)}}
+function convertTopEstimate(){{
+    const open=Object.values(estimates).filter(e=>['Pending','Sent','Accepted'].includes(e.status)).sort((a,b)=>(b.num>a.num?1:-1));
+    if(!open.length){{showToast('No open estimates to convert.');return}}
+    convertToJob(open[0].num);
+}}
+function convertToJob(eid){{
+    const e=estimates[eid];if(!e)return;
+    closeModal('estimateModal');
+    document.getElementById('sjType').value=document.getElementById('sjType').options[0].value;
+    // Try to match service to a job type
+    const desc=(e.items[0]?.desc||'').toLowerCase();
+    Array.from(document.getElementById('sjType').options).forEach(opt=>{{
+        if(desc.includes(opt.value.toLowerCase().split(' ')[0]))document.getElementById('sjType').value=opt.value;
+    }});
+    document.getElementById('sjAddr').value=e.addr||'';
+    document.getElementById('sjClient').value=e.client||'';
+    document.getElementById('sjNotes').value='From estimate #'+e.num+(e.notes?' — '+e.notes:'');
+    try{{document.getElementById('sjDate').valueAsDate=new Date()}}catch(err){{}}
+    openModal('schedModal');
+    showToast('Estimate prefilled — set date & assign tech','success');
+}}
+function renderAll(){{renderEstimates();renderSched();renderCustomers();renderReports();renderHeroKpis();}}
 load();renderAll();
 try{{document.getElementById('sjDate').valueAsDate=new Date()}}catch(e){{}}
 document.querySelectorAll('.modal-overlay').forEach(m=>{{m.addEventListener('click',e=>{{if(e.target===m)m.classList.remove('open')}})}});

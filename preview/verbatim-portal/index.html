@@ -814,10 +814,43 @@ function openTranscript(id){
     dl.style.opacity=dl.disabled?'0.5':'1';
     dl.style.cursor=dl.disabled?'not-allowed':'pointer';
     dl.textContent=dl.disabled?'Awaiting certification':'Download Certified PDF';
-    dl.onclick=function(){if(dl.disabled)return;showToast(`${t.id} download started`,'success');closeModal('trModal')};
+    dl.onclick=function(){if(dl.disabled)return;downloadArchive(t.id,t.caseName);closeModal('trModal')};
     openModal('trModal');
 }
-function downloadArchive(id,caption){showToast(`${id} · ${caption} — download started`,'success')}
+function downloadArchive(id,caption){
+    // Generate a real (demo) text file the user can actually download
+    const t=stateOrCase(id);
+    const lines=[
+        '═══════════════════════════════════════════════════════════',
+        '            CERTIFIED COPY — '+(t?.caseName||caption),
+        '═══════════════════════════════════════════════════════════',
+        '',
+        'Transcript ID: '+id,
+        'Witness:       '+(t?.witness||'—'),
+        'Pages:         '+(t?.pages||'—'),
+        'Reporter:      '+(t?.reporter||'—'),
+        'Status:        '+(t?.stage||'Certified'),
+        'Generated:     '+new Date().toLocaleString(),
+        '',
+        '───────────────────────────────────────────────────────────',
+        '',
+        'This is a demonstration archive — in production, this',
+        'download would deliver the certified transcript PDF, all',
+        'exhibits, and a digital certification page bearing the',
+        'reporter\'s signature and case-bound metadata.',
+        '',
+        '         Verbatim & Co. · Certified Court Reporting',
+        '         100 Concourse Pkwy, Birmingham, AL',
+        '═══════════════════════════════════════════════════════════',
+    ].join('\n');
+    const blob=new Blob([lines],{type:'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=id+'_'+(caption||'transcript').replace(/[^a-z0-9]+/gi,'_').toLowerCase()+'.txt';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    showToast(`${id} · ${caption} downloaded`,'success');
+}
+function stateOrCase(id){try{return firmTranscripts().find(x=>x.id===id)}catch(e){return null}}
 
 function renderReadSign(){
     const rs=firmReadsign();

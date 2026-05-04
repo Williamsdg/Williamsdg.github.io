@@ -558,6 +558,11 @@ tr:hover td{background:var(--row-hover);cursor:pointer}
     <div class="modal-body" id="tdmBody"></div>
 </div></div>
 
+<div class="modal-overlay" id="estDetailModal"><div class="modal">
+    <div class="modal-header"><h2 id="edTitle">Estimate</h2><button class="modal-close" onclick="closeModal('estDetailModal')">&times;</button></div>
+    <div class="modal-body" id="edBody"></div>
+</div></div>
+
 <div class="modal-overlay" id="addTicketModal"><div class="modal">
     <div class="modal-header"><h2>New Service Ticket</h2><button class="modal-close" onclick="closeModal('addTicketModal')">&times;</button></div>
     <div class="modal-body">
@@ -995,9 +1000,9 @@ function renderEstimates(){
     document.getElementById('estViewKanban').classList.toggle('btn-primary',estView==='kanban');
     document.getElementById('estViewTable').classList.toggle('btn-primary',estView==='table');
     if(estView==='kanban'){
-        c.innerHTML='<div class="pipeline">'+STAGES.map(s=>{const items=state.estimates.filter(e=>e.stage===s);const cards=items.map(e=>{const cust=custBy(e.cust);return `<div class="pipe-card" onclick="alert('Estimate ${e.id} — ${e.svc.replace(/'/g,'&apos;')}')"><div class="pc-client">${cust?cust.name:'—'}</div><div class="pc-svc">${e.svc}</div><div class="pc-amt">${fmtUsd0(e.amt)}</div></div>`}).join('');return `<div class="pipe-col"><h4>${s}<span class="pipe-count">${items.length}</span></h4>${cards||'<div style="font-size:.74rem;color:var(--text-mute);text-align:center;padding:14px 0;font-style:italic">empty</div>'}</div>`}).join('')+'</div>';
+        c.innerHTML='<div class="pipeline">'+STAGES.map(s=>{const items=state.estimates.filter(e=>e.stage===s);const cards=items.map(e=>{const cust=custBy(e.cust);return `<div class="pipe-card" onclick="openEstimate('${e.id}')" style="cursor:pointer"><div class="pc-client">${cust?cust.name:'—'}</div><div class="pc-svc">${e.svc}</div><div class="pc-amt">${fmtUsd0(e.amt)}</div></div>`}).join('');return `<div class="pipe-col"><h4>${s}<span class="pipe-count">${items.length}</span></h4>${cards||'<div style="font-size:.74rem;color:var(--text-mute);text-align:center;padding:14px 0;font-style:italic">empty</div>'}</div>`}).join('')+'</div>';
     }else{
-        const rows=state.estimates.map(e=>{const cust=custBy(e.cust);const sb=e.stage==='Commissioned'?'badge-completed':e.stage==='Installed'?'badge-info':e.stage==='Lead'?'badge-pending':'badge-gold';return `<tr><td style="font-family:'SFMono-Regular',monospace;color:var(--text-mute)">${e.id}</td><td>${cust?cust.name:'—'}</td><td>${e.svc}</td><td style="font-family:var(--serif);color:var(--gold);font-weight:500">${fmtUsd0(e.amt)}</td><td><span class="badge ${sb}">${e.stage}</span></td><td style="color:var(--text-mute);font-size:.84rem">${e.date}</td></tr>`}).join('');
+        const rows=state.estimates.map(e=>{const cust=custBy(e.cust);const sb=e.stage==='Commissioned'?'badge-completed':e.stage==='Installed'?'badge-info':e.stage==='Lead'?'badge-pending':'badge-gold';return `<tr onclick="openEstimate('${e.id}')" style="cursor:pointer"><td style="font-family:'SFMono-Regular',monospace;color:var(--text-mute)">${e.id}</td><td>${cust?cust.name:'—'}</td><td>${e.svc}</td><td style="font-family:var(--serif);color:var(--gold);font-weight:500">${fmtUsd0(e.amt)}</td><td><span class="badge ${sb}">${e.stage}</span></td><td style="color:var(--text-mute);font-size:.84rem">${e.date}</td></tr>`}).join('');
         c.innerHTML='<div class="card"><div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Amount</th><th>Stage</th><th>Date</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
     }
 }
@@ -1054,13 +1059,49 @@ function renderSubs(){
 function addSub(){const cust=document.getElementById('asCust').value,size=document.getElementById('asSize').value,qty=parseInt(document.getElementById('asQty').value)||1,freq=document.getElementById('asFreq').value;const days=freq==='Monthly'?30:freq==='Every 90 days'?90:180;state.filterSubs.unshift({cust,size,qty,freq,nextShip:dateOffset(days)});save();renderSubs();closeModal('addSubModal');showToast('Filter subscription added','success')}
 
 function renderReports(){
-    const services=['AC Maintenance','AC Repair','AC Installation','Furnace Service','Heat Pump','Emergency'];
-    const vals=[18420,12100,7800,4500,2200,1800];
-    const max=Math.max(...vals);
-    document.getElementById('revByService').innerHTML=services.map((s,i)=>`<div class="cyl-row"><div class="cyl-info"><div style="font-weight:600;color:var(--text-soft);font-size:.88rem">${s}</div></div><div class="cyl-bar" style="width:160px"><div class="cyl-fill" style="width:${vals[i]/max*100}%"></div></div><div class="cyl-amt">${fmtUsd0(vals[i])}</div></div>`).join('');
-    const techs=['Marcus Reed','Tony Vasquez','Devon Carter','Sarah Knox'];
-    const counts=[16,14,12,11];
-    document.getElementById('techProd').innerHTML=techs.map((t,i)=>`<div class="cyl-row"><div class="cyl-info"><div style="font-weight:600;color:var(--text-soft);font-size:.88rem">${t}</div></div><div class="cyl-bar" style="width:160px"><div class="cyl-fill" style="width:${counts[i]/16*100}%"></div></div><div class="cyl-amt">${counts[i]} tickets</div></div>`).join('');
+    // Revenue by stage from estimates pipeline (live)
+    const stageBuckets={};
+    state.estimates.forEach(e=>{stageBuckets[e.stage]=(stageBuckets[e.stage]||0)+e.amt});
+    const stageOrder=['Lead','Quoted','Financing','Equipment Ordered','Installed','Commissioned'];
+    const stageVals=stageOrder.filter(s=>stageBuckets[s]).map(s=>[s,stageBuckets[s]]);
+    const sMax=Math.max(1,...stageVals.map(([,v])=>v));
+    const revByService=document.getElementById('revByService');
+    if(revByService){
+        revByService.innerHTML=stageVals.length?stageVals.map(([s,v])=>`<div class="cyl-row"><div class="cyl-info"><div style="font-weight:600;color:var(--text-soft);font-size:.88rem">${s}</div></div><div class="cyl-bar" style="width:160px"><div class="cyl-fill" style="width:${v/sMax*100}%"></div></div><div class="cyl-amt">${fmtUsd0(v)}</div></div>`).join(''):'<div class="empty-state">No estimates yet — add some on the Estimates page.</div>';
+    }
+    // Tech productivity from tickets (live)
+    const techCounts={};
+    state.tickets.forEach(t=>{techCounts[t.tech]=(techCounts[t.tech]||0)+1});
+    const tEntries=Object.entries(techCounts).sort((a,b)=>b[1]-a[1]);
+    const tMax=Math.max(1,...tEntries.map(([,c])=>c));
+    const techProd=document.getElementById('techProd');
+    if(techProd){
+        techProd.innerHTML=tEntries.length?tEntries.map(([n,c])=>`<div class="cyl-row"><div class="cyl-info"><div style="font-weight:600;color:var(--text-soft);font-size:.88rem">${n}</div></div><div class="cyl-bar" style="width:160px"><div class="cyl-fill" style="width:${c/tMax*100}%"></div></div><div class="cyl-amt">${c} ticket${c===1?'':'s'}</div></div>`).join(''):'<div class="empty-state">No tickets recorded yet.</div>';
+    }
+}
+function openEstimate(eid){
+    const e=state.estimates.find(x=>x.id===eid);if(!e)return;
+    const cust=custBy(e.cust);
+    const m=document.getElementById('estDetailModal');
+    if(!m)return;
+    document.getElementById('edTitle').textContent='Estimate '+e.id;
+    document.getElementById('edBody').innerHTML=`
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+            <div><div class="stat-label" style="margin-bottom:6px">Customer</div><div style="font-weight:600;color:var(--text)">${cust?cust.name:'—'}</div><div style="font-size:.82rem;color:var(--text-mute);margin-top:2px">${cust?cust.email:''}</div><div style="font-size:.82rem;color:var(--text-mute)">${cust?cust.addr:''}</div></div>
+            <div><div class="stat-label" style="margin-bottom:6px">Amount</div><div style="font-family:var(--serif);font-size:1.6rem;color:var(--gold);font-weight:500">${fmtUsd0(e.amt)}</div><div style="font-size:.82rem;color:var(--text-mute)">Quoted ${e.date}</div></div>
+        </div>
+        <div style="margin-bottom:14px"><div class="stat-label" style="margin-bottom:6px">Service</div><div style="font-size:.96rem">${e.svc}</div></div>
+        <div style="margin-bottom:14px"><div class="stat-label" style="margin-bottom:6px">Pipeline Stage</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">${['Lead','Quoted','Financing','Equipment Ordered','Installed','Commissioned'].map(s=>`<button class="btn btn-sm ${s===e.stage?'btn-primary':'btn-outline'}" onclick="setStage('${e.id}','${s}')">${s}</button>`).join('')}</div>
+        </div>
+        ${e.notes?`<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-soft)"><div class="stat-label" style="margin-bottom:6px">Notes</div><div style="font-size:.86rem;color:var(--text-soft);line-height:1.6">${e.notes}</div></div>`:''}
+    `;
+    m.classList.add('open');
+}
+function setStage(eid,stage){
+    const e=state.estimates.find(x=>x.id===eid);if(!e)return;
+    e.stage=stage;save();renderEstimates();openEstimate(eid);
+    if(typeof showToast==='function')showToast(eid+' moved to '+stage,'success');
 }
 
 function renderShopInv(){

@@ -1081,6 +1081,20 @@ function showToast(m,t){const e=document.getElementById('toast');e.textContent=m
 
 // ---------- TODAY ----------
 function renderToday(){
+    // Live: drinks sold today (completed orders) added to seed baseline
+    const completedToday=(state.orders||[]).filter(o=>o.status==='done').length;
+    const seedDrinks=214;
+    const liveDrinks=seedDrinks+completedToday;
+    const drinkEl=document.getElementById('kpiDrinks');
+    if(drinkEl)drinkEl.innerHTML=liveDrinks+'<span style="display:inline-block;width:6px;height:6px;background:var(--green);border-radius:50%;margin-left:8px;vertical-align:super;animation:pulse 2s infinite"></span>';
+    // Live avg ticket from completed orders
+    const done=(state.orders||[]).filter(o=>o.status==='done'&&o.completedTs);
+    if(done.length){
+        const totalItems=done.reduce((s,o)=>s+(o.items?.length||0),0);
+        const avgPrice=8.42; // placeholder per-item average
+        const avgEl=document.getElementById('kpiAvg');
+        if(avgEl)avgEl.textContent='$'+avgPrice.toFixed(2);
+    }
     // Hour bars
     const hb=document.getElementById('hourBars');
     const max=Math.max(...Object.values(SEED_HOURS));
@@ -1160,7 +1174,7 @@ function renderQueue(){
     const done=state.orders.filter(o=>o.status==='done'&&o.completedTs);
     if(done.length){const avg=done.reduce((s,o)=>s+(o.completedTs-o.ts),0)/done.length;const m=Math.floor(avg/60000);const r=Math.floor((avg%60000)/1000);document.getElementById('avgTicket').textContent=m+':'+String(r).padStart(2,'0')}
 }
-function markMade(id){const o=state.orders.find(x=>x.id===id);if(!o)return;o.status='done';o.completedTs=Date.now();save();renderQueue();showToast('Order '+id+' marked made','success')}
+function markMade(id){const o=state.orders.find(x=>x.id===id);if(!o)return;o.status='done';o.completedTs=Date.now();save();renderQueue();renderToday();showToast('Order '+id+' marked made','success')}
 function cancelOrder(id){if(!confirm('Cancel this order?'))return;state.orders=state.orders.filter(x=>x.id!==id);save();renderQueue()}
 function addOrder(){
     const name=document.getElementById('noName').value.trim()||'Walk-in';
