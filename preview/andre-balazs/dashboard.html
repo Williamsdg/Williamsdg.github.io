@@ -229,7 +229,7 @@
       <h6>Overview</h6>
       <a class="side-link active"><span class="ico">◇</span> Dashboard</a>
       <a class="side-link"><span class="ico">◐</span> Properties <span style="margin-left:auto;color:rgba(207,200,184,.5);font-size:.74rem">7</span></a>
-      <a class="side-link"><span class="ico">✉</span> Inquiries <span class="badge">12</span></a>
+      <a class="side-link"><span class="ico">✉</span> Inquiries <span class="badge" id="side-badge">12</span></a>
       <a class="side-link"><span class="ico">⌖</span> Bookings</a>
       <a class="side-link"><span class="ico">◍</span> Events Calendar</a>
     </div>
@@ -268,7 +268,7 @@
     <div class="topbar">
       <div class="top-title">
         <h1>Good morning, <em>André</em>.</h1>
-        <p>Sunday, May 3 · 12 inquiries since Friday · 2 events this week · Chiltern at 94% occupancy</p>
+        <p id="top-sub">Sunday, May 3 · 12 inquiries since Friday · 2 events this week · Chiltern at 94% occupancy</p>
       </div>
       <div class="top-actions">
         <div class="search">
@@ -284,23 +284,23 @@
     <div class="stats">
       <div class="stat">
         <div class="stat-label">Open Inquiries</div>
-        <div class="stat-value"><em>12</em></div>
-        <div class="stat-foot"><strong>+5</strong> since Friday · 4 require reply today</div>
+        <div class="stat-value" id="stat-open"><em>12</em></div>
+        <div class="stat-foot" id="stat-open-foot"><strong>+5</strong> since Friday · 4 require reply today</div>
       </div>
       <div class="stat">
         <div class="stat-label">Occupancy · This Week</div>
-        <div class="stat-value">87%</div>
+        <div class="stat-value" id="stat-occ">87%</div>
         <div class="stat-foot"><strong>+4 pts</strong> vs same week 2025</div>
       </div>
       <div class="stat">
         <div class="stat-label">Confirmed Events</div>
-        <div class="stat-value">9</div>
-        <div class="stat-foot">Next 30 days · £218k contracted</div>
+        <div class="stat-value" id="stat-events">9</div>
+        <div class="stat-foot" id="stat-events-foot">Next 30 days · £218k contracted</div>
       </div>
       <div class="stat">
         <div class="stat-label">Residence Pipeline</div>
-        <div class="stat-value"><em>3</em></div>
-        <div class="stat-foot">Qualified leads · 1 in negotiation</div>
+        <div class="stat-value" id="stat-res"><em>3</em></div>
+        <div class="stat-foot" id="stat-res-foot">Qualified leads · 1 in negotiation</div>
       </div>
     </div>
 
@@ -519,19 +519,11 @@
           </div>
         </div>
         <div class="cal-head">
-          <span>← April</span>
-          <span style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--ink)">May 2026</span>
-          <span>June →</span>
+          <span id="cal-prev" style="cursor:pointer">← April</span>
+          <span id="cal-month" style="font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--ink)">May 2026</span>
+          <span id="cal-next" style="cursor:pointer">June →</span>
         </div>
-        <div class="cal-grid">
-          <div class="cal-day head">Mon</div><div class="cal-day head">Tue</div><div class="cal-day head">Wed</div><div class="cal-day head">Thu</div><div class="cal-day head">Fri</div><div class="cal-day head">Sat</div><div class="cal-day head">Sun</div>
-
-          <div class="cal-day muted">28</div><div class="cal-day muted">29</div><div class="cal-day muted">30</div><div class="cal-day book">1</div><div class="cal-day full">2</div><div class="cal-day today event">3</div><div class="cal-day book">4</div>
-          <div class="cal-day book">5</div><div class="cal-day book">6</div><div class="cal-day full">7</div><div class="cal-day full">8</div><div class="cal-day full">9</div><div class="cal-day event">10</div><div class="cal-day book">11</div>
-          <div class="cal-day">12</div><div class="cal-day book">13</div><div class="cal-day book">14</div><div class="cal-day full">15</div><div class="cal-day full">16</div><div class="cal-day full">17</div><div class="cal-day book">18</div>
-          <div class="cal-day book">19</div><div class="cal-day event">20</div><div class="cal-day full">21</div><div class="cal-day full">22</div><div class="cal-day full">23</div><div class="cal-day full">24</div><div class="cal-day full">25</div>
-          <div class="cal-day book">26</div><div class="cal-day book">27</div><div class="cal-day book">28</div><div class="cal-day book">29</div><div class="cal-day book">30</div><div class="cal-day full">31</div><div class="cal-day muted">1</div>
-        </div>
+        <div class="cal-grid" id="cal-grid"></div>
         <div style="padding:12px 24px 22px;display:flex;gap:18px;font-size:.74rem;color:var(--muted);flex-wrap:wrap;border-top:1px solid var(--line-soft)">
           <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-right:6px"></span>Booking</span>
           <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--hot);margin-right:6px"></span>Event</span>
@@ -653,7 +645,162 @@
   const $ = (s, p=document) => p.querySelector(s);
   const $$ = (s, p=document) => Array.from(p.querySelectorAll(s));
 
-  // ---- Toast ----
+  /* ============================================================
+     STATE
+     ============================================================ */
+  const STATE = {
+    inquiries: [
+      { id:'vivienne', cat:'events', tag:'E', tagClass:'events',
+        name:'Vivienne Carter', badge:{cls:'hot',text:'Urgent'},
+        detail:'Private courtyard dinner · 60 guests · June 14',
+        property:'Chiltern Firehouse · Marylebone', when:'14 min ago',
+        kicker:'Selected · Private Event Inquiry',
+        sub:'Inquiry no. 2026-0421 · Submitted 14 minutes ago',
+        pills:'<span class="pill hot">Urgent</span><span class="pill muted">Unassigned</span>',
+        propertyHtml:'<strong>Chiltern Firehouse</strong> · Marylebone',
+        type:'Private courtyard dinner — 60 guests, seated',
+        date:'Saturday, June 14 · 7:30 PM – 11:30 PM',
+        routed:'Sasha Hartwell, Events Director',
+        budget:'£40k – £60k', ref:'Repeat guest — last stay Sept 2025',
+        contact:'vivienne@vc-studio.co · +44 20 7946 0118',
+        ltv:'<strong>£14,820</strong> · 4 prior stays',
+        message:'"We\'d love to host an intimate dinner for our publication\'s 10-year anniversary. The courtyard would be perfect — long communal table, candle-only, low music. Nuno\'s team if at all possible. Open on flowers and menu, but no canapés please. We\'re flexible on date if June 14 doesn\'t work."',
+        status:'open' },
+      { id:'marco', cat:'stays', tag:'S', tagClass:'',
+        name:'Marco Steiner', badge:{cls:'gold',text:'Returning'},
+        detail:'Loft Suite, July 8–14 · with partner · same as last visit',
+        property:'Chiltern Firehouse', when:'1 hr ago',
+        kicker:'Selected · Stay Inquiry',
+        sub:'Inquiry no. 2026-0420 · Submitted 1 hour ago',
+        pills:'<span class="pill gold">Returning Guest</span><span class="pill good">Auto-Approved</span>',
+        propertyHtml:'<strong>Chiltern Firehouse</strong> · Loft Suite',
+        type:'7-night stay · 2 adults · same suite as Sept 2025',
+        date:'Wednesday, July 8 → Tuesday, July 14',
+        routed:'James Aldwych, Front-of-House',
+        budget:'Rate locked · £14,560 (Loft Suite × 7)',
+        ref:'Direct booking · 6th visit',
+        contact:'m.steiner@steiner-cap.com · +41 44 286 7700',
+        ltv:'<strong>£82,440</strong> · 5 prior stays · Always Loft Suite',
+        message:'"Same as last September — Loft Suite for the week. Sophia and I are coming for the Frieze previews. Could we have the Steinway tuned again? Otherwise no special requests. We\'ll find our own way from Heathrow."',
+        status:'open' },
+      { id:'bishara', cat:'residences', tag:'R', tagClass:'residence',
+        name:'Bishara Family Office', badge:{cls:'warn',text:'By Referral'},
+        detail:'Inquiry on Mercer residence opportunity · introduced by D. Salomé',
+        property:'The Mercer', when:'3 hrs ago',
+        kicker:'Selected · Residence Inquiry',
+        sub:'Inquiry no. 2026-0418 · Submitted 3 hours ago',
+        pills:'<span class="pill warn">By Referral</span><span class="pill muted">Qualifying</span>',
+        propertyHtml:'<strong>The Mercer</strong> · Residence inquiry',
+        type:'Two-bedroom residence — full ownership · primary or pied-à-terre TBD',
+        date:'Site visit requested · within 14 days',
+        routed:'Olivia March, Head of Residences',
+        budget:'Unstated · pre-qualified by referral',
+        ref:'Introduced by D. Salomé (Mercer Residence owner since 2022)',
+        contact:'office@bishara.fo · +1 212 555 0144',
+        ltv:'New relationship · referral chain verified',
+        message:'"Following a conversation with Mr. Salomé, the principal would like to understand what is — and is not — currently available at The Mercer. Discretion is paramount. We are flexible on timing for a private viewing and will travel from Geneva."',
+        status:'open' },
+      { id:'tmag', cat:'press', tag:'P', tagClass:'press',
+        name:'T Magazine — A. Khouri', badge:null,
+        detail:"Editorial feature on Chiltern's 13th anniversary · shoot July",
+        property:'Chiltern Firehouse', when:'Yesterday',
+        kicker:'Selected · Press Inquiry',
+        sub:'Inquiry no. 2026-0415 · Submitted yesterday',
+        pills:'<span class="pill gold">Tier-1 Press</span><span class="pill good">Editorial Calendar</span>',
+        propertyHtml:'<strong>Chiltern Firehouse</strong> · 13th anniversary feature',
+        type:'Long-form editorial · 4,500 words · photo shoot on-property',
+        date:'Shoot week of July 21 · runs Sept 2026 issue',
+        routed:'Iris Penn, Director of Communications',
+        budget:'Editorial · no fee · access in exchange for embargo',
+        ref:'Direct from Hanya Yanagihara\'s desk',
+        contact:'a.khouri@nytimes.com · +1 212 556 1212',
+        ltv:'Prior coverage: NYT × 4 features since 2014',
+        message:'"For our September design issue we\'d love to revisit Chiltern thirteen years on. Long read, on-property shoot, ideally André on the record about what has and has not aged. We\'d need three days of access including one with the kitchen and one in the courtyard."',
+        status:'open' },
+      { id:'theo', cat:'stays', tag:'S', tagClass:'',
+        name:'Theo Whitley', badge:null,
+        detail:'Garden Room · May 22–25 · honeymoon, requested late checkout',
+        property:'Chateau Marmont', when:'Yesterday',
+        kicker:'Selected · Stay Inquiry',
+        sub:'Inquiry no. 2026-0411 · Submitted yesterday',
+        pills:'<span class="pill gold">Honeymoon</span><span class="pill muted">First-time Guest</span>',
+        propertyHtml:'<strong>Chateau Marmont</strong> · Garden Room',
+        type:'3-night stay · 2 adults · honeymoon',
+        date:'Friday, May 22 → Monday, May 25',
+        routed:'Gemma Vargas, Front-of-House',
+        budget:'£3,920 (Garden Room × 3) · in-room dining held open',
+        ref:'Concierge referral · Brown\'s of London',
+        contact:'theo@whitley.studio · +44 7700 900118',
+        ltv:'New relationship · concierge channel',
+        message:'"We\'re hoping for a quiet first weekend after the wedding. Late checkout on Monday would be everything. No fuss, no flowers in the room please — we both have allergies. Would love a recommendation for a Sunday lunch off-property."',
+        status:'open' },
+      { id:'rouhier', cat:'events', tag:'E', tagClass:'events',
+        name:'Rouhier Atelier', badge:{cls:'good',text:'Confirmed'},
+        detail:'Full property buyout · Sept 5–7 · contract signed',
+        property:'Locanda al Mare', when:'2 days ago',
+        kicker:'Selected · Confirmed Event',
+        sub:'Inquiry no. 2026-0398 · Contract countersigned 2 days ago',
+        pills:'<span class="pill good">Confirmed</span><span class="pill gold">Full Buyout</span>',
+        propertyHtml:'<strong>Locanda al Mare</strong> · Capri',
+        type:'Full property buyout · 36 guests · 3 nights',
+        date:'Friday, Sept 5 → Monday, Sept 8',
+        routed:'Sasha Hartwell, Events Director',
+        budget:'€186,000 · 50% deposit received',
+        ref:'Repeat client · 4th Locanda buyout since 2021',
+        contact:'concierge@rouhier.fr · +33 1 42 96 12 12',
+        ltv:'<strong>€642,000</strong> · 8 prior buyouts across the collection',
+        message:'"Our atelier closes for the first week of September each year and we have been bringing our team to Locanda since 2021. Same brief: long lunches, the cliff terrace at sunset, and please no formal seating plan. Mariella behind the bar if she\'s available."',
+        status:'confirmed' }
+    ],
+    selectedId: 'vivienne',
+    filter: 'all',
+    properties: [
+      { key:'chiltern', name:'Chiltern Firehouse', loc:'Marylebone, London · 26 rooms', occ:94, thumb:'chiltern' },
+      { key:'mercer',   name:'The Mercer',         loc:'SoHo, New York · 75 rooms',     occ:88, thumb:'' },
+      { key:'chateau',  name:'Chateau Marmont',    loc:'West Hollywood · 63 rooms',     occ:91, thumb:'chateau' },
+      { key:'sunset',   name:'Sunset Beach',       loc:'Sunset Strip, LA · 20 rooms',   occ:76, thumb:'standard' },
+      { key:'raleigh',  name:'The Raleigh',        loc:'South Beach, Miami · 104 rooms',occ:82, thumb:'raleigh' },
+      { key:'locanda',  name:'Locanda al Mare',    loc:'Capri, Italy · 10 rooms',       occ:100,thumb:'locanda' }
+    ],
+    calProperty: 'Chiltern',
+    calMonthIdx: 0,   // 0 = May 2026
+    calData: {
+      // status per day-of-month for each property; states: '', 'book', 'event', 'full', 'today'
+      Chiltern: {
+        'May 2026':  ['','','','book','full','today event','book','book','book','full','full','full','event','book','','book','book','full','full','full','book','book','event','full','full','full','full','full','book','book','book','book','book','book','full'],
+        'April 2026':['book','full','full','full','book','book','','','book','full','full','book','book','','book','full','event','full','book','book','','full','full','full','book','book','','full','full','full'],
+        'June 2026': ['book','event','full','full','book','book','','book','full','full','full','event','book','','book','full','full','full','book','book','','full','full','full','book','book','','event','full','full']
+      },
+      Mercer: {
+        'May 2026':  ['full','full','book','book','full','full','full','book','event','full','full','book','book','','book','book','full','full','full','book','book','','event','full','full','full','book','book','','full','full','full','full','book','book'],
+        'April 2026':['full','full','full','book','book','','','full','event','full','book','book','','','book','full','full','full','full','book','','full','full','full','book','book','','book','full','full'],
+        'June 2026': ['book','book','full','full','full','book','','event','full','full','full','book','book','','book','full','full','event','book','book','','full','full','full','book','book','','full','full','full']
+      },
+      Chateau: {
+        'May 2026':  ['book','book','full','full','full','book','book','event','full','full','full','book','','','book','full','full','full','book','book','','event','full','full','full','book','book','','full','full','full','full','book','book','book'],
+        'April 2026':['','book','full','full','full','book','','book','full','full','event','book','','','book','full','full','full','book','','','full','full','full','book','book','','book','full','full'],
+        'June 2026': ['full','full','full','book','book','','','event','full','full','full','book','','','book','full','full','full','book','book','','event','full','full','book','book','','full','full','full']
+      }
+    },
+    months: ['May 2026','April 2026','June 2026'],   // current/prev/next
+    monthLabels: { 'May 2026': {prev:'← April', next:'June →'}, 'April 2026':{prev:'← March',next:'May →'}, 'June 2026':{prev:'← May',next:'July →'} },
+    monthFirstDow: { 'May 2026':4, 'April 2026':1, 'June 2026':0 },  // 0=Mon
+    monthDays:    { 'May 2026':31, 'April 2026':30, 'June 2026':30 },
+    monthPrevDays:{ 'May 2026':30, 'April 2026':31, 'June 2026':31 },
+    today: { month:'May 2026', day:3 },
+    content: [
+      { id:'c1', status:'live',      title:'An Evening with Nuno: Spring at Chiltern', type:'Journal',         when:'Live · 4d' },
+      { id:'c2', status:'draft',     title:'The Mercer at Twenty-Five',                type:'Editorial',       when:'Draft · André' },
+      { id:'c3', status:'scheduled', title:'Capri Notebook: A Summer at Locanda',      type:'Journal',         when:'Schd · May 8' },
+      { id:'c4', status:'live',      title:'Chateau Sessions — Vol. III',              type:'Music',           when:'Live · 2w' },
+      { id:'c5', status:'draft',     title:'A Letter on Hospitality',                  type:"Founder's Note",  when:'Draft · André' },
+      { id:'c6', status:'scheduled', title:'May Newsletter — From the Collection',     type:'Newsletter',      when:'Schd · Wed 9 AM' }
+    ]
+  };
+
+  /* ============================================================
+     TOAST
+     ============================================================ */
   const toast = $('#toast');
   let toastTimer;
   function showToast(html){
@@ -663,228 +810,355 @@
     toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
   }
 
-  // ---- Inquiry data ----
-  const INQUIRIES = {
-    vivienne: {
-      kicker: 'Selected · Private Event Inquiry',
-      name: 'Vivienne <em>Carter</em>',
-      sub: 'Inquiry no. 2026-0421 · Submitted 14 minutes ago',
-      pills: '<span class="pill hot">Urgent</span><span class="pill muted">Unassigned</span>',
-      property: '<strong>Chiltern Firehouse</strong> · Marylebone',
-      type: 'Private courtyard dinner — 60 guests, seated',
-      date: 'Saturday, June 14 · 7:30 PM – 11:30 PM',
-      routed: 'Sasha Hartwell, Events Director',
-      budget: '£40k – £60k',
-      ref: 'Repeat guest — last stay Sept 2025',
-      contact: 'vivienne@vc-studio.co · +44 20 7946 0118',
-      ltv: '<strong>£14,820</strong> · 4 prior stays',
-      message: '"We\'d love to host an intimate dinner for our publication\'s 10-year anniversary. The courtyard would be perfect — long communal table, candle-only, low music. Nuno\'s team if at all possible. Open on flowers and menu, but no canapés please. We\'re flexible on date if June 14 doesn\'t work."'
-    },
-    marco: {
-      kicker: 'Selected · Stay Inquiry',
-      name: 'Marco <em>Steiner</em>',
-      sub: 'Inquiry no. 2026-0420 · Submitted 1 hour ago',
-      pills: '<span class="pill gold">Returning Guest</span><span class="pill good">Auto-Approved</span>',
-      property: '<strong>Chiltern Firehouse</strong> · Loft Suite',
-      type: '7-night stay · 2 adults · same suite as Sept 2025',
-      date: 'Wednesday, July 8 → Tuesday, July 14',
-      routed: 'James Aldwych, Front-of-House',
-      budget: 'Rate locked · £14,560 (Loft Suite × 7)',
-      ref: 'Direct booking · 6th visit',
-      contact: 'm.steiner@steiner-cap.com · +41 44 286 7700',
-      ltv: '<strong>£82,440</strong> · 5 prior stays · Always Loft Suite',
-      message: '"Same as last September — Loft Suite for the week. Sophia and I are coming for the Frieze previews. Could we have the Steinway tuned again? Otherwise no special requests. We\'ll find our own way from Heathrow."'
-    },
-    bishara: {
-      kicker: 'Selected · Residence Inquiry',
-      name: 'Bishara <em>Family Office</em>',
-      sub: 'Inquiry no. 2026-0418 · Submitted 3 hours ago',
-      pills: '<span class="pill warn">By Referral</span><span class="pill muted">Qualifying</span>',
-      property: '<strong>The Mercer</strong> · Residence inquiry',
-      type: 'Two-bedroom residence — full ownership · primary or pied-à-terre TBD',
-      date: 'Site visit requested · within 14 days',
-      routed: 'Olivia March, Head of Residences',
-      budget: 'Unstated · pre-qualified by referral',
-      ref: 'Introduced by D. Salomé (Mercer Residence owner since 2022)',
-      contact: 'office@bishara.fo · +1 212 555 0144',
-      ltv: 'New relationship · referral chain verified',
-      message: '"Following a conversation with Mr. Salomé, the principal would like to understand what is — and is not — currently available at The Mercer. Discretion is paramount. We are flexible on timing for a private viewing and will travel from Geneva."'
-    },
-    tmag: {
-      kicker: 'Selected · Press Inquiry',
-      name: 'T Magazine — <em>A. Khouri</em>',
-      sub: 'Inquiry no. 2026-0415 · Submitted yesterday',
-      pills: '<span class="pill gold">Tier-1 Press</span><span class="pill good">Editorial Calendar</span>',
-      property: '<strong>Chiltern Firehouse</strong> · 13th anniversary feature',
-      type: 'Long-form editorial · 4,500 words · photo shoot on-property',
-      date: 'Shoot week of July 21 · runs Sept 2026 issue',
-      routed: 'Iris Penn, Director of Communications',
-      budget: 'Editorial · no fee · access in exchange for embargo',
-      ref: 'Direct from Hanya Yanagihara\'s desk',
-      contact: 'a.khouri@nytimes.com · +1 212 556 1212',
-      ltv: 'Prior coverage: NYT × 4 features since 2014',
-      message: '"For our September design issue we\'d love to revisit Chiltern thirteen years on. Long read, on-property shoot, ideally André on the record about what has and has not aged. We\'d need three days of access including one with the kitchen and one in the courtyard."'
-    },
-    theo: {
-      kicker: 'Selected · Stay Inquiry',
-      name: 'Theo <em>Whitley</em>',
-      sub: 'Inquiry no. 2026-0411 · Submitted yesterday',
-      pills: '<span class="pill gold">Honeymoon</span><span class="pill muted">First-time Guest</span>',
-      property: '<strong>Chateau Marmont</strong> · Garden Room',
-      type: '3-night stay · 2 adults · honeymoon',
-      date: 'Friday, May 22 → Monday, May 25',
-      routed: 'Gemma Vargas, Front-of-House',
-      budget: '£3,920 (Garden Room × 3) · in-room dining held open',
-      ref: 'Concierge referral · Brown\'s of London',
-      contact: 'theo@whitley.studio · +44 7700 900118',
-      ltv: 'New relationship · concierge channel',
-      message: '"We\'re hoping for a quiet first weekend after the wedding. Late checkout on Monday would be everything. No fuss, no flowers in the room please — we both have allergies. Would love a recommendation for a Sunday lunch off-property."'
-    },
-    rouhier: {
-      kicker: 'Selected · Confirmed Event',
-      name: 'Rouhier <em>Atelier</em>',
-      sub: 'Inquiry no. 2026-0398 · Contract countersigned 2 days ago',
-      pills: '<span class="pill good">Confirmed</span><span class="pill gold">Full Buyout</span>',
-      property: '<strong>Locanda al Mare</strong> · Capri',
-      type: 'Full property buyout · 36 guests · 3 nights',
-      date: 'Friday, Sept 5 → Monday, Sept 8',
-      routed: 'Sasha Hartwell, Events Director',
-      budget: '€186,000 · 50% deposit received',
-      ref: 'Repeat client · 4th Locanda buyout since 2021',
-      contact: 'concierge@rouhier.fr · +33 1 42 96 12 12',
-      ltv: '<strong>€642,000</strong> · 8 prior buyouts across the collection',
-      message: '"Our atelier closes for the first week of September each year and we have been bringing our team to Locanda since 2021. Same brief: long lunches, the cliff terrace at sunset, and please no formal seating plan. Mariella behind the bar if she\'s available."'
-    }
-  };
+  /* ============================================================
+     RENDER: STATS
+     ============================================================ */
+  function renderStats(){
+    const open = STATE.inquiries.filter(i => i.status==='open').length;
+    const events = STATE.inquiries.filter(i => i.cat==='events' && i.status!=='dismissed').length
+                 + 7; // baseline confirmed events on calendar
+    const residences = STATE.inquiries.filter(i => i.cat==='residences' && i.status==='open').length + 2;
+    const occAvg = Math.round(STATE.properties.reduce((s,p)=>s+p.occ,0) / STATE.properties.length);
 
-  // ---- Wire inquiry rows to detail panel ----
-  const rows = $$('#inq-list .inq-row');
-  rows.forEach(row => {
-    row.addEventListener('click', () => {
-      const id = row.dataset.inq;
-      const data = INQUIRIES[id];
-      if (!data) return;
-      rows.forEach(r => r.classList.remove('selected'));
-      row.classList.add('selected');
-      $('#pn-kicker').textContent = data.kicker;
-      $('#pn-name').innerHTML = data.name;
-      $('#pn-sub').textContent = data.sub;
-      $('#pn-pills').innerHTML = data.pills;
-      $('#pn-property').innerHTML = data.property;
-      $('#pn-type').textContent = data.type;
-      $('#pn-date').textContent = data.date;
-      $('#pn-routed').textContent = data.routed;
-      $('#pn-budget').textContent = data.budget;
-      $('#pn-ref').textContent = data.ref;
-      $('#pn-contact').textContent = data.contact;
-      $('#pn-ltv').innerHTML = data.ltv;
-      $('#pn-message').textContent = data.message;
-      $('#inq-panel').scrollIntoView({behavior:'smooth', block:'center'});
-    });
-  });
-  // mark Vivienne as selected by default
-  if (rows[0]) rows[0].classList.add('selected');
+    $('#stat-open').innerHTML = `<em>${open}</em>`;
+    $('#stat-occ').textContent = occAvg + '%';
+    $('#stat-events').textContent = events;
+    $('#stat-res').innerHTML = `<em>${residences}</em>`;
+    $('#side-badge').textContent = open;
 
-  // ---- Inquiry filter ----
-  const filterBtns = $$('#inq-filter button');
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('on'));
-      btn.classList.add('on');
-      const f = btn.dataset.filter;
-      rows.forEach(r => {
-        r.style.display = (f === 'all' || r.dataset.cat === f) ? '' : 'none';
+    // foot text
+    const today = STATE.inquiries.filter(i => i.status==='open' && /min ago|hr ago/.test(i.when)).length;
+    $('#stat-open-foot').innerHTML = `<strong>${open>=12?'+5':open>=10?'+3':'-'+(12-open)}</strong> since Friday · ${today} require reply today`;
+  }
+
+  /* ============================================================
+     RENDER: INQUIRY LIST
+     ============================================================ */
+  function renderInquiries(){
+    const list = $('#inq-list');
+    const visible = STATE.inquiries.filter(i =>
+      (STATE.filter === 'all' || i.cat === STATE.filter) && i.status !== 'dismissed'
+    );
+
+    list.innerHTML = visible.map(i => {
+      const badge = i.badge ? `<span class="pill ${i.badge.cls}" style="margin-left:8px">${i.badge.text}</span>` : '';
+      const sel = (i.id === STATE.selectedId) ? ' selected' : '';
+      return `
+        <div class="inq-row${sel}" data-inq="${i.id}" data-cat="${i.cat}">
+          <div class="inq-tag ${i.tagClass}">${i.tag}</div>
+          <div>
+            <div class="inq-name">${i.name} ${badge}</div>
+            <div class="inq-detail">${i.detail}</div>
+          </div>
+          <div class="inq-prop">${i.property}</div>
+          <div class="inq-when">${i.when}</div>
+          <div class="inq-arrow">→</div>
+        </div>`;
+    }).join('') || '<div style="padding:60px 24px;text-align:center;color:var(--muted);font-size:.9rem">No inquiries match this filter.</div>';
+
+    // re-bind
+    $$('#inq-list .inq-row').forEach(row => {
+      row.addEventListener('click', () => {
+        STATE.selectedId = row.dataset.inq;
+        renderInquiries();
+        renderPanel();
+        $('#inq-panel').scrollIntoView({behavior:'smooth', block:'center'});
       });
     });
-  });
 
-  // ---- Calendar property switcher ----
-  const calBtns = $$('#cal-seg button');
-  const calProp = $('#cal-prop');
-  calBtns.forEach(btn => {
+    // update filter button counts
+    $$('#inq-filter button').forEach(btn => {
+      const f = btn.dataset.filter;
+      const original = btn.dataset.label || btn.textContent.replace(/\s*·\s*\d+$/,'').trim();
+      btn.dataset.label = original;
+      const count = (f === 'all')
+        ? STATE.inquiries.filter(i => i.status!=='dismissed').length
+        : STATE.inquiries.filter(i => i.cat === f && i.status!=='dismissed').length;
+      btn.textContent = `${original} · ${count}`;
+    });
+  }
+
+  /* ============================================================
+     RENDER: DETAIL PANEL
+     ============================================================ */
+  function renderPanel(){
+    const i = STATE.inquiries.find(x => x.id === STATE.selectedId);
+    if (!i){
+      $('#pn-name').innerHTML = 'No inquiry selected';
+      $('#pn-message').textContent = '';
+      return;
+    }
+    $('#pn-kicker').textContent = i.kicker;
+    const [first, ...rest] = i.name.split(' ');
+    $('#pn-name').innerHTML = `${first} <em>${rest.join(' ')}</em>`;
+    $('#pn-sub').textContent = i.sub;
+    $('#pn-pills').innerHTML = i.pills;
+    $('#pn-property').innerHTML = i.propertyHtml;
+    $('#pn-type').textContent = i.type;
+    $('#pn-date').textContent = i.date;
+    $('#pn-routed').textContent = i.routed;
+    $('#pn-budget').textContent = i.budget;
+    $('#pn-ref').textContent = i.ref;
+    $('#pn-contact').textContent = i.contact;
+    $('#pn-ltv').innerHTML = i.ltv;
+    $('#pn-message').textContent = i.message;
+  }
+
+  /* ============================================================
+     RENDER: CALENDAR
+     ============================================================ */
+  function renderCalendar(){
+    const month = STATE.months[STATE.calMonthIdx];
+    const grid = $('#cal-grid');
+    const data = STATE.calData[STATE.calProperty][month] || [];
+    const days = STATE.monthDays[month];
+    const firstDow = STATE.monthFirstDow[month];
+    const prevDays = STATE.monthPrevDays[month];
+
+    // Header
+    $('#cal-month').textContent = month;
+    $('#cal-prev').textContent = STATE.monthLabels[month].prev;
+    $('#cal-next').textContent = STATE.monthLabels[month].next;
+    $('#cal-title').innerHTML = `${month.split(' ')[0]} at <em id="cal-prop">${STATE.calProperty}</em>`;
+
+    let html = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+      .map(d => `<div class="cal-day head">${d}</div>`).join('');
+
+    // leading muted days
+    for (let i=0;i<firstDow;i++){
+      html += `<div class="cal-day muted">${prevDays - firstDow + 1 + i}</div>`;
+    }
+    // current month
+    for (let d=1; d<=days; d++){
+      const status = data[d-1] || '';
+      const isToday = (month === STATE.today.month && d === STATE.today.day);
+      const cls = ['cal-day', status, isToday ? 'today' : ''].filter(Boolean).join(' ');
+      html += `<div class="${cls}" data-day="${d}">${d}</div>`;
+    }
+    // trailing muted days to fill the grid (max 42 cells)
+    const total = 7 + firstDow + days;
+    const trail = (Math.ceil(total/7)*7) - total;
+    for (let i=1;i<=trail;i++) html += `<div class="cal-day muted">${i}</div>`;
+
+    grid.innerHTML = html;
+
+    $$('#cal-grid .cal-day').forEach(day => {
+      if (day.classList.contains('head') || day.classList.contains('muted')) return;
+      day.addEventListener('click', () => {
+        const d = parseInt(day.dataset.day, 10);
+        // cycle status: '' -> book -> event -> full -> ''
+        const cycle = ['','book','event','full'];
+        const cur = ['book','event','full'].find(c => day.classList.contains(c)) || '';
+        const next = cycle[(cycle.indexOf(cur)+1) % cycle.length];
+        STATE.calData[STATE.calProperty][month][d-1] = next;
+        const labelMap = {'':'released','book':'marked Booking','event':'marked Event','full':'marked Sold Out'};
+        showToast(`${month.split(' ')[0]} ${d} at <em>${STATE.calProperty}</em> · ${labelMap[next]}`);
+        renderCalendar();
+      });
+    });
+  }
+
+  /* ============================================================
+     RENDER: CONTENT
+     ============================================================ */
+  function renderContent(){
+    const wrap = $('#content-list');
+    if (!wrap) return;
+    wrap.innerHTML = STATE.content.map(c => `
+      <div class="content-row" data-cid="${c.id}">
+        <span class="cstatus ${c.status}"></span>
+        <div class="ctitle">${c.title}</div>
+        <span class="ctype">${c.type}</span>
+        <span class="cwhen">${c.when}</span>
+      </div>`).join('');
+
+    $$('#content-list .content-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const c = STATE.content.find(x => x.id === row.dataset.cid);
+        if (!c) return;
+        // cycle status: draft -> scheduled -> live -> draft
+        const cycle = ['draft','scheduled','live'];
+        const next = cycle[(cycle.indexOf(c.status)+1) % cycle.length];
+        c.status = next;
+        c.when = next === 'live' ? 'Live · just now' : next === 'scheduled' ? 'Schd · tomorrow' : 'Draft · André';
+        renderContent();
+        showToast(`<em>${c.title.slice(0,32)}…</em> → ${next}`);
+      });
+    });
+  }
+
+  /* ============================================================
+     EVENT WIRING (one-time)
+     ============================================================ */
+
+  // Filter buttons
+  $$('#inq-filter button').forEach(btn => {
     btn.addEventListener('click', () => {
-      calBtns.forEach(b => b.classList.remove('on'));
+      $$('#inq-filter button').forEach(b => b.classList.remove('on'));
       btn.classList.add('on');
-      calProp.textContent = btn.dataset.prop;
+      STATE.filter = btn.dataset.filter;
+      renderInquiries();
     });
   });
 
-  // ---- Sidebar navigation (visual only) ----
-  const sideLinks = $$('.side-link');
-  sideLinks.forEach(link => {
+  // Calendar property switcher
+  $$('#cal-seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('#cal-seg button').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      STATE.calProperty = btn.dataset.prop;
+      renderCalendar();
+      renderStats();
+    });
+  });
+
+  // Calendar prev/next
+  $('#cal-prev').addEventListener('click', () => {
+    STATE.calMonthIdx = (STATE.calMonthIdx + 1) % STATE.months.length;  // [May, April, June]: idx 1 = April
+    // simple cycle: May -> April -> June -> May
+    renderCalendar();
+  });
+  $('#cal-next').addEventListener('click', () => {
+    STATE.calMonthIdx = (STATE.calMonthIdx + 2) % STATE.months.length;  // step 2 in 3-cycle = next
+    renderCalendar();
+  });
+
+  // Sidebar nav
+  $$('.side-link').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      sideLinks.forEach(l => l.classList.remove('active'));
+      $$('.side-link').forEach(l => l.classList.remove('active'));
       link.classList.add('active');
-      const label = link.textContent.trim().split(/\s+/).slice(0,3).join(' ');
-      showToast(`Opening <em>${label}</em>`);
     });
   });
 
-  // ---- Panel actions ----
-  const ACTIONS = {
-    reply: name => `Reply window opened for <em>${name}</em>`,
-    forward: () => `Forwarded to <em>Events Director</em>`,
-    hold: () => `Date held — provisional for 48 hours`,
-    note: () => `Internal note added to inquiry`
-  };
+  // Panel actions — actually mutate state
   $$('.panel-actions [data-action]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const fn = ACTIONS[btn.dataset.action];
-      const guestName = ($('#pn-name').textContent || 'guest').trim();
-      if (fn) showToast(fn(guestName));
+      const i = STATE.inquiries.find(x => x.id === STATE.selectedId);
+      if (!i) return;
+      const action = btn.dataset.action;
+      if (action === 'reply') {
+        i.status = 'replied';
+        i.badge = { cls:'good', text:'Replied' };
+        i.pills = '<span class="pill good">Replied</span><span class="pill muted">Awaiting Guest</span>';
+        i.when = 'just now';
+        showToast(`Reply sent to <em>${i.name}</em>`);
+      } else if (action === 'forward') {
+        i.routed = i.routed.replace(/^[^,]+,\s*/, 'Sasha Hartwell, ');
+        i.pills = '<span class="pill warn">Forwarded</span><span class="pill muted">Awaiting Director</span>';
+        showToast(`Forwarded to <em>Events Director</em>`);
+      } else if (action === 'hold') {
+        i.pills = i.pills + '<span class="pill gold">Date Held · 48h</span>';
+        // mark requested date on calendar if applicable
+        const m = i.date.match(/June (\d+)|May (\d+)|July (\d+)/);
+        if (m) {
+          const day = parseInt(m[1]||m[2]||m[3], 10);
+          const monthName = m[0].split(' ')[0] + ' 2026';
+          if (STATE.calData[STATE.calProperty][monthName]) {
+            STATE.calData[STATE.calProperty][monthName][day-1] = 'event';
+            renderCalendar();
+          }
+        }
+        showToast(`Date held — provisional 48 hours`);
+      } else if (action === 'note') {
+        i.sub = i.sub + ' · note added';
+        showToast(`Internal note added`);
+      }
+      renderInquiries();
+      renderPanel();
+      renderStats();
     });
   });
 
-  // ---- Calendar day clicks ----
-  $$('.cal-day').forEach(day => {
-    if (day.classList.contains('head') || day.classList.contains('muted')) return;
-    day.style.cursor = 'pointer';
-    day.addEventListener('click', () => {
-      const num = day.textContent.trim();
-      let kind = 'available';
-      if (day.classList.contains('full')) kind = 'sold out';
-      else if (day.classList.contains('event')) kind = 'event held';
-      else if (day.classList.contains('book')) kind = 'bookings';
-      showToast(`May ${num} at <em>${calProp.textContent}</em> · ${kind}`);
-    });
+  // Stat card click — drill into related filter
+  $('#stat-open').closest('.stat').addEventListener('click', () => {
+    STATE.filter = 'all';
+    $$('#inq-filter button').forEach(b => b.classList.toggle('on', b.dataset.filter==='all'));
+    renderInquiries();
+    $('#inq-list').scrollIntoView({behavior:'smooth', block:'center'});
+  });
+  $('#stat-events').closest('.stat').addEventListener('click', () => {
+    STATE.filter = 'events';
+    $$('#inq-filter button').forEach(b => b.classList.toggle('on', b.dataset.filter==='events'));
+    renderInquiries();
+    $('#inq-list').scrollIntoView({behavior:'smooth', block:'center'});
+  });
+  $('#stat-res').closest('.stat').addEventListener('click', () => {
+    STATE.filter = 'residences';
+    $$('#inq-filter button').forEach(b => b.classList.toggle('on', b.dataset.filter==='residences'));
+    renderInquiries();
+    $('#inq-list').scrollIntoView({behavior:'smooth', block:'center'});
+  });
+  $('#stat-occ').closest('.stat').addEventListener('click', () => {
+    // bump selected property occupancy by random 1-3 points to demonstrate
+    const props = STATE.properties;
+    const idx = Math.floor(Math.random() * props.length);
+    const p = props[idx];
+    p.occ = Math.min(100, p.occ + (Math.floor(Math.random()*3)+1));
+    renderStats();
+    showToast(`${p.name} occupancy → <em>${p.occ}%</em>`);
   });
 
-  // ---- Content & press rows ----
-  $$('.content-row, .press-row').forEach(row => {
-    row.style.cursor = 'pointer';
-    row.addEventListener('click', () => {
-      const t = row.querySelector('.ctitle, .ptitle');
-      if (t) showToast(`Opening <em>${t.textContent.replace(/^["“]|["”]$/g,'').slice(0,40)}…</em>`);
-    });
-  });
-
-  // ---- Stat cards ----
-  $$('.stat').forEach(stat => {
-    stat.style.cursor = 'pointer';
-    stat.addEventListener('click', () => {
-      const label = stat.querySelector('.stat-label')?.textContent || '';
-      showToast(`Drilling into <em>${label}</em>`);
-    });
-  });
-
-  // ---- New Story button ----
-  $$('.btn-primary').forEach(btn => {
-    if (btn.dataset.action) return; // already wired
+  // New Story / New Entry — actually add to content list
+  let newStoryCount = 0;
+  $$('.btn-primary, .btn-ghost').forEach(btn => {
+    if (btn.dataset.action) return;
     if (btn.textContent.includes('New Story') || btn.textContent.includes('New Entry')) {
-      btn.addEventListener('click', () => showToast(`Opening <em>new entry</em> editor`));
+      btn.addEventListener('click', () => {
+        newStoryCount++;
+        const titles = [
+          'Notes from the Front Door',
+          'On Lemon Trees, and Time',
+          'A Very Quiet Sunday at Locanda',
+          'Three Drinks, One Bar',
+          'The Year in Doors'
+        ];
+        const newItem = {
+          id: 'cnew' + newStoryCount,
+          status: 'draft',
+          title: titles[newStoryCount % titles.length],
+          type: 'Journal',
+          when: 'Draft · just now'
+        };
+        STATE.content.unshift(newItem);
+        renderContent();
+        showToast(`New draft created — <em>${newItem.title.slice(0,32)}…</em>`);
+      });
     }
   });
 
-  // ---- Topbar search (Enter to trigger) ----
+  // Search
   const search = $('.search input');
   if (search) {
-    search.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && search.value.trim()) {
-        showToast(`Searching for <em>${search.value.trim().slice(0,30)}</em>`);
+    search.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      if (!q) {
+        renderInquiries();
+        return;
       }
+      $$('#inq-list .inq-row').forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(q) ? '' : 'none';
+      });
     });
   }
+
+  /* ============================================================
+     INITIAL RENDER
+     ============================================================ */
+  // Move content list inside an addressable wrapper so renderContent can populate it
+  const contentCard = $$('.card').find(c => c.querySelector('.card-head h2')?.textContent.includes('Content'));
+  if (contentCard) {
+    const inner = contentCard.querySelector('.card-head').nextElementSibling;
+    if (inner) inner.id = 'content-list';
+  }
+
+  renderInquiries();
+  renderPanel();
+  renderCalendar();
+  renderContent();
+  renderStats();
 })();
 </script>
 
