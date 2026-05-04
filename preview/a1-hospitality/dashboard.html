@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>A-1 Hospitality — Operator Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1b2a;
+    --ink-soft:#1b2a3d;
+    --paper:#f6f3ec;
+    --bg:#f4f6f8;
+    --card:#fff;
+    --border:#e3e7ed;
+    --border-soft:#eef1f5;
+    --copper:#b87a3e;
+    --copper-soft:#d09a64;
+    --evergreen:#1f3a32;
+    --evergreen-soft:#2d544a;
+    --muted:#6b7480;
+    --muted-2:#8a93a0;
+    --green:#1f8754;
+    --amber:#c98a2b;
+    --red:#c44d4d;
+    --blue:#2f6bd6;
+    --sidebar-w:240px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--bg);font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer}
+  .serif{font-family:'Fraunces',serif}
+
+  /* Pitch banner */
+  .pitch-banner{position:fixed;bottom:18px;right:18px;z-index:200;background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.18);display:flex;align-items:center;gap:10px}
+  .pitch-banner::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--copper-soft);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .pitch-banner a{border-bottom:1px solid var(--copper-soft);padding-bottom:1px}
+
+  /* Layout */
+  .app{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:100vh}
+
+  /* Sidebar */
+  aside{background:var(--ink);color:var(--paper);padding:22px 0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.05)}
+  .side-brand{padding:0 22px 22px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+  .side-mark{width:34px;height:34px;border:1.5px solid var(--copper-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:.82rem;color:var(--copper-soft);font-weight:600}
+  .side-title{font-family:'Fraunces',serif;font-size:1rem;color:#fff;line-height:1.15;font-weight:500}
+  .side-title small{display:block;font-family:'Inter',sans-serif;font-size:.65rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:600;margin-top:3px}
+  .side-section{padding:18px 14px 6px;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.4);font-weight:700}
+  .side-nav{list-style:none;padding:0 8px}
+  .side-nav li{margin-bottom:1px}
+  .side-nav a{display:flex;align-items:center;gap:11px;padding:9px 14px;border-radius:7px;color:rgba(255,255,255,.74);font-size:.85rem;font-weight:500;transition:.15s}
+  .side-nav a:hover{background:rgba(255,255,255,.05);color:#fff}
+  .side-nav a.active{background:rgba(208,154,100,.14);color:#fff}
+  .side-nav a .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2)}
+  .side-nav a.active .dot{background:var(--copper-soft)}
+  .side-nav a .badge{margin-left:auto;background:var(--copper);color:#fff;font-size:.66rem;padding:2px 7px;border-radius:999px;font-weight:700}
+  .side-foot{margin-top:auto;padding:18px 22px;border-top:1px solid rgba(255,255,255,.08);font-size:.78rem;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:10px}
+  .side-foot .av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--copper),var(--copper-soft));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.75rem}
+  .side-foot strong{color:#fff;display:block;font-size:.82rem;font-weight:600}
+
+  /* Main */
+  main{padding:22px 32px 60px;max-width:1500px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:24px;flex-wrap:wrap}
+  .topbar h1{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:500;line-height:1.1}
+  .topbar h1 small{display:block;font-family:'Inter',sans-serif;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+  .top-actions{display:flex;gap:10px;align-items:center}
+  .search-input{padding:9px 14px;border:1px solid var(--border);border-radius:7px;background:#fff;font-size:.85rem;width:220px;font-family:inherit}
+  .btn{padding:9px 16px;border-radius:7px;border:1px solid var(--border);background:#fff;font-size:.82rem;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:7px;transition:.15s}
+  .btn:hover{border-color:var(--ink)}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.primary:hover{background:var(--copper);border-color:var(--copper)}
+  .btn.copper{background:var(--copper);color:#fff;border-color:var(--copper)}
+  .btn.copper:hover{background:var(--ink);border-color:var(--ink)}
+
+  /* Tabs */
+  .tabs{display:flex;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:4px;margin-bottom:22px;overflow-x:auto}
+  .tab{padding:8px 16px;border:none;background:transparent;font-size:.82rem;font-weight:600;color:var(--muted);border-radius:6px;white-space:nowrap;transition:.15s}
+  .tab:hover{color:var(--ink)}
+  .tab.active{background:var(--ink);color:#fff}
+
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:18px}
+  .kpi-label{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .kpi-val{font-family:'Fraunces',serif;font-size:1.85rem;font-weight:500;line-height:1}
+  .kpi-trend{font-size:.76rem;color:var(--green);margin-top:6px;font-weight:600}
+  .kpi-trend.down{color:var(--red)}
+  .kpi-trend.flat{color:var(--muted)}
+
+  /* Two column */
+  .grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-bottom:18px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+
+  /* Card */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:20px}
+  .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+  .card-head h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:500}
+  .card-head .meta{font-size:.78rem;color:var(--muted)}
+  .card-head .controls{display:flex;gap:6px}
+  .pill-btn{padding:5px 11px;border-radius:999px;border:1px solid var(--border);background:transparent;font-size:.72rem;color:var(--muted);font-weight:600}
+  .pill-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* Property table */
+  .prop-table{width:100%;border-collapse:collapse;font-size:.86rem}
+  .prop-table th{text-align:left;padding:10px 12px;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border)}
+  .prop-table td{padding:13px 12px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
+  .prop-table tr:hover{background:var(--border-soft)}
+  .prop-table tr:last-child td{border-bottom:none}
+  .prop-table .name{font-weight:600;color:var(--ink)}
+  .prop-table .sub{font-size:.76rem;color:var(--muted);margin-top:2px}
+  .brand-tag{display:inline-block;padding:3px 9px;border-radius:5px;font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .brand-tag.hilton{background:#e7eef7;color:#1d3557}
+  .brand-tag.marriott{background:#f4e6e0;color:#5a2a1d}
+  .brand-tag.ihg{background:#dee9e3;color:#1f3a32}
+  .brand-tag.choice{background:#dee5ed;color:#3a4d5a}
+  .brand-tag.wyndham{background:#e6dfee;color:#4a3a5a}
+  .brand-tag.bw{background:#ece5ce;color:#5a4d2d}
+  .brand-tag.indep{background:#e3e3e3;color:#3a3a3a}
+  .brand-tag.motel{background:#efe2d6;color:#5a3a2d}
+  .brand-tag.rest{background:#f0d8cf;color:#7a3a2d}
+  .stat-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:.72rem;font-weight:600}
+  .stat-pill.live{background:#e0f2e7;color:var(--green)}
+  .stat-pill.live::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green)}
+  .stat-pill.dev{background:#fdf0d9;color:var(--amber)}
+  .stat-pill.dev::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber)}
+  .occ-bar{width:90px;height:6px;background:var(--border-soft);border-radius:999px;overflow:hidden}
+  .occ-fill{height:100%;background:linear-gradient(90deg,var(--evergreen),var(--evergreen-soft));border-radius:999px}
+  .occ-fill.warn{background:linear-gradient(90deg,var(--amber),#dca15a)}
+  .row-actions{display:flex;gap:6px;justify-content:flex-end}
+  .icon-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#fff;font-size:.76rem;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+  .icon-btn:hover{border-color:var(--ink);color:var(--ink)}
+
+  /* Inquiry list */
+  .inq-list{display:flex;flex-direction:column}
+  .inq{padding:14px 0;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;align-items:flex-start}
+  .inq:last-child{border-bottom:none}
+  .inq-av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--evergreen),var(--evergreen-soft));color:#fff;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:600;flex-shrink:0}
+  .inq-body{flex:1;min-width:0}
+  .inq-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;gap:10px}
+  .inq-name{font-weight:600;font-size:.9rem}
+  .inq-time{font-size:.72rem;color:var(--muted)}
+  .inq-type{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--copper);font-weight:700;margin-bottom:5px}
+  .inq-msg{font-size:.84rem;color:var(--ink-soft);line-height:1.5}
+  .inq-actions{margin-top:8px;display:flex;gap:6px}
+
+  /* Job applicants */
+  .job-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border-soft);gap:14px}
+  .job-row:last-child{border-bottom:none}
+  .job-info{flex:1;min-width:0}
+  .job-title{font-weight:600;font-size:.88rem;margin-bottom:2px}
+  .job-meta{font-size:.74rem;color:var(--muted)}
+  .job-applicants{font-family:'Fraunces',serif;font-size:1.25rem;color:var(--ink);font-weight:500}
+
+  /* Calendar / activity */
+  .activity{display:flex;flex-direction:column;gap:0}
+  .act{padding:11px 0;border-bottom:1px solid var(--border-soft);display:flex;gap:12px;font-size:.84rem}
+  .act:last-child{border-bottom:none}
+  .act-dot{width:8px;height:8px;border-radius:50%;background:var(--copper);margin-top:7px;flex-shrink:0}
+  .act-dot.green{background:var(--green)}
+  .act-dot.blue{background:var(--blue)}
+  .act-dot.amber{background:var(--amber)}
+  .act-body{flex:1}
+  .act-text{color:var(--ink-soft);line-height:1.5}
+  .act-text strong{color:var(--ink);font-weight:600}
+  .act-time{font-size:.72rem;color:var(--muted);margin-top:2px}
+
+  /* RevPAR chart */
+  .chart{height:180px;display:flex;align-items:flex-end;gap:6px;padding:14px 0 6px;border-bottom:1px solid var(--border-soft)}
+  .bar{flex:1;background:linear-gradient(180deg,var(--copper-soft),var(--copper));border-radius:4px 4px 0 0;position:relative;min-height:6px;transition:.3s}
+  .bar:hover{opacity:.85}
+  .bar.dim{background:linear-gradient(180deg,var(--border),#cdd2da)}
+  .chart-labels{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);padding-top:8px;font-weight:600}
+  .chart-legend{display:flex;gap:18px;justify-content:flex-end;font-size:.74rem;color:var(--muted);margin-top:10px;font-weight:600}
+  .chart-legend .lg{display:inline-flex;align-items:center;gap:6px}
+  .chart-legend .lg::before{content:'';width:12px;height:8px;border-radius:2px;background:var(--copper)}
+  .chart-legend .lg.dim::before{background:var(--border)}
+
+  /* Page editor */
+  .editor-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:18px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px}
+  .field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:.86rem;background:#fff}
+  .field textarea{min-height:88px;resize:vertical}
+  .preview{background:var(--bg);border:1px dashed var(--border);border-radius:9px;padding:18px;font-size:.86rem}
+  .preview-tag{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px}
+
+  /* Notice */
+  .notice{background:linear-gradient(135deg,#fdf6ea,#f8efde);border:1px solid #ecd9b5;border-radius:9px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:22px;font-size:.86rem}
+  .notice strong{color:var(--ink)}
+  .notice em{font-style:italic;color:var(--copper);font-family:'Fraunces',serif}
+
+  @media (max-width:1100px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .grid-2,.grid-3,.editor-grid{grid-template-columns:1fr}
+  }
+  @media (max-width:780px){
+    .app{grid-template-columns:1fr}
+    aside{position:relative;height:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="pitch-banner">
+  Spec dashboard for A-1 Hospitality
+  <a href="index.html">View Public Site →</a>
+</div>
+
+<div class="app">
+
+  <aside>
+    <div class="side-brand">
+      <div class="side-mark">A1</div>
+      <div class="side-title">A-1 Hospitality<small>Operator Console</small></div>
+    </div>
+
+    <div class="side-section">Operate</div>
+    <ul class="side-nav">
+      <li><a href="#" class="active"><span class="dot"></span>Overview</a></li>
+      <li><a href="#"><span class="dot"></span>Properties <span class="badge">24</span></a></li>
+      <li><a href="#"><span class="dot"></span>Pipeline <span class="badge">8</span></a></li>
+      <li><a href="#"><span class="dot"></span>Revenue &amp; Reporting</a></li>
+    </ul>
+
+    <div class="side-section">Grow</div>
+    <ul class="side-nav">
+      <li><a href="#"><span class="dot"></span>Inquiries <span class="badge">12</span></a></li>
+      <li><a href="#"><span class="dot"></span>Investors</a></li>
+      <li><a href="#"><span class="dot"></span>Public Site Editor</a></li>
+      <li><a href="#"><span class="dot"></span>Announcements</a></li>
+    </ul>
+
+    <div class="side-section">People</div>
+    <ul class="side-nav">
+      <li><a href="#"><span class="dot"></span>Careers / Hireology</a></li>
+      <li><a href="#"><span class="dot"></span>Team Directory</a></li>
+      <li><a href="#"><span class="dot"></span>Settings</a></li>
+    </ul>
+
+    <div class="side-foot">
+      <div class="av">TP</div>
+      <div><strong>Taran Patel</strong>Managing Principal</div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1><small>Tuesday, May 4 · 2026</small>Good morning, Taran.</h1>
+      </div>
+      <div class="top-actions">
+        <input class="search-input" placeholder="Search properties, inquiries…">
+        <button class="btn">Export</button>
+        <button class="btn primary">+ New Property</button>
+      </div>
+    </div>
+
+    <div class="notice">
+      <div><strong>Tapestry Collection Hood River</strong> permitting milestone closes <em>Friday</em> — Prashant flagged 2 open items in Pipeline.</div>
+      <button class="btn copper">Open Pipeline →</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active">Overview</button>
+      <button class="tab">Properties</button>
+      <button class="tab">Pipeline</button>
+      <button class="tab">Inquiries</button>
+      <button class="tab">Public Site</button>
+      <button class="tab">Reporting</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-label">Operating Properties</div>
+        <div class="kpi-val">24</div>
+        <div class="kpi-trend flat">+0 this month</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Portfolio Occupancy (MTD)</div>
+        <div class="kpi-val">71.4%</div>
+        <div class="kpi-trend">+3.2 pts vs LY</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Portfolio RevPAR (MTD)</div>
+        <div class="kpi-val">$98.40</div>
+        <div class="kpi-trend">+$6.10 vs LY</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Open Inquiries</div>
+        <div class="kpi-val">12</div>
+        <div class="kpi-trend down">3 over 48h</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">In Development</div>
+        <div class="kpi-val">8</div>
+        <div class="kpi-trend">2 opening Q3</div>
+      </div>
+    </div>
+
+    <!-- RevPAR + Inquiries -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <h3>Portfolio RevPAR — Last 30 Days</h3>
+          <div class="controls">
+            <button class="pill-btn">7D</button>
+            <button class="pill-btn active">30D</button>
+            <button class="pill-btn">90D</button>
+            <button class="pill-btn">YTD</button>
+          </div>
+        </div>
+        <div class="chart">
+          <div class="bar dim" style="height:42%"></div>
+          <div class="bar dim" style="height:48%"></div>
+          <div class="bar dim" style="height:55%"></div>
+          <div class="bar dim" style="height:50%"></div>
+          <div class="bar dim" style="height:60%"></div>
+          <div class="bar dim" style="height:70%"></div>
+          <div class="bar dim" style="height:65%"></div>
+          <div class="bar" style="height:58%"></div>
+          <div class="bar" style="height:62%"></div>
+          <div class="bar" style="height:68%"></div>
+          <div class="bar" style="height:64%"></div>
+          <div class="bar" style="height:72%"></div>
+          <div class="bar" style="height:80%"></div>
+          <div class="bar" style="height:78%"></div>
+          <div class="bar" style="height:70%"></div>
+          <div class="bar" style="height:74%"></div>
+          <div class="bar" style="height:82%"></div>
+          <div class="bar" style="height:88%"></div>
+          <div class="bar" style="height:90%"></div>
+          <div class="bar" style="height:84%"></div>
+          <div class="bar" style="height:78%"></div>
+          <div class="bar" style="height:82%"></div>
+          <div class="bar" style="height:86%"></div>
+          <div class="bar" style="height:92%"></div>
+          <div class="bar" style="height:96%"></div>
+          <div class="bar" style="height:88%"></div>
+          <div class="bar" style="height:80%"></div>
+          <div class="bar" style="height:86%"></div>
+          <div class="bar" style="height:94%"></div>
+          <div class="bar" style="height:98%"></div>
+        </div>
+        <div class="chart-labels"><span>Apr 5</span><span>Apr 12</span><span>Apr 19</span><span>Apr 26</span><span>May 3</span></div>
+        <div class="chart-legend"><span class="lg dim">Last Year</span><span class="lg">This Year</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Recent Inquiries</h3>
+          <a href="#" style="font-size:.78rem;color:var(--copper);font-weight:700">View all →</a>
+        </div>
+        <div class="inq-list">
+          <div class="inq">
+            <div class="inq-av">JM</div>
+            <div class="inq-body">
+              <div class="inq-head"><div class="inq-name">James Morrison</div><div class="inq-time">2h ago</div></div>
+              <div class="inq-type">Investment Opportunity</div>
+              <div class="inq-msg">Sovereign-backed fund exploring PNW limited-service hotel acquisitions in $40–80M range. Open to JV.</div>
+              <div class="inq-actions">
+                <button class="icon-btn">↗</button>
+                <button class="icon-btn">✓</button>
+                <button class="icon-btn">✕</button>
+              </div>
+            </div>
+          </div>
+          <div class="inq">
+            <div class="inq-av" style="background:linear-gradient(135deg,#5a2a1d,#7a3a2d)">RK</div>
+            <div class="inq-body">
+              <div class="inq-head"><div class="inq-name">Rita Kleinfeld</div><div class="inq-time">5h ago</div></div>
+              <div class="inq-type">Management Partnership</div>
+              <div class="inq-msg">Owner of 92-key Hilton Garden Inn outside Spokane — current 3rd-party manager not performing. Looking for proposal.</div>
+              <div class="inq-actions">
+                <button class="icon-btn">↗</button>
+                <button class="icon-btn">✓</button>
+              </div>
+            </div>
+          </div>
+          <div class="inq">
+            <div class="inq-av" style="background:linear-gradient(135deg,#1d3557,#2d4a6a)">DC</div>
+            <div class="inq-body">
+              <div class="inq-head"><div class="inq-name">David Chen</div><div class="inq-time">Yesterday</div></div>
+              <div class="inq-type">Development Partnership</div>
+              <div class="inq-msg">Land assemblage in Boise metro, ready-to-build 110-key extended-stay site. Seeking operator/developer.</div>
+              <div class="inq-actions">
+                <button class="icon-btn">↗</button>
+                <button class="icon-btn">✓</button>
+              </div>
+            </div>
+          </div>
+          <div class="inq">
+            <div class="inq-av" style="background:linear-gradient(135deg,#1f3a32,#2d544a)">MA</div>
+            <div class="inq-body">
+              <div class="inq-head"><div class="inq-name">Maya Adler</div><div class="inq-time">2 days</div></div>
+              <div class="inq-type">Press &amp; Media</div>
+              <div class="inq-msg">PNW Business Journal — 28-year retrospective story on family-owned hotel operators.</div>
+              <div class="inq-actions">
+                <button class="icon-btn">↗</button>
+                <button class="icon-btn">✓</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Properties + side panels -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <h3>All Properties</h3>
+          <div class="controls">
+            <button class="pill-btn active">All</button>
+            <button class="pill-btn">Hilton</button>
+            <button class="pill-btn">Marriott</button>
+            <button class="pill-btn">IHG</button>
+            <button class="pill-btn">Choice</button>
+            <button class="pill-btn">Wyndham</button>
+            <button class="pill-btn">Indep.</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+        <table class="prop-table">
+          <thead>
+            <tr><th>Property</th><th>Brand</th><th>Status</th><th>Occ.</th><th>RevPAR</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr><td><div class="name">Hampton Inn &amp; Suites Rosenberg</div><div class="sub">Rosenberg, TX</div></td><td><span class="brand-tag hilton">Hilton</span></td><td><span class="stat-pill live">Live</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="occ-bar"><div class="occ-fill" style="width:78%"></div></div><span style="font-size:.78rem;color:var(--muted)">78%</span></div></td><td>$112.40</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">Courtyard by Marriott Pasco</div><div class="sub">Pasco, WA · Virtual tour live</div></td><td><span class="brand-tag marriott">Marriott</span></td><td><span class="stat-pill live">Live</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="occ-bar"><div class="occ-fill" style="width:74%"></div></div><span style="font-size:.78rem;color:var(--muted)">74%</span></div></td><td>$98.20</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">Columbia Gorge Hotel Hood River</div><div class="sub">Hood River, OR · Independent</div></td><td><span class="brand-tag indep">Indep.</span></td><td><span class="stat-pill live">Live</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="occ-bar"><div class="occ-fill" style="width:82%"></div></div><span style="font-size:.78rem;color:var(--muted)">82%</span></div></td><td>$184.60</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">Holiday Inn Express Pasco</div><div class="sub">Pasco, WA</div></td><td><span class="brand-tag ihg">IHG</span></td><td><span class="stat-pill live">Live</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="occ-bar"><div class="occ-fill" style="width:71%"></div></div><span style="font-size:.78rem;color:var(--muted)">71%</span></div></td><td>$89.50</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">Hilton Garden Inn Clackamas</div><div class="sub">Clackamas, OR</div></td><td><span class="brand-tag hilton">Hilton</span></td><td><span class="stat-pill live">Live</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="occ-bar"><div class="occ-fill" style="width:69%"></div></div><span style="font-size:.78rem;color:var(--muted)">69%</span></div></td><td>$102.80</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">Best Western Plus Liberty Lake Inn</div><div class="sub">Liberty Lake, WA</div></td><td><span class="brand-tag bw">BW</span></td><td><span class="stat-pill live">Live</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="occ-bar"><div class="occ-fill warn" style="width:58%"></div></div><span style="font-size:.78rem;color:var(--muted)">58%</span></div></td><td>$72.10</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">Hampton Inn Seattle-Airport</div><div class="sub">Seattle, WA</div></td><td><span class="brand-tag hilton">Hilton</span></td><td><span class="stat-pill live">Live</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="occ-bar"><div class="occ-fill" style="width:88%"></div></div><span style="font-size:.78rem;color:var(--muted)">88%</span></div></td><td>$148.70</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">La Quinta Sea-Tac Airport</div><div class="sub">Seattle, WA</div></td><td><span class="brand-tag wyndham">Wyndham</span></td><td><span class="stat-pill live">Live</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="occ-bar"><div class="occ-fill" style="width:81%"></div></div><span style="font-size:.78rem;color:var(--muted)">81%</span></div></td><td>$118.40</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">Sacajawea Hotel Three Forks</div><div class="sub">Three Forks, MT · Independent</div></td><td><span class="brand-tag indep">Indep.</span></td><td><span class="stat-pill live">Live</span></td><td><div style="display:flex;align-items:center;gap:8px"><div class="occ-bar"><div class="occ-fill" style="width:76%"></div></div><span style="font-size:.78rem;color:var(--muted)">76%</span></div></td><td>$162.30</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">de Fuego Grill</div><div class="sub">Clackamas, OR · F&amp;B outlet</div></td><td><span class="brand-tag rest">Rest.</span></td><td><span class="stat-pill live">Live</span></td><td colspan="2" style="font-size:.82rem;color:var(--muted)">F&amp;B revenue tracked separately</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">Tapestry Collection Hood River</div><div class="sub">Hood River, OR · Construction</div></td><td><span class="brand-tag hilton">Hilton</span></td><td><span class="stat-pill dev">In Dev</span></td><td colspan="2" style="font-size:.82rem;color:var(--muted)">Opening Q3 2026</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+            <tr><td><div class="name">Voco Olympia</div><div class="sub">Olympia, WA · Permitting</div></td><td><span class="brand-tag ihg">IHG</span></td><td><span class="stat-pill dev">In Dev</span></td><td colspan="2" style="font-size:.82rem;color:var(--muted)">Opening Q1 2027</td><td><div class="row-actions"><button class="icon-btn">⚙</button><button class="icon-btn">↗</button></div></td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;font-size:.82rem;color:var(--muted)">
+          <span>Showing 12 of 32 · 24 live, 8 in development</span>
+          <button class="btn">View all →</button>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div class="card">
+          <div class="card-head">
+            <h3>Open Job Posts</h3>
+            <a href="https://sites.hireology.com/a-1hospitalitygroup/" style="font-size:.78rem;color:var(--copper);font-weight:700" target="_blank">Hireology ↗</a>
+          </div>
+          <div class="job-row">
+            <div class="job-info">
+              <div class="job-title">General Manager</div>
+              <div class="job-meta">Hilton Garden Inn Portland Airport · Posted 4 days ago</div>
+            </div>
+            <div class="job-applicants">14<small style="font-family:'Inter',sans-serif;font-size:.66rem;letter-spacing:.16em;color:var(--muted);font-weight:700;display:block">APPLICANTS</small></div>
+          </div>
+          <div class="job-row">
+            <div class="job-info">
+              <div class="job-title">Director of Sales</div>
+              <div class="job-meta">Olympia Hotel at Capitol Lake · 1 week ago</div>
+            </div>
+            <div class="job-applicants">8<small style="font-family:'Inter',sans-serif;font-size:.66rem;letter-spacing:.16em;color:var(--muted);font-weight:700;display:block">APPLICANTS</small></div>
+          </div>
+          <div class="job-row">
+            <div class="job-info">
+              <div class="job-title">Front Desk Lead (PT)</div>
+              <div class="job-meta">Hampton Inn Seattle-Airport · 2 days ago</div>
+            </div>
+            <div class="job-applicants">22<small style="font-family:'Inter',sans-serif;font-size:.66rem;letter-spacing:.16em;color:var(--muted);font-weight:700;display:block">APPLICANTS</small></div>
+          </div>
+          <div class="job-row">
+            <div class="job-info">
+              <div class="job-title">Maintenance Tech</div>
+              <div class="job-meta">Best Western Liberty Lake · 5 days ago</div>
+            </div>
+            <div class="job-applicants">3<small style="font-family:'Inter',sans-serif;font-size:.66rem;letter-spacing:.16em;color:var(--muted);font-weight:700;display:block">APPLICANTS</small></div>
+          </div>
+          <div class="job-row">
+            <div class="job-info">
+              <div class="job-title">Banquet Server</div>
+              <div class="job-meta">de Fuego Grill · Today</div>
+            </div>
+            <div class="job-applicants">1<small style="font-family:'Inter',sans-serif;font-size:.66rem;letter-spacing:.16em;color:var(--muted);font-weight:700;display:block">APPLICANTS</small></div>
+          </div>
+          <button class="btn primary" style="width:100%;margin-top:14px;justify-content:center">+ Post New Job</button>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Recent Activity</h3></div>
+          <div class="activity">
+            <div class="act"><div class="act-dot green"></div><div class="act-body"><div class="act-text"><strong>Veronica Chavez</strong> closed PM ticket #4128 at Hampton Inn Rosenberg</div><div class="act-time">12 min ago</div></div></div>
+            <div class="act"><div class="act-dot blue"></div><div class="act-body"><div class="act-text"><strong>Toni Sortino</strong> updated weekend rate strategy for 6 properties</div><div class="act-time">1h ago</div></div></div>
+            <div class="act"><div class="act-dot"></div><div class="act-body"><div class="act-text"><strong>Investor inquiry</strong> from James Morrison routed to Cristian Castillo</div><div class="act-time">2h ago</div></div></div>
+            <div class="act"><div class="act-dot amber"></div><div class="act-body"><div class="act-text"><strong>Tapestry Hood River</strong> permit milestone flagged by Prashant</div><div class="act-time">4h ago</div></div></div>
+            <div class="act"><div class="act-dot green"></div><div class="act-body"><div class="act-text"><strong>Jon Price</strong> published May newsletter to 8,400 past guests</div><div class="act-time">Yesterday</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Public Site Editor -->
+    <div class="card" style="margin-top:18px">
+      <div class="card-head">
+        <h3>Public Site Editor — Property Page</h3>
+        <div class="controls">
+          <select class="pill-btn" style="padding:7px 11px;border-color:var(--border)">
+            <option>Hilton Garden Inn Clackamas</option>
+            <option>Hampton Inn Rosenberg</option>
+            <option>Sacajawea Hotel Three Forks</option>
+            <option>Columbia Gorge Hotel Hood River</option>
+          </select>
+          <button class="btn">Cancel</button>
+          <button class="btn copper">Publish Changes</button>
+        </div>
+      </div>
+      <div class="editor-grid">
+        <div>
+          <div class="field">
+            <label>Property Name</label>
+            <input type="text" value="Hilton Garden Inn Clackamas">
+          </div>
+          <div class="field">
+            <label>Brand Affiliation</label>
+            <select>
+              <option>Hilton</option><option>Marriott</option><option>IHG</option><option>Choice</option><option>Wyndham</option><option>Best Western</option><option>Independent</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Address</label>
+            <input type="text" value="12566 SE 93rd Ave, Clackamas, OR 97015">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input type="text" value="(800) 492-8700">
+          </div>
+          <div class="field">
+            <label>Hero Tagline</label>
+            <input type="text" value="Your gateway to the Oregon Cascades — minutes from Portland.">
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <textarea>149 rooms with mountain or city views, on-site dining at de Fuego Grill, full-service bar at The Underground, and 4,200 sq ft of flexible event space.</textarea>
+          </div>
+          <div class="field">
+            <label>Featured Amenities</label>
+            <input type="text" value="Pool, Fitness Center, EV Charging, Pet-Friendly, On-site Restaurant">
+          </div>
+        </div>
+        <div class="preview">
+          <div class="preview-tag">Live Preview</div>
+          <div style="background:linear-gradient(135deg,#1d3557,#0d1b2a);height:140px;border-radius:7px;position:relative;color:#fff;padding:18px;display:flex;flex-direction:column;justify-content:flex-end">
+            <span style="font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;background:rgba(0,0,0,.4);padding:5px 10px;border-radius:999px;align-self:flex-start;margin-bottom:auto;font-weight:600">Hilton</span>
+            <h3 style="font-family:'Fraunces',serif;font-size:1.25rem;font-weight:500">Hilton Garden Inn Clackamas</h3>
+            <div style="font-size:.78rem;opacity:.85">12566 SE 93rd Ave · Clackamas, OR</div>
+          </div>
+          <p style="margin-top:14px;font-style:italic;font-family:'Fraunces',serif;color:var(--ink-soft);font-size:.96rem">"Your gateway to the Oregon Cascades — minutes from Portland."</p>
+          <p style="margin-top:8px;color:var(--ink-soft);line-height:1.6;font-size:.86rem">149 rooms with mountain or city views, on-site dining at de Fuego Grill, full-service bar at The Underground, and 4,200 sq ft of flexible event space.</p>
+          <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:6px">
+            <span style="font-size:.7rem;padding:4px 10px;background:#fff;border:1px solid var(--border);border-radius:999px;color:var(--ink-soft);font-weight:600">Pool</span>
+            <span style="font-size:.7rem;padding:4px 10px;background:#fff;border:1px solid var(--border);border-radius:999px;color:var(--ink-soft);font-weight:600">Fitness Center</span>
+            <span style="font-size:.7rem;padding:4px 10px;background:#fff;border:1px solid var(--border);border-radius:999px;color:var(--ink-soft);font-weight:600">EV Charging</span>
+            <span style="font-size:.7rem;padding:4px 10px;background:#fff;border:1px solid var(--border);border-radius:999px;color:var(--ink-soft);font-weight:600">Pet-Friendly</span>
+            <span style="font-size:.7rem;padding:4px 10px;background:#fff;border:1px solid var(--border);border-radius:999px;color:var(--ink-soft);font-weight:600">On-site Restaurant</span>
+          </div>
+          <div style="margin-top:14px;font-size:.74rem;color:var(--muted);padding-top:10px;border-top:1px dashed var(--border)">Edits propagate to the public site in ~30 seconds. Search engines re-index nightly.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="card" style="margin-top:18px">
+      <div class="card-head">
+        <h3>Development Pipeline — 8 Projects</h3>
+        <div class="controls">
+          <button class="pill-btn active">All</button>
+          <button class="pill-btn">Permitting</button>
+          <button class="pill-btn">Construction</button>
+          <button class="pill-btn">Pre-Opening</button>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div style="border:1px solid var(--border);border-radius:8px;padding:18px;background:#fafbfc">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span class="brand-tag hilton">Hilton</span><span class="stat-pill dev">Construction</span></div>
+          <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:4px">Tapestry Collection</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Hood River, OR</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">PROGRESS · 68%</div>
+          <div class="occ-bar" style="width:100%"><div class="occ-fill" style="width:68%"></div></div>
+          <div style="margin-top:12px;font-size:.78rem;color:var(--ink-soft)"><strong>Owner:</strong> Prashant G. · <strong>Open:</strong> Q3 2026</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:18px;background:#fafbfc">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span class="brand-tag ihg">IHG</span><span class="stat-pill dev">Permitting</span></div>
+          <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:4px">Voco Olympia</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Olympia, WA</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">PROGRESS · 22%</div>
+          <div class="occ-bar" style="width:100%"><div class="occ-fill warn" style="width:22%"></div></div>
+          <div style="margin-top:12px;font-size:.78rem;color:var(--ink-soft)"><strong>Owner:</strong> Prashant G. · <strong>Open:</strong> Q1 2027</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:18px;background:#fafbfc">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span class="brand-tag hilton">Hilton</span><span class="stat-pill dev">Construction</span></div>
+          <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:4px">Home2 Suites</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Pasco, WA</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">PROGRESS · 41%</div>
+          <div class="occ-bar" style="width:100%"><div class="occ-fill" style="width:41%"></div></div>
+          <div style="margin-top:12px;font-size:.78rem;color:var(--ink-soft)"><strong>Owner:</strong> Jerry B. · <strong>Open:</strong> Q4 2026</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:18px;background:#fafbfc">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span class="brand-tag marriott">Marriott</span><span class="stat-pill dev">Pre-Opening</span></div>
+          <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:4px">SpringHill Suites</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Kennewick, WA</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">PROGRESS · 92%</div>
+          <div class="occ-bar" style="width:100%"><div class="occ-fill" style="width:92%"></div></div>
+          <div style="margin-top:12px;font-size:.78rem;color:var(--ink-soft)"><strong>Owner:</strong> Miles W. · <strong>Open:</strong> Aug 2026</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:18px;background:#fafbfc">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span class="brand-tag marriott">Marriott</span><span class="stat-pill dev">Construction</span></div>
+          <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:4px">Fairfield Inn &amp; Suites</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Hermiston, OR</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">PROGRESS · 54%</div>
+          <div class="occ-bar" style="width:100%"><div class="occ-fill" style="width:54%"></div></div>
+          <div style="margin-top:12px;font-size:.78rem;color:var(--ink-soft)"><strong>Owner:</strong> Jerry B. · <strong>Open:</strong> Q4 2026</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:8px;padding:18px;background:#fafbfc">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px"><span class="brand-tag marriott">Marriott</span><span class="stat-pill dev">Permitting</span></div>
+          <div style="font-family:'Fraunces',serif;font-size:1.1rem;margin-bottom:4px">Fairfield Inn</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px">Kennewick, WA</div>
+          <div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">PROGRESS · 18%</div>
+          <div class="occ-bar" style="width:100%"><div class="occ-fill warn" style="width:18%"></div></div>
+          <div style="margin-top:12px;font-size:.78rem;color:var(--ink-soft)"><strong>Owner:</strong> Prashant G. · <strong>Open:</strong> 2027</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:30px;text-align:center;font-size:.78rem;color:var(--muted);padding:20px;border-top:1px solid var(--border)">
+      Spec dashboard concept · A-1 Hospitality Group · Williams Digital · One console for all 32 properties — public site, inquiries, hiring, pipeline, and reporting in one place.
+    </div>
+  </main>
+</div>
+
+<script>
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  }));
+  document.querySelectorAll('.pill-btn').forEach(p => p.addEventListener('click', e => {
+    const grp = e.target.parentElement;
+    grp.querySelectorAll('.pill-btn').forEach(x => x.classList.remove('active'));
+    e.target.classList.add('active');
+  }));
+</script>
+</body>
+</html>
