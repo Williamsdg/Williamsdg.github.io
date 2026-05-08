@@ -378,6 +378,65 @@
   }
 
   // ============================================
+  // WEEKLY SNAPSHOT — computed from underlying data so the dashboard
+  // headline stays consistent with what board members see elsewhere
+  // ============================================
+  var weeklySnapshot = (function() {
+    // Top-collecting neighborhood
+    var top = communities[0];
+    for (var i = 1; i < communities.length; i++) {
+      if (communities[i].collectionRate > top.collectionRate) top = communities[i];
+    }
+    // ARC requests submitted in last 7 days
+    var newArcCount = arcApplications.filter(function(a) {
+      var diff = (Date.now() - new Date(a.submittedDate).getTime()) / (1000 * 60 * 60 * 24);
+      return diff <= 7;
+    }).length;
+    // Violations escalated to fine status this week
+    var escalatedFines = violations.filter(function(v) {
+      return v.status === 'fined' || (v.fineAmount && v.fineAmount > 0);
+    }).length;
+    // Weekly revenue estimate (Q2 / 13 weeks rough)
+    var weeklyRevenue = Math.round(financials.totalCollected / 4 / 13);
+    var paymentsThisWeek = Math.max(280, Math.round(residents.length * 0.2));
+    return {
+      collected: weeklyRevenue,
+      collectedFormatted: '$' + weeklyRevenue.toLocaleString(),
+      paymentCount: paymentsThisWeek,
+      newArcRequests: Math.max(3, newArcCount),
+      escalatedViolations: Math.max(2, escalatedFines),
+      topNeighborhood: top.name,
+      topCollectionRate: top.collectionRate
+    };
+  })();
+
+  // ============================================
+  // STAFF AUDIT LOG — recent sensitive actions
+  // ============================================
+  var auditLog = [
+    { id: 'AUD-3421', timestamp: hoursAgo(0.5), actor: 'Jennifer Walsh', role: 'Community Director', action: 'Approved ARC request', target: 'ARC-2026-031 (Bennett)', severity: 'info' },
+    { id: 'AUD-3420', timestamp: hoursAgo(1), actor: 'Sarah Mitchell', role: 'Compliance Officer', action: 'Issued violation notice', target: 'CN-2026-148 (Magnolia Ridge Ln)', severity: 'warn' },
+    { id: 'AUD-3419', timestamp: hoursAgo(2), actor: 'Jennifer Walsh', role: 'Community Director', action: 'Posted late fee', target: 'Account HH-1842 ($25.00)', severity: 'warn' },
+    { id: 'AUD-3418', timestamp: hoursAgo(3), actor: 'David Lawson', role: 'Board Chair', action: 'Viewed financial summary', target: 'Q2 Financials Report', severity: 'info' },
+    { id: 'AUD-3417', timestamp: hoursAgo(4.5), actor: 'Mike Torres', role: 'Maintenance Lead', action: 'Updated work order', target: 'WO-1247 (status: in-progress)', severity: 'info' },
+    { id: 'AUD-3416', timestamp: hoursAgo(6), actor: 'Jennifer Walsh', role: 'Community Director', action: 'Sent mass announcement', target: 'Pool Season Opens — 1,547 recipients', severity: 'info' },
+    { id: 'AUD-3415', timestamp: hoursAgo(8), actor: 'Sarah Mitchell', role: 'Compliance Officer', action: 'Escalated violation', target: 'CN-2026-141 (2nd notice + $50 fine)', severity: 'warn' },
+    { id: 'AUD-3414', timestamp: hoursAgo(22), actor: 'Jennifer Walsh', role: 'Community Director', action: 'Modified resident record', target: 'R-018 (email updated)', severity: 'info' },
+    { id: 'AUD-3413', timestamp: daysAgo(1), actor: 'David Lawson', role: 'Board Chair', action: 'Voted on board motion', target: 'Pool Resurfacing Bid (approved)', severity: 'critical' },
+    { id: 'AUD-3412', timestamp: daysAgo(1), actor: 'System', role: 'Automated', action: 'Auto-pay batch processed', target: '247 transactions, $67,925.00', severity: 'info' },
+    { id: 'AUD-3411', timestamp: daysAgo(1), actor: 'Jennifer Walsh', role: 'Community Director', action: 'Refunded payment', target: 'PAY-8721 ($275.00 to R-031)', severity: 'warn' },
+    { id: 'AUD-3410', timestamp: daysAgo(2), actor: 'Sarah Mitchell', role: 'Compliance Officer', action: 'Closed violation', target: 'CN-2026-138 (resolved with photo)', severity: 'info' },
+    { id: 'AUD-3409', timestamp: daysAgo(2), actor: 'David Lawson', role: 'Board Chair', action: 'Downloaded financial export', target: 'Q1 2026 Financials (CSV)', severity: 'critical' },
+    { id: 'AUD-3408', timestamp: daysAgo(3), actor: 'Jennifer Walsh', role: 'Community Director', action: 'Created vendor record', target: 'AquaTech Pools (new)', severity: 'info' },
+    { id: 'AUD-3407', timestamp: daysAgo(3), actor: 'Mike Torres', role: 'Maintenance Lead', action: 'Closed work order', target: 'WO-1240 (sign replacement)', severity: 'info' },
+    { id: 'AUD-3406', timestamp: daysAgo(4), actor: 'System', role: 'Automated', action: 'Backup completed', target: 'Daily database backup (2.3GB)', severity: 'info' },
+    { id: 'AUD-3405', timestamp: daysAgo(5), actor: 'Jennifer Walsh', role: 'Community Director', action: 'Modified ARC committee', target: 'Heritage Hills ARC (added P. Hayes)', severity: 'critical' },
+    { id: 'AUD-3404', timestamp: daysAgo(5), actor: 'Sarah Mitchell', role: 'Compliance Officer', action: 'Bulk-updated residents', target: '14 records (community reassignment)', severity: 'warn' },
+    { id: 'AUD-3403', timestamp: daysAgo(6), actor: 'David Lawson', role: 'Board Chair', action: 'Logged in', target: 'Board portal session', severity: 'info' },
+    { id: 'AUD-3402', timestamp: daysAgo(7), actor: 'Jennifer Walsh', role: 'Community Director', action: 'Generated report', target: 'Monthly Compliance Summary (April)', severity: 'info' }
+  ];
+
+  // ============================================
   // EXPOSE PUBLIC API
   // ============================================
   window.LPMS = {
@@ -392,6 +451,8 @@
     activityFeed: activityFeed,
     financials: financials,
     memberPersona: memberPersona,
+    weeklySnapshot: weeklySnapshot,
+    auditLog: auditLog,
 
     // Computed
     totalHomes: totalHomes,

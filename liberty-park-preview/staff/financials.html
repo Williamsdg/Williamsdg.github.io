@@ -1040,6 +1040,67 @@
             </div>
           </div>
 
+          <!-- Collection Rate Trend (Sparkline) -->
+          <div class="card mb-3">
+            <div class="card-header">
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Collection Rate &mdash; 12-Month Trend
+              </h3>
+              <span class="badge badge-teal">+1.3% vs Last Year</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 200px;gap:24px;align-items:center;padding:1rem 0;">
+              <div style="position:relative;">
+                <svg id="collectionSparkline" viewBox="0 0 600 140" preserveAspectRatio="none" style="width:100%;height:140px;display:block;">
+                  <defs>
+                    <linearGradient id="sparkGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#2E7D6F" stop-opacity="0.25"/>
+                      <stop offset="100%" stop-color="#2E7D6F" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- Reference grid -->
+                  <line x1="0" y1="35" x2="600" y2="35" stroke="#E5DDC8" stroke-dasharray="3,4" stroke-width="1"/>
+                  <line x1="0" y1="70" x2="600" y2="70" stroke="#E5DDC8" stroke-dasharray="3,4" stroke-width="1"/>
+                  <line x1="0" y1="105" x2="600" y2="105" stroke="#E5DDC8" stroke-dasharray="3,4" stroke-width="1"/>
+                  <!-- Data: 88, 89, 90.5, 91, 92.5, 93, 92, 93.5, 94, 94.2, 95.1, 96.1 (mapped to y inverted) -->
+                  <path d="M0,90 L55,82 L109,67 L164,62 L218,47 L273,42 L327,52 L382,37 L436,30 L491,28 L545,18 L600,9 L600,140 L0,140 Z" fill="url(#sparkGradient)"/>
+                  <path d="M0,90 L55,82 L109,67 L164,62 L218,47 L273,42 L327,52 L382,37 L436,30 L491,28 L545,18 L600,9" fill="none" stroke="#2E7D6F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- End marker -->
+                  <circle cx="600" cy="9" r="5" fill="#2E7D6F"/>
+                  <circle cx="600" cy="9" r="9" fill="#2E7D6F" opacity="0.18"/>
+                </svg>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:6px;letter-spacing:0.5px;">
+                  <span>Jun '25</span><span>Sep '25</span><span>Dec '25</span><span>Mar '26</span><span>May '26</span>
+                </div>
+              </div>
+              <div style="border-left:2px solid #F0EDE5;padding-left:20px;">
+                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">Current</div>
+                <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;color:var(--navy-dark);line-height:1;">96.1%</div>
+                <div style="display:inline-flex;align-items:center;gap:4px;color:var(--teal);font-size:13px;font-weight:600;margin-top:6px;background:rgba(46,125,111,0.1);padding:3px 8px;border-radius:100px;">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+                  +8.1% YoY
+                </div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:14px;line-height:1.5;">
+                  Highest 12-mo<br>collection rate on record.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Revenue by Neighborhood (Horizontal Bars) -->
+          <div class="card mb-3">
+            <div class="card-header">
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Revenue by Neighborhood &mdash; YTD
+              </h3>
+              <span class="text-sm text-muted">Top 8 of 15 neighborhoods</span>
+            </div>
+            <div id="revenueByNeighborhood" style="padding:1rem 0;display:flex;flex-direction:column;gap:11px;">
+              <!-- populated by JS -->
+            </div>
+          </div>
+
           <!-- Revenue Chart -->
           <div class="card mb-3">
             <div class="card-header">
@@ -1047,7 +1108,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                 Monthly Revenue
               </h3>
-              <span class="text-sm text-muted">Jan - Mar 2024</span>
+              <span class="text-sm text-muted">Jan – Apr 2026</span>
             </div>
             <div class="revenue-chart" id="revenueChart">
               <div class="chart-bar-group">
@@ -1741,6 +1802,36 @@
         '</tr>';
 
         tbody.innerHTML = html;
+      }
+
+      // Revenue by Neighborhood — horizontal bars (top 8)
+      var rbn = document.getElementById('revenueByNeighborhood');
+      if (rbn) {
+        var sorted = LPMS.communities.slice().sort(function(a, b) {
+          return (b.homes * b.assessment) - (a.homes * a.assessment);
+        }).slice(0, 8);
+        var maxRevenue = sorted[0].homes * sorted[0].assessment;
+        var rbnHtml = '';
+        sorted.forEach(function(c, i) {
+          var revenue = c.homes * c.assessment;
+          var pct = (revenue / maxRevenue) * 100;
+          var color = c.collectionRate >= 95 ? '#2E7D6F' : c.collectionRate >= 90 ? '#5CC4B2' : c.collectionRate >= 85 ? '#D4943A' : '#C03939';
+          rbnHtml +=
+            '<div style="display:grid;grid-template-columns:160px 1fr 110px;gap:14px;align-items:center;font-size:13px;">' +
+              '<div style="font-weight:600;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + c.name + '</div>' +
+              '<div style="position:relative;height:22px;background:var(--off-white);border-radius:4px;overflow:hidden;">' +
+                '<div class="rbn-bar" data-pct="' + pct.toFixed(1) + '" style="height:100%;width:0;background:' + color + ';border-radius:4px;transition:width 0.9s cubic-bezier(0.4,0,0.2,1) ' + (i * 60) + 'ms;"></div>' +
+              '</div>' +
+              '<div style="text-align:right;font-weight:700;color:var(--text-dark);">$' + revenue.toLocaleString() + '</div>' +
+            '</div>';
+        });
+        rbn.innerHTML = rbnHtml;
+        // Animate bars in
+        setTimeout(function() {
+          rbn.querySelectorAll('.rbn-bar').forEach(function(bar) {
+            bar.style.width = bar.dataset.pct + '%';
+          });
+        }, 100);
       }
     })();
 

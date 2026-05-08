@@ -902,6 +902,7 @@
           <div class="tab active" data-tab="tab-make-payment">Make Payment</div>
           <div class="tab" data-tab="tab-history">Payment History</div>
           <div class="tab" data-tab="tab-autopay">AutoPay</div>
+          <div class="tab" data-tab="tab-plan">Payment Plan</div>
           <div class="tab" data-tab="tab-statements">Statements</div>
         </div>
 
@@ -1049,15 +1050,22 @@
 
           <!-- Payment History Tab -->
           <div class="tab-panel" id="tab-history" style="display:none;">
-            <div class="history-filter">
-              <label class="form-label" style="margin-bottom:0;">Filter by Year:</label>
-              <select class="year-select" id="yearFilter">
+            <div class="history-filter" style="display:flex;gap:0.625rem;flex-wrap:wrap;align-items:center;margin-bottom:0.875rem;">
+              <input type="search" id="paymentSearch" class="form-input" placeholder="Search by confirmation # or description..." style="flex:1;min-width:240px;padding:0.5rem 0.75rem;font-size:0.875rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);">
+              <select class="year-select" id="yearFilter" style="padding:0.5rem 0.75rem;font-size:0.875rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);min-width:120px;">
                 <option value="all">All Years</option>
-                <option value="2024" selected>2024</option>
-                <option value="2023">2023</option>
-                <option value="2022">2022</option>
+                <option value="2026" selected>2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
               </select>
+              <select id="methodFilter" style="padding:0.5rem 0.75rem;font-size:0.875rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);min-width:140px;">
+                <option value="all">All Methods</option>
+                <option value="ACH">Bank ACH</option>
+                <option value="Visa">Credit / Debit</option>
+              </select>
+              <button type="button" id="paymentClearFilters" class="btn btn-ghost btn-sm" style="padding:0.5rem 0.875rem;">Clear</button>
             </div>
+            <div id="paymentFilterMeta" style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.75rem;"></div>
 
             <div class="history-table-wrap">
               <table>
@@ -1239,6 +1247,75 @@
                 </button>
               </div>
             </div>
+          </div>
+
+          <!-- Payment Plan Tab -->
+          <div class="tab-panel" id="tab-plan" style="display:none;">
+            <div style="background:linear-gradient(135deg,rgba(46,125,111,0.06),rgba(200,162,84,0.06));border-radius:var(--radius-lg);padding:1.5rem 1.75rem;margin-bottom:1.25rem;display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;border:1px solid rgba(46,125,111,0.2);">
+              <div style="width:48px;height:48px;border-radius:12px;background:rgba(46,125,111,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="24" height="24" fill="none" stroke="#2E7D6F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <div style="flex:1;min-width:240px;">
+                <h3 style="font-size:1.0625rem;color:var(--navy);margin-bottom:4px;">Need more time? Set up a payment plan.</h3>
+                <p style="font-size:0.875rem;color:var(--text-body);margin:0;line-height:1.6;">Liberty Park works with homeowners experiencing financial hardship. A payment plan splits your past-due balance into smaller monthly installments. Approval is automatic for plans under 6 months &mdash; longer plans require board review.</p>
+              </div>
+            </div>
+
+            <form id="paymentPlanForm" style="background:white;border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:1.75rem 1.75rem;">
+              <h4 style="font-size:1rem;color:var(--text-dark);margin-bottom:1rem;">Plan Request</h4>
+
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label class="form-label">Total balance to spread</label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                  <div>
+                    <input type="text" class="form-input" value="$550.00" id="planTotalAmount" readonly style="background:var(--off-white);font-weight:700;font-size:1rem;">
+                    <small style="color:var(--text-muted);font-size:0.75rem;display:block;margin-top:4px;">Current past-due balance</small>
+                  </div>
+                  <div>
+                    <select class="form-input" id="planMonths" style="font-weight:600;">
+                      <option value="2">2 months ($275/mo)</option>
+                      <option value="3" selected>3 months ($183.33/mo)</option>
+                      <option value="4">4 months ($137.50/mo)</option>
+                      <option value="6">6 months ($91.67/mo)</option>
+                      <option value="12">12 months ($45.83/mo) &mdash; requires board review</option>
+                    </select>
+                    <small style="color:var(--text-muted);font-size:0.75rem;display:block;margin-top:4px;">Number of installments</small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label class="form-label">First installment date</label>
+                <input type="date" class="form-input" id="planStartDate" value="2026-05-15">
+                <small style="color:var(--text-muted);font-size:0.75rem;display:block;margin-top:4px;">Subsequent installments draft on the same day each month.</small>
+              </div>
+
+              <div class="form-group" style="margin-bottom:1rem;">
+                <label class="form-label">Payment method for installments</label>
+                <select class="form-input" id="planMethod">
+                  <option>Bank ACH ending in 8901</option>
+                  <option>Visa ending in 4242</option>
+                  <option>Add a new method</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom:1.25rem;">
+                <label class="form-label">Reason (optional)</label>
+                <textarea class="form-input" rows="3" placeholder="Helps the office understand context — kept confidential, only seen by the Director."></textarea>
+              </div>
+
+              <div style="background:rgba(200,162,84,0.08);border:1px solid rgba(200,162,84,0.25);border-radius:var(--radius-sm);padding:0.875rem 1rem;margin-bottom:1.25rem;font-size:0.8125rem;color:var(--text-body);line-height:1.5;">
+                <strong style="color:var(--navy-dark);display:block;margin-bottom:4px;">What happens next:</strong>
+                Plans under 6 months are auto-approved on submit. The first installment drafts on the date above. Late fees on the past-due balance are paused as long as installments are on time. You can pay off the remaining balance early with no penalty.
+              </div>
+
+              <div style="display:flex;gap:0.625rem;flex-wrap:wrap;">
+                <button type="button" class="btn btn-primary" onclick="alert('Payment plan submitted! Confirmation email on its way.');">Submit Plan Request</button>
+                <button type="button" class="btn btn-outline" onclick="alert('Demo: would email Director directly to discuss alternative.');">Talk to Office Instead</button>
+              </div>
+            </form>
+
+            <div style="margin-top:1.25rem;font-size:0.8125rem;color:var(--text-muted);text-align:center;">Questions? Call (205) 945-6401 or <a href="messages.html" style="color:var(--gold-dark);font-weight:600;">message the office</a>.</div>
           </div>
 
           <!-- Statements Tab -->
@@ -1442,6 +1519,18 @@
         if (autopayTab) autopayTab.click();
       });
 
+      // Hash-driven deep links: #plan, #autopay, #history, #statements
+      function applyHash() {
+        var h = (window.location.hash || '').replace('#', '');
+        if (!h) return;
+        var map = { plan: 'tab-plan', autopay: 'tab-autopay', history: 'tab-history', statements: 'tab-statements', pay: 'tab-make-payment' };
+        var target = map[h] || h;
+        var t = document.querySelector('[data-tab="' + target + '"]');
+        if (t) t.click();
+      }
+      applyHash();
+      window.addEventListener('hashchange', applyHash);
+
       // "Pay Now" scrolls to Make Payment tab
       document.getElementById('payNowBtn')?.addEventListener('click', () => {
         const payTab = document.querySelector('[data-tab="tab-make-payment"]');
@@ -1604,26 +1693,37 @@
       });
     }
 
-    /* --- Year Filter for History --- */
+    /* --- Combined Filters for Payment History --- */
     function initYearFilter() {
-      const select = document.getElementById('yearFilter');
-      if (!select) return;
+      const yearSelect = document.getElementById('yearFilter');
+      const methodSelect = document.getElementById('methodFilter');
+      const search = document.getElementById('paymentSearch');
+      const clearBtn = document.getElementById('paymentClearFilters');
+      const meta = document.getElementById('paymentFilterMeta');
+      if (!yearSelect) return;
 
-      select.addEventListener('change', () => {
-        const year = select.value;
+      function applyFilters() {
+        const year = yearSelect.value;
+        const method = methodSelect ? methodSelect.value : 'all';
+        const q = (search ? search.value : '').toLowerCase().trim();
         const rows = document.querySelectorAll('#paymentHistoryBody tr');
         let total = 0;
         let count = 0;
+        let visible = 0;
 
         rows.forEach(row => {
           const rowYear = row.dataset.year;
-          if (year === 'all' || rowYear === year) {
-            row.style.display = '';
+          const rowText = row.textContent.toLowerCase();
+          const yearMatch = year === 'all' || rowYear === year;
+          const methodMatch = method === 'all' || rowText.includes(method.toLowerCase());
+          const searchMatch = !q || rowText.includes(q);
+          const show = yearMatch && methodMatch && searchMatch;
+          row.style.display = show ? '' : 'none';
+          if (show) {
+            visible++;
             const amountText = row.querySelector('td:nth-child(3)')?.textContent.replace(/[^0-9.]/g, '');
             total += parseFloat(amountText) || 0;
             count++;
-          } else {
-            row.style.display = 'none';
           }
         });
 
@@ -1631,10 +1731,26 @@
         const amount = document.getElementById('totalYearAmount');
         if (label) label.textContent = year === 'all' ? 'all years' : year;
         if (amount) amount.textContent = '$' + total.toFixed(2);
-      });
 
-      // Trigger initial filter
-      select.dispatchEvent(new Event('change'));
+        if (meta) {
+          meta.textContent = visible === rows.length
+            ? 'Showing all ' + rows.length + ' payments'
+            : 'Showing ' + visible + ' of ' + rows.length + ' payments';
+        }
+      }
+
+      yearSelect.addEventListener('change', applyFilters);
+      if (methodSelect) methodSelect.addEventListener('change', applyFilters);
+      if (search) search.addEventListener('input', applyFilters);
+      if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+          yearSelect.value = 'all';
+          if (methodSelect) methodSelect.value = 'all';
+          if (search) search.value = '';
+          applyFilters();
+        });
+      }
+      applyFilters();
     }
 
     /* --- AutoPay --- */

@@ -1519,6 +1519,35 @@
     <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
   </button>
 
+  <!-- Run Report Preview Modal -->
+  <style>
+    .rp-overlay { position: fixed; inset: 0; background: rgba(13,20,35,0.7); backdrop-filter: blur(4px); z-index: 300; display: none; align-items: flex-start; justify-content: center; padding: 30px 16px; overflow-y: auto; }
+    .rp-overlay.open { display: flex; }
+    .rp-shell { background: white; border-radius: 14px; max-width: 720px; width: 100%; box-shadow: 0 30px 80px rgba(0,0,0,0.4); overflow: hidden; }
+    .rp-topbar { background: var(--navy, #1B2A4A); color: white; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; }
+    .rp-topbar-title { font-weight: 600; font-size: 14px; }
+    .rp-topbar-title span { color: var(--gold-light, #D4B56E); font-weight: 400; margin-left: 8px; font-size: 12px; }
+    .rp-close { background: rgba(255,255,255,0.1); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+    .rp-body { padding: 26px; max-height: calc(90vh - 60px); overflow-y: auto; background: #FAFAFA; }
+    .rp-summary { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 12px; margin-bottom: 20px; }
+    .rp-stat { background: white; border-radius: 10px; padding: 16px 18px; text-align: center; border: 1px solid var(--border, #E5DDC8); }
+    .rp-stat-val { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; font-weight: 800; color: var(--navy-dark, #0D1423); line-height: 1; }
+    .rp-stat-lbl { font-size: 11px; color: var(--text-muted, #777); text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; font-weight: 600; }
+    .rp-chart-wrap { background: white; border-radius: 10px; padding: 18px 22px; border: 1px solid var(--border, #E5DDC8); margin-bottom: 16px; }
+    .rp-chart-wrap h4 { font-size: 13px; color: var(--navy-dark, #0D1423); margin-bottom: 12px; }
+    .rp-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .rp-disclaimer { background: rgba(200,162,84,0.1); border: 1px solid rgba(200,162,84,0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--text-body, #555); margin-top: 14px; }
+  </style>
+  <div class="rp-overlay" id="reportPreviewModal" role="dialog" aria-modal="true">
+    <div class="rp-shell">
+      <div class="rp-topbar">
+        <div class="rp-topbar-title" id="rpTitle">Report Preview <span id="rpSubtitle"></span></div>
+        <button class="rp-close" id="rpClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="rp-body" id="rpBody"></div>
+    </div>
+  </div>
+
   <script src="../mock-data.js"></script>
   <script src="../demo-engine.js"></script>
   <script src="../portal.js"></script>
@@ -1691,6 +1720,176 @@
           });
         });
       }
+
+      // ============================================
+      // REPORT PREVIEW MODAL — wire "Run Now" + featured report buttons
+      // ============================================
+      var rpModal = document.getElementById('reportPreviewModal');
+      var rpBody = document.getElementById('rpBody');
+      var rpSubtitle = document.getElementById('rpSubtitle');
+
+      function openReportPreview(reportName, content) {
+        rpSubtitle.textContent = '— ' + reportName;
+        rpBody.innerHTML = content;
+        rpModal.classList.add('open');
+        document.body.classList.add('modal-open');
+      }
+      function closeReportPreview() {
+        rpModal.classList.remove('open');
+        document.body.classList.remove('modal-open');
+      }
+      document.getElementById('rpClose').addEventListener('click', closeReportPreview);
+      rpModal.addEventListener('click', function(e) { if (e.target === rpModal) closeReportPreview(); });
+      document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && rpModal.classList.contains('open')) closeReportPreview(); });
+
+      function fmtMoney(n) { return '$' + Math.round(n).toLocaleString(); }
+      function downloadActions(name) {
+        return '<div class="rp-actions">' +
+          '<button class="btn btn-primary btn-sm" onclick="alert(\'Demo: would download ' + name + '.pdf\');">Download PDF</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="alert(\'Demo: would download ' + name + '.csv\');">Download CSV</button>' +
+          '<button class="btn btn-outline btn-sm" onclick="alert(\'Demo: would email to selected board members\');">Email to Board</button>' +
+        '</div>' +
+        '<div class="rp-disclaimer">Demo data &mdash; in production, this report runs against live financials and exports a board-ready PDF with cover page and footnotes.</div>';
+      }
+
+      var fin = (window.LPMS && LPMS.financials) || {};
+      var totalAssessed = fin.totalAssessed || 425000;
+      var totalCollected = fin.totalCollected || 408000;
+      var rate = fin.collectionRate || 96.0;
+      var outstanding = totalAssessed - totalCollected;
+
+      var reports = {
+        'monthly-financial': {
+          name: 'Monthly Financial Summary',
+          html: '<div class="rp-summary">' +
+                  '<div class="rp-stat"><div class="rp-stat-val">' + fmtMoney(totalCollected) + '</div><div class="rp-stat-lbl">Collected MTD</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">' + rate + '%</div><div class="rp-stat-lbl">Collection Rate</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">' + fmtMoney(outstanding) + '</div><div class="rp-stat-lbl">Outstanding</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">15</div><div class="rp-stat-lbl">Communities</div></div>' +
+                '</div>' +
+                '<div class="rp-chart-wrap"><h4>Revenue by Month (last 4)</h4>' +
+                  '<svg viewBox="0 0 400 100" style="width:100%;height:100px;"><polyline fill="none" stroke="#2E7D6F" stroke-width="2.5" points="20,70 100,55 180,40 260,30 340,22"/><circle cx="340" cy="22" r="4" fill="#2E7D6F"/></svg>' +
+                '</div>' +
+                downloadActions('monthly-financial-summary')
+        },
+        'delinquency': {
+          name: 'Delinquency Report',
+          html: '<div class="rp-summary">' +
+                  '<div class="rp-stat"><div class="rp-stat-val" style="color:var(--danger);">' + fmtMoney(outstanding) + '</div><div class="rp-stat-lbl">Past Due</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">149</div><div class="rp-stat-lbl">Past-Due Accounts</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">23</div><div class="rp-stat-lbl">60+ Days</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">8</div><div class="rp-stat-lbl">Lien-Eligible</div></div>' +
+                '</div>' +
+                '<div class="rp-chart-wrap"><h4>Aging Breakdown</h4>' +
+                  '<div style="display:flex;height:30px;border-radius:6px;overflow:hidden;font-size:11px;color:white;font-weight:700;">' +
+                    '<div style="flex:55;background:#2E7D6F;display:flex;align-items:center;justify-content:center;">Current 55%</div>' +
+                    '<div style="flex:25;background:#5CC4B2;display:flex;align-items:center;justify-content:center;">30d 25%</div>' +
+                    '<div style="flex:14;background:#D4943A;display:flex;align-items:center;justify-content:center;">60d 14%</div>' +
+                    '<div style="flex:6;background:#C03939;display:flex;align-items:center;justify-content:center;">90d+ 6%</div>' +
+                  '</div>' +
+                '</div>' +
+                downloadActions('delinquency-report')
+        },
+        'compliance-trends': {
+          name: 'Compliance Trends by Neighborhood',
+          html: '<div class="rp-summary">' +
+                  '<div class="rp-stat"><div class="rp-stat-val">73</div><div class="rp-stat-lbl">Open Notices</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">142</div><div class="rp-stat-lbl">Resolved (Q2)</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">7.2 days</div><div class="rp-stat-lbl">Avg Resolution</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">94%</div><div class="rp-stat-lbl">First-Notice Resolution</div></div>' +
+                '</div>' +
+                '<div class="rp-chart-wrap"><h4>Top Violation Categories</h4>' +
+                  '<div style="display:flex;flex-direction:column;gap:6px;font-size:13px;">' +
+                    '<div style="display:grid;grid-template-columns:160px 1fr 40px;gap:10px;align-items:center;"><span>Lawn Maintenance</span><div style="height:14px;background:#F5F1EA;border-radius:3px;"><div style="height:100%;width:78%;background:#2E7D6F;border-radius:3px;"></div></div><span style="text-align:right;font-weight:600;">31</span></div>' +
+                    '<div style="display:grid;grid-template-columns:160px 1fr 40px;gap:10px;align-items:center;"><span>Trash Storage</span><div style="height:14px;background:#F5F1EA;border-radius:3px;"><div style="height:100%;width:55%;background:#5CC4B2;border-radius:3px;"></div></div><span style="text-align:right;font-weight:600;">22</span></div>' +
+                    '<div style="display:grid;grid-template-columns:160px 1fr 40px;gap:10px;align-items:center;"><span>Unapproved Mods</span><div style="height:14px;background:#F5F1EA;border-radius:3px;"><div style="height:100%;width:30%;background:#D4943A;border-radius:3px;"></div></div><span style="text-align:right;font-weight:600;">12</span></div>' +
+                    '<div style="display:grid;grid-template-columns:160px 1fr 40px;gap:10px;align-items:center;"><span>Vehicle Parking</span><div style="height:14px;background:#F5F1EA;border-radius:3px;"><div style="height:100%;width:20%;background:#C03939;border-radius:3px;"></div></div><span style="text-align:right;font-weight:600;">8</span></div>' +
+                  '</div>' +
+                '</div>' +
+                downloadActions('compliance-trends')
+        },
+        'arc-turnaround': {
+          name: 'ARC Turnaround Time',
+          html: '<div class="rp-summary">' +
+                  '<div class="rp-stat"><div class="rp-stat-val">11.4 days</div><div class="rp-stat-lbl">Avg Turnaround</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">88%</div><div class="rp-stat-lbl">Approved</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">7</div><div class="rp-stat-lbl">Pending Review</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">Q2 ↑</div><div class="rp-stat-lbl">Faster vs Q1</div></div>' +
+                '</div>' +
+                '<div class="rp-chart-wrap"><h4>Days from Submission to Decision</h4>' +
+                  '<div style="display:flex;justify-content:space-around;align-items:end;height:120px;">' +
+                    '<div style="text-align:center;"><div style="width:30px;height:60%;background:linear-gradient(180deg,#C8A254,#A8863A);margin:0 auto;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;margin-top:4px;color:var(--text-muted);">Q1 \'25</div></div>' +
+                    '<div style="text-align:center;"><div style="width:30px;height:55%;background:linear-gradient(180deg,#C8A254,#A8863A);margin:0 auto;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;margin-top:4px;color:var(--text-muted);">Q2 \'25</div></div>' +
+                    '<div style="text-align:center;"><div style="width:30px;height:48%;background:linear-gradient(180deg,#C8A254,#A8863A);margin:0 auto;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;margin-top:4px;color:var(--text-muted);">Q3 \'25</div></div>' +
+                    '<div style="text-align:center;"><div style="width:30px;height:42%;background:linear-gradient(180deg,#C8A254,#A8863A);margin:0 auto;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;margin-top:4px;color:var(--text-muted);">Q4 \'25</div></div>' +
+                    '<div style="text-align:center;"><div style="width:30px;height:35%;background:linear-gradient(180deg,#C8A254,#A8863A);margin:0 auto;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;margin-top:4px;color:var(--text-muted);">Q1 \'26</div></div>' +
+                    '<div style="text-align:center;"><div style="width:30px;height:32%;background:linear-gradient(180deg,#2E7D6F,#5CC4B2);margin:0 auto;border-radius:4px 4px 0 0;"></div><div style="font-size:11px;margin-top:4px;color:var(--teal);font-weight:700;">Q2 \'26</div></div>' +
+                  '</div>' +
+                '</div>' +
+                downloadActions('arc-turnaround')
+        },
+        'work-orders': {
+          name: 'Work Order Status Report',
+          html: '<div class="rp-summary">' +
+                  '<div class="rp-stat"><div class="rp-stat-val">23</div><div class="rp-stat-lbl">Open</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">5</div><div class="rp-stat-lbl">Urgent</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">4.3 days</div><div class="rp-stat-lbl">Avg Resolution</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">$8,420</div><div class="rp-stat-lbl">MTD Spend</div></div>' +
+                '</div>' + downloadActions('work-orders')
+        },
+        'communications-impact': {
+          name: 'Communications Impact',
+          html: '<div class="rp-summary">' +
+                  '<div class="rp-stat"><div class="rp-stat-val">9,420</div><div class="rp-stat-lbl">Emails (30d)</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">42%</div><div class="rp-stat-lbl">Open Rate</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">98.1%</div><div class="rp-stat-lbl">Deliverability</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">37%</div><div class="rp-stat-lbl">SMS Opt-In</div></div>' +
+                '</div>' + downloadActions('communications-impact')
+        },
+        'community-health': {
+          name: 'Community Health Scorecard',
+          html: '<div class="rp-summary">' +
+                  '<div class="rp-stat"><div class="rp-stat-val">A-</div><div class="rp-stat-lbl">Avg Grade</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">11/15</div><div class="rp-stat-lbl">A or A-</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">2/15</div><div class="rp-stat-lbl">Below B</div></div>' +
+                  '<div class="rp-stat"><div class="rp-stat-val">Park Overlook</div><div class="rp-stat-lbl">Needs Attention</div></div>' +
+                '</div>' + downloadActions('community-health')
+        }
+      };
+
+      // Bind all "Run Now" / featured report buttons by their parent card title or button text
+      document.querySelectorAll('.report-card').forEach(function(card) {
+        var title = (card.querySelector('h4') || {}).textContent || '';
+        var key = (function() {
+          var t = title.toLowerCase();
+          if (t.indexOf('financial summary') > -1) return 'monthly-financial';
+          if (t.indexOf('delinquency') > -1) return 'delinquency';
+          if (t.indexOf('work order') > -1) return 'work-orders';
+          if (t.indexOf('compliance') > -1) return 'compliance-trends';
+          if (t.indexOf('arc') > -1) return 'arc-turnaround';
+          if (t.indexOf('community health') > -1) return 'community-health';
+          if (t.indexOf('communication') > -1) return 'communications-impact';
+          return 'monthly-financial';
+        })();
+        card.querySelectorAll('button').forEach(function(btn) {
+          if (/run now/i.test(btn.textContent) || /generate/i.test(btn.textContent) || /download/i.test(btn.textContent)) {
+            btn.addEventListener('click', function(e) {
+              e.preventDefault();
+              var r = reports[key];
+              if (r) openReportPreview(r.name, r.html);
+            });
+          }
+        });
+      });
+
+      // Also wire any "Featured Report" buttons elsewhere on the page
+      document.querySelectorAll('[data-report]').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+          e.preventDefault();
+          var r = reports[el.dataset.report];
+          if (r) openReportPreview(r.name, r.html);
+        });
+      });
 
     });
   </script>

@@ -783,13 +783,81 @@
     body.demo-banner-hidden .portal-layout > main { padding-top: 0; }
     @media print { #demo-banner { display: none !important; } }
   </style>
-  <!-- Demo Mode Banner -->
+  <!-- Demo Mode Banner with Role Switcher -->
   <div id="demo-banner" style="background:linear-gradient(90deg,#1B2A4A,#2A3F6A);color:white;padding:10px 20px;text-align:center;font-size:13px;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;border-bottom:2px solid #C8A254;height:44px;line-height:1.3;">
     <span style="background:#C8A254;color:#0D1423;padding:3px 10px;border-radius:4px;font-weight:700;letter-spacing:0.5px;font-size:11px;">DEMO MODE</span>
-    <span>Sandboxed preview of the Liberty Park Staff Portal &mdash; all data is fictional. Logged in as <strong>Sarah Mitchell</strong> (Community Director).</span>
-    <a href="../pitch.html" style="color:#C8A254;text-decoration:none;font-weight:600;border-left:1px solid rgba(255,255,255,0.2);padding-left:14px;">&larr; Back to Proposal</a>
+    <span>Logged in as <strong id="demoRoleLabel">Sarah Mitchell</strong> <span id="demoRoleTitle" style="opacity:0.75;">(Community Director)</span></span>
+    <span style="display:inline-flex;align-items:center;gap:6px;border-left:1px solid rgba(255,255,255,0.2);padding-left:12px;">
+      <span style="font-size:11px;opacity:0.75;">View as:</span>
+      <select id="demoRoleSelect" style="background:rgba(255,255,255,0.1);color:white;border:1px solid rgba(255,255,255,0.2);font-size:11px;padding:3px 8px;border-radius:4px;font-family:inherit;cursor:pointer;">
+        <option value="director" data-name="Sarah Mitchell" data-title="Community Director">Director</option>
+        <option value="board" data-name="David Lawson" data-title="Board Chair">Board Chair</option>
+        <option value="compliance" data-name="Jennifer Walsh" data-title="Compliance Officer">Compliance Officer</option>
+        <option value="vendor" data-name="Mike Torres" data-title="Maintenance Vendor">Vendor (read-only)</option>
+      </select>
+    </span>
+    <a href="../pitch.html" style="color:#C8A254;text-decoration:none;font-weight:600;border-left:1px solid rgba(255,255,255,0.2);padding-left:12px;">&larr; Proposal</a>
     <button onclick="document.body.classList.toggle('demo-banner-hidden');" style="background:none;border:1px solid rgba(255,255,255,0.3);color:white;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;">Hide</button>
   </div>
+  <script>
+    // Role switcher — updates greeting, sidebar user, header user, and adds a body class
+    (function() {
+      var sel = document.getElementById('demoRoleSelect');
+      if (!sel) return;
+      function applyRole() {
+        var opt = sel.options[sel.selectedIndex];
+        var name = opt.dataset.name;
+        var title = opt.dataset.title;
+        var role = opt.value;
+        // Update banner
+        var roleLabel = document.getElementById('demoRoleLabel');
+        var roleTitle = document.getElementById('demoRoleTitle');
+        if (roleLabel) roleLabel.textContent = name;
+        if (roleTitle) roleTitle.textContent = '(' + title + ')';
+        // Update sidebar user (if present)
+        var sidebarName = document.querySelector('.sidebar-user-info .name');
+        var sidebarRole = document.querySelector('.sidebar-user-info .role');
+        if (sidebarName) sidebarName.textContent = name;
+        if (sidebarRole) {
+          var dot = sidebarRole.querySelector('.status-online');
+          sidebarRole.innerHTML = (dot ? '<span class="status-online"></span> ' : '') + title;
+        }
+        // Update header user (avatar initials + name)
+        var headerName = document.querySelector('.header-user-info .name');
+        var headerRole = document.querySelector('.header-user-info .role');
+        var headerAvatar = document.querySelector('.header-user .avatar');
+        if (headerName) headerName.textContent = name;
+        if (headerRole) headerRole.textContent = title;
+        if (headerAvatar) {
+          var parts = name.split(' ');
+          headerAvatar.textContent = (parts[0][0] || '') + (parts[1] ? parts[1][0] : '');
+        }
+        // Update greeting
+        var greeting = document.getElementById('greetingText');
+        if (greeting) {
+          var hour = new Date().getHours();
+          var pre = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+          greeting.textContent = pre + ', ' + name.split(' ')[0];
+        }
+        // Body class for role-specific styling
+        document.body.classList.remove('role-director','role-board','role-compliance','role-vendor');
+        document.body.classList.add('role-' + role);
+        // Persist
+        try { localStorage.setItem('lp_demo_role', role); } catch (e) {}
+      }
+      // Restore last role
+      try {
+        var saved = localStorage.getItem('lp_demo_role');
+        if (saved) {
+          for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === saved) { sel.selectedIndex = i; break; }
+          }
+        }
+      } catch (e) {}
+      sel.addEventListener('change', applyRole);
+      applyRole();
+    })();
+  </script>
 
   <div class="portal-layout">
     <!-- Sidebar Overlay (mobile) -->
@@ -1087,7 +1155,7 @@
           </div>
           <div style="flex:1;min-width:240px;">
             <div style="font-weight:700;color:var(--navy);margin-bottom:3px;font-size:0.95rem;">This Week at a Glance</div>
-            <div style="font-size:0.875rem;color:var(--text-light);line-height:1.5;">Collected <strong style="color:var(--navy);">$47,280</strong> across 312 payments &middot; 5 new ARC requests &middot; Heatherwood collection rate <strong style="color:#2E7D6F;">96.4%</strong> (highest) &middot; 2 violations escalated to fines.</div>
+            <div id="weeklySnapshotLine" style="font-size:0.875rem;color:var(--text-light);line-height:1.5;">Loading week overview...</div>
           </div>
           <a href="reports.html" class="btn btn-outline btn-sm" style="white-space:nowrap;">View Weekly Report</a>
         </div>
@@ -1420,6 +1488,118 @@
     </button>
   </div>
 
+  <!-- Send Notice Preview Modal -->
+  <div class="sn-modal-overlay" id="sendNoticeModal" role="dialog" aria-modal="true">
+    <style>
+      .sn-modal-overlay { position: fixed; inset: 0; background: rgba(13,20,35,0.7); backdrop-filter: blur(4px); z-index: 300; display: none; align-items: flex-start; justify-content: center; padding: 32px 16px; overflow-y: auto; }
+      .sn-modal-overlay.open { display: flex; animation: snFade 0.2s ease; }
+      @keyframes snFade { from { opacity: 0; } to { opacity: 1; } }
+      .sn-shell { background: white; border-radius: 14px; max-width: 640px; width: 100%; box-shadow: 0 30px 80px rgba(0,0,0,0.4); overflow: hidden; animation: snSlide 0.25s ease; }
+      @keyframes snSlide { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      .sn-topbar { background: var(--navy); color: white; padding: 14px 22px; display: flex; justify-content: space-between; align-items: center; }
+      .sn-topbar-title { font-weight: 600; font-size: 14px; }
+      .sn-topbar-title span { color: var(--gold-light); font-weight: 400; margin-left: 8px; font-size: 12px; }
+      .sn-close { background: rgba(255,255,255,0.1); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+      .sn-close:hover { background: rgba(255,255,255,0.2); }
+      .sn-body { padding: 22px; max-height: calc(90vh - 60px); overflow-y: auto; background: #F4F4F5; }
+      .sn-controls { background: white; border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+      .sn-control-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; padding: 6px 0; font-size: 13px; }
+      .sn-control-row .label { color: var(--text-muted); font-weight: 600; font-size: 12px; }
+      .sn-control-row select, .sn-control-row input { font: inherit; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; width: 100%; font-size: 13px; }
+      .sn-preview-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; margin-bottom: 8px; padding-left: 4px; }
+      .sn-email { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+      .sn-email-meta { background: #F4F4F5; padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 12px; }
+      .sn-email-meta .row { padding: 2px 0; }
+      .sn-email-meta .row .lbl { color: var(--text-muted); font-weight: 600; display: inline-block; min-width: 50px; }
+      .sn-email-meta .row .val { color: var(--text-dark); }
+      .sn-email-banner { background: linear-gradient(135deg, var(--navy-dark, #0D1423) 0%, var(--navy) 100%); color: white; padding: 22px 22px; text-align: center; }
+      .sn-email-banner .name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; letter-spacing: 1.5px; }
+      .sn-email-banner .sub { color: var(--gold-light); font-size: 11px; letter-spacing: 2px; font-weight: 600; margin-top: 3px; }
+      .sn-email-content { padding: 22px; font-size: 13.5px; line-height: 1.65; color: #333; }
+      .sn-email-content h3 { font-size: 17px; color: var(--navy-dark); margin-bottom: 10px; font-family: 'Plus Jakarta Sans', sans-serif; }
+      .sn-email-content p { margin-bottom: 10px; }
+      .sn-cta { display: inline-block; background: var(--gold); color: var(--navy-dark); padding: 10px 22px; border-radius: 6px; font-weight: 700; font-size: 13px; margin-top: 6px; text-decoration: none; }
+      .sn-email-footer { background: #FAFAFA; padding: 14px 22px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+      .sn-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+      .sn-actions .btn { padding: 9px 18px; }
+      .sn-disclaimer { background: rgba(200,162,84,0.12); border: 1px solid rgba(200,162,84,0.3); border-radius: 8px; padding: 10px 14px; margin-top: 14px; font-size: 12px; color: var(--text-body); }
+    </style>
+    <div class="sn-shell">
+      <div class="sn-topbar">
+        <div class="sn-topbar-title">Send Notice <span>Preview before sending</span></div>
+        <button class="sn-close" id="snModalClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="sn-body">
+        <div class="sn-controls">
+          <div class="sn-control-row">
+            <div class="label">Template</div>
+            <select id="snTemplate">
+              <option>Mass Announcement &mdash; Pool Season</option>
+              <option>Maintenance Update &mdash; Resident</option>
+              <option>Compliance Notice (1st)</option>
+              <option>Late Payment Reminder</option>
+            </select>
+          </div>
+          <div class="sn-control-row">
+            <div class="label">Audience</div>
+            <select id="snAudience">
+              <option value="all">All Residents (1,547)</option>
+              <option value="heritage-hills">Heritage Hills (58)</option>
+              <option value="liberty-ridge">Liberty Ridge (210)</option>
+              <option value="the-bray">The Bray (62)</option>
+              <option value="past-due">Past-Due Residents (149)</option>
+            </select>
+          </div>
+          <div class="sn-control-row">
+            <div class="label">Channels</div>
+            <div style="display:flex;gap:14px;font-size:13px;">
+              <label><input type="checkbox" checked> Email</label>
+              <label><input type="checkbox" checked> Portal</label>
+              <label><input type="checkbox"> SMS</label>
+              <label><input type="checkbox" checked> Push</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="sn-preview-label">Preview &mdash; What residents will receive</div>
+        <div class="sn-email">
+          <div class="sn-email-meta">
+            <div class="row"><span class="lbl">From:</span><span class="val"><strong>Jennifer Walsh</strong> &lt;jwalsh@libertypark.com&gt;</span></div>
+            <div class="row"><span class="lbl">To:</span><span class="val" id="snToLine">All Liberty Park Residents (1,547)</span></div>
+            <div class="row"><span class="lbl">Subject:</span><span class="val"><strong>Pool Season Opens May 24 &mdash; Schedule &amp; Reminders</strong></span></div>
+          </div>
+          <div class="sn-email-banner">
+            <div class="name">LIBERTY PARK</div>
+            <div class="sub">COMMUNITY ANNOUNCEMENT</div>
+          </div>
+          <div class="sn-email-content">
+            <h3>Pool season is almost here.</h3>
+            <p>Liberty Park, the pool opens <strong>Saturday, May 24</strong> for the 2026 season. Here's what you need to know:</p>
+            <p>&bull; <strong>Hours:</strong> 9 AM &ndash; 9 PM daily through Labor Day<br>
+            &bull; <strong>Access:</strong> Use your existing key fob &mdash; no new cards this year<br>
+            &bull; <strong>Guest Policy:</strong> 4 guests per household, sign in at the kiosk<br>
+            &bull; <strong>Swim Lessons:</strong> Registration opens May 15</p>
+            <p>The Memorial Day kickoff is <strong>Monday, May 26</strong> &mdash; food trucks, kids' events, and the season's first lifeguard-led swim test.</p>
+            <a href="#" class="sn-cta">View Full Schedule</a>
+          </div>
+          <div class="sn-email-footer">
+            Sent to all 1,547 households across 15 neighborhoods. <a href="#">Manage notification preferences</a>
+          </div>
+        </div>
+
+        <div class="sn-disclaimer">
+          <strong>Demo:</strong> in production, clicking Send dispatches via Resend (email) + Twilio (SMS) + Web Push. Audit log entry created automatically.
+        </div>
+
+        <div class="sn-actions">
+          <button class="btn btn-primary btn-sm" onclick="alert('Demo: would send to selected audience and log to audit trail.');">Send to Selected Audience</button>
+          <button class="btn btn-outline btn-sm" onclick="alert('Demo: would save as draft.');">Save Draft</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('snModalClose').click();">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="../mock-data.js"></script>
   <script src="../demo-engine.js"></script>
   <script src="../portal.js"></script>
@@ -1461,6 +1641,21 @@
       // ============================================
       // POPULATE FROM LPMS DATA
       // ============================================
+
+      // --- Weekly Snapshot ---
+      (function() {
+        var line = document.getElementById('weeklySnapshotLine');
+        if (!line || !window.LPMS || !LPMS.weeklySnapshot) return;
+        var s = LPMS.weeklySnapshot;
+        line.innerHTML =
+          'Collected <strong style="color:var(--navy);">' + s.collectedFormatted + '</strong>' +
+          ' across ' + s.paymentCount + ' payments &middot; ' +
+          s.newArcRequests + ' new ARC requests &middot; ' +
+          s.topNeighborhood + ' collection rate <strong style="color:#2E7D6F;">' +
+          s.topCollectionRate + '%</strong> (highest) &middot; ' +
+          s.escalatedViolations + ' violations escalated to fines.';
+      })();
+
 
       // --- KPI Cards ---
       var kpiValues = document.querySelectorAll('.kpi-value');
@@ -1628,7 +1823,35 @@
       var btnNotice = document.getElementById('btnSendNotice');
       if (btnNotice) {
         btnNotice.addEventListener('click', function() {
-          window.location.href = 'communications.html';
+          openSendNoticePreview();
+        });
+      }
+
+      // --- Send Notice Preview Modal ---
+      function openSendNoticePreview() {
+        var modal = document.getElementById('sendNoticeModal');
+        if (modal) { modal.classList.add('open'); document.body.classList.add('modal-open'); }
+      }
+      function closeSendNoticePreview() {
+        var modal = document.getElementById('sendNoticeModal');
+        if (modal) { modal.classList.remove('open'); document.body.classList.remove('modal-open'); }
+      }
+      // Wire close interactions
+      var snModal = document.getElementById('sendNoticeModal');
+      if (snModal) {
+        snModal.addEventListener('click', function(e) { if (e.target === snModal) closeSendNoticePreview(); });
+        var snClose = document.getElementById('snModalClose');
+        if (snClose) snClose.addEventListener('click', closeSendNoticePreview);
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeSendNoticePreview(); });
+      }
+      // Audience switcher (re-render preview based on selection)
+      var snAudienceSelect = document.getElementById('snAudience');
+      if (snAudienceSelect) {
+        snAudienceSelect.addEventListener('change', function() {
+          var v = this.value;
+          var line = document.getElementById('snToLine');
+          var counts = { 'all': 'All Liberty Park Residents (1,547)', 'heritage-hills': 'Heritage Hills (58 households)', 'liberty-ridge': 'Liberty Ridge (210 households)', 'the-bray': 'The Bray (62 households)', 'past-due': 'Residents with past-due balance (149)' };
+          if (line) line.textContent = counts[v] || counts['all'];
         });
       }
 

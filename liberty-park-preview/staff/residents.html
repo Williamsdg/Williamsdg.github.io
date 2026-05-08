@@ -1369,14 +1369,48 @@
       });
     });
 
-    // Row click to highlight
+    // Row click — open 360 detail panel for the clicked resident
     document.querySelectorAll('#residentsTable tbody tr').forEach(row => {
       row.addEventListener('click', (e) => {
-        // Don't highlight when clicking actions
         if (e.target.closest('.actions-cell')) return;
 
         document.querySelectorAll('#residentsTable tbody tr.selected').forEach(r => r.classList.remove('selected'));
-        row.classList.toggle('selected');
+        row.classList.add('selected');
+
+        // Pull data from the row and populate the detail panel header
+        var nameCell = row.querySelector('td:nth-child(2)') || row.querySelector('td:first-child');
+        var addrCell = row.querySelector('td:nth-child(3)');
+        var commCell = row.querySelector('td:nth-child(4)');
+        var statusBadge = row.querySelector('.badge, .status-badge');
+        var avatar = row.querySelector('.avatar');
+
+        var name = (nameCell ? nameCell.textContent : 'Resident').trim().split('\n')[0];
+        var address = (addrCell ? addrCell.textContent : '').trim();
+        var community = (commCell ? commCell.textContent : '').trim();
+
+        // Update the header
+        var detailHdr = document.querySelector('.detail-panel-header');
+        if (detailHdr) {
+          var h2 = detailHdr.querySelector('h2');
+          var commName = detailHdr.querySelector('.community-name');
+          var avatarEl = detailHdr.querySelector('.avatar');
+          var badgeEl = detailHdr.querySelector('.detail-panel-header-left .badge');
+          if (h2) h2.textContent = name;
+          if (commName) commName.textContent = community + (address ? ' · ' + address : '');
+          if (avatarEl) {
+            var parts = name.split(' ');
+            avatarEl.textContent = ((parts[0]||'')[0]||'') + ((parts[1]||'')[0]||'');
+          }
+          if (badgeEl && statusBadge) {
+            badgeEl.textContent = statusBadge.textContent;
+            badgeEl.className = 'badge';
+            badgeEl.style.cssText = statusBadge.getAttribute('style') || 'background:rgba(46,125,111,0.2);color:#3eebc0;font-size:0.75rem;';
+          }
+        }
+
+        // Smooth-scroll the detail panel into view
+        var panel = document.getElementById('residentDetail');
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
 
