@@ -1,5 +1,5 @@
 /* ============================================
-   LIBERTY PARK MANAGEMENT SERVICES
+   BRIARWOOD MANAGEMENT SERVICES
    Shared Portal JavaScript
    ============================================ */
 
