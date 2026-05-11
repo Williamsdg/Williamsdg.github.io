@@ -305,7 +305,7 @@
   function generateConfirmationNumber() {
     var year = new Date().getFullYear();
     var num = 100000 + Math.floor(Math.random() * 899999);
-    return 'LP-' + year + '-' + num;
+    return 'BW-' + year + '-' + num;
   }
 
   // ============================================

@@ -95,7 +95,7 @@
     { id: 'R-022', firstName: 'Nicole', lastName: 'Lewis', initials: 'NL', email: 'nicole.lewis@email.com', phone: '(205) 555-0941', address: '941 Stonehaven Dr', community: 'stonehaven', communityName: 'Stonehaven', status: 'current', balance: 0, lastPayment: daysAgo(3), moveInDate: '2022-05-17', avatarColor: 'teal' },
     { id: 'R-023', firstName: 'Mark', lastName: 'Robinson', initials: 'MR', email: 'mark.robinson@email.com', phone: '(205) 555-0378', address: '378 Ashbury Ln', community: 'ashbury-hill', communityName: 'Ashbury Hill', status: 'current', balance: 250.00, lastPayment: daysAgo(19), moveInDate: '2016-08-25', avatarColor: 'navy' },
     { id: 'R-024', firstName: 'Kimberly', lastName: 'Clark', initials: 'KC', email: 'kim.clark@email.com', phone: '(205) 555-0612', address: '612 Briarwood Oaks Way', community: 'briarwood-oaks', communityName: 'Briarwood Oaks', status: 'current', balance: 0, lastPayment: daysAgo(7), moveInDate: '2020-09-14', avatarColor: 'gold' },
-    { id: 'R-025', firstName: 'Jason', lastName: 'Walker', initials: 'MC'', email: 'jason.walker@email.com', phone: '(205) 555-0845', address: '845 Stonehaven Ct', community: 'stonehaven', communityName: 'Stonehaven', status: 'current', balance: 300.00, lastPayment: daysAgo(15), moveInDate: '2018-12-01', avatarColor: 'teal' },
+    { id: 'R-025', firstName: 'Jason', lastName: 'Walker', initials: 'JW', email: 'jason.walker@email.com', phone: '(205) 555-0845', address: '845 Stonehaven Ct', community: 'stonehaven', communityName: 'Stonehaven', status: 'current', balance: 300.00, lastPayment: daysAgo(15), moveInDate: '2018-12-01', avatarColor: 'teal' },
     { id: 'R-026', firstName: 'Megan', lastName: 'Hall', initials: 'MH', email: 'megan.hall@email.com', phone: '(205) 555-0176', address: '176 Meadow Glen Ln', community: 'the-meadows', communityName: 'The Meadows', status: 'delinquent', balance: 675.00, lastPayment: daysAgo(88), moveInDate: '2017-04-22', avatarColor: 'navy' },
     { id: 'R-027', firstName: 'Ryan', lastName: 'Allen', initials: 'RA', email: 'ryan.allen@email.com', phone: '(205) 555-0534', address: '534 Meadowview Dr', community: 'the-meadows', communityName: 'The Meadows', status: 'current', balance: 0, lastPayment: daysAgo(6), moveInDate: '2021-06-10', avatarColor: 'gold' },
     { id: 'R-028', firstName: 'Lisa', lastName: 'Young', initials: 'LY', email: 'lisa.young@email.com', phone: '(205) 555-0793', address: '793 Magnolia Grove Dr', community: 'magnolia-grove', communityName: 'Magnolia Grove', status: 'past-due', balance: 450.00, lastPayment: daysAgo(48), moveInDate: '2019-11-18', avatarColor: 'teal' },
@@ -323,7 +323,7 @@
     payment.id = 'PAY-' + (9000 + Math.floor(Math.random() * 999));
     payment.date = new Date();
     payment.status = 'completed';
-    payment.confirmationNumber = 'LP-' + now.getFullYear() + '-' + (100000 + Math.floor(Math.random() * 899999));
+    payment.confirmationNumber = 'BW-' + now.getFullYear() + '-' + (100000 + Math.floor(Math.random() * 899999));
     var extra = load('payments') || [];
     extra.unshift(payment);
     save('payments', extra);
