@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Communities - Staff Portal | Briarwood Community Association</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../portal.css">
+  <style>
+    /* Page-specific styles */
+    .communities-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 1024px) {
+      .communities-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .communities-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .community-card {
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      transition: var(--transition);
+      cursor: pointer;
+    }
+
+    .community-card:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+      border-color: var(--border);
+    }
+
+    .community-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .community-card-name {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 0.25rem;
+    }
+
+    .community-card-location {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .health-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.25rem 0.625rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .health-indicator .health-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .health-a-plus .health-dot, .health-a .health-dot, .health-a-minus .health-dot {
+      background: var(--success);
+    }
+    .health-a-plus, .health-a, .health-a-minus {
+      background: rgba(46, 125, 111, 0.1);
+      color: var(--success);
+    }
+
+    .health-b-plus .health-dot, .health-b .health-dot {
+      background: var(--info);
+    }
+    .health-b-plus, .health-b {
+      background: rgba(41, 128, 185, 0.1);
+      color: var(--info);
+    }
+
+    .health-c-plus .health-dot, .health-c .health-dot {
+      background: var(--warning);
+    }
+    .health-c-plus, .health-c {
+      background: rgba(212, 148, 58, 0.1);
+      color: var(--warning);
+    }
+
+    .community-stats {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      margin: 0.75rem 0;
+      border-top: 1px solid var(--border-light);
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.8125rem;
+      color: var(--text-body);
+    }
+
+    .community-stats span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .community-stats .stat-divider {
+      width: 1px;
+      height: 14px;
+      background: var(--border);
+    }
+
+    .community-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.75rem;
+    }
+
+    .manager-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    .manager-info .avatar {
+      width: 24px;
+      height: 24px;
+      font-size: 0.5625rem;
+    }
+
+    .view-details-link {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: var(--transition-fast);
+    }
+
+    .view-details-link:hover {
+      color: var(--gold-dark);
+      gap: 0.5rem;
+    }
+
+    /* Toolbar */
+    .page-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .page-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .page-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .toolbar-search {
+      position: relative;
+    }
+
+    .toolbar-search input {
+      padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      width: 240px;
+      transition: var(--transition-fast);
+      background: var(--white);
+    }
+
+    .toolbar-search input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(200, 162, 84, 0.15);
+      width: 300px;
+    }
+
+    .toolbar-search svg {
+      position: absolute;
+      left: 0.625rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .view-toggle {
+      display: flex;
+      align-items: center;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .view-toggle-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      color: var(--text-muted);
+      background: var(--white);
+    }
+
+    .view-toggle-btn:first-child {
+      border-right: 1.5px solid var(--border);
+    }
+
+    .view-toggle-btn.active {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    .view-toggle-btn:hover:not(.active) {
+      background: var(--off-white);
+      color: var(--text-dark);
+    }
+
+    .count-label {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .count-label span {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+    }
+
+    /* List view */
+    .communities-grid.list-view {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .communities-grid.list-view .community-card {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1rem 1.5rem;
+    }
+
+    .communities-grid.list-view .community-card-header {
+      margin-bottom: 0;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .communities-grid.list-view .community-stats {
+      border: none;
+      margin: 0;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .communities-grid.list-view .community-card-footer {
+      margin-top: 0;
+      flex-shrink: 0;
+    }
+
+    /* Detail Panel */
+    .detail-panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+      margin-top: 2rem;
+      overflow: hidden;
+    }
+
+    .detail-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem 2rem;
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    .detail-panel-header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .detail-panel-header h2 {
+      color: var(--white);
+      font-size: 1.5rem;
+      margin: 0;
+    }
+
+    .detail-panel-header .badge {
+      font-size: 0.875rem;
+      padding: 0.25rem 0.75rem;
+    }
+
+    .detail-panel-header .home-count {
+      font-size: 0.9375rem;
+      color: rgba(255,255,255,0.7);
+      margin-left: 0.5rem;
+    }
+
+    .detail-panel-body {
+      padding: 0 2rem 2rem;
+    }
+
+    .detail-tabs {
+      padding: 0 2rem;
+    }
+
+    .detail-overview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .detail-overview {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .detail-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .detail-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .detail-info-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+    }
+
+    .detail-info-value {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+
+    .detail-quick-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .detail-quick-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .detail-quick-stat {
+      background: var(--off-white);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .detail-quick-stat .stat-value {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .detail-quick-stat .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .page-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .page-toolbar-right {
+        flex-wrap: wrap;
+      }
+      .toolbar-search input {
+        width: 100%;
+      }
+      .toolbar-search input:focus {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="portal-layout">
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:1.125rem;letter-spacing:0.04em;color:var(--white);">LIBERTY PARK</div>
+            <div style="width:24px;height:2px;background:var(--gold);border-radius:2px;margin:2px 0;"></div>
+            <div style="font-size:0.6875rem;color:var(--gold);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">Staff Portal</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Overview</div>
+        </div>
+
+        <a href="index.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+          </span>
+          Dashboard
+        </a>
+
+        <a href="calendar.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </span>
+          Calendar
+        </a>
+
+        <div class="sidebar-section" style="margin-top:0.75rem;">
+          <div class="sidebar-section-title">Management</div>
+        </div>
+
+        <a href="communities.html" class="sidebar-link active">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </span>
+          Communities
+        </a>
+
+        <a href="residents.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+              <path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </span>
+          Residents
+        </a>
+
+        <a href="work-orders.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </span>
+          Work Orders
+        </a>
+
+        <div class="sidebar-section" style="margin-top:0.75rem;">
+          <div class="sidebar-section-title">Operations</div>
+        </div>
+
+        <a href="compliance.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+          </span>
+          Compliance
+        </a>
+
+        <a href="communications.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </span>
+          Communications
+        </a>
+
+        <a href="arc-review.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+            </svg>
+          </span>
+          ARC Review
+        </a>
+
+        <a href="amenities.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </span>
+          Amenities
+        </a>
+
+        <div class="sidebar-section" style="margin-top:0.75rem;">
+          <div class="sidebar-section-title">Reports</div>
+        </div>
+
+        <a href="documents.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </span>
+          Documents
+        </a>
+
+        <a href="reports.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </span>
+          Reports
+        </a>
+
+        <a href="financials.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </span>
+          Financials
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">MC</div>
+          <div class="sidebar-user-info">
+            <div class="name">Margaret Chen</div>
+            <div class="role">
+              <span class="status-online"></span>
+              &nbsp;Community Director
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="portal-main">
+      <!-- Header -->
+      <header class="portal-header">
+        <div>
+          <h1 style="font-size:1.5rem;margin:0;">Communities</h1>
+          <div style="font-size:0.8125rem;color:var(--text-muted);margin-top:0.125rem;">
+            Management / <span style="color:var(--text-dark);font-weight:500;">Communities</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <!-- Search -->
+          <button class="btn-icon" style="position:relative;width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:var(--transition-fast);" onmouseover="this.style.background='var(--off-white)'" onmouseout="this.style.background='transparent'">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          </button>
+          <!-- Notification Bell -->
+          <button class="btn-icon" style="position:relative;width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:var(--transition-fast);" onmouseover="this.style.background='var(--off-white)'" onmouseout="this.style.background='transparent'">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+            <span class="notification-count" style="position:absolute;top:2px;right:2px;">5</span>
+          </button>
+          <!-- Avatar -->
+          <div class="avatar avatar-sm avatar-navy" style="cursor:pointer;">MC</div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <div class="portal-content page-enter">
+
+        <!-- Toolbar -->
+        <div class="page-toolbar">
+          <div class="page-toolbar-left">
+            <div class="count-label">11 <span>Communities</span></div>
+          </div>
+          <div class="page-toolbar-right">
+            <div class="toolbar-search">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="7.5" r="5.5"/><path d="M14 14l-3-3"/></svg>
+              <input type="text" id="communitySearch" placeholder="Search communities..." data-search-input="communityGrid">
+            </div>
+            <div class="view-toggle">
+              <button class="view-toggle-btn active" id="gridViewBtn" title="Grid View">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5" height="5" rx="0.5"/><rect x="9" y="2" width="5" height="5" rx="0.5"/><rect x="2" y="9" width="5" height="5" rx="0.5"/><rect x="9" y="9" width="5" height="5" rx="0.5"/></svg>
+              </button>
+              <button class="view-toggle-btn" id="listViewBtn" title="List View">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12"/><path d="M2 8h12"/><path d="M2 12h12"/></svg>
+              </button>
+            </div>
+            <button class="btn btn-primary btn-sm">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+              Add Community
+            </button>
+          </div>
+        </div>
+
+        <!-- Communities Grid -->
+        <div class="communities-grid" id="communityGrid">
+          <!-- Populated dynamically from LPMS -->
+        </div>
+
+        <!-- Community Detail Panel — Briarwood Oaks -->
+        <div class="detail-panel" id="communityDetail">
+          <div class="detail-panel-header">
+            <div class="detail-panel-header-left">
+              <h2>Briarwood Oaks</h2>
+              <span class="badge badge-success" style="background:rgba(46,125,111,0.2);color:#3eebc0;">A+</span>
+              <span class="home-count">58 Homes</span>
+            </div>
+            <div style="display:flex;gap:0.5rem;">
+              <button class="btn btn-sm btn-outline-white" style="border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8);padding:0.375rem 1rem;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit
+              </button>
+            </div>
+          </div>
+
+          <!-- Detail Tabs -->
+          <div class="tabs detail-tabs">
+            <button class="tab active" data-tab="detail-overview">Overview</button>
+            <button class="tab" data-tab="detail-financials">Financials</button>
+            <button class="tab" data-tab="detail-workorders">Work Orders</button>
+            <button class="tab" data-tab="detail-compliance">Compliance</button>
+            <button class="tab" data-tab="detail-board">Board</button>
+          </div>
+
+          <div class="detail-panel-body">
+            <!-- Overview Tab -->
+            <div class="tab-panel active" id="detail-overview">
+              <div class="detail-overview">
+                <!-- Left Column: Info -->
+                <div>
+                  <h4 style="margin-bottom:1rem;">Community Information</h4>
+                  <div class="detail-info-grid">
+                    <div class="detail-info-item">
+                      <span class="detail-info-label">Address</span>
+                      <span class="detail-info-value">Hoover, AL 35242</span>
+                    </div>
+                    <div class="detail-info-item">
+                      <span class="detail-info-label">Established</span>
+                      <span class="detail-info-value">2010</span>
+                    </div>
+                    <div class="detail-info-item">
+                      <span class="detail-info-label">Assessment</span>
+                      <span class="detail-info-value">$275/quarter</span>
+                    </div>
+                    <div class="detail-info-item">
+                      <span class="detail-info-label">Manager</span>
+                      <span class="detail-info-value">Margaret Chen</span>
+                    </div>
+                    <div class="detail-info-item">
+                      <span class="detail-info-label">Board President</span>
+                      <span class="detail-info-value">William Harris</span>
+                    </div>
+                    <div class="detail-info-item">
+                      <span class="detail-info-label">Annual Budget</span>
+                      <span class="detail-info-value">$63,800</span>
+                    </div>
+                    <div class="detail-info-item">
+                      <span class="detail-info-label">Reserve Fund</span>
+                      <span class="detail-info-value">$42,500</span>
+                    </div>
+                    <div class="detail-info-item">
+                      <span class="detail-info-label">Total Homes</span>
+                      <span class="detail-info-value">58</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column: Recent Activity -->
+                <div>
+                  <h4 style="margin-bottom:1rem;">Recent Activity</h4>
+                  <div class="timeline">
+                    <div class="timeline-item">
+                      <div class="timeline-dot active"></div>
+                      <div>
+                        <div style="font-size:0.875rem;font-weight:500;color:var(--text-dark);">Board meeting scheduled</div>
+                        <div style="font-size:0.8125rem;color:var(--text-muted);">Annual budget review meeting set for April 15</div>
+                        <div style="font-size:0.75rem;color:var(--text-light);margin-top:0.25rem;">Mar 28, 2026</div>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-dot success"></div>
+                      <div>
+                        <div style="font-size:0.875rem;font-weight:500;color:var(--text-dark);">Q1 Assessment collected</div>
+                        <div style="font-size:0.8125rem;color:var(--text-muted);">57 of 58 homeowners paid on time</div>
+                        <div style="font-size:0.75rem;color:var(--text-light);margin-top:0.25rem;">Mar 15, 2026</div>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-dot"></div>
+                      <div>
+                        <div style="font-size:0.875rem;font-weight:500;color:var(--text-dark);">Landscaping contract renewed</div>
+                        <div style="font-size:0.8125rem;color:var(--text-muted);">GreenPro Services renewed for 2026 season</div>
+                        <div style="font-size:0.75rem;color:var(--text-light);margin-top:0.25rem;">Mar 10, 2026</div>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-dot success"></div>
+                      <div>
+                        <div style="font-size:0.875rem;font-weight:500;color:var(--text-dark);">Pool maintenance completed</div>
+                        <div style="font-size:0.8125rem;color:var(--text-muted);">Seasonal opening inspection passed</div>
+                        <div style="font-size:0.75rem;color:var(--text-light);margin-top:0.25rem;">Mar 5, 2026</div>
+                      </div>
+                    </div>
+                    <div class="timeline-item">
+                      <div class="timeline-dot"></div>
+                      <div>
+                        <div style="font-size:0.875rem;font-weight:500;color:var(--text-dark);">New homeowner orientation</div>
+                        <div style="font-size:0.8125rem;color:var(--text-muted);">Welcome package sent to 412 Briarwood Oaks Way</div>
+                        <div style="font-size:0.75rem;color:var(--text-light);margin-top:0.25rem;">Feb 28, 2026</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Stats -->
+              <div class="detail-quick-stats">
+                <div class="detail-quick-stat">
+                  <div class="stat-value" style="color:var(--navy);">2</div>
+                  <div class="stat-label">Open Work Orders</div>
+                </div>
+                <div class="detail-quick-stat">
+                  <div class="stat-value" style="color:var(--success);">0</div>
+                  <div class="stat-label">Active Violations</div>
+                </div>
+                <div class="detail-quick-stat">
+                  <div class="stat-value" style="color:var(--gold-dark);">3</div>
+                  <div class="stat-label">Upcoming Events</div>
+                </div>
+                <div class="detail-quick-stat">
+                  <div class="stat-value" style="color:var(--teal);">99%</div>
+                  <div class="stat-label">Collection Rate</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Financials Tab (placeholder) -->
+            <div class="tab-panel" id="detail-financials" style="display:none;">
+              <div class="empty-state">
+                <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="48" height="48" rx="8"/><path d="M24 40V28"/><path d="M32 40V20"/><path d="M40 40V32"/></svg>
+                <h4>Financial Overview</h4>
+                <p>Detailed financial reports for Briarwood Oaks will be displayed here.</p>
+              </div>
+            </div>
+
+            <!-- Work Orders Tab (placeholder) -->
+            <div class="tab-panel" id="detail-workorders" style="display:none;">
+              <div class="empty-state">
+                <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="48" height="48" rx="8"/><path d="M24 24h16"/><path d="M24 32h16"/><path d="M24 40h10"/></svg>
+                <h4>Work Orders</h4>
+                <p>Active and completed work orders for Briarwood Oaks will be displayed here.</p>
+              </div>
+            </div>
+
+            <!-- Compliance Tab (placeholder) -->
+            <div class="tab-panel" id="detail-compliance" style="display:none;">
+              <div class="empty-state">
+                <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="48" height="48" rx="8"/><path d="M24 32l4 4 8-8"/></svg>
+                <h4>Compliance</h4>
+                <p>Compliance tracking and violation records for Briarwood Oaks will be displayed here.</p>
+              </div>
+            </div>
+
+            <!-- Board Tab (placeholder) -->
+            <div class="tab-panel" id="detail-board" style="display:none;">
+              <div class="empty-state">
+                <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="24" r="8"/><path d="M16 48v-2a12 12 0 0124 0v2"/></svg>
+                <h4>Board Members</h4>
+                <p>Board member details and meeting history for Briarwood Oaks will be displayed here.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" aria-label="Toggle sidebar">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+  </div>
+
+  <script src="../mock-data.js"></script>
+  <script src="../demo-engine.js"></script>
+  <script src="../portal.js"></script>
+  <script>
+    // ============================================
+    // POPULATE FROM LPMS DATA
+    // ============================================
+    (function initCommunities() {
+      if (!window.LPMS) return;
+      var grid = document.getElementById('communityGrid');
+      if (!grid) return;
+
+      var html = '';
+      LPMS.communities.forEach(function(c) {
+        var gradeColor = c.healthScore >= 90 ? 'var(--teal)' : c.healthScore >= 80 ? 'var(--warning)' : 'var(--danger)';
+        var barClass = c.healthScore >= 90 ? 'green' : c.healthScore >= 80 ? 'yellow' : 'red';
+        var barColor = barClass === 'green' ? 'var(--teal)' : barClass === 'yellow' ? 'var(--warning)' : 'var(--danger)';
+        var managerInitials = c.manager.split(' ').map(function(n){return n[0];}).join('');
+
+        html += '<div class="community-card" data-searchable>' +
+          '<div class="community-card-header">' +
+            '<div>' +
+              '<div class="community-card-name">' + c.name + '</div>' +
+              '<div class="community-card-location">' + c.location + ', AL</div>' +
+            '</div>' +
+            '<div class="health-badge" style="color:' + gradeColor + ';">' + c.healthGrade + '</div>' +
+          '</div>' +
+          '<div class="community-stats">' +
+            '<div class="community-stat"><div class="community-stat-value">' + c.homes + '</div><div class="community-stat-label">Homes</div></div>' +
+            '<div class="community-stat"><div class="community-stat-value" style="color:' + gradeColor + ';">' + c.collectionRate + '%</div><div class="community-stat-label">Collection</div></div>' +
+            '<div class="community-stat"><div class="community-stat-value">' + c.activeIssues + '</div><div class="community-stat-label">Open Issues</div></div>' +
+            '<div class="community-stat"><div class="community-stat-value">$' + c.assessment + '</div><div class="community-stat-label">Assessment</div></div>' +
+          '</div>' +
+          '<div class="progress-bar" style="height:4px;margin:0.75rem 0;"><div class="progress-fill" style="width:' + c.collectionRate + '%;background:' + barColor + ';height:100%;border-radius:100px;"></div></div>' +
+          '<div class="community-card-footer">' +
+            '<div class="manager-info">' +
+              '<div class="avatar avatar-teal" style="width:24px;height:24px;font-size:0.5625rem;">' + managerInitials + '</div>' +
+              c.manager +
+            '</div>' +
+            '<a href="#" class="view-details-link" data-community="' + c.id + '">View Details <span>&rarr;</span></a>' +
+          '</div>' +
+        '</div>';
+      });
+      grid.innerHTML = html;
+
+      // Update count
+      var countEl = document.getElementById('commCount');
+      if (countEl) countEl.textContent = LPMS.communities.length;
+    })();
+
+    // Grid/List View Toggle
+    const gridBtn = document.getElementById('gridViewBtn');
+    const listBtn = document.getElementById('listViewBtn');
+    const communityGrid = document.getElementById('communityGrid');
+
+    gridBtn.addEventListener('click', () => {
+      gridBtn.classList.add('active');
+      listBtn.classList.remove('active');
+      communityGrid.classList.remove('list-view');
+    });
+
+    listBtn.addEventListener('click', () => {
+      listBtn.classList.add('active');
+      gridBtn.classList.remove('active');
+      communityGrid.classList.add('list-view');
+    });
+
+    // Search Filter
+    const searchInput = document.getElementById('communitySearch');
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.toLowerCase();
+      document.querySelectorAll('#communityGrid .community-card').forEach(card => {
+        const name = card.querySelector('.community-card-name').textContent.toLowerCase();
+        const location = card.querySelector('.community-card-location').textContent.toLowerCase();
+        card.style.display = (name.includes(query) || location.includes(query)) ? '' : 'none';
+      });
+    });
+
+    // Card hover effects (add subtle highlight)
+    document.querySelectorAll('.community-card').forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        card.style.borderColor = 'var(--gold)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.borderColor = '';
+      });
+    });
+
+    // Detail Panel Tab switching
+    document.querySelectorAll('.detail-tabs .tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Deactivate all tabs
+        document.querySelectorAll('.detail-tabs .tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Show the target panel
+        const targetId = tab.dataset.tab;
+        document.querySelectorAll('.detail-panel-body .tab-panel').forEach(panel => {
+          panel.style.display = panel.id === targetId ? '' : 'none';
+          if (panel.id === targetId) {
+            panel.classList.add('active');
+          } else {
+            panel.classList.remove('active');
+          }
+        });
+      });
+    });
+
+    // Scroll to detail panel when clicking "View Details" on Briarwood Oaks
+    document.querySelectorAll('.view-details-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const community = link.dataset.community;
+        if (community === 'the-preserve') {
+          document.getElementById('communityDetail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

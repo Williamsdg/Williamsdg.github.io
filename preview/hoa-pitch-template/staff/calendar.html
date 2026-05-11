@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar — Staff Portal — Selective Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../portal.css">
+  <style>
+    /* === Calendar Page Styles === */
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 1200px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    .stat-card .stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .stat-card .stat-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Header bar */
+    .page-title-area h1 {
+      font-size: 1.25rem;
+      line-height: 1.3;
+    }
+
+    .header-search {
+      position: relative;
+      width: 260px;
+    }
+
+    .header-search input {
+      width: 100%;
+      padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      background: var(--off-white);
+      transition: var(--transition-fast);
+    }
+
+    .header-search input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(200,162,84,0.15);
+      background: var(--white);
+    }
+
+    .header-search input::placeholder { color: var(--text-light); }
+
+    .header-search svg {
+      position: absolute;
+      left: 0.625rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .notification-btn {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      transition: var(--transition-fast);
+      color: var(--text-body);
+      cursor: pointer;
+    }
+
+    .notification-btn:hover { background: var(--off-white); }
+    .notification-btn svg { width: 20px; height: 20px; }
+    .notification-btn .notification-count {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+    }
+
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.375rem 0.625rem;
+      border-radius: var(--radius-sm);
+      transition: var(--transition-fast);
+      cursor: pointer;
+      margin-left: 0.5rem;
+    }
+
+    .header-user:hover { background: var(--off-white); }
+
+    .header-user .avatar {
+      width: 34px;
+      height: 34px;
+      font-size: 0.75rem;
+      background: var(--gold-subtle);
+      color: var(--gold-dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+      .header-search { width: 180px; }
+    }
+    @media (max-width: 500px) {
+      .header-search { display: none; }
+    }
+
+    /* Breadcrumb */
+    .breadcrumb {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-top: 0.125rem;
+    }
+
+    .breadcrumb a {
+      color: var(--text-muted);
+      transition: var(--transition-fast);
+    }
+
+    .breadcrumb a:hover { color: var(--gold); }
+
+    .breadcrumb .sep {
+      margin: 0 0.375rem;
+      opacity: 0.5;
+    }
+
+    /* Sidebar User */
+    .sidebar-user {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.25rem 0;
+    }
+
+    .sidebar-user .avatar {
+      width: 38px;
+      height: 38px;
+      background: rgba(200,162,84,0.2);
+      color: var(--gold-light);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .sidebar-user-info .name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--white);
+      line-height: 1.2;
+    }
+
+    .sidebar-user-info .role {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .status-online {
+      width: 8px;
+      height: 8px;
+      background: #4ADE80;
+      border-radius: 50%;
+      display: inline-block;
+      position: relative;
+    }
+
+    .status-online::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      border: 2px solid rgba(74, 222, 128, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    /* Section spacing */
+    .portal-content > * + * {
+      margin-top: 1.25rem;
+    }
+
+    /* Filter row */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .filter-row .form-select {
+      width: auto;
+      min-width: 140px;
+      padding: 0.5rem 2rem 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+      background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B7B8D' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      appearance: none;
+    }
+
+    .filter-row .form-input {
+      width: auto;
+      min-width: 130px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    /* Violation ID */
+    .vio-id {
+      font-weight: 600;
+      color: var(--navy);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.875rem;
+    }
+
+    /* Priority badges */
+    .priority-high { background: rgba(192,57,43,0.1); color: var(--danger); }
+    .priority-medium { background: rgba(212,148,58,0.1); color: var(--warning); }
+    .priority-low { background: rgba(46,125,111,0.1); color: var(--teal); }
+
+    /* Violation detail panel */
+    .violation-detail {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .violation-detail { grid-template-columns: 1fr; }
+    }
+
+    .detail-field {
+      margin-bottom: 1rem;
+    }
+
+    .detail-label {
+      font-size: 0.6875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .detail-value {
+      font-size: 0.9375rem;
+      color: var(--text-dark);
+      font-weight: 500;
+    }
+
+    /* Photo evidence grid */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 600px) {
+      .photo-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .photo-placeholder {
+      aspect-ratio: 4 / 3;
+      background: var(--warm-gray);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-light);
+      gap: 0.375rem;
+      border: 2px dashed var(--border);
+    }
+
+    .photo-placeholder svg { width: 28px; height: 28px; }
+
+    .photo-placeholder span {
+      font-size: 0.6875rem;
+      font-weight: 500;
+    }
+
+    /* Action button group */
+    .action-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    /* Hearing card */
+    .hearing-card {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--off-white);
+      border-radius: var(--radius-sm);
+      align-items: flex-start;
+    }
+
+    .hearing-card + .hearing-card {
+      margin-top: 0.75rem;
+    }
+
+    .hearing-date-box {
+      width: 56px;
+      height: 56px;
+      background: var(--white);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid var(--border-light);
+    }
+
+    .hearing-date-box .month {
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--gold-dark);
+    }
+
+    .hearing-date-box .day {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1;
+    }
+
+    .hearing-info {
+      flex: 1;
+    }
+
+    .hearing-info h4 {
+      font-size: 0.9375rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .hearing-info .text-sm {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    /* Inspection row */
+    .inspection-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.875rem 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .inspection-item:last-child { border-bottom: none; }
+
+    .inspection-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .inspection-icon svg { width: 20px; height: 20px; }
+
+    /* Create violation modal form */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .upload-area:hover {
+      border-color: var(--gold);
+      background: rgba(200,162,84,0.03);
+    }
+
+    .upload-area svg {
+      width: 32px;
+      height: 32px;
+      margin: 0 auto 0.5rem;
+    }
+
+    td .badge {
+      font-size: 0.6875rem;
+      padding: 0.1875rem 0.625rem;
+    }
+
+    /* Table sorting styles */
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th.sortable:hover {
+      color: var(--text-dark);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="portal-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div style="width:40px;height:40px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1B2A4A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:1.125rem;letter-spacing:0.04em;color:var(--white);">SELECTIVE</div>
+            <div style="width:24px;height:2px;background:var(--gold);border-radius:2px;margin:2px 0;"></div>
+            <div style="font-size:0.6875rem;color:var(--gold);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">Staff Portal</div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Overview</div>
+        </div>
+
+        <a href="index.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+          </span>
+          Dashboard
+        </a>
+
+        <a href="calendar.html" class="sidebar-link active">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </span>
+          Calendar
+        </a>
+
+        <div class="sidebar-section" style="margin-top:0.75rem;">
+          <div class="sidebar-section-title">Management</div>
+        </div>
+
+        <a href="communities.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </span>
+          Communities
+        </a>
+
+        <a href="residents.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+              <path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </span>
+          Residents
+        </a>
+
+        <a href="work-orders.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </span>
+          Work Orders
+        </a>
+
+        <div class="sidebar-section" style="margin-top:0.75rem;">
+          <div class="sidebar-section-title">Operations</div>
+        </div>
+
+        <a href="compliance.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+          </span>
+          Compliance
+          <span class="notification-count" style="margin-left:auto;background:var(--warning);">12</span>
+        </a>
+
+        <a href="communications.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+          </span>
+          Communications
+        </a>
+
+        <a href="arc-review.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+            </svg>
+          </span>
+          ARC Review
+        </a>
+
+        <a href="amenities.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </span>
+          Amenities
+        </a>
+
+        <div class="sidebar-section" style="margin-top:0.75rem;">
+          <div class="sidebar-section-title">Reports</div>
+        </div>
+
+        <a href="documents.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </span>
+          Documents
+        </a>
+
+        <a href="reports.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+          </span>
+          Reports
+        </a>
+
+        <a href="financials.html" class="sidebar-link">
+          <span class="icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </span>
+          Financials
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="avatar">MC</div>
+          <div class="sidebar-user-info">
+            <div class="name">Robert Hayes</div>
+            <div class="role">
+              <span class="status-online"></span>
+              &nbsp;Property Manager
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content -->
+    <main class="portal-main">
+      <!-- Header -->
+      <header class="portal-header">
+        <div class="page-title-area">
+          <h1>Calendar</h1>
+          <div class="breadcrumb">
+            <a href="index.html">Staff Portal</a>
+            <span class="sep">/</span>
+            <span>Calendar</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="header-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" placeholder="Search events......">
+          </div>
+
+          <button class="notification-btn" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            <span class="notification-count">5</span>
+          </button>
+
+          <div class="header-user">
+            <div class="avatar">MC</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <div class="portal-content">
+
+        <!-- Toolbar -->
+        <div class="card" style="margin-bottom:1.5rem;padding:1rem 1.25rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <button onclick="changeMonth(-1)" style="padding:0.375rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;background:var(--white);font-size:0.875rem;">&larr;</button>
+              <h3 id="monthTitle" style="min-width:160px;text-align:center;font-size:1.125rem;" id="calendarMonthTitle">April 2024</h3>
+              <button onclick="changeMonth(1)" style="padding:0.375rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;background:var(--white);font-size:0.875rem;">&rarr;</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div style="display:flex;border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;">
+                <button class="view-btn active" onclick="setView('month',this)" style="padding:0.375rem 0.875rem;font-size:0.8125rem;font-weight:500;cursor:pointer;border:none;background:var(--navy);color:var(--white);">Month</button>
+                <button class="view-btn" onclick="setView('list',this)" style="padding:0.375rem 0.875rem;font-size:0.8125rem;font-weight:500;cursor:pointer;border:none;background:var(--white);color:var(--text-body);">List</button>
+              </div>
+              <select style="padding:0.375rem 0.75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.8125rem;background:var(--white);">
+                <option>All Events</option>
+                <option>Board Meetings</option>
+                <option>Inspections</option>
+                <option>Community Events</option>
+                <option>Deadlines</option>
+                <option>Rentals</option>
+              </select>
+              <button data-modal="addEventModal" class="btn btn-primary btn-sm">+ Add Event</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem;">
+          <!-- Calendar Grid -->
+          <div class="card" style="padding:0;overflow:hidden;" id="monthView">
+            <div class="calendar-grid" id="calendarGrid">
+              <div class="calendar-header-cell">Sun</div>
+              <div class="calendar-header-cell">Mon</div>
+              <div class="calendar-header-cell">Tue</div>
+              <div class="calendar-header-cell">Wed</div>
+              <div class="calendar-header-cell">Thu</div>
+              <div class="calendar-header-cell">Fri</div>
+              <div class="calendar-header-cell">Sat</div>
+              <!-- Cells populated dynamically -->
+            </div>
+          </div>
+
+          <!-- List View (hidden) -->
+          <div id="listView" style="display:none;" class="card" style="padding:0;">
+            <div style="padding:1.25rem;">
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:var(--gold-subtle);color:var(--gold-dark);"><div class="date-month">APR</div><div class="date-day">1</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">Q2 Assessments Due</div><div style="font-size:0.8125rem;color:var(--text-muted);">All Communities</div></div>
+                <span class="badge badge-gold" style="margin-left:auto;">Deadline</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:rgba(41,128,185,0.08);color:var(--info);"><div class="date-month">APR</div><div class="date-day">5</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">Johnson Wedding Reception</div><div style="font-size:0.8125rem;color:var(--text-muted);">Sterling Gate Clubhouse &bull; 2:00 PM</div></div>
+                <span class="badge badge-navy" style="margin-left:auto;">Rental</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:rgba(27,42,74,0.08);color:var(--navy);"><div class="date-month">APR</div><div class="date-day">8</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">Board Meeting — Arbor Trail</div><div style="font-size:0.8125rem;color:var(--text-muted);">Clubhouse &bull; 7:00 PM</div></div>
+                <span class="badge badge-navy" style="margin-left:auto;">Board</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:rgba(27,42,74,0.08);color:var(--navy);"><div class="date-month">APR</div><div class="date-day">8</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">Board Meeting — Danberry</div><div style="font-size:0.8125rem;color:var(--text-muted);">Community Center &bull; 6:00 PM</div></div>
+                <span class="badge badge-navy" style="margin-left:auto;">Board</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:rgba(46,125,111,0.08);color:var(--teal);"><div class="date-month">APR</div><div class="date-day">12</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">Birthday Party — The Preserve</div><div style="font-size:0.8125rem;color:var(--text-muted);">Clubhouse &bull; 2:00 - 6:00 PM</div></div>
+                <span class="badge badge-teal" style="margin-left:auto;">Rental</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:rgba(46,125,111,0.08);color:var(--teal);"><div class="date-month">APR</div><div class="date-day">15</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">Pool Season Opens</div><div style="font-size:0.8125rem;color:var(--text-muted);">All Communities &bull; 8:00 AM</div></div>
+                <span class="badge badge-teal" style="margin-left:auto;">Event</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:rgba(212,148,58,0.08);color:var(--warning);"><div class="date-month">APR</div><div class="date-day">18</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">Annual Inspection — Hillsboro</div><div style="font-size:0.8125rem;color:var(--text-muted);">9:00 AM - 3:00 PM</div></div>
+                <span class="badge badge-warning" style="margin-left:auto;">Inspection</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:rgba(46,125,111,0.08);color:var(--teal);"><div class="date-month">APR</div><div class="date-day">20</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">Community Yard Sale — The Preserve</div><div style="font-size:0.8125rem;color:var(--text-muted);">Main Parking Area &bull; 7:00 AM</div></div>
+                <span class="badge badge-teal" style="margin-left:auto;">Event</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:rgba(27,42,74,0.08);color:var(--navy);"><div class="date-month">APR</div><div class="date-day">22</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">ARC Committee Meeting</div><div style="font-size:0.8125rem;color:var(--text-muted);">Office &bull; 10:00 AM</div></div>
+                <span class="badge badge-navy" style="margin-left:auto;">Board</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;border-bottom:1px solid var(--border-light);">
+                <div class="date-block" style="background:var(--gold-subtle);color:var(--gold-dark);"><div class="date-month">APR</div><div class="date-day">25</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">Budget Review — Knox Square</div><div style="font-size:0.8125rem;color:var(--text-muted);">Office &bull; 6:00 PM</div></div>
+                <span class="badge badge-gold" style="margin-left:auto;">Board</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem 0;">
+                <div class="date-block" style="background:rgba(27,42,74,0.08);color:var(--navy);"><div class="date-month">APR</div><div class="date-day">28</div></div>
+                <div><div style="font-weight:600;font-size:0.9375rem;">HOA Meeting — Kirkman Preserve</div><div style="font-size:0.8125rem;color:var(--text-muted);">Clubhouse &bull; 7:00 PM</div></div>
+                <span class="badge badge-navy" style="margin-left:auto;">Board</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sidebar: Upcoming & Legend -->
+          <div>
+            <div class="card" style="margin-bottom:1rem;">
+              <h4 style="margin-bottom:1rem;font-size:0.9375rem;">Upcoming Events</h4>
+              <div id="calendarUpcoming"><!-- Populated from LPMS --></div>
+              <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div style="display:flex;gap:0.625rem;align-items:flex-start;"><div style="min-width:36px;text-align:center;font-weight:700;color:var(--gold);font-size:0.8125rem;line-height:1.2;">APR<br>1</div><div><div style="font-weight:500;font-size:0.8125rem;">Q2 Assessments Due</div><div style="font-size:0.75rem;color:var(--text-muted);">All Communities</div></div></div>
+                <div style="display:flex;gap:0.625rem;align-items:flex-start;"><div style="min-width:36px;text-align:center;font-weight:700;color:var(--info);font-size:0.8125rem;line-height:1.2;">APR<br>5</div><div><div style="font-weight:500;font-size:0.8125rem;">Johnson Wedding</div><div style="font-size:0.75rem;color:var(--text-muted);">Sterling Gate &bull; 2 PM</div></div></div>
+                <div style="display:flex;gap:0.625rem;align-items:flex-start;"><div style="min-width:36px;text-align:center;font-weight:700;color:var(--navy);font-size:0.8125rem;line-height:1.2;">APR<br>8</div><div><div style="font-weight:500;font-size:0.8125rem;">Board Meetings (2)</div><div style="font-size:0.75rem;color:var(--text-muted);">Arbor Trail, Danberry</div></div></div>
+                <div style="display:flex;gap:0.625rem;align-items:flex-start;"><div style="min-width:36px;text-align:center;font-weight:700;color:var(--teal);font-size:0.8125rem;line-height:1.2;">APR<br>12</div><div><div style="font-weight:500;font-size:0.8125rem;">Birthday Party</div><div style="font-size:0.75rem;color:var(--text-muted);">The Preserve &bull; 2 PM</div></div></div>
+                <div style="display:flex;gap:0.625rem;align-items:flex-start;"><div style="min-width:36px;text-align:center;font-weight:700;color:var(--teal);font-size:0.8125rem;line-height:1.2;">APR<br>15</div><div><div style="font-weight:500;font-size:0.8125rem;">Pool Season Opens</div><div style="font-size:0.75rem;color:var(--text-muted);">All Communities</div></div></div>
+              </div>
+            </div>
+            <div class="card">
+              <h4 style="margin-bottom:0.75rem;font-size:0.9375rem;">Event Types</h4>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;"><span style="width:10px;height:10px;border-radius:50%;background:var(--navy);flex-shrink:0;"></span>Board Meeting</div>
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;"><span style="width:10px;height:10px;border-radius:50%;background:var(--warning);flex-shrink:0;"></span>Inspection</div>
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;"><span style="width:10px;height:10px;border-radius:50%;background:var(--teal);flex-shrink:0;"></span>Community Event</div>
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;"><span style="width:10px;height:10px;border-radius:50%;background:var(--gold);flex-shrink:0;"></span>Deadline / Financial</div>
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.8125rem;"><span style="width:10px;height:10px;border-radius:50%;background:var(--info);flex-shrink:0;"></span>Clubhouse Rental</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <style>
+          @media(max-width:900px){
+            [style*="grid-template-columns:1fr 300px"]{grid-template-columns:1fr !important;}
+          }
+        </style>
+
+    </main>
+  </div>
+
+  <!-- Sidebar Toggle (mobile) -->
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+    <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+  </button>
+
+  <!-- Create Violation Modal -->
+  <div class="modal" id="createViolationModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content modal-content-lg">
+      <div class="modal-header">
+        <h3>Create Violation</h3>
+        <button class="modal-close" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Community *</label>
+            <select class="form-select" required>
+              <option value="">Select community...</option>
+              <option>Barimore</option>
+              <option>Hillsboro</option>
+              <option>Knox Square</option>
+              <option>Sterling Gate</option>
+              <option>Danberry</option>
+              <option>Abingdon</option>
+              <option>The Preserve</option>
+              <option>Arbor Trail</option>
+              <option>Cahaba Ridge</option>
+              <option>Magnolia Park</option>
+              <option>Crestview</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Address *</label>
+            <input type="text" class="form-input" placeholder="e.g. 142 Oak Ln" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Homeowner</label>
+          <input type="text" class="form-input" placeholder="Auto-fills when address is entered" style="background:var(--off-white);">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Violation Type *</label>
+            <select class="form-select" required>
+              <option value="">Select type...</option>
+              <option>Lawn Maintenance</option>
+              <option>Parking Violation</option>
+              <option>Exterior Modification</option>
+              <option>Noise Complaint</option>
+              <option>Architectural Violation</option>
+              <option>Pet Violation</option>
+              <option>Trash/Debris</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select class="form-select">
+              <option>Low</option>
+              <option selected>Medium</option>
+              <option>High</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description *</label>
+          <textarea class="form-textarea" rows="3" placeholder="Describe the violation in detail..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Photo Evidence</label>
+          <div class="upload-area">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <div style="font-size:0.875rem;font-weight:500;">Click to upload or drag and drop</div>
+            <div style="font-size:0.75rem;color:var(--text-light);">PNG, JPG up to 10MB</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Initial Action</label>
+          <select class="form-select">
+            <option>Warning Letter</option>
+            <option>First Notice</option>
+            <option>Fine</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm modal-close-btn">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="showToast('Violation created successfully'); document.getElementById('createViolationModal').classList.remove('open'); document.body.style.overflow='';">Create Violation</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../mock-data.js"></script>
+  <script src="../demo-engine.js"></script>
+  <script src="../portal.js"></script>
+  <script>
+    // ============================================
+    // RENDER CALENDAR FROM LPMS DATA
+    // ============================================
+    (function initCalendar() {
+      if (!window.LPMS) return;
+
+      var now = new Date();
+      var currentMonth = now.getMonth();
+      var currentYear = now.getFullYear();
+
+      function renderMonth(year, month) {
+        var grid = document.getElementById('calendarGrid');
+        if (!grid) return;
+
+        var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        var titleEl = document.getElementById('calendarMonthTitle');
+        if (titleEl) titleEl.textContent = months[month] + ' ' + year;
+
+        // Build event lookup by day
+        var eventsByDay = {};
+        LPMS.events.forEach(function(evt) {
+          var d = new Date(evt.date);
+          if (d.getMonth() === month && d.getFullYear() === year) {
+            var day = d.getDate();
+            if (!eventsByDay[day]) eventsByDay[day] = [];
+            eventsByDay[day].push(evt);
+          }
+        });
+
+        // Calendar math
+        var firstDay = new Date(year, month, 1).getDay();
+        var daysInMonth = new Date(year, month + 1, 0).getDate();
+        var daysInPrev = new Date(year, month, 0).getDate();
+        var today = now.getDate();
+        var isCurrentMonth = (month === now.getMonth() && year === now.getFullYear());
+
+        var html = '<div class="calendar-header-cell">Sun</div><div class="calendar-header-cell">Mon</div><div class="calendar-header-cell">Tue</div><div class="calendar-header-cell">Wed</div><div class="calendar-header-cell">Thu</div><div class="calendar-header-cell">Fri</div><div class="calendar-header-cell">Sat</div>';
+
+        // Previous month trailing days
+        for (var p = firstDay - 1; p >= 0; p--) {
+          html += '<div class="calendar-cell other-month"><div class="day-number">' + (daysInPrev - p) + '</div></div>';
+        }
+
+        // Current month days
+        var typeColors = { board:'rgba(27,42,74,0.12)', inspection:'rgba(212,148,58,0.12)', community:'rgba(46,125,111,0.12)', deadline:'var(--gold)', reservation:'rgba(41,128,185,0.15)', hearing:'rgba(192,57,43,0.12)', maintenance:'rgba(27,42,74,0.12)' };
+        var typeTextColors = { board:'var(--navy)', inspection:'var(--warning)', community:'var(--teal)', deadline:'var(--navy-dark)', reservation:'var(--info)', hearing:'var(--danger)', maintenance:'var(--navy)' };
+
+        for (var d = 1; d <= daysInMonth; d++) {
+          var isToday = isCurrentMonth && d === today;
+          html += '<div class="calendar-cell' + (isToday ? ' today' : '') + '">';
+          html += '<div class="day-number">' + d + '</div>';
+          if (eventsByDay[d]) {
+            eventsByDay[d].forEach(function(evt) {
+              var bg = typeColors[evt.type] || typeColors.board;
+              var color = typeTextColors[evt.type] || typeTextColors.board;
+              html += '<div class="calendar-event" style="background:' + bg + ';color:' + color + ';font-size:0.6rem;">' + evt.title + '</div>';
+            });
+          }
+          html += '</div>';
+        }
+
+        // Next month leading days
+        var totalCells = firstDay + daysInMonth;
+        var remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+        for (var n = 1; n <= remaining; n++) {
+          html += '<div class="calendar-cell other-month"><div class="day-number">' + n + '</div></div>';
+        }
+
+        grid.innerHTML = html;
+      }
+
+      renderMonth(currentYear, currentMonth);
+
+      // Month navigation
+      var prevBtn = document.querySelector('.calendar-nav-prev, [onclick*="prev"]');
+      var nextBtn = document.querySelector('.calendar-nav-next, [onclick*="next"]');
+      // Fallback: find by button position
+      var navBtns = document.querySelectorAll('.calendar-nav button, .month-nav button');
+      if (navBtns.length >= 2) {
+        navBtns[0].addEventListener('click', function() {
+          currentMonth--;
+          if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+          renderMonth(currentYear, currentMonth);
+        });
+        navBtns[1].addEventListener('click', function() {
+          currentMonth++;
+          if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+          renderMonth(currentYear, currentMonth);
+        });
+      }
+
+      // Upcoming events sidebar
+      var upcoming = document.getElementById('calendarUpcoming');
+      if (upcoming) {
+        var html = '';
+        LPMS.events.forEach(function(evt) {
+          html += DemoEngine.renderEventItem(evt);
+        });
+        upcoming.innerHTML = html;
+      }
+    })();
+
+    // Tab switching for compliance page
+    document.querySelectorAll('#complianceTabs .tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('#complianceTabs .tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const target = tab.dataset.tab;
+        document.querySelectorAll('#complianceTabContent .tab-panel').forEach(panel => {
+          panel.style.display = panel.id === target ? '' : 'none';
+          if (panel.id === target) panel.classList.add('active');
+          else panel.classList.remove('active');
+        });
+      });
+    });
+
+    // Table sorting
+    document.querySelectorAll('#violationsTable th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const table = th.closest('table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const idx = Array.from(th.parentNode.children).indexOf(th);
+        const asc = th.dataset.sort !== 'asc';
+        th.dataset.sort = asc ? 'asc' : 'desc';
+
+        // Reset other headers
+        th.parentNode.querySelectorAll('th').forEach(h => { if (h !== th) delete h.dataset.sort; });
+
+        rows.sort((a, b) => {
+          const at = a.children[idx]?.textContent.trim() || '';
+          const bt = b.children[idx]?.textContent.trim() || '';
+          return asc ? at.localeCompare(bt) : bt.localeCompare(at);
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
+      });
+    });
+
+    // Filter functionality
+    document.querySelectorAll('.filter-row select').forEach(select => {
+      select.addEventListener('change', () => {
+        // Visual feedback
+        select.style.borderColor = select.value ? 'var(--gold)' : '';
+      });
+    });
+
+    // Modal close button
+    document.querySelectorAll('.modal-close-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const modal = btn.closest('.modal');
+        if (modal) {
+          modal.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+      });
+    });
+  </script>
+<script>
+function setView(view, btn) {
+  document.getElementById("monthView").style.display = view === "month" ? "" : "none";
+  document.getElementById("listView").style.display = view === "list" ? "" : "none";
+  document.querySelectorAll(".view-btn").forEach(b => { b.style.background = "var(--white)"; b.style.color = "var(--text-body)"; });
+  btn.style.background = "var(--navy)"; btn.style.color = "var(--white)";
+}
+function changeMonth(dir) {
+  var el = document.getElementById("monthTitle");
+  var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var parts = el.textContent.split(" ");
+  var mi = months.indexOf(parts[0]);
+  var yr = parseInt(parts[1]);
+  mi += dir;
+  if(mi > 11){mi=0;yr++;}if(mi<0){mi=11;yr--;}
+  el.textContent = months[mi] + " " + yr;
+}
+</script>
+</body>
+</html>
