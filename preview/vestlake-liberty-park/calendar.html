@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Community Calendar — Vestlake Communities at Liberty Park</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231F4434'/%3E%3Ctext x='16' y='22' font-family='serif' font-weight='800' font-size='14' fill='%23B8924A' text-anchor='middle'%3EV%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .page-header { background: linear-gradient(135deg, var(--forest-dark) 0%, var(--forest) 100%); color: white; padding: 56px 0 40px; }
+  .page-header h1 { color: white; margin-bottom: 8px; }
+  .page-header p { color: rgba(255,255,255,0.8); }
+
+  .cal-layout { display: grid; grid-template-columns: 1.6fr 1fr; gap: 28px; }
+  .cal-card { background: white; border: 1px solid var(--border-light); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
+  .cal-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .cal-controls h2 { font-size: 22px; margin: 0; }
+  .cal-nav-btn { background: white; border: 1px solid var(--border); width: 36px; height: 36px; border-radius: var(--radius-sm); cursor: pointer; color: var(--forest); display: inline-flex; align-items: center; justify-content: center; transition: var(--transition); }
+  .cal-nav-btn:hover { background: var(--cream); border-color: var(--forest); }
+
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+  .cal-weekdays div { text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 1px; padding: 6px 0; text-transform: uppercase; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day { aspect-ratio: 1; padding: 6px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--cream-light); font-size: 13px; cursor: pointer; transition: var(--transition); position: relative; overflow: hidden; }
+  .cal-day:hover { background: var(--cream); border-color: var(--forest); }
+  .cal-day.empty { background: transparent; border: none; cursor: default; }
+  .cal-day.today { background: var(--forest); color: white; border-color: var(--forest); }
+  .cal-day.today .day-num { color: white; }
+  .cal-day.selected { background: var(--gold); border-color: var(--gold); }
+  .cal-day .day-num { font-weight: 600; color: var(--text); }
+  .cal-day .day-dots { position: absolute; bottom: 4px; left: 4px; right: 4px; display: flex; gap: 2px; justify-content: center; }
+  .cal-day .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--forest); }
+  .cal-day.today .dot { background: white; }
+  .cal-day .dot.gold { background: var(--gold); }
+  .cal-day .dot.danger { background: var(--danger); }
+
+  .legend { display: flex; gap: 16px; margin-top: 18px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 10px; height: 10px; border-radius: 50%; background: var(--forest); display: inline-block; }
+  .legend .sw.gold { background: var(--gold); }
+  .legend .sw.danger { background: var(--danger); }
+
+  .events-list h3 { font-family: 'Inter', sans-serif; font-size: 15px; margin-bottom: 14px; color: var(--forest); letter-spacing: 0.5px; text-transform: uppercase; }
+  .event-item { padding: 14px 0; border-bottom: 1px solid var(--border-light); display: grid; grid-template-columns: auto 1fr; gap: 14px; }
+  .event-item:last-child { border-bottom: none; }
+  .event-date { background: var(--cream); border-radius: var(--radius-sm); padding: 8px 12px; text-align: center; min-width: 56px; }
+  .event-date .ed-mo { font-size: 10px; letter-spacing: 1px; color: var(--gold); font-weight: 700; text-transform: uppercase; }
+  .event-date .ed-day { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--forest); line-height: 1; }
+  .event-content h4 { font-family: 'Inter', sans-serif; font-size: 15px; margin-bottom: 4px; }
+  .event-content .meta { font-size: 12px; color: var(--text-muted); }
+  .event-tag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .event-tag.board { background: rgba(31,68,52,0.1); color: var(--forest); }
+  .event-tag.social { background: rgba(184,146,74,0.15); color: var(--gold); }
+  .event-tag.facility { background: rgba(46,125,111,0.12); color: var(--success); }
+  .event-tag.holiday { background: rgba(180,63,63,0.1); color: var(--danger); }
+  .event-tag.deadline { background: rgba(212,148,58,0.15); color: var(--warning); }
+
+  .demo-note { background: rgba(184,146,74,0.1); border: 1px solid rgba(184,146,74,0.3); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 24px; font-size: 14px; color: var(--text); }
+  .demo-note strong { color: var(--gold); }
+
+  @media (max-width: 900px) {
+    .cal-layout { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .cal-day { font-size: 11px; padding: 4px; }
+    .cal-day .day-dots { bottom: 2px; }
+    .cal-day .dot { width: 4px; height: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="container nav-inner">
+    <a href="index.html" class="nav-logo">
+      <span class="nav-logo-bar"></span>
+      <span>VESTLAKE COMMUNITIES<span class="nav-logo-sub">AT LIBERTY PARK</span></span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="calendar.html" class="active">Calendar</a></li>
+      <li><a href="newsletters.html">Newsletters</a></li>
+      <li><a href="documents.html">Documents</a></li>
+      <li><a href="resources.html">Resources</a></li>
+      <li><a href="https://example.com/hoa-dues" class="nav-cta" target="_blank" rel="noopener">Pay Dues</a></li>
+    </ul>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Menu">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+  </div>
+</nav>
+
+<section class="page-header">
+  <div class="container">
+    <h1>Community Calendar</h1>
+    <p>Board meetings, social events, pool schedule, trash holidays, and ARC deadlines — all in one place.</p>
+  </div>
+</section>
+
+<section class="section section-cream">
+  <div class="container">
+
+    <div class="demo-note">
+      <strong>Demo:</strong> This is a sample month with placeholder events. The real calendar will be populated and managed by board admins through the CMS.
+    </div>
+
+    <div class="cal-layout">
+
+      <div class="cal-card">
+        <div class="cal-controls">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="Previous month">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4l-6 6 6 6"/></svg>
+          </button>
+          <h2 id="monthTitle">Loading…</h2>
+          <button class="cal-nav-btn" onclick="changeMonth(1)" aria-label="Next month">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l6 6-6 6"/></svg>
+          </button>
+        </div>
+
+        <div class="cal-weekdays">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+
+        <div class="legend">
+          <span><span class="sw"></span> Board / Meetings</span>
+          <span><span class="sw gold"></span> Social / Facility</span>
+          <span><span class="sw danger"></span> Holiday / Closure</span>
+        </div>
+      </div>
+
+      <div class="cal-card events-list">
+        <h3>Upcoming This Month</h3>
+        <div id="eventsList"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <div>© 2026 Vestlake Communities at Liberty Park</div>
+      <div><a href="pitch.html">Proposal</a></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Sample events for May 2026
+  var EVENTS = {
+    '2026-05-04': [{ tag: 'board', title: 'ARC Submission Deadline', time: '11:59 PM', dot: 'gold' }],
+    '2026-05-11': [{ tag: 'board', title: 'Annual Board Meeting', time: '7:00 PM · Clubhouse', dot: '' }],
+    '2026-05-18': [{ tag: 'facility', title: 'Lifeguard Training Begins', time: '9:00 AM · Community Pool', dot: 'gold' }],
+    '2026-05-24': [{ tag: 'facility', title: 'Pool Opens — Memorial Day Weekend', time: '10:00 AM', dot: 'gold' }],
+    '2026-05-25': [{ tag: 'holiday', title: 'Memorial Day — Trash Pickup Delayed', time: 'Office Closed', dot: 'danger' }],
+    '2026-06-07': [{ tag: 'social', title: 'Community Cookout', time: '5:00 PM · Pavilion', dot: 'gold' }],
+    '2026-06-14': [{ tag: 'social', title: 'Movie Night by the Pool', time: '8:30 PM', dot: 'gold' }],
+    '2026-06-15': [{ tag: 'board', title: 'Monthly Board Meeting', time: '7:00 PM · Clubhouse', dot: '' }]
+  };
+
+  var current = new Date(2026, 4, 1); // May 2026
+  var todayKey = '2026-05-11';
+
+  function fmtKey(y, m, d) {
+    return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+
+  function render() {
+    var y = current.getFullYear();
+    var m = current.getMonth();
+    document.getElementById('monthTitle').textContent = MONTHS[m] + ' ' + y;
+
+    var firstDay = new Date(y, m, 1).getDay();
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+
+    for (var i = 0; i < firstDay; i++) {
+      var empty = document.createElement('div');
+      empty.className = 'cal-day empty';
+      grid.appendChild(empty);
+    }
+    for (var d = 1; d <= daysInMonth; d++) {
+      var key = fmtKey(y, m, d);
+      var cell = document.createElement('div');
+      cell.className = 'cal-day' + (key === todayKey ? ' today' : '');
+      var dots = '';
+      if (EVENTS[key]) {
+        var dotsArr = EVENTS[key].map(function (e) { return '<span class="dot ' + (e.dot || '') + '"></span>'; });
+        dots = '<div class="day-dots">' + dotsArr.join('') + '</div>';
+      }
+      cell.innerHTML = '<div class="day-num">' + d + '</div>' + dots;
+      grid.appendChild(cell);
+    }
+
+    // Build event list (this month + spillover for following month if sparse)
+    var list = document.getElementById('eventsList');
+    list.innerHTML = '';
+    var keys = Object.keys(EVENTS).sort();
+    var added = 0;
+    for (var i = 0; i < keys.length && added < 8; i++) {
+      var k = keys[i];
+      var parts = k.split('-');
+      var ky = parseInt(parts[0], 10);
+      var km = parseInt(parts[1], 10) - 1;
+      var kd = parseInt(parts[2], 10);
+      if (ky < y || (ky === y && km < m)) continue;
+      EVENTS[k].forEach(function (e) {
+        var item = document.createElement('div');
+        item.className = 'event-item';
+        item.innerHTML =
+          '<div class="event-date">' +
+            '<div class="ed-mo">' + MONTHS[km].slice(0,3) + '</div>' +
+            '<div class="ed-day">' + kd + '</div>' +
+          '</div>' +
+          '<div class="event-content">' +
+            '<span class="event-tag ' + e.tag + '">' + e.tag + '</span>' +
+            '<h4>' + e.title + '</h4>' +
+            '<div class="meta">' + e.time + '</div>' +
+          '</div>';
+        list.appendChild(item);
+        added++;
+      });
+    }
+    if (added === 0) {
+      list.innerHTML = '<p style="color: var(--text-muted); font-size: 14px;">No upcoming events this month.</p>';
+    }
+  }
+
+  window.changeMonth = function (delta) {
+    current.setMonth(current.getMonth() + delta);
+    render();
+  };
+
+  render();
+})();
+</script>
+
+</body>
+</html>

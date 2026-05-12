@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Preview — Vestlake Communities at Liberty Park</title>
+<meta name="description" content="Preview of the board admin interface — Decap CMS demo for Vestlake Communities at Liberty Park.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231F4434'/%3E%3Ctext x='16' y='22' font-family='serif' font-weight='800' font-size='14' fill='%23B8924A' text-anchor='middle'%3EV%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .page-header { background: linear-gradient(135deg, var(--forest-dark) 0%, var(--forest) 100%); color: white; padding: 56px 0 40px; }
+  .page-header h1 { color: white; margin-bottom: 8px; }
+  .page-header p { color: rgba(255,255,255,0.8); max-width: 680px; }
+  .page-header .badge { display: inline-block; background: rgba(184,146,74,0.2); border: 1px solid rgba(184,146,74,0.4); color: var(--gold-light); padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
+
+  .demo-note { background: rgba(184,146,74,0.1); border: 1px solid rgba(184,146,74,0.3); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 24px; font-size: 14px; color: var(--text); }
+  .demo-note strong { color: var(--gold); }
+
+  /* CMS chrome */
+  .cms-frame { background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg); }
+  .cms-window-bar { background: #f1ece0; padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .cms-window-bar .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .cms-window-bar .dot.red { background: #FF5F57; }
+  .cms-window-bar .dot.yellow { background: #FEBC2E; }
+  .cms-window-bar .dot.green { background: #28C840; }
+  .cms-window-bar .url { background: white; border: 1px solid var(--border); border-radius: 100px; padding: 4px 12px; font-size: 12px; color: var(--text-muted); margin-left: 12px; font-family: monospace; }
+
+  .cms-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 600px; }
+  .cms-sidebar { background: var(--forest-dark); color: white; padding: 22px 0; }
+  .cms-brand { padding: 0 22px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 14px; }
+  .cms-brand .b-title { font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; }
+  .cms-brand .b-sub { font-size: 10px; letter-spacing: 1.5px; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-top: 2px; }
+
+  .cms-nav-section { padding: 4px 0 14px; }
+  .cms-nav-label { padding: 6px 22px; font-size: 10px; letter-spacing: 1.5px; color: rgba(255,255,255,0.4); text-transform: uppercase; font-weight: 700; }
+  .cms-nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 22px; font-size: 14px; color: rgba(255,255,255,0.75); cursor: pointer; transition: var(--transition); border-left: 3px solid transparent; }
+  .cms-nav-item:hover { background: rgba(255,255,255,0.06); color: white; }
+  .cms-nav-item.active { background: rgba(184,146,74,0.15); color: white; border-left-color: var(--gold); }
+  .cms-nav-item svg { flex-shrink: 0; opacity: 0.8; }
+  .cms-nav-item .count { margin-left: auto; font-size: 11px; background: rgba(255,255,255,0.08); padding: 2px 7px; border-radius: 10px; }
+
+  .cms-main { background: var(--cream-light); }
+  .cms-topbar { background: white; border-bottom: 1px solid var(--border-light); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .cms-topbar .breadcrumb { font-size: 13px; color: var(--text-muted); }
+  .cms-topbar .breadcrumb strong { color: var(--text); }
+  .cms-topbar .user-chip { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+  .cms-topbar .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--forest); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+
+  .cms-content { padding: 24px; }
+  .cms-section-title { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 4px; }
+  .cms-section-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; }
+
+  .entries-table { background: white; border: 1px solid var(--border-light); border-radius: var(--radius); overflow: hidden; }
+  .entries-row { display: grid; grid-template-columns: 1fr auto auto auto; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--border-light); align-items: center; transition: var(--transition); }
+  .entries-row.header { background: var(--cream-light); font-size: 11px; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+  .entries-row:not(.header):hover { background: var(--cream-light); }
+  .entries-row:last-child { border-bottom: none; }
+  .entry-title { font-weight: 600; font-size: 14px; color: var(--text); }
+  .entry-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .entry-status { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .entry-status.published { background: rgba(46,125,111,0.12); color: var(--success); }
+  .entry-status.draft { background: rgba(212,148,58,0.15); color: var(--warning); }
+  .entry-date { font-size: 13px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .entry-action { font-size: 12px; color: var(--forest); font-weight: 600; cursor: pointer; }
+  .entry-action:hover { text-decoration: underline; }
+
+  .new-btn { background: var(--forest); color: white; padding: 8px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border: none; }
+  .new-btn:hover { background: var(--forest-light); }
+
+  /* Edit form */
+  .edit-grid { display: grid; grid-template-columns: 1fr 280px; gap: 22px; margin-top: 18px; }
+  .edit-form { background: white; border: 1px solid var(--border-light); border-radius: var(--radius); padding: 24px; }
+  .form-field { margin-bottom: 18px; }
+  .form-field label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .form-field .field-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .file-drop { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px; background: var(--cream-light); cursor: pointer; transition: var(--transition); }
+  .file-drop:hover { border-color: var(--forest); background: var(--cream); color: var(--text); }
+  .file-drop strong { color: var(--forest); }
+
+  .edit-sidebar { background: white; border: 1px solid var(--border-light); border-radius: var(--radius); padding: 20px; height: fit-content; position: sticky; top: 24px; }
+  .edit-sidebar h4 { font-family: 'Inter', sans-serif; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+  .status-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border-light); font-size: 13px; }
+  .status-row:last-of-type { border-bottom: none; margin-bottom: 14px; }
+  .status-row .label { color: var(--text-muted); }
+  .status-row .value { font-weight: 600; color: var(--text); }
+  .save-btn { background: var(--gold); color: var(--forest-dark); padding: 11px 18px; border-radius: var(--radius-sm); font-weight: 700; font-size: 14px; cursor: pointer; border: none; width: 100%; margin-top: 6px; }
+  .save-btn:hover { background: var(--gold-light); }
+  .save-btn.outline { background: white; color: var(--text); border: 1px solid var(--border); margin-top: 8px; }
+  .save-btn.outline:hover { background: var(--cream); }
+
+  /* Key features grid */
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .feature-card { background: white; border: 1px solid var(--border-light); border-radius: var(--radius); padding: 24px; }
+  .feature-card .feat-icon { width: 40px; height: 40px; background: var(--cream); color: var(--forest); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+  .feature-card h3 { font-family: 'Inter', sans-serif; font-size: 16px; margin-bottom: 8px; }
+  .feature-card p { font-size: 14px; color: var(--text-body); line-height: 1.6; }
+
+  .workflow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; position: relative; }
+  .workflow::before { content: ''; position: absolute; top: 22px; left: 5%; right: 5%; height: 2px; background: var(--border); z-index: 0; }
+  .wf-step { background: white; border: 1px solid var(--border-light); border-radius: var(--radius); padding: 22px 18px; position: relative; z-index: 1; text-align: center; }
+  .wf-step .wf-num { width: 44px; height: 44px; border-radius: 50%; background: var(--forest); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; margin: 0 auto 14px; box-shadow: 0 0 0 4px var(--cream-light); }
+  .wf-step h4 { font-family: 'Inter', sans-serif; font-size: 14px; margin-bottom: 6px; }
+  .wf-step p { font-size: 13px; color: var(--text-muted); }
+
+  @media (max-width: 900px) {
+    .cms-layout { grid-template-columns: 1fr; }
+    .cms-sidebar { display: none; }
+    .edit-grid { grid-template-columns: 1fr; }
+    .edit-sidebar { position: static; }
+    .features-grid { grid-template-columns: 1fr; }
+    .workflow { grid-template-columns: 1fr 1fr; }
+    .workflow::before { display: none; }
+  }
+  @media (max-width: 600px) {
+    .entries-row { grid-template-columns: 1fr auto; gap: 10px; padding: 12px 14px; }
+    .entries-row .entry-date, .entries-row .entry-status { display: none; }
+    .entries-row.header { display: none; }
+    .workflow { grid-template-columns: 1fr; }
+    .cms-content { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="container nav-inner">
+    <a href="index.html" class="nav-logo">
+      <span class="nav-logo-bar"></span>
+      <span>VESTLAKE COMMUNITIES<span class="nav-logo-sub">AT LIBERTY PARK</span></span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="calendar.html">Calendar</a></li>
+      <li><a href="newsletters.html">Newsletters</a></li>
+      <li><a href="documents.html">Documents</a></li>
+      <li><a href="resources.html">Resources</a></li>
+      <li><a href="pitch.html">Proposal</a></li>
+    </ul>
+    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Menu">
+      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+  </div>
+</nav>
+
+<section class="page-header">
+  <div class="container">
+    <span class="badge">Admin Preview · Board members only</span>
+    <h1>What the Board Sees</h1>
+    <p>This is the editor the board uses to update the public website. It runs on Decap CMS — no code, no terminal, no developer required. Sign in with a free GitHub account, click "edit," type. Hit save and it's live in about a minute.</p>
+  </div>
+</section>
+
+<section class="section section-cream">
+  <div class="container">
+
+    <div class="demo-note">
+      <strong>Demo only:</strong> The screens below are styled to look exactly like the actual admin you'll use. They're not interactive in this preview — they're just here to show the board what content editing looks like before approval.
+    </div>
+
+    <!-- CMS Demo: Newsletter list -->
+    <h2 style="font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 6px;">1. Board admins see this when they log in</h2>
+    <p style="color: var(--text-muted); margin-bottom: 22px;">Pick what you want to edit — newsletters, calendar, documents, homepage announcements. Same idea as Gmail or Dropbox.</p>
+
+    <div class="cms-frame">
+      <div class="cms-window-bar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="url">vestlakelibertypark.com/admin</span>
+      </div>
+      <div class="cms-layout">
+        <aside class="cms-sidebar">
+          <div class="cms-brand">
+            <div class="b-title">Vestlake Admin</div>
+            <div class="b-sub">Content Editor</div>
+          </div>
+          <div class="cms-nav-section">
+            <div class="cms-nav-label">Content</div>
+            <div class="cms-nav-item">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h10M3 8h10M3 12h7"/></svg>
+              Homepage
+            </div>
+            <div class="cms-nav-item active">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="12" height="11" rx="1"/><path d="M2 7h12M6 1v4"/></svg>
+              Newsletters <span class="count">23</span>
+            </div>
+            <div class="cms-nav-item">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="12" height="11" rx="1"/><path d="M2 7h12"/></svg>
+              Calendar Events <span class="count">14</span>
+            </div>
+            <div class="cms-nav-item">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7l3 3v8H3z"/></svg>
+              Documents <span class="count">25</span>
+            </div>
+            <div class="cms-nav-item">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg>
+              Resources Page
+            </div>
+          </div>
+          <div class="cms-nav-section">
+            <div class="cms-nav-label">Settings</div>
+            <div class="cms-nav-item">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="3"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/></svg>
+              Site Settings
+            </div>
+            <div class="cms-nav-item">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 3-5 6-5s6 2 6 5"/></svg>
+              Board Members
+            </div>
+          </div>
+        </aside>
+
+        <div class="cms-main">
+          <div class="cms-topbar">
+            <div class="breadcrumb">Content / <strong>Newsletters</strong></div>
+            <div class="user-chip">
+              <div class="avatar">MR</div>
+              <span>Margaret Reynolds</span>
+            </div>
+          </div>
+          <div class="cms-content">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
+              <div>
+                <h2 class="cms-section-title">Newsletters</h2>
+                <p class="cms-section-sub">Upload and publish monthly community newsletters. Residents see them in the archive.</p>
+              </div>
+              <button class="new-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 2v10M2 7h10"/></svg>
+                New Newsletter
+              </button>
+            </div>
+
+            <div class="entries-table">
+              <div class="entries-row header">
+                <div>Title</div>
+                <div>Status</div>
+                <div>Published</div>
+                <div>Action</div>
+              </div>
+              <div class="entries-row">
+                <div>
+                  <div class="entry-title">May 2026 — Pool Season &amp; Annual Meeting</div>
+                  <div class="entry-meta">newsletter-2026-05.pdf · 1.2 MB</div>
+                </div>
+                <div><span class="entry-status published">Published</span></div>
+                <div class="entry-date">May 1, 2026</div>
+                <div class="entry-action">Edit</div>
+              </div>
+              <div class="entries-row">
+                <div>
+                  <div class="entry-title">June 2026 — Summer Activities Preview</div>
+                  <div class="entry-meta">newsletter-2026-06-draft.pdf · 0.9 MB</div>
+                </div>
+                <div><span class="entry-status draft">Draft</span></div>
+                <div class="entry-date">—</div>
+                <div class="entry-action">Edit</div>
+              </div>
+              <div class="entries-row">
+                <div>
+                  <div class="entry-title">April 2026 — Spring Cleanup &amp; ARC Updates</div>
+                  <div class="entry-meta">newsletter-2026-04.pdf · 980 KB</div>
+                </div>
+                <div><span class="entry-status published">Published</span></div>
+                <div class="entry-date">Apr 1, 2026</div>
+                <div class="entry-action">Edit</div>
+              </div>
+              <div class="entries-row">
+                <div>
+                  <div class="entry-title">March 2026 — Reserve Study &amp; Budget Notes</div>
+                  <div class="entry-meta">newsletter-2026-03.pdf · 1.4 MB</div>
+                </div>
+                <div><span class="entry-status published">Published</span></div>
+                <div class="entry-date">Mar 1, 2026</div>
+                <div class="entry-action">Edit</div>
+              </div>
+              <div class="entries-row">
+                <div>
+                  <div class="entry-title">February 2026 — Welcome New Neighbors</div>
+                  <div class="entry-meta">newsletter-2026-02.pdf · 720 KB</div>
+                </div>
+                <div><span class="entry-status published">Published</span></div>
+                <div class="entry-date">Feb 1, 2026</div>
+                <div class="entry-action">Edit</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CMS Demo: Edit form -->
+    <h2 style="font-family: 'Playfair Display', serif; font-size: 28px; margin: 56px 0 6px;">2. Uploading a newsletter takes about 60 seconds</h2>
+    <p style="color: var(--text-muted); margin-bottom: 22px;">Click "New Newsletter," fill in three fields, drop the PDF, hit publish. The archive page on the public site updates itself.</p>
+
+    <div class="cms-frame">
+      <div class="cms-window-bar">
+        <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+        <span class="url">vestlakelibertypark.com/admin/newsletters/new</span>
+      </div>
+      <div style="background: var(--cream-light); padding: 24px;">
+        <div style="background: white; padding: 14px 20px; border-radius: var(--radius); margin-bottom: 18px; font-size: 13px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+          <div>Newsletters / <strong style="color: var(--text);">New Newsletter</strong></div>
+          <div style="display: flex; align-items: center; gap: 8px;"><div style="width: 28px; height: 28px; border-radius: 50%; background: var(--forest); color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">MR</div><span>Margaret Reynolds</span></div>
+        </div>
+
+        <div class="edit-grid">
+          <div class="edit-form">
+            <div class="form-field">
+              <label>Newsletter Title</label>
+              <input type="text" value="June 2026 — Summer Activities Preview" style="font-size: 15px;">
+              <div class="field-hint">This is the headline residents see in the archive.</div>
+            </div>
+
+            <div class="form-field">
+              <label>Issue Month &amp; Year</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <select><option>June</option></select>
+                <input type="text" value="2026">
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Short Description</label>
+              <textarea rows="3" style="resize: vertical;">Summer events lineup, pool hours update, July 4th community cookout details, and an important note about contractor parking during sidewalk repairs.</textarea>
+              <div class="field-hint">Shows under the newsletter title in the archive.</div>
+            </div>
+
+            <div class="form-field">
+              <label>PDF File</label>
+              <div class="file-drop">
+                <strong>📄 newsletter-2026-06-draft.pdf</strong> · 980 KB<br>
+                <span style="font-size: 12px;">Click to replace or drag a new file here</span>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Page Count</label>
+              <input type="text" value="6" style="max-width: 100px;">
+            </div>
+          </div>
+
+          <aside class="edit-sidebar">
+            <h4>Publishing</h4>
+            <div class="status-row"><span class="label">Status</span><span class="value" style="color: var(--warning);">Draft</span></div>
+            <div class="status-row"><span class="label">Last saved</span><span class="value">2 min ago</span></div>
+            <div class="status-row"><span class="label">Author</span><span class="value">M. Reynolds</span></div>
+
+            <button class="save-btn">Publish to website</button>
+            <button class="save-btn outline">Save as draft</button>
+            <button class="save-btn outline">Preview</button>
+
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 14px; line-height: 1.5;">Publishing pushes this newsletter live within ~60 seconds. You can unpublish or edit at any time.</p>
+          </aside>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Features -->
+<section class="section section-white">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">What the Admin Can Do</span>
+      <h2>Designed for the board, not developers</h2>
+      <p>Everything a board secretary or volunteer needs — no more.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feat-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h10v10H3z"/><path d="M3 7h10M7 3v10"/></svg></div>
+        <h3>Upload Newsletters</h3>
+        <p>Drop a PDF, fill in three fields, publish. Archive page updates itself with proper sorting by date.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="14" height="13" rx="1"/><path d="M2 7h14M6 1v4M12 1v4"/></svg></div>
+        <h3>Manage Calendar Events</h3>
+        <p>Add board meetings, social events, pool open/close dates, trash holidays. Pick a date, type a title, save.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7l3 3v8H3z"/><path d="M8 8h3M8 11h3"/></svg></div>
+        <h3>Post Documents</h3>
+        <p>Upload board minutes, bylaws, financial reports. Organize into categories. Replace or remove anytime.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 16V6l8-4 8 4v10"/><path d="M6 16v-6h8v6"/></svg></div>
+        <h3>Edit the Homepage Banner</h3>
+        <p>Change the welcome message, announcement banner, or featured event with a single text field.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg></div>
+        <h3>Update External Links</h3>
+        <p>Switching dues provider, ARC system, or pool reservation tool? Change one URL and the whole site updates.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feat-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="6" r="3"/><path d="M3 18c0-4 4-7 7-7s7 3 7 7"/></svg></div>
+        <h3>Add Board Members</h3>
+        <p>Invite a new board secretary by typing their GitHub username. Remove access just as easily when terms end.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Workflow -->
+<section class="section section-cream">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-eyebrow">How Publishing Works</span>
+      <h2>Click "publish" and it's live in under a minute</h2>
+      <p>Under the hood — but you never have to think about any of this.</p>
+    </div>
+
+    <div class="workflow">
+      <div class="wf-step">
+        <div class="wf-num">1</div>
+        <h4>You edit content</h4>
+        <p>Type, upload, save. Same as Gmail or Google Docs.</p>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">2</div>
+        <h4>Saved to GitHub</h4>
+        <p>Every edit is version-controlled. You can undo any change.</p>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">3</div>
+        <h4>Site rebuilds</h4>
+        <p>GitHub automatically rebuilds the public website with your edit.</p>
+      </div>
+      <div class="wf-step">
+        <div class="wf-num">4</div>
+        <h4>Live worldwide</h4>
+        <p>~60 seconds later, residents see the update.</p>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 36px;">
+      <a href="pitch.html" class="btn btn-forest">Back to Proposal</a>
+      <a href="index.html" class="btn btn-outline">View the Public Site</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <div>© 2026 Vestlake Communities at Liberty Park · Admin preview</div>
+      <div><a href="pitch.html">Proposal</a></div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
