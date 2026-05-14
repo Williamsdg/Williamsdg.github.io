@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Studio — Broken Beau Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#050a18;--navy:#0b1530;--navy-2:#101d3d;--navy-soft:#1a2950;--navy-hi:#22325c;
+    --gold:#c9a25a;--gold-bright:#e0bd76;--gold-soft:#8d7340;
+    --bone:#f5efe2;--paper:#faf6ee;
+    --line:rgba(201,162,90,.18);--line-strong:rgba(201,162,90,.42);
+    --muted:#8c9bb8;--muted-soft:#5a6987;
+    --green:#5fbf8b;--amber:#e0a64b;--red:#d77575;--violet:#9b87e5;--blue:#7cb6e8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:var(--bone);background:var(--ink);font-weight:300;-webkit-font-smoothing:antialiased;font-size:14px}
+  .serif{font-family:'Cormorant Garamond',serif}
+  a{color:inherit;text-decoration:none}
+
+  /* Layout */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  aside{background:var(--navy);border-right:1px solid var(--line);padding:24px 0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+  .brand{padding:0 22px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  .crest{width:38px;height:38px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--gold);font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:500}
+  .brand-txt{font-family:'Cormorant Garamond',serif;color:var(--bone);font-size:1.1rem;letter-spacing:.1em;text-transform:uppercase;line-height:1.1}
+  .brand-txt em{display:block;font-style:italic;color:var(--gold);font-size:.7rem;letter-spacing:.16em;margin-top:3px;text-transform:none}
+  nav.side{padding:18px 0;flex:1;overflow-y:auto}
+  nav.side .grp{padding:14px 22px 8px;font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted-soft);font-weight:600}
+  nav.side a{display:flex;align-items:center;gap:12px;padding:10px 22px;font-size:.85rem;color:var(--bone);opacity:.78;border-left:2px solid transparent;transition:.2s;letter-spacing:.02em}
+  nav.side a:hover{opacity:1;background:rgba(201,162,90,.05)}
+  nav.side a.on{opacity:1;background:rgba(201,162,90,.08);border-left-color:var(--gold);color:var(--gold)}
+  nav.side a .ico{width:18px;text-align:center;color:var(--gold);font-size:.95rem}
+  nav.side a .badge{margin-left:auto;background:var(--gold);color:var(--ink);font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.04em}
+  .side-foot{padding:18px 22px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-soft));color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.85rem}
+  .side-foot .nm{font-size:.85rem;color:var(--bone)}
+  .side-foot .rl{font-size:.68rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:2px}
+
+  main{padding:0;min-width:0}
+  .top{padding:20px 36px;border-bottom:1px solid var(--line);background:rgba(11,21,48,.5);backdrop-filter:blur(12px);display:flex;justify-content:space-between;align-items:center;gap:24px;position:sticky;top:0;z-index:10}
+  .top h1{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:400;color:var(--bone)}
+  .top h1 em{color:var(--gold);font-style:italic}
+  .top-actions{display:flex;align-items:center;gap:12px}
+  .search{display:flex;align-items:center;background:rgba(5,10,24,.7);border:1px solid var(--line);border-radius:3px;padding:0 12px;min-width:280px}
+  .search input{background:transparent;border:0;color:var(--bone);font-family:inherit;font-size:.85rem;padding:9px 8px;width:100%;outline:none}
+  .search input::placeholder{color:var(--muted)}
+  .ico-btn{width:36px;height:36px;border:1px solid var(--line);background:transparent;color:var(--bone);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:3px;position:relative;transition:.2s}
+  .ico-btn:hover{border-color:var(--gold);color:var(--gold)}
+  .ico-btn .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--gold);border-radius:50%;border:1px solid var(--navy)}
+
+  .body{padding:32px 36px 60px}
+
+  /* KPI strip */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px}
+  .kpi{background:var(--navy);border:1px solid var(--line);border-radius:4px;padding:20px;position:relative;overflow:hidden}
+  .kpi::after{content:"";position:absolute;top:0;left:0;width:3px;height:100%;background:var(--gold)}
+  .kpi.b::after{background:var(--blue)}.kpi.v::after{background:var(--violet)}.kpi.a::after{background:var(--amber)}.kpi.g::after{background:var(--green)}
+  .kpi .lab{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .kpi .num{font-family:'Cormorant Garamond',serif;font-size:2.1rem;color:var(--bone);margin-top:8px;font-weight:400;line-height:1}
+  .kpi .delta{font-size:.74rem;color:var(--green);margin-top:8px;display:flex;align-items:center;gap:5px}
+  .kpi .delta.down{color:var(--red)}
+  .kpi .delta small{color:var(--muted);text-transform:uppercase;letter-spacing:.14em;font-size:.62rem;font-weight:500}
+
+  /* Two col layout */
+  .row-2{display:grid;grid-template-columns:1.4fr .9fr;gap:18px;margin-bottom:18px}
+  .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:18px}
+  .row-12{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-bottom:18px}
+
+  /* Cards */
+  .card{background:var(--navy);border:1px solid var(--line);border-radius:4px}
+  .card-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .card-head h3{font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--bone);font-weight:400}
+  .card-head h3 em{color:var(--gold);font-style:italic}
+  .card-head .controls{display:flex;gap:6px}
+  .chip{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;padding:6px 12px;border:1px solid var(--line);color:var(--muted);cursor:pointer;border-radius:2px;font-weight:500}
+  .chip.on{background:var(--gold);color:var(--ink);border-color:var(--gold);font-weight:600}
+  .card-body{padding:22px}
+
+  /* Branding requests panel */
+  .req{padding:18px 22px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:flex-start;transition:.2s}
+  .req:hover{background:rgba(201,162,90,.04)}
+  .req:last-child{border-bottom:0}
+  .req-mono{width:54px;height:54px;background:linear-gradient(160deg,var(--navy-2),var(--navy-soft));border:1px solid var(--line-strong);border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;color:var(--gold);font-size:1.5rem;font-style:italic;font-weight:400;position:relative;overflow:hidden}
+  .req-mono small{position:absolute;bottom:-2px;left:0;right:0;text-align:center;font-family:'Inter',sans-serif;font-style:normal;color:var(--gold);font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+  .req-info .head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .req-info .nm{font-size:1rem;color:var(--bone);font-weight:500}
+  .req-info .id{font-size:.7rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;font-weight:500}
+  .req-info .det{font-size:.82rem;color:var(--muted);margin-top:6px;line-height:1.6}
+  .req-info .det strong{color:var(--bone);font-weight:500}
+  .req-info .tags{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+  .tag{font-size:.66rem;padding:3px 9px;border:1px solid var(--line);color:var(--bone);border-radius:2px;letter-spacing:.06em;font-weight:500}
+  .tag.gold{border-color:var(--gold-soft);color:var(--gold)}
+  .tag.green{border-color:rgba(95,191,139,.5);color:var(--green);background:rgba(95,191,139,.08)}
+  .tag.amber{border-color:rgba(224,166,75,.5);color:var(--amber);background:rgba(224,166,75,.08)}
+  .tag.violet{border-color:rgba(155,135,229,.5);color:var(--violet);background:rgba(155,135,229,.08)}
+  .tag.red{border-color:rgba(215,117,117,.5);color:var(--red);background:rgba(215,117,117,.08)}
+  .req-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .btn-sm{padding:7px 14px;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;border-radius:3px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--bone);transition:.2s;font-weight:600;font-family:inherit;white-space:nowrap}
+  .btn-sm:hover{border-color:var(--gold);color:var(--gold)}
+  .btn-sm.accept{background:var(--green);color:var(--ink);border-color:var(--green)}
+  .btn-sm.accept:hover{background:transparent;color:var(--green)}
+  .btn-sm.decline{border-color:rgba(215,117,117,.5);color:var(--red)}
+  .btn-sm.decline:hover{background:var(--red);color:var(--ink);border-color:var(--red)}
+  .btn-sm.quote{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+  .btn-sm.quote:hover{background:transparent;color:var(--gold)}
+
+  /* Resolved state */
+  .req.resolved{opacity:.62}
+
+  /* Orders table */
+  table{width:100%;border-collapse:collapse}
+  thead th{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);padding:14px 22px;text-align:left;border-bottom:1px solid var(--line);font-weight:600}
+  tbody td{padding:14px 22px;border-bottom:1px solid var(--line);font-size:.86rem;color:var(--bone)}
+  tbody tr:hover{background:rgba(201,162,90,.04)}
+  tbody tr:last-child td{border-bottom:0}
+  td.muted{color:var(--muted)}
+  .ord-id{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);font-size:.95rem}
+  .ord-cust{display:flex;align-items:center;gap:10px}
+  .ord-cust .av{width:28px;height:28px;border-radius:50%;background:var(--navy-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;border:1px solid var(--line)}
+
+  /* Chart placeholder */
+  .chart{height:180px;position:relative;margin-top:8px}
+  .chart svg{width:100%;height:100%}
+  .chart-grid{stroke:rgba(201,162,90,.08);stroke-width:1}
+  .chart-area{fill:url(#gold-fade)}
+  .chart-line{fill:none;stroke:var(--gold);stroke-width:2}
+  .chart-dot{fill:var(--gold)}
+
+  /* Production board */
+  .prod-cols{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .prod-col{background:rgba(5,10,24,.45);border:1px solid var(--line);border-radius:3px;padding:14px;min-height:240px}
+  .prod-col h5{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;justify-content:space-between;font-weight:600}
+  .prod-col h5 small{color:var(--muted);background:var(--navy);padding:2px 7px;border-radius:999px;font-weight:500;letter-spacing:.05em}
+  .prod-card{background:var(--navy);border:1px solid var(--line);padding:12px 14px;border-radius:3px;margin-bottom:10px;cursor:grab;font-size:.78rem;color:var(--bone);transition:.2s}
+  .prod-card:hover{border-color:var(--gold-soft)}
+  .prod-card .pid{font-size:.66rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;font-weight:500}
+  .prod-card .pnm{color:var(--bone);font-weight:500}
+  .prod-card .pdet{color:var(--muted);font-size:.72rem;margin-top:4px;line-height:1.5}
+  .prod-card .pbar{margin-top:10px;height:3px;background:rgba(201,162,90,.15);border-radius:999px;overflow:hidden}
+  .prod-card .pbar i{display:block;height:100%;background:var(--gold);border-radius:999px}
+
+  /* Inventory bars */
+  .inv-row{padding:14px 22px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
+  .inv-row:last-child{border-bottom:0}
+  .inv-row .pn{font-size:.92rem;color:var(--bone)}
+  .inv-row .pc{font-size:.72rem;color:var(--muted);margin-top:3px;letter-spacing:.05em}
+  .inv-bar{width:160px;height:5px;background:rgba(201,162,90,.12);border-radius:999px;overflow:hidden;margin-top:6px}
+  .inv-bar i{display:block;height:100%;background:var(--gold);border-radius:999px}
+  .inv-bar.low i{background:var(--amber)}
+  .inv-bar.crit i{background:var(--red)}
+  .inv-num{text-align:right;font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--gold);font-weight:400}
+  .inv-num small{display:block;font-family:'Inter',sans-serif;font-size:.66rem;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-top:2px;font-weight:500}
+
+  /* Activity feed */
+  .feed{padding:0 22px}
+  .feed-item{padding:14px 0;border-bottom:1px solid var(--line);display:flex;gap:14px}
+  .feed-item:last-child{border-bottom:0}
+  .feed-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:7px;flex-shrink:0;box-shadow:0 0 0 3px rgba(201,162,90,.1)}
+  .feed-dot.b{background:var(--blue);box-shadow:0 0 0 3px rgba(124,182,232,.15)}
+  .feed-dot.v{background:var(--violet);box-shadow:0 0 0 3px rgba(155,135,229,.15)}
+  .feed-dot.g{background:var(--green);box-shadow:0 0 0 3px rgba(95,191,139,.15)}
+  .feed-dot.r{background:var(--red);box-shadow:0 0 0 3px rgba(215,117,117,.15)}
+  .feed-txt{font-size:.85rem;color:var(--bone);line-height:1.6}
+  .feed-txt strong{font-weight:500}
+  .feed-txt small{display:block;color:var(--muted);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;margin-top:4px;font-weight:500}
+  .feed-txt em{color:var(--gold);font-style:normal;font-weight:500}
+
+  /* Customers card */
+  .cust{padding:14px 22px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+  .cust:last-child{border-bottom:0}
+  .cust .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--navy-hi),var(--navy));color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.78rem;border:1px solid var(--line)}
+  .cust .nm{font-size:.92rem;color:var(--bone)}
+  .cust .sub{font-size:.7rem;color:var(--muted);letter-spacing:.04em;margin-top:3px}
+  .cust .v{text-align:right;font-family:'Cormorant Garamond',serif;color:var(--gold);font-size:1.15rem;font-weight:400}
+  .cust .v small{display:block;color:var(--muted);font-family:'Inter',sans-serif;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;margin-top:2px;font-weight:500}
+
+  /* Map / channels */
+  .channels{padding:22px}
+  .channel{display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:10px 0}
+  .channel .clab{font-size:.86rem;color:var(--bone);min-width:90px}
+  .channel .cval{text-align:right;font-size:.82rem;color:var(--gold);font-weight:500;min-width:60px}
+  .channel .cpct{font-size:.7rem;color:var(--muted);min-width:46px;text-align:right;letter-spacing:.06em}
+  .channel .cbar{height:6px;background:rgba(201,162,90,.1);border-radius:999px;overflow:hidden;flex:1}
+  .channel .cbar i{display:block;height:100%;background:var(--gold);border-radius:999px}
+  .channel .cbar i.b{background:var(--blue)}.channel .cbar i.v{background:var(--violet)}.channel .cbar i.a{background:var(--amber)}.channel .cbar i.g{background:var(--green)}
+
+  /* Footer pitch */
+  .footer-pitch{margin-top:40px;padding:22px;text-align:center;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);border-top:1px solid var(--line);font-weight:500}
+  .footer-pitch a{color:var(--gold)}
+
+  @media (max-width:1280px){
+    .app{grid-template-columns:1fr}
+    aside{position:relative;height:auto;width:100%;display:none}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .row-2,.row-12{grid-template-columns:1fr}
+    .row-3{grid-template-columns:1fr}
+    .prod-cols{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:640px){
+    .body{padding:24px 18px 50px}
+    .top{padding:16px 18px}
+    .search{min-width:0;flex:1}
+    .kpis{grid-template-columns:1fr}
+    .prod-cols{grid-template-columns:1fr}
+    .req{grid-template-columns:1fr;gap:14px}
+    .req-actions{justify-content:flex-start}
+    .top h1{font-size:1.3rem}
+    thead{display:none}
+    tbody td{display:block;padding:6px 16px;border:0}
+    tbody tr{display:block;border-bottom:1px solid var(--line);padding:12px 0}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside>
+    <a class="brand" href="index.html">
+      <div class="crest">B</div>
+      <div class="brand-txt">Broken Beau<em>Studio · Operations</em></div>
+    </a>
+
+    <nav class="side">
+      <div class="grp">Overview</div>
+      <a class="on"><span class="ico">◆</span>Dashboard</a>
+      <a><span class="ico">⇄</span>Orders <span class="badge">14</span></a>
+
+      <div class="grp">The Atelier</div>
+      <a><span class="ico">✦</span>Branding Requests <span class="badge">5</span></a>
+      <a><span class="ico">⚒</span>Production Board</a>
+      <a><span class="ico">⌬</span>Artwork Library</a>
+
+      <div class="grp">Inventory</div>
+      <a><span class="ico">▣</span>Stock Levels</a>
+      <a><span class="ico">↻</span>Restock Orders</a>
+      <a><span class="ico">✣</span>Vendors</a>
+
+      <div class="grp">Audience</div>
+      <a><span class="ico">◯</span>Customers</a>
+      <a><span class="ico">✉</span>Newsletter</a>
+      <a><span class="ico">★</span>Reviews</a>
+
+      <div class="grp">Studio</div>
+      <a><span class="ico">⚙</span>Settings</a>
+      <a><span class="ico">↗</span>View Storefront</a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="avatar">CW</div>
+      <div>
+        <div class="nm">Cody W.</div>
+        <div class="rl">Founder · Owner</div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <h1>Good morning, Cody — <em>here's the studio.</em></h1>
+      <div class="top-actions">
+        <div class="search"><span style="color:var(--muted)">⌕</span><input placeholder="Search orders, customers, requests..."></div>
+        <button class="ico-btn"><span class="dot"></span>◢</button>
+        <button class="ico-btn">⚙</button>
+      </div>
+    </div>
+
+    <div class="body">
+
+      <!-- KPI strip -->
+      <div class="kpis">
+        <div class="kpi">
+          <div class="lab">Today · Revenue</div>
+          <div class="num">$4,287</div>
+          <div class="delta">▲ 18.4% <small>vs yesterday</small></div>
+        </div>
+        <div class="kpi b">
+          <div class="lab">Orders · Open</div>
+          <div class="num">14</div>
+          <div class="delta">▲ 3 <small>since yesterday</small></div>
+        </div>
+        <div class="kpi v">
+          <div class="lab">Branding Requests</div>
+          <div class="num">5</div>
+          <div class="delta">▲ 2 <small>awaiting review</small></div>
+        </div>
+        <div class="kpi a">
+          <div class="lab">In Production</div>
+          <div class="num">187</div>
+          <div class="delta"><small>polos across 6 jobs</small></div>
+        </div>
+        <div class="kpi g">
+          <div class="lab">MTD · Revenue</div>
+          <div class="num">$58,420</div>
+          <div class="delta">▲ 31% <small>vs last month</small></div>
+        </div>
+      </div>
+
+      <!-- Branding requests + Activity feed -->
+      <div class="row-2">
+        <div class="card">
+          <div class="card-head">
+            <h3>Branding Requests · <em>Atelier Inbox</em></h3>
+            <div class="controls">
+              <span class="chip on">Awaiting (3)</span>
+              <span class="chip">Quoted (1)</span>
+              <span class="chip">Accepted (1)</span>
+              <span class="chip">All</span>
+            </div>
+          </div>
+
+          <div class="req" id="req1">
+            <div class="req-mono">L<small>Linden Cap</small></div>
+            <div class="req-info">
+              <div class="head">
+                <span class="nm">Linden Capital — Annual Offsite</span>
+                <span class="id">BB-0247</span>
+              </div>
+              <div class="det">
+                <strong>The Core</strong> · Deep Navy · <strong>48 polos</strong> · Flat embroidery, left chest, Atelier Gold thread<br>
+                Contact: Marisa Chen · marisa@lindencap.com · needed by Jun 14
+              </div>
+              <div class="tags">
+                <span class="tag amber">New · 2h ago</span>
+                <span class="tag gold">Repeat Customer</span>
+                <span class="tag">PDF + AI files attached</span>
+              </div>
+            </div>
+            <div class="req-actions">
+              <button class="btn-sm accept" onclick="resolve('req1','Accepted')">Accept</button>
+              <button class="btn-sm quote" onclick="resolve('req1','Quoted')">Send Quote</button>
+              <button class="btn-sm decline" onclick="resolve('req1','Declined')">Decline</button>
+              <button class="btn-sm">View →</button>
+            </div>
+          </div>
+
+          <div class="req" id="req2">
+            <div class="req-mono">RC<small>Royal Creek</small></div>
+            <div class="req-info">
+              <div class="head">
+                <span class="nm">Royal Creek Golf Club — Member Polos</span>
+                <span class="id">BB-0246</span>
+              </div>
+              <div class="det">
+                <strong>The Lockwood</strong> · Bourbon Tan · <strong>120 polos</strong> · 3D Raised, left chest, Bone thread<br>
+                Contact: Henry Aldridge · henry@royalcreekgc.com · flexible timeline
+              </div>
+              <div class="tags">
+                <span class="tag amber">New · 9h ago</span>
+                <span class="tag violet">High Value · ~$13k</span>
+                <span class="tag">Crest mockup attached</span>
+              </div>
+            </div>
+            <div class="req-actions">
+              <button class="btn-sm accept" onclick="resolve('req2','Accepted')">Accept</button>
+              <button class="btn-sm quote" onclick="resolve('req2','Quoted')">Send Quote</button>
+              <button class="btn-sm decline" onclick="resolve('req2','Declined')">Decline</button>
+              <button class="btn-sm">View →</button>
+            </div>
+          </div>
+
+          <div class="req" id="req3">
+            <div class="req-mono">M<small>Marsh+Co</small></div>
+            <div class="req-info">
+              <div class="head">
+                <span class="nm">Marsh &amp; Co. — Wedding Party</span>
+                <span class="id">BB-0245</span>
+              </div>
+              <div class="det">
+                <strong>The Regatta</strong> · Sail White · <strong>14 polos</strong> · Flat embroidery, sleeve, Pine Green thread<br>
+                Contact: Hayes Marsh · hayes@marshandco.com · needed by Jul 02
+              </div>
+              <div class="tags">
+                <span class="tag amber">New · yesterday</span>
+                <span class="tag">Monogram only</span>
+              </div>
+            </div>
+            <div class="req-actions">
+              <button class="btn-sm accept" onclick="resolve('req3','Accepted')">Accept</button>
+              <button class="btn-sm quote" onclick="resolve('req3','Quoted')">Send Quote</button>
+              <button class="btn-sm decline" onclick="resolve('req3','Declined')">Decline</button>
+              <button class="btn-sm">View →</button>
+            </div>
+          </div>
+
+          <div class="req resolved">
+            <div class="req-mono">CCC<small>Coleman CC</small></div>
+            <div class="req-info">
+              <div class="head">
+                <span class="nm">Coleman Country Club — Pro Shop</span>
+                <span class="id">BB-0241</span>
+              </div>
+              <div class="det">
+                <strong>The Core</strong> · Deep Navy · <strong>36 polos</strong> · Flat embroidery, left chest, Atelier Gold<br>
+                <strong style="color:var(--gold)">Quoted · $4,212 · 4-week turnaround</strong> — sent Tue, awaiting reply
+              </div>
+              <div class="tags">
+                <span class="tag gold">Quoted</span>
+                <span class="tag">Follow-up scheduled Thu</span>
+              </div>
+            </div>
+            <div class="req-actions">
+              <button class="btn-sm">Resend</button>
+              <button class="btn-sm">View →</button>
+            </div>
+          </div>
+
+          <div class="req resolved">
+            <div class="req-mono">SE<small>Sea Island</small></div>
+            <div class="req-info">
+              <div class="head">
+                <span class="nm">Sea Island Co. — Caddie Uniforms</span>
+                <span class="id">BB-0238</span>
+              </div>
+              <div class="det">
+                <strong>The Dean</strong> · Pine Green · <strong>72 polos</strong><br>
+                <strong style="color:var(--green)">Accepted · moved to production · ships Jun 22</strong>
+              </div>
+              <div class="tags">
+                <span class="tag green">Accepted</span>
+                <span class="tag">In production · digitizing</span>
+              </div>
+            </div>
+            <div class="req-actions">
+              <button class="btn-sm">View →</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Live · <em>Activity</em></h3>
+            <span class="chip on">Last 24h</span>
+          </div>
+          <div class="feed">
+            <div class="feed-item">
+              <span class="feed-dot v"></span>
+              <div class="feed-txt"><strong>New branding request</strong> — <em>Linden Capital</em> submitted BB-0247 (48 polos, Core, Navy)<small>2 minutes ago · via storefront</small></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-dot g"></span>
+              <div class="feed-txt"><strong>Order shipped</strong> — #BB-3-1184 to <em>Andrew P., Charleston SC</em> — The Core + The Lockwood<small>14 minutes ago · USPS 9400...</small></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-dot"></span>
+              <div class="feed-txt"><strong>Sale</strong> — <em>The Holloway · Medium</em> ordered by Will G. ($95)<small>38 minutes ago · Shopify checkout</small></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-dot b"></span>
+              <div class="feed-txt"><strong>Restock alert</strong> — The Core · Large is at <em>4 units</em> — vendor lead time 12d<small>1h ago · auto-flagged</small></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-dot g"></span>
+              <div class="feed-txt"><strong>Quote accepted</strong> — Sea Island Co. accepted BB-0238 · <em>$8,640 PO</em><small>3h ago · production queued</small></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-dot v"></span>
+              <div class="feed-txt"><strong>Branding request</strong> — Royal Creek Golf Club (120 polos, Lockwood)<small>9h ago</small></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-dot r"></span>
+              <div class="feed-txt"><strong>Return request</strong> — #BB-3-1099 · sizing — replacement Med dispatched<small>11h ago</small></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-dot"></span>
+              <div class="feed-txt"><strong>Review · ★★★★★</strong> — Hayes W. on The Core: "Holds the collar. Buying three more."<small>yesterday · published</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revenue chart + Channels -->
+      <div class="row-12">
+        <div class="card">
+          <div class="card-head">
+            <h3>Revenue · <em>Trailing 30 days</em></h3>
+            <div class="controls">
+              <span class="chip">7d</span>
+              <span class="chip on">30d</span>
+              <span class="chip">90d</span>
+              <span class="chip">YTD</span>
+            </div>
+          </div>
+          <div class="card-body" style="padding:22px">
+            <div style="display:flex;gap:36px;margin-bottom:18px">
+              <div><div style="font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500">Total</div><div style="font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--bone);font-weight:400">$58,420</div></div>
+              <div><div style="font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500">Orders</div><div style="font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--bone);font-weight:400">412</div></div>
+              <div><div style="font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500">Avg · Order</div><div style="font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--gold);font-weight:400">$142</div></div>
+              <div><div style="font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500">Atelier Pipeline</div><div style="font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--gold);font-weight:400">$24,890</div></div>
+            </div>
+            <div class="chart">
+              <svg viewBox="0 0 600 180" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="gold-fade" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#c9a25a" stop-opacity=".35"/>
+                    <stop offset="100%" stop-color="#c9a25a" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="0" y1="40" x2="600" y2="40" class="chart-grid"/>
+                <line x1="0" y1="90" x2="600" y2="90" class="chart-grid"/>
+                <line x1="0" y1="140" x2="600" y2="140" class="chart-grid"/>
+                <path class="chart-area" d="M0,130 L40,115 L80,118 L120,95 L160,102 L200,82 L240,90 L280,68 L320,75 L360,55 L400,70 L440,45 L480,52 L520,30 L560,40 L600,22 L600,180 L0,180 Z"/>
+                <path class="chart-line" d="M0,130 L40,115 L80,118 L120,95 L160,102 L200,82 L240,90 L280,68 L320,75 L360,55 L400,70 L440,45 L480,52 L520,30 L560,40 L600,22"/>
+                <circle class="chart-dot" cx="600" cy="22" r="4"/>
+                <circle class="chart-dot" cx="440" cy="45" r="3" opacity=".5"/>
+                <circle class="chart-dot" cx="280" cy="68" r="3" opacity=".5"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Channels · <em>MTD</em></h3></div>
+          <div class="channels">
+            <div class="channel"><span class="clab">Storefront</span><span class="cbar"><i style="width:88%"></i></span><span class="cval">$42,180</span><span class="cpct">72%</span></div>
+            <div class="channel"><span class="clab">Atelier</span><span class="cbar"><i class="v" style="width:48%"></i></span><span class="cval">$11,240</span><span class="cpct">19%</span></div>
+            <div class="channel"><span class="clab">Wholesale</span><span class="cbar"><i class="b" style="width:14%"></i></span><span class="cval">$3,540</span><span class="cpct">6%</span></div>
+            <div class="channel"><span class="clab">Pop-up · Coleman</span><span class="cbar"><i class="g" style="width:7%"></i></span><span class="cval">$1,460</span><span class="cpct">3%</span></div>
+          </div>
+          <div style="border-top:1px solid var(--line);padding:18px 22px">
+            <div style="font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;font-weight:500">Top States · This Month</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <span class="tag gold">TX · $14.2k</span>
+              <span class="tag gold">GA · $8.6k</span>
+              <span class="tag">FL · $6.1k</span>
+              <span class="tag">SC · $5.4k</span>
+              <span class="tag">NY · $4.8k</span>
+              <span class="tag">CA · $3.9k</span>
+              <span class="tag">+41 more</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Production board -->
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-head">
+          <h3>Production Board · <em>The Atelier Floor</em></h3>
+          <div class="controls">
+            <span class="chip">All Jobs</span>
+            <span class="chip on">Active (6)</span>
+            <span class="chip">Completed</span>
+          </div>
+        </div>
+        <div class="card-body" style="padding:22px">
+          <div class="prod-cols">
+            <div class="prod-col">
+              <h5>Artwork Review <small>2</small></h5>
+              <div class="prod-card">
+                <div class="pid">BB-0247 · Linden Capital</div>
+                <div class="pnm">48 · The Core</div>
+                <div class="pdet">Awaiting digitization · vector cleanup needed</div>
+                <div class="pbar"><i style="width:10%"></i></div>
+              </div>
+              <div class="prod-card">
+                <div class="pid">BB-0246 · Royal Creek</div>
+                <div class="pnm">120 · The Lockwood</div>
+                <div class="pdet">3D raised — sample stitch-out pending</div>
+                <div class="pbar"><i style="width:18%"></i></div>
+              </div>
+            </div>
+            <div class="prod-col">
+              <h5>Stitch · In Progress <small>2</small></h5>
+              <div class="prod-card">
+                <div class="pid">BB-0238 · Sea Island Co.</div>
+                <div class="pnm">72 · The Dean</div>
+                <div class="pdet">Machine 02 · 38 of 72 complete</div>
+                <div class="pbar"><i style="width:53%"></i></div>
+              </div>
+              <div class="prod-card">
+                <div class="pid">BB-0232 · Wilson Wedding</div>
+                <div class="pnm">22 · The Regatta</div>
+                <div class="pdet">Machine 01 · 16 of 22 complete</div>
+                <div class="pbar"><i style="width:72%"></i></div>
+              </div>
+            </div>
+            <div class="prod-col">
+              <h5>Quality &amp; Pack <small>1</small></h5>
+              <div class="prod-card">
+                <div class="pid">BB-0229 · Glenwood Investments</div>
+                <div class="pnm">28 · The Core</div>
+                <div class="pdet">QC complete · packing for ship Mon</div>
+                <div class="pbar"><i style="width:92%"></i></div>
+              </div>
+            </div>
+            <div class="prod-col">
+              <h5>Shipped · Today <small>1</small></h5>
+              <div class="prod-card">
+                <div class="pid">BB-0225 · St. Andrews Realty</div>
+                <div class="pnm">16 · The Armada</div>
+                <div class="pdet">Tracking 9400... · delivers Wed</div>
+                <div class="pbar"><i style="width:100%"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom row: Orders + Inventory + Customers -->
+      <div class="row-3">
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Recent Orders</h3>
+            <a class="chip" style="cursor:pointer">View all →</a>
+          </div>
+          <table>
+            <thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="ord-id">#BB-3-1192</span></td>
+                <td><div class="ord-cust"><span class="av">AP</span>Andrew P.</div></td>
+                <td>$193</td>
+                <td><span class="tag green">Shipped</span></td>
+              </tr>
+              <tr>
+                <td><span class="ord-id">#BB-3-1191</span></td>
+                <td><div class="ord-cust"><span class="av">WG</span>Will G.</div></td>
+                <td>$95</td>
+                <td><span class="tag amber">Packing</span></td>
+              </tr>
+              <tr>
+                <td><span class="ord-id">#BB-3-1190</span></td>
+                <td><div class="ord-cust"><span class="av">HM</span>Hayes M.</div></td>
+                <td>$290</td>
+                <td><span class="tag amber">Packing</span></td>
+              </tr>
+              <tr>
+                <td><span class="ord-id">#BB-3-1189</span></td>
+                <td><div class="ord-cust"><span class="av">RB</span>Reed B.</div></td>
+                <td>$98</td>
+                <td><span class="tag">New</span></td>
+              </tr>
+              <tr>
+                <td><span class="ord-id">#BB-3-1188</span></td>
+                <td><div class="ord-cust"><span class="av">JS</span>Julian S.</div></td>
+                <td>$386</td>
+                <td><span class="tag green">Shipped</span></td>
+              </tr>
+              <tr>
+                <td><span class="ord-id">#BB-3-1187</span></td>
+                <td><div class="ord-cust"><span class="av">MK</span>Mason K.</div></td>
+                <td>$95</td>
+                <td><span class="tag green">Shipped</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Inventory · <em>Live</em></h3>
+            <a class="chip" style="cursor:pointer">Restock →</a>
+          </div>
+          <div class="inv-row">
+            <div>
+              <div class="pn">The Core · Deep Navy</div>
+              <div class="pc">All sizes · SKU BB-002-N</div>
+              <div class="inv-bar"><i style="width:64%"></i></div>
+            </div>
+            <div class="inv-num">128<small>units</small></div>
+          </div>
+          <div class="inv-row">
+            <div>
+              <div class="pn">The Dean · Pine Green</div>
+              <div class="pc">All sizes · SKU BB-003-G</div>
+              <div class="inv-bar"><i style="width:78%"></i></div>
+            </div>
+            <div class="inv-num">156<small>units</small></div>
+          </div>
+          <div class="inv-row">
+            <div>
+              <div class="pn">The Lockwood · Bourbon Tan</div>
+              <div class="pc">All sizes · SKU BB-005-B</div>
+              <div class="inv-bar low"><i style="width:34%"></i></div>
+            </div>
+            <div class="inv-num" style="color:var(--amber)">68<small>units · low</small></div>
+          </div>
+          <div class="inv-row">
+            <div>
+              <div class="pn">The Core · Large</div>
+              <div class="pc">Single size · SKU BB-002-N-L</div>
+              <div class="inv-bar crit"><i style="width:8%"></i></div>
+            </div>
+            <div class="inv-num" style="color:var(--red)">4<small>critical</small></div>
+          </div>
+          <div class="inv-row">
+            <div>
+              <div class="pn">The Regatta · Sail White</div>
+              <div class="pc">Final run · SKU BB-008-W</div>
+              <div class="inv-bar low"><i style="width:24%"></i></div>
+            </div>
+            <div class="inv-num" style="color:var(--amber)">42<small>final run</small></div>
+          </div>
+          <div class="inv-row">
+            <div>
+              <div class="pn">The Armada · Slate</div>
+              <div class="pc">All sizes · SKU BB-004-S</div>
+              <div class="inv-bar"><i style="width:71%"></i></div>
+            </div>
+            <div class="inv-num">142<small>units</small></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>Top Customers · <em>LTV</em></h3>
+            <a class="chip" style="cursor:pointer">All →</a>
+          </div>
+          <div class="cust">
+            <div class="av">MC</div>
+            <div>
+              <div class="nm">Marisa Chen</div>
+              <div class="sub">Linden Capital · 4 orders, 96 polos</div>
+            </div>
+            <div class="v">$8,640<small>lifetime</small></div>
+          </div>
+          <div class="cust">
+            <div class="av">HA</div>
+            <div>
+              <div class="nm">Henry Aldridge</div>
+              <div class="sub">Royal Creek GC · 2 orders</div>
+            </div>
+            <div class="v">$4,210<small>lifetime</small></div>
+          </div>
+          <div class="cust">
+            <div class="av">JS</div>
+            <div>
+              <div class="nm">Julian Salter</div>
+              <div class="sub">Charleston, SC · 6 orders</div>
+            </div>
+            <div class="v">$1,890<small>lifetime</small></div>
+          </div>
+          <div class="cust">
+            <div class="av">AP</div>
+            <div>
+              <div class="nm">Andrew Powell</div>
+              <div class="sub">Charleston, SC · 5 orders</div>
+            </div>
+            <div class="v">$1,420<small>lifetime</small></div>
+          </div>
+          <div class="cust">
+            <div class="av">WG</div>
+            <div>
+              <div class="nm">Will Garrison</div>
+              <div class="sub">Augusta, GA · 4 orders</div>
+            </div>
+            <div class="v">$1,180<small>lifetime</small></div>
+          </div>
+          <div class="cust">
+            <div class="av">HM</div>
+            <div>
+              <div class="nm">Hayes Marsh</div>
+              <div class="sub">Dallas, TX · 3 orders</div>
+            </div>
+            <div class="v">$870<small>lifetime</small></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="footer-pitch">
+        Broken Beau Studio · Internal · v0.3<span style="margin:0 14px;opacity:.5">·</span>Concept by <a href="https://williamsdigital.io" target="_blank">Williams Digital</a>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  function resolve(id, status){
+    const card = document.getElementById(id);
+    if(!card) return;
+    card.classList.add('resolved');
+    const tags = card.querySelector('.tags');
+    const actions = card.querySelector('.req-actions');
+    const cls = status === 'Accepted' ? 'green' : status === 'Declined' ? 'red' : 'gold';
+    tags.innerHTML = `<span class="tag ${cls}">${status}</span><span class="tag">Customer notified · just now</span>`;
+    actions.innerHTML = '<button class="btn-sm">View →</button>';
+  }
+</script>
+
+</body>
+</html>
