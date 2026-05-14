@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bridge — Bahamas Water Toys Operator Console</title>
+<meta name="description" content="Operator dashboard concept for Bahamas Water Toys: bookings, fleet status, captain schedule, weather, and revenue." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#071e2a;
+    --bg-2:#0b2a3a;
+    --panel:#0f3548;
+    --panel-2:#143d52;
+    --line:rgba(255,255,255,.08);
+    --line-2:rgba(255,255,255,.14);
+    --ink:#eaf3f6;
+    --ink-soft:#b9cdd5;
+    --muted:#7a96a3;
+    --aqua:#7fd5e4;
+    --aqua-bright:#1ea7c4;
+    --sea:#0d6a8a;
+    --coral:#e87a5a;
+    --coral-deep:#c25638;
+    --gold:#f0c674;
+    --green:#5dd39e;
+    --red:#ef6f6c;
+    --amber:#f0a874;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,.serif{font-family:'Playfair Display',serif;font-weight:500}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:'JetBrains Mono',monospace}
+
+  /* SHELL */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  aside.side{background:#051821;border-right:1px solid var(--line);padding:24px 18px;display:flex;flex-direction:column;gap:8px;position:sticky;top:0;height:100vh}
+  .brand-line{display:flex;align-items:center;gap:10px;margin-bottom:24px;padding:0 6px}
+  .bm{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--aqua),var(--aqua-bright) 60%,var(--coral) 130%);position:relative;flex-shrink:0;box-shadow:inset 0 -4px 8px rgba(0,0,0,.3)}
+  .bm::after{content:"";position:absolute;left:4px;right:4px;top:55%;height:1px;background:rgba(255,255,255,.4);box-shadow:0 3px 0 rgba(255,255,255,.25),0 -3px 0 rgba(255,255,255,.22)}
+  .brand-line .bn{font-family:'Playfair Display',serif;font-size:1.05rem;line-height:1;font-weight:500}
+  .brand-line .br{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+
+  .nav-section{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:14px 12px 6px}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;font-size:.84rem;color:var(--ink-soft);font-weight:500;cursor:pointer;transition:.15s}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+  .nav-item.active{background:rgba(30,167,196,.14);color:var(--aqua);border:1px solid rgba(30,167,196,.22)}
+  .nav-item .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:.95rem;opacity:.85}
+  .nav-item .badge{margin-left:auto;font-size:.62rem;background:var(--coral);color:#fff;padding:2px 6px;border-radius:999px;font-weight:700;letter-spacing:.04em}
+  .side-foot{margin-top:auto;border-top:1px solid var(--line);padding:18px 8px 4px;display:flex;align-items:center;gap:10px}
+  .side-foot .av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;font-size:.78rem}
+  .side-foot .nm{font-size:.82rem;font-weight:500}
+  .side-foot .rl{font-size:.66rem;color:var(--muted);letter-spacing:.04em}
+
+  /* MAIN */
+  main{display:flex;flex-direction:column}
+  header.topbar{padding:18px 32px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;background:rgba(7,30,42,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:10}
+  .topbar h1{font-size:1.45rem;font-weight:500}
+  .topbar .sub{font-size:.78rem;color:var(--muted);margin-top:2px}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .search{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:.84rem;color:var(--ink-soft);width:280px;display:flex;align-items:center;gap:10px}
+  .search input{background:none;border:none;outline:none;color:var(--ink);width:100%;font-family:'Inter',sans-serif;font-size:.84rem}
+  .search input::placeholder{color:var(--muted)}
+  .kbd{font-family:'JetBrains Mono',monospace;font-size:.66rem;padding:1px 5px;border:1px solid var(--line-2);border-radius:4px;color:var(--muted)}
+  .icon-btn{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);position:relative}
+  .icon-btn:hover{background:rgba(255,255,255,.09)}
+  .icon-btn .pip{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--coral);border:2px solid var(--bg)}
+  .new-btn{padding:10px 16px;border-radius:10px;background:var(--coral);color:#fff;font-size:.78rem;letter-spacing:.04em;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;gap:8px}
+  .new-btn:hover{background:var(--coral-deep)}
+
+  /* CONTENT */
+  .content{padding:28px 32px;display:flex;flex-direction:column;gap:24px}
+  .row{display:grid;gap:20px}
+  .row.r-4{grid-template-columns:repeat(4,1fr)}
+  .row.r-3{grid-template-columns:repeat(3,1fr)}
+  .row.r-2{grid-template-columns:1.4fr 1fr}
+  .row.r-2b{grid-template-columns:1fr 1fr}
+  .row.r-bookings{grid-template-columns:2fr 1fr}
+
+  .card{background:linear-gradient(180deg,var(--panel) 0%, var(--bg-2) 100%);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+  .card h3{font-size:1.05rem;font-weight:500;color:var(--ink);font-family:'Playfair Display',serif}
+  .card .head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+  .card .head .lbl{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+  .card .head .val{font-size:1.95rem;font-family:'Playfair Display',serif;font-weight:500;line-height:1;color:var(--ink)}
+  .card .head .delta{font-size:.72rem;color:var(--green);font-weight:600;margin-top:6px;display:flex;align-items:center;gap:5px}
+  .card .head .delta.down{color:var(--red)}
+  .card .head .ic{width:38px;height:38px;border-radius:10px;background:rgba(127,213,228,.12);color:var(--aqua);display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:1px solid rgba(127,213,228,.18)}
+  .ic.coral{background:rgba(232,122,90,.14);color:var(--coral);border-color:rgba(232,122,90,.22)}
+  .ic.gold{background:rgba(240,198,116,.14);color:var(--gold);border-color:rgba(240,198,116,.22)}
+  .ic.green{background:rgba(93,211,158,.14);color:var(--green);border-color:rgba(93,211,158,.22)}
+
+  /* mini bars */
+  .mini-bars{display:flex;align-items:flex-end;gap:4px;height:42px;margin-top:6px}
+  .mini-bars span{flex:1;background:linear-gradient(180deg,var(--aqua) 0%, rgba(127,213,228,.2) 100%);border-radius:3px;min-height:6px;opacity:.92}
+  .mini-bars.coral span{background:linear-gradient(180deg,var(--coral) 0%, rgba(232,122,90,.2) 100%)}
+  .mini-bars.gold span{background:linear-gradient(180deg,var(--gold) 0%, rgba(240,198,116,.2) 100%)}
+  .mini-bars.green span{background:linear-gradient(180deg,var(--green) 0%, rgba(93,211,158,.2) 100%)}
+
+  /* PANEL HEADERS */
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:4px}
+  .panel-head h3{font-size:1.1rem}
+  .panel-head .desc{font-size:.78rem;color:var(--muted);margin-top:2px}
+  .panel-actions{display:flex;gap:6px}
+  .chip{padding:6px 12px;border-radius:999px;font-size:.7rem;letter-spacing:.04em;font-weight:600;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink-soft);cursor:pointer}
+  .chip.active{background:rgba(127,213,228,.14);border-color:rgba(127,213,228,.32);color:var(--aqua)}
+  .chip:hover{background:rgba(255,255,255,.08)}
+
+  /* TODAY SCHEDULE (timeline) */
+  .schedule{display:flex;flex-direction:column;gap:14px}
+  .timeline-hd{display:grid;grid-template-columns:140px 1fr;gap:14px;align-items:center;padding:0 4px 8px;border-bottom:1px solid var(--line);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .timeline-hours{display:grid;grid-template-columns:repeat(13,1fr);gap:0;font-family:'JetBrains Mono',monospace}
+  .timeline-hours span{font-size:.64rem;color:var(--muted)}
+  .v-row{display:grid;grid-template-columns:140px 1fr;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+  .v-row:last-child{border-bottom:none}
+  .v-tag{display:flex;flex-direction:column;gap:2px}
+  .v-tag .nm{font-size:.88rem;font-weight:600;color:var(--ink)}
+  .v-tag .cp{font-size:.72rem;color:var(--muted)}
+  .v-track{position:relative;height:50px;background:rgba(255,255,255,.03);border-radius:8px;border:1px dashed var(--line)}
+  .v-block{position:absolute;top:4px;bottom:4px;border-radius:6px;padding:5px 10px;font-size:.72rem;font-weight:600;color:#fff;display:flex;align-items:center;gap:6px;cursor:pointer;border:1px solid rgba(255,255,255,.15);overflow:hidden;line-height:1.2}
+  .v-block:hover{filter:brightness(1.15)}
+  .v-block.confirmed{background:linear-gradient(135deg,var(--sea),var(--aqua-bright))}
+  .v-block.private{background:linear-gradient(135deg,#3a1f5c,#7a3aa0)}
+  .v-block.sunset{background:linear-gradient(135deg,var(--coral),var(--coral-deep))}
+  .v-block.maint{background:repeating-linear-gradient(45deg,#3a3a3a,#3a3a3a 6px,#2a2a2a 6px,#2a2a2a 12px);color:var(--muted)}
+  .v-block.pending{background:linear-gradient(135deg,var(--gold),#c69836)}
+  .v-block .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.85);flex-shrink:0}
+  .nowline{position:absolute;top:-8px;bottom:-8px;width:2px;background:var(--coral);box-shadow:0 0 0 4px rgba(232,122,90,.2);z-index:2}
+  .nowline::before{content:"NOW";position:absolute;top:-14px;left:-22px;font-size:.6rem;color:var(--coral);font-weight:700;letter-spacing:.16em;background:var(--bg);padding:1px 6px;border-radius:4px}
+
+  /* BOOKINGS LIST */
+  .bookings{display:flex;flex-direction:column}
+  .bkg-row{display:grid;grid-template-columns:90px 1fr 1.1fr .9fr .8fr 100px 26px;gap:14px;align-items:center;padding:14px 8px;border-bottom:1px solid var(--line);font-size:.85rem;cursor:pointer;transition:.15s}
+  .bkg-row:hover{background:rgba(255,255,255,.03)}
+  .bkg-row:last-child{border-bottom:none}
+  .bkg-row.header{padding:8px;border-bottom:1px solid var(--line);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;cursor:default}
+  .bkg-row.header:hover{background:transparent}
+  .bk-date{font-family:'JetBrains Mono',monospace;color:var(--ink-soft);font-size:.78rem}
+  .bk-date strong{display:block;color:var(--ink);font-size:.88rem;font-family:'Playfair Display',serif;font-weight:500;margin-bottom:1px}
+  .bk-guest{display:flex;align-items:center;gap:10px}
+  .bk-guest .av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--aqua),var(--sea));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.72rem;flex-shrink:0}
+  .bk-guest .av.c2{background:linear-gradient(135deg,var(--coral),var(--coral-deep))}
+  .bk-guest .av.c3{background:linear-gradient(135deg,var(--gold),#c69836)}
+  .bk-guest .av.c4{background:linear-gradient(135deg,#7a3aa0,#3a1f5c)}
+  .bk-guest .nm{font-weight:600;color:var(--ink);font-size:.86rem}
+  .bk-guest .meta{font-size:.7rem;color:var(--muted);margin-top:1px}
+  .bk-tour{color:var(--ink-soft)}
+  .bk-tour strong{display:block;color:var(--ink);font-weight:500}
+  .bk-tour .src{font-size:.7rem;color:var(--muted);margin-top:1px;letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+  .bk-amt{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink)}
+  .status{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:.66rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border:1px solid}
+  .status .d{width:5px;height:5px;border-radius:50%;background:currentColor}
+  .status.confirmed{color:var(--green);background:rgba(93,211,158,.12);border-color:rgba(93,211,158,.28)}
+  .status.pending{color:var(--gold);background:rgba(240,198,116,.12);border-color:rgba(240,198,116,.28)}
+  .status.paid{color:var(--aqua);background:rgba(127,213,228,.12);border-color:rgba(127,213,228,.28)}
+  .status.refund{color:var(--red);background:rgba(239,111,108,.12);border-color:rgba(239,111,108,.28)}
+  .row-chev{color:var(--muted);font-size:1rem}
+
+  /* FLEET STATUS */
+  .fleet-list{display:flex;flex-direction:column;gap:10px}
+  .fleet-row{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+  .fleet-mini{width:44px;height:44px;border-radius:10px;background:linear-gradient(180deg,var(--aqua-bright),var(--sea));position:relative;flex-shrink:0;overflow:hidden}
+  .fleet-mini::after{content:"";position:absolute;left:5px;right:5px;bottom:18%;height:14px;background:#f6efe0;border-radius:2px 2px 8px 8px;box-shadow:0 3px 5px rgba(0,0,0,.3)}
+  .fleet-mini.alt::after{background:#e87a5a}
+  .fleet-meta .nm{font-size:.86rem;font-weight:600;color:var(--ink)}
+  .fleet-meta .cls{font-size:.7rem;color:var(--muted);letter-spacing:.04em;margin-top:1px}
+  .fleet-meta .status-line{margin-top:6px;font-size:.72rem;color:var(--ink-soft);font-family:'JetBrains Mono',monospace}
+  .fleet-stat{text-align:right;font-size:.7rem;color:var(--muted)}
+  .fleet-stat strong{display:block;font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--ink);font-weight:600;margin-bottom:2px}
+  .pin{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+  .pin.green{background:var(--green);box-shadow:0 0 0 3px rgba(93,211,158,.22)}
+  .pin.gold{background:var(--gold);box-shadow:0 0 0 3px rgba(240,198,116,.2)}
+  .pin.red{background:var(--red);box-shadow:0 0 0 3px rgba(239,111,108,.22)}
+  .pin.muted{background:var(--muted)}
+
+  /* WEATHER */
+  .weather{background:linear-gradient(135deg, #0a4d68 0%, #1ea7c4 100%);position:relative;overflow:hidden}
+  .weather::before{content:"";position:absolute;inset:0;background:
+    radial-gradient(circle 80px at 80% 20%, rgba(255,228,180,.6) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 30% 90%, rgba(255,255,255,.18), transparent 70%)}
+  .weather-inner{position:relative;z-index:1}
+  .weather .now{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:18px}
+  .weather .temp{font-size:3.6rem;line-height:.9;font-family:'Playfair Display',serif;font-weight:500;color:#fff}
+  .weather .cond{font-size:.78rem;color:rgba(255,255,255,.78);letter-spacing:.04em;font-weight:500;text-align:right}
+  .weather .cond strong{display:block;font-size:.92rem;color:#fff;font-weight:600;margin-bottom:2px;font-family:'Playfair Display',serif}
+  .marine-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:rgba(0,0,0,.18);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,.12)}
+  .marine-grid .lk{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.62);font-weight:600;margin-bottom:5px}
+  .marine-grid .v{font-size:.95rem;color:#fff;font-weight:600;font-family:'JetBrains Mono',monospace}
+  .marine-grid .v small{font-size:.7rem;font-weight:500;color:rgba(255,255,255,.7);margin-left:3px}
+  .sail-ok{margin-top:14px;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(93,211,158,.18);border:1px solid rgba(93,211,158,.32);border-radius:10px;font-size:.78rem;color:#bff5db;font-weight:600}
+  .sail-ok .d{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(93,211,158,.22)}
+
+  /* MESSAGES */
+  .msgs{display:flex;flex-direction:column;gap:2px}
+  .msg{display:flex;gap:12px;padding:12px 8px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s}
+  .msg:hover{background:rgba(255,255,255,.03)}
+  .msg:last-child{border-bottom:none}
+  .msg .av{width:34px;height:34px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--aqua),var(--sea));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:.74rem;position:relative}
+  .msg .av.c2{background:linear-gradient(135deg,var(--coral),var(--coral-deep))}
+  .msg .av.c3{background:linear-gradient(135deg,var(--gold),#c69836)}
+  .msg .av .ch{position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:#25D366;border:2px solid var(--panel);font-size:.5rem;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+  .msg .av .ch.ig{background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)}
+  .msg .av .ch.em{background:#3a8df0}
+  .msg .body{flex:1;min-width:0}
+  .msg .top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px}
+  .msg .nm{font-size:.84rem;font-weight:600;color:var(--ink)}
+  .msg .tm{font-size:.66rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  .msg .preview{font-size:.78rem;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .msg.unread .nm{color:var(--aqua)}
+  .msg.unread .preview{color:var(--ink);font-weight:500}
+  .msg.unread::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:24px;background:var(--coral);border-radius:0 3px 3px 0}
+  .msg{position:relative}
+
+  /* REVENUE */
+  .rev-chart{position:relative;height:200px;margin-top:14px}
+  .rev-chart svg{width:100%;height:100%}
+  .legend{display:flex;gap:18px;font-size:.74rem;color:var(--ink-soft);margin-top:8px}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .legend i{width:10px;height:10px;border-radius:3px}
+
+  /* DESTINATION/TOUR PERF */
+  .tour-perf{display:flex;flex-direction:column;gap:10px}
+  .tp-row{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px}
+  .tp-row .nm{font-size:.84rem;font-weight:600;color:var(--ink)}
+  .tp-row .sub{font-size:.7rem;color:var(--muted);letter-spacing:.04em;margin-top:2px}
+  .tp-bar{width:140px;height:7px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;position:relative}
+  .tp-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--aqua),var(--aqua-bright))}
+  .tp-bar.coral i{background:linear-gradient(90deg,#f4a47e,var(--coral))}
+  .tp-bar.gold i{background:linear-gradient(90deg,#f4d896,var(--gold))}
+  .tp-amt{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink);font-size:.86rem;text-align:right;min-width:74px}
+  .tp-amt small{display:block;font-weight:500;color:var(--muted);font-size:.66rem;letter-spacing:.04em;margin-top:1px}
+
+  /* SPEC RIBBON */
+  .spec-ribbon{position:fixed;bottom:16px;left:16px;background:rgba(7,30,42,.96);color:#fff;padding:9px 16px;border-radius:999px;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;font-weight:600;z-index:200;display:flex;align-items:center;gap:8px;border:1px solid rgba(127,213,228,.18)}
+  .spec-ribbon .dot{width:7px;height:7px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 4px rgba(232,122,90,.22)}
+  .spec-ribbon a{color:var(--aqua);margin-left:6px}
+
+  @media (max-width:1180px){
+    .row.r-4{grid-template-columns:repeat(2,1fr)}
+    .row.r-3{grid-template-columns:1fr}
+    .row.r-2,.row.r-2b,.row.r-bookings{grid-template-columns:1fr}
+  }
+  @media (max-width:820px){
+    aside.side{display:none}
+    .app{grid-template-columns:1fr}
+    .row.r-4{grid-template-columns:1fr}
+    .search{display:none}
+    .timeline-hd, .v-row{grid-template-columns:90px 1fr}
+    .bkg-row{grid-template-columns:1fr 1fr;gap:8px}
+    .bkg-row > div:nth-child(n+5){display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <div class="brand-line">
+      <span class="bm"></span>
+      <div>
+        <div class="bn">Bridge</div>
+        <div class="br">Operator Console</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Bridge</div>
+    <div class="nav-item active"><span class="ic">⊞</span> Dashboard</div>
+    <div class="nav-item"><span class="ic">⌖</span> Today's Schedule</div>
+    <div class="nav-item"><span class="ic">⌗</span> Bookings <span class="badge">12</span></div>
+    <div class="nav-item"><span class="ic">⌬</span> Guest Inbox <span class="badge">5</span></div>
+
+    <div class="nav-section">Operations</div>
+    <div class="nav-item"><span class="ic">⛴</span> Fleet</div>
+    <div class="nav-item"><span class="ic">⚓</span> Captains</div>
+    <div class="nav-item"><span class="ic">▩</span> Tour Catalog</div>
+    <div class="nav-item"><span class="ic">⛅</span> Weather & Tides</div>
+
+    <div class="nav-section">Business</div>
+    <div class="nav-item"><span class="ic">$</span> Revenue</div>
+    <div class="nav-item"><span class="ic">◉</span> Reviews</div>
+    <div class="nav-item"><span class="ic">✦</span> Cruise Partners</div>
+    <div class="nav-item"><span class="ic">⚙</span> Settings</div>
+
+    <div class="side-foot">
+      <div class="av">DM</div>
+      <div>
+        <div class="nm">Dion Mitchell</div>
+        <div class="rl">Owner / Capt.</div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <h1>Good morning, Capt. Dion</h1>
+        <div class="sub">Wednesday, May 13 · 7 boats out, 1 maint · 4 pending confirms</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search">
+          <span style="opacity:.6">⌕</span>
+          <input placeholder="Search guests, bookings, tours…" />
+          <span class="kbd">⌘K</span>
+        </div>
+        <div class="icon-btn">⏻<span class="pip"></span></div>
+        <div class="icon-btn">⛅</div>
+        <button class="new-btn">＋ New Booking</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- TOP METRICS -->
+      <div class="row r-4">
+        <div class="card">
+          <div class="head">
+            <div>
+              <div class="lbl">Today's Revenue</div>
+              <div class="val">$14,820</div>
+              <div class="delta">↑ 18% vs avg Wed</div>
+            </div>
+            <div class="ic green">$</div>
+          </div>
+          <div class="mini-bars green">
+            <span style="height:35%"></span><span style="height:55%"></span><span style="height:42%"></span>
+            <span style="height:78%"></span><span style="height:65%"></span><span style="height:88%"></span>
+            <span style="height:72%"></span><span style="height:95%"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head">
+            <div>
+              <div class="lbl">Bookings Today</div>
+              <div class="val">11</div>
+              <div class="delta">3 cruise-guest · 8 hotel</div>
+            </div>
+            <div class="ic">⌗</div>
+          </div>
+          <div class="mini-bars">
+            <span style="height:40%"></span><span style="height:60%"></span><span style="height:75%"></span>
+            <span style="height:55%"></span><span style="height:88%"></span><span style="height:70%"></span>
+            <span style="height:82%"></span><span style="height:92%"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head">
+            <div>
+              <div class="lbl">Fleet Utilization</div>
+              <div class="val">86%</div>
+              <div class="delta">5/6 boats out today</div>
+            </div>
+            <div class="ic coral">⛴</div>
+          </div>
+          <div class="mini-bars coral">
+            <span style="height:55%"></span><span style="height:72%"></span><span style="height:84%"></span>
+            <span style="height:65%"></span><span style="height:78%"></span><span style="height:92%"></span>
+            <span style="height:86%"></span><span style="height:96%"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head">
+            <div>
+              <div class="lbl">May MTD Revenue</div>
+              <div class="val">$184k</div>
+              <div class="delta">↑ 24% vs May '25</div>
+            </div>
+            <div class="ic gold">★</div>
+          </div>
+          <div class="mini-bars gold">
+            <span style="height:48%"></span><span style="height:62%"></span><span style="height:55%"></span>
+            <span style="height:72%"></span><span style="height:84%"></span><span style="height:78%"></span>
+            <span style="height:88%"></span><span style="height:94%"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDULE + WEATHER -->
+      <div class="row r-2">
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Today's Schedule · Wed May 13</h3>
+              <div class="desc">Live captain assignments — drag blocks to reschedule</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">Today</button>
+              <button class="chip">Tomorrow</button>
+              <button class="chip">Week</button>
+            </div>
+          </div>
+
+          <div class="schedule">
+            <div class="timeline-hd">
+              <div>Vessel</div>
+              <div class="timeline-hours">
+                <span>6a</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                <span>11</span><span>12p</span><span>1</span><span>2</span><span>3</span>
+                <span>4</span><span>5</span><span>6p</span>
+              </div>
+            </div>
+
+            <div class="v-row">
+              <div class="v-tag"><div class="nm">Conch Pearl</div><div class="cp">Capt. Renaldo</div></div>
+              <div class="v-track">
+                <div class="v-block private" style="left:14%;width:62%"><span class="dot"></span> Pigs · Exuma · 8h · Kestler+5</div>
+              </div>
+            </div>
+            <div class="v-row">
+              <div class="v-tag"><div class="nm">Sandbar Queen</div><div class="cp">Capt. Marvin</div></div>
+              <div class="v-track">
+                <div class="v-block confirmed" style="left:22%;width:18%"><span class="dot"></span> Rose Half · 8 guests</div>
+                <div class="v-block private" style="left:46%;width:30%"><span class="dot"></span> Private · Bachelorette · 14</div>
+              </div>
+            </div>
+            <div class="v-row">
+              <div class="v-tag"><div class="nm">Lady Eleuthera</div><div class="cp">Capt. Dion</div></div>
+              <div class="v-track">
+                <div class="v-block private" style="left:12%;width:66%"><span class="dot"></span> Spanish Wells · Charter · 8h</div>
+              </div>
+            </div>
+            <div class="v-row">
+              <div class="v-tag"><div class="nm">Sweet Tide</div><div class="cp">Capt. Andre</div></div>
+              <div class="v-track">
+                <div class="v-block confirmed" style="left:18%;width:14%"><span class="dot"></span> Pigs Safari · cruise · 6</div>
+                <div class="v-block confirmed" style="left:38%;width:14%"><span class="dot"></span> Snorkel Safari · 8</div>
+                <div class="v-block pending" style="left:56%;width:14%"><span class="dot"></span> ⚠ Awaiting deposit</div>
+                <div class="nowline" style="left:46%"></div>
+              </div>
+            </div>
+            <div class="v-row">
+              <div class="v-tag"><div class="nm">Sundowner</div><div class="cp">Capt. Joel</div></div>
+              <div class="v-track">
+                <div class="v-block sunset" style="left:68%;width:18%"><span class="dot"></span> Sunset · 16 guests · champagne</div>
+              </div>
+            </div>
+            <div class="v-row">
+              <div class="v-tag"><div class="nm">Little Pearl</div><div class="cp">Capt. Tariq</div></div>
+              <div class="v-track">
+                <div class="v-block maint" style="left:6%;width:88%">⚠ Dry-dock · prop replacement · back Thu AM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card weather">
+          <div class="weather-inner">
+            <div class="panel-head">
+              <div>
+                <h3 style="color:#fff">Marine Conditions</h3>
+                <div class="desc" style="color:rgba(255,255,255,.65)">Nassau Harbour · NOAA + on-water</div>
+              </div>
+            </div>
+            <div class="now">
+              <div class="temp">82°</div>
+              <div class="cond">
+                <strong>Mostly sunny</strong>
+                Feels like 86° · UV 9
+              </div>
+            </div>
+            <div class="marine-grid">
+              <div>
+                <div class="lk">Wind</div>
+                <div class="v">8<small>kt E</small></div>
+              </div>
+              <div>
+                <div class="lk">Seas</div>
+                <div class="v">1.5<small>ft</small></div>
+              </div>
+              <div>
+                <div class="lk">Tide</div>
+                <div class="v">+2.1<small>ft ↗</small></div>
+              </div>
+              <div>
+                <div class="lk">Visibility</div>
+                <div class="v">60<small>ft</small></div>
+              </div>
+              <div>
+                <div class="lk">Water</div>
+                <div class="v">78<small>°F</small></div>
+              </div>
+              <div>
+                <div class="lk">Sunset</div>
+                <div class="v">7:42<small>p</small></div>
+              </div>
+            </div>
+            <div class="sail-ok"><span class="d"></span> All routes clear — Exuma window open through 6pm</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOOKINGS + MESSAGES -->
+      <div class="row r-bookings">
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Upcoming Bookings</h3>
+              <div class="desc">Next 7 days · click row to open</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">All</button>
+              <button class="chip">Pending</button>
+              <button class="chip">Confirmed</button>
+              <button class="chip">Cruise</button>
+            </div>
+          </div>
+
+          <div class="bookings">
+            <div class="bkg-row header">
+              <div>Date</div><div>Guest</div><div>Tour</div><div>Vessel</div><div>Status</div><div style="text-align:right">Total</div><div></div>
+            </div>
+            <div class="bkg-row">
+              <div class="bk-date"><strong>May 13</strong>8:30 AM</div>
+              <div class="bk-guest"><div class="av">JK</div><div><div class="nm">Jenna Kestler</div><div class="meta">Party of 6 · 4-star Atlantis</div></div></div>
+              <div class="bk-tour"><strong>Pigs · Exuma</strong><div class="src">Private · Direct</div></div>
+              <div>Conch Pearl</div>
+              <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+              <div class="bk-amt" style="text-align:right">$5,500</div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="bkg-row">
+              <div class="bk-date"><strong>May 13</strong>5:30 PM</div>
+              <div class="bk-guest"><div class="av c2">RM</div><div><div class="nm">Renee Morrison</div><div class="meta">Party of 16 · Anniversary</div></div></div>
+              <div class="bk-tour"><strong>Sunset Cruise</strong><div class="src">Group · Viator</div></div>
+              <div>Sundowner</div>
+              <div><span class="status paid"><span class="d"></span>Paid</span></div>
+              <div class="bk-amt" style="text-align:right">$2,000</div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="bkg-row">
+              <div class="bk-date"><strong>May 13</strong>2:15 PM</div>
+              <div class="bk-guest"><div class="av c3">DT</div><div><div class="nm">Daniel Tan</div><div class="meta">Party of 4 · Carnival ship</div></div></div>
+              <div class="bk-tour"><strong>Snorkel Safari · 2h</strong><div class="src">Cruise · TripAdvisor</div></div>
+              <div>Sweet Tide</div>
+              <div><span class="status pending"><span class="d"></span>Deposit Due</span></div>
+              <div class="bk-amt" style="text-align:right">$700</div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="bkg-row">
+              <div class="bk-date"><strong>May 14</strong>8:00 AM</div>
+              <div class="bk-guest"><div class="av c4">AH</div><div><div class="nm">Aisha Holcomb</div><div class="meta">Party of 8 · Wedding rehearsal</div></div></div>
+              <div class="bk-tour"><strong>Spanish Wells Charter</strong><div class="src">Private · Email</div></div>
+              <div>Lady Eleuthera</div>
+              <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+              <div class="bk-amt" style="text-align:right">$4,000</div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="bkg-row">
+              <div class="bk-date"><strong>May 14</strong>9:30 AM</div>
+              <div class="bk-guest"><div class="av">MN</div><div><div class="nm">Mike Nakamura</div><div class="meta">Party of 12 · Corporate retreat</div></div></div>
+              <div class="bk-tour"><strong>Ultimate Party Boat</strong><div class="src">Private · Concierge</div></div>
+              <div>Sandbar Queen</div>
+              <div><span class="status pending"><span class="d"></span>Awaiting Sig</span></div>
+              <div class="bk-amt" style="text-align:right">$1,500</div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="bkg-row">
+              <div class="bk-date"><strong>May 15</strong>10:00 AM</div>
+              <div class="bk-guest"><div class="av c2">SP</div><div><div class="nm">Sara Polanco</div><div class="meta">Family of 5 · Baha Mar</div></div></div>
+              <div class="bk-tour"><strong>Rose Island Half</strong><div class="src">Group · Direct</div></div>
+              <div>Sweet Tide</div>
+              <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+              <div class="bk-amt" style="text-align:right">$995</div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="bkg-row">
+              <div class="bk-date"><strong>May 15</strong>3:30 PM</div>
+              <div class="bk-guest"><div class="av c3">BW</div><div><div class="nm">Brian Wexler</div><div class="meta">Party of 2 · Honeymoon</div></div></div>
+              <div class="bk-tour"><strong>See the Pigs · 1h</strong><div class="src">Group · Instagram</div></div>
+              <div>Little Pearl</div>
+              <div><span class="status refund"><span class="d"></span>Refund Req</span></div>
+              <div class="bk-amt" style="text-align:right">$198</div>
+              <div class="row-chev">›</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Guest Inbox</h3>
+              <div class="desc">Unified — WhatsApp, IG, email</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">All · 5</button>
+            </div>
+          </div>
+          <div class="msgs">
+            <div class="msg unread">
+              <div class="av c2">RM<span class="ch">W</span></div>
+              <div class="body">
+                <div class="top"><div class="nm">Renee Morrison</div><div class="tm">2m</div></div>
+                <div class="preview">Could you do champagne instead of prosecco? Anniversary surp...</div>
+              </div>
+            </div>
+            <div class="msg unread">
+              <div class="av c3">DT<span class="ch">W</span></div>
+              <div class="body">
+                <div class="top"><div class="nm">Daniel Tan</div><div class="tm">11m</div></div>
+                <div class="preview">Ship docks 8:10 — can we still make the 9:00 departure?</div>
+              </div>
+            </div>
+            <div class="msg unread">
+              <div class="av"><span style="font-size:.74rem">@</span><span class="ch ig">i</span></div>
+              <div class="body">
+                <div class="top"><div class="nm">@sailwithsam_</div><div class="tm">28m</div></div>
+                <div class="preview">Loved the page — quote for 6 on May 22?</div>
+              </div>
+            </div>
+            <div class="msg unread">
+              <div class="av c2">AH<span class="ch">W</span></div>
+              <div class="body">
+                <div class="top"><div class="nm">Aisha Holcomb</div><div class="tm">42m</div></div>
+                <div class="preview">Sending signed contract now. Can we add a photographer?</div>
+              </div>
+            </div>
+            <div class="msg unread">
+              <div class="av c3">BW<span class="ch em">e</span></div>
+              <div class="body">
+                <div class="top"><div class="nm">Brian Wexler</div><div class="tm">1h</div></div>
+                <div class="preview">My wife got food poisoning — need to reschedule, options?</div>
+              </div>
+            </div>
+            <div class="msg">
+              <div class="av">JK<span class="ch">W</span></div>
+              <div class="body">
+                <div class="top"><div class="nm">Jenna Kestler</div><div class="tm">3h</div></div>
+                <div class="preview">Thanks for the brief! See you at slip 4 at 8:15.</div>
+              </div>
+            </div>
+            <div class="msg">
+              <div class="av c2">MN<span class="ch em">e</span></div>
+              <div class="body">
+                <div class="top"><div class="nm">Mike Nakamura</div><div class="tm">5h</div></div>
+                <div class="preview">Resending W-9. Apologies for the delay!</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FLEET STATUS + TOUR PERF -->
+      <div class="row r-2b">
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Fleet Status</h3>
+              <div class="desc">Live position · hours since service · maintenance flags</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">All</button>
+              <button class="chip">In Service</button>
+              <button class="chip">Maintenance</button>
+            </div>
+          </div>
+          <div class="fleet-list">
+            <div class="fleet-row">
+              <div class="fleet-mini"></div>
+              <div class="fleet-meta">
+                <div class="nm">Conch Pearl <span style="color:var(--muted);font-weight:400;font-size:.72rem;margin-left:6px">36' Contender</span></div>
+                <div class="cls">Capt. Renaldo · Exuma route</div>
+                <div class="status-line"><span class="pin green"></span> En route · 22nm out · ETA dock 4:45p</div>
+              </div>
+              <div class="fleet-stat"><strong>312</strong>hrs since svc</div>
+            </div>
+            <div class="fleet-row">
+              <div class="fleet-mini alt"></div>
+              <div class="fleet-meta">
+                <div class="nm">Sandbar Queen <span style="color:var(--muted);font-weight:400;font-size:.72rem;margin-left:6px">42' Sea Hunter</span></div>
+                <div class="cls">Capt. Marvin · Private bachelorette</div>
+                <div class="status-line"><span class="pin green"></span> Anchored · Sandbar #3 · 11 guests aboard</div>
+              </div>
+              <div class="fleet-stat"><strong>148</strong>hrs since svc</div>
+            </div>
+            <div class="fleet-row">
+              <div class="fleet-mini"></div>
+              <div class="fleet-meta">
+                <div class="nm">Lady Eleuthera <span style="color:var(--muted);font-weight:400;font-size:.72rem;margin-left:6px">48' Intrepid</span></div>
+                <div class="cls">Capt. Dion · Spanish Wells charter</div>
+                <div class="status-line"><span class="pin green"></span> En route · 41nm out · ETA dock 5:30p</div>
+              </div>
+              <div class="fleet-stat"><strong>89</strong>hrs since svc</div>
+            </div>
+            <div class="fleet-row">
+              <div class="fleet-mini alt"></div>
+              <div class="fleet-meta">
+                <div class="nm">Sweet Tide <span style="color:var(--muted);font-weight:400;font-size:.72rem;margin-left:6px">32' Yellowfin</span></div>
+                <div class="cls">Capt. Andre · Snorkel rotation</div>
+                <div class="status-line"><span class="pin gold"></span> Dockside · refuel · next dep 2:15p</div>
+              </div>
+              <div class="fleet-stat"><strong>402</strong>hrs since svc</div>
+            </div>
+            <div class="fleet-row">
+              <div class="fleet-mini"></div>
+              <div class="fleet-meta">
+                <div class="nm">Sundowner <span style="color:var(--muted);font-weight:400;font-size:.72rem;margin-left:6px">38' Cruiser</span></div>
+                <div class="cls">Capt. Joel · Sunset prep</div>
+                <div class="status-line"><span class="pin muted"></span> Standby · departs 5:30p · champagne loaded</div>
+              </div>
+              <div class="fleet-stat"><strong>205</strong>hrs since svc</div>
+            </div>
+            <div class="fleet-row">
+              <div class="fleet-mini alt"></div>
+              <div class="fleet-meta">
+                <div class="nm">Little Pearl <span style="color:var(--muted);font-weight:400;font-size:.72rem;margin-left:6px">28' Whaler</span></div>
+                <div class="cls">Capt. Tariq · Dry-dock</div>
+                <div class="status-line"><span class="pin red"></span> Maintenance · prop swap · back Thu 6a</div>
+              </div>
+              <div class="fleet-stat"><strong>0</strong>hrs · in svc</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Tour Performance · 30 days</h3>
+              <div class="desc">Revenue by tour · click to drill into bookings</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">Revenue</button>
+              <button class="chip">Bookings</button>
+              <button class="chip">Rating</button>
+            </div>
+          </div>
+          <div class="tour-perf">
+            <div class="tp-row">
+              <div>
+                <div class="nm">Pigs · Exuma (Private)</div>
+                <div class="sub">22 charters · 4.95 ★</div>
+              </div>
+              <div class="tp-bar"><i style="width:94%"></i></div>
+              <div class="tp-amt">$121k<small>↑ 31%</small></div>
+            </div>
+            <div class="tp-row">
+              <div>
+                <div class="nm">Rose Island Half-Day</div>
+                <div class="sub">68 departures · 4.88 ★</div>
+              </div>
+              <div class="tp-bar coral"><i style="width:72%"></i></div>
+              <div class="tp-amt">$48.2k<small>↑ 12%</small></div>
+            </div>
+            <div class="tp-row">
+              <div>
+                <div class="nm">Sunset Champagne</div>
+                <div class="sub">31 departures · 4.92 ★</div>
+              </div>
+              <div class="tp-bar gold"><i style="width:54%"></i></div>
+              <div class="tp-amt">$32.8k<small>↑ 8%</small></div>
+            </div>
+            <div class="tp-row">
+              <div>
+                <div class="nm">Snorkel Sea Safari</div>
+                <div class="sub">42 departures · 4.84 ★</div>
+              </div>
+              <div class="tp-bar"><i style="width:46%"></i></div>
+              <div class="tp-amt">$28.4k<small>↑ 4%</small></div>
+            </div>
+            <div class="tp-row">
+              <div>
+                <div class="nm">Party Boat</div>
+                <div class="sub">9 charters · 4.96 ★</div>
+              </div>
+              <div class="tp-bar coral"><i style="width:32%"></i></div>
+              <div class="tp-amt">$16.5k<small>↑ 22%</small></div>
+            </div>
+            <div class="tp-row">
+              <div>
+                <div class="nm">Spanish Wells / Harbour</div>
+                <div class="sub">3 charters · 5.00 ★</div>
+              </div>
+              <div class="tp-bar gold"><i style="width:22%"></i></div>
+              <div class="tp-amt">$12k<small>new</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REVENUE CHART -->
+      <div class="card">
+        <div class="panel-head">
+          <div>
+            <h3>Revenue · last 30 days</h3>
+            <div class="desc">Group tours vs. private charters · USD</div>
+          </div>
+          <div class="panel-actions">
+            <button class="chip">7d</button>
+            <button class="chip active">30d</button>
+            <button class="chip">YTD</button>
+            <button class="chip">All</button>
+          </div>
+        </div>
+        <div class="rev-chart">
+          <svg viewBox="0 0 800 200" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#7fd5e4" stop-opacity=".4"/>
+                <stop offset="100%" stop-color="#7fd5e4" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#e87a5a" stop-opacity=".42"/>
+                <stop offset="100%" stop-color="#e87a5a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- gridlines -->
+            <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+              <line x1="0" y1="40" x2="800" y2="40"/>
+              <line x1="0" y1="90" x2="800" y2="90"/>
+              <line x1="0" y1="140" x2="800" y2="140"/>
+              <line x1="0" y1="190" x2="800" y2="190"/>
+            </g>
+            <!-- private charters (coral) area + line -->
+            <path d="M0,140 C40,130 70,115 110,118 C150,121 180,90 220,80 C260,72 290,95 330,82 C370,70 400,40 440,55 C480,68 510,42 550,38 C590,34 620,58 660,48 C700,38 740,30 800,28 L800,200 L0,200 Z" fill="url(#g2)"/>
+            <path d="M0,140 C40,130 70,115 110,118 C150,121 180,90 220,80 C260,72 290,95 330,82 C370,70 400,40 440,55 C480,68 510,42 550,38 C590,34 620,58 660,48 C700,38 740,30 800,28" fill="none" stroke="#e87a5a" stroke-width="2.4"/>
+            <!-- group tours (aqua) -->
+            <path d="M0,170 C40,160 70,165 110,150 C150,140 180,148 220,138 C260,128 290,135 330,122 C370,112 400,118 440,105 C480,95 510,98 550,82 C590,72 620,76 660,70 C700,65 740,72 800,58 L800,200 L0,200 Z" fill="url(#g1)"/>
+            <path d="M0,170 C40,160 70,165 110,150 C150,140 180,148 220,138 C260,128 290,135 330,122 C370,112 400,118 440,105 C480,95 510,98 550,82 C590,72 620,76 660,70 C700,65 740,72 800,58" fill="none" stroke="#7fd5e4" stroke-width="2.2"/>
+            <!-- callout point -->
+            <circle cx="660" cy="48" r="5" fill="#e87a5a" stroke="#fff" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="legend">
+          <span><i style="background:#e87a5a"></i> Private Charters · <span style="color:var(--ink);font-weight:600">$184k</span></span>
+          <span><i style="background:#7fd5e4"></i> Group Tours · <span style="color:var(--ink);font-weight:600">$92k</span></span>
+          <span><i style="background:#f0c674"></i> Cruise-Guest Add-ons · <span style="color:var(--ink);font-weight:600">$24k</span></span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="spec-ribbon">
+  <span class="dot"></span> Spec Concept
+  <a href="index.html">← Back to Site</a>
+</div>
+
+</body>
+</html>
