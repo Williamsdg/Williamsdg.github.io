@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Operator Console — Pitch It Junk Removal</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --ink: #141517; --ink-2: #1d1f23; --ink-3: #2a2d33; --ink-4: #3a3e45;
+  --paper: #f6f3ec; --paper-2: #ecdfc6;
+  --rust: #e25822; --rust-dark: #b1380f; --rust-light: #ff7a3d;
+  --moss: #4a5d2f; --moss-light: #6a8643;
+  --line: rgba(20,21,23,0.12);
+  --line-dark: rgba(246,243,236,0.1);
+  --line-mid: rgba(246,243,236,0.06);
+  --ok: #2f7d3a; --warn: #c68a2e; --err: #c84a3a;
+  --bg: #1a1c1f;
+  --panel: #232629;
+  --panel-2: #2a2d31;
+  --text: #e8e4dc;
+  --muted: rgba(232,228,220,0.55);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.55; -webkit-font-smoothing: antialiased; overflow: hidden; }
+button { font-family: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+
+.app {
+  display: grid; grid-template-columns: 220px 1fr; height: 100vh;
+}
+
+/* SIDEBAR */
+.side {
+  background: var(--ink); border-right: 1px solid var(--line-dark);
+  display: flex; flex-direction: column; padding: 18px 0; overflow-y: auto;
+}
+.side-brand { display: flex; align-items: center; gap: 10px; padding: 4px 20px 22px; }
+.side-brand-mark { width: 34px; height: 34px; border-radius: 7px; background: var(--rust); display: grid; place-items: center; color: #fff; font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 0.92rem; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25); }
+.side-brand-text { font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 1.05rem; text-transform: uppercase; letter-spacing: -0.5px; color: var(--text); }
+.side-brand-text span { color: var(--rust-light); }
+.side-tag { font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); padding: 0 20px 14px; font-weight: 700; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 20px;
+  color: var(--muted); font-size: 0.9rem; font-weight: 500;
+  border-left: 3px solid transparent; transition: all .15s; cursor: pointer; user-select: none;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,0.02); }
+.nav-item.active { color: var(--text); background: rgba(226,88,34,0.08); border-left-color: var(--rust); }
+.nav-item .count {
+  margin-left: auto; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 100px;
+  background: rgba(255,255,255,0.06); display: grid; place-items: center; font-size: 0.7rem; font-weight: 700; color: var(--text);
+}
+.nav-item.active .count { background: var(--rust); color: #fff; }
+.nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+
+.side-section { font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(232,228,220,0.35); padding: 18px 20px 8px; font-weight: 700; }
+
+.side-foot { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--line-dark); display: flex; align-items: center; gap: 10px; }
+.side-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--rust); color: #fff; display: grid; place-items: center; font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 0.78rem; }
+.side-foot-name { font-size: 0.85rem; font-weight: 600; }
+.side-foot-role { font-size: 0.7rem; color: var(--muted); }
+
+/* MAIN */
+.main { display: flex; flex-direction: column; overflow: hidden; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px; border-bottom: 1px solid var(--line-mid); background: var(--ink-2);
+  flex-shrink: 0;
+}
+.topbar-left h1 { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.3px; }
+.topbar-left .crumbs { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.topbar-right { display: flex; gap: 10px; align-items: center; }
+.search {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  background: var(--panel); border: 1px solid var(--line-dark); border-radius: 8px;
+  font-size: 0.85rem; color: var(--muted); min-width: 240px;
+}
+.search svg { width: 14px; height: 14px; }
+.search input { background: transparent; border: none; color: var(--text); outline: none; flex: 1; font-family: inherit; font-size: 0.85rem; }
+.icon-btn {
+  width: 36px; height: 36px; background: var(--panel); border: 1px solid var(--line-dark);
+  border-radius: 8px; display: grid; place-items: center; color: var(--muted); transition: all .15s;
+  position: relative;
+}
+.icon-btn:hover { color: var(--text); border-color: var(--rust); }
+.icon-btn svg { width: 17px; height: 17px; }
+.icon-btn .badge {
+  position: absolute; top: -4px; right: -4px; width: 16px; height: 16px;
+  background: var(--rust); color: #fff; border-radius: 50%;
+  font-size: 0.62rem; font-weight: 800; display: grid; place-items: center;
+}
+
+/* KPI STRIP */
+.kpis {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  padding: 20px 28px 0; flex-shrink: 0;
+}
+.kpi {
+  background: var(--panel); border: 1px solid var(--line-mid); border-radius: 10px; padding: 16px 18px;
+}
+.kpi-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); font-weight: 700; }
+.kpi-value { font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 1.8rem; margin-top: 2px; line-height: 1.05; }
+.kpi-foot { font-size: 0.74rem; color: var(--muted); margin-top: 4px; }
+.kpi-foot.up { color: var(--moss-light); }
+.kpi-foot.down { color: var(--rust-light); }
+
+/* CONTENT */
+.content { flex: 1; overflow-y: auto; padding: 20px 28px 40px; }
+.view { display: none; }
+.view.active { display: block; }
+
+/* FILTER ROW */
+.filters {
+  display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 14px;
+  align-items: center;
+}
+.chip {
+  padding: 7px 14px; background: var(--panel); border: 1px solid var(--line-dark); border-radius: 100px;
+  font-size: 0.82rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.chip:hover { color: var(--text); border-color: rgba(246,243,236,0.2); }
+.chip.active { background: var(--rust); border-color: var(--rust); color: #fff; }
+.filters .spacer { flex: 1; }
+
+/* REQUEST CARDS */
+.req-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.req-card {
+  background: var(--panel); border: 1px solid var(--line-mid); border-radius: 12px; padding: 18px;
+  cursor: pointer; transition: all .15s; position: relative;
+}
+.req-card:hover { border-color: var(--rust); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+.req-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.req-name { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 1.02rem; }
+.req-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.req-meta .pipe { color: rgba(255,255,255,0.15); margin: 0 6px; }
+.req-tier {
+  font-family: 'Archivo', sans-serif; font-size: 0.7rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 10px;
+  background: rgba(226,88,34,0.15); color: var(--rust-light); border-radius: 100px;
+  flex-shrink: 0; white-space: nowrap;
+}
+.req-tier.full { background: rgba(226,88,34,0.25); }
+.req-tier.unsure { background: rgba(198,138,46,0.18); color: var(--warn); }
+.req-desc { font-size: 0.88rem; color: rgba(232,228,220,0.78); margin-bottom: 12px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.req-thumbs { display: flex; gap: 6px; margin-bottom: 12px; }
+.req-thumb {
+  width: 48px; height: 48px; border-radius: 6px; background: var(--ink-3);
+  display: grid; place-items: center; color: var(--muted); position: relative; overflow: hidden;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;
+}
+.req-thumb.photo { background: linear-gradient(135deg, #3a3e45, #2a2d31); }
+.req-thumb.video { background: linear-gradient(135deg, #4a3520, #2a2d31); }
+.req-thumb.video::after { content: '▶'; position: absolute; font-size: 0.85rem; color: rgba(255,255,255,0.85); }
+.req-thumb.video span { display: none; }
+.req-thumb.more { background: var(--ink-4); color: var(--text); font-weight: 800; }
+.req-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid var(--line-mid); }
+.req-stamp { font-size: 0.74rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.req-stamp .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--rust); }
+.req-stamp.new .dot { animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.req-status {
+  font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 100px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.req-status.new { background: rgba(226,88,34,0.18); color: var(--rust-light); }
+.req-status.quoted { background: rgba(198,138,46,0.18); color: var(--warn); }
+.req-status.signed { background: rgba(47,125,58,0.2); color: #6abe75; }
+.req-status.scheduled { background: rgba(106,134,67,0.2); color: var(--moss-light); }
+.req-status.declined { background: rgba(200,74,58,0.15); color: var(--err); }
+
+.empty { text-align: center; padding: 60px 24px; color: var(--muted); font-size: 0.95rem; }
+.empty svg { width: 48px; height: 48px; opacity: 0.4; margin-bottom: 14px; }
+
+/* DETAIL PANEL (slide-in) */
+.detail-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 90;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.detail-overlay.show { opacity: 1; pointer-events: auto; }
+.detail-panel {
+  position: fixed; top: 0; right: 0; width: 720px; max-width: 100vw; height: 100vh; z-index: 100;
+  background: var(--bg); border-left: 1px solid var(--line-dark);
+  transform: translateX(100%); transition: transform .25s ease; display: flex; flex-direction: column;
+  box-shadow: -16px 0 40px rgba(0,0,0,0.4);
+}
+.detail-panel.open { transform: translateX(0); }
+.detail-head {
+  padding: 18px 26px; border-bottom: 1px solid var(--line-mid); background: var(--ink-2);
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.detail-head h2 { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 1.15rem; }
+.detail-head .sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.close-btn {
+  width: 32px; height: 32px; background: var(--panel); border: 1px solid var(--line-dark);
+  border-radius: 8px; display: grid; place-items: center; color: var(--muted); transition: all .15s;
+}
+.close-btn:hover { color: var(--text); border-color: var(--rust); }
+.close-btn svg { width: 16px; height: 16px; }
+
+.detail-body { flex: 1; overflow-y: auto; padding: 24px 26px; }
+.detail-section { margin-bottom: 28px; }
+.detail-section h3 {
+  font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 1.5px; color: var(--rust-light); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.detail-section h3::after { content: ''; flex: 1; height: 1px; background: var(--line-dark); }
+.kv { display: grid; grid-template-columns: 120px 1fr; gap: 10px 16px; font-size: 0.9rem; }
+.kv dt { color: var(--muted); }
+.kv dd { color: var(--text); font-weight: 500; }
+.kv dd a { color: var(--rust-light); }
+
+.spot-list { display: flex; flex-direction: column; gap: 8px; }
+.spot-item { padding: 12px 14px; background: var(--panel); border: 1px solid var(--line-mid); border-radius: 8px; font-size: 0.88rem; }
+.spot-item strong { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--rust-light); margin-right: 8px; }
+.spot-item .stairs { color: var(--muted); font-size: 0.82rem; margin-left: 6px; }
+.spot-item .notes { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+
+.media-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.media-tile {
+  aspect-ratio: 1; border-radius: 8px; background: var(--ink-3); position: relative;
+  overflow: hidden; display: grid; place-items: center; color: var(--muted); font-size: 0.7rem;
+}
+.media-tile.photo { background: linear-gradient(135deg, #3a3e45 0%, #2a2d31 100%); }
+.media-tile.video { background: linear-gradient(135deg, #4a3520 0%, #2a2d31 100%); }
+.media-tile.video::after { content: '▶'; font-size: 1.4rem; color: rgba(255,255,255,0.85); position: absolute; }
+.media-tile.video::before { content: 'VIDEO'; position: absolute; bottom: 6px; left: 6px; font-size: 0.6rem; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 3px; letter-spacing: 1px; font-weight: 700; }
+
+/* QUOTE EDITOR */
+.quote-editor { background: var(--panel); border: 1px solid var(--line-mid); border-radius: 10px; padding: 20px; }
+.line-item { display: grid; grid-template-columns: 1fr 100px 36px; gap: 10px; align-items: center; margin-bottom: 10px; }
+.line-item input {
+  background: var(--ink); border: 1px solid var(--line-dark); border-radius: 6px;
+  padding: 9px 12px; color: var(--text); font-size: 0.88rem; font-family: inherit; outline: none;
+  width: 100%;
+}
+.line-item input:focus { border-color: var(--rust); }
+.line-item input[type="number"] { font-family: 'JetBrains Mono', monospace; text-align: right; }
+.line-remove {
+  width: 32px; height: 32px; background: transparent; border: 1px solid var(--line-dark);
+  border-radius: 6px; display: grid; place-items: center; color: var(--muted); transition: all .15s;
+}
+.line-remove:hover { color: var(--err); border-color: var(--err); }
+.line-remove svg { width: 14px; height: 14px; }
+.line-add {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: transparent;
+  border: 1px dashed var(--line-dark); border-radius: 6px; color: var(--muted); font-size: 0.82rem;
+  font-weight: 600; transition: all .15s; margin-top: 6px;
+}
+.line-add:hover { border-color: var(--rust); border-style: solid; color: var(--rust-light); }
+.line-add svg { width: 13px; height: 13px; }
+
+.totals {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-dark);
+}
+.totals-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; }
+.totals-value { font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 1.9rem; color: var(--rust-light); }
+
+.note-area {
+  margin-top: 14px; width: 100%; padding: 12px 14px;
+  background: var(--ink); border: 1px solid var(--line-dark); border-radius: 8px;
+  color: var(--text); font-size: 0.9rem; font-family: inherit; outline: none; resize: vertical; min-height: 80px;
+}
+.note-area:focus { border-color: var(--rust); }
+
+.detail-foot {
+  padding: 16px 26px; border-top: 1px solid var(--line-mid); background: var(--ink-2);
+  display: flex; gap: 10px; justify-content: flex-end; flex-shrink: 0; flex-wrap: wrap;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 8px;
+  font-weight: 700; font-size: 0.88rem; border: none; transition: all .15s;
+}
+.btn svg { width: 14px; height: 14px; }
+.btn-primary { background: var(--rust); color: #fff; box-shadow: 0 3px 0 var(--rust-dark); }
+.btn-primary:hover { background: var(--rust-light); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--line-dark); }
+.btn-ghost:hover { border-color: var(--rust); color: var(--rust-light); }
+.btn-danger { background: transparent; color: var(--err); border: 1px solid rgba(200,74,58,0.4); }
+.btn-danger:hover { background: rgba(200,74,58,0.1); border-color: var(--err); }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--ok); color: #fff; padding: 14px 22px; border-radius: 10px; font-size: 0.92rem;
+  font-weight: 600; box-shadow: 0 12px 30px rgba(0,0,0,0.35); opacity: 0; pointer-events: none;
+  transition: all .25s ease; z-index: 200; display: flex; align-items: center; gap: 10px;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast svg { width: 18px; height: 18px; }
+
+/* SCHEDULE TABLE (signed view) */
+.schedule-table {
+  background: var(--panel); border: 1px solid var(--line-mid); border-radius: 12px; overflow: hidden;
+}
+.schedule-table table { width: 100%; border-collapse: collapse; }
+.schedule-table th {
+  text-align: left; padding: 14px 18px; font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+  border-bottom: 1px solid var(--line-mid); background: rgba(0,0,0,0.15);
+}
+.schedule-table td { padding: 14px 18px; font-size: 0.9rem; border-bottom: 1px solid var(--line-mid); }
+.schedule-table tr:last-child td { border-bottom: none; }
+.schedule-table tr { cursor: pointer; transition: background .12s; }
+.schedule-table tr:hover { background: rgba(255,255,255,0.02); }
+.schedule-table .row-name { font-weight: 700; }
+.schedule-table .row-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+.schedule-table .when { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--text); }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 100px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 60px 1fr; }
+  .side-brand-text, .nav-item span:not(.count), .side-section, .side-foot-name, .side-foot-role { display: none; }
+  .side-brand { padding: 4px 14px 22px; }
+  .nav-item { padding: 12px 20px; justify-content: center; }
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .search { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="side-brand">
+      <div class="side-brand-mark">PJ</div>
+      <div class="side-brand-text">Pitch It<span>.</span></div>
+    </div>
+    <div class="side-tag">Operator Console</div>
+
+    <div class="nav-item active" data-view="new">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+      <span>New Requests</span>
+      <span class="count" id="countNew">0</span>
+    </div>
+    <div class="nav-item" data-view="quoted">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+      <span>Sent for Signature</span>
+      <span class="count" id="countQuoted">0</span>
+    </div>
+    <div class="nav-item" data-view="signed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>Signed &amp; Scheduled</span>
+      <span class="count" id="countSigned">0</span>
+    </div>
+    <div class="nav-item" data-view="declined">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      <span>Declined</span>
+      <span class="count" id="countDeclined">0</span>
+    </div>
+
+    <div class="side-section">Tools</div>
+    <div class="nav-item" data-view="route">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8 2 5 5 5 9c0 6 7 13 7 13s7-7 7-13c0-4-3-7-7-7z"/></svg>
+      <span>Today&rsquo;s Route</span>
+    </div>
+    <div class="nav-item" data-view="reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span>Reports</span>
+    </div>
+
+    <div class="side-foot">
+      <div class="side-avatar">PJ</div>
+      <div>
+        <div class="side-foot-name">Operator</div>
+        <div class="side-foot-role">Owner / Admin</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1 id="viewTitle">New Requests</h1>
+        <div class="crumbs" id="viewCrumbs">Quotes awaiting your review</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input placeholder="Search by name, address, ref…" id="searchInput" />
+        </div>
+        <button class="icon-btn" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="badge" id="notifBadge">3</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-label">Open Requests</div>
+        <div class="kpi-value" id="kpiOpen">0</div>
+        <div class="kpi-foot up">+2 since yesterday</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Pending Signature</div>
+        <div class="kpi-value" id="kpiPending">0</div>
+        <div class="kpi-foot">Avg. close: 4.2 hrs</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Scheduled (7d)</div>
+        <div class="kpi-value" id="kpiScheduled">0</div>
+        <div class="kpi-foot up">$<span id="kpiRevenue">0</span> booked</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Win Rate (30d)</div>
+        <div class="kpi-value">71%</div>
+        <div class="kpi-foot up">+4 pts vs. last mo.</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- NEW REQUESTS -->
+      <div class="view active" id="view-new">
+        <div class="filters">
+          <div class="chip active" data-filter="all">All</div>
+          <div class="chip" data-filter="single">Single Item</div>
+          <div class="chip" data-filter="quarter">Quarter</div>
+          <div class="chip" data-filter="half">Half</div>
+          <div class="chip" data-filter="full">Full Truck</div>
+          <div class="chip" data-filter="multi">Multi / Unsure</div>
+          <div class="spacer"></div>
+          <div class="chip" id="sortNewest">Newest first</div>
+        </div>
+        <div class="req-grid" id="newGrid"></div>
+      </div>
+
+      <!-- SENT FOR SIGNATURE -->
+      <div class="view" id="view-quoted">
+        <div class="req-grid" id="quotedGrid"></div>
+      </div>
+
+      <!-- SIGNED & SCHEDULED -->
+      <div class="view" id="view-signed">
+        <div class="schedule-table">
+          <table>
+            <thead>
+              <tr><th>Customer</th><th>Pickup</th><th>Tier</th><th>Total</th><th>Status</th></tr>
+            </thead>
+            <tbody id="signedRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DECLINED -->
+      <div class="view" id="view-declined">
+        <div class="req-grid" id="declinedGrid"></div>
+      </div>
+
+      <!-- ROUTE (placeholder) -->
+      <div class="view" id="view-route">
+        <div class="empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2C8 2 5 5 5 9c0 6 7 13 7 13s7-7 7-13c0-4-3-7-7-7z"/></svg>
+          <p>Today&rsquo;s route board — connect to dispatch in Phase 2.</p>
+        </div>
+      </div>
+
+      <!-- REPORTS (placeholder) -->
+      <div class="view" id="view-reports">
+        <div class="empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <p>Revenue, win-rate, &amp; diversion reports — Phase 2.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-overlay" id="detailOverlay"></div>
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-head">
+    <div>
+      <h2 id="dName">Customer Name</h2>
+      <div class="sub" id="dRef">PJ-00000 &middot; submitted —</div>
+    </div>
+    <button class="close-btn" id="closeDetail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <div class="detail-body">
+
+    <div class="detail-section">
+      <h3>Customer</h3>
+      <dl class="kv">
+        <dt>Phone</dt><dd id="dPhone"><a href="#">—</a></dd>
+        <dt>Email</dt><dd id="dEmail"><a href="#">—</a></dd>
+        <dt>Address</dt><dd id="dAddress">—</dd>
+        <dt>Preferred</dt><dd id="dWhen">—</dd>
+      </dl>
+    </div>
+
+    <div class="detail-section">
+      <h3>Job Description</h3>
+      <p id="dDesc" style="font-size: 0.92rem; color: rgba(232,228,220,0.85); line-height: 1.65;">—</p>
+    </div>
+
+    <div class="detail-section">
+      <h3>Pickup Spots</h3>
+      <div class="spot-list" id="dSpots"></div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Customer Photos &amp; Video</h3>
+      <div class="media-grid" id="dMedia"></div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Quote Builder</h3>
+      <div class="quote-editor">
+        <div id="lineItems"></div>
+        <button class="line-add" id="addLine">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add line item
+        </button>
+        <textarea class="note-area" id="customerMessage" placeholder="Customer-facing message (will appear on the quote). e.g. &quot;Confirmed Friday 8a — bringing the bigger truck since we&rsquo;re also taking the deck boards.&quot;"></textarea>
+        <textarea class="note-area" id="internalNote" placeholder="Internal note (only you see this)." style="margin-top: 10px;"></textarea>
+        <div class="totals">
+          <span class="totals-label">Quote total</span>
+          <span class="totals-value">$<span id="quoteTotal">0</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section" id="signedDetailSection" style="display: none;">
+      <h3>Signature on File</h3>
+      <div style="background: var(--panel); padding: 20px; border-radius: 10px; border: 1px solid var(--line-mid);">
+        <div style="display: flex; gap: 20px; align-items: center;">
+          <div style="width: 180px; height: 70px; background: #fff; border-radius: 6px; display: grid; place-items: center; padding: 8px;">
+            <span style="font-family: 'Caveat', cursive; font-size: 1.8rem; color: #141517; font-style: italic;" id="dSigName">—</span>
+          </div>
+          <div>
+            <div style="font-weight: 700; font-size: 0.92rem;" id="dSigFullName">—</div>
+            <div style="font-size: 0.78rem; color: var(--muted); margin-top: 2px;" id="dSigStamp">Signed —</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="detail-foot" id="detailFoot">
+    <button class="btn btn-danger" id="actDecline">Decline</button>
+    <div style="flex: 1;"></div>
+    <button class="btn btn-ghost" id="actSave">Save Draft</button>
+    <button class="btn btn-primary" id="actSend">
+      Send for Signature
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastMsg">Done</span>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+/* ---------- seed data ---------- */
+const SEED_REQUESTS = [
+  {
+    id: 'PJ-48217', status: 'new', submittedAt: '2026-05-14T07:42:00',
+    name: 'Marcus Caldwell', phone: '(205) 555-0118', email: 'marcus.c@example.com',
+    address: '1402 Vestavia Park Cir, Birmingham AL 35216',
+    preferDate: '2026-05-16', preferWindow: 'Morning (7a–11a)',
+    tier: 'half', tierLabel: 'Half Truck',
+    desc: 'Garage clean-out after a long-overdue purge. Old sectional sofa (heavy, in three pieces), king mattress + box spring, broken treadmill, two bikes with flat tires, about 12 bankers boxes of paperwork, lawn chairs that look haunted.',
+    spots: [
+      { location: 'Garage (ground floor)', stairs: 'No stairs', notes: 'Sectional, treadmill, bikes, lawn chairs' },
+      { location: 'Basement', stairs: '1 flight', notes: 'King mattress + boxes' }
+    ],
+    photos: 4, videos: 1,
+    suggested: [
+      { label: 'Half-truck base', amount: 295 },
+      { label: 'Stairs surcharge (basement)', amount: 30 }
+    ]
+  },
+  {
+    id: 'PJ-48219', status: 'new', submittedAt: '2026-05-14T08:55:00',
+    name: 'Priya Sharma', phone: '(205) 555-0146', email: 'priya@example.com',
+    address: '518 Highland Ave S, Birmingham AL 35205',
+    preferDate: '2026-05-15', preferWindow: 'Same-day, ASAP',
+    tier: 'single', tierLabel: 'Single Item',
+    desc: 'Just need a Sleep Number king bed (frame + mattress + box spring) removed. Will be on the curb by 11am. Frame is fully disassembled.',
+    spots: [ { location: 'Curbside / driveway', stairs: 'No stairs', notes: 'King bed, disassembled frame' } ],
+    photos: 3, videos: 0,
+    suggested: [ { label: 'Single-item pickup (king set)', amount: 145 } ]
+  },
+  {
+    id: 'PJ-48221', status: 'new', submittedAt: '2026-05-14T06:18:00',
+    name: 'Donna Whitfield', phone: '(205) 555-0189', email: 'donna.w@example.com',
+    address: '2417 Oakridge Ln, Hoover AL 35244',
+    preferDate: '2026-05-17', preferWindow: 'Anytime — you pick',
+    tier: 'full', tierLabel: 'Full Truck',
+    desc: 'Estate clean-out for my mother who moved into memory care. Whole house except the kitchen. Two bedroom sets, dining set, sofas, an old upright piano (please be careful — it has sentimental value but we can\'t move it), boxes in attic, garage clutter, and a defunct hot tub on the back deck.',
+    spots: [
+      { location: 'Inside ground floor', stairs: 'No stairs', notes: 'Living room + dining + piano (heavy!)' },
+      { location: 'Second floor / upstairs', stairs: '2+ flights', notes: 'Two bedroom sets' },
+      { location: 'Attic', stairs: 'Narrow stairs', notes: '~20 boxes, holiday decor' },
+      { location: 'Garage (ground floor)', stairs: 'No stairs', notes: 'Tools, lawn equipment, paint cans (full)' },
+      { location: 'Back yard', stairs: '1 flight', notes: 'Hot tub on raised deck' }
+    ],
+    photos: 8, videos: 2,
+    suggested: [
+      { label: 'Full-truck base', amount: 495 },
+      { label: 'Piano disassembly + careful handling', amount: 175 },
+      { label: 'Hot tub disassembly + deck access', amount: 120 },
+      { label: 'Stairs surcharge (multi-floor)', amount: 60 },
+      { label: 'Hazardous: paint cans (partial fees)', amount: 45 }
+    ]
+  },
+  {
+    id: 'PJ-48205', status: 'quoted', submittedAt: '2026-05-13T14:12:00', sentAt: '2026-05-13T15:50:00',
+    name: 'Jordan Smith', phone: '(205) 555-0182', email: 'jordan@example.com',
+    address: '2417 Oakridge Ln, Birmingham AL 35216',
+    preferDate: '2026-05-17', preferWindow: 'Morning (7a–11a)',
+    tier: 'half', tierLabel: 'Half Truck',
+    desc: 'Garage clean-out: sectional sofa, two mattresses, broken treadmill, misc boxes, lawn equipment.',
+    spots: [
+      { location: 'Garage (ground floor)', stairs: 'No stairs', notes: 'Sectional, treadmill, lawn equipment' },
+      { location: 'Basement', stairs: '2+ flights', notes: 'Two mattresses, boxes' }
+    ],
+    photos: 5, videos: 0,
+    lineItems: [
+      { label: 'Half-truck base', amount: 295 },
+      { label: 'Stairs surcharge', amount: 30 },
+      { label: 'Hot-tub disassembly', amount: 20 }
+    ],
+    total: 345
+  },
+  {
+    id: 'PJ-48198', status: 'quoted', submittedAt: '2026-05-13T11:30:00', sentAt: '2026-05-13T12:45:00',
+    name: 'Tariq Bennett', phone: '(205) 555-0151', email: 'tariq@example.com',
+    address: '301 21st St N, Birmingham AL 35203',
+    preferDate: '2026-05-18', preferWindow: 'Evening (5p–7p)',
+    tier: 'quarter', tierLabel: 'Quarter Truck',
+    desc: 'Office clear-out — old desks, two filing cabinets, a couch nobody loves. After-hours preferred so we don\'t scare clients.',
+    spots: [ { location: 'Inside ground floor', stairs: 'No stairs', notes: 'Office suite #204' } ],
+    photos: 2, videos: 0,
+    lineItems: [
+      { label: 'Quarter-truck base', amount: 195 },
+      { label: 'After-hours service', amount: 50 }
+    ],
+    total: 245
+  },
+  {
+    id: 'PJ-48172', status: 'signed', submittedAt: '2026-05-12T09:00:00', sentAt: '2026-05-12T10:15:00', signedAt: '2026-05-12T11:42:00',
+    name: 'Elena Vasquez', phone: '(205) 555-0173', email: 'elena.v@example.com',
+    address: '4720 Crestwood Blvd, Birmingham AL 35222',
+    preferDate: '2026-05-15', preferWindow: 'Midday (11a–2p)',
+    tier: 'half', tierLabel: 'Half Truck',
+    desc: 'Moving cross-country — taking what fits in the U-Haul, pitching the rest. Mostly furniture + 30+ boxes.',
+    spots: [
+      { location: 'Inside ground floor', stairs: 'No stairs', notes: 'Living + dining furniture' },
+      { location: 'Second floor / upstairs', stairs: '1 flight', notes: '30 boxes + bedroom set' }
+    ],
+    photos: 6, videos: 1,
+    lineItems: [
+      { label: 'Half-truck base', amount: 295 },
+      { label: 'Stairs surcharge', amount: 30 }
+    ],
+    total: 325
+  },
+  {
+    id: 'PJ-48165', status: 'signed', submittedAt: '2026-05-12T07:15:00', sentAt: '2026-05-12T08:30:00', signedAt: '2026-05-12T09:08:00',
+    name: 'Reggie Holloway', phone: '(205) 555-0164', email: 'reggie@example.com',
+    address: '1818 5th Ave S, Birmingham AL 35233',
+    preferDate: '2026-05-14', preferWindow: 'Afternoon (2p–5p)',
+    tier: 'single', tierLabel: 'Single Item',
+    desc: 'Old fridge (working but ugly) — please take to donation if possible.',
+    spots: [ { location: 'Garage (ground floor)', stairs: 'No stairs', notes: 'Fridge, defrosted' } ],
+    photos: 2, videos: 0,
+    lineItems: [
+      { label: 'Single-item appliance', amount: 95 },
+      { label: 'Refrigerant fee', amount: 25 }
+    ],
+    total: 120
+  },
+  {
+    id: 'PJ-48148', status: 'declined', submittedAt: '2026-05-11T16:22:00',
+    name: 'Frank Lyons', phone: '(205) 555-0192', email: 'frank.l@example.com',
+    address: '900 Industrial Pkwy, Bessemer AL 35020',
+    preferDate: '2026-05-14', preferWindow: 'Anytime — you pick',
+    tier: 'unsure', tierLabel: 'Multiple Loads',
+    desc: 'Old auto shop tear-out. Asbestos ceiling tiles, drums of used motor oil, lead-painted door frames. Looking for a fast turnaround.',
+    spots: [ { location: 'Inside ground floor', stairs: 'No stairs', notes: 'Whole building, ~3,000 sqft' } ],
+    photos: 3, videos: 1,
+    declineReason: 'Hazardous materials (asbestos, oil) — outside scope. Referred to certified abatement partner.'
+  }
+];
+
+/* Pull in any session-handoff intake from intake.html */
+function maybePullSessionIntake() {
+  try {
+    const raw = sessionStorage.getItem('pitchit_intake_handoff');
+    if (!raw) return null;
+    sessionStorage.removeItem('pitchit_intake_handoff');
+    const d = JSON.parse(raw);
+    return {
+      id: d.ref || 'PJ-' + Math.floor(10000 + Math.random() * 89999),
+      status: 'new', submittedAt: new Date().toISOString(),
+      name: d.name || 'Unnamed Customer',
+      phone: d.phone || '—', email: d.email || '—',
+      address: d.address || '—',
+      preferDate: '', preferWindow: '',
+      tier: (d.tier || '').toLowerCase().split(' ')[0] || 'unsure',
+      tierLabel: d.tier || 'Pending',
+      desc: d.desc || '—',
+      spots: d.spots || [],
+      photos: Math.max(0, (d.mediaCount || 0) - 1), videos: d.mediaCount ? 1 : 0,
+      suggested: []
+    };
+  } catch (_) { return null; }
+}
+
+let requests = [...SEED_REQUESTS];
+const fresh = maybePullSessionIntake();
+if (fresh) requests = [fresh, ...requests];
+
+let currentRequest = null;
+let activeView = 'new';
+let activeFilter = 'all';
+
+/* ---------- render ---------- */
+const fmtTimeAgo = (iso) => {
+  const t = new Date(iso); const now = new Date();
+  const mins = Math.round((now - t) / 60000);
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  return Math.round(hrs / 24) + 'd ago';
+};
+const fmtMoney = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const fmtDate = (iso) => new Date(iso).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+
+function thumbsFor(r) {
+  const total = (r.photos || 0) + (r.videos || 0);
+  let html = '';
+  let shown = 0;
+  for (let i = 0; i < Math.min(r.photos || 0, 3); i++) {
+    html += '<div class="req-thumb photo"></div>';
+    shown++;
+  }
+  for (let i = 0; i < Math.min(r.videos || 0, 4 - shown); i++) {
+    html += '<div class="req-thumb video"></div>';
+    shown++;
+  }
+  if (total > shown) html += '<div class="req-thumb more">+' + (total - shown) + '</div>';
+  if (total === 0) html = '<div class="req-thumb" style="color: var(--muted); font-size: 0.65rem;">No media</div>';
+  return html;
+}
+
+function cardHTML(r) {
+  return '' +
+    '<div class="req-card" data-id="' + r.id + '">' +
+      '<div class="req-head">' +
+        '<div>' +
+          '<div class="req-name">' + r.name + '</div>' +
+          '<div class="req-meta">' + r.id + '<span class="pipe">·</span>' + (r.address.split(',')[1] || '').trim() + '</div>' +
+        '</div>' +
+        '<div class="req-tier ' + r.tier + '">' + r.tierLabel + '</div>' +
+      '</div>' +
+      '<p class="req-desc">' + r.desc + '</p>' +
+      '<div class="req-thumbs">' + thumbsFor(r) + '</div>' +
+      '<div class="req-foot">' +
+        '<div class="req-stamp ' + r.status + '"><span class="dot"></span>' + fmtTimeAgo(r.submittedAt) + '</div>' +
+        '<div class="req-status ' + r.status + '">' + (r.status === 'new' ? 'New' : r.status === 'quoted' ? 'Sent · awaiting sign' : r.status === 'signed' ? 'Signed' : r.status) + '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderGrids() {
+  const newReqs = requests.filter(r => r.status === 'new' && (activeFilter === 'all' || r.tier === activeFilter));
+  const quoted = requests.filter(r => r.status === 'quoted');
+  const signed = requests.filter(r => r.status === 'signed');
+  const declined = requests.filter(r => r.status === 'declined');
+
+  $('newGrid').innerHTML = newReqs.length ? newReqs.map(cardHTML).join('') : '<div class="empty" style="grid-column: 1/-1;">No new requests right now.</div>';
+  $('quotedGrid').innerHTML = quoted.length ? quoted.map(cardHTML).join('') : '<div class="empty" style="grid-column: 1/-1;">No quotes awaiting signature.</div>';
+  $('declinedGrid').innerHTML = declined.length ? declined.map(cardHTML).join('') : '<div class="empty" style="grid-column: 1/-1;">Nothing declined.</div>';
+  $('signedRows').innerHTML = signed.length ? signed.map(r =>
+    '<tr data-id="' + r.id + '">' +
+      '<td><div class="row-name">' + r.name + '</div><div class="row-sub">' + r.id + ' · ' + r.email + '</div></td>' +
+      '<td><div class="when">' + (r.preferDate || '—') + '</div><div class="row-sub">' + (r.preferWindow || '') + '</div></td>' +
+      '<td>' + r.tierLabel + '</td>' +
+      '<td><strong>$' + fmtMoney(r.total || 0) + '</strong></td>' +
+      '<td><span class="req-status ' + r.status + '">' + r.status + '</span></td>' +
+    '</tr>'
+  ).join('') : '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted);">No signed jobs yet.</td></tr>';
+
+  /* counts + KPIs */
+  $('countNew').textContent = requests.filter(r => r.status === 'new').length;
+  $('countQuoted').textContent = quoted.length;
+  $('countSigned').textContent = signed.length;
+  $('countDeclined').textContent = declined.length;
+  $('kpiOpen').textContent = requests.filter(r => r.status === 'new').length;
+  $('kpiPending').textContent = quoted.length;
+  $('kpiScheduled').textContent = signed.length;
+  $('kpiRevenue').textContent = fmtMoney(signed.reduce((a, r) => a + (r.total || 0), 0));
+  $('notifBadge').textContent = requests.filter(r => r.status === 'new').length;
+
+  /* wire card clicks */
+  document.querySelectorAll('.req-card').forEach(c => c.addEventListener('click', () => openDetail(c.dataset.id)));
+  document.querySelectorAll('#signedRows tr[data-id]').forEach(r => r.addEventListener('click', () => openDetail(r.dataset.id)));
+}
+
+/* ---------- views ---------- */
+const VIEW_TITLES = {
+  new: ['New Requests', 'Quotes awaiting your review'],
+  quoted: ['Sent for Signature', 'Customers reviewing the agreement'],
+  signed: ['Signed &amp; Scheduled', 'Confirmed pickups on the calendar'],
+  declined: ['Declined', 'Requests outside scope'],
+  route: ['Today&rsquo;s Route', 'Crew schedule for ' + new Date().toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' })],
+  reports: ['Reports', 'Revenue, win-rate, &amp; diversion']
+};
+function setView(v) {
+  activeView = v;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.view === v));
+  document.querySelectorAll('.view').forEach(p => p.classList.toggle('active', p.id === 'view-' + v));
+  const [title, sub] = VIEW_TITLES[v] || ['—', ''];
+  $('viewTitle').innerHTML = title;
+  $('viewCrumbs').innerHTML = sub;
+}
+document.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', () => setView(n.dataset.view)));
+
+/* ---------- filters ---------- */
+document.querySelectorAll('#view-new .chip[data-filter]').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('#view-new .chip[data-filter]').forEach(x => x.classList.remove('active'));
+  c.classList.add('active');
+  activeFilter = c.dataset.filter;
+  renderGrids();
+}));
+
+/* ---------- detail panel ---------- */
+function openDetail(id) {
+  const r = requests.find(x => x.id === id);
+  if (!r) return;
+  currentRequest = r;
+  $('dName').textContent = r.name;
+  $('dRef').textContent = r.id + ' · submitted ' + fmtDate(r.submittedAt);
+  $('dPhone').innerHTML = '<a href="tel:' + r.phone.replace(/\D/g,'') + '">' + r.phone + '</a>';
+  $('dEmail').innerHTML = '<a href="mailto:' + r.email + '">' + r.email + '</a>';
+  $('dAddress').textContent = r.address;
+  $('dWhen').textContent = (r.preferDate ? r.preferDate + ' · ' : '') + (r.preferWindow || '—');
+  $('dDesc').textContent = r.desc;
+
+  $('dSpots').innerHTML = (r.spots || []).map((s, i) =>
+    '<div class="spot-item">' +
+      '<strong>SPOT ' + (i + 1) + '</strong>' + s.location +
+      (s.stairs && s.stairs !== 'No stairs' ? '<span class="stairs">· ' + s.stairs + '</span>' : '') +
+      (s.notes ? '<div class="notes">' + s.notes + '</div>' : '') +
+    '</div>'
+  ).join('') || '<div style="color: var(--muted); font-size: 0.85rem;">No spots specified.</div>';
+
+  const total = (r.photos || 0) + (r.videos || 0);
+  let media = '';
+  for (let i = 0; i < (r.photos || 0); i++) media += '<div class="media-tile photo"></div>';
+  for (let i = 0; i < (r.videos || 0); i++) media += '<div class="media-tile video"></div>';
+  $('dMedia').innerHTML = media || '<div style="color: var(--muted); font-size: 0.85rem; grid-column: 1/-1;">No media attached.</div>';
+
+  /* Quote builder lines */
+  const lines = r.lineItems ? [...r.lineItems] : (r.suggested ? [...r.suggested] : [{ label: 'Service charge', amount: 0 }]);
+  renderLines(lines);
+  $('customerMessage').value = r.customerMessage || '';
+  $('internalNote').value = r.internalNote || '';
+
+  /* Signed view extras */
+  if (r.status === 'signed') {
+    $('signedDetailSection').style.display = 'block';
+    $('dSigName').textContent = r.name;
+    $('dSigFullName').textContent = r.name;
+    $('dSigStamp').textContent = 'Signed ' + fmtDate(r.signedAt);
+    $('detailFoot').innerHTML = '<div style="flex: 1; font-size: 0.82rem; color: var(--muted);">✓ Agreement on file — pickup scheduled</div>' +
+      '<button class="btn btn-ghost">Email Receipt</button>' +
+      '<button class="btn btn-primary">View Agreement</button>';
+  } else if (r.status === 'declined') {
+    $('signedDetailSection').style.display = 'none';
+    $('detailFoot').innerHTML = '<div style="flex: 1; font-size: 0.82rem; color: var(--err);">Declined: ' + (r.declineReason || '—') + '</div>' +
+      '<button class="btn btn-ghost" onclick="reopenCurrent()">Reopen</button>';
+  } else {
+    $('signedDetailSection').style.display = 'none';
+    $('detailFoot').innerHTML =
+      '<button class="btn btn-danger" id="actDecline">Decline</button>' +
+      '<div style="flex: 1;"></div>' +
+      '<button class="btn btn-ghost" id="actSave">Save Draft</button>' +
+      '<button class="btn btn-primary" id="actSend">' + (r.status === 'quoted' ? 'Resend Quote' : 'Send for Signature') +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
+      '</button>';
+    $('actDecline').addEventListener('click', declineCurrent);
+    $('actSave').addEventListener('click', saveDraft);
+    $('actSend').addEventListener('click', sendForSignature);
+  }
+
+  $('detailOverlay').classList.add('show');
+  $('detailPanel').classList.add('open');
+}
+function closeDetail() {
+  $('detailOverlay').classList.remove('show');
+  $('detailPanel').classList.remove('open');
+  currentRequest = null;
+}
+$('closeDetail').addEventListener('click', closeDetail);
+$('detailOverlay').addEventListener('click', closeDetail);
+
+/* ---------- quote line items ---------- */
+function lineHTML(item) {
+  return '' +
+    '<div class="line-item">' +
+      '<input type="text" value="' + (item.label || '').replace(/"/g, '&quot;') + '" placeholder="Line item label" />' +
+      '<input type="number" value="' + (item.amount || 0) + '" min="0" step="5" />' +
+      '<button class="line-remove" type="button" aria-label="Remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>' +
+    '</div>';
+}
+function renderLines(items) {
+  $('lineItems').innerHTML = items.map(lineHTML).join('');
+  attachLineHandlers();
+  updateTotal();
+}
+function attachLineHandlers() {
+  document.querySelectorAll('#lineItems .line-item input').forEach(i => i.addEventListener('input', updateTotal));
+  document.querySelectorAll('#lineItems .line-remove').forEach(b => b.addEventListener('click', () => {
+    b.closest('.line-item').remove();
+    updateTotal();
+  }));
+}
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll('#lineItems .line-item').forEach(li => {
+    total += parseFloat(li.querySelector('input[type="number"]').value) || 0;
+  });
+  $('quoteTotal').textContent = fmtMoney(total);
+}
+$('addLine').addEventListener('click', () => {
+  $('lineItems').insertAdjacentHTML('beforeend', lineHTML({ label: '', amount: 0 }));
+  attachLineHandlers();
+  const inputs = $('lineItems').querySelectorAll('.line-item input[type="text"]');
+  inputs[inputs.length - 1].focus();
+});
+
+/* ---------- actions ---------- */
+function collectLineItems() {
+  return Array.from(document.querySelectorAll('#lineItems .line-item')).map(li => ({
+    label: li.querySelector('input[type="text"]').value.trim() || 'Service',
+    amount: parseFloat(li.querySelector('input[type="number"]').value) || 0
+  })).filter(x => x.amount > 0 || x.label);
+}
+function persistCurrent() {
+  if (!currentRequest) return;
+  currentRequest.lineItems = collectLineItems();
+  currentRequest.total = currentRequest.lineItems.reduce((a, l) => a + l.amount, 0);
+  currentRequest.customerMessage = $('customerMessage').value;
+  currentRequest.internalNote = $('internalNote').value;
+}
+function sendForSignature() {
+  if (!currentRequest) return;
+  persistCurrent();
+  if (currentRequest.total <= 0) { toast('Add at least one line item with a price.', true); return; }
+  currentRequest.status = 'quoted';
+  currentRequest.sentAt = new Date().toISOString();
+  toast('Quote sent to ' + currentRequest.name + ' for signature.');
+  closeDetail();
+  renderGrids();
+  setView('quoted');
+}
+function saveDraft() {
+  persistCurrent();
+  toast('Draft saved.');
+  renderGrids();
+}
+function declineCurrent() {
+  if (!currentRequest) return;
+  const reason = prompt('Reason for declining? (optional — will be saved internally)');
+  currentRequest.status = 'declined';
+  if (reason) currentRequest.declineReason = reason;
+  toast('Request declined.');
+  closeDetail();
+  renderGrids();
+}
+function reopenCurrent() {
+  if (!currentRequest) return;
+  currentRequest.status = 'new';
+  toast('Request reopened.');
+  closeDetail();
+  renderGrids();
+  setView('new');
+}
+window.reopenCurrent = reopenCurrent;
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg, isError) {
+  const t = $('toast');
+  $('toastMsg').textContent = msg;
+  t.style.background = isError ? 'var(--err)' : 'var(--ok)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ---------- search ---------- */
+$('searchInput').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  document.querySelectorAll('.req-card').forEach(c => {
+    const txt = c.textContent.toLowerCase();
+    c.style.display = (!q || txt.includes(q)) ? '' : 'none';
+  });
+});
+
+/* keyboard close */
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeDetail(); });
+
+/* ---------- init ---------- */
+renderGrids();
+if (fresh) toast('New request received from ' + fresh.name);
+</script>
+
+</body>
+</html>
