@@ -76,6 +76,50 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--r
 textarea { min-height: 110px; resize: vertical; }
 
 .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.spot-list { display: flex; flex-direction: column; gap: 12px; }
+.spot-row {
+  display: grid; grid-template-columns: 1fr 1fr 1.4fr auto;
+  gap: 10px; align-items: start;
+  padding: 14px; background: #fafaf7;
+  border: 1.5px solid var(--line); border-radius: 10px;
+  position: relative; animation: spotIn .2s ease;
+}
+@keyframes spotIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.spot-row select, .spot-row input { padding: 10px 12px; font-size: 0.9rem; }
+.spot-row .spot-label {
+  display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; color: rgba(20,21,23,0.55); margin-bottom: 4px;
+}
+.spot-row .spot-num {
+  position: absolute; top: -8px; left: 12px; background: var(--ink); color: var(--rust-light);
+  font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 0.65rem; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 4px; text-transform: uppercase;
+}
+.spot-remove {
+  margin-top: 18px; width: 36px; height: 36px; background: #fff;
+  border: 1.5px solid var(--line); border-radius: 8px;
+  display: grid; place-items: center; cursor: pointer; transition: all .15s;
+  color: rgba(20,21,23,0.4);
+}
+.spot-remove:hover { border-color: #c84a3a; color: #c84a3a; background: rgba(200,74,58,0.05); }
+.spot-remove svg { width: 16px; height: 16px; }
+.spot-remove[disabled] { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+.add-spot-btn {
+  margin-top: 12px; display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; background: #fff; border: 1.5px dashed var(--line); border-radius: 8px;
+  font-family: inherit; font-weight: 600; font-size: 0.88rem; color: var(--ink);
+  cursor: pointer; transition: all .15s;
+}
+.add-spot-btn:hover { border-color: var(--rust); border-style: solid; color: var(--rust); background: rgba(226,88,34,0.04); }
+.add-spot-btn svg { width: 16px; height: 16px; }
+
+@media (max-width: 700px) {
+  .spot-row { grid-template-columns: 1fr 1fr; }
+  .spot-row .spot-cell-notes { grid-column: 1 / -1; }
+  .spot-row .spot-remove { margin-top: 0; grid-column: 2; justify-self: end; }
+}
 .chip {
   padding: 10px 16px; border: 1.5px solid var(--line); border-radius: 100px; background: #fff;
   font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all .15s; user-select: none;
@@ -281,30 +325,14 @@ textarea { min-height: 110px; resize: vertical; }
         <div class="hint">Be specific about heavy items (hot tubs, pianos, safes) and anything stuck behind doorways or upstairs.</div>
       </div>
 
-      <div class="field-row">
-        <div class="field">
-          <label>Location of items <span class="req">*</span></label>
-          <select id="location">
-            <option value="">Choose...</option>
-            <option>Curbside / driveway</option>
-            <option>Garage (ground floor)</option>
-            <option>Inside ground floor</option>
-            <option>Second floor / upstairs</option>
-            <option>Basement</option>
-            <option>Attic</option>
-            <option>Back yard</option>
-            <option>Multiple locations</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Stairs involved?</label>
-          <select id="stairs">
-            <option value="No">No</option>
-            <option value="1 flight">1 flight</option>
-            <option value="2+ flights">2+ flights</option>
-            <option value="Narrow stairs">Narrow stairs</option>
-          </select>
-        </div>
+      <div class="field">
+        <label>Pickup spots <span class="req">*</span></label>
+        <div class="hint" style="margin-top: -2px; margin-bottom: 10px;">Add a row for each location we&rsquo;re grabbing stuff from. Stairs/access notes help us send the right crew.</div>
+        <div id="spotList" class="spot-list"></div>
+        <button type="button" class="add-spot-btn" id="addSpot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add another spot
+        </button>
       </div>
 
       <div class="step-actions" style="margin: 28px -36px -32px;">
@@ -450,8 +478,7 @@ textarea { min-height: 110px; resize: vertical; }
           <div class="review-row"><dt>Job type</dt><dd id="rJobType">&mdash;</dd></div>
           <div class="review-row"><dt>Estimated size</dt><dd id="rTier">&mdash;</dd></div>
           <div class="review-row"><dt>Items</dt><dd id="rDesc">&mdash;</dd></div>
-          <div class="review-row"><dt>Location</dt><dd id="rLoc">&mdash;</dd></div>
-          <div class="review-row"><dt>Stairs</dt><dd id="rStairs">&mdash;</dd></div>
+          <div class="review-row"><dt>Pickup spots</dt><dd id="rSpots">&mdash;</dd></div>
         </dl>
       </div>
 
@@ -524,7 +551,9 @@ function validateStep(n) {
     if (!$('jobType').value) return showErr(1, 'Pick the type of job.'), false;
     if (!$('tier').value)    return showErr(1, 'Pick the rough size.'), false;
     if (!$('description').value.trim()) return showErr(1, 'Give us a quick description.'), false;
-    if (!$('location').value) return showErr(1, 'Where are the items located?'), false;
+    if (getSpots().length === 0) return showErr(1, 'Add at least one pickup spot.'), false;
+    const blank = getSpots().find(s => !s.location);
+    if (blank) return showErr(1, 'Pick a location for each pickup spot.'), false;
   }
   if (n === 3) {
     if (!$('firstName').value.trim()) return showErr(3, 'First name is required.'), false;
@@ -546,6 +575,74 @@ document.querySelectorAll('[data-prev]').forEach(b => b.addEventListener('click'
   e.preventDefault();
   goToStep(+b.dataset.prev);
 }));
+
+/* ---------- pickup spots repeater ---------- */
+const LOCATION_OPTS = [
+  'Curbside / driveway',
+  'Garage (ground floor)',
+  'Inside ground floor',
+  'Second floor / upstairs',
+  'Basement',
+  'Attic',
+  'Back yard',
+  'Side yard / shed',
+  'Rooftop / deck',
+  'Storage unit'
+];
+const STAIRS_OPTS = ['No stairs', '1 flight', '2+ flights', 'Narrow stairs', 'Spiral / tight turn'];
+
+function spotRowHTML(idx) {
+  const locOpts = ['<option value="">Choose location…</option>'].concat(LOCATION_OPTS.map(o => '<option>' + o + '</option>')).join('');
+  const stairOpts = STAIRS_OPTS.map(o => '<option>' + o + '</option>').join('');
+  return '' +
+    '<div class="spot-row" data-idx="' + idx + '">' +
+      '<div class="spot-num">Spot ' + (idx + 1) + '</div>' +
+      '<div class="spot-cell-loc">' +
+        '<span class="spot-label">Location</span>' +
+        '<select class="spot-location">' + locOpts + '</select>' +
+      '</div>' +
+      '<div class="spot-cell-stairs">' +
+        '<span class="spot-label">Stairs / access</span>' +
+        '<select class="spot-stairs">' + stairOpts + '</select>' +
+      '</div>' +
+      '<div class="spot-cell-notes">' +
+        '<span class="spot-label">What&rsquo;s here? (optional)</span>' +
+        '<input type="text" class="spot-notes" placeholder="e.g. sectional sofa, 2 mattresses" />' +
+      '</div>' +
+      '<button type="button" class="spot-remove" aria-label="Remove spot" title="Remove">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>' +
+      '</button>' +
+    '</div>';
+}
+function renumberSpots() {
+  const rows = document.querySelectorAll('#spotList .spot-row');
+  rows.forEach((r, i) => {
+    r.dataset.idx = i;
+    r.querySelector('.spot-num').textContent = 'Spot ' + (i + 1);
+  });
+  document.querySelectorAll('#spotList .spot-remove').forEach(b => { b.disabled = rows.length <= 1; });
+}
+function addSpot() {
+  const idx = document.querySelectorAll('#spotList .spot-row').length;
+  $('spotList').insertAdjacentHTML('beforeend', spotRowHTML(idx));
+  renumberSpots();
+}
+function getSpots() {
+  return Array.from(document.querySelectorAll('#spotList .spot-row')).map(r => ({
+    location: r.querySelector('.spot-location').value,
+    stairs: r.querySelector('.spot-stairs').value,
+    notes: r.querySelector('.spot-notes').value.trim()
+  }));
+}
+$('spotList').addEventListener('click', (e) => {
+  const rm = e.target.closest('.spot-remove');
+  if (!rm) return;
+  if (document.querySelectorAll('#spotList .spot-row').length <= 1) return;
+  rm.closest('.spot-row').remove();
+  renumberSpots();
+});
+$('addSpot').addEventListener('click', addSpot);
+addSpot();
 
 /* ---------- chip + tier card selection ---------- */
 function setupSingleSelect(groupId, hiddenId) {
@@ -623,8 +720,18 @@ function populateReview() {
   $('rJobType').textContent = jobTypeLabels[$('jobType').value] || '—';
   $('rTier').textContent    = tierLabels[$('tier').value] || '—';
   $('rDesc').textContent    = $('description').value.trim() || '—';
-  $('rLoc').textContent     = $('location').value || '—';
-  $('rStairs').textContent  = $('stairs').value || 'No';
+  const spots = getSpots().filter(s => s.location);
+  if (spots.length === 0) {
+    $('rSpots').textContent = '—';
+  } else {
+    $('rSpots').innerHTML = spots.map((s, i) =>
+      '<div style="padding:4px 0;">' +
+        '<strong>' + (i + 1) + '. ' + s.location + '</strong>' +
+        (s.stairs && s.stairs !== 'No stairs' ? ' <span style="color:rgba(20,21,23,0.55);">(' + s.stairs + ')</span>' : '') +
+        (s.notes ? '<div style="font-size:0.85rem;color:rgba(20,21,23,0.65);margin-top:2px;">' + s.notes.replace(/[<>&]/g, c => ({ '<':'&lt;', '>':'&gt;', '&':'&amp;' }[c])) + '</div>' : '') +
+      '</div>'
+    ).join('');
+  }
   $('rName').textContent    = ($('firstName').value + ' ' + $('lastName').value).trim() || '—';
   $('rEmail').textContent   = $('email').value || '—';
   $('rPhone').textContent   = $('phone').value || '—';
@@ -664,6 +771,7 @@ $('intakeForm').addEventListener('submit', (e) => {
       email: $('email').value,
       phone: $('phone').value,
       address: [$('address').value, $('city').value, $('zip').value].filter(Boolean).join(', '),
+      spots: getSpots().filter(s => s.location),
       mediaCount: files.length
     }));
   } catch (_) {}
