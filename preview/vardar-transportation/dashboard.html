@@ -414,6 +414,38 @@
   .qv-spinner{display:inline-block;width:18px;height:18px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
   @keyframes spin{to{transform:rotate(360deg)}}
 
+  /* Booking modal (dashboard-themed — different from public-facing qv-overlay) */
+  .bk-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:300;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;animation:qvFade .2s ease}
+  .bk-overlay[hidden]{display:none}
+  .bk-card{max-width:640px;width:100%;background:var(--panel);border:1px solid var(--gold-deep);border-radius:14px;box-shadow:0 40px 100px rgba(0,0,0,.55);overflow:hidden;animation:qvSlide .35s cubic-bezier(.2,.7,.3,1)}
+  .bk-head{padding:22px 28px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .bk-head h2{font-family:'Playfair Display',serif;color:#fff;font-size:1.4rem;font-weight:500}
+  .bk-head .bk-eyebrow{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:4px;display:block}
+  .bk-close{width:34px;height:34px;border-radius:50%;background:var(--ink-3);border:none;color:#fff;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .bk-close:hover{background:var(--ink)}
+  .bk-body{padding:24px 28px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .bk-body .full{grid-column:1/-1}
+  .bk-body .bk-field{background:var(--ink-3);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+  .bk-body .bk-field:focus-within{border-color:var(--gold)}
+  .bk-body label{display:block;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .bk-body input,.bk-body select,.bk-body textarea{width:100%;background:transparent;border:none;outline:none;color:#fff;font-size:.92rem;font-weight:500;font-family:inherit}
+  .bk-body select option{background:var(--ink-3)}
+  .bk-body textarea{resize:vertical;min-height:54px;line-height:1.5}
+  .bk-foot{padding:18px 28px;border-top:1px solid var(--line);background:var(--ink-2);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .bk-foot .hint{font-size:.78rem;color:var(--muted)}
+  .bk-foot .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .bk-success{padding:36px 28px;text-align:center}
+  .bk-success .checkmark{width:60px;height:60px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.9rem;margin:0 auto 16px;animation:popIn .4s cubic-bezier(.2,.9,.3,1.4)}
+  .bk-success h3{font-family:'Playfair Display',serif;color:#fff;font-size:1.5rem;font-weight:500;margin-bottom:10px}
+  .bk-success p{color:var(--text-soft);font-size:.95rem;line-height:1.6;max-width:38ch;margin:0 auto 22px}
+  @media (max-width:640px){
+    .bk-body{grid-template-columns:1fr;padding:18px 18px}
+    .bk-head{padding:16px 18px}
+    .bk-foot{padding:14px 18px}
+    .bk-foot .actions{width:100%;flex-direction:column}
+    .bk-foot .actions .btn{width:100%;justify-content:center}
+  }
+
   /* Toast */
   .toast-stack{position:fixed;bottom:24px;left:24px;z-index:250;display:flex;flex-direction:column;gap:10px;pointer-events:none}
   .toast{background:var(--ink-2);border:1px solid var(--gold-deep);color:#fff;padding:14px 18px;border-radius:10px;font-size:.86rem;box-shadow:0 12px 36px rgba(0,0,0,.45);min-width:280px;max-width:380px;pointer-events:auto;display:flex;align-items:center;gap:12px;animation:toastIn .3s cubic-bezier(.2,.7,.3,1)}
@@ -561,8 +593,8 @@
     </div>
   </div>
   <div class="top-actions">
-    <button class="btn">Settings</button>
-    <button class="btn primary">+ New Booking</button>
+    <button class="btn" id="settingsBtn">Settings</button>
+    <button class="btn primary" id="newBookingBtn">+ New Booking</button>
     <div class="avatar">VG</div>
   </div>
 </header>
@@ -906,7 +938,7 @@
               <tr><td colspan="3" style="color:#fff;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700">Quote Total</td><td class="r tot">$2,650.00</td></tr>
             </tfoot>
           </table>
-          <div class="add-line">+ Add line item</div>
+          <div class="add-line" id="addLineBtn">+ Add line item</div>
         </div>
 
         <div class="q-field" style="margin-bottom:18px">
@@ -917,9 +949,9 @@
         <div class="q-foot">
           <div class="note">A $500 non-refundable deposit secures the date. Cancellation policy: full refund 72+ hrs prior.</div>
           <div class="send-actions">
-            <button class="btn">Save Draft</button>
-            <button class="btn">Send via SMS</button>
-            <button class="btn primary">Send via Email →</button>
+            <button class="btn" id="saveDraftBtn">Save Draft</button>
+            <button class="btn" id="sendSmsBtn">Send via SMS</button>
+            <button class="btn primary" id="sendEmailBtn">Send via Email →</button>
           </div>
         </div>
       </section>
@@ -1576,14 +1608,14 @@
 
         <div class="composer">
           <div class="composer-tools">
-            <button>+ Attach</button>
-            <button>+ Quote</button>
-            <button>+ Itinerary</button>
-            <button>Templates</button>
+            <button data-toast="Attachment picker is a $30/mo feature add-on.">+ Attach</button>
+            <button data-preview-quote="q-sarah">+ Quote</button>
+            <button data-toast="Itinerary builder opens here.">+ Itinerary</button>
+            <button data-toast="Saved-reply templates open here.">Templates</button>
           </div>
           <div class="composer-input">
-            <textarea placeholder="Type a reply to Sarah..."></textarea>
-            <button class="send">Send →</button>
+            <textarea placeholder="Type a reply to Sarah..." id="composerInput"></textarea>
+            <button class="send" id="composerSend">Send →</button>
           </div>
         </div>
       </section>
@@ -1663,6 +1695,90 @@
       <h3>Deposit received. Your date is held.</h3>
       <p>Vardar will confirm by text within the hour. A receipt and full itinerary are on the way to your inbox.</p>
       <button class="qv-btn accept" id="qvSuccessClose" style="max-width:240px;margin:0 auto">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== New Booking modal ===================== -->
+<div class="bk-overlay" id="bookingModal" hidden>
+  <div class="bk-card" role="dialog" aria-modal="true">
+    <div class="bk-head">
+      <div>
+        <span class="bk-eyebrow">New booking</span>
+        <h2>Create a new booking</h2>
+      </div>
+      <button class="bk-close" id="bkClose" aria-label="Close">×</button>
+    </div>
+    <div id="bkForm">
+      <div class="bk-body">
+        <div class="bk-field">
+          <label>Customer Name</label>
+          <input type="text" placeholder="e.g. Sarah Mitchell">
+        </div>
+        <div class="bk-field">
+          <label>Phone</label>
+          <input type="tel" placeholder="(205) 555-0000">
+        </div>
+        <div class="bk-field">
+          <label>Service Type</label>
+          <select>
+            <option>Chauffeured — Round Trip</option>
+            <option>Chauffeured — Multi-stop</option>
+            <option>Self-Drive Rental</option>
+            <option>Airport Transfer</option>
+            <option>Wedding Shuttle</option>
+            <option>Game-Day Package</option>
+          </select>
+        </div>
+        <div class="bk-field">
+          <label>Vehicle</label>
+          <select>
+            <option>V-01 Sprinter Exec · 15 pax</option>
+            <option>V-02 Transit XLT · 12 pax</option>
+            <option>V-03 Transit XLT · 12 pax</option>
+            <option>V-05 Express Lux · 8 pax</option>
+            <option>V-07 Transit XLT · 12 pax</option>
+            <option>Recommend best fit</option>
+          </select>
+        </div>
+        <div class="bk-field">
+          <label>Pickup Date</label>
+          <input type="date">
+        </div>
+        <div class="bk-field">
+          <label>Pickup Time</label>
+          <input type="time">
+        </div>
+        <div class="bk-field">
+          <label>Passengers</label>
+          <input type="number" min="1" max="15" placeholder="6">
+        </div>
+        <div class="bk-field">
+          <label>Estimated Hours</label>
+          <input type="number" min="1" placeholder="4">
+        </div>
+        <div class="bk-field full">
+          <label>Pickup & Stops</label>
+          <textarea placeholder="Pickup address, then any stops..."></textarea>
+        </div>
+        <div class="bk-field full">
+          <label>Notes</label>
+          <textarea placeholder="Special requests, decor, cooler stock..."></textarea>
+        </div>
+      </div>
+      <div class="bk-foot">
+        <div class="hint">A draft quote will be created from this booking.</div>
+        <div class="actions">
+          <button class="btn" id="bkCancel">Cancel</button>
+          <button class="btn primary" id="bkSubmit">Create Booking →</button>
+        </div>
+      </div>
+    </div>
+    <div class="bk-success" id="bkSuccess" style="display:none">
+      <div class="checkmark">✓</div>
+      <h3>Booking created.</h3>
+      <p>Draft quote saved and the calendar has been updated. Customer will get a text confirmation.</p>
+      <button class="btn primary" id="bkSuccessClose">Done</button>
     </div>
   </div>
 </div>
@@ -1992,6 +2108,102 @@
     div.innerHTML='<div class="bubble">'+text+'</div><div class="when">just now</div>';
     thread.appendChild(div);
     thread.scrollTop = thread.scrollHeight;
+  }
+
+  // ---------------- Booking modal ----------------
+  const bookingModal = document.getElementById('bookingModal');
+  const bkForm = document.getElementById('bkForm');
+  const bkSuccess = document.getElementById('bkSuccess');
+  function openBooking(){
+    bkForm.style.display='';
+    bkSuccess.style.display='none';
+    bookingModal.hidden=false;
+    document.body.style.overflow='hidden';
+  }
+  function closeBooking(){
+    bookingModal.hidden=true;
+    document.body.style.overflow='';
+  }
+  document.getElementById('newBookingBtn').addEventListener('click', openBooking);
+  document.getElementById('bkClose').addEventListener('click', closeBooking);
+  document.getElementById('bkCancel').addEventListener('click', closeBooking);
+  bookingModal.addEventListener('click', e=>{ if(e.target===bookingModal) closeBooking(); });
+  document.getElementById('bkSubmit').addEventListener('click', ()=>{
+    bkForm.style.display='none';
+    bkSuccess.style.display='';
+  });
+  document.getElementById('bkSuccessClose').addEventListener('click', ()=>{
+    closeBooking();
+    toast('Booking created · draft quote saved', 'success');
+  });
+
+  // ---------------- Quote action buttons ----------------
+  document.getElementById('saveDraftBtn').addEventListener('click', ()=>{
+    toast('Quote draft saved', 'success');
+  });
+  document.getElementById('sendSmsBtn').addEventListener('click', ()=>{
+    setQuoteStatus('q-sarah','sent','Sent · SMS');
+    toast('Quote sent to Sarah via SMS', 'success');
+  });
+  document.getElementById('sendEmailBtn').addEventListener('click', ()=>{
+    setQuoteStatus('q-sarah','sent','Sent · Email');
+    toast('Quote emailed to sarah.m.mitchell@gmail.com', 'success');
+  });
+  document.getElementById('addLineBtn').addEventListener('click', ()=>{
+    const tbody = document.querySelector('.q-lines tbody');
+    if(!tbody) return;
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td><input placeholder="New line item description"></td><td><input value="1" style="width:40px"></td><td><input value="$0" style="width:60px"></td><td class="r">$0.00</td>';
+    tbody.appendChild(tr);
+    tr.querySelector('input').focus();
+  });
+
+  // ---------------- Chat composer ----------------
+  const composerInput = document.getElementById('composerInput');
+  const composerSend = document.getElementById('composerSend');
+  function sendComposerMessage(){
+    const text = composerInput.value.trim();
+    if(!text) return;
+    appendChatMessage(text, 'out');
+    composerInput.value='';
+    composerInput.style.height='auto';
+  }
+  composerSend.addEventListener('click', sendComposerMessage);
+  composerInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && !e.shiftKey){
+      e.preventDefault();
+      sendComposerMessage();
+    }
+  });
+  // auto-grow
+  composerInput.addEventListener('input', ()=>{
+    composerInput.style.height='auto';
+    composerInput.style.height = Math.min(composerInput.scrollHeight, 140) + 'px';
+  });
+
+  // ---------------- Generic data-toast handler ----------------
+  document.addEventListener('click', e=>{
+    const t = e.target.closest('[data-toast]');
+    if(t){
+      e.preventDefault();
+      toast(t.dataset.toast);
+    }
+  });
+
+  // ---------------- Settings stub ----------------
+  document.getElementById('settingsBtn').addEventListener('click', ()=>{
+    toast('Settings panel — business info, drivers, fleet, billing');
+  });
+
+  // ---------------- Top-bar search ----------------
+  const topSearch = document.querySelector('header.top .search input');
+  if(topSearch){
+    topSearch.addEventListener('keydown', e=>{
+      if(e.key==='Enter'){
+        const q = topSearch.value.trim();
+        if(q) toast('Searching for "'+q+'" across trips, customers, and vehicles');
+      }
+    });
   }
 </script>
 
