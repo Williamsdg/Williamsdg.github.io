@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Huddle With Coach Pink — Auburn Film Room</title>
+<meta name="description" content="A film review studio for Auburn football. Mark plays, draw on the frame, log stats, trim clips.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===================== TOP BAR ===================== -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">🏈</span>
+      <span class="brand-wordmark">Huddle With <span class="brand-pink">Coach Pink</span></span>
+    </div>
+    <div class="topbar-controls">
+      <select id="gameSelect" class="game-select" title="Switch game">
+        <option value="">No game loaded</option>
+      </select>
+      <button id="btnNewGame" class="btn btn-primary">+ New Game</button>
+      <button id="btnExport" class="btn btn-ghost" title="Export current game as JSON">Export</button>
+      <button id="btnImport" class="btn btn-ghost" title="Import game JSON">Import</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <!-- ===================== LEFT PANEL ===================== -->
+  <aside class="left">
+    <div class="panel-head">
+      <h3>Plays</h3>
+      <span id="markerCount" class="count">0</span>
+    </div>
+    <input id="markerSearch" class="search" placeholder="Search plays…">
+    <ul id="markerList" class="marker-list"></ul>
+
+    <div class="panel-head" style="margin-top:18px;">
+      <h3>Clips</h3>
+      <span id="clipCount" class="count">0</span>
+    </div>
+    <ul id="clipList" class="clip-list"></ul>
+  </aside>
+
+  <!-- ===================== CENTER (VIDEO) ===================== -->
+  <main class="center">
+
+    <div id="reattachBanner" class="banner hidden">
+      <div>
+        <strong>Re-attach video</strong>
+        <span id="reattachFileName"></span>
+        <span class="muted">(video files don't sync across sessions)</span>
+      </div>
+      <label class="btn btn-primary btn-sm">
+        Choose file
+        <input type="file" id="reattachFile" accept="video/*" hidden>
+      </label>
+    </div>
+
+    <div class="video-wrap" id="videoWrap">
+      <div id="videoMount" class="video-mount"></div>
+      <canvas id="overlay" class="overlay"></canvas>
+      <div id="videoEmpty" class="video-empty">
+        <div class="video-empty-inner">
+          <h2>Load a game to begin</h2>
+          <p class="muted">Start a new game in the top bar and pick a source — YouTube link, MP4 upload, or embed URL.</p>
+          <button class="btn btn-primary" id="btnNewGameInline">+ New Game</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transport -->
+    <div class="transport">
+      <button id="btnPlayPause" class="t-btn" title="Play / Pause (Space)">▶</button>
+      <button id="btnBack" class="t-btn" title="-5s (J)">−5s</button>
+      <button id="btnFwd" class="t-btn" title="+5s (L)">+5s</button>
+      <button id="btnFrameBack" class="t-btn" title="Frame back (,) — MP4 only">⟨ Frame</button>
+      <button id="btnFrameFwd" class="t-btn" title="Frame forward (.) — MP4 only">Frame ⟩</button>
+
+      <div class="scrubber-wrap">
+        <input id="scrubber" class="scrubber" type="range" min="0" max="1000" value="0" step="1">
+        <span id="timeReadout" class="time-readout">0:00 / 0:00</span>
+      </div>
+
+      <button id="btnMark" class="t-btn t-btn-primary" title="Mark Play (M)">⦿ Mark Play</button>
+      <button id="btnSetIn" class="t-btn" title="Set IN point (I)">[ IN</button>
+      <button id="btnSetOut" class="t-btn" title="Set OUT point (O)">OUT ]</button>
+      <button id="btnLoop" class="t-btn" title="Loop IN→OUT">↻ Loop</button>
+      <button id="btnSaveClip" class="t-btn" title="Save clip">＋ Clip</button>
+      <button id="btnExportClip" class="t-btn" title="Export clip as WebM — MP4 only">⤓ WebM</button>
+      <span id="ioReadout" class="muted small">IN: — &nbsp; OUT: —</span>
+    </div>
+
+    <!-- Telestrator -->
+    <div class="telestrator">
+      <div class="tool-group">
+        <button class="tool" data-tool="pen" title="Pen">✎</button>
+        <button class="tool" data-tool="arrow" title="Arrow">↗</button>
+        <button class="tool" data-tool="ellipse" title="Circle">○</button>
+        <button class="tool" data-tool="rect" title="Rectangle">▭</button>
+        <button class="tool" data-tool="text" title="Text">A</button>
+      </div>
+      <div class="tool-group">
+        <label class="color-pick" title="Color">
+          <input type="color" id="penColor" value="#DD550C">
+        </label>
+        <label class="line-width" title="Stroke width">
+          <input type="range" id="penWidth" min="2" max="14" value="4">
+        </label>
+      </div>
+      <div class="tool-group">
+        <button class="tool" id="btnUndo" title="Undo">↶</button>
+        <button class="tool" id="btnRedo" title="Redo">↷</button>
+        <button class="tool" id="btnClearDraw" title="Clear drawings">⌫</button>
+        <button class="tool" id="btnSnapshot" title="Snapshot PNG">📷</button>
+      </div>
+      <div class="hint muted small">Esc to deselect tool. Drawings auto-save to the active play.</div>
+    </div>
+  </main>
+
+  <!-- ===================== RIGHT PANEL ===================== -->
+  <aside class="right">
+    <div class="tabs">
+      <button class="tab active" data-tab="play">Play Details</button>
+      <button class="tab" data-tab="stats">Stats</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </div>
+
+    <section class="tab-pane active" data-pane="play">
+      <div id="playPaneEmpty" class="empty-state">
+        <p class="muted">Mark a play to log details.</p>
+      </div>
+      <div id="playPaneBody" class="hidden">
+        <div class="play-head">
+          <input id="playTitle" class="play-title" placeholder="Play title (e.g., 3rd & 7 — Mesh)">
+          <button id="btnDeletePlay" class="link-danger" title="Delete play">Delete</button>
+        </div>
+
+        <div class="play-meta">
+          <label>Time<input id="playTime" type="text" readonly></label>
+          <label>Quarter
+            <select id="playQuarter">
+              <option value="">—</option>
+              <option>1</option><option>2</option><option>3</option><option>4</option><option>OT</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="playtype-toggle">
+          <button class="pt" data-pt="offense">Offense (1)</button>
+          <button class="pt" data-pt="defense">Defense (2)</button>
+          <button class="pt" data-pt="st">Special Teams (3)</button>
+        </div>
+
+        <!-- Schema forms injected by JS based on playType -->
+        <div id="schemaForm" class="schema-form"></div>
+
+        <label class="notes-label">Notes
+          <textarea id="playNotes" rows="4" placeholder="Read, coverage, coaching point…"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <section class="tab-pane" data-pane="stats">
+      <div class="stats-filters">
+        <label>Quarter
+          <select id="filterQuarter">
+            <option value="">All</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>OT</option>
+          </select>
+        </label>
+        <label>Down
+          <select id="filterDown">
+            <option value="">All</option>
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+          </select>
+        </label>
+      </div>
+      <div id="statsBody" class="stats-body"></div>
+    </section>
+
+    <section class="tab-pane" data-pane="settings">
+      <div id="settingsBody" class="settings-body">
+        <p class="muted">No game loaded. Use <strong>+ New Game</strong> to start.</p>
+      </div>
+    </section>
+  </aside>
+
+</div>
+
+<!-- ===================== NEW GAME MODAL ===================== -->
+<div class="modal hidden" id="newGameModal">
+  <div class="modal-card">
+    <h2>New Game</h2>
+    <p class="muted">Set the opponent and pick a video source.</p>
+
+    <div class="form-row">
+      <label>Opponent
+        <input id="ng_opponent" placeholder="Alabama">
+      </label>
+      <label>Date
+        <input id="ng_date" type="date">
+      </label>
+    </div>
+    <div class="form-row">
+      <label>Season
+        <input id="ng_season" type="number" value="2025">
+      </label>
+      <label>Home / Away
+        <select id="ng_homeAway">
+          <option value="home">Home</option>
+          <option value="away">Away</option>
+          <option value="neutral">Neutral</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="source-tabs">
+      <button class="src-tab active" data-src="youtube">YouTube</button>
+      <button class="src-tab" data-src="mp4">Upload MP4</button>
+      <button class="src-tab" data-src="iframe">Embed URL</button>
+    </div>
+
+    <div class="src-pane" data-src-pane="youtube">
+      <label>YouTube URL or video ID
+        <input id="ng_yt" placeholder="https://youtube.com/watch?v=…">
+      </label>
+    </div>
+    <div class="src-pane hidden" data-src-pane="mp4">
+      <label>Video file
+        <input id="ng_mp4" type="file" accept="video/*">
+      </label>
+      <p class="muted small">The file stays in your browser — nothing is uploaded.</p>
+    </div>
+    <div class="src-pane hidden" data-src-pane="iframe">
+      <label>Embed URL (Hudl, Vimeo, etc.)
+        <input id="ng_iframe" placeholder="https://www.hudl.com/embed/…">
+      </label>
+      <p class="muted small">Iframe sources can't be controlled programmatically — you'll enter play timestamps manually.</p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="ng_cancel">Cancel</button>
+      <button class="btn btn-primary" id="ng_create">Create Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stopwatch helper for iframe sources -->
+<div id="stopwatch" class="stopwatch hidden">
+  <span class="sw-label">Stopwatch</span>
+  <span id="swReadout">0:00.0</span>
+  <button id="swStart">Start</button>
+  <button id="swReset">Reset</button>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- YouTube IFrame API -->
+<script>window.YT_API_READY = new Promise(r => { window.onYouTubeIframeAPIReady = r; });</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script src="app.js"></script>
+</body>
+</html>
