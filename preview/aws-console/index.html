@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AWS Console — Developer Edition</title>
+<meta name="description" content="A developer-first reimagining of the AWS console. Speculative redesign by Williams Digital." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0b0d10;
+    --bg-2:#0f1216;
+    --panel:#14171d;
+    --panel-2:#191d24;
+    --line:#1f242d;
+    --line-2:#2a313c;
+    --ink:#e6e9ef;
+    --ink-2:#9ba3b3;
+    --ink-3:#6b7382;
+    --accent:#ff9900;
+    --accent-2:#ffb547;
+    --green:#22c55e;
+    --red:#ef4444;
+    --amber:#f59e0b;
+    --blue:#3b82f6;
+    --purple:#a78bfa;
+    --cyan:#06b6d4;
+    --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-size:14px}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+  code,pre,.mono{font-family:var(--mono)}
+
+  /* ============= TOP BAR ============= */
+  .topbar{height:48px;border-bottom:1px solid var(--line);background:var(--bg-2);display:flex;align-items:center;padding:0 16px;gap:12px;position:sticky;top:0;z-index:30}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.01em}
+  .brand-mark{width:24px;height:24px;border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#0b0d10;font-weight:800;font-size:12px}
+  .brand small{color:var(--ink-3);font-weight:500;margin-left:4px;font-size:12px}
+  .region-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:var(--panel);border:1px solid var(--line);border-radius:7px;font-size:12px;color:var(--ink-2);cursor:pointer;font-family:var(--mono)}
+  .region-pill:hover{border-color:var(--line-2);color:var(--ink)}
+  .region-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+  .cmd-pill{margin-left:auto;display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--panel);border:1px solid var(--line);border-radius:7px;font-size:12.5px;color:var(--ink-3);cursor:pointer;min-width:280px}
+  .cmd-pill:hover{border-color:var(--line-2);color:var(--ink-2)}
+  .cmd-pill kbd{font-family:var(--mono);background:var(--bg);padding:1px 6px;border-radius:4px;border:1px solid var(--line);font-size:11px;margin-left:auto}
+  .top-icons{display:flex;align-items:center;gap:6px}
+  .iconbtn{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--ink-2);position:relative}
+  .iconbtn:hover{background:var(--panel);color:var(--ink)}
+  .iconbtn .badge{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--red)}
+  .avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff;cursor:pointer}
+
+  /* ============= LAYOUT ============= */
+  .app{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 48px)}
+  .sidebar{border-right:1px solid var(--line);background:var(--bg-2);padding:18px 12px;position:sticky;top:48px;height:calc(100vh - 48px);overflow-y:auto}
+  .sidebar h5{margin:14px 8px 6px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13px;color:var(--ink-2);cursor:pointer;margin-bottom:1px;transition:.1s}
+  .nav-item:hover{background:var(--panel);color:var(--ink)}
+  .nav-item.active{background:var(--panel-2);color:var(--ink)}
+  .nav-item.active .ico{color:var(--accent)}
+  .nav-item .ico{width:16px;height:16px;color:var(--ink-3);flex-shrink:0}
+  .nav-item .badge{margin-left:auto;font-size:10px;background:var(--line);padding:1px 6px;border-radius:5px;color:var(--ink-2);font-family:var(--mono);font-weight:600}
+  .nav-item .badge.red{background:rgba(239,68,68,.15);color:var(--red)}
+  .nav-item .badge.green{background:rgba(34,197,94,.15);color:var(--green)}
+
+  .main{padding:24px 28px;overflow:hidden;min-width:0}
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+  .page-head h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.015em}
+  .page-head h1 small{color:var(--ink-3);font-weight:500;font-size:14px;margin-left:8px}
+  .page-actions{display:flex;gap:8px}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:7px;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--ink);transition:.1s}
+  .btn:hover{border-color:var(--line-2);background:var(--panel-2)}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#0b0d10}
+  .btn-primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+  .btn-danger{color:var(--red);border-color:rgba(239,68,68,.3)}
+  .btn-danger:hover{background:rgba(239,68,68,.1)}
+
+  /* ============= STAT CARDS ============= */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+  @media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .stat-label{font-size:11.5px;color:var(--ink-3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+  .stat-value{font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em}
+  .stat-delta{font-size:11.5px;margin-top:4px;font-weight:600}
+  .stat-delta.up{color:var(--green)}
+  .stat-delta.down{color:var(--red)}
+
+  /* ============= ARCH DIAGRAM ============= */
+  .arch{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:20px}
+  .arch-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .arch-head h3{margin:0;font-size:14px;font-weight:600}
+  .arch-flow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .arch-node{flex:1;min-width:140px;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;transition:.15s;position:relative}
+  .arch-node:hover{border-color:var(--line-2);transform:translateY(-2px)}
+  .arch-node.error{border-color:rgba(239,68,68,.4);box-shadow:0 0 0 1px rgba(239,68,68,.2)}
+  .arch-node .ico-svc{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:8px}
+  .arch-node .svc-name{font-weight:600;font-size:13px;margin-bottom:2px}
+  .arch-node .svc-id{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-bottom:8px}
+  .arch-node .svc-stat{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+  .arch-node .status-dot{position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(34,197,94,.5);animation:pulse 2s infinite}
+  .arch-node.error .status-dot{background:var(--red);box-shadow:0 0 0 0 rgba(239,68,68,.6);animation:pulse 1s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 currentColor}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .arch-arrow{color:var(--ink-3);flex-shrink:0}
+
+  /* ============= TWO COL ============= */
+  .two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+  @media(max-width:1100px){.two-col{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .panel-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .panel-head h3{margin:0;font-size:14px;font-weight:600}
+  .panel-head .sub{color:var(--ink-3);font-size:12px;margin-left:8px;font-weight:500}
+  .panel-body{padding:0}
+
+  /* ============= LOGS ============= */
+  .log-toolbar{display:flex;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line);align-items:center;flex-wrap:wrap}
+  .log-search{flex:1;min-width:240px;display:flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+  .log-search input{flex:1;background:transparent;border:0;color:var(--ink);outline:none;font-family:var(--mono);font-size:12.5px}
+  .log-filter{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;font-size:11.5px;color:var(--ink-2);cursor:pointer;font-family:var(--mono);font-weight:500}
+  .log-filter:hover{border-color:var(--line-2);color:var(--ink)}
+  .log-filter.active{background:var(--panel-2);color:var(--ink);border-color:var(--line-2)}
+  .log-filter .x{color:var(--ink-3)}
+
+  .log-stream{font-family:var(--mono);font-size:12px;line-height:1.65;padding:8px 0;max-height:520px;overflow-y:auto;background:var(--bg-2)}
+  .log-line{padding:3px 18px;display:flex;gap:12px;border-left:2px solid transparent;cursor:pointer}
+  .log-line:hover{background:var(--panel)}
+  .log-line .ts{color:var(--ink-3);flex-shrink:0;white-space:nowrap}
+  .log-line .svc{color:var(--cyan);min-width:120px;flex-shrink:0}
+  .log-line .lvl{min-width:50px;flex-shrink:0;font-weight:600}
+  .log-line .msg{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .log-line.INFO .lvl{color:var(--blue)}
+  .log-line.WARN .lvl{color:var(--amber)}
+  .log-line.WARN{border-left-color:var(--amber)}
+  .log-line.ERROR .lvl{color:var(--red)}
+  .log-line.ERROR{border-left-color:var(--red);background:rgba(239,68,68,.04)}
+  .log-line.DEBUG .lvl{color:var(--ink-3)}
+  .log-line.DEBUG .msg{color:var(--ink-2)}
+  .log-stream::-webkit-scrollbar{width:8px}
+  .log-stream::-webkit-scrollbar-track{background:transparent}
+  .log-stream::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+
+  /* ============= DEPLOYS LIST ============= */
+  .deploy-list{padding:0}
+  .deploy-row{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px}
+  .deploy-row:last-child{border-bottom:0}
+  .deploy-row:hover{background:var(--panel-2)}
+  .deploy-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+  .deploy-icon.success{background:rgba(34,197,94,.12);color:var(--green)}
+  .deploy-icon.failed{background:rgba(239,68,68,.12);color:var(--red)}
+  .deploy-icon.running{background:rgba(245,158,11,.12);color:var(--amber)}
+  .deploy-meta{flex:1;min-width:0}
+  .deploy-meta .top{font-weight:600;font-size:13.5px;display:flex;align-items:center;gap:8px}
+  .deploy-meta .sha{font-family:var(--mono);font-size:11px;color:var(--ink-3);background:var(--bg);padding:1px 6px;border-radius:4px}
+  .deploy-meta .bot{font-size:12px;color:var(--ink-3);margin-top:3px}
+  .deploy-actions{display:flex;gap:6px}
+  .deploy-actions .btn{padding:5px 10px;font-size:12px}
+
+  /* ============= COST CHART ============= */
+  .chart-wrap{padding:18px}
+  .bar-chart{display:flex;align-items:flex-end;gap:4px;height:140px;padding:0 4px 8px;border-bottom:1px solid var(--line);position:relative}
+  .bar{flex:1;background:linear-gradient(180deg,var(--accent) 0%,rgba(255,153,0,.3) 100%);border-radius:3px 3px 0 0;min-height:6px;position:relative;cursor:pointer;transition:.15s}
+  .bar:hover{background:linear-gradient(180deg,var(--accent-2) 0%,rgba(255,181,71,.5) 100%)}
+  .bar.spike{background:linear-gradient(180deg,var(--red) 0%,rgba(239,68,68,.3) 100%)}
+  .bar-x{display:flex;gap:4px;padding:0 4px;margin-top:6px}
+  .bar-x span{flex:1;text-align:center;font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+  .cost-breakdown{padding:0 18px 18px}
+  .cost-row{display:flex;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+  .cost-row:first-child{border-top:0}
+  .cost-row .swatch{width:10px;height:10px;border-radius:2px;margin-right:10px}
+  .cost-row .name{flex:1}
+  .cost-row .amt{font-family:var(--mono);font-weight:600}
+  .cost-row .delta{font-family:var(--mono);font-size:11.5px;margin-left:10px;min-width:60px;text-align:right}
+  .cost-row .delta.up{color:var(--red)}
+  .cost-row .delta.down{color:var(--green)}
+
+  .alert{margin:0 18px 14px;padding:10px 14px;border-radius:8px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);font-size:12.5px;color:#ffb4b4;display:flex;align-items:center;gap:10px}
+  .alert .ico{color:var(--red);flex-shrink:0}
+
+  /* ============= TABLES ============= */
+  .tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .tbl thead th{text-align:left;padding:10px 18px;font-weight:600;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line);background:var(--bg-2)}
+  .tbl tbody td{padding:11px 18px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .tbl tbody tr{cursor:pointer;transition:.1s}
+  .tbl tbody tr:hover{background:var(--panel-2)}
+  .tbl tbody tr:last-child td{border-bottom:0}
+  .tbl .mono{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+  .tag{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:5px;font-size:11px;font-family:var(--mono);font-weight:600;background:var(--bg);border:1px solid var(--line);color:var(--ink-2)}
+  .tag.green{background:rgba(34,197,94,.1);color:var(--green);border-color:rgba(34,197,94,.2)}
+  .tag.red{background:rgba(239,68,68,.1);color:var(--red);border-color:rgba(239,68,68,.2)}
+  .tag.amber{background:rgba(245,158,11,.1);color:var(--amber);border-color:rgba(245,158,11,.2)}
+  .tag.blue{background:rgba(59,130,246,.1);color:var(--blue);border-color:rgba(59,130,246,.2)}
+  .tag.purple{background:rgba(167,139,250,.1);color:var(--purple);border-color:rgba(167,139,250,.2)}
+
+  /* ============= PAGE VIEW STATES ============= */
+  .view{display:none}
+  .view.active{display:block;animation:fade .2s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  /* ============= COMMAND PALETTE ============= */
+  .scrim{position:fixed;inset:0;background:rgba(5,7,10,.7);backdrop-filter:blur(6px);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:80px 20px 20px}
+  .scrim.open{display:flex;animation:fade .15s ease}
+  .palette{background:var(--panel);border:1px solid var(--line-2);border-radius:12px;width:100%;max-width:600px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+  .palette-input{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .palette-input input{flex:1;background:transparent;border:0;color:var(--ink);font-size:15px;outline:none;font-family:inherit}
+  .palette-input kbd{font-family:var(--mono);background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--line);font-size:11px;color:var(--ink-3)}
+  .palette-results{max-height:380px;overflow-y:auto;padding:6px 0}
+  .palette-group{padding:4px 0}
+  .palette-group-label{padding:6px 18px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .palette-item{display:flex;align-items:center;gap:12px;padding:9px 18px;cursor:pointer;font-size:13.5px}
+  .palette-item:hover,.palette-item.sel{background:var(--panel-2)}
+  .palette-item .ico{width:18px;height:18px;color:var(--ink-3);flex-shrink:0}
+  .palette-item .hint{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+  .palette-foot{padding:8px 18px;border-top:1px solid var(--line);display:flex;gap:14px;font-size:11.5px;color:var(--ink-3)}
+  .palette-foot kbd{font-family:var(--mono);background:var(--bg);padding:1px 5px;border-radius:3px;border:1px solid var(--line);font-size:10.5px;margin-right:4px}
+
+  /* ============= DRAWER ============= */
+  .drawer-scrim{position:fixed;inset:0;background:rgba(5,7,10,.5);z-index:90;opacity:0;pointer-events:none;transition:.2s}
+  .drawer-scrim.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;width:540px;max-width:100vw;height:100vh;background:var(--bg-2);border-left:1px solid var(--line);z-index:91;transform:translateX(100%);transition:.25s cubic-bezier(.4,0,.2,1);overflow-y:auto}
+  .drawer.open{transform:translateX(0)}
+  .drawer-head{padding:20px 22px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;gap:12px}
+  .drawer-head .ico-big{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .drawer-head h2{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em}
+  .drawer-head .sub{color:var(--ink-3);font-size:12px;margin-top:3px;font-family:var(--mono)}
+  .drawer-close{margin-left:auto;width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--ink-2)}
+  .drawer-close:hover{background:var(--panel);color:var(--ink)}
+  .drawer-body{padding:18px 22px}
+  .drawer-section{margin-bottom:22px}
+  .drawer-section h4{margin:0 0 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+  .kv{display:grid;grid-template-columns:120px 1fr;gap:6px 14px;font-size:13px}
+  .kv .k{color:var(--ink-3)}
+  .kv .v{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+
+  /* ============= TERMINAL ============= */
+  .term{position:fixed;left:228px;right:0;bottom:0;height:200px;background:#06080a;border-top:1px solid var(--line-2);z-index:40;transform:translateY(168px);transition:.25s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+  .term.open{transform:translateY(0)}
+  .term-head{height:32px;padding:0 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);background:var(--bg-2);cursor:pointer;flex-shrink:0}
+  .term-head .dot{width:10px;height:10px;border-radius:50%}
+  .term-head .dot.r{background:#ff5f57}.term-head .dot.y{background:#febc2e}.term-head .dot.g{background:#28c840}
+  .term-head .label{margin-left:8px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);font-weight:600}
+  .term-head .right{margin-left:auto;color:var(--ink-3);font-size:11px;font-family:var(--mono)}
+  .term-body{flex:1;overflow-y:auto;padding:10px 14px;font-family:var(--mono);font-size:12px;line-height:1.55}
+  .term-line{color:var(--ink-2);white-space:pre-wrap;word-break:break-all}
+  .term-line.cmd{color:var(--ink)}
+  .term-line.cmd::before{content:"$ ";color:var(--green)}
+  .term-line.ok{color:var(--green)}
+  .term-line.err{color:var(--red)}
+  .term-input-row{display:flex;align-items:center;gap:6px;padding:6px 14px 10px}
+  .term-input-row::before{content:"$";color:var(--green);font-family:var(--mono);font-weight:600}
+  .term-input-row input{flex:1;background:transparent;border:0;color:var(--ink);font-family:var(--mono);font-size:12px;outline:none}
+  @media(max-width:900px){.term{left:0}}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.2s;z-index:200}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ============= IAM ============= */
+  .role-card{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;cursor:pointer}
+  .role-card:hover{background:var(--panel-2)}
+  .role-icon{width:34px;height:34px;border-radius:7px;background:rgba(167,139,250,.15);color:var(--purple);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .role-meta{flex:1;min-width:0}
+  .role-meta .name{font-weight:600;font-size:13.5px}
+  .role-meta .arn{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .role-perms{display:flex;gap:4px;flex-wrap:wrap;max-width:280px;justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">aws</span> Console <small>Developer Edition</small></div>
+  <span class="region-pill" id="regionPill"><span class="dot"></span> us-east-1</span>
+
+  <button class="cmd-pill" id="openPalette">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Jump to anything…
+    <kbd>⌘K</kbd>
+  </button>
+
+  <div class="top-icons">
+    <button class="iconbtn" data-toast="3 unread alerts" title="Notifications">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span class="badge"></span>
+    </button>
+    <button class="iconbtn" id="toggleTerm" title="Toggle terminal">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+    </button>
+    <button class="iconbtn" data-toast="Help center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+    <div class="avatar" data-toast="dylan@williamsdigital.io">DW</div>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <h5>Operate</h5>
+    <div class="nav-item active" data-view="stack"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4M3 17l9 4 9-4"/></svg> Stack <span class="badge green">healthy</span></div>
+    <div class="nav-item" data-view="logs"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> Logs <span class="badge red">3</span></div>
+    <div class="nav-item" data-view="deploys"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> Deploys</div>
+    <div class="nav-item" data-view="costs"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Costs <span class="badge red">⚠</span></div>
+
+    <h5>Resources</h5>
+    <div class="nav-item" data-view="resources"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> All resources <span class="badge">42</span></div>
+    <div class="nav-item" data-view="iam"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> IAM &amp; access</div>
+    <div class="nav-item" data-toast="DB explorer demo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg> Databases</div>
+    <div class="nav-item" data-toast="Queues demo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Queues &amp; streams</div>
+
+    <h5>Build</h5>
+    <div class="nav-item" data-toast="Pipelines demo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg> Pipelines</div>
+    <div class="nav-item" data-toast="Secrets demo"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Secrets</div>
+    <div class="nav-item" data-view="settings"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Settings</div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <!-- =================== STACK =================== -->
+    <section class="view active" id="view-stack">
+      <div class="page-head">
+        <h1>Stack <small>payments-prod · us-east-1</small></h1>
+        <div class="page-actions">
+          <button class="btn" data-toast="Stack diagram exported"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export</button>
+          <button class="btn btn-primary" data-toast="New deployment kicked off">Deploy</button>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Requests · 24h</div>
+          <div class="stat-value">2.41M</div>
+          <div class="stat-delta up">▲ 12.4% vs yesterday</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">P95 latency</div>
+          <div class="stat-value">184<small style="font-size:14px;color:var(--ink-3)">ms</small></div>
+          <div class="stat-delta down">▼ 8ms</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Error rate</div>
+          <div class="stat-value" style="color:var(--amber)">0.42<small style="font-size:14px;color:var(--ink-3)">%</small></div>
+          <div class="stat-delta up" style="color:var(--amber)">▲ from 0.18%</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Spend MTD</div>
+          <div class="stat-value">$4,287</div>
+          <div class="stat-delta down">▼ 3.2% pace</div>
+        </div>
+      </div>
+
+      <div class="arch">
+        <div class="arch-head">
+          <h3>Live topology</h3>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">refreshed <span id="archAgo">3s</span> ago</span>
+        </div>
+        <div class="arch-flow" id="archFlow"></div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Recent activity <span class="sub">across all services</span></h3>
+            <button class="btn" data-toast="Live tail opening">Live tail</button>
+          </div>
+          <div class="panel-body">
+            <table class="tbl">
+              <thead><tr><th>Service</th><th>Event</th><th>When</th></tr></thead>
+              <tbody>
+                <tr data-resource="payments-api"><td>payments-api</td><td>504 from upstream — retried &amp; succeeded</td><td class="mono">12s ago</td></tr>
+                <tr data-resource="user-service"><td>user-service</td><td>Auto-scaled 4 → 6 tasks</td><td class="mono">2m ago</td></tr>
+                <tr data-resource="payments-api"><td>payments-api</td><td>Deployed <span class="tag green">v2.41.0</span></td><td class="mono">14m ago</td></tr>
+                <tr data-resource="users-table"><td>users-table</td><td>RCU consumption ▲ 38%</td><td class="mono">22m ago</td></tr>
+                <tr data-resource="event-queue"><td>event-queue</td><td>Drained backlog (1,240 msgs)</td><td class="mono">1h ago</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Alerts</h3><span class="sub">3 open</span></div>
+          <div class="panel-body" style="padding:0">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--line)">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="tag red">P2</span><b style="font-size:13.5px">Lambda invocations 4× baseline</b></div>
+              <div style="font-size:12px;color:var(--ink-3);line-height:1.5">payments-api received 12,400 invocations in the last 5min (baseline: 3,100). Likely cause: retry storm from upstream.</div>
+            </div>
+            <div style="padding:14px 18px;border-bottom:1px solid var(--line)">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="tag amber">P3</span><b style="font-size:13.5px">DynamoDB throttle warnings</b></div>
+              <div style="font-size:12px;color:var(--ink-3);line-height:1.5">users-table has triggered 14 throttle events in the last hour. Consider increasing RCU or moving to on-demand.</div>
+            </div>
+            <div style="padding:14px 18px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="tag blue">INFO</span><b style="font-size:13.5px">Certificate renewal due in 9 days</b></div>
+              <div style="font-size:12px;color:var(--ink-3);line-height:1.5">api.payments.example.com — ACM auto-renewal scheduled.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================== LOGS =================== -->
+    <section class="view" id="view-logs">
+      <div class="page-head">
+        <h1>Logs <small>live tail across all services</small></h1>
+        <div class="page-actions">
+          <button class="btn" id="pauseTail"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause</button>
+          <button class="btn" data-toast="Logs exported as JSON">Export</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="log-toolbar">
+          <div class="log-search">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="logSearch" placeholder="filter (request id, message, regex)…">
+          </div>
+          <button class="log-filter active" data-lvl="ALL">All <span class="x" id="cntALL">0</span></button>
+          <button class="log-filter" data-lvl="INFO">INFO <span class="x" id="cntINFO">0</span></button>
+          <button class="log-filter" data-lvl="WARN">WARN <span class="x" id="cntWARN">0</span></button>
+          <button class="log-filter" data-lvl="ERROR">ERROR <span class="x" id="cntERROR">0</span></button>
+          <button class="log-filter" data-lvl="DEBUG">DEBUG <span class="x" id="cntDEBUG">0</span></button>
+        </div>
+        <div class="log-stream" id="logStream"></div>
+      </div>
+    </section>
+
+    <!-- =================== DEPLOYS =================== -->
+    <section class="view" id="view-deploys">
+      <div class="page-head">
+        <h1>Deploys <small>last 30 days</small></h1>
+        <div class="page-actions">
+          <button class="btn" data-toast="Filter panel">Filter</button>
+          <button class="btn btn-primary" data-toast="Manual deploy wizard">New deploy</button>
+        </div>
+      </div>
+
+      <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><div class="stat-label">Deploys this week</div><div class="stat-value">23</div><div class="stat-delta up">▲ 4 vs last</div></div>
+        <div class="stat"><div class="stat-label">Success rate</div><div class="stat-value">95.6<small style="font-size:14px;color:var(--ink-3)">%</small></div><div class="stat-delta up">▲ 2.1pp</div></div>
+        <div class="stat"><div class="stat-label">Avg lead time</div><div class="stat-value">12<small style="font-size:14px;color:var(--ink-3)">min</small></div><div class="stat-delta down">▼ 4min</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Deploy history</h3><span class="sub">all services</span></div>
+        <div class="deploy-list" id="deployList"></div>
+      </div>
+    </section>
+
+    <!-- =================== COSTS =================== -->
+    <section class="view" id="view-costs">
+      <div class="page-head">
+        <h1>Costs <small>month to date</small></h1>
+        <div class="page-actions">
+          <button class="btn" data-toast="CSV downloaded">Export CSV</button>
+          <button class="btn" data-toast="Budget alert configured">Set budget alert</button>
+        </div>
+      </div>
+
+      <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat"><div class="stat-label">Spend MTD</div><div class="stat-value">$4,287</div><div class="stat-delta down">▼ 3.2% pace</div></div>
+        <div class="stat"><div class="stat-label">Forecast EOM</div><div class="stat-value">$8,140</div><div class="stat-delta down">▼ vs $8,420</div></div>
+        <div class="stat"><div class="stat-label">Top driver</div><div class="stat-value" style="font-size:18px">Lambda</div><div class="stat-delta">$1,420 / 33%</div></div>
+        <div class="stat"><div class="stat-label">Anomalies</div><div class="stat-value" style="color:var(--red)">1</div><div class="stat-delta up" style="color:var(--red)">▲ Lambda spike</div></div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-head"><h3>Daily spend</h3><span class="sub">last 14 days · USD</span></div>
+        <div class="alert">
+          <svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div><b>Anomaly detected · 2 days ago</b> — Lambda spend hit $420 (baseline $180). Likely cause: retry storm in <code style="color:#ffd1d1">payments-api</code>.</div>
+        </div>
+        <div class="chart-wrap">
+          <div class="bar-chart" id="barChart"></div>
+          <div class="bar-x" id="barX"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>By service</h3><span class="sub">MTD breakdown</span></div>
+        <div class="cost-breakdown" id="costBreakdown"></div>
+      </div>
+    </section>
+
+    <!-- =================== IAM =================== -->
+    <section class="view" id="view-iam">
+      <div class="page-head">
+        <h1>IAM &amp; access <small>roles, policies, audit</small></h1>
+        <div class="page-actions">
+          <button class="btn" data-toast="Access analyzer ran">Run analyzer</button>
+          <button class="btn btn-primary" data-toast="New role wizard">New role</button>
+        </div>
+      </div>
+
+      <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat"><div class="stat-label">Active roles</div><div class="stat-value">42</div></div>
+        <div class="stat"><div class="stat-label">Service-linked</div><div class="stat-value">18</div></div>
+        <div class="stat"><div class="stat-label">Unused 90d</div><div class="stat-value" style="color:var(--amber)">7</div><div class="stat-delta" style="color:var(--amber)">Review recommended</div></div>
+        <div class="stat"><div class="stat-label">Overly permissive</div><div class="stat-value" style="color:var(--red)">2</div><div class="stat-delta" style="color:var(--red)">Action required</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Roles</h3>
+          <div class="log-search" style="max-width:280px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="iamSearch" placeholder="filter roles…">
+          </div>
+        </div>
+        <div class="panel-body" id="roleList"></div>
+      </div>
+    </section>
+
+    <!-- =================== RESOURCES =================== -->
+    <section class="view" id="view-resources">
+      <div class="page-head">
+        <h1>All resources <small>everything you own, one list</small></h1>
+        <div class="page-actions">
+          <div class="log-search" style="max-width:280px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="resSearch" placeholder="search 42 resources…">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="log-toolbar">
+          <button class="log-filter active" data-rtype="ALL">All</button>
+          <button class="log-filter" data-rtype="Lambda">Lambda</button>
+          <button class="log-filter" data-rtype="DynamoDB">DynamoDB</button>
+          <button class="log-filter" data-rtype="S3">S3</button>
+          <button class="log-filter" data-rtype="SQS">SQS</button>
+          <button class="log-filter" data-rtype="RDS">RDS</button>
+          <button class="log-filter" data-rtype="API Gateway">API GW</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Name</th><th>Type</th><th>Region</th><th>Status</th><th>Created</th></tr></thead>
+          <tbody id="resBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- =================== SETTINGS =================== -->
+    <section class="view" id="view-settings">
+      <div class="page-head"><h1>Settings</h1></div>
+      <div class="panel" style="padding:24px">
+        <p style="color:var(--ink-2);margin:0 0 20px;font-size:14px;line-height:1.6">Preview build. In production this is where you'd configure preferences, MFA, billing contacts, and integrations (Slack, PagerDuty, GitHub).</p>
+        <p style="color:var(--ink-3);font-size:13px;margin:0">Built by Williams Digital · speculative redesign · <a href="https://williamsdigital.io" style="color:var(--accent-2)">williamsdigital.io</a></p>
+      </div>
+    </section>
+
+  </main>
+
+</div>
+
+<!-- ===== COMMAND PALETTE ===== -->
+<div class="scrim" id="paletteScrim">
+  <div class="palette" role="dialog" aria-modal="true">
+    <div class="palette-input">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--ink-3)"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="paletteInput" placeholder="Type a command, service, or resource…" autocomplete="off">
+      <kbd>ESC</kbd>
+    </div>
+    <div class="palette-results" id="paletteResults"></div>
+    <div class="palette-foot">
+      <span><kbd>↑↓</kbd>navigate</span>
+      <span><kbd>↵</kbd>select</span>
+      <span><kbd>⌘K</kbd>toggle</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DRAWER ===== -->
+<div class="drawer-scrim" id="drawerScrim"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="ico-big" id="drIco">λ</div>
+    <div style="flex:1;min-width:0">
+      <h2 id="drName">—</h2>
+      <div class="sub" id="drArn">—</div>
+    </div>
+    <button class="drawer-close" id="drClose"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="drawer-body" id="drBody"></div>
+</aside>
+
+<!-- ===== TERMINAL ===== -->
+<div class="term" id="term">
+  <div class="term-head" id="termHead">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="label">aws-cli · ~/payments-prod</span>
+    <span class="right">⌘\ to toggle</span>
+  </div>
+  <div class="term-body" id="termBody">
+    <div class="term-line">Welcome to the Roundtable AWS Console terminal. Try: <span style="color:var(--accent-2)">aws lambda list-functions</span>, <span style="color:var(--accent-2)">deploy payments-api</span>, <span style="color:var(--accent-2)">tail logs</span>, or <span style="color:var(--accent-2)">help</span>.</div>
+  </div>
+  <div class="term-input-row">
+    <input id="termInput" placeholder="enter a command…" autocomplete="off" spellcheck="false">
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===========================================================
+   DATA
+   =========================================================== */
+const SERVICES = [
+  {id:'api-gateway',  name:'API Gateway',  icon:'🌐', color:'#3b82f6', requests:'2.41M', latency:'18ms',  status:'ok'},
+  {id:'payments-api', name:'payments-api', icon:'λ',  color:'#ff9900', requests:'1.92M', latency:'142ms', status:'error', sub:'Lambda'},
+  {id:'user-service', name:'user-service', icon:'λ',  color:'#ff9900', requests:'480k',  latency:'88ms',  status:'ok',    sub:'Lambda'},
+  {id:'users-table',  name:'users-table',  icon:'⬢',  color:'#a78bfa', requests:'5.1M',  latency:'4ms',   status:'ok',    sub:'DynamoDB'},
+  {id:'event-queue',  name:'event-queue',  icon:'≋',  color:'#06b6d4', requests:'182k',  latency:'2ms',   status:'ok',    sub:'SQS'},
+  {id:'media-bucket', name:'media-bucket', icon:'🪣', color:'#22c55e', requests:'14.2k', latency:'—',     status:'ok',    sub:'S3'},
+];
+
+const LOG_TEMPLATES = [
+  {svc:'payments-api', lvl:'INFO', msg:'POST /charge ok rid=%RID% amt=%AMT% latency_ms=%MS%'},
+  {svc:'payments-api', lvl:'INFO', msg:'cache miss key=user:%UID% ttl=300'},
+  {svc:'api-gateway',  lvl:'INFO', msg:'2xx rid=%RID% src=%IP% route=/v1/charge'},
+  {svc:'user-service', lvl:'INFO', msg:'token validated uid=%UID% scope=read:profile'},
+  {svc:'users-table',  lvl:'DEBUG',msg:'GetItem consumed=1.0 RCU latency=4ms'},
+  {svc:'event-queue',  lvl:'INFO', msg:'message_received id=%RID% group=payments'},
+  {svc:'payments-api', lvl:'WARN', msg:'slow downstream stripe.charges.create took %MS%ms'},
+  {svc:'payments-api', lvl:'ERROR',msg:'upstream 504 from stripe rid=%RID% retry=2'},
+  {svc:'user-service', lvl:'WARN', msg:'rate_limit_near uid=%UID% used=98/100'},
+  {svc:'users-table',  lvl:'WARN', msg:'ProvisionedThroughputExceeded backoff_ms=%MS%'},
+  {svc:'media-bucket', lvl:'INFO', msg:'PUT s3://media-bucket/uploads/%RID%.jpg 201'},
+  {svc:'api-gateway',  lvl:'ERROR',msg:'5xx upstream timeout rid=%RID% route=/v1/charge'},
+];
+
+const DEPLOYS = [
+  {svc:'payments-api', sha:'a8f3c91', ver:'v2.41.0', author:'@dylan', status:'success', msg:'Add retry budget to Stripe client', when:'14 minutes ago'},
+  {svc:'user-service', sha:'b1e4d22', ver:'v1.18.3', author:'@maria',  status:'success', msg:'Bump JWT lib to 9.0.2 (CVE patch)',     when:'2 hours ago'},
+  {svc:'media-bucket', sha:'c92ff10', ver:'iac',     author:'@kev',    status:'success', msg:'Enable versioning + lifecycle to Glacier', when:'5 hours ago'},
+  {svc:'payments-api', sha:'d71a4e8', ver:'v2.40.9', author:'@maria',  status:'failed',  msg:'Try idempotency-key header (reverted)', when:'1 day ago'},
+  {svc:'user-service', sha:'e2c5b71', ver:'v1.18.2', author:'@dylan',  status:'success', msg:'Add /me endpoint cache layer',          when:'2 days ago'},
+  {svc:'event-queue',  sha:'f0d822a', ver:'iac',     author:'@kev',    status:'success', msg:'Raise SQS visibility timeout 30s→90s',  when:'2 days ago'},
+  {svc:'payments-api', sha:'a9b1cd2', ver:'v2.40.8', author:'@maria',  status:'success', msg:'Telemetry: emit charge_attempt span',   when:'3 days ago'},
+];
+
+const COST_BARS = [180,176,182,178,420,194,188,192,186,191,205,198,210,202];
+const COST_BREAKDOWN = [
+  {name:'Lambda',     color:'#ff9900', amt:1420, delta:'+18.2%', up:true},
+  {name:'DynamoDB',   color:'#a78bfa', amt:910,  delta:'+2.1%',  up:true},
+  {name:'API Gateway',color:'#3b82f6', amt:640,  delta:'-4.3%',  up:false},
+  {name:'S3 + CloudFront', color:'#22c55e', amt:520, delta:'+1.0%', up:true},
+  {name:'RDS Aurora', color:'#06b6d4', amt:480,  delta:'+0.4%',  up:true},
+  {name:'CloudWatch', color:'#f59e0b', amt:210,  delta:'+12.0%', up:true},
+  {name:'Other',      color:'#6b7382', amt:107,  delta:'-1.0%',  up:false},
+];
+
+const ROLES = [
+  {name:'payments-api-execution-role', arn:'arn:aws:iam::4203:role/payments-api-execution-role', perms:['Lambda','DynamoDB','SQS','KMS'], status:'ok'},
+  {name:'user-service-execution-role', arn:'arn:aws:iam::4203:role/user-service-execution-role', perms:['Lambda','DynamoDB','Cognito'], status:'ok'},
+  {name:'ci-deploy-role',              arn:'arn:aws:iam::4203:role/ci-deploy-role',              perms:['Lambda','S3','CloudFormation','IAM'], status:'warn'},
+  {name:'admin-break-glass',           arn:'arn:aws:iam::4203:role/admin-break-glass',           perms:['*:*'], status:'err'},
+  {name:'analytics-readonly',          arn:'arn:aws:iam::4203:role/analytics-readonly',          perms:['Athena','S3:GetObject','Glue'], status:'ok'},
+  {name:'legacy-cron-runner',          arn:'arn:aws:iam::4203:role/legacy-cron-runner',          perms:['Lambda','SES'], status:'unused'},
+  {name:'support-readonly',            arn:'arn:aws:iam::4203:role/support-readonly',            perms:['CloudWatch:Get*','Logs:Get*'], status:'ok'},
+];
+
+const RESOURCES = [
+  {name:'payments-api',   type:'Lambda',      region:'us-east-1', status:'ok',    created:'2024-08-12'},
+  {name:'user-service',   type:'Lambda',      region:'us-east-1', status:'ok',    created:'2024-06-03'},
+  {name:'notifier-fn',    type:'Lambda',      region:'us-east-1', status:'ok',    created:'2025-01-19'},
+  {name:'image-resizer',  type:'Lambda',      region:'us-east-1', status:'warn',  created:'2024-11-04'},
+  {name:'users-table',    type:'DynamoDB',    region:'us-east-1', status:'ok',    created:'2024-05-22'},
+  {name:'sessions-table', type:'DynamoDB',    region:'us-east-1', status:'ok',    created:'2024-05-22'},
+  {name:'audit-log',      type:'DynamoDB',    region:'us-east-1', status:'ok',    created:'2024-09-10'},
+  {name:'media-bucket',   type:'S3',          region:'us-east-1', status:'ok',    created:'2023-11-30'},
+  {name:'backups-bucket', type:'S3',          region:'us-east-1', status:'ok',    created:'2023-11-30'},
+  {name:'static-assets',  type:'S3',          region:'us-east-1', status:'ok',    created:'2024-02-14'},
+  {name:'event-queue',    type:'SQS',         region:'us-east-1', status:'ok',    created:'2024-07-09'},
+  {name:'deadletter-q',   type:'SQS',         region:'us-east-1', status:'warn',  created:'2024-07-09'},
+  {name:'main-cluster',   type:'RDS',         region:'us-east-1', status:'ok',    created:'2024-04-01'},
+  {name:'replica-cluster',type:'RDS',         region:'us-east-1', status:'ok',    created:'2024-04-01'},
+  {name:'public-api',     type:'API Gateway', region:'us-east-1', status:'ok',    created:'2024-04-02'},
+  {name:'internal-api',   type:'API Gateway', region:'us-east-1', status:'ok',    created:'2024-08-15'},
+];
+
+/* ===========================================================
+   HELPERS
+   =========================================================== */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const rid = () => Math.random().toString(36).slice(2,10);
+const pad2 = n => String(n).padStart(2,'0');
+function toastMsg(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+$$('[data-toast]').forEach(b => b.addEventListener('click', () => toastMsg(b.dataset.toast)));
+
+/* ===========================================================
+   NAV / VIEWS
+   =========================================================== */
+$$('.nav-item[data-view]').forEach(item => item.addEventListener('click', () => {
+  $$('.nav-item').forEach(x => x.classList.remove('active'));
+  item.classList.add('active');
+  const v = item.dataset.view;
+  $$('.view').forEach(s => s.classList.remove('active'));
+  const sec = document.getElementById('view-'+v);
+  if (sec) sec.classList.add('active');
+}));
+
+/* ===========================================================
+   STACK ARCH
+   =========================================================== */
+function renderArch(){
+  const order = ['api-gateway','payments-api','users-table','event-queue','media-bucket'];
+  const html = order.map((id,idx) => {
+    const s = SERVICES.find(x=>x.id===id);
+    const arrow = idx < order.length-1
+      ? `<svg class="arch-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>`
+      : '';
+    return `
+      <div class="arch-node ${s.status==='error'?'error':''}" data-resource="${s.id}">
+        <span class="status-dot"></span>
+        <div class="ico-svc" style="background:${s.color}22;color:${s.color};border:1px solid ${s.color}44">${s.icon}</div>
+        <div class="svc-name">${s.name}</div>
+        <div class="svc-id">${s.sub || 'AWS'}</div>
+        <div class="svc-stat"><span>${s.requests} req</span><span>${s.latency}</span></div>
+      </div>
+      ${arrow}`;
+  }).join('');
+  $('#archFlow').innerHTML = html;
+  $$('.arch-node').forEach(n => n.addEventListener('click', () => openDrawer(n.dataset.resource)));
+}
+renderArch();
+// refresh ticker
+let archSec = 3;
+setInterval(()=>{ archSec = (archSec+1) % 60; $('#archAgo').textContent = archSec+'s'; }, 1000);
+
+// table rows -> drawer
+$$('[data-resource]').forEach(el => el.addEventListener('click', () => openDrawer(el.dataset.resource)));
+
+/* ===========================================================
+   LOGS
+   =========================================================== */
+const logState = { paused:false, filter:'ALL', search:'', counts:{ALL:0,INFO:0,WARN:0,ERROR:0,DEBUG:0} };
+
+function makeLogLine(){
+  const tpl = LOG_TEMPLATES[Math.floor(Math.random()*LOG_TEMPLATES.length)];
+  const now = new Date();
+  const ts = `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}.${String(now.getMilliseconds()).padStart(3,'0')}`;
+  const msg = tpl.msg
+    .replace('%RID%', rid())
+    .replace('%AMT%', `$${(Math.random()*200).toFixed(2)}`)
+    .replace('%MS%', String(Math.floor(20 + Math.random()*400)))
+    .replace('%UID%', Math.floor(1000+Math.random()*9000))
+    .replace('%IP%',  `${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`);
+  return {ts, svc: tpl.svc, lvl: tpl.lvl, msg};
+}
+
+function pushLog(){
+  if (logState.paused) return;
+  const line = makeLogLine();
+  logState.counts.ALL++;
+  logState.counts[line.lvl]++;
+  renderCounts();
+
+  if (!matchesFilters(line)) return;
+
+  const stream = $('#logStream');
+  const div = document.createElement('div');
+  div.className = `log-line ${line.lvl}`;
+  div.innerHTML = `
+    <span class="ts">${line.ts}</span>
+    <span class="svc">${line.svc}</span>
+    <span class="lvl">${line.lvl}</span>
+    <span class="msg">${line.msg}</span>`;
+  stream.appendChild(div);
+  // cap nodes
+  while (stream.childNodes.length > 500) stream.removeChild(stream.firstChild);
+  stream.scrollTop = stream.scrollHeight;
+}
+function matchesFilters(line){
+  if (logState.filter !== 'ALL' && line.lvl !== logState.filter) return false;
+  if (logState.search){
+    const q = logState.search.toLowerCase();
+    if (!line.msg.toLowerCase().includes(q) && !line.svc.toLowerCase().includes(q)) return false;
+  }
+  return true;
+}
+function renderCounts(){
+  ['ALL','INFO','WARN','ERROR','DEBUG'].forEach(k => {
+    const el = $('#cnt'+k);
+    if (el) el.textContent = logState.counts[k];
+  });
+}
+function rerenderLogStream(){
+  // re-filter existing without dropping the live tail — just clear and let it refill
+  $('#logStream').innerHTML = '';
+}
+
+$$('#view-logs .log-filter').forEach(btn => btn.addEventListener('click', () => {
+  $$('#view-logs .log-filter').forEach(x => x.classList.remove('active'));
+  btn.classList.add('active');
+  logState.filter = btn.dataset.lvl;
+  rerenderLogStream();
+}));
+$('#logSearch').addEventListener('input', e => {
+  logState.search = e.target.value;
+  rerenderLogStream();
+});
+$('#pauseTail').addEventListener('click', () => {
+  logState.paused = !logState.paused;
+  $('#pauseTail').innerHTML = logState.paused
+    ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg> Resume'
+    : '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause';
+});
+
+// seed + live tail
+for (let i = 0; i < 18; i++) pushLog();
+setInterval(pushLog, 900);
+
+/* ===========================================================
+   DEPLOYS
+   =========================================================== */
+function renderDeploys(){
+  $('#deployList').innerHTML = DEPLOYS.map((d,i) => {
+    const ico = d.status==='success'
+      ? '<div class="deploy-icon success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>'
+      : d.status==='failed'
+      ? '<div class="deploy-icon failed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div>'
+      : '<div class="deploy-icon running"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>';
+    return `
+      <div class="deploy-row">
+        ${ico}
+        <div class="deploy-meta">
+          <div class="top">${d.svc} <span class="tag ${d.status==='success'?'green':d.status==='failed'?'red':'amber'}">${d.ver}</span> <span class="sha">${d.sha}</span></div>
+          <div class="bot">${d.msg} · ${d.author} · ${d.when}</div>
+        </div>
+        <div class="deploy-actions">
+          <button class="btn" data-deploy-diff="${i}">View diff</button>
+          ${d.status==='success' ? `<button class="btn btn-danger" data-deploy-rollback="${i}">Rollback</button>` : `<button class="btn" data-deploy-rerun="${i}">Re-run</button>`}
+        </div>
+      </div>`;
+  }).join('');
+  $$('[data-deploy-diff]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); toastMsg(`Diff: ${DEPLOYS[+b.dataset.deployDiff].sha} ↔ HEAD`); }));
+  $$('[data-deploy-rollback]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const i = +b.dataset.deployRollback;
+    if (confirm(`Roll back ${DEPLOYS[i].svc} to ${DEPLOYS[i].ver}? This will redeploy the previous revision.`)){
+      toastMsg(`Rolling back ${DEPLOYS[i].svc}…`);
+    }
+  }));
+  $$('[data-deploy-rerun]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); toastMsg(`Re-running deploy ${DEPLOYS[+b.dataset.deployRerun].sha}`); }));
+}
+renderDeploys();
+
+/* ===========================================================
+   COSTS
+   =========================================================== */
+function renderCosts(){
+  const max = Math.max(...COST_BARS);
+  $('#barChart').innerHTML = COST_BARS.map((v,i) => `
+    <div class="bar ${v>300?'spike':''}" style="height:${(v/max)*100}%" title="Day ${i+1}: $${v}"></div>
+  `).join('');
+  $('#barX').innerHTML = COST_BARS.map((_,i) => `<span>D${i+1}</span>`).join('');
+
+  $$('#barChart .bar').forEach((b,i) => b.addEventListener('click', () => toastMsg(`Day ${i+1}: $${COST_BARS[i]}`)));
+
+  $('#costBreakdown').innerHTML = COST_BREAKDOWN.map(c => `
+    <div class="cost-row">
+      <span class="swatch" style="background:${c.color}"></span>
+      <span class="name">${c.name}</span>
+      <span class="amt">$${c.amt.toLocaleString()}</span>
+      <span class="delta ${c.up?'up':'down'}">${c.delta}</span>
+    </div>
+  `).join('');
+}
+renderCosts();
+
+/* ===========================================================
+   IAM
+   =========================================================== */
+function renderRoles(filter=''){
+  const q = filter.toLowerCase();
+  const list = ROLES.filter(r => !q || r.name.toLowerCase().includes(q) || r.perms.join(' ').toLowerCase().includes(q));
+  if (!list.length){ $('#roleList').innerHTML = `<div style="padding:40px;text-align:center;color:var(--ink-3);font-size:13px">No roles match "${filter}"</div>`; return; }
+  $('#roleList').innerHTML = list.map(r => {
+    const flag = r.status==='err'    ? '<span class="tag red">Overly permissive</span>'
+              : r.status==='warn'   ? '<span class="tag amber">Broad scope</span>'
+              : r.status==='unused' ? '<span class="tag">Unused 90d</span>'
+              : '<span class="tag green">OK</span>';
+    return `
+      <div class="role-card" data-role="${r.name}">
+        <div class="role-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="role-meta">
+          <div class="name">${r.name}</div>
+          <div class="arn">${r.arn}</div>
+        </div>
+        <div class="role-perms">
+          ${r.perms.map(p => `<span class="tag ${p==='*:*'?'red':'purple'}">${p}</span>`).join('')}
+          ${flag}
+        </div>
+      </div>`;
+  }).join('');
+  $$('.role-card').forEach(el => el.addEventListener('click', () => toastMsg(`Opening role: ${el.dataset.role}`)));
+}
+renderRoles();
+$('#iamSearch').addEventListener('input', e => renderRoles(e.target.value));
+
+/* ===========================================================
+   RESOURCES
+   =========================================================== */
+const resState = { type:'ALL', search:'' };
+function renderResources(){
+  const list = RESOURCES.filter(r => {
+    if (resState.type !== 'ALL' && r.type !== resState.type) return false;
+    if (resState.search){
+      const q = resState.search.toLowerCase();
+      if (!r.name.toLowerCase().includes(q) && !r.type.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  if (!list.length){
+    $('#resBody').innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-3);padding:40px">No resources match.</td></tr>`;
+    return;
+  }
+  $('#resBody').innerHTML = list.map(r => `
+    <tr data-resource="${r.name}">
+      <td><b>${r.name}</b></td>
+      <td><span class="tag ${typeTag(r.type)}">${r.type}</span></td>
+      <td class="mono">${r.region}</td>
+      <td>${r.status==='ok'?'<span class="tag green">healthy</span>':'<span class="tag amber">warn</span>'}</td>
+      <td class="mono">${r.created}</td>
+    </tr>`).join('');
+  $$('#resBody tr').forEach(tr => tr.addEventListener('click', () => openDrawer(tr.dataset.resource)));
+}
+function typeTag(t){
+  return {Lambda:'amber',DynamoDB:'purple','S3':'green','SQS':'blue','RDS':'blue','API Gateway':'blue'}[t] || '';
+}
+renderResources();
+$$('#view-resources .log-filter').forEach(b => b.addEventListener('click', () => {
+  $$('#view-resources .log-filter').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  resState.type = b.dataset.rtype;
+  renderResources();
+}));
+$('#resSearch').addEventListener('input', e => { resState.search = e.target.value; renderResources(); });
+
+/* ===========================================================
+   DRAWER
+   =========================================================== */
+function openDrawer(name){
+  const r = RESOURCES.find(x=>x.name===name) || SERVICES.find(x=>x.id===name);
+  if (!r){ toastMsg(`Opening ${name}`); return; }
+  const isService = !!r.id;
+  const display = isService ? r.name : r.name;
+  const type = isService ? (r.sub || 'AWS') : r.type;
+  const color = {Lambda:'#ff9900',DynamoDB:'#a78bfa','S3':'#22c55e','SQS':'#06b6d4','RDS':'#06b6d4','API Gateway':'#3b82f6'}[type] || '#ff9900';
+  const ico = isService ? r.icon : ({Lambda:'λ',DynamoDB:'⬢','S3':'🪣','SQS':'≋','RDS':'⊟','API Gateway':'🌐'}[type] || '◇');
+  $('#drIco').textContent = ico;
+  $('#drIco').style.background = color + '22';
+  $('#drIco').style.color = color;
+  $('#drName').textContent = display;
+  $('#drArn').textContent = `arn:aws:${type.toLowerCase().replace(/\s/g,'')}:us-east-1:4203:${display}`;
+  $('#drBody').innerHTML = `
+    <div class="drawer-section">
+      <h4>Metrics · last 1h</h4>
+      <div class="kv">
+        <div class="k">Invocations</div><div class="v">${(Math.random()*120000|0).toLocaleString()}</div>
+        <div class="k">P50 latency</div><div class="v">${(40 + Math.random()*40)|0}ms</div>
+        <div class="k">P95 latency</div><div class="v">${(120 + Math.random()*120)|0}ms</div>
+        <div class="k">Error rate</div><div class="v">${(Math.random()*1.5).toFixed(2)}%</div>
+        <div class="k">Throttles</div><div class="v">${(Math.random()*10)|0}</div>
+      </div>
+    </div>
+    <div class="drawer-section">
+      <h4>Configuration</h4>
+      <div class="kv">
+        <div class="k">Runtime</div><div class="v">${type==='Lambda'?'nodejs20.x':'—'}</div>
+        <div class="k">Memory</div><div class="v">${type==='Lambda'?'512 MB':'—'}</div>
+        <div class="k">Timeout</div><div class="v">${type==='Lambda'?'30s':'—'}</div>
+        <div class="k">Region</div><div class="v">us-east-1</div>
+        <div class="k">Created</div><div class="v">${r.created || '2024-08-12'}</div>
+      </div>
+    </div>
+    <div class="drawer-section">
+      <h4>Quick actions</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button class="btn" data-da="View logs">View logs</button>
+        <button class="btn" data-da="Tail in terminal">Tail in terminal</button>
+        <button class="btn" data-da="Open metrics">Open metrics</button>
+        <button class="btn" data-da="Edit config">Edit config</button>
+        <button class="btn btn-danger" data-da="Restart">Restart</button>
+      </div>
+    </div>
+    <div class="drawer-section">
+      <h4>Recent invocations</h4>
+      <div style="font-family:var(--mono);font-size:11.5px;color:var(--ink-2);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+        <div>14:08:42  <span style="color:var(--green)">2xx</span>  142ms  rid=${rid()}</div>
+        <div>14:08:41  <span style="color:var(--green)">2xx</span>  118ms  rid=${rid()}</div>
+        <div>14:08:39  <span style="color:var(--red)">504</span>   3000ms rid=${rid()}</div>
+        <div>14:08:38  <span style="color:var(--green)">2xx</span>  134ms  rid=${rid()}</div>
+      </div>
+    </div>`;
+  $$('[data-da]').forEach(b => b.addEventListener('click', () => toastMsg(b.dataset.da+': '+display)));
+  $('#drawer').classList.add('open');
+  $('#drawerScrim').classList.add('open');
+}
+function closeDrawer(){
+  $('#drawer').classList.remove('open');
+  $('#drawerScrim').classList.remove('open');
+}
+$('#drClose').addEventListener('click', closeDrawer);
+$('#drawerScrim').addEventListener('click', closeDrawer);
+
+/* ===========================================================
+   COMMAND PALETTE
+   =========================================================== */
+const COMMANDS = [
+  ...['stack','logs','deploys','costs','iam','resources','settings'].map(v => ({group:'Pages', label:'Go to '+v[0].toUpperCase()+v.slice(1), hint:'view', do:() => navTo(v)})),
+  {group:'Actions', label:'Deploy payments-api', hint:'⏎', do:() => toastMsg('Kicking off payments-api deploy…')},
+  {group:'Actions', label:'Tail logs', hint:'⏎', do:() => { navTo('logs'); }},
+  {group:'Actions', label:'View cost anomaly', hint:'⏎', do:() => { navTo('costs'); }},
+  {group:'Actions', label:'Toggle terminal', hint:'⌘\\', do:() => toggleTerm()},
+  ...RESOURCES.slice(0,12).map(r => ({group:'Resources', label:r.name, hint:r.type, do:() => openDrawer(r.name)})),
+];
+
+const palette = { open:false, sel:0, results:[] };
+function openPalette(){
+  palette.open = true;
+  $('#paletteScrim').classList.add('open');
+  $('#paletteInput').value = '';
+  $('#paletteInput').focus();
+  filterPalette('');
+}
+function closePalette(){
+  palette.open = false;
+  $('#paletteScrim').classList.remove('open');
+}
+function filterPalette(q){
+  q = q.trim().toLowerCase();
+  palette.results = COMMANDS.filter(c => !q || c.label.toLowerCase().includes(q) || c.group.toLowerCase().includes(q));
+  palette.sel = 0;
+  renderPalette();
+}
+function renderPalette(){
+  if (!palette.results.length){
+    $('#paletteResults').innerHTML = `<div style="padding:30px;text-align:center;color:var(--ink-3);font-size:13px">No matches</div>`;
+    return;
+  }
+  const groups = {};
+  palette.results.forEach((r,i) => { (groups[r.group] = groups[r.group] || []).push({...r, idx:i}); });
+  let html = '';
+  Object.keys(groups).forEach(g => {
+    html += `<div class="palette-group"><div class="palette-group-label">${g}</div>`;
+    groups[g].forEach(r => {
+      html += `<div class="palette-item ${r.idx===palette.sel?'sel':''}" data-idx="${r.idx}">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>${r.label}</span>
+        <span class="hint">${r.hint}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  $('#paletteResults').innerHTML = html;
+  $$('.palette-item').forEach(el => el.addEventListener('click', () => {
+    palette.results[+el.dataset.idx].do();
+    closePalette();
+  }));
+}
+function navTo(v){
+  const item = $(`.nav-item[data-view="${v}"]`);
+  if (item) item.click();
+}
+$('#openPalette').addEventListener('click', openPalette);
+$('#paletteInput').addEventListener('input', e => filterPalette(e.target.value));
+$('#paletteScrim').addEventListener('click', e => { if (e.target.id==='paletteScrim') closePalette(); });
+
+document.addEventListener('keydown', e => {
+  // ⌘K / Ctrl+K
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){
+    e.preventDefault();
+    palette.open ? closePalette() : openPalette();
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key === '\\'){
+    e.preventDefault();
+    toggleTerm();
+    return;
+  }
+  if (palette.open){
+    if (e.key === 'Escape') return closePalette();
+    if (e.key === 'ArrowDown'){ e.preventDefault(); palette.sel = Math.min(palette.results.length-1, palette.sel+1); renderPalette(); }
+    if (e.key === 'ArrowUp')  { e.preventDefault(); palette.sel = Math.max(0, palette.sel-1); renderPalette(); }
+    if (e.key === 'Enter')    { e.preventDefault(); if (palette.results[palette.sel]){ palette.results[palette.sel].do(); closePalette(); } }
+  }
+  if (e.key === 'Escape'){ closeDrawer(); closePalette(); }
+});
+
+/* ===========================================================
+   TERMINAL
+   =========================================================== */
+let termOpen = false;
+function toggleTerm(){
+  termOpen = !termOpen;
+  $('#term').classList.toggle('open', termOpen);
+  if (termOpen) setTimeout(() => $('#termInput').focus(), 200);
+}
+$('#toggleTerm').addEventListener('click', toggleTerm);
+$('#termHead').addEventListener('click', toggleTerm);
+
+function termWrite(text, cls=''){
+  const div = document.createElement('div');
+  div.className = 'term-line ' + cls;
+  div.textContent = text;
+  $('#termBody').appendChild(div);
+  $('#termBody').scrollTop = $('#termBody').scrollHeight;
+}
+
+const TERM_HELP = `commands:
+  help                          this message
+  clear                         clear screen
+  aws lambda list-functions     list lambda functions
+  aws s3 ls                     list buckets
+  aws dynamodb list-tables      list dynamo tables
+  deploy <service>              kick off a deploy
+  tail logs [service]           jump to logs view
+  go <stack|logs|deploys|costs|iam|resources>
+  whoami                        show identity`;
+
+function runTermCmd(raw){
+  const cmd = raw.trim();
+  if (!cmd) return;
+  termWrite(cmd, 'cmd');
+  const [head, ...rest] = cmd.split(/\s+/);
+  const args = rest.join(' ');
+
+  if (cmd === 'help')          return TERM_HELP.split('\n').forEach(l => termWrite(l));
+  if (cmd === 'clear')         return $('#termBody').innerHTML = '';
+  if (cmd === 'whoami')        return termWrite('arn:aws:iam::4203:user/dylan (Account: payments-prod)', 'ok');
+
+  if (cmd === 'aws lambda list-functions'){
+    RESOURCES.filter(r=>r.type==='Lambda').forEach(r => termWrite(`  ${r.name}  runtime=nodejs20.x  memory=512`));
+    return;
+  }
+  if (cmd === 'aws s3 ls'){
+    RESOURCES.filter(r=>r.type==='S3').forEach(r => termWrite(`  2024-08-12 14:00  ${r.name}`));
+    return;
+  }
+  if (cmd === 'aws dynamodb list-tables'){
+    termWrite('{\n  "TableNames": [');
+    const tbls = RESOURCES.filter(r=>r.type==='DynamoDB').map(r => `    "${r.name}"`).join(',\n');
+    termWrite(tbls);
+    termWrite('  ]\n}');
+    return;
+  }
+  if (head === 'deploy'){
+    const svc = args || 'payments-api';
+    termWrite(`▸ deploying ${svc}…`);
+    setTimeout(()=>termWrite('  ▸ building image…'), 200);
+    setTimeout(()=>termWrite('  ▸ pushing to ECR'), 600);
+    setTimeout(()=>termWrite('  ▸ updating function code'), 1000);
+    setTimeout(()=>termWrite(`✓ ${svc} deployed`, 'ok'), 1400);
+    return;
+  }
+  if (head === 'tail' && rest[0] === 'logs'){
+    navTo('logs');
+    termWrite('▸ jumping to Logs view…', 'ok');
+    return;
+  }
+  if (head === 'go' && rest[0]){
+    navTo(rest[0]);
+    termWrite(`▸ navigated to ${rest[0]}`, 'ok');
+    return;
+  }
+  termWrite(`command not found: ${cmd}. type 'help' for options.`, 'err');
+}
+$('#termInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter'){
+    runTermCmd(e.target.value);
+    e.target.value = '';
+  }
+});
+
+/* ===========================================================
+   REGION SWITCHER (silly little touch)
+   =========================================================== */
+const REGIONS = ['us-east-1','us-west-2','eu-west-1','ap-south-1','sa-east-1'];
+let regionIdx = 0;
+$('#regionPill').addEventListener('click', () => {
+  regionIdx = (regionIdx+1) % REGIONS.length;
+  const r = REGIONS[regionIdx];
+  $('#regionPill').innerHTML = `<span class="dot"></span> ${r}`;
+  toastMsg(`Switched to ${r}`);
+});
+</script>
+</body>
+</html>
