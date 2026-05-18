@@ -324,9 +324,14 @@ function onTimeUpdate(t) {
   const d = state.adapter?.getDuration() || 0;
   $('#timeReadout').textContent = `${fmtTime(t)} / ${fmtTime(d)}`;
   if (d > 0) $('#scrubber').value = String(Math.round((t / d) * 1000));
-  // Loop logic
+  // Manual loop (IN/OUT clip)
   if (state.loopActive && state.inPoint != null && state.outPoint != null) {
     if (t >= state.outPoint) state.adapter.seek(state.inPoint);
+  }
+  // Play-range loop: if the active marker has inTime/outTime, loop within it while playing
+  const am = activeMarker();
+  if (am && playRange(am) && state.adapter && !state.adapter.isPaused()) {
+    if (t >= am.outTime) state.adapter.seek(am.inTime);
   }
   // Track play state transitions for auto-clear / pin-to-clip
   if (state.adapter) {
@@ -576,12 +581,27 @@ async function snapshot() {
 // =================== MARKERS ====================
 function markPlay() {
   if (!state.game || !state.adapter) { toast('Load a game first.'); return; }
-  const t = state.adapter.getTime();
+  const now = state.adapter.getTime();
+  // Range mode: both IN and OUT set, OUT after IN -> capture as play range
+  // Quick mode: no IN/OUT set -> single timestamp marker (legacy)
+  let inT, outT, anchor;
+  const haveRange = state.inPoint != null && state.outPoint != null && state.outPoint > state.inPoint;
+  if (haveRange) {
+    inT = state.inPoint; outT = state.outPoint;
+    anchor = inT;
+  } else {
+    anchor = now;
+    inT = null; outT = null;
+  }
   const m = {
     id: uid('m'),
-    time: t,
+    time: anchor,
+    inTime: inT,
+    outTime: outT,
     quarter: '',
-    title: `Play at ${fmtTime(t)}`,
+    title: haveRange
+      ? `Play ${fmtTime(inT)}–${fmtTime(outT)}`
+      : `Play at ${fmtTime(now)}`,
     playType: 'offense',
     notes: '',
     tags: [],
@@ -591,19 +611,31 @@ function markPlay() {
     strokes: [],
   };
   state.game.markers.push(m);
-  state.game.markers.sort((a, b) => a.time - b.time);
+  state.game.markers.sort((a, b) => playStart(a) - playStart(b));
   setActiveMarker(m.id);
+  // Consume the IN/OUT once they're stored on the play
+  if (haveRange) { state.inPoint = null; state.outPoint = null; renderIO(); }
   renderMarkerList();
   renderPlayPane();
   renderQuickStats();
   persistGame();
-  toast('Marked play at ' + fmtTime(t));
+  toast(haveRange
+    ? `Marked play ${fmtTime(inT)}–${fmtTime(outT)} (${(outT - inT).toFixed(1)}s)`
+    : 'Marked play at ' + fmtTime(now));
 }
+
+// Returns the start time of a marker (inTime if set, else legacy time)
+function playStart(m) { return m.inTime != null ? m.inTime : m.time; }
+function playEnd(m)   { return m.outTime != null ? m.outTime : null; }
+function playRange(m) { return playEnd(m) != null; }
 
 function setActiveMarker(id) {
   state.activeMarkerId = id;
   const m = state.game?.markers.find(x => x.id === id);
-  if (m && state.adapter && state.adapter.capabilities.control) state.adapter.seek(m.time);
+  if (m && state.adapter && state.adapter.capabilities.control) {
+    state.adapter.seek(playStart(m));
+    state.adapter.pause();
+  }
   restoreDrawingForMarker(m);
   renderMarkerList();
   renderPlayPane();
@@ -612,9 +644,18 @@ function setActiveMarker(id) {
 function nudgeActiveMarkerTime(delta) {
   const m = activeMarker();
   if (!m) return;
-  m.time = Math.max(0, m.time + delta);
-  state.game.markers.sort((a, b) => a.time - b.time);
-  if (state.adapter && state.adapter.capabilities.control) state.adapter.seek(m.time);
+  if (m.inTime != null) {
+    // Shift the whole range so the play duration stays the same
+    const newIn = Math.max(0, m.inTime + delta);
+    const dur = (m.outTime != null) ? (m.outTime - m.inTime) : 0;
+    m.inTime = newIn;
+    if (m.outTime != null) m.outTime = newIn + dur;
+    m.time = newIn;
+  } else {
+    m.time = Math.max(0, m.time + delta);
+  }
+  state.game.markers.sort((a, b) => playStart(a) - playStart(b));
+  if (state.adapter && state.adapter.capabilities.control) state.adapter.seek(playStart(m));
   renderMarkerList();
   renderPlayPane();
   persistGame();
@@ -622,11 +663,10 @@ function nudgeActiveMarkerTime(delta) {
 
 function gotoAdjacentMarker(dir) {
   if (!state.game || !state.game.markers.length) return;
-  const ms = state.game.markers.slice().sort((a, b) => a.time - b.time);
+  const ms = state.game.markers.slice().sort((a, b) => playStart(a) - playStart(b));
   const idx = ms.findIndex(x => x.id === state.activeMarkerId);
   let next;
   if (idx < 0) {
-    // No active marker — seek to first/last based on direction
     next = dir > 0 ? ms[0] : ms[ms.length - 1];
   } else {
     next = ms[clamp(idx + dir, 0, ms.length - 1)];
@@ -791,8 +831,11 @@ function renderMarkerList() {
   for (const m of items) {
     const li = document.createElement('li');
     li.className = 'marker-item' + (m.id === state.activeMarkerId ? ' active' : '');
+    const tsLabel = playRange(m)
+      ? `${fmtTime(m.inTime)}–${fmtTime(m.outTime)}`
+      : fmtTime(m.time);
     li.innerHTML = `
-      <span class="ts-chip">${fmtTime(m.time)}</span>
+      <span class="ts-chip ${playRange(m) ? 'ts-range' : ''}">${tsLabel}</span>
       <span class="pt-chip ${m.playType}">${m.playType === 'st' ? 'ST' : m.playType.slice(0,3)}</span>
       <span class="marker-title">${escapeHTML(m.title || '(untitled)')}</span>
       <button class="marker-del" title="Delete">×</button>
@@ -817,9 +860,20 @@ function renderPlayPane() {
   empty.classList.add('hidden'); body.classList.remove('hidden');
 
   $('#playTitle').value = m.title || '';
-  $('#playTime').value = fmtTime(m.time);
+  $('#playTime').value = fmtTime(playStart(m));
   $('#playQuarter').value = m.quarter || '';
   $('#playNotes').value = m.notes || '';
+
+  // Range row
+  const outLabel = $('#playOutLabel');
+  const durLabel = $('#playDuration');
+  if (playRange(m)) {
+    outLabel.textContent = fmtTime(m.outTime);
+    durLabel.textContent = `${(m.outTime - m.inTime).toFixed(1)}s loop`;
+  } else {
+    outLabel.textContent = '—';
+    durLabel.textContent = '';
+  }
 
   $$('.pt').forEach(b => b.classList.toggle('active', b.dataset.pt === m.playType));
   renderSchemaForm();
@@ -1413,6 +1467,27 @@ function wireUI() {
   $$('.pt').forEach(b => b.addEventListener('click', () => setPlayType(b.dataset.pt)));
   $('#btnDeletePlay').addEventListener('click', () => { const m = activeMarker(); if (m) deletePlay(m.id); });
   $$('.nudge').forEach(b => b.addEventListener('click', () => nudgeActiveMarkerTime(+b.dataset.nudge)));
+
+  $('#btnSetPlayOut').addEventListener('click', () => {
+    const m = activeMarker();
+    if (!m || !state.adapter) return;
+    const t = state.adapter.getTime();
+    const startT = playStart(m);
+    if (t <= startT) { toast('OUT must be after the play start.', 'error'); return; }
+    if (m.inTime == null) m.inTime = startT;
+    m.outTime = t;
+    persistGame(); renderPlayPane(); renderMarkerList();
+    toast(`Play range set: ${fmtTime(m.inTime)}–${fmtTime(t)} (${(t - m.inTime).toFixed(1)}s)`);
+  });
+
+  $('#btnClearPlayRange').addEventListener('click', () => {
+    const m = activeMarker();
+    if (!m) return;
+    if (m.inTime != null) m.time = m.inTime;
+    m.inTime = null; m.outTime = null;
+    persistGame(); renderPlayPane(); renderMarkerList();
+    toast('Play range cleared.');
+  });
 
   // Tag input
   $('#tagInput').addEventListener('keydown', e => {
