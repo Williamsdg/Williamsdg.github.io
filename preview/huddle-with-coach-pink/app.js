@@ -28,8 +28,12 @@ const state = {
   search: '',
   filterQuarter: '',
   filterDown: '',
+  filterTag: '',
   ngSource: 'youtube',
   rightTab: 'play',
+  playbackRate: 1,
+  autoClearOnPlay: false,
+  pinDrawingsToClip: false,
 };
 
 // =================== UTILITIES ====================
@@ -160,7 +164,8 @@ function Mp4Adapter(file, mountEl) {
     onTimeUpdate: (cb) => { timeCb = cb; },
     getVideoRect: () => ({ width: video.videoWidth || 1920, height: video.videoHeight || 1080 }),
     frameStep: (dir) => { video.pause(); video.currentTime = clamp(video.currentTime + dir * (1 / 30), 0, video.duration || 0); },
-    capabilities: { frameStep: true, mediaRecorder: true, scrub: true, control: true },
+    setRate: (r) => { video.playbackRate = r; },
+    capabilities: { frameStep: true, mediaRecorder: true, scrub: true, control: true, speed: true },
     destroy: () => {
       try { URL.revokeObjectURL(video.src); } catch {}
       video.remove();
@@ -225,7 +230,8 @@ async function YouTubeAdapter(videoId, mountEl) {
     isPaused: () => { try { return player.getPlayerState() !== YT.PlayerState.PLAYING; } catch { return true; } },
     onTimeUpdate: (cb) => { timeCb = cb; },
     getVideoRect: () => ({ width: 1920, height: 1080 }),
-    capabilities: { frameStep: false, mediaRecorder: false, scrub: true, control: true },
+    setRate: (r) => { try { player.setPlaybackRate(r); } catch {} },
+    capabilities: { frameStep: false, mediaRecorder: false, scrub: true, control: true, speed: true },
     destroy: () => {
       clearInterval(pollTimer);
       try { player.destroy(); } catch {}
@@ -252,7 +258,7 @@ function IframeAdapter(embedUrl, mountEl) {
     isPaused: () => true,
     onTimeUpdate: (cb) => { timeCb = cb; state._iframeTimeCb = cb; },
     getVideoRect: () => ({ width: 1920, height: 1080 }),
-    capabilities: { frameStep: false, mediaRecorder: false, scrub: false, control: false },
+    capabilities: { frameStep: false, mediaRecorder: false, scrub: false, control: false, speed: false },
     destroy: () => { iframe.remove(); },
   };
 }
@@ -291,6 +297,10 @@ async function attachAdapter() {
 
   showEmptyVideo(false);
   state.adapter.onTimeUpdate(onTimeUpdate);
+  // Restore previous speed if adapter supports it
+  if (state.adapter.capabilities.speed && state.adapter.setRate) {
+    state.adapter.setRate(state.playbackRate || 1);
+  }
   resizeOverlay();
   updateCapabilities();
 }
@@ -300,13 +310,14 @@ function showEmptyVideo(show) {
 }
 
 function updateCapabilities() {
-  const caps = state.adapter?.capabilities || { frameStep: false, mediaRecorder: false, control: false };
+  const caps = state.adapter?.capabilities || { frameStep: false, mediaRecorder: false, control: false, speed: false };
   $('#btnFrameBack').disabled  = !caps.frameStep;
   $('#btnFrameFwd').disabled   = !caps.frameStep;
   $('#btnExportClip').disabled = !caps.mediaRecorder;
   $('#btnPlayPause').disabled  = !caps.control;
   $('#btnBack').disabled       = !caps.control;
   $('#btnFwd').disabled        = !caps.control;
+  $('#speedSelect').disabled   = !caps.speed;
 }
 
 function onTimeUpdate(t) {
@@ -317,6 +328,31 @@ function onTimeUpdate(t) {
   if (state.loopActive && state.inPoint != null && state.outPoint != null) {
     if (t >= state.outPoint) state.adapter.seek(state.inPoint);
   }
+  // Track play state transitions for auto-clear / pin-to-clip
+  if (state.adapter) {
+    const paused = state.adapter.isPaused();
+    if (state._wasPaused === undefined) state._wasPaused = paused;
+    if (state._wasPaused && !paused) onPlaybackResumed();
+    if (!state._wasPaused && paused) onPlaybackPaused();
+    state._wasPaused = paused;
+  }
+}
+
+function onPlaybackResumed() {
+  if (!state.autoClearOnPlay) { state._drawingsHidden = false; renderStrokes(); return; }
+  // Don't hide if pin-to-clip is on AND we have an active clip range
+  if (state.pinDrawingsToClip && state.loopActive &&
+      state.inPoint != null && state.outPoint != null) {
+    state._drawingsHidden = false; renderStrokes(); return;
+  }
+  state._drawingsHidden = true;
+  renderStrokes();
+}
+
+function onPlaybackPaused() {
+  // Show drawings again when paused
+  state._drawingsHidden = false;
+  renderStrokes();
 }
 
 // =================== CANVAS / TELESTRATOR ====================
@@ -361,6 +397,10 @@ function pushStroke(s) {
 function renderStrokes() {
   const c = ctx();
   c.clearRect(0, 0, overlay().width, overlay().height);
+  if (state._drawingsHidden) {
+    if (state.currentStroke) drawShape(c, state.currentStroke);
+    return;
+  }
   for (const s of getStrokes()) drawShape(c, s);
   if (state.currentStroke) drawShape(c, state.currentStroke);
 }
@@ -396,6 +436,14 @@ function drawShape(c, s) {
   } else if (s.type === 'text') {
     c.font = `bold ${16 + s.width * 2}px Inter, sans-serif`;
     c.fillText(s.text, s.x, s.y);
+  } else if (s.type === 'legacyPng') {
+    if (!s._img) {
+      s._img = new Image();
+      s._img.onload = () => renderStrokes();
+      s._img.src = s.png;
+      return;
+    }
+    if (s._img.complete) c.drawImage(s._img, 0, 0, overlay().width, overlay().height);
   }
 }
 
@@ -447,32 +495,27 @@ function saveDrawingToMarker() {
   if (!state.activeMarkerId || !state.game) return;
   const m = state.game.markers.find(x => x.id === state.activeMarkerId);
   if (!m) return;
-  const strokes = getStrokes();
-  if (strokes.length === 0) { m.drawingPng = null; persistGame(); return; }
-  try {
-    m.drawingPng = overlay().toDataURL('image/png');
-    persistGame();
-  } catch (e) { /* ignore */ }
+  m.strokes = getStrokes().slice();
+  m.drawingPng = null; // legacy field — no longer used as source of truth
+  persistGame();
 }
 
 function restoreDrawingForMarker(m) {
   state.activeMarkerId = m ? m.id : null;
   if (!m) { renderStrokes(); return; }
-  if (state.strokes[m.id]) { renderStrokes(); return; }
-  // Reload strokes-from-PNG isn't possible — drawingPng is a flattened image.
-  // Treat it as an immutable backdrop until user draws (then strokes live on top).
-  state.strokes[m.id] = [];
-  if (m.drawingPng) {
-    const img = new Image();
-    img.onload = () => {
-      const c = ctx();
-      c.clearRect(0, 0, overlay().width, overlay().height);
-      c.drawImage(img, 0, 0, overlay().width, overlay().height);
-    };
-    img.src = m.drawingPng;
-  } else {
-    renderStrokes();
+  // Hydrate strokes from saved data if not already cached
+  if (!state.strokes[m.id]) {
+    if (Array.isArray(m.strokes) && m.strokes.length) {
+      state.strokes[m.id] = m.strokes.slice();
+    } else if (m.drawingPng) {
+      // Legacy: marker saved before stroke persistence existed.
+      // Show the PNG once as a backdrop. New strokes will replace it.
+      state.strokes[m.id] = [{ type: 'legacyPng', png: m.drawingPng }];
+    } else {
+      state.strokes[m.id] = [];
+    }
   }
+  renderStrokes();
 }
 
 function undo() {
@@ -494,7 +537,7 @@ function clearDraw() {
   state.strokes[state.activeMarkerId] = [];
   state.redoStacks[state.activeMarkerId] = [];
   const m = state.game.markers.find(x => x.id === state.activeMarkerId);
-  if (m) m.drawingPng = null;
+  if (m) { m.strokes = []; m.drawingPng = null; }
   renderStrokes(); persistGame();
 }
 
@@ -520,7 +563,13 @@ async function snapshot() {
   c.toBlob((blob) => {
     if (!blob) return toast('Snapshot failed.', 'error');
     const t = state.adapter.getTime();
-    downloadBlob(blob, `huddle-snap-${state.game.opponent}-${fmtTime(t).replace(':', 'm')}.png`);
+    const m = activeMarker();
+    const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+    const parts = ['huddle-snap', slug(state.game.opponent)];
+    if (m && m.quarter) parts.push('q' + slug(m.quarter));
+    if (m && m.title) parts.push(slug(m.title));
+    parts.push(fmtTime(t).replace(':', 'm'));
+    downloadBlob(blob, parts.filter(Boolean).join('-') + '.png');
   }, 'image/png');
 }
 
@@ -535,16 +584,18 @@ function markPlay() {
     title: `Play at ${fmtTime(t)}`,
     playType: 'offense',
     notes: '',
+    tags: [],
     offense: emptyOffense(),
     defense: null,
     st: null,
-    drawingPng: null,
+    strokes: [],
   };
   state.game.markers.push(m);
   state.game.markers.sort((a, b) => a.time - b.time);
   setActiveMarker(m.id);
   renderMarkerList();
   renderPlayPane();
+  renderQuickStats();
   persistGame();
   toast('Marked play at ' + fmtTime(t));
 }
@@ -558,6 +609,31 @@ function setActiveMarker(id) {
   renderPlayPane();
 }
 
+function nudgeActiveMarkerTime(delta) {
+  const m = activeMarker();
+  if (!m) return;
+  m.time = Math.max(0, m.time + delta);
+  state.game.markers.sort((a, b) => a.time - b.time);
+  if (state.adapter && state.adapter.capabilities.control) state.adapter.seek(m.time);
+  renderMarkerList();
+  renderPlayPane();
+  persistGame();
+}
+
+function gotoAdjacentMarker(dir) {
+  if (!state.game || !state.game.markers.length) return;
+  const ms = state.game.markers.slice().sort((a, b) => a.time - b.time);
+  const idx = ms.findIndex(x => x.id === state.activeMarkerId);
+  let next;
+  if (idx < 0) {
+    // No active marker — seek to first/last based on direction
+    next = dir > 0 ? ms[0] : ms[ms.length - 1];
+  } else {
+    next = ms[clamp(idx + dir, 0, ms.length - 1)];
+  }
+  if (next) setActiveMarker(next.id);
+}
+
 function deletePlay(id) {
   if (!state.game) return;
   if (!confirm('Delete this play?')) return;
@@ -566,6 +642,9 @@ function deletePlay(id) {
   if (state.activeMarkerId === id) state.activeMarkerId = null;
   renderMarkerList();
   renderPlayPane();
+  renderQuickStats();
+  refreshTagFilter();
+  refreshConceptSuggestions();
   persistGame();
 }
 
@@ -625,7 +704,7 @@ function offenseFormHTML(o) {
         ${['run','pass','rpo','screen','pa'].map(p => `<option ${o.playType===p?'selected':''}>${p}</option>`).join('')}
       </select>
     </label>
-    <label>Concept<input data-k="concept" value="${o.concept}" placeholder="Mesh, Stick, Counter…"></label>
+    <label>Concept<input data-k="concept" list="conceptList" value="${o.concept}" placeholder="Mesh, Stick, Counter…"></label>
     <label>Result (yards)<input type="number" data-k="resultYards" value="${o.resultYards}"></label>
     <div class="checkbox-row">
       <label><input type="checkbox" data-k="motion" ${o.motion?'checked':''}> Motion</label>
@@ -692,10 +771,12 @@ function updateSchemaField(m, el) {
   if (m.playType === 'offense') {
     m.offense.success = computeSuccess(m.offense);
     m.offense.explosive = computeExplosive(m.offense);
+    if (k === 'concept') refreshConceptSuggestions();
     renderSchemaForm(); // re-render to update computed badges
   }
   persistGame();
   renderStatsIfActive();
+  renderQuickStats();
 }
 
 // =================== RENDER: MARKER LIST ====================
@@ -742,6 +823,80 @@ function renderPlayPane() {
 
   $$('.pt').forEach(b => b.classList.toggle('active', b.dataset.pt === m.playType));
   renderSchemaForm();
+  renderTagChips();
+  refreshTagSuggestions();
+}
+
+// =================== TAGS ====================
+function renderTagChips() {
+  const m = activeMarker();
+  const ul = $('#tagChips');
+  ul.innerHTML = '';
+  if (!m) return;
+  if (!Array.isArray(m.tags)) m.tags = [];
+  for (const tag of m.tags) {
+    const li = document.createElement('li');
+    li.className = 'tag-chip';
+    li.innerHTML = `<span>${escapeHTML(tag)}</span><button class="x" title="Remove">×</button>`;
+    li.querySelector('.x').addEventListener('click', () => {
+      m.tags = m.tags.filter(t => t !== tag);
+      renderTagChips(); persistGame(); refreshTagFilter(); renderStatsIfActive();
+    });
+    ul.appendChild(li);
+  }
+}
+
+function addTagFromInput() {
+  const inp = $('#tagInput');
+  const v = inp.value.trim();
+  if (!v) return;
+  const m = activeMarker();
+  if (!m) return;
+  if (!Array.isArray(m.tags)) m.tags = [];
+  if (!m.tags.includes(v)) m.tags.push(v);
+  inp.value = '';
+  renderTagChips(); persistGame(); refreshTagFilter(); refreshTagSuggestions(); renderStatsIfActive();
+}
+
+function allGameTags() {
+  if (!state.game) return [];
+  const set = new Set();
+  for (const mk of state.game.markers) {
+    (mk.tags || []).forEach(t => set.add(t));
+  }
+  return [...set].sort();
+}
+
+function refreshTagSuggestions() {
+  const dl = $('#tagSuggestions');
+  if (!dl) return;
+  dl.innerHTML = allGameTags().map(t => `<option value="${escapeHTML(t)}"></option>`).join('');
+}
+
+function refreshTagFilter() {
+  const sel = $('#filterTag');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All</option>' +
+    allGameTags().map(t => `<option ${t===cur?'selected':''}>${escapeHTML(t)}</option>`).join('');
+}
+
+// =================== CONCEPT AUTOCOMPLETE ====================
+function refreshConceptSuggestions() {
+  // Inject/refresh a <datalist id="conceptList"> reflecting all unique offense concepts used in this game.
+  let dl = document.getElementById('conceptList');
+  if (!dl) {
+    dl = document.createElement('datalist');
+    dl.id = 'conceptList';
+    document.body.appendChild(dl);
+  }
+  const set = new Set();
+  if (state.game) {
+    for (const mk of state.game.markers) {
+      if (mk.offense && mk.offense.concept) set.add(mk.offense.concept);
+    }
+  }
+  dl.innerHTML = [...set].sort().map(c => `<option value="${escapeHTML(c)}"></option>`).join('');
 }
 
 // =================== CLIPS ====================
@@ -837,6 +992,7 @@ function applyFilters(markers) {
       const bucket = m[m.playType];
       if (!bucket || String(bucket.down || '') !== state.filterDown) return false;
     }
+    if (state.filterTag && !(m.tags || []).includes(state.filterTag)) return false;
     return true;
   });
 }
@@ -922,6 +1078,27 @@ function renderStatsIfActive() {
   if (state.rightTab === 'stats') renderStats();
 }
 
+function renderQuickStats() {
+  const grid = $('#qsGrid');
+  if (!grid) return;
+  if (!state.game || !state.game.markers.length) {
+    grid.innerHTML = '<div class="qs-empty muted small">No plays yet</div>';
+    return;
+  }
+  const s = computeStats(state.game.markers);
+  const tiles = [
+    ['Plays', state.game.markers.length],
+    ['Off Y/P', num(s.ypp, 1)],
+    ['Success', s.offPlays ? pct(s.success / s.offPlays) : '—'],
+    ['Expl', s.explosive],
+    ['TFL', s.tfls],
+    ['Sack', s.sacks],
+  ];
+  grid.innerHTML = tiles.map(([k, v]) =>
+    `<div class="qs-tile"><div class="k">${k}</div><div class="v">${v}</div></div>`
+  ).join('');
+}
+
 // =================== SETTINGS ====================
 function renderSettings() {
   const body = $('#settingsBody');
@@ -1001,6 +1178,9 @@ function renderAll() {
   renderStats();
   renderSettings();
   renderIO();
+  renderQuickStats();
+  refreshTagFilter();
+  refreshConceptSuggestions();
   updateCapabilities();
 }
 
@@ -1094,7 +1274,22 @@ function wireHotkeys() {
       case '1': if (activeMarker()) setPlayType('offense'); break;
       case '2': if (activeMarker()) setPlayType('defense'); break;
       case '3': if (activeMarker()) setPlayType('st'); break;
-      case 'Escape': setDrawMode(null); break;
+      case '[': gotoAdjacentMarker(-1); break;
+      case ']': gotoAdjacentMarker(+1); break;
+      case '?':
+      case '/':
+        if (e.shiftKey || e.key === '?') {
+          e.preventDefault();
+          $('#helpModal').classList.toggle('hidden');
+        }
+        break;
+      case 'Escape':
+        if (!$('#helpModal').classList.contains('hidden')) {
+          $('#helpModal').classList.add('hidden');
+        } else {
+          setDrawMode(null);
+        }
+        break;
     }
   });
 }
@@ -1151,10 +1346,18 @@ function wireUI() {
     if (!state.adapter) return;
     state.adapter.isPaused() ? state.adapter.play() : state.adapter.pause();
   });
+  $('#btnPrevPlay').addEventListener('click', () => gotoAdjacentMarker(-1));
+  $('#btnNextPlay').addEventListener('click', () => gotoAdjacentMarker(+1));
   $('#btnBack').addEventListener('click', () => state.adapter && state.adapter.seek(state.adapter.getTime() - 5));
   $('#btnFwd').addEventListener('click',  () => state.adapter && state.adapter.seek(state.adapter.getTime() + 5));
   $('#btnFrameBack').addEventListener('click', () => state.adapter?.frameStep && state.adapter.frameStep(-1));
   $('#btnFrameFwd').addEventListener('click',  () => state.adapter?.frameStep && state.adapter.frameStep(+1));
+  $('#speedSelect').addEventListener('change', e => {
+    state.playbackRate = +e.target.value;
+    if (state.adapter?.setRate) state.adapter.setRate(state.playbackRate);
+  });
+  $('#btnHelp').addEventListener('click', () => $('#helpModal').classList.remove('hidden'));
+  $('#help_close').addEventListener('click', () => $('#helpModal').classList.add('hidden'));
   $('#scrubber').addEventListener('input', e => {
     if (!state.adapter) return;
     const d = state.adapter.getDuration(); if (!d) return;
@@ -1172,8 +1375,23 @@ function wireUI() {
   $$('.tool[data-tool]').forEach(b => b.addEventListener('click', () => {
     setDrawMode(state.tool === b.dataset.tool ? null : b.dataset.tool);
   }));
-  $('#penColor').addEventListener('input', e => { state.penColor = e.target.value; });
+  $('#penColor').addEventListener('input', e => {
+    state.penColor = e.target.value;
+    $$('.color-swatch').forEach(s => s.classList.remove('active'));
+  });
   $('#penWidth').addEventListener('input', e => { state.penWidth = +e.target.value; });
+  $$('.color-swatch').forEach(sw => sw.addEventListener('click', () => {
+    state.penColor = sw.dataset.color;
+    $('#penColor').value = sw.dataset.color;
+    $$('.color-swatch').forEach(s => s.classList.toggle('active', s === sw));
+  }));
+  $('#toggleAutoClear').addEventListener('change', e => {
+    state.autoClearOnPlay = e.target.checked;
+    if (!state.autoClearOnPlay) { state._drawingsHidden = false; renderStrokes(); }
+  });
+  $('#togglePinClip').addEventListener('change', e => {
+    state.pinDrawingsToClip = e.target.checked;
+  });
   $('#btnUndo').addEventListener('click', undo);
   $('#btnRedo').addEventListener('click', redo);
   $('#btnClearDraw').addEventListener('click', clearDraw);
@@ -1194,11 +1412,19 @@ function wireUI() {
   $('#playNotes').addEventListener('input', e => { const m = activeMarker(); if (m) { m.notes = e.target.value; persistGame(); } });
   $$('.pt').forEach(b => b.addEventListener('click', () => setPlayType(b.dataset.pt)));
   $('#btnDeletePlay').addEventListener('click', () => { const m = activeMarker(); if (m) deletePlay(m.id); });
+  $$('.nudge').forEach(b => b.addEventListener('click', () => nudgeActiveMarkerTime(+b.dataset.nudge)));
+
+  // Tag input
+  $('#tagInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTagFromInput(); }
+  });
+  $('#tagInput').addEventListener('change', () => { if ($('#tagInput').value.trim()) addTagFromInput(); });
 
   // Search & filters
   $('#markerSearch').addEventListener('input', e => { state.search = e.target.value; renderMarkerList(); });
   $('#filterQuarter').addEventListener('change', e => { state.filterQuarter = e.target.value; renderStats(); });
   $('#filterDown').addEventListener('change', e => { state.filterDown = e.target.value; renderStats(); });
+  $('#filterTag').addEventListener('change', e => { state.filterTag = e.target.value; renderStats(); });
 
   // Resize
   window.addEventListener('resize', resizeOverlay);

@@ -6,6 +6,7 @@
 <title>Huddle With Coach Pink — Auburn Film Room</title>
 <meta name="description" content="A film review studio for Auburn football. Mark plays, draw on the frame, log stats, trim clips.">
 <meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230C2340'/%3E%3Cellipse cx='16' cy='16' rx='9' ry='6' fill='%23DD550C'/%3E%3Cpath d='M10 16h12M16 12.5v7' stroke='%23FAF7F2' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -46,6 +47,11 @@
       <span id="clipCount" class="count">0</span>
     </div>
     <ul id="clipList" class="clip-list"></ul>
+
+    <div class="quick-stats" id="quickStats">
+      <div class="qs-head">Quick Stats</div>
+      <div class="qs-grid" id="qsGrid"></div>
+    </div>
   </aside>
 
   <!-- ===================== CENTER (VIDEO) ===================== -->
@@ -77,11 +83,23 @@
 
     <!-- Transport -->
     <div class="transport">
+      <button id="btnPrevPlay" class="t-btn" title="Previous play ([)">⟨⟨</button>
       <button id="btnPlayPause" class="t-btn" title="Play / Pause (Space)">▶</button>
+      <button id="btnNextPlay" class="t-btn" title="Next play (])">⟩⟩</button>
       <button id="btnBack" class="t-btn" title="-5s (J)">−5s</button>
       <button id="btnFwd" class="t-btn" title="+5s (L)">+5s</button>
       <button id="btnFrameBack" class="t-btn" title="Frame back (,) — MP4 only">⟨ Frame</button>
       <button id="btnFrameFwd" class="t-btn" title="Frame forward (.) — MP4 only">Frame ⟩</button>
+
+      <select id="speedSelect" class="speed-select" title="Playback speed">
+        <option value="0.25">0.25×</option>
+        <option value="0.5">0.5×</option>
+        <option value="0.75">0.75×</option>
+        <option value="1" selected>1×</option>
+        <option value="1.25">1.25×</option>
+        <option value="1.5">1.5×</option>
+        <option value="2">2×</option>
+      </select>
 
       <div class="scrubber-wrap">
         <input id="scrubber" class="scrubber" type="range" min="0" max="1000" value="0" step="1">
@@ -95,6 +113,7 @@
       <button id="btnSaveClip" class="t-btn" title="Save clip">＋ Clip</button>
       <button id="btnExportClip" class="t-btn" title="Export clip as WebM — MP4 only">⤓ WebM</button>
       <span id="ioReadout" class="muted small">IN: — &nbsp; OUT: —</span>
+      <button id="btnHelp" class="t-btn" title="Keyboard shortcuts (?)" style="margin-left:auto;">?</button>
     </div>
 
     <!-- Telestrator -->
@@ -107,9 +126,16 @@
         <button class="tool" data-tool="text" title="Text">A</button>
       </div>
       <div class="tool-group">
-        <label class="color-pick" title="Color">
-          <input type="color" id="penColor" value="#DD550C">
-        </label>
+        <div class="color-presets">
+          <button class="color-swatch active" data-color="#DD550C" style="background:#DD550C" title="Auburn orange"></button>
+          <button class="color-swatch" data-color="#FAF7F2" style="background:#FAF7F2" title="White"></button>
+          <button class="color-swatch" data-color="#F5A623" style="background:#F5A623" title="Yellow"></button>
+          <button class="color-swatch" data-color="#C0392B" style="background:#C0392B" title="Red"></button>
+          <button class="color-swatch" data-color="#2EC4F2" style="background:#2EC4F2" title="Cyan"></button>
+          <label class="color-pick" title="Custom color">
+            <input type="color" id="penColor" value="#DD550C">
+          </label>
+        </div>
         <label class="line-width" title="Stroke width">
           <input type="range" id="penWidth" min="2" max="14" value="4">
         </label>
@@ -120,7 +146,14 @@
         <button class="tool" id="btnClearDraw" title="Clear drawings">⌫</button>
         <button class="tool" id="btnSnapshot" title="Snapshot PNG">📷</button>
       </div>
-      <div class="hint muted small">Esc to deselect tool. Drawings auto-save to the active play.</div>
+      <div class="tool-group toggles">
+        <label class="mini-toggle" title="Auto-clear drawings when playback resumes">
+          <input type="checkbox" id="toggleAutoClear"> auto-clear on play
+        </label>
+        <label class="mini-toggle" title="Keep drawings visible while looping the active clip">
+          <input type="checkbox" id="togglePinClip"> pin to clip
+        </label>
+      </div>
     </div>
   </main>
 
@@ -143,7 +176,15 @@
         </div>
 
         <div class="play-meta">
-          <label>Time<input id="playTime" type="text" readonly></label>
+          <label>Time
+            <div class="nudge-row">
+              <button class="nudge" data-nudge="-0.5" title="−0.5s">−½</button>
+              <button class="nudge" data-nudge="-0.1" title="−0.1s">−⅒</button>
+              <input id="playTime" type="text" readonly>
+              <button class="nudge" data-nudge="0.1" title="+0.1s">+⅒</button>
+              <button class="nudge" data-nudge="0.5" title="+0.5s">+½</button>
+            </div>
+          </label>
           <label>Quarter
             <select id="playQuarter">
               <option value="">—</option>
@@ -160,6 +201,14 @@
 
         <!-- Schema forms injected by JS based on playType -->
         <div id="schemaForm" class="schema-form"></div>
+
+        <label class="tags-label">Tags
+          <div class="tag-row">
+            <ul id="tagChips" class="tag-chips"></ul>
+            <input id="tagInput" class="tag-input" placeholder="Add tag + Enter" list="tagSuggestions">
+            <datalist id="tagSuggestions"></datalist>
+          </div>
+        </label>
 
         <label class="notes-label">Notes
           <textarea id="playNotes" rows="4" placeholder="Read, coverage, coaching point…"></textarea>
@@ -179,6 +228,11 @@
           <select id="filterDown">
             <option value="">All</option>
             <option>1</option><option>2</option><option>3</option><option>4</option>
+          </select>
+        </label>
+        <label>Tag
+          <select id="filterTag">
+            <option value="">All</option>
           </select>
         </label>
       </div>
@@ -262,6 +316,51 @@
 
 <!-- Toast -->
 <div id="toast" class="toast hidden"></div>
+
+<!-- ===================== HELP / SHORTCUTS MODAL ===================== -->
+<div class="modal hidden" id="helpModal">
+  <div class="modal-card help-card">
+    <h2>Keyboard Shortcuts</h2>
+    <p class="muted">Press <kbd>?</kbd> any time to open this. <kbd>Esc</kbd> to close.</p>
+    <div class="help-grid">
+      <div class="help-col">
+        <h4>Playback</h4>
+        <ul>
+          <li><kbd>Space</kbd> Play / pause</li>
+          <li><kbd>K</kbd> Pause</li>
+          <li><kbd>J</kbd> / <kbd>L</kbd> −5s / +5s</li>
+          <li><kbd>,</kbd> / <kbd>.</kbd> Frame back / forward <span class="muted">(MP4)</span></li>
+        </ul>
+        <h4>Plays</h4>
+        <ul>
+          <li><kbd>M</kbd> Mark play at current time</li>
+          <li><kbd>[</kbd> / <kbd>]</kbd> Previous / next play</li>
+          <li><kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> Offense / Defense / ST</li>
+        </ul>
+      </div>
+      <div class="help-col">
+        <h4>Clips</h4>
+        <ul>
+          <li><kbd>I</kbd> / <kbd>O</kbd> Set IN / OUT</li>
+        </ul>
+        <h4>Drawing</h4>
+        <ul>
+          <li><kbd>Esc</kbd> Deselect drawing tool</li>
+          <li>Click a tool, then drag on the video</li>
+          <li>Undo / Redo / Clear in the chalk strip</li>
+        </ul>
+        <h4>Capture</h4>
+        <ul>
+          <li>📷 Snapshot exports the frame + drawings as PNG</li>
+          <li>⤓ WebM exports the IN→OUT segment <span class="muted">(MP4 only)</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="help_close">Got it</button>
+    </div>
+  </div>
+</div>
 
 <!-- YouTube IFrame API -->
 <script>window.YT_API_READY = new Promise(r => { window.onYouTubeIframeAPIReady = r; });</script>
