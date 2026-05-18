@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Counter — Full Circle Doughnuts Owner Dashboard</title>
+<meta name="description" content="Operations dashboard concept for Full Circle Doughnuts — staff scheduling, team chat, Google reviews, requests, and daily/monthly specials." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1a0e0e;
+    --bg-2:#231414;
+    --panel:#2a1a1a;
+    --panel-2:#321e1e;
+    --panel-3:#3a2222;
+    --line:rgba(255,255,255,.08);
+    --line-2:rgba(255,255,255,.14);
+    --ink:#fdf5ee;
+    --ink-soft:#d3b9b6;
+    --muted:#998080;
+    --red:#ef4252;
+    --red-deep:#c41e2c;
+    --red-soft:rgba(239,66,82,.16);
+    --red-line:rgba(239,66,82,.32);
+    --gold:#e8b34a;
+    --gold-soft:rgba(232,179,74,.15);
+    --green:#5dd39e;
+    --green-soft:rgba(93,211,158,.15);
+    --amber:#f0a874;
+    --blue:#6cb6e0;
+    --blue-soft:rgba(108,182,224,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,.serif{font-family:'Fraunces',serif;font-weight:600}
+  a{color:inherit;text-decoration:none}
+  button{font-family:'Inter',sans-serif}
+  .mono{font-family:'JetBrains Mono',monospace}
+
+  /* ===== SHELL ===== */
+  .app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+  aside.side{background:#130808;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand-line{display:flex;align-items:center;gap:11px;margin-bottom:24px;padding:0 4px}
+  .bm{width:36px;height:36px;position:relative;flex-shrink:0}
+  .bm-ring{position:absolute;inset:0;border-radius:50%;background:var(--red)}
+  .bm-hole{position:absolute;inset:36%;border-radius:50%;background:#130808}
+  .bm-text{position:absolute;inset:0;animation:spin 22s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .bm-text text{font-family:'Fraunces',serif;font-size:5.6px;letter-spacing:.22em;fill:#fff;font-weight:700;text-transform:uppercase}
+  .brand-line .bn{font-family:'Fraunces',serif;font-size:1.02rem;line-height:1;font-weight:600}
+  .brand-line .br{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:3px;font-weight:700}
+
+  .nav-section{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:14px 10px 6px}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:.84rem;color:var(--ink-soft);font-weight:500;cursor:pointer;transition:.15s}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+  .nav-item.active{background:var(--red-soft);color:var(--red);border:1px solid var(--red-line)}
+  .nav-item .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;opacity:.85}
+  .nav-item .badge{margin-left:auto;font-size:.62rem;background:var(--red);color:#fff;padding:2px 7px;border-radius:999px;font-weight:700;letter-spacing:.04em}
+  .nav-item .badge.gold{background:var(--gold);color:#3a2210}
+  .nav-item .badge.green{background:var(--green);color:#0f3a25}
+  .side-foot{margin-top:auto;border-top:1px solid var(--line);padding:14px 6px 4px;display:flex;align-items:center;gap:10px}
+  .side-foot .av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:.78rem}
+  .side-foot .nm{font-size:.82rem;font-weight:600}
+  .side-foot .rl{font-size:.66rem;color:var(--muted);letter-spacing:.04em}
+
+  /* ===== MAIN ===== */
+  main{display:flex;flex-direction:column;min-width:0}
+  header.topbar{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;background:rgba(26,14,14,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:10}
+  .topbar h1{font-size:1.4rem;font-weight:500}
+  .topbar .sub{font-size:.78rem;color:var(--muted);margin-top:2px}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .search{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:.84rem;color:var(--ink-soft);width:260px;display:flex;align-items:center;gap:10px}
+  .search input{background:none;border:none;outline:none;color:var(--ink);width:100%;font-family:'Inter',sans-serif;font-size:.84rem}
+  .search input::placeholder{color:var(--muted)}
+  .kbd{font-family:'JetBrains Mono',monospace;font-size:.66rem;padding:1px 5px;border:1px solid var(--line-2);border-radius:4px;color:var(--muted)}
+  .icon-btn{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);position:relative}
+  .icon-btn:hover{background:rgba(255,255,255,.09)}
+  .icon-btn .pip{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--bg)}
+  .new-btn{padding:10px 18px;border-radius:10px;background:var(--red);color:#fff;font-size:.78rem;letter-spacing:.04em;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;gap:8px}
+  .new-btn:hover{background:var(--red-deep)}
+
+  /* ===== CONTENT ===== */
+  .content{padding:26px 28px;display:flex;flex-direction:column;gap:22px}
+  .row{display:grid;gap:18px}
+  .row.r-4{grid-template-columns:repeat(4,1fr)}
+  .row.r-3{grid-template-columns:repeat(3,1fr)}
+  .row.r-2{grid-template-columns:1.5fr 1fr}
+  .row.r-2b{grid-template-columns:1fr 1fr}
+  .row.r-sched{grid-template-columns:2fr 1fr}
+
+  .card{background:linear-gradient(180deg,var(--panel) 0%, var(--bg-2) 100%);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+  .card h3{font-size:1.05rem;font-weight:500;color:var(--ink);font-family:'Fraunces',serif}
+  .card .head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+  .card .head .lbl{font-size:.64rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px}
+  .card .head .val{font-size:1.95rem;font-family:'Fraunces',serif;font-weight:600;line-height:1;color:var(--ink)}
+  .card .head .delta{font-size:.72rem;color:var(--green);font-weight:600;margin-top:6px;display:flex;align-items:center;gap:5px}
+  .card .head .delta.down{color:var(--red)}
+  .card .head .ic{width:38px;height:38px;border-radius:10px;background:var(--red-soft);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:1px solid var(--red-line)}
+  .ic.gold{background:var(--gold-soft);color:var(--gold);border-color:rgba(232,179,74,.28)}
+  .ic.green{background:var(--green-soft);color:var(--green);border-color:rgba(93,211,158,.28)}
+  .ic.blue{background:var(--blue-soft);color:var(--blue);border-color:rgba(108,182,224,.28)}
+
+  .mini-bars{display:flex;align-items:flex-end;gap:4px;height:42px;margin-top:6px}
+  .mini-bars span{flex:1;background:linear-gradient(180deg,var(--red) 0%, rgba(239,66,82,.2) 100%);border-radius:3px;min-height:6px;opacity:.92}
+  .mini-bars.gold span{background:linear-gradient(180deg,var(--gold) 0%, rgba(232,179,74,.2) 100%)}
+  .mini-bars.green span{background:linear-gradient(180deg,var(--green) 0%, rgba(93,211,158,.2) 100%)}
+  .mini-bars.blue span{background:linear-gradient(180deg,var(--blue) 0%, rgba(108,182,224,.2) 100%)}
+
+  /* panel headers */
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:4px}
+  .panel-head h3{font-size:1.08rem}
+  .panel-head .desc{font-size:.76rem;color:var(--muted);margin-top:2px}
+  .panel-actions{display:flex;gap:6px}
+  .chip{padding:6px 12px;border-radius:999px;font-size:.7rem;letter-spacing:.04em;font-weight:600;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink-soft);cursor:pointer}
+  .chip.active{background:var(--red-soft);border-color:var(--red-line);color:var(--red)}
+  .chip:hover{background:rgba(255,255,255,.08)}
+
+  /* ===== SCHEDULE TIMELINE ===== */
+  .sched-hd{display:grid;grid-template-columns:160px 1fr;gap:14px;padding:0 4px 8px;border-bottom:1px solid var(--line);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;align-items:center}
+  .sched-hours{display:grid;grid-template-columns:repeat(8,1fr);font-family:'JetBrains Mono',monospace}
+  .sched-hours span{font-size:.64rem;color:var(--muted)}
+  .v-row{display:grid;grid-template-columns:160px 1fr;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+  .v-row:last-child{border-bottom:none}
+  .v-tag{display:flex;align-items:center;gap:11px}
+  .v-tag .av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem}
+  .v-tag .nm{font-size:.88rem;font-weight:600;color:var(--ink)}
+  .v-tag .rl{font-size:.7rem;color:var(--muted)}
+  .v-bar-track{position:relative;height:38px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .v-bar{position:absolute;top:4px;bottom:4px;border-radius:7px;padding:6px 12px;display:flex;align-items:center;font-size:.76rem;font-weight:600;color:#fff;letter-spacing:.02em;overflow:hidden;white-space:nowrap}
+  .v-bar.red{background:linear-gradient(90deg,rgba(239,66,82,.85),rgba(196,30,44,.85));border:1px solid var(--red-line)}
+  .v-bar.gold{background:linear-gradient(90deg,rgba(232,179,74,.85),rgba(195,140,40,.85));border:1px solid rgba(232,179,74,.32);color:#2a1a0a}
+  .v-bar.green{background:linear-gradient(90deg,rgba(93,211,158,.78),rgba(43,150,108,.78));border:1px solid rgba(93,211,158,.32);color:#06251a}
+  .v-bar.blue{background:linear-gradient(90deg,rgba(108,182,224,.78),rgba(60,130,180,.78));border:1px solid rgba(108,182,224,.32);color:#0a2438}
+  .v-now{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--gold);box-shadow:0 0 12px var(--gold)}
+  .v-now::after{content:"";position:absolute;top:-6px;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--gold)}
+
+  /* ===== CHAT ===== */
+  .chat{display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden}
+  .chat-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .chat-head .nm{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:500}
+  .chat-head .sub{font-size:.72rem;color:var(--muted);margin-top:2px}
+  .chat-head .pres{display:flex;gap:-6px;margin-left:auto}
+  .pres-av{width:26px;height:26px;border-radius:50%;border:2px solid var(--bg-2);background:linear-gradient(135deg,var(--red),var(--gold));display:flex;align-items:center;justify-content:center;color:#fff;font-size:.66rem;font-weight:700;margin-left:-8px}
+  .chat-body{padding:16px 20px;display:flex;flex-direction:column;gap:14px;max-height:380px;overflow-y:auto}
+  .msg{display:flex;gap:10px;align-items:flex-start}
+  .msg .av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.7rem}
+  .msg .bubble{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;border-top-left-radius:4px;padding:9px 13px;max-width:78%}
+  .msg .bubble .nm{font-size:.72rem;font-weight:700;color:var(--ink);margin-bottom:2px;display:flex;align-items:center;gap:6px}
+  .msg .bubble .nm time{font-size:.62rem;color:var(--muted);font-weight:500;font-family:'JetBrains Mono',monospace}
+  .msg .bubble .tx{font-size:.86rem;color:var(--ink-soft);line-height:1.45}
+  .msg.me{flex-direction:row-reverse}
+  .msg.me .bubble{background:var(--red-soft);border-color:var(--red-line);border-top-left-radius:14px;border-top-right-radius:4px}
+  .msg.system{justify-content:center}
+  .msg.system .syschip{font-size:.7rem;color:var(--muted);background:rgba(255,255,255,.04);padding:5px 12px;border-radius:999px;border:1px solid var(--line);font-style:italic}
+  .chat-input{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.18)}
+  .chat-input input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink);font-family:'Inter',sans-serif;font-size:.86rem;outline:none}
+  .chat-input input::placeholder{color:var(--muted)}
+  .chat-input .send{padding:9px 14px;border-radius:10px;background:var(--red);color:#fff;font-size:.76rem;font-weight:700;border:none;cursor:pointer}
+  .chat-input .send:hover{background:var(--red-deep)}
+  .chat-input .ib{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--ink-soft);cursor:pointer}
+
+  .chat-tabs{display:flex;padding:0 14px;gap:4px;border-bottom:1px solid var(--line)}
+  .chat-tab{padding:11px 14px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:7px}
+  .chat-tab.active{color:var(--ink);border-bottom-color:var(--red)}
+  .chat-tab .b{font-size:.6rem;background:var(--red);color:#fff;padding:1px 6px;border-radius:999px;font-weight:700}
+
+  /* ===== REVIEWS LIST ===== */
+  .rev-grid{display:grid;grid-template-columns:1fr;gap:0}
+  .rev-card{padding:18px 0;border-bottom:1px solid var(--line);display:flex;gap:14px}
+  .rev-card:last-child{border-bottom:none}
+  .rev-card .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--gold));color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.84rem;flex-shrink:0}
+  .rev-card .meta{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .rev-card .nm{font-size:.86rem;font-weight:600}
+  .rev-card .stars{color:var(--gold);font-size:.78rem;letter-spacing:.04em}
+  .rev-card .when{font-size:.7rem;color:var(--muted);margin-left:auto}
+  .rev-card .tx{font-size:.86rem;color:var(--ink-soft);line-height:1.55;margin-bottom:10px}
+  .rev-card .actions{display:flex;gap:6px;flex-wrap:wrap}
+  .rev-card .actions .chip{font-size:.66rem;letter-spacing:.02em}
+  .rev-card.flag{background:rgba(239,66,82,.05);margin:0 -10px;padding:18px 12px;border:1px solid var(--red-line);border-radius:10px}
+  .rev-stat{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-bottom:14px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+  .rev-stat .rsv{font-family:'Fraunces',serif;font-size:2.4rem;font-weight:600;line-height:1;display:flex;align-items:baseline;gap:6px}
+  .rev-stat .rsv em{font-size:.6em;color:var(--gold);font-style:normal}
+  .rev-stat .rsl{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:6px}
+  .rev-stat .small{font-size:.78rem;color:var(--ink-soft);margin-top:4px}
+  .rev-bars{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+  .rb-row{display:grid;grid-template-columns:24px 1fr 32px;gap:8px;align-items:center;font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  .rb-track{height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+  .rb-fill{height:100%;background:var(--gold);border-radius:2px}
+
+  /* ===== REQUESTS / TASKS ===== */
+  .req-row{padding:13px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:30px 1fr auto auto;gap:12px;align-items:center}
+  .req-row:last-child{border-bottom:none}
+  .req-check{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line-2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .req-check.done{background:var(--green);border-color:var(--green);color:#062013;font-size:.8rem;font-weight:700}
+  .req-row .tt{font-size:.88rem;font-weight:500;color:var(--ink)}
+  .req-row.done .tt{color:var(--muted);text-decoration:line-through}
+  .req-row .sub{font-size:.72rem;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:8px}
+  .req-row .sub .who{display:inline-flex;align-items:center;gap:5px}
+  .req-row .sub .who .av{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--gold));color:#fff;font-weight:700;font-size:.6rem;display:flex;align-items:center;justify-content:center}
+  .pri{font-size:.62rem;font-weight:700;letter-spacing:.1em;padding:3px 8px;border-radius:5px;text-transform:uppercase}
+  .pri.high{background:var(--red-soft);color:var(--red);border:1px solid var(--red-line)}
+  .pri.med{background:var(--gold-soft);color:var(--gold);border:1px solid rgba(232,179,74,.32)}
+  .pri.low{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--line)}
+
+  /* ===== SPECIALS ===== */
+  .specials-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .sp-day{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:11px 9px;display:flex;flex-direction:column;gap:6px;min-height:120px}
+  .sp-day.today{background:var(--red-soft);border-color:var(--red-line)}
+  .sp-day .d{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .sp-day.today .d{color:var(--red)}
+  .sp-day .ds{font-size:.62rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  .sp-day .nm{font-family:'Fraunces',serif;font-size:.88rem;line-height:1.2;font-weight:500;color:var(--ink);margin-top:auto}
+  .sp-day .pr{font-size:.72rem;font-weight:700;color:var(--gold)}
+  .sp-day .pr em{font-style:normal;color:var(--muted);font-weight:500}
+  .sp-day .empty{font-size:.72rem;color:var(--muted);font-style:italic;margin-top:auto}
+
+  .sp-month{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:rgba(232,179,74,.06);border:1px solid rgba(232,179,74,.22);border-radius:14px}
+  .sp-month .lh{display:flex;align-items:center;gap:14px}
+  .sp-month .crest{width:44px;height:44px;border-radius:12px;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:1px solid rgba(232,179,74,.32)}
+  .sp-month .ti{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600}
+  .sp-month .desc{font-size:.78rem;color:var(--muted);margin-top:2px}
+
+  /* ===== INVENTORY / FORECAST ===== */
+  .inv-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 80px;gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:.84rem}
+  .inv-row:last-child{border-bottom:none}
+  .inv-row .nm{font-weight:600;display:flex;align-items:center;gap:9px}
+  .inv-row .dot{width:9px;height:9px;border-radius:50%;background:var(--green)}
+  .inv-row .dot.warn{background:var(--gold)}
+  .inv-row .dot.bad{background:var(--red)}
+  .inv-row .qt{color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.78rem}
+  .inv-row .bar{height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+  .inv-row .fill{height:100%;border-radius:3px}
+  .inv-row .fill.g{background:var(--green)}
+  .inv-row .fill.y{background:var(--gold)}
+  .inv-row .fill.r{background:var(--red)}
+
+  /* ===== UTIL ===== */
+  .stat-list{display:flex;flex-direction:column;gap:0}
+  .stat-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:.86rem}
+  .stat-row:last-child{border-bottom:none}
+  .stat-row .lb{color:var(--ink-soft)}
+  .stat-row .vl{font-family:'Fraunces',serif;font-weight:600;color:var(--ink)}
+  .stat-row .vl em{font-style:normal;color:var(--green);font-size:.72rem;font-weight:600;margin-left:6px}
+  .stat-row .vl em.bad{color:var(--red)}
+  .legend{display:flex;gap:14px;font-size:.7rem;color:var(--muted)}
+  .legend .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .legend .dot.front{background:var(--red)}
+  .legend .dot.bake{background:var(--gold)}
+  .legend .dot.barista{background:var(--blue)}
+  .legend .dot.lead{background:var(--green)}
+
+  @media (max-width: 1100px){
+    .row.r-4{grid-template-columns:repeat(2,1fr)}
+    .row.r-3{grid-template-columns:1fr}
+    .row.r-2,.row.r-2b,.row.r-sched{grid-template-columns:1fr}
+  }
+  @media (max-width:780px){
+    .app{grid-template-columns:1fr}
+    aside.side{position:relative;height:auto}
+    .specials-grid{grid-template-columns:repeat(2,1fr)}
+    .search{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="side">
+    <div class="brand-line">
+      <span class="bm">
+        <span class="bm-ring"></span>
+        <svg class="bm-text" viewBox="0 0 100 100">
+          <defs>
+            <path id="sideCircle" d="M 50,50 m -38,0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0"/>
+          </defs>
+          <text><textPath href="#sideCircle" startOffset="0">FULL CIRCLE • DOUGHNUTS • FRESH DAILY • </textPath></text>
+        </svg>
+        <span class="bm-hole"></span>
+      </span>
+      <div>
+        <div class="bn">The Counter</div>
+        <div class="br">Owner Console</div>
+      </div>
+    </div>
+
+    <div class="nav-item active"><span class="ic">◉</span>Overview</div>
+    <div class="nav-item"><span class="ic">▦</span>Schedule<span class="badge">3</span></div>
+    <div class="nav-item"><span class="ic">✉</span>Team Chat<span class="badge gold">7</span></div>
+    <div class="nav-item"><span class="ic">★</span>Reviews<span class="badge">2</span></div>
+    <div class="nav-item"><span class="ic">⌄</span>Staff Requests<span class="badge green">4</span></div>
+    <div class="nav-item"><span class="ic">●</span>Daily Specials</div>
+    <div class="nav-item"><span class="ic">◐</span>Inventory</div>
+    <div class="nav-item"><span class="ic">◇</span>Catering</div>
+
+    <div class="nav-section">Insights</div>
+    <div class="nav-item"><span class="ic">⟗</span>Sales</div>
+    <div class="nav-item"><span class="ic">⌖</span>Labor</div>
+    <div class="nav-item"><span class="ic">◳</span>Waste & Yield</div>
+
+    <div class="nav-section">Account</div>
+    <div class="nav-item"><span class="ic">⚙</span>Settings</div>
+    <div class="nav-item"><span class="ic">⎋</span><a href="index.html">View Public Site →</a></div>
+
+    <div class="side-foot">
+      <div class="av">DW</div>
+      <div>
+        <div class="nm">Dylan Williams</div>
+        <div class="rl">Owner</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main>
+    <header class="topbar">
+      <div>
+        <h1>Good morning, Dylan.</h1>
+        <div class="sub">Wednesday · May 18 · The case opens in 22 minutes</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search">
+          <span style="opacity:.6">⌕</span>
+          <input placeholder="Search orders, staff, flavors…" />
+          <span class="kbd">⌘ K</span>
+        </div>
+        <button class="icon-btn" title="Notifications"><span>🔔</span><span class="pip"></span></button>
+        <button class="new-btn">＋ New</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ===== KPI ROW ===== -->
+      <div class="row r-4">
+        <div class="card">
+          <div class="head">
+            <div>
+              <div class="lbl">Today's Sales</div>
+              <div class="val">$2,148</div>
+              <div class="delta">▲ 12% vs last Wed</div>
+            </div>
+            <div class="ic">$</div>
+          </div>
+          <div class="mini-bars">
+            <span style="height:30%"></span><span style="height:48%"></span><span style="height:62%"></span><span style="height:55%"></span><span style="height:74%"></span><span style="height:88%"></span><span style="height:95%"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head">
+            <div>
+              <div class="lbl">Doughnuts Sold</div>
+              <div class="val">643</div>
+              <div class="delta">▲ 84 vs avg</div>
+            </div>
+            <div class="ic gold">◉</div>
+          </div>
+          <div class="mini-bars gold">
+            <span style="height:42%"></span><span style="height:58%"></span><span style="height:72%"></span><span style="height:65%"></span><span style="height:80%"></span><span style="height:94%"></span><span style="height:88%"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head">
+            <div>
+              <div class="lbl">Google Rating</div>
+              <div class="val">4.9 ★</div>
+              <div class="delta">▲ 18 new this week</div>
+            </div>
+            <div class="ic gold">★</div>
+          </div>
+          <div class="mini-bars gold">
+            <span style="height:75%"></span><span style="height:80%"></span><span style="height:85%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:94%"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head">
+            <div>
+              <div class="lbl">Labor / Sales</div>
+              <div class="val">21.4%</div>
+              <div class="delta down">▼ target 24%</div>
+            </div>
+            <div class="ic green">⌖</div>
+          </div>
+          <div class="mini-bars green">
+            <span style="height:55%"></span><span style="height:62%"></span><span style="height:48%"></span><span style="height:42%"></span><span style="height:38%"></span><span style="height:44%"></span><span style="height:40%"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SCHEDULE + TEAM CHAT ===== -->
+      <div class="row r-sched">
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Today's Schedule</h3>
+              <div class="desc">5 staff on · 3 stations · gold line = right now (6:08 AM)</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">Today</button>
+              <button class="chip">Tomorrow</button>
+              <button class="chip">Week</button>
+              <button class="chip">＋ Shift</button>
+            </div>
+          </div>
+
+          <div class="sched-hd">
+            <div>Staff · Station</div>
+            <div class="sched-hours">
+              <span>4 AM</span><span>5 AM</span><span>6 AM</span><span>7 AM</span><span>9 AM</span><span>11 AM</span><span>1 PM</span><span>3 PM</span>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div class="v-row">
+              <div class="v-tag"><div class="av" style="background:linear-gradient(135deg,#e8b34a,#c08a2c)">MJ</div><div><div class="nm">Marcus J.</div><div class="rl">Head Baker</div></div></div>
+              <div class="v-bar-track">
+                <div class="v-bar gold" style="left:0%;width:55%">4:00 – 10:30 · Bake & Glaze</div>
+                <div class="v-now" style="left:30%"></div>
+              </div>
+            </div>
+            <div class="v-row">
+              <div class="v-tag"><div class="av" style="background:linear-gradient(135deg,#ef4252,#c41e2c)">SR</div><div><div class="nm">Sara R.</div><div class="rl">Front Lead</div></div></div>
+              <div class="v-bar-track">
+                <div class="v-bar red" style="left:25%;width:55%">6:00 – 1:30 · Counter / Lead</div>
+                <div class="v-now" style="left:30%"></div>
+              </div>
+            </div>
+            <div class="v-row">
+              <div class="v-tag"><div class="av" style="background:linear-gradient(135deg,#6cb6e0,#3c82b4)">TK</div><div><div class="nm">Tomas K.</div><div class="rl">Barista</div></div></div>
+              <div class="v-bar-track">
+                <div class="v-bar blue" style="left:25%;width:50%">6:00 – 12:30 · Espresso / Pour-over</div>
+                <div class="v-now" style="left:30%"></div>
+              </div>
+            </div>
+            <div class="v-row">
+              <div class="v-tag"><div class="av" style="background:linear-gradient(135deg,#5dd39e,#2b966c)">EB</div><div><div class="nm">Eli B.</div><div class="rl">Counter</div></div></div>
+              <div class="v-bar-track">
+                <div class="v-bar green" style="left:30%;width:55%">6:30 – 2:00 · Counter / Restock</div>
+                <div class="v-now" style="left:30%"></div>
+              </div>
+            </div>
+            <div class="v-row">
+              <div class="v-tag"><div class="av" style="background:linear-gradient(135deg,#ef4252,#c41e2c)">LM</div><div><div class="nm">Lina M.</div><div class="rl">Counter</div></div></div>
+              <div class="v-bar-track">
+                <div class="v-bar red" style="left:55%;width:40%">10:00 – 2:00 · Lunch Rush</div>
+                <div class="v-now" style="left:30%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="legend" style="margin-top:6px">
+            <span><span class="dot bake"></span>Bake</span>
+            <span><span class="dot front"></span>Counter</span>
+            <span><span class="dot barista"></span>Barista</span>
+            <span><span class="dot lead"></span>Lead</span>
+          </div>
+        </div>
+
+        <!-- TEAM CHAT -->
+        <div class="card chat">
+          <div class="chat-tabs">
+            <div class="chat-tab active">#general <span class="b">7</span></div>
+            <div class="chat-tab">#bake</div>
+            <div class="chat-tab">#front</div>
+          </div>
+          <div class="chat-head" style="border-top:1px solid var(--line)">
+            <div>
+              <div class="nm">The Team</div>
+              <div class="sub">5 online · Marcus is in the bake room</div>
+            </div>
+            <div class="pres" style="display:flex">
+              <div class="pres-av" style="background:linear-gradient(135deg,#e8b34a,#c08a2c)">M</div>
+              <div class="pres-av" style="background:linear-gradient(135deg,#ef4252,#c41e2c)">S</div>
+              <div class="pres-av" style="background:linear-gradient(135deg,#6cb6e0,#3c82b4)">T</div>
+              <div class="pres-av" style="background:linear-gradient(135deg,#5dd39e,#2b966c)">E</div>
+              <div class="pres-av" style="background:rgba(255,255,255,.08);color:var(--muted)">+1</div>
+            </div>
+          </div>
+          <div class="chat-body">
+            <div class="msg system"><div class="syschip">— Wednesday, May 18 —</div></div>
+            <div class="msg">
+              <div class="av" style="background:linear-gradient(135deg,#e8b34a,#c08a2c)">M</div>
+              <div class="bubble">
+                <div class="nm">Marcus <time>5:42 AM</time></div>
+                <div class="tx">Glaze is hot. First 4 dozen Originals coming up. Holding back 20 for the 7 AM catering pickup.</div>
+              </div>
+            </div>
+            <div class="msg">
+              <div class="av" style="background:linear-gradient(135deg,#ef4252,#c41e2c)">S</div>
+              <div class="bubble">
+                <div class="nm">Sara <time>5:58 AM</time></div>
+                <div class="tx">Got it — I'll label the catering tray. Heads up, lemon zest is low. Two left.</div>
+              </div>
+            </div>
+            <div class="msg me">
+              <div class="av" style="background:linear-gradient(135deg,#ef4252,#e8b34a)">D</div>
+              <div class="bubble">
+                <div class="nm">Dylan (you) <time>6:02 AM</time></div>
+                <div class="tx">Adding lemon to the Sysco order — going in at 7. Anything else?</div>
+              </div>
+            </div>
+            <div class="msg">
+              <div class="av" style="background:linear-gradient(135deg,#6cb6e0,#3c82b4)">T</div>
+              <div class="bubble">
+                <div class="nm">Tomas <time>6:05 AM</time></div>
+                <div class="tx">We're tight on oat milk. Maybe 2 quarts left.</div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-input">
+            <input placeholder="Message the team…" />
+            <button class="ib" title="Attach">📎</button>
+            <button class="send">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== REVIEWS + REQUESTS ===== -->
+      <div class="row r-2b">
+
+        <!-- GOOGLE REVIEWS -->
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Google Reviews</h3>
+              <div class="desc">Linked to Google Business · 2 unanswered</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip">All</button>
+              <button class="chip active">Unanswered <span style="color:var(--red);font-weight:700;margin-left:4px">2</span></button>
+              <button class="chip">Flagged</button>
+            </div>
+          </div>
+
+          <div class="rev-stat">
+            <div>
+              <div class="rsl">Overall</div>
+              <div class="rsv">4.9 <em>★★★★★</em></div>
+              <div class="small">214 reviews · ↑ 18 this week</div>
+            </div>
+            <div class="rev-bars">
+              <div class="rb-row"><span>5</span><div class="rb-track"><div class="rb-fill" style="width:91%"></div></div><span>91%</span></div>
+              <div class="rb-row"><span>4</span><div class="rb-track"><div class="rb-fill" style="width:7%"></div></div><span>7%</span></div>
+              <div class="rb-row"><span>3</span><div class="rb-track"><div class="rb-fill" style="width:1%"></div></div><span>1%</span></div>
+              <div class="rb-row"><span>2</span><div class="rb-track"><div class="rb-fill" style="width:0%"></div></div><span>0%</span></div>
+              <div class="rb-row"><span>1</span><div class="rb-track"><div class="rb-fill" style="width:1%"></div></div><span>1%</span></div>
+            </div>
+          </div>
+
+          <div class="rev-grid">
+            <div class="rev-card flag">
+              <div class="av">RT</div>
+              <div style="flex:1">
+                <div class="meta">
+                  <span class="nm">Ron T.</span>
+                  <span class="stars">★★★☆☆</span>
+                  <span class="pri high">Needs Reply</span>
+                  <span class="when">2 hours ago</span>
+                </div>
+                <div class="tx">Doughnut was great but waited 20 mins at the counter on Saturday. Y'all need more help on drop day.</div>
+                <div class="actions">
+                  <button class="chip">✦ AI Reply</button>
+                  <button class="chip">↩ Reply</button>
+                  <button class="chip">Mark Resolved</button>
+                </div>
+              </div>
+            </div>
+            <div class="rev-card">
+              <div class="av">JL</div>
+              <div style="flex:1">
+                <div class="meta">
+                  <span class="nm">Jenna L.</span>
+                  <span class="stars">★★★★★</span>
+                  <span class="pri med">Reply Pending</span>
+                  <span class="when">Yesterday</span>
+                </div>
+                <div class="tx">Maple Bourbon is unreal. Drove from Hoover. Worth every mile.</div>
+                <div class="actions">
+                  <button class="chip">✦ AI Reply</button>
+                  <button class="chip">↩ Reply</button>
+                </div>
+              </div>
+            </div>
+            <div class="rev-card">
+              <div class="av">SP</div>
+              <div style="flex:1">
+                <div class="meta">
+                  <span class="nm">Sandra P.</span>
+                  <span class="stars">★★★★★</span>
+                  <span class="when">3 days ago</span>
+                </div>
+                <div class="tx">Best glaze in Birmingham. The brown-butter pecan made my entire weekend.</div>
+                <div class="actions">
+                  <button class="chip" style="color:var(--green);border-color:rgba(93,211,158,.3)">✓ Replied</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STAFF REQUESTS -->
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Staff Requests</h3>
+              <div class="desc">Time-off, swaps, supplies · 4 open</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">Open <span style="color:var(--red);font-weight:700;margin-left:4px">4</span></button>
+              <button class="chip">Approved</button>
+              <button class="chip">＋ New</button>
+            </div>
+          </div>
+
+          <div class="req-row">
+            <div class="req-check"></div>
+            <div>
+              <div class="tt">Time off — Friday May 27 (full day)</div>
+              <div class="sub"><span class="who"><span class="av">SR</span>Sara R.</span>· Family wedding · submitted 2 days ago</div>
+            </div>
+            <span class="pri high">Urgent</span>
+            <button class="chip">Review</button>
+          </div>
+          <div class="req-row">
+            <div class="req-check"></div>
+            <div>
+              <div class="tt">Shift swap — Sat AM with Eli</div>
+              <div class="sub"><span class="who"><span class="av">LM</span>Lina M.</span>· Eli accepted · submitted yesterday</div>
+            </div>
+            <span class="pri med">Approve</span>
+            <button class="chip">Review</button>
+          </div>
+          <div class="req-row">
+            <div class="req-check"></div>
+            <div>
+              <div class="tt">Supply request — replacement piping bags (×4)</div>
+              <div class="sub"><span class="who"><span class="av">MJ</span>Marcus J.</span>· Tear in current rotation</div>
+            </div>
+            <span class="pri low">Low</span>
+            <button class="chip">Order</button>
+          </div>
+          <div class="req-row">
+            <div class="req-check"></div>
+            <div>
+              <div class="tt">Flavor pitch — Brown Sugar Banana</div>
+              <div class="sub"><span class="who"><span class="av">TK</span>Tomas K.</span>· For Saturday Drop No. 17 · 2 votes</div>
+            </div>
+            <span class="pri med">Vote</span>
+            <button class="chip">Open</button>
+          </div>
+          <div class="req-row done">
+            <div class="req-check done">✓</div>
+            <div>
+              <div class="tt">New apron order — 6 ×, red, embroidered</div>
+              <div class="sub"><span class="who"><span class="av">SR</span>Sara R.</span>· Approved · ETA May 22</div>
+            </div>
+            <span class="pri low">Done</span>
+            <button class="chip">View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SPECIALS CALENDAR ===== -->
+      <div class="card">
+        <div class="panel-head">
+          <div>
+            <h3>This Week's Specials</h3>
+            <div class="desc">Daily flavors auto-publish to the public site · Saturday drop is gated to 60 units</div>
+          </div>
+          <div class="panel-actions">
+            <button class="chip">‹ Prev Week</button>
+            <button class="chip active">May 17 – 23</button>
+            <button class="chip">Next Week ›</button>
+            <button class="chip" style="background:var(--red);color:#fff;border-color:var(--red)">＋ Schedule Flavor</button>
+          </div>
+        </div>
+
+        <div class="specials-grid">
+          <div class="sp-day"><div class="d">Sun</div><div class="ds">May 17</div><div class="empty">Closed</div></div>
+          <div class="sp-day"><div class="d">Mon</div><div class="ds">May 18</div><div class="nm">Honey Lavender</div><div class="pr">$3.50 <em>· 48 baked</em></div></div>
+          <div class="sp-day"><div class="d">Tue</div><div class="ds">May 17</div><div class="nm">Apple Fritter</div><div class="pr">$3.25 <em>· 60 baked</em></div></div>
+          <div class="sp-day today"><div class="d">Wed · Today</div><div class="ds">May 18</div><div class="nm">Crème Brûlée</div><div class="pr">$3.75 <em>· 60 baked</em></div></div>
+          <div class="sp-day"><div class="d">Thu</div><div class="ds">May 19</div><div class="nm">Espresso Cream</div><div class="pr">$3.50 <em>· 48 baked</em></div></div>
+          <div class="sp-day"><div class="d">Fri</div><div class="ds">May 20</div><div class="nm">Brown Butter</div><div class="pr">$3.50 <em>· 72 baked</em></div></div>
+          <div class="sp-day" style="border-color:var(--gold);background:rgba(232,179,74,.08)"><div class="d" style="color:var(--gold)">Sat · DROP</div><div class="ds">May 21</div><div class="nm">Pecan Praline ★</div><div class="pr">$4.25 <em>· 60 limit</em></div></div>
+        </div>
+
+        <div class="sp-month" style="margin-top:14px">
+          <div class="lh">
+            <div class="crest">◉</div>
+            <div>
+              <div class="ti">Monthly Theme — "Brown Sugar Month"</div>
+              <div class="desc">May 1 – 31 · 6 flavors built around brown sugar, demerara, and molasses. Auto-tagged on public site & Instagram.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="chip">Edit Theme</button>
+            <button class="chip" style="background:var(--gold-soft);color:var(--gold);border-color:rgba(232,179,74,.32)">Schedule June</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== INVENTORY + DAY OUTLOOK ===== -->
+      <div class="row r-2">
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Inventory · Pars at a Glance</h3>
+              <div class="desc">Auto-deducted from POS sales · low-par alerts ping Marcus</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">Bake Goods</button>
+              <button class="chip">Coffee Bar</button>
+              <button class="chip">Catering</button>
+            </div>
+          </div>
+
+          <div class="inv-row">
+            <div class="nm"><span class="dot"></span>AP Flour (50 lb)</div>
+            <div class="qt">4.2 / 6.0 bags</div>
+            <div class="bar"><div class="fill g" style="width:70%"></div></div>
+            <span class="pri low">OK</span>
+          </div>
+          <div class="inv-row">
+            <div class="nm"><span class="dot"></span>Buttermilk</div>
+            <div class="qt">12 / 16 quarts</div>
+            <div class="bar"><div class="fill g" style="width:75%"></div></div>
+            <span class="pri low">OK</span>
+          </div>
+          <div class="inv-row">
+            <div class="nm"><span class="dot warn"></span>Lemon Zest</div>
+            <div class="qt">2 / 8 oz</div>
+            <div class="bar"><div class="fill y" style="width:25%"></div></div>
+            <span class="pri med">Low</span>
+          </div>
+          <div class="inv-row">
+            <div class="nm"><span class="dot bad"></span>Oat Milk</div>
+            <div class="qt">2 / 12 quarts</div>
+            <div class="bar"><div class="fill r" style="width:18%"></div></div>
+            <span class="pri high">Order Today</span>
+          </div>
+          <div class="inv-row">
+            <div class="nm"><span class="dot"></span>Pecans (raw)</div>
+            <div class="qt">5.5 / 6.0 lb</div>
+            <div class="bar"><div class="fill g" style="width:92%"></div></div>
+            <span class="pri low">OK</span>
+          </div>
+          <div class="inv-row">
+            <div class="nm"><span class="dot"></span>Maple Syrup</div>
+            <div class="qt">3.2 / 4.0 L</div>
+            <div class="bar"><div class="fill g" style="width:80%"></div></div>
+            <span class="pri low">OK</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Today at a Glance</h3>
+              <div class="desc">May 18 · forecast vs. actual</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">Today</button>
+              <button class="chip">7-day</button>
+            </div>
+          </div>
+          <div class="stat-list">
+            <div class="stat-row"><span class="lb">Bake Target</span><span class="vl">820 doughnuts</span></div>
+            <div class="stat-row"><span class="lb">Forecast Sales</span><span class="vl">$2,400 <em>+8%</em></span></div>
+            <div class="stat-row"><span class="lb">Catering Pickups</span><span class="vl">3 orders <em>$348</em></span></div>
+            <div class="stat-row"><span class="lb">Coffee Bar</span><span class="vl">~180 drinks</span></div>
+            <div class="stat-row"><span class="lb">Estimated Waste</span><span class="vl">~24 units <em class="bad">+6 vs Tue</em></span></div>
+            <div class="stat-row"><span class="lb">Walk-out Time</span><span class="vl">1:00 PM</span></div>
+          </div>
+
+          <div style="margin-top:12px;padding:12px 14px;background:var(--red-soft);border:1px solid var(--red-line);border-radius:10px;display:flex;gap:10px;align-items:flex-start">
+            <span style="color:var(--red);font-size:1.1rem">●</span>
+            <div style="font-size:.82rem;color:var(--ink-soft);line-height:1.5"><strong style="color:var(--red);font-weight:700">Heads up:</strong> Local college finals end Friday — last 3 years showed a 22% Sat-AM bump. Consider baking an extra 60 Originals for May 21.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
