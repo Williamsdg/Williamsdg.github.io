@@ -17,6 +17,7 @@
     --accent-2: #6aa6ff;
     --first: #f5b94a;
     --second: #b8bfd6;
+    --winner: #f5b94a;
     --danger: #ff6a6a;
   }
   * { box-sizing: border-box; }
@@ -36,21 +37,9 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-  header h1 {
-    margin: 0;
-    font-size: 22px;
-    letter-spacing: 0.3px;
-  }
-  header .sub {
-    color: var(--muted);
-    font-size: 12px;
-    margin-top: 4px;
-  }
-  .toolbar {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+  header h1 { margin: 0; font-size: 22px; letter-spacing: 0.3px; }
+  header .sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
   button, .btn {
     background: var(--panel-2);
     color: var(--text);
@@ -85,18 +74,35 @@
     border-color: var(--accent);
     border-bottom-color: var(--panel);
   }
-  main {
-    padding: 0 28px 60px;
+  .view-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 0 28px;
+    margin-top: -1px;
+    border-bottom: 1px solid var(--line);
   }
+  .view-tab {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 10px 16px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .view-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  main { padding: 0 28px 60px; }
   .panel {
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 0 8px 8px 8px;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
     padding: 18px;
   }
-  .section {
-    margin-top: 22px;
-  }
+  .section { margin-top: 22px; }
   .section:first-child { margin-top: 0; }
   .section h2 {
     margin: 0 0 10px;
@@ -105,11 +111,7 @@
     letter-spacing: 1px;
     color: var(--accent-2);
   }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th, td {
     text-align: left;
     padding: 7px 10px;
@@ -175,52 +177,48 @@
     z-index: 1000;
   }
   .toast.show { opacity: 1; }
-  .meta {
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 14px;
-  }
-  details summary {
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 12px;
-    padding: 6px 0;
-  }
-  details[open] summary { color: var(--accent); }
+  .meta { color: var(--muted); font-size: 11px; margin-top: 14px; }
   .award-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 12px;
   }
   .award-card {
     background: var(--panel-2);
     border: 1px solid var(--line);
     border-radius: 6px;
+    overflow: hidden;
+  }
+  .award-card h3 {
+    margin: 0;
     padding: 10px 12px;
-  }
-  .award-card .name {
-    font-size: 11px;
-    color: var(--muted);
+    font-size: 12px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
+    color: var(--accent);
+    border-bottom: 1px solid var(--line);
+    background: rgba(0,0,0,0.15);
   }
-  .award-card .winner {
-    margin-top: 4px;
-    font-size: 14px;
-    color: var(--text);
-    min-height: 18px;
+  .award-card table { font-size: 12px; }
+  .award-card td, .award-card th { padding: 5px 10px; }
+  .award-card tr.winner td {
+    background: rgba(245, 185, 74, 0.08);
+    color: var(--winner);
+    font-weight: 600;
   }
-  .award-card .winner[contenteditable="true"]:empty::before {
-    content: "—";
+  .award-card tr.winner td:first-child::before {
+    content: "★ ";
+    color: var(--winner);
+  }
+  .winner-toggle {
+    background: transparent;
+    border: none;
     color: var(--muted);
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 14px;
   }
-  .award-card .team {
-    font-size: 11px;
-    color: var(--accent-2);
-    margin-top: 2px;
-    min-height: 14px;
-  }
+  .winner-toggle.active { color: var(--winner); }
 </style>
 </head>
 <body>
@@ -238,16 +236,20 @@
 </header>
 
 <div class="years" id="yearTabs"></div>
+<div class="view-tabs">
+  <button class="view-tab active" data-view="all-americans" onclick="setView('all-americans')">All-Americans</button>
+  <button class="view-tab" data-view="awards" onclick="setView('awards')">Awards Finalists</button>
+</div>
 
 <main>
   <div class="panel" id="panel"></div>
-  <div class="meta">Data lives in <code>localStorage</code> under <code>postseason_awards_v1</code>. Clearing site data wipes it — export JSON regularly.</div>
+  <div class="meta">Data lives in <code>localStorage</code> under <code>postseason_awards_v2</code>. Export JSON regularly.</div>
 </main>
 
 <div class="toast" id="toast"></div>
 
 <script>
-const STORAGE_KEY = "postseason_awards_v1";
+const STORAGE_KEY = "postseason_awards_v2";
 const YEARS = [2024, 2025, 2026, 2027, 2028, 2029];
 
 const SECTIONS = [
@@ -259,82 +261,1498 @@ const SECTIONS = [
   { id: "specialists", label: "Specialists", positions: ["K", "P", "RET"] }
 ];
 
-const INDIVIDUAL_AWARDS = [
-  "Heisman Trophy",
-  "Maxwell Award (Best Player)",
-  "Walter Camp (Best Player)",
-  "Davey O'Brien (QB)",
-  "Manning Award (QB)",
-  "Doak Walker (RB)",
-  "Biletnikoff (WR)",
-  "John Mackey (TE)",
-  "Outland Trophy (Interior Lineman)",
-  "Rimington (Center)",
-  "Lombardi (Lineman)",
-  "Bednarik (Defensive Player)",
-  "Chuck Bednarik / Nagurski (Defender)",
-  "Dick Butkus (LB)",
-  "Jim Thorpe (DB)",
-  "Lou Groza (K)",
-  "Ray Guy (P)",
-  "Paul Hornung (Versatility)",
-  "Johnny Unitas (Senior QB)",
+const AWARDS = [
+  "Heisman",
   "Coach of the Year",
-  "Offensive Player of the Year",
-  "Defensive Player of the Year",
-  "Freshman of the Year"
+  "O'Brien (Best QB)",
+  "Doak Walker (Best RB)",
+  "Bednarik (Best WR)",
+  "Mackey (Best TE)",
+  "Outland (Best IOL)",
+  "Rimington (Best C)",
+  "Hendricks (Best DE)",
+  "Lombardi (Best DL)",
+  "Butkus (Best LB)",
+  "Bednarik (Best Defensive Player)",
+  "Thorpe (Best DB)",
+  "Best ST Returner"
 ];
 
-const SEED_2025 = [
-  { pos: "QB", rank: 1, player: "Rashawn Abimiri", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
-  { pos: "QB", rank: 2, player: "Santiago Esposito", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
-  { pos: "HB", rank: 1, player: "Ron Warfield", team: "Minnesota", cls: "SR (RS)", owner: "Nolan" },
-  { pos: "HB", rank: 1, player: "Ashton Jeanty II", team: "Boise St", cls: "SR", owner: "Jason" },
-  { pos: "HB", rank: 2, player: "Erik Bridge", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
-  { pos: "HB", rank: 2, player: "Caden Durham", team: "Texas Tech", cls: "SR", owner: "Jordan" },
-  { pos: "WR", rank: 1, player: "Jason Rutter", team: "Tennessee", cls: "FR (RS)", owner: "Will" },
-  { pos: "WR", rank: 1, player: "Ross Leo", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
-  { pos: "WR", rank: 1, player: "Kam Mikell", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
-  { pos: "WR", rank: 2, player: "Trent Devoe", team: "South Carolina", cls: "JR (RS)", owner: "Christian" },
-  { pos: "WR", rank: 2, player: "Ben Latimer", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
-  { pos: "WR", rank: 2, player: "Nitro Tuggle", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
-  { pos: "TE", rank: 1, player: "Daryll Aldrich", team: "Southern Miss", cls: "SO", owner: "User" },
-  { pos: "TE", rank: 2, player: "Tucker Draft", team: "Washington", cls: "SO", owner: "Chase" },
-  { pos: "TE", rank: 2, player: "Mateo Comella", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
-  { pos: "LT", rank: 1, player: "Garrison Cherelus", team: "Ohio St", cls: "SR (RS)", owner: "User" },
-  { pos: "LT", rank: 2, player: "Sean Calmelat", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
-  { pos: "LT", rank: 2, player: "Zach Cantwell", team: "Georgia", cls: "SR (RS)", owner: "CPU" },
-  { pos: "LG", rank: 1, player: "Ty Fort", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
-  { pos: "LG", rank: 2, player: "Antwuan Howard", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
-  { pos: "C", rank: 1, player: "DeAndre Hook", team: "Louisville", cls: "SR (RS)", owner: "Cael" },
-  { pos: "C", rank: 2, player: "Kevin Braham", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
-  { pos: "RG", rank: 1, player: "Gideon Okorafor", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
-  { pos: "RG", rank: 2, player: "Alex Scioli", team: "Washington", cls: "SR (RS)", owner: "Chase" },
-  { pos: "RT", rank: 1, player: "Joey Newhouse", team: "Michigan", cls: "SR (RS)", owner: "CPU" },
-  { pos: "RT", rank: 2, player: "Fetu Silatolu", team: "Washington", cls: "SR (RS)", owner: "Chase" },
-  { pos: "LE", rank: 1, player: "Chad Wiseman", team: "Nebraska", cls: "SR (RS)", owner: "CPU" },
-  { pos: "LE", rank: 2, player: "Whitefield Powell", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
-  { pos: "RE", rank: 1, player: "Tucker Mixon", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
-  { pos: "RE", rank: 2, player: "Malachi Wrice", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
-  { pos: "DT", rank: 1, player: "Sam Street", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
-  { pos: "DT", rank: 1, player: "Caden Durham", team: "Texas Tech", cls: "SR", owner: "Jordan" },
-  { pos: "DT", rank: 1, player: "Mitch Sanders", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
-  { pos: "LOLB", rank: 1, player: "Jason Kuechly", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
-  { pos: "LOLB", rank: 2, player: "DaWann Smalls", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
-  { pos: "MLB", rank: 1, player: "Lynn Ankrah", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
-  { pos: "ROLB", rank: 1, player: "Maxwell Richardson", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
-  { pos: "CB", rank: 1, player: "Tylen Singleton", team: "Southern Miss", cls: "SR", owner: "User" },
-  { pos: "CB", rank: 2, player: "Sean Priest", team: "Washington", cls: "SR", owner: "Chase" },
-  { pos: "CB", rank: 2, player: "Treyvon Aviles", team: "Georgia", cls: "SR (RS)", owner: "CPU" },
-  { pos: "CB", rank: 2, player: "Nick Rich", team: "Houston", cls: "SR (RS)", owner: "CPU" },
-  { pos: "FS", rank: 1, player: "Zack Myers", team: "Southern Miss", cls: "SR (RS)", owner: "CPU" },
-  { pos: "FS", rank: 2, player: "Quentin Reddish", team: "Charlotte", cls: "SR (RS)", owner: "CPU" },
-  { pos: "SS", rank: 1, player: "Manny Carlos", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
-  { pos: "SS", rank: 2, player: "Collin McLauring", team: "Penn St", cls: "JR (RS)", owner: "Cole" }
-];
+// Coach of the Year stores name + team only (no class/owner)
+const COACH_AWARDS = new Set(["Coach of the Year"]);
+
+const SEED = {
+  2024: {
+    allAmericans: [
+      { pos: "QB", rank: 1, player: "Miller Moss", team: "USC", cls: "JR (RS)", owner: "Ed" },
+      { pos: "QB", rank: 2, player: "Cam Ward", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+      { pos: "HB", rank: 1, player: "Ollie Gordon II", team: "OK State", cls: "JR", owner: "Mitch M" },
+      { pos: "HB", rank: 1, player: "Devin Neal", team: "Kansas", cls: "SR", owner: "Chubbs" },
+      { pos: "HB", rank: 2, player: "Damien Martinez", team: "Miami", cls: "JR", owner: "Zach" },
+      { pos: "HB", rank: 2, player: "Josh Williams", team: "LSU", cls: "SR (RS)", owner: "Connor Cox" },
+      { pos: "WR", rank: 1, player: "Travis Hunter", team: "Colorado", cls: "JR", owner: "Brady" },
+      { pos: "WR", rank: 1, player: "Nyck Harbor", team: "South Carolina", cls: "SO", owner: "Christian" },
+      { pos: "WR", rank: 1, player: "Zachariah Branch", team: "USC", cls: "SO", owner: "Ed" },
+      { pos: "WR", rank: 2, player: "Christian Leary", team: "GT", cls: "SR", owner: "Ben" },
+      { pos: "WR", rank: 2, player: "Isaiah Neyor", team: "Nebraska", cls: "SR", owner: "Carter" },
+      { pos: "WR", rank: 2, player: "Kyren Lacy", team: "LSU", cls: "SR", owner: "Connor Cox" },
+      { pos: "TE", rank: 1, player: "Roberto Miranda", team: "Arizona", cls: "JR (RS)", owner: "Morgan" },
+      { pos: "TE", rank: 2, player: "Bryson Nesbit", team: "North Carolina", cls: "SR", owner: "Josh" },
+      { pos: "LT", rank: 1, player: "Will Campbell", team: "LSU", cls: "JR", owner: "Connor Cox" },
+      { pos: "LT", rank: 2, player: "Kelvin Banks", team: "Texas", cls: "JR", owner: "Payton" },
+      { pos: "LG", rank: 1, player: "Clay Webb", team: "Jax State", cls: "SR (RS)", owner: "CPU" },
+      { pos: "LG", rank: 2, player: "Donovan Jackson", team: "Ohio State", cls: "SR", owner: "CPU" },
+      { pos: "C", rank: 1, player: "Jonah Monheim", team: "USC", cls: "SR (RS)", owner: "Ed" },
+      { pos: "C", rank: 2, player: "Parker Brailsford", team: "Alabama", cls: "SO (RS)", owner: "CPU" },
+      { pos: "RG", rank: 1, player: "Tate Ratledge", team: "UGA", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RG", rank: 2, player: "Luke Kandra", team: "Cincinnati", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RT", rank: 1, player: "Jonah Savaiinaea", team: "Arizona", cls: "JR", owner: "Morgan" },
+      { pos: "RT", rank: 2, player: "Emery Jones Jr", team: "LSU", cls: "JR", owner: "Connor Cox" },
+      { pos: "LE", rank: 1, player: "Jack Sawyer", team: "Ohio ST", cls: "SR (RS)", owner: "CPU" },
+      { pos: "LE", rank: 2, player: "Ruben Bain Jr", team: "Miami", cls: "SO", owner: "Zach" },
+      { pos: "RE", rank: 1, player: "James Pierce Jr.", team: "Tennessee", cls: "JR", owner: "Will C" },
+      { pos: "RE", rank: 2, player: "Abdul Carter", team: "Penn State", cls: "JR", owner: "Porter" },
+      { pos: "DT", rank: 1, player: "Mason Graham", team: "Michigan", cls: "JR", owner: "CPU" },
+      { pos: "DT", rank: 1, player: "Walter Nolen", team: "Ole Miss", cls: "JR", owner: "Connor Clancy" },
+      { pos: "DT", rank: 2, player: "Kenneth Grant", team: "Michigan", cls: "JR", owner: "CPU" },
+      { pos: "DT", rank: 2, player: "Tyleik Williams", team: "Ohio St", cls: "SR", owner: "CPU" },
+      { pos: "LOLB", rank: 1, player: "Mykel Williams", team: "UGA", cls: "JR", owner: "CPU" },
+      { pos: "LOLB", rank: 2, player: "Harold Perkins", team: "LSU", cls: "JR", owner: "Connor Cox" },
+      { pos: "MLB", rank: 1, player: "Jay Higgins", team: "Iowa", cls: "SR (RS)", owner: "CPU" },
+      { pos: "MLB", rank: 2, player: "Nick Martin", team: "OK State", cls: "JR (RS)", owner: "Mitch M" },
+      { pos: "ROLB", rank: 1, player: "Barrett Carter", team: "Clemson", cls: "SR", owner: "Caiden" },
+      { pos: "ROLB", rank: 2, player: "Jason Henderson", team: "Old Dominion", cls: "SR", owner: "CPU" },
+      { pos: "CB", rank: 1, player: "Will Johnson", team: "Michigan", cls: "JR", owner: "CPU" },
+      { pos: "CB", rank: 1, player: "Benjamin Morrison", team: "Notre Dame", cls: "JR", owner: "Weston" },
+      { pos: "CB", rank: 2, player: "Quincy Riley", team: "Louisville", cls: "SR (RS)", owner: "CPU" },
+      { pos: "CB", rank: 2, player: "Jabbar Muhammad", team: "Oregon", cls: "SR", owner: "Carson" },
+      { pos: "FS", rank: 1, player: "Caleb Downs", team: "Ohio St", cls: "SO", owner: "CPU" },
+      { pos: "FS", rank: 2, player: "Malaki Starks", team: "UGA", cls: "JR", owner: "CPU" },
+      { pos: "SS", rank: 1, player: "Jonas Sanker", team: "Virginia", cls: "SR", owner: "CPU" },
+      { pos: "SS", rank: 2, player: "Kevin Winston Jr", team: "Penn State", cls: "JR", owner: "Porter" }
+    ],
+    awards: {
+      "Heisman": [
+        { winner: true, player: "Ollie Gordon II", pos: "HB", team: "Ok State", cls: "JR", owner: "Mitch M" },
+        { player: "Travis Hunter", pos: "WR/CB", team: "Colorado", cls: "JR", owner: "Brady" },
+        { player: "Nyck Harbor", pos: "WR", team: "South Carolina", cls: "SO", owner: "Christian" },
+        { player: "Zachariah Branch", pos: "WR", team: "USC", cls: "SO", owner: "Ed" },
+        { player: "Devin Neal", pos: "HB", team: "Kansas", cls: "SR", owner: "Chubbs" },
+        { player: "Miller Moss", pos: "QB", team: "USC", cls: "JR (RS)", owner: "Ed" },
+        { player: "Isaiah Neyor", pos: "WR", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "James Pearce Jr", pos: "RE", team: "Tennessee", cls: "JR", owner: "Will C" },
+        { player: "Christian Leary", pos: "WR", team: "GT", cls: "SR", owner: "Ben" },
+        { player: "Collin Oliver", pos: "ROLB", team: "Ok State", cls: "SR", owner: "Mitch M" },
+        { player: "Josh Williams", pos: "HB", team: "LSU", cls: "SR (RS)", owner: "Connor Cox" },
+        { player: "Cam Ward", pos: "QB", team: "Miami", cls: "SR (RS)", owner: "Zach L" }
+      ],
+      "Coach of the Year": [
+        { winner: true, player: "Mitch M", team: "Ok State" },
+        { player: "Carter", team: "Nebraska" },
+        { player: "Jason", team: "Boise St" },
+        { player: "Nate", team: "Air Force" },
+        { player: "Zach", team: "Miami" },
+        { player: "Brady", team: "Colorado" },
+        { player: "Ed", team: "USC" },
+        { player: "Connor Cox", team: "LSU" },
+        { player: "Christian", team: "South Carolina" },
+        { player: "Austin N", team: "UTSA" },
+        { player: "Mitch S", team: "Duke" },
+        { player: "Chubbs", team: "Kansas" }
+      ],
+      "O'Brien (Best QB)": [
+        { winner: true, player: "Miller Moss", pos: "QB", team: "USC", cls: "JR (RS)", owner: "Ed" },
+        { player: "Cam Ward", pos: "QB", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Shedeur Sanders", pos: "QB", team: "Colorado", cls: "SR", owner: "Brady" },
+        { player: "LaNorris Sellers", pos: "QB", team: "South Carolina", cls: "FR (RS)", owner: "Christian" },
+        { player: "Malachi Nelson", pos: "QB", team: "Boise St", cls: "FR (RS)", owner: "Jason" },
+        { player: "Dylan Raiola", pos: "QB", team: "Nebraska", cls: "FR", owner: "Carter" },
+        { player: "Max Brown", pos: "QB", team: "Charlotte", cls: "SO (RS)", owner: "CPU" },
+        { player: "Garrett Greene", pos: "QB", team: "West Virginia", cls: "SR", owner: "CPU" },
+        { player: "Alan Bowman", pos: "QB", team: "Ok State", cls: "SR (RS)", owner: "Mitch M" },
+        { player: "Jaylen Raynor", pos: "QB", team: "Arkansas St", cls: "SO", owner: "CPU" },
+        { player: "Jordan McCloud", pos: "QB", team: "Texas St", cls: "SR (RS)", owner: "CPU" },
+        { player: "Garrett Nussmeier", pos: "QB", team: "LSU", cls: "JR (RS)", owner: "Connor Cox" }
+      ],
+      "Doak Walker (Best RB)": [
+        { winner: true, player: "Ollie Gordon II", pos: "HB", team: "Ok State", cls: "JR", owner: "Mitch M" },
+        { player: "Devin Neal", pos: "HB", team: "Kansas", cls: "SR", owner: "Chubbs" },
+        { player: "Damien Martinez", pos: "HB", team: "Miami", cls: "JR", owner: "Zach" },
+        { player: "Josh Williams", pos: "HB", team: "LSU", cls: "SR (RS)", owner: "Connor Cox" },
+        { player: "Jonah Coleman", pos: "HB", team: "Washington", cls: "JR", owner: "Jake" },
+        { player: "Jaquez Moore", pos: "HB", team: "Duke", cls: "SR", owner: "Mitch S" },
+        { player: "Ashton Jeanty", pos: "HB", team: "Boise St", cls: "JR", owner: "Jason" },
+        { player: "Dylan Sampson", pos: "HB", team: "Tennessee", cls: "JR", owner: "Will" },
+        { player: "Raheim Sanders", pos: "HB", team: "South Carolina", cls: "SR", owner: "Christian" },
+        { player: "Cade Harris", pos: "HB", team: "Air Force", cls: "SR", owner: "Nate" },
+        { player: "Harrison Waylee", pos: "HB", team: "Wyoming", cls: "SR", owner: "Dallen" },
+        { player: "Omarion Hampton", pos: "HB", team: "North Carolina", cls: "JR", owner: "Josh" }
+      ],
+      "Bednarik (Best WR)": [
+        { winner: true, player: "Travis Hunter", pos: "WR", team: "Colorado", cls: "JR", owner: "Brady" },
+        { player: "Nyck Harbor", pos: "WR", team: "South Carolina", cls: "SO", owner: "Christian" },
+        { player: "Zachariah Branch", pos: "WR", team: "USC", cls: "SO", owner: "Ed" },
+        { player: "Christian Leary", pos: "WR", team: "GT", cls: "SR", owner: "Ben" },
+        { player: "Isaiah Neyor", pos: "WR", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Kyren Lacy", pos: "WR", team: "LSU", cls: "SR", owner: "Connor Cox" },
+        { player: "Courtney Jackson", pos: "WR", team: "Arkansas St", cls: "SR (RS)", owner: "CPU" },
+        { player: "Jahmal Banks", pos: "WR", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Xavier Restrepo", pos: "WR", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Tre Harris", pos: "WR", team: "Ole Miss", cls: "SR (RS)", owner: "Connor Clancy" },
+        { player: "De'Zhaun Stribling", pos: "WR", team: "Ok State", cls: "JR (RS)", owner: "Mitch M" },
+        { player: "Austin Bolt", pos: "WR", team: "Boise St", cls: "SR (RS)", owner: "Jason" }
+      ],
+      "Mackey (Best TE)": [
+        { winner: true, player: "Roberto Miranda", pos: "TE", team: "Arizona", cls: "JR (RS)", owner: "Morgan" },
+        { player: "Bryson Nesbit", pos: "TE", team: "North Carolina", cls: "SR", owner: "Josh" },
+        { player: "Lake McRee", pos: "TE", team: "USC", cls: "JR (RS)", owner: "Ed" },
+        { player: "Oscar Delp", pos: "TE", team: "UGA", cls: "JR", owner: "CPU" },
+        { player: "Matt Lauter", pos: "TE", team: "Boise St", cls: "JR (RS)", owner: "Jason" },
+        { player: "Brant Kuithe", pos: "TE", team: "Utah", cls: "SR (RS)", owner: "William" },
+        { player: "John Michael Gyllenborg", pos: "TE", team: "Wyoming", cls: "JR (RS)", owner: "Dallen" },
+        { player: "Rivaldo Fairweather", pos: "TE", team: "Auburn", cls: "SR", owner: "Tyler" },
+        { player: "Tyler Warren", pos: "TE", team: "Penn State", cls: "SR", owner: "Porter" },
+        { player: "Elijah Arroyo", pos: "TE", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Luke Hasz", pos: "TE", team: "Arkansas", cls: "SO", owner: "CPU" },
+        { player: "Cane Berrong", pos: "TE", team: "Coastal Carolina", cls: "JR (RS)", owner: "CPU" }
+      ],
+      "Outland (Best IOL)": [
+        { winner: true, player: "Joe Michalski", pos: "C", team: "Ok State", cls: "SR (RS)", owner: "Mitch M" },
+        { player: "Jonah Monheim", pos: "C", team: "USC", cls: "SR (RS)", owner: "Ed" },
+        { player: "Preston Wilson", pos: "RG", team: "Ok State", cls: "SR", owner: "Mitch M" },
+        { player: "Miles Frazier", pos: "RG", team: "LSU", cls: "SR (RS)", owner: "Connor Cox" },
+        { player: "Garrett Dellinger", pos: "LG", team: "LSU", cls: "SR", owner: "Connor Cox" },
+        { player: "Anez Cooper", pos: "RG", team: "Miami", cls: "JR", owner: "Zach" },
+        { player: "Taylor Miterko", pos: "RG", team: "Ok State", cls: "SR (RS)", owner: "Mitch M" },
+        { player: "Vershon Lee", pos: "C", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "DJ Chester", pos: "C", team: "LSU", cls: "FR (RS)", owner: "Connor Cox" },
+        { player: "Jason Brooks Jr", pos: "LG", team: "Ok State", cls: "SR (RS)", owner: "Mitch M" },
+        { player: "Maurice Smith", pos: "C", team: "Florida St", cls: "SR (RS)", owner: "Logan" },
+        { player: "Jakai Moore", pos: "LG", team: "South Carolina", cls: "SR (RS)", owner: "Christian" }
+      ],
+      "Rimington (Best C)": [
+        { winner: true, player: "Joe Michalski", pos: "C", team: "Ok State", cls: "SR (RS)", owner: "Mitch M" },
+        { player: "Jonah Monheim", pos: "C", team: "USC", cls: "SR (RS)", owner: "Ed" },
+        { player: "Vershon Lee", pos: "C", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "DJ Chester", pos: "C", team: "LSU", cls: "FR (RS)", owner: "Connor Cox" },
+        { player: "Maurice Smith", pos: "C", team: "Florida State", cls: "SR (RS)", owner: "Logan" },
+        { player: "Torricelli Simpkins III", pos: "C", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Ben Scott", pos: "C", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Jake Majors", pos: "C", team: "Texas", cls: "SR (RS)", owner: "Payton" },
+        { player: "Cooper Mays", pos: "C", team: "Tennessee", cls: "SR", owner: "Will C" },
+        { player: "Parker Brailsford", pos: "C", team: "Alabama", cls: "SO (RS)", owner: "CPU" },
+        { player: "Ryan Rodriguez", pos: "C", team: "Miami", cls: "SO (RS)", owner: "Zach" },
+        { player: "Ashton Craig", pos: "C", team: "Notre Dame", cls: "JR", owner: "Weston" }
+      ],
+      "Hendricks (Best DE)": [
+        { winner: true, player: "James Pearce Jr", pos: "RE", team: "Tennessee", cls: "JR", owner: "Will C" },
+        { player: "Rueben Bain Jr", pos: "LE", team: "Miami", cls: "SO", owner: "Zach" },
+        { player: "Caleb Herring", pos: "RE", team: "Tennessee", cls: "SO", owner: "Will C" },
+        { player: "Dylan Brooks", pos: "RE", team: "Kansas", cls: "JR (RS)", owner: "Chubbs" },
+        { player: "Dominic Bailey", pos: "LE", team: "Tennessee", cls: "SR (RS)", owner: "Will C" },
+        { player: "Patrick Payton", pos: "LE", team: "Florida St", cls: "JR (RS)", owner: "Logan" },
+        { player: "Princely Umanmielen", pos: "RE", team: "Ole Miss", cls: "SR", owner: "Connor Clancy" },
+        { player: "Donovan Ezeiruaku", pos: "RE", team: "Boston College", cls: "SR", owner: "CPU" },
+        { player: "Kaimon Rucker", pos: "RE", team: "North Carolina", cls: "SR (RS)", owner: "Josh" },
+        { player: "Brendan Mott", pos: "RE", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Ryan Smith", pos: "LE", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Kody Walterscheid", pos: "RE", team: "Ok State", cls: "SR (RS)", owner: "Mitch M" }
+      ],
+      "Lombardi (Best DL)": [
+        { winner: true, player: "James Pearce Jr", pos: "RE", team: "Tennessee", cls: "JR", owner: "Will C" },
+        { player: "Rueben Bain Jr", pos: "LE", team: "Miami", cls: "SO", owner: "Zach" },
+        { player: "Caleb Herring", pos: "RE", team: "Tennessee", cls: "SO", owner: "Will C" },
+        { player: "Collin Clay", pos: "DT", team: "Ok State", cls: "SR (RS)", owner: "Mitch M" },
+        { player: "Patrick Payton", pos: "LE", team: "Florida St", cls: "JR (RS)", owner: "Logan" },
+        { player: "Dominic Bailey", pos: "LE", team: "Tennessee", cls: "SR (RS)", owner: "Will C" },
+        { player: "Dylan Brooks", pos: "RE", team: "Kansas", cls: "JR (RS)", owner: "Chubbs" },
+        { player: "Donovan Ezeiruaku", pos: "RE", team: "Boston College", cls: "SR", owner: "CPU" },
+        { player: "Princely Umanmielen", pos: "RE", team: "Ole Miss", cls: "SR", owner: "Connor Clancy" },
+        { player: "Kaimon Rucker", pos: "RE", team: "North Carolina", cls: "SR (RS)", owner: "Josh" },
+        { player: "Brendan Mott", pos: "RE", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Abdul Carter", pos: "RE", team: "Penn State", cls: "JR", owner: "Porter" }
+      ],
+      "Butkus (Best LB)": [
+        { winner: true, player: "Collin Oliver", pos: "ROLB", team: "Ok State", cls: "SR", owner: "Mitch M" },
+        { player: "Nick Martin", pos: "MLB", team: "Ok State", cls: "JR (RS)", owner: "Mitch M" },
+        { player: "Kyle Kennard", pos: "LOLB", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Wesley Bissainthe", pos: "ROLB", team: "Miami", cls: "JR", owner: "Zach" },
+        { player: "Harold Perkins Jr", pos: "LOLB", team: "LSU", cls: "JR", owner: "Connor Cox" },
+        { player: "Donyai Taylor", pos: "LOLB", team: "UTSA", cls: "SR (RS)", owner: "Austin" },
+        { player: "Debo Williams", pos: "MLB", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Greg Penn III", pos: "MLB", team: "LSU", cls: "SR", owner: "Connor Cox" },
+        { player: "Jalen McLeod", pos: "LOLB", team: "Auburn", cls: "SR", owner: "Tyler" },
+        { player: "Lander Barton", pos: "MLB", team: "Utah", cls: "JR", owner: "William" },
+        { player: "Mason Cobb", pos: "MLB", team: "USC", cls: "SR (RS)", owner: "Ed" },
+        { player: "Eugene Asante", pos: "ROLB", team: "Auburn", cls: "SR (RS)", owner: "Tyler" }
+      ],
+      "Bednarik (Best Defensive Player)": [
+        { winner: true, player: "James Pearce Jr", pos: "RE", team: "Tennessee", cls: "JR", owner: "Will C" },
+        { player: "Collin Oliver", pos: "ROLB", team: "Ok State", cls: "SR", owner: "Mitch M" },
+        { player: "Nick Martin", pos: "MLB", team: "Ok State", cls: "JR (RS)", owner: "Mitch M" },
+        { player: "Kendal Daniels", pos: "SS", team: "Ok State", cls: "JR (RS)", owner: "Mitch M" },
+        { player: "Vicari Swain", pos: "CB", team: "South Carolina", cls: "FR (RS)", owner: "Christian" },
+        { player: "Kyle Kennard", pos: "LOLB", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Rueben Bain Jr", pos: "LE", team: "Miami", cls: "SO", owner: "Zach" },
+        { player: "Caleb Herring", pos: "RE", team: "Tennessee", cls: "SO", owner: "Will C" },
+        { player: "Tommi Hill", pos: "CB", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Collin Clay", pos: "DT", team: "Ok State", cls: "SR (RS)", owner: "Mitch M" },
+        { player: "Patrick Payton", pos: "LE", team: "Florida St", cls: "JR (RS)", owner: "Logan M" },
+        { player: "Dominic Bailey", pos: "LE", team: "Tennessee", cls: "SR (RS)", owner: "Will C" }
+      ],
+      "Thorpe (Best DB)": [
+        { winner: true, player: "Kendal Daniels", pos: "SS", team: "Ok State", cls: "JR (RS)", owner: "Mitch M" },
+        { player: "Vicari Swain", pos: "CB", team: "South Carolina", cls: "FR (RS)", owner: "Christian" },
+        { player: "Tommi Hill", pos: "CB", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Malcom Hartzog", pos: "CB", team: "Nebraska", cls: "JR", owner: "Carter" },
+        { player: "Jordan Allen", pos: "FS", team: "LSU", cls: "SR", owner: "Connor Cox" },
+        { player: "Chandler Rivers", pos: "CB", team: "Duke", cls: "JR", owner: "Mitch S" },
+        { player: "Korie Black", pos: "CB", team: "Ok State", cls: "SR", owner: "Mitch M" },
+        { player: "Major Burns", pos: "SS", team: "LSU", cls: "SR", owner: "Connor Cox" },
+        { player: "DeAndre Boykins", pos: "SS", team: "North Carolina", cls: "JR (RS)", owner: "Josh S" },
+        { player: "Trey Rucker", pos: "FS", team: "Ok State", cls: "SR (RS)", owner: "Mitch M" },
+        { player: "Jalon Kilgore", pos: "SS", team: "South Carolina", cls: "SO", owner: "Christian" },
+        { player: "Zy Alexander", pos: "CB", team: "LSU", cls: "SR", owner: "Connor Cox" }
+      ],
+      "Best ST Returner": [
+        { player: "Jordan Watkins", pos: "WR", team: "Ole Miss", cls: "SR", owner: "Connor Clancy" },
+        { player: "Da'Wain Lofton", pos: "WR", team: "Ok State", cls: "SR", owner: "Mitch M" },
+        { player: "Caden Durham", pos: "HB", team: "LSU", cls: "FR", owner: "Connor Cox" },
+        { player: "Jaylen Lloyd", pos: "WR", team: "Nebraska", cls: "SO", owner: "Carter" },
+        { player: "Khalil Engram", pos: "WR", team: "LSU", cls: "SO (RS)", owner: "Connor Cox" },
+        { player: "Le'Veon Moss", pos: "HB", team: "TAMU", cls: "JR", owner: "CPU" },
+        { player: "Ryan Niblet", pos: "WR", team: "Texas", cls: "FR (RS)", owner: "Payton" },
+        { player: "Ray Ray Joseph", pos: "WR", team: "Miami", cls: "SO", owner: "Zach" },
+        { player: "Giles Jackson", pos: "WR", team: "Washington", cls: "SR (RS)", owner: "Jake" },
+        { player: "Drae McCray", pos: "WR", team: "Texas Tech", cls: "SR", owner: "CPU" },
+        { player: "Kedren Young", pos: "HB", team: "Notre Dame", cls: "FR", owner: "Weston" },
+        { player: "Sterling Lockett", pos: "WR", team: "Kansas ST", cls: "SO (RS)", owner: "Tre" }
+      ]
+    }
+  },
+  2025: {
+    allAmericans: [
+      { pos: "QB", rank: 1, player: "Malachi Nelson", team: "Boise St", cls: "SO (RS)", owner: "Jason" },
+      { pos: "QB", rank: 2, player: "Miller Moss", team: "USC", cls: "SR (RS)", owner: "Ed" },
+      { pos: "HB", rank: 1, player: "DJ Giddens", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+      { pos: "HB", rank: 1, player: "Jeremyiah Love", team: "Notre Dame", cls: "JR", owner: "Jazz" },
+      { pos: "HB", rank: 2, player: "Jadyn Ott", team: "USC", cls: "SR (RS)", owner: "Ed" },
+      { pos: "HB", rank: 2, player: "Abu Sama", team: "Nebraska", cls: "JR", owner: "Carter" },
+      { pos: "WR", rank: 1, player: "Prince Stachan", team: "Boise St", cls: "JR", owner: "Jason" },
+      { pos: "WR", rank: 1, player: "Nyck Harbor", team: "South Carolina", cls: "SO", owner: "Christian" },
+      { pos: "WR", rank: 1, player: "Zachariah Branch", team: "USC", cls: "SO", owner: "Ed" },
+      { pos: "WR", rank: 2, player: "Sammy Izien", team: "GT", cls: "FR", owner: "Ben" },
+      { pos: "WR", rank: 2, player: "Dae'vonn Hall", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+      { pos: "WR", rank: 2, player: "Mario Williams", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+      { pos: "TE", rank: 1, player: "Lake McRee", team: "USC", cls: "SR (RS)", owner: "Ed" },
+      { pos: "TE", rank: 2, player: "Oscar Delp", team: "UGA", cls: "SR", owner: "CPU" },
+      { pos: "LT", rank: 1, player: "Josh Conerly Jr", team: "Oregon", cls: "SR", owner: "Carson" },
+      { pos: "LT", rank: 2, player: "Earnest Greene III", team: "UGA", cls: "JR (RS)", owner: "CPU" },
+      { pos: "LG", rank: 1, player: "Dylan Fairchild", team: "UGA", cls: "SR (RS)", owner: "CPU" },
+      { pos: "LG", rank: 2, player: "Tyler Booker", team: "Alabama", cls: "SR", owner: "CPU" },
+      { pos: "C", rank: 1, player: "Parker Brailsford", team: "Alabama", cls: "JR (RS)", owner: "CPU" },
+      { pos: "C", rank: 2, player: "Lyndon Cooper", team: "Pitt", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RG", rank: 1, player: "Jaeden Roberts", team: "Alabama", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RG", rank: 2, player: "Xavier Hill", team: "Memphis", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RT", rank: 1, player: "Francis Mauigoa", team: "Miami", cls: "JR", owner: "Zach" },
+      { pos: "RT", rank: 2, player: "Blake Miller", team: "Clemson", cls: "SR", owner: "Caiden" },
+      { pos: "LE", rank: 1, player: "Ruben Bain Jr", team: "Miami", cls: "JR", owner: "Zach" },
+      { pos: "LE", rank: 2, player: "Nic Scourton", team: "TAMU", cls: "SR", owner: "CPU" },
+      { pos: "RE", rank: 1, player: "James Pierce Jr.", team: "Tennessee", cls: "SR", owner: "Will C" },
+      { pos: "RE", rank: 2, player: "Abdul Carter", team: "Penn State", cls: "SR", owner: "Porter" },
+      { pos: "DT", rank: 1, player: "Peter Woods", team: "Clemson", cls: "JR", owner: "Caiden" },
+      { pos: "DT", rank: 1, player: "Kenneth Grant", team: "Michigan", cls: "SR", owner: "CPU" },
+      { pos: "DT", rank: 2, player: "Bear Alexander", team: "USC", cls: "SR", owner: "Ed" },
+      { pos: "DT", rank: 2, player: "Dontay Corleone", team: "Cincinnati", cls: "SR", owner: "CPU" },
+      { pos: "LOLB", rank: 1, player: "Harold Perkins", team: "LSU", cls: "SR", owner: "CPU" },
+      { pos: "LOLB", rank: 2, player: "Desmond Purnell", team: "Kansas St", cls: "SR", owner: "Tre" },
+      { pos: "MLB", rank: 1, player: "Jaishawn Barham", team: "Michigan", cls: "SR", owner: "CPU" },
+      { pos: "MLB", rank: 2, player: "Deontae Lawson", team: "Alabama", cls: "SR", owner: "CPU" },
+      { pos: "ROLB", rank: 1, player: "Anthony Hill Jr", team: "Texas", cls: "JR", owner: "CPU" },
+      { pos: "ROLB", rank: 2, player: "Jacob Manu", team: "Arizona", cls: "SR", owner: "CPU" },
+      { pos: "CB", rank: 1, player: "Ephesians Prysck", team: "Washington", cls: "SR", owner: "CPU" },
+      { pos: "CB", rank: 1, player: "Domani Jackson", team: "Alabama", cls: "SR", owner: "CPU" },
+      { pos: "CB", rank: 2, player: "Collin Wright", team: "Stanford", cls: "SR", owner: "CPU" },
+      { pos: "CB", rank: 2, player: "Maxwell Hairston", team: "Kentucky", cls: "SR", owner: "CPU" },
+      { pos: "FS", rank: 1, player: "Caleb Downs", team: "Ohio St", cls: "SO", owner: "CPU" },
+      { pos: "FS", rank: 2, player: "Dillon Thieneman", team: "Purdue", cls: "JR", owner: "CPU" },
+      { pos: "SS", rank: 1, player: "Kevin Winston Jr", team: "Penn State", cls: "JR", owner: "Porter" },
+      { pos: "SS", rank: 2, player: "Xavier Nwankpa", team: "Iowa", cls: "SR", owner: "CPU" }
+    ],
+    awards: {
+      "Heisman": [
+        { player: "Prince Stachan", pos: "WR", team: "Boise St", cls: "JR", owner: "Jason" },
+        { player: "Zachariah Branch", pos: "WR", team: "USC", cls: "JR", owner: "Ed" },
+        { player: "James Pearce JR", pos: "RE", team: "Tennessee", cls: "SR", owner: "Will C" },
+        { player: "Nyck Harbor", pos: "WR", team: "South Carolina", cls: "JR", owner: "Christian" },
+        { player: "Miller Moss", pos: "QB", team: "USC", cls: "SR (RS)", owner: "Ed" },
+        { player: "Mario Williams", pos: "WR", team: "Miami", cls: "SR (RS)", owner: "Zach L" },
+        { player: "Caleb Herring", pos: "LE", team: "Tennessee", cls: "JR", owner: "Will C" },
+        { player: "Dylan Raiola", pos: "QB", team: "Nebraska", cls: "SO", owner: "Carter" },
+        { player: "DJ Giddens", pos: "RB", team: "Kansas State", cls: "SR (RS)", owner: "Tre" },
+        { player: "Malachi Nelson", pos: "QB", team: "Boise St", cls: "SO (RS)", owner: "Jason" },
+        { player: "Sammy Izien", pos: "WR", team: "Georgia Tech", cls: "FR", owner: "Ben" },
+        { player: "Dae'vonn Hall", pos: "WR", team: "Nebraska", cls: "FR (RS)", owner: "Carter" }
+      ],
+      "Coach of the Year": [
+        { player: "Jason", team: "Boise St" },
+        { player: "Zach", team: "Miami" },
+        { player: "Carter", team: "Nebraska" },
+        { player: "Tyler R", team: "Auburn" },
+        { player: "Brady", team: "Colorado" },
+        { player: "CPU", team: "Troy" },
+        { player: "Will C", team: "Tennessee" },
+        { player: "Ed", team: "USC" },
+        { player: "Austin N", team: "UTSA" },
+        { player: "Mitch S", team: "Duke" },
+        { player: "Tre", team: "Kansas St" },
+        { player: "CPU", team: "Sam Houston" }
+      ],
+      "O'Brien (Best QB)": [
+        { player: "Miller Moss", pos: "QB", team: "USC", cls: "SR (RS)", owner: "Ed" },
+        { player: "Dylan Raiola", pos: "QB", team: "Nebraska", cls: "SO", owner: "Carter" },
+        { player: "Malachi Nelson", pos: "QB", team: "Boise St", cls: "SO (RS)", owner: "Jason" },
+        { player: "LaNorris Sellers", pos: "QB", team: "South Carolina", cls: "SO (RS)", owner: "Christian" },
+        { player: "Haynes King", pos: "QB", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Reese Poffenbarger", pos: "QB", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Quentin Hayes", pos: "QB", team: "Air Force", cls: "JR (RS)", owner: "CPU" },
+        { player: "Maalik Murphy", pos: "QB", team: "Duke", cls: "JR (RS)", owner: "Mitch S" },
+        { player: "Cardell Williams", pos: "QB", team: "Tulsa", cls: "JR (RS)", owner: "CPU" },
+        { player: "Jacurri Brown", pos: "QB", team: "UCF", cls: "JR (RS)", owner: "CPU" },
+        { player: "John Mateer", pos: "QB", team: "Wazzu", cls: "JR (RS)", owner: "CPU" },
+        { player: "Cade Klubnik", pos: "QB", team: "LSU", cls: "SR", owner: "CPU" }
+      ],
+      "Doak Walker (Best RB)": [
+        { player: "DJ Giddens", pos: "HB", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Jeremiyah Love", pos: "HB", team: "Notre Dame", cls: "JR", owner: "Jazz" },
+        { player: "Jadyn Ott", pos: "HB", team: "USC", cls: "SR", owner: "Ed" },
+        { player: "Abu Sama III", pos: "HB", team: "Nebraska", cls: "JR", owner: "Carter" },
+        { player: "Jamal Haynes", pos: "HB", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Donald Chaney", pos: "HB", team: "Louisville", cls: "SR (RS)", owner: "Cael" },
+        { player: "Quran Boyd", pos: "HB", team: "Duke", cls: "SO (RS)", owner: "Mitch" },
+        { player: "Damien Martinez", pos: "HB", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Jeremiah Cobb", pos: "HB", team: "Auburn", cls: "JR", owner: "Tyler R" },
+        { player: "Rueben Owens", pos: "HB", team: "TAMU", cls: "SO (RS)", owner: "CPU" },
+        { player: "Makhi Hughes", pos: "HB", team: "Tulane", cls: "JR (RS)", owner: "CPU" },
+        { player: "Lequint Allen", pos: "HB", team: "Syracuse", cls: "SR", owner: "CPU" }
+      ],
+      "Bednarik (Best WR)": [
+        { player: "Prince Strachan", pos: "WR", team: "Boise St", cls: "JR", owner: "Jason" },
+        { player: "Zachariah Branch", pos: "WR", team: "USC", cls: "JR", owner: "Ed" },
+        { player: "Nyck Harbor", pos: "WR", team: "South Carolina", cls: "JR", owner: "Christian" },
+        { player: "Sammy Izien", pos: "WR", team: "GT", cls: "FR", owner: "Ben" },
+        { player: "Mario Williams", pos: "WR", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Dae'vonn Hall", pos: "WR", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
+        { player: "Cam Coleman", pos: "WR", team: "Auburn", cls: "SO", owner: "Tyler" },
+        { player: "Sahmir Hagans", pos: "WR", team: "Duke", cls: "SR (RS)", owner: "Mitch S" },
+        { player: "Malachi Coleman", pos: "WR", team: "Nebraska", cls: "JR", owner: "Carter" },
+        { player: "Kyron Hudson", pos: "WR", team: "USC", cls: "SR (RS)", owner: "Ed" },
+        { player: "Carl Murphey", pos: "WR", team: "Air Force", cls: "FR", owner: "CPU" },
+        { player: "Squirell White", pos: "WR", team: "Tennessee", cls: "SR", owner: "Will C" }
+      ],
+      "Mackey (Best TE)": [
+        { player: "Lake McRee", pos: "TE", team: "USC", cls: "SR (RS)", owner: "Ed" },
+        { player: "Elijah Arroyo", pos: "TE", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Oscar Delp", pos: "TE", team: "UGA", cls: "JR", owner: "CPU" },
+        { player: "Matt Lauter", pos: "TE", team: "Boise St", cls: "JR (RS)", owner: "Jason" },
+        { player: "Jake Taylor", pos: "TE", team: "Duke", cls: "SR (RS)", owner: "Mitch S" },
+        { player: "Chris Stewart", pos: "TE", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Brian Courtney", pos: "TE", team: "FSU", cls: "SR", owner: "Carson" },
+        { player: "Thomas Fidone II", pos: "TE", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Landen King", pos: "TE", team: "Utah", cls: "SR (RS)", owner: "CPU" },
+        { player: "Brady Hunt", pos: "TE", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Jake Johnson", pos: "TE", team: "UNC", cls: "JR (RS)", owner: "CPU" },
+        { player: "Oronde Gadsden II", pos: "TE", team: "Syracuse", cls: "SR (RS)", owner: "CPU" }
+      ],
+      "Outland (Best IOL)": [
+        { player: "Tyler Booker", pos: "LG", team: "Alabama", cls: "SR", owner: "CPU" },
+        { player: "Dylan Fairchild", pos: "LG", team: "UGA", cls: "SR (RS)", owner: "CPU" },
+        { player: "Parker Brailsford", pos: "C", team: "Alabama", cls: "JR (RS)", owner: "CPU" },
+        { player: "Jardon Roberts", pos: "RG", team: "Alabama", cls: "SR (RS)", owner: "CPU" },
+        { player: "Terrence Moore", pos: "C", team: "Pitt", cls: "SR (RS)", owner: "CPU" },
+        { player: "Xavier Hill", pos: "RG", team: "Memphis", cls: "SR (RS)", owner: "CPU" },
+        { player: "Justin Evans", pos: "LG", team: "Nebraska", cls: "JR (RS)", owner: "Carter" },
+        { player: "Isaiah Wright", pos: "C", team: "Maryland", cls: "SR (RS)", owner: "Tyler C" },
+        { player: "Jordan White", pos: "LG", team: "Liberty", cls: "SR (RS)", owner: "CPU" },
+        { player: "Thomas Shrader", pos: "LG", team: "App State", cls: "SR (RS)", owner: "CPU" },
+        { player: "Justin Pickett", pos: "LG", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Wendell Moe", pos: "LG", team: "Arizona", cls: "JR (RS)", owner: "CPU" }
+      ],
+      "Rimington (Best C)": [
+        { player: "Parker Brailsford", pos: "C", team: "Alabama", cls: "SO (RS)", owner: "CPU" },
+        { player: "Terrence Moore", pos: "C", team: "Pitt", cls: "SR (RS)", owner: "CPU" },
+        { player: "Isaiah Wright", pos: "C", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Andrew Madrigal", pos: "C", team: "Nevada", cls: "SR (RS)", owner: "CPU" },
+        { player: "Carson Hinzman", pos: "C", team: "Ohio State", cls: "SR (RS)", owner: "CPU" },
+        { player: "Brady Small", pos: "C", team: "Army", cls: "JR", owner: "CPU" },
+        { player: "Jake Slaughter", pos: "C", team: "Florida", cls: "SR (RS)", owner: "CPU" },
+        { player: "Connor Lew", pos: "C", team: "Auburn", cls: "JR", owner: "CPU" },
+        { player: "Luke Lapeze", pos: "C", team: "UTSA", cls: "SR (RS)", owner: "Austin" },
+        { player: "Kai Davison", pos: "C", team: "SJSU", cls: "SR (RS)", owner: "CPU" },
+        { player: "Lyndon Cooper", pos: "C", team: "Pitt", cls: "SR (RS)", owner: "CPU" },
+        { player: "Ryan Rodriguez", pos: "C", team: "Miami", cls: "SO (RS)", owner: "Zach" }
+      ],
+      "Hendricks (Best DE)": [
+        { player: "James Pearce Jr", pos: "RE", team: "Tennessee", cls: "SR", owner: "Will C" },
+        { player: "Caleb Herring", pos: "LE", team: "Tennessee", cls: "SO", owner: "Will C" },
+        { player: "Jordan Allen", pos: "LE", team: "Kansas St", cls: "SO (RS)", owner: "Tre" },
+        { player: "Tobi Osunsanmi", pos: "RE", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+        { player: "Dylan Stewart", pos: "RE", team: "South Carolina", cls: "SO", owner: "Christian" },
+        { player: "Leati Little", pos: "LE", team: "GT", cls: "FR", owner: "Ben" },
+        { player: "Loghan Thomas", pos: "RE", team: "Notre Dame", cls: "FR (RS)", owner: "Jazz" },
+        { player: "Jayden Virgin-Morgan", pos: "RE", team: "Boise St", cls: "JR (RS)", owner: "Jason" },
+        { player: "Nic Scourton", pos: "LE", team: "TAMU", cls: "SR", owner: "CPU" },
+        { player: "Devin Redd", pos: "RE", team: "Duke", cls: "SR", owner: "Mitch S" },
+        { player: "Kevin O'Connor", pos: "RE", team: "Duke", cls: "SO (RS)", owner: "Mitch S" },
+        { player: "Adonijah Green", pos: "RE", team: "Louisville", cls: "SO (RS)", owner: "Cael" }
+      ],
+      "Lombardi (Best DL)": [
+        { player: "James Pearce Jr", pos: "RE", team: "Tennessee", cls: "SR", owner: "Will C" },
+        { player: "Caleb Herring", pos: "LE", team: "Tennessee", cls: "JR", owner: "Will C" },
+        { player: "Jordan Allen", pos: "LE", team: "Kansas St", cls: "SO (RS)", owner: "Tre" },
+        { player: "Tobi Osunsanmi", pos: "RE", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+        { player: "Dylan Stewart", pos: "RE", team: "South Carolina", cls: "SO", owner: "Christian" },
+        { player: "Bear Alexander", pos: "DT", team: "USC", cls: "SR", owner: "Ed" },
+        { player: "Leati Little", pos: "LE", team: "GT", cls: "FR", owner: "Ben" },
+        { player: "Alonzo Brackins", pos: "RE", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
+        { player: "Loghan Thomas", pos: "RE", team: "Notre Dame", cls: "FR (RS)", owner: "Jazz" },
+        { player: "AJ Rollins", pos: "LE", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Jayden Virgin-Morgan", pos: "RE", team: "Boise St", cls: "JR (RS)", owner: "Jason" },
+        { player: "Nic Scourton", pos: "LE", team: "TAMU", cls: "SR", owner: "CPU" }
+      ],
+      "Butkus (Best LB)": [
+        { player: "Hardon Perkins Jr", pos: "LOLB", team: "LSU", cls: "SR", owner: "CPU" },
+        { player: "Bryan Thomas JR", pos: "LOLB", team: "South Carolina", cls: "SR", owner: "Christian" },
+        { player: "Mikai Gbayor", pos: "LOLB", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Desmond Purnell", pos: "LOLB", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Andrew Simpson", pos: "ROLB", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
+        { player: "TJ Quinn", pos: "MLB", team: "Louisville", cls: "SR (RS)", owner: "Cael" },
+        { player: "Johnny Hodges", pos: "LOLB", team: "TCU", cls: "SR (RS)", owner: "CPU" },
+        { player: "Kaleb Elarms-Orr", pos: "MLB", team: "TCU", cls: "SR (RS)", owner: "CPU" },
+        { player: "Tre Freeman", pos: "ROLB", team: "Duke", cls: "SR (RS)", owner: "Mitch S" },
+        { player: "JayR Johnson", pos: "MLB", team: "South Carolina", cls: "FR (RS)", owner: "Christian" },
+        { player: "Chandler Martin", pos: "ROLB", team: "Tennessee", cls: "SR (RS)", owner: "Will C" },
+        { player: "Jaren Kanak", pos: "ROLB", team: "Oklahoma", cls: "SR", owner: "CPU" }
+      ],
+      "Bednarik (Best Defensive Player)": [
+        { player: "James Pearce Jr", pos: "RE", team: "Tennessee", cls: "SR", owner: "Will C" },
+        { player: "Caleb Herring", pos: "LE", team: "Tennessee", cls: "JR (RS)", owner: "Will C" },
+        { player: "Jordan Allen", pos: "LE", team: "Kansas State", cls: "SO (RS)", owner: "Tre" },
+        { player: "Tobi Osunsanmi", pos: "RE", team: "Kansas State", cls: "JR (RS)", owner: "Tre" },
+        { player: "Jalon Kilgore", pos: "CB", team: "South Carolina", cls: "JR", owner: "Christian" },
+        { player: "Dylan Stewart", pos: "RE", team: "South Carolina", cls: "SO", owner: "Christian" },
+        { player: "Harold Perkins", pos: "LOLB", team: "LSU", cls: "SR", owner: "CPU" },
+        { player: "Bryan Thomas", pos: "LOLB", team: "South Carolina", cls: "SR", owner: "Christian" },
+        { player: "Bear Alexander", pos: "DT", team: "USC", cls: "SR", owner: "Ed" },
+        { player: "Leati Little", pos: "LE", team: "Georgia Tech", cls: "FR", owner: "Ben" },
+        { player: "Loghan Thomas", pos: "RE", team: "Notre Dame", cls: "FR (RS)", owner: "Jazz" },
+        { player: "Jayden Virgin-Morgan", pos: "RE", team: "Boise State", cls: "JR (RS)", owner: "Jason" }
+      ],
+      "Thorpe (Best DB)": [
+        { player: "Jalon Kilgore", pos: "CB", team: "South Carolina", cls: "JR", owner: "Christian" },
+        { player: "Jeremiah Cooper", pos: "FS", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Nick Hawthorne", pos: "SS", team: "Boise St", cls: "SO (RS)", owner: "Jason" },
+        { player: "Jeadyn Lukus", pos: "CB", team: "Clemson", cls: "SR", owner: "Caiden" },
+        { player: "Syeed Gibbs", pos: "CB", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+        { player: "VJ Payne", pos: "SS", team: "Kansas State", cls: "SR (RS)", owner: "Tre" },
+        { player: "Boo Carter", pos: "FS", team: "Tennessee", cls: "FR (RS)", owner: "Will C" },
+        { player: "Tao Johnson", pos: "SS", team: "Nebraska", cls: "JR (RS)", owner: "Carter" },
+        { player: "Davison Igbinosun", pos: "CB", team: "Notre Dame", cls: "SR", owner: "Jazz" },
+        { player: "Charles Lester III", pos: "CB", team: "Florida St", cls: "FR (RS)", owner: "Logan" },
+        { player: "Franklyn Johnson Jr", pos: "CB", team: "Boise St", cls: "SO (RS)", owner: "Jason" },
+        { player: "Ahmari Harvey", pos: "CB", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" }
+      ],
+      "Best ST Returner": [
+        { player: "Mike Matthews", pos: "WR", team: "Tennessee", cls: "FR (RS)", owner: "Will C" },
+        { player: "Sterling Lockett", pos: "WR", team: "Kansas ST", cls: "SO (RS)", owner: "Tre" },
+        { player: "Rayshon Luke", pos: "HB", team: "Notre Dame", cls: "SR", owner: "Jazz" },
+        { player: "Dorian Exum", pos: "WR", team: "TCU", cls: "SR (RS)", owner: "CPU" },
+        { player: "Mario Willams", pos: "WR", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Khalil Engram", pos: "WR", team: "LSU", cls: "JR (RS)", owner: "CPU" },
+        { player: "Jerrick Melvin", pos: "WR", team: "Duke", cls: "FR", owner: "Mitch S" },
+        { player: "Camdon Frier", pos: "WR", team: "FSU", cls: "FR (RS)", owner: "Carson" },
+        { player: "Dedrick Latulas", pos: "WR", team: "La Tech", cls: "JR", owner: "CPU" },
+        { player: "Nyziah Hunter", pos: "WR", team: "Cal", cls: "SO (RS)", owner: "CPU" },
+        { player: "Ryan Niblett", pos: "WR", team: "Texas", cls: "SO (RS)", owner: "CPU" },
+        { player: "Ryan Rodriguez", pos: "WR", team: "Miami", cls: "SO (RS)", owner: "Zach" }
+      ]
+    }
+  },
+  2026: {
+    allAmericans: [
+      { pos: "QB", rank: 1, player: "Dylan Raiola", team: "Nebraska", cls: "JR", owner: "Carter" },
+      { pos: "QB", rank: 2, player: "Trace Campbell", team: "UAB", cls: "SR (RS)", owner: "CPU" },
+      { pos: "HB", rank: 1, player: "Gavin Sawchuk", team: "Oklahoma", cls: "SR (RS)", owner: "User" },
+      { pos: "HB", rank: 1, player: "Dylan Edwards", team: "Kansas St", cls: "SR", owner: "Tre" },
+      { pos: "HB", rank: 2, player: "Abu Sama III", team: "Nebraska", cls: "SR", owner: "Carter" },
+      { pos: "HB", rank: 2, player: "Caleb Largo", team: "Texas Tech", cls: "SO (RS)", owner: "Jordan" },
+      { pos: "WR", rank: 1, player: "Prince Strachan", team: "Boise St", cls: "SR", owner: "Jason" },
+      { pos: "WR", rank: 1, player: "Malachi Coleman", team: "Nebraska", cls: "SR", owner: "Carter" },
+      { pos: "WR", rank: 1, player: "Malachi Riley", team: "Arizona", cls: "SR", owner: "Avery" },
+      { pos: "WR", rank: 2, player: "Jayce Brown", team: "Kansas St", cls: "SR", owner: "Tre" },
+      { pos: "WR", rank: 2, player: "Kenny Johnson", team: "Pitt", cls: "SR", owner: "CPU" },
+      { pos: "WR", rank: 2, player: "Tony Freeman", team: "Wash St", cls: "SR", owner: "Samuel" },
+      { pos: "TE", rank: 1, player: "Lawson Luckie", team: "Georgia", cls: "SR", owner: "CPU" },
+      { pos: "TE", rank: 2, player: "Garrett Oakley", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+      { pos: "LT", rank: 1, player: "Elijah Page", team: "USC", cls: "JR (RS)", owner: "CPU" },
+      { pos: "LT", rank: 2, player: "Kadyn Proctor", team: "Alabama", cls: "SR", owner: "CPU" },
+      { pos: "LG", rank: 1, player: "Justin Evans", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+      { pos: "LG", rank: 2, player: "Roger Alderman", team: "Utah", cls: "JR (RS)", owner: "CPU" },
+      { pos: "C", rank: 1, player: "Brady Small", team: "Army", cls: "SR", owner: "CPU" },
+      { pos: "C", rank: 2, player: "DeVonte Reinbolt", team: "Kansas St", cls: "SO", owner: "Tre" },
+      { pos: "RG", rank: 1, player: "Gabe Fortson", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+      { pos: "RG", rank: 2, player: "Zach Rice", team: "UNC", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RT", rank: 1, player: "Brian Parker", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+      { pos: "RT", rank: 2, player: "Ja'Kavion Nonar", team: "FIU", cls: "SR (RS)", owner: "CPU" },
+      { pos: "LE", rank: 1, player: "Ernest Willor Jr", team: "Wisconsin", cls: "JR", owner: "CPU" },
+      { pos: "LE", rank: 2, player: "Tomiwa Durojaiye", team: "FSU", cls: "SR (RS)", owner: "Carson" },
+      { pos: "RE", rank: 1, player: "Matayo Uiagalelei", team: "Oregon", cls: "SR (RS)", owner: "Logan" },
+      { pos: "RE", rank: 2, player: "Marquise Lightfoot", team: "Miami", cls: "SO (RS)", owner: "Zach" },
+      { pos: "DT", rank: 1, player: "Jordan Phillips", team: "Maryland", cls: "SR (RS)", owner: "CPU" },
+      { pos: "DT", rank: 1, player: "Ahmad Moten", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+      { pos: "DT", rank: 2, player: "Kayden McDonald", team: "Ohio St", cls: "JR (RS)", owner: "CPU" },
+      { pos: "DT", rank: 2, player: "Drake Carlson", team: "Purdue", cls: "JR (RS)", owner: "CPU" },
+      { pos: "LOLB", rank: 1, player: "Samuel Omosigho", team: "Oklahoma", cls: "SR", owner: "User" },
+      { pos: "LOLB", rank: 2, player: "Sione Fotu", team: "Oregon St", cls: "SR (RS)", owner: "Alec" },
+      { pos: "MLB", rank: 1, player: "Ben Roberts", team: "LSU", cls: "SR (RS)", owner: "CPU" },
+      { pos: "MLB", rank: 2, player: "Sammy Brown", team: "Clemson", cls: "JR", owner: "Caiden" },
+      { pos: "ROLB", rank: 1, player: "Anthony Hill Jr", team: "Texas", cls: "SR", owner: "CPU" },
+      { pos: "ROLB", rank: 2, player: "Tanner Farris", team: "Ohio St", cls: "SR (RS)", owner: "CPU" },
+      { pos: "CB", rank: 1, player: "Cormani McClain", team: "Florida", cls: "SR", owner: "CPU" },
+      { pos: "CB", rank: 1, player: "Avery Stuart", team: "Kentucky", cls: "JR (RS)", owner: "CPU" },
+      { pos: "CB", rank: 2, player: "Jalon Kilgore", team: "South Carolina", cls: "SR", owner: "Christian" },
+      { pos: "CB", rank: 2, player: "Kayin Lee", team: "Auburn", cls: "SR", owner: "Tyler" },
+      { pos: "FS", rank: 1, player: "Kamari Ramsey", team: "USC", cls: "SR (RS)", owner: "CPU" },
+      { pos: "FS", rank: 2, player: "Jaiden Patterson", team: "UNC", cls: "JR", owner: "CPU" },
+      { pos: "SS", rank: 1, player: "Keion Dunlap", team: "Troy", cls: "JR", owner: "CPU" },
+      { pos: "SS", rank: 2, player: "Peyton Woodyard", team: "Oregon", cls: "JR", owner: "Logan" }
+    ],
+    awards: {
+      "Heisman": [
+        { player: "Malachi Coleman", pos: "WR", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Prince Strachan", pos: "WR", team: "Boise St", cls: "SR", owner: "Jason" },
+        { player: "Marquise Lightfoot", pos: "RE", team: "Miami", cls: "SO (RS)", owner: "Zach" },
+        { player: "Abu Sama III", pos: "HB", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Dylan Raiola", pos: "QB", team: "Nebraska", cls: "JR", owner: "Carter" },
+        { player: "Anthony Thrash", pos: "HB", team: "TAMU", cls: "SO", owner: "Chris" },
+        { player: "Caleb Herring", pos: "LE", team: "Tennessee", cls: "SR", owner: "Will" },
+        { player: "Jordan Allen", pos: "LE", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+        { player: "Tobi Osunsanmi", pos: "RE", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Dylan Edwards", pos: "HB", team: "Kansas St", cls: "SR", owner: "Tre" },
+        { player: "Miquel Dingle", pos: "ROLB", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Gavin Sawchuk", pos: "HB", team: "Oklahoma", cls: "SR (RS)", owner: "User" }
+      ],
+      "Coach of the Year": [
+        { player: "", team: "(forgot to pull)" }
+      ],
+      "O'Brien (Best QB)": [
+        { player: "Dylan Raiola", pos: "QB", team: "Nebraska", cls: "JR", owner: "Carter" },
+        { player: "Rashawn Abiamiri", pos: "QB", team: "Tennessee", cls: "FR (RS)", owner: "Will" },
+        { player: "Trace Campbell", pos: "QB", team: "UAB", cls: "SR (RS)", owner: "CPU" },
+        { player: "Eli Holstein", pos: "QB", team: "ULL", cls: "JR (RS)", owner: "CPU" },
+        { player: "Marcel Reed", pos: "QB", team: "TAMU", cls: "SR", owner: "Chris" },
+        { player: "Hauss Hejny", pos: "QB", team: "TCU", cls: "SO (RS)", owner: "CPU" },
+        { player: "Avery Johnson", pos: "QB", team: "Kansas St", cls: "SR", owner: "Tre" },
+        { player: "Maalik Murphy", pos: "QB", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Noah Fifita", pos: "QB", team: "Arizona", cls: "SR (RS)", owner: "Avery" },
+        { player: "Tucker Kilcrease", pos: "QB", team: "Troy", cls: "SR (RS)", owner: "CPU" },
+        { player: "Brendan Sorsby", pos: "QB", team: "Cincinnati", cls: "SR (RS)", owner: "CPU" },
+        { player: "Max Brown", pos: "QB", team: "Charlotte", cls: "SR (RS)", owner: "CPU" }
+      ],
+      "Doak Walker (Best RB)": [
+        { player: "Anthony Thrash", pos: "HB", team: "TAMU", cls: "SO", owner: "Chris" },
+        { player: "Abu Sama III", pos: "HB", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Gavin Sawchuk", pos: "HB", team: "Oklahoma", cls: "SR (RS)", owner: "User" },
+        { player: "Dylan Edwards", pos: "HB", team: "Kansas St", cls: "SR", owner: "Tre" },
+        { player: "Caleb Largo", pos: "HB", team: "Texas Tech", cls: "SO (RS)", owner: "Jordan" },
+        { player: "Quran Boyd", pos: "HB", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Ryan Williams", pos: "HB", team: "Tennessee", cls: "JR", owner: "Will" },
+        { player: "Kam Davis", pos: "HB", team: "Florida State", cls: "SO (RS)", owner: "Carson" },
+        { player: "Mark Fletcher Jr.", pos: "HB", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Wayshawn Parker", pos: "HB", team: "Washington St", cls: "SO (RS)", owner: "Samuel" },
+        { player: "JMaury Davis", pos: "HB", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Emery Godfrey", pos: "HB", team: "Minnesota", cls: "SO (RS)", owner: "Nolan" }
+      ],
+      "Bednarik (Best WR)": [
+        { player: "Malachi Coleman", pos: "WR", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Prince Strachan", pos: "WR", team: "Boise St", cls: "SR", owner: "Jason" },
+        { player: "Malachi Riley", pos: "WR", team: "Arizona", cls: "SR", owner: "Avery" },
+        { player: "Jayce Brown", pos: "WR", team: "Kansas St", cls: "SR", owner: "Tre" },
+        { player: "Tony Freeman", pos: "WR", team: "Washington St", cls: "SR", owner: "Samuel" },
+        { player: "T.J. Moore", pos: "WR", team: "Charlotte", cls: "JR", owner: "CPU" },
+        { player: "Jalen Sumner", pos: "WR", team: "Penn State", cls: "SO", owner: "CPU" },
+        { player: "Kenny Johnson", pos: "WR", team: "Pitt", cls: "SR", owner: "CPU" },
+        { player: "Dontae Little", pos: "WR", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Rodney Gallagher III", pos: "WR", team: "West Virginia", cls: "JR (RS)", owner: "CPU" },
+        { player: "Makai Jackson", pos: "WR", team: "App State", cls: "SR (RS)", owner: "CPU" },
+        { player: "Chad Richard", pos: "WR", team: "Maryland", cls: "FR (RS)", owner: "CPU" }
+      ],
+      "Mackey (Best TE)": [
+        { player: "Riley Williams", pos: "TE", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Donovan Green", pos: "TE", team: "TAMU", cls: "SR", owner: "Chris" },
+        { player: "Lawson Luckie", pos: "TE", team: "Georgia", cls: "SR", owner: "CPU" },
+        { player: "Jason Llewellyn", pos: "TE", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Garrett Oakley", pos: "TE", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Randy Pittman Jr.", pos: "TE", team: "Florida St", cls: "SR", owner: "Carson" },
+        { player: "Jamari Johnson", pos: "TE", team: "Louisville", cls: "JR (RS)", owner: "Cael" },
+        { player: "Dontae Droogsma", pos: "TE", team: "South Carolina", cls: "FR (RS)", owner: "Christian" },
+        { player: "Ryner Swanson", pos: "TE", team: "BYU", cls: "JR", owner: "User" },
+        { player: "Zach Ortwerth", pos: "TE", team: "Iowa", cls: "JR (RS)", owner: "CPU" },
+        { player: "Trae Swartz", pos: "TE", team: "Troy", cls: "SO (RS)", owner: "CPU" },
+        { player: "Walter Matthews", pos: "TE", team: "USC", cls: "JR", owner: "CPU" }
+      ],
+      "Outland (Best IOL)": [
+        { player: "Gabe Fortson", pos: "RG", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+        { player: "Justin Evans", pos: "LG", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Roger Alderman", pos: "LG", team: "Utah", cls: "JR (RS)", owner: "CPU" },
+        { player: "Brady Small", pos: "C", team: "Army", cls: "SR", owner: "CPU" },
+        { player: "Cayden Green", pos: "LG", team: "Mizzou", cls: "JR (RS)", owner: "Vond" },
+        { player: "Hayden Windham", pos: "LG", team: "Oregon", cls: "SR (RS)", owner: "Logan" },
+        { player: "Shamurad Umarov", pos: "LG", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Mark Nabou Jr", pos: "C", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Solatoa Moea'i", pos: "LG", team: "Utah", cls: "SR", owner: "CPU" },
+        { player: "Wes King", pos: "LG", team: "Wyoming", cls: "SR (RS)", owner: "CPU" },
+        { player: "Trovon Baugh", pos: "RG", team: "South Carolina", cls: "JR (RS)", owner: "Christian" },
+        { player: "Olaus Alinen", pos: "RG", team: "Alabama", cls: "JR (RS)", owner: "CPU" }
+      ],
+      "Rimington (Best C)": [
+        { player: "Brady Small", pos: "C", team: "Army", cls: "SR", owner: "CPU" },
+        { player: "Mark Nabou Jr", pos: "C", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Iapani Laloulu", pos: "C", team: "Oregon", cls: "SR (RS)", owner: "Logan" },
+        { player: "DeVonte Reinbolt", pos: "C", team: "Kansas St", cls: "SO", owner: "Tre" },
+        { player: "DJ Chester", pos: "C", team: "LSU", cls: "JR (RS)", owner: "CPU" },
+        { player: "Ryan Brubaker", pos: "C", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Isaac Sohn", pos: "C", team: "North Texas", cls: "JR (RS)", owner: "CPU" },
+        { player: "Will Larkins", pos: "C", team: "Georgia State", cls: "JR (RS)", owner: "CPU" },
+        { player: "Landen Hatchett", pos: "C", team: "Washington", cls: "SR", owner: "CPU" },
+        { player: "Cooper Cousins", pos: "C", team: "Penn St", cls: "SO (RS)", owner: "CPU" },
+        { player: "Ayden Bussell", pos: "C", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Devin Godfrey", pos: "C", team: "Stanford", cls: "FR (RS)", owner: "CPU" }
+      ],
+      "Hendricks (Best DE)": [
+        { player: "Marquise Lightfoot", pos: "RE", team: "Miami", cls: "SO (RS)", owner: "Zach" },
+        { player: "Caleb Herring", pos: "LE", team: "Tennessee", cls: "SR", owner: "Will" },
+        { player: "Jordan Allen", pos: "LE", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+        { player: "Tobi Osunsanmi", pos: "RE", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "K.J. McManus", pos: "RE", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "SO (RS)", owner: "Mitch" },
+        { player: "Dylan Stewart", pos: "RE", team: "South Carolina", cls: "JR", owner: "Christian" },
+        { player: "Armondo Blount", pos: "LE", team: "Miami", cls: "JR", owner: "Zach" },
+        { player: "Kevin O'Connor", pos: "RE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+        { player: "Leati Little", pos: "LE", team: "Georgia Tech", cls: "SO", owner: "Ben" },
+        { player: "Alonzo Brackins", pos: "RE", team: "Nebraska", cls: "SO (RS)", owner: "Carter" }
+      ],
+      "Lombardi (Best DL)": [
+        { player: "Marquise Lightfoot", pos: "RE", team: "Miami", cls: "SO (RS)", owner: "Zach" },
+        { player: "Caleb Herring", pos: "LE", team: "Tennessee", cls: "SR", owner: "Will" },
+        { player: "Jordan Allen", pos: "LE", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+        { player: "Tobi Osunsanmi", pos: "RE", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "K.J. McManus", pos: "RE", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Armondo Blount", pos: "LE", team: "Miami", cls: "JR", owner: "Zach" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "SO (RS)", owner: "Mitch" },
+        { player: "Dylan Stewart", pos: "RE", team: "South Carolina", cls: "JR", owner: "Christian" },
+        { player: "Leati Little", pos: "LE", team: "Georgia Tech", cls: "SO", owner: "Ben" },
+        { player: "Kevin O'Connor", pos: "RE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+        { player: "Alonzo Brackins", pos: "RE", team: "Nebraska", cls: "SO (RS)", owner: "Carter" }
+      ],
+      "Butkus (Best LB)": [
+        { player: "Miquel Dingle", pos: "ROLB", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Kip Lewis", pos: "ROLB", team: "Oklahoma", cls: "SR (RS)", owner: "User" },
+        { player: "Malik Bryant", pos: "MLB", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Dajon Doss", pos: "LOLB", team: "Washington St", cls: "JR", owner: "Samuel" },
+        { player: "Ty Kana", pos: "ROLB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Arion Carter", pos: "LOLB", team: "Tennessee", cls: "SR", owner: "Will" },
+        { player: "Devon Jackson", pos: "ROLB", team: "Oregon", cls: "SR (RS)", owner: "Logan" },
+        { player: "Justin Horne", pos: "MLB", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Samuel Omosigho", pos: "LOLB", team: "Oklahoma", cls: "SR", owner: "User" },
+        { player: "Arthur Rainey", pos: "LOLB", team: "Texas Tech", cls: "SO (RS)", owner: "Jordan" },
+        { player: "JayR Johnson", pos: "MLB", team: "South Carolina", cls: "SO (RS)", owner: "Christian" },
+        { player: "Ramon Breaston", pos: "MLB", team: "Miami", cls: "SR (RS)", owner: "Zach" }
+      ],
+      "Bednarik (Best Defensive Player)": [
+        { player: "Marquise Lightfoot", pos: "RE", team: "Miami", cls: "SO (RS)", owner: "Zach" },
+        { player: "Caleb Herring", pos: "LE", team: "Tennessee", cls: "SR", owner: "Will" },
+        { player: "Jordan Allen", pos: "LE", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+        { player: "Tobi Osunsanmi", pos: "RE", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Miquel Dingle", pos: "ROLB", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "K.J. McManus", pos: "RE", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "SO (RS)", owner: "Mitch" },
+        { player: "Dylan Stewart", pos: "RE", team: "South Carolina", cls: "JR", owner: "Christian" },
+        { player: "Armondo Blount", pos: "LE", team: "Miami", cls: "JR", owner: "Zach" },
+        { player: "Kip Lewis", pos: "ROLB", team: "Oklahoma", cls: "SR (RS)", owner: "User" },
+        { player: "Kevin O'Connor", pos: "RE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "SO (RS)", owner: "Will" }
+      ],
+      "Thorpe (Best DB)": [
+        { player: "Robert Stafford", pos: "CB", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Jayvon Thomas", pos: "CB", team: "TAMU", cls: "JR (RS)", owner: "Chris" },
+        { player: "Ellis Robinson IV", pos: "CB", team: "Duke", cls: "JR", owner: "Mitch" },
+        { player: "Peyton Bowen", pos: "SS", team: "Oklahoma", cls: "SR", owner: "User" },
+        { player: "Markeith Williams", pos: "SS", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Dontae Balfour", pos: "CB", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Kaleb Beasley", pos: "CB", team: "Tennessee", cls: "JR", owner: "Will" },
+        { player: "Jordan Castell", pos: "FS", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Zaquon Patterson", pos: "CB", team: "Miami", cls: "SO (RS)", owner: "Zach" },
+        { player: "Jalon Kilgore", pos: "CB", team: "South Carolina", cls: "SR", owner: "Christian" },
+        { player: "Jalon Peoples", pos: "CB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Colby McCalister", pos: "SS", team: "Kansas St", cls: "SR (RS)", owner: "Tre" }
+      ],
+      "Best ST Returner": [
+        { player: "Sterling Lockett", pos: "WR", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Isaiah Sategna", pos: "WR", team: "Arkansas", cls: "SR (RS)", owner: "Tyler" },
+        { player: "Ray Ray Joseph", pos: "WR", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Jaylen Lloyd", pos: "WR", team: "Nebraska", cls: "SR", owner: "Carter" },
+        { player: "Chadrick Queen", pos: "WR", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Justius Lowe", pos: "WR", team: "Oregon", cls: "SR (RS)", owner: "Logan" },
+        { player: "Mike Matthews", pos: "WR", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+        { player: "JeyQuan Smith", pos: "WR", team: "USF", cls: "JR (RS)", owner: "CPU" },
+        { player: "Jamari Hawkins", pos: "WR", team: "UCF", cls: "SR (RS)", owner: "CPU" },
+        { player: "Jordan Anthony", pos: "WR", team: "Arkansas", cls: "SR (RS)", owner: "Tyler" },
+        { player: "John Simon", pos: "WR", team: "La Tech", cls: "SO (RS)", owner: "CPU" },
+        { player: "Andre Devine", pos: "WR", team: "Jax State", cls: "JR", owner: "CPU" }
+      ]
+    }
+  },
+  2027: {
+    allAmericans: [
+      { pos: "QB", rank: 1, player: "Rashawn Abiamiri", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+      { pos: "QB", rank: 2, player: "Lincoln Kienholz", team: "Ohio St", cls: "SR (RS)", owner: "CPU" },
+      { pos: "HB", rank: 1, player: "T.J. McWilliams", team: "Minnesota", cls: "SR (RS)", owner: "Nolan" },
+      { pos: "HB", rank: 1, player: "Andre Devine", team: "Miami", cls: "SR", owner: "Zach" },
+      { pos: "HB", rank: 2, player: "Kwinten Ives", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+      { pos: "HB", rank: 2, player: "Jordan Washington", team: "Washington", cls: "JR (RS)", owner: "Chase" },
+      { pos: "WR", rank: 1, player: "Carter Karras", team: "Boise St", cls: "FR (RS)", owner: "Jason" },
+      { pos: "WR", rank: 1, player: "Kerry Love", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+      { pos: "WR", rank: 1, player: "Beni Ngoyi", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+      { pos: "WR", rank: 2, player: "Jared Kelley", team: "Kent State", cls: "SR (RS)", owner: "CPU" },
+      { pos: "WR", rank: 2, player: "Kris Sparks", team: "App St", cls: "FR (RS)", owner: "CPU" },
+      { pos: "WR", rank: 2, player: "Jordyn Bridgewater", team: "UCF", cls: "JR (RS)", owner: "CPU" },
+      { pos: "TE", rank: 1, player: "Jalen Pope", team: "TTU", cls: "SR (RS)", owner: "Jordan" },
+      { pos: "TE", rank: 2, player: "Quincy Weeks", team: "Duke", cls: "FR (RS)", owner: "Mitch" },
+      { pos: "LT", rank: 1, player: "Lucas Simmons", team: "FSU", cls: "SR (RS)", owner: "Logan" },
+      { pos: "LT", rank: 2, player: "Ayden Bussell", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+      { pos: "LG", rank: 1, player: "Cayden Green", team: "Mizzou", cls: "SR (RS)", owner: "VonD" },
+      { pos: "LG", rank: 2, player: "Logan Reichert", team: "Mizzou", cls: "SR (RS)", owner: "VonD" },
+      { pos: "C", rank: 1, player: "Lee Fe'esago", team: "Mizzou", cls: "JR", owner: "VonD" },
+      { pos: "C", rank: 2, player: "Cooper Cousins", team: "Penn St", cls: "JR (RS)", owner: "CPU" },
+      { pos: "RG", rank: 1, player: "Amos Talalele", team: "USC", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RG", rank: 2, player: "Trovon Baugh", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+      { pos: "RT", rank: 1, player: "Kaedin Massey", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+      { pos: "RT", rank: 2, player: "Joey Newhouse", team: "Michigan", cls: "SO (RS)", owner: "CPU" },
+      { pos: "LE", rank: 1, player: "Jordan Allen", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+      { pos: "LE", rank: 2, player: "Whitefield Power", team: "Colorado St", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RE", rank: 1, player: "Marquise Lightfoot", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+      { pos: "RE", rank: 2, player: "Shaq Cantrell", team: "Arkansas", cls: "JR", owner: "Tyler C" },
+      { pos: "DT", rank: 1, player: "Solomon Williams", team: "TAMU", cls: "JR (RS)", owner: "Chris" },
+      { pos: "DT", rank: 1, player: "Sam Street", team: "Duke", cls: "SO (RS)", owner: "Mitch" },
+      { pos: "DT", rank: 2, player: "Drake Carlson", team: "Purdue", cls: "SR (RS)", owner: "CPU" },
+      { pos: "DT", rank: 2, player: "Elinneus Davis", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+      { pos: "LOLB", rank: 1, player: "Lynn Ankrah", team: "Nebraska", cls: "SO (RS)", owner: "Carter" },
+      { pos: "LOLB", rank: 2, player: "Tylen Singleton", team: "LSU", cls: "SR", owner: "CPU" },
+      { pos: "MLB", rank: 1, player: "MJ Johnson", team: "Rutgers", cls: "MLB", owner: "CPU" },
+      { pos: "MLB", rank: 2, player: "Karmelo Overton", team: "Memphis", cls: "SR (RS)", owner: "CPU" },
+      { pos: "ROLB", rank: 1, player: "Demarcus Riddick", team: "Auburn", cls: "SR", owner: "Tyler R" },
+      { pos: "ROLB", rank: 2, player: "Justin Logan", team: "GT", cls: "JR (RS)", owner: "Ben" },
+      { pos: "CB", rank: 1, player: "Jaylen Mbakwe", team: "Alabama", cls: "SR", owner: "CPU" },
+      { pos: "CB", rank: 1, player: "Jacoby Lorent", team: "ND", cls: "JR (RS)", owner: "CPU" },
+      { pos: "CB", rank: 2, player: "Antonio White Jr", team: "Rutgers", cls: "JR (RS)", owner: "CPU" },
+      { pos: "CB", rank: 2, player: "Vicari Swain", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+      { pos: "FS", rank: 1, player: "Kimari Robinson", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+      { pos: "FS", rank: 2, player: "DK Gilley", team: "Rutgers", cls: "JR (RS)", owner: "CPU" },
+      { pos: "SS", rank: 1, player: "Vontae Floyd", team: "Duke", cls: "JR (RS)", owner: "CPU" },
+      { pos: "SS", rank: 2, player: "Greg Tobias", team: "Penn St", cls: "JR", owner: "CPU" }
+    ],
+    awards: {
+      "Heisman": [
+        { player: "T.J. McWilliams", pos: "HB", team: "Minnesota", cls: "SR (RS)", owner: "Nolan" },
+        { player: "Carter Karras", pos: "WR", team: "Boise St", cls: "FR (RS)", owner: "Jason" },
+        { player: "Andre Devine", pos: "HB", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Marquise Lightfoot", pos: "RE", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Anthony Thrash", pos: "HB", team: "TAMU", cls: "JR", owner: "Chris" },
+        { player: "Kerry Love", pos: "WR", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Kwinten Ives", pos: "HB", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Rashawn Abiamiri", pos: "QB", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+        { player: "Asa Newsom", pos: "ROLB", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Beni Ngoyi", pos: "WR", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Jordan Washington", pos: "HB", team: "Washington", cls: "JR (RS)", owner: "Chase" }
+      ],
+      "Coach of the Year": [
+        { player: "", team: "Washington" },
+        { player: "", team: "TAMU" },
+        { player: "", team: "Kansas St" },
+        { player: "", team: "Miami" },
+        { player: "", team: "Florida St" },
+        { player: "", team: "Nebraska" },
+        { player: "", team: "Minnesota" },
+        { player: "", team: "Texas Tech" },
+        { player: "", team: "Oklahoma" },
+        { player: "CPU", team: "Temple" },
+        { player: "CPU", team: "UNLV" },
+        { player: "CPU", team: "WKU" }
+      ],
+      "O'Brien (Best QB)": [
+        { player: "Rashawn Abiamiri", pos: "QB", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+        { player: "Lincoln Kienholz", pos: "QB", team: "Ohio St", cls: "SR (RS)", owner: "CPU" },
+        { player: "LaNorris Sellers", pos: "QB", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Jake Strong", pos: "QB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Roderick Kendricks", pos: "QB", team: "USC", cls: "SO (RS)", owner: "CPU" },
+        { player: "Brady Drogosh", pos: "QB", team: "Cincinnati", cls: "SR (RS)", owner: "CPU" },
+        { player: "Josh Remigio", pos: "QB", team: "Colorado", cls: "JR", owner: "CPU" },
+        { player: "DJ Lagway", pos: "QB", team: "SMU", cls: "SR", owner: "CPU" },
+        { player: "Kemani Horne", pos: "QB", team: "Miami", cls: "JR", owner: "CPU" },
+        { player: "Dallas Yates", pos: "QB", team: "Nebraska", cls: "FR", owner: "Carter" },
+        { player: "Theo Jameson", pos: "QB", team: "App St.", cls: "SO", owner: "CPU" },
+        { player: "Christopher Vizzina", pos: "QB", team: "Clemson", cls: "SR (RS)", owner: "Caiden" }
+      ],
+      "Doak Walker (Best RB)": [
+        { player: "Anthony Thrash", pos: "HB", team: "TAMU", cls: "JR", owner: "User" },
+        { player: "T.J. McWilliams", pos: "HB", team: "Minnesota", cls: "SR (RS)", owner: "Nolan" },
+        { player: "Andre Devine", pos: "HB", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Kwinten Ives", pos: "HB", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Jordan Washington", pos: "HB", team: "Washington", cls: "JR (RS)", owner: "Chase" },
+        { player: "Taylor Tatum", pos: "HB", team: "Oklahoma", cls: "JR (RS)", owner: "User" },
+        { player: "Joe Jackson", pos: "HB", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Caleb Largo", pos: "HB", team: "TTU", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Thane Martin", pos: "HB", team: "Louisville", cls: "SR (RS)", owner: "Cael" },
+        { player: "Kam Davis", pos: "HB", team: "FSU", cls: "JR (RS)", owner: "Logan" },
+        { player: "Peyton Lewis", pos: "HB", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Terrance Vasher", pos: "HB", team: "Duke", cls: "SO (RS)", owner: "Mitch" }
+      ],
+      "Bednarik (Best WR)": [
+        { player: "Carter Karras", pos: "WR", team: "Boise St", cls: "FR (RS)", owner: "Jason" },
+        { player: "Kerry Love", pos: "WR", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+        { player: "Beni Ngoyi", pos: "WR", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Kris Sparks", pos: "WR", team: "App State", cls: "FR (RS)", owner: "CPU" },
+        { player: "Jared Kelley", pos: "WR", team: "Kent State", cls: "SR (RS)", owner: "CPU" },
+        { player: "Jaidyn Doss", pos: "WR", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Jordyn Bridgewater", pos: "WR", team: "UCF", cls: "JR (RS)", owner: "CPU" },
+        { player: "Braylon Staley", pos: "WR", team: "South Carolina", cls: "JR (RS)", owner: "Christian" },
+        { player: "Kevynn Ballage", pos: "WR", team: "Miami", cls: "JR", owner: "Zach" },
+        { player: "Micah Hudson", pos: "WR", team: "TTU", cls: "SR", owner: "Jordan" },
+        { player: "Cam'ron Lacy", pos: "WR", team: "Middle Tennessee St", cls: "SR (RS)", owner: "CPU" },
+        { player: "Mike Matthews", pos: "WR", team: "Tennessee", cls: "JR (RS)", owner: "Will" }
+      ],
+      "Mackey (Best TE)": [
+        { player: "Jaden Platt", pos: "TE", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Jalen Pope", pos: "TE", team: "TTU", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Quincy Weeks", pos: "TE", team: "Duke", cls: "FR (RS)", owner: "Mitch" },
+        { player: "Cole Harrison", pos: "TE", team: "Navy", cls: "JR (RS)", owner: "CPU" },
+        { player: "Harrison Bolan", pos: "TE", team: "Louisville", cls: "JR (RS)", owner: "Cael" },
+        { player: "Fabian Fanene", pos: "TE", team: "GT", cls: "JR", owner: "Ben" },
+        { player: "Tom Larson", pos: "TE", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Landen Thomas", pos: "TE", team: "FSU", cls: "SR", owner: "Logan" },
+        { player: "Kevin Bostic", pos: "TE", team: "South Carolina", cls: "FR (RS)", owner: "Christian" },
+        { player: "CJ Graves", pos: "TE", team: "ND", cls: "SO", owner: "CPU" },
+        { player: "Austin Generals", pos: "TE", team: "UCF", cls: "SO (RS)", owner: "CPU" },
+        { player: "Jaden Reddell", pos: "TE", team: "Bowling Green", cls: "SR", owner: "CPU" }
+      ],
+      "Outland (Best IOL)": [
+        { player: "Cayden Green", pos: "LG", team: "Mizzou", cls: "SR (RS)", owner: "VonD" },
+        { player: "Markee Anderson", pos: "LG", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Logan Reichert", pos: "LG", team: "Mizzou", cls: "SR (RS)", owner: "VonD" },
+        { player: "Ty Fort", pos: "LG", team: "GT", cls: "SO (RS)", owner: "Ben" },
+        { player: "Lee Fe'esago", pos: "C", team: "Mizzou", cls: "JR", owner: "VonD" },
+        { player: "Trovon Baugh", pos: "RG", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Amos Talalele", pos: "RG", team: "USC", cls: "SR (RS)", owner: "CPU" },
+        { player: "Tyson Ruffins", pos: "LG", team: "Nevada", cls: "SR (RS)", owner: "CPU" },
+        { player: "Al Dunn", pos: "LG", team: "Michigan", cls: "JR", owner: "CPU" },
+        { player: "Will Larkins", pos: "C", team: "Georgia Tech", cls: "SR (RS)", owner: "CPU" },
+        { player: "Tyler Hilton", pos: "LG", team: "Buffalo", cls: "JR (RS)", owner: "CPU" },
+        { player: "James Durand", pos: "LG", team: "Wisconsin", cls: "SR (RS)", owner: "CPU" }
+      ],
+      "Rimington (Best C)": [
+        { player: "Lee Fe'esago", pos: "C", team: "Mizzou", cls: "JR", owner: "VonD" },
+        { player: "Will Larkins", pos: "C", team: "GT", cls: "SR (RS)", owner: "Ben" },
+        { player: "Jason Fayad", pos: "C", team: "Colorado", cls: "SO (RS)", owner: "CPU" },
+        { player: "Devin Brooks", pos: "C", team: "Oregon", cls: "JR (RS)", owner: "Carson" },
+        { player: "Percy Banks", pos: "C", team: "TAMU", cls: "SR (RS)", owner: "User" },
+        { player: "Sam Pendleton", pos: "C", team: "ND", cls: "SR (RS)", owner: "CPU" },
+        { player: "Joe Otting", pos: "C", team: "ND", cls: "SR (RS)", owner: "CPU" },
+        { player: "Cooper Cousins", pos: "C", team: "Penn St", cls: "JR (RS)", owner: "CPU" },
+        { player: "Grant Brix", pos: "C", team: "Nebraska", cls: "JR (RS)", owner: "Carter" },
+        { player: "Troy Bulaga", pos: "C", team: "UCLA", cls: "SO (RS)", owner: "CPU" },
+        { player: "Kade Martin", pos: "C", team: "UAB", cls: "JR (RS)", owner: "CPU" },
+        { player: "Jackson Ruess", pos: "C", team: "Ball State", cls: "SR (RS)", owner: "CPU" }
+      ],
+      "Hendricks (Best DE)": [
+        { player: "Marquise Lightfoot", pos: "RE", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Jordan Allen", pos: "LE", team: "TCU", cls: "SR (RS)", owner: "Tre" },
+        { player: "Leati Little", pos: "LE", team: "GT", cls: "JR", owner: "Ben" },
+        { player: "Colin Simmons", pos: "LE", team: "TAMU", cls: "SR", owner: "Chris" },
+        { player: "Amondo Blount", pos: "LE", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Derion Gullette", pos: "RE", team: "TAMU", cls: "SR (RS)", owner: "User" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Kevin O'Connor", pos: "RE", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Braylon Rigsby", pos: "RE", team: "TTU", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Amaree Williams", pos: "RE", team: "Florida St", cls: "JR (RS)", owner: "Logan" },
+        { player: "Joe Nelson", pos: "RE", team: "Stanford", cls: "JR (RS)", owner: "CPU" }
+      ],
+      "Lombardi (Best DL)": [
+        { player: "Marquise Lightfoot", pos: "RE", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Jordan Allen", pos: "LE", team: "TCU", cls: "SR (RS)", owner: "Tre" },
+        { player: "Colin Simmons", pos: "LE", team: "TAMU", cls: "SR", owner: "Chris" },
+        { player: "Amondo Blount", pos: "LE", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Derion Gullette", pos: "RE", team: "TAMU", cls: "SR (RS)", owner: "User" },
+        { player: "Leati Little", pos: "LE", team: "GT", cls: "JR", owner: "Ben" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Kevin O'Connor", pos: "RE", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Amaree Williams", pos: "RE", team: "Florida St", cls: "JR (RS)", owner: "Logan" },
+        { player: "Braylon Rigsby", pos: "RE", team: "TTU", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Joe Nelson", pos: "RE", team: "Stanford", cls: "JR (RS)", owner: "CPU" }
+      ],
+      "Butkus (Best LB)": [
+        { player: "Asa Newsom", pos: "ROLB", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Frank Traham", pos: "MLB", team: "TAMU", cls: "JR", owner: "Chris" },
+        { player: "Kris Jones", pos: "ROLB", team: "Oklahoma", cls: "JR (RS)", owner: "User" },
+        { player: "Demarcus Riddick", pos: "ROLB", team: "Auburn", cls: "SR", owner: "Tyler R" },
+        { player: "Lynn Ankrah", pos: "LOLB", team: "Nebraska", cls: "SO (RS)", owner: "Carter" },
+        { player: "Hugh Benson", pos: "ROLB", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Peyton Morgan", pos: "MLB", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Justin Logan", pos: "ROLB", team: "GT", cls: "JR (RS)", owner: "Ben" },
+        { player: "JayR Johnson", pos: "MLB", team: "South Carolina", cls: "JR (RS)", owner: "Christian" },
+        { player: "Joel Giacobbe", pos: "LOLB", team: "Miami", cls: "JR", owner: "Zach" },
+        { player: "Dahvon Keys", pos: "MLB", team: "LSU", cls: "JR (RS)", owner: "CPU" },
+        { player: "Abram Robertson", pos: "ROLB", team: "Oregon St", cls: "JR (RS)", owner: "Alec" }
+      ],
+      "Bednarik (Best Defensive Player)": [
+        { player: "Marquise Lightfoot", pos: "RE", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Asa Newsom", pos: "ROLB", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Jordan Allen", pos: "LE", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Leati Little", pos: "LE", team: "GT", cls: "JR", owner: "Ben" },
+        { player: "Colin Simmons", pos: "LE", team: "TAMU", cls: "SR", owner: "User" },
+        { player: "Armondo Blount", pos: "LE", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Derion Gullette", pos: "RE", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Kevin O'Connor", pos: "RE", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Kris Jones", pos: "ROLB", team: "Oklahoma", cls: "JR (RS)", owner: "User" },
+        { player: "Frank Trahan", pos: "MLB", team: "TAMU", cls: "JR", owner: "Chris" }
+      ],
+      "Thorpe (Best DB)": [
+        { player: "Jayvon Thomas", pos: "CB", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Braxton Myers", pos: "CB", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Devondre McGee", pos: "SS", team: "TAMU", cls: "JR (RS)", owner: "Chris" },
+        { player: "Robert Stafford", pos: "CB", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Kaleb Hale", pos: "CB", team: "TTU", cls: "SO (RS)", owner: "Jordan" },
+        { player: "Evan Taylor", pos: "CB", team: "Nebraska", cls: "JR (RS)", owner: "Carter" },
+        { player: "Sean Priest", pos: "CB", team: "Washington", cls: "SO", owner: "Chase" },
+        { player: "Jordan Pride", pos: "FS", team: "TAMU", cls: "JR (RS)", owner: "Chris" },
+        { player: "Myles Davis", pos: "SS", team: "TAMU", cls: "SR", owner: "Chris" },
+        { player: "Jermaine Andrews", pos: "CB", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Zaquan Patterson", pos: "FS", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Kurt Fritts", pos: "CB", team: "Minnesota", cls: "SR", owner: "Nolan" }
+      ],
+      "Best ST Returner": [
+        { player: "No users in top 12", team: "" }
+      ]
+    }
+  },
+  2028: {
+    allAmericans: [
+      { pos: "QB", rank: 1, player: "John White", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+      { pos: "QB", rank: 2, player: "Rashawn Abimiri", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+      { pos: "HB", rank: 1, player: "Erik Bridge", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
+      { pos: "HB", rank: 1, player: "Tevita Kemoeatu", team: "Fresno St", cls: "SR", owner: "User" },
+      { pos: "HB", rank: 2, player: "Jordan Washington", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+      { pos: "HB", rank: 2, player: "Caleb Largo", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+      { pos: "WR", rank: 1, player: "Marvin Dykes", team: "Boise St", cls: "SR", owner: "Jason" },
+      { pos: "WR", rank: 1, player: "Kevynn Ballage", team: "Miami", cls: "SR", owner: "Zach" },
+      { pos: "WR", rank: 1, player: "Damarr Baker", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+      { pos: "WR", rank: 2, player: "Bredell Richardson", team: "UCF", cls: "SR (RS)", owner: "CPU" },
+      { pos: "WR", rank: 2, player: "Malcolm Simmons", team: "Auburn", cls: "SR (RS)", owner: "Tyler" },
+      { pos: "WR", rank: 2, player: "Kerry Love", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+      { pos: "TE", rank: 1, player: "Daryll Aldrich", team: "Southern Miss", cls: "FR", owner: "User" },
+      { pos: "TE", rank: 2, player: "Ja'Mario Talbot", team: "Minnesota", cls: "FR", owner: "Nolan" },
+      { pos: "LT", rank: 1, player: "Jack Small", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+      { pos: "LT", rank: 2, player: "Nick Pratt", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+      { pos: "LG", rank: 1, player: "Ty Fort", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+      { pos: "LG", rank: 2, player: "David Griggs", team: "Miami", cls: "SR", owner: "Zach" },
+      { pos: "C", rank: 1, player: "Kevin Braham", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+      { pos: "C", rank: 2, player: "DeVonte Reinbolt", team: "Kansas State", cls: "JR (RS)", owner: "Tre" },
+      { pos: "RG", rank: 1, player: "Alex Scioli", team: "Washington", cls: "JR (RS)", owner: "Chase" },
+      { pos: "RG", rank: 2, player: "Kobe Branham", team: "Arkansas", cls: "SR (RS)", owner: "Tyler" },
+      { pos: "RT", rank: 1, player: "Alex Bradley", team: "San Jose St", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RT", rank: 2, player: "Ahmad Breida", team: "Ohio St", cls: "JR (RS)", owner: "User" },
+      { pos: "LE", rank: 1, player: "Whitefield Powell", team: "Kansas", cls: "SR (RS)", owner: "CPU" },
+      { pos: "LE", rank: 2, player: "Kendal Brown", team: "Charlotte", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RE", rank: 1, player: "Alex Bradley", team: "San Jose St", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RE", rank: 2, player: "Dalton Hamm", team: "Nebraska", cls: "SO (RS)", owner: "Carter" },
+      { pos: "DT", rank: 1, player: "Josh Hopper", team: "Minnesota", cls: "SR (RS)", owner: "Nolan" },
+      { pos: "DT", rank: 1, player: "Nicholas Trahan", team: "Georgia Tech", cls: "SR", owner: "Ben" },
+      { pos: "DT", rank: 2, player: "Ben Latimer", team: "Southern Miss", cls: "JR (RS)", owner: "User" },
+      { pos: "DT", rank: 2, player: "Marcus Downs", team: "UCF", cls: "SR (RS)", owner: "CPU" },
+      { pos: "LOLB", rank: 1, player: "Joel Giacobbe", team: "Miami", cls: "SR", owner: "Zach" },
+      { pos: "LOLB", rank: 2, player: "Tylen Singleton", team: "Virginia Tech", cls: "SR", owner: "CPU" },
+      { pos: "MLB", rank: 1, player: "Ryan Holliday", team: "Washington", cls: "SR", owner: "Chase" },
+      { pos: "MLB", rank: 2, player: "Payton Morgan", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+      { pos: "ROLB", rank: 1, player: "Sean Calmelat", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+      { pos: "ROLB", rank: 2, player: "Justin Logan", team: "GT", cls: "SR (RS)", owner: "Ben" },
+      { pos: "CB", rank: 1, player: "Cai Bates", team: "Florida St", cls: "SR (RS)", owner: "Logan" },
+      { pos: "CB", rank: 1, player: "Bernard Connell", team: "Utah", cls: "SR (RS)", owner: "User" },
+      { pos: "CB", rank: 2, player: "Marcelles Williams", team: "Rutgers", cls: "SR (RS)", owner: "CPU" },
+      { pos: "CB", rank: 2, player: "Jaylen Mbakwe", team: "TAMU", cls: "SR", owner: "Chris" },
+      { pos: "FS", rank: 1, player: "Zack Myers", team: "Sam Houston", cls: "SR (RS)", owner: "CPU" },
+      { pos: "FS", rank: 2, player: "Xavier Squires", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+      { pos: "SS", rank: 1, player: "Vontae Floyd", team: "Duke", cls: "JR (RS)", owner: "CPU" },
+      { pos: "SS", rank: 2, player: "Colton Hood", team: "Nebraska", cls: "SR (RS)", owner: "Carter" }
+    ],
+    awards: {
+      "Heisman": [
+        { player: "Daryll Aldrich", pos: "TE", team: "Southern Miss", cls: "FR", owner: "User" },
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Erik Bridge", pos: "HB", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
+        { player: "Tevita Kemoeatu", pos: "HB", team: "Fresno St", cls: "SR", owner: "User" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "SR", owner: "Mitch" },
+        { player: "Taylor Tatum", pos: "HB", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "Joel Giacobbe", pos: "LOLB", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Caleb Largo", pos: "HB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Jordan Washington", pos: "HB", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+        { player: "Marvin Dykes", pos: "WR", team: "Boise St", cls: "SR", owner: "Jason" },
+        { player: "Allen Fasano", pos: "RE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Rashawn Abimiri", pos: "QB", team: "Tennessee", cls: "JR (RS)", owner: "Will" }
+      ],
+      "Coach of the Year": [
+        { player: "", team: "Fresno St" },
+        { player: "", team: "Duke" },
+        { player: "", team: "TAMU" },
+        { player: "", team: "Oklahoma" },
+        { player: "", team: "Washington" },
+        { player: "", team: "Southern Mississippi" },
+        { player: "", team: "Nebraska" },
+        { player: "", team: "Colorado St" },
+        { player: "", team: "Utah" },
+        { player: "", team: "Miami" },
+        { player: "", team: "Texas Tech" },
+        { player: "", team: "FAU" }
+      ],
+      "O'Brien (Best QB)": [
+        { player: "Rashawn Abiamiri", pos: "QB", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "John White", pos: "QB", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Darrelle Bowie", pos: "QB", team: "Duke", cls: "FR (RS)", owner: "Mitch" },
+        { player: "Kemani Horne", pos: "QB", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Dallas Yates", pos: "QB", team: "Nebraska", cls: "SO", owner: "Carter" },
+        { player: "Isaiah Marshall", pos: "QB", team: "Toledo", cls: "SR (RS)", owner: "CPU" },
+        { player: "Matthias Williams", pos: "QB", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+        { player: "Jose Pianalto", pos: "QB", team: "TAMU", cls: "JR (RS)", owner: "Chris" },
+        { player: "Josh Remigio", pos: "QB", team: "Iowa State", cls: "SR", owner: "CPU" },
+        { player: "Brendan Zurbrugg", pos: "QB", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "AJ Surace", pos: "QB", team: "Rutgers", cls: "SR (RS)", owner: "CPU" },
+        { player: "Jacques Westbrook", pos: "QB", team: "Buffalo", cls: "JR (RS)", owner: "CPU" }
+      ],
+      "Doak Walker (Best RB)": [
+        { player: "Erik Bridge", pos: "HB", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
+        { player: "Taylor Tatum", pos: "HB", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "Tevita Kemoeatu", pos: "HB", team: "Fresno St", cls: "SR", owner: "User" },
+        { player: "Caleb Largo", pos: "HB", team: "TTU", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Jordan Washington", pos: "HB", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+        { player: "Anthony Massey", pos: "HB", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Deon Chamberlin", pos: "HB", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "James Peoples", pos: "HB", team: "South Carolina", cls: "SR", owner: "Christian" },
+        { player: "Dylan Riley", pos: "HB", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
+        { player: "Chris Wheatley-Humphrey", pos: "HB", team: "Utah", cls: "SR (RS)", owner: "User" },
+        { player: "Isaiah Cobbs", pos: "HB", team: "Wazzu", cls: "SR (RS)", owner: "Samuel" },
+        { player: "Wayshawn Parker", pos: "HB", team: "Wazzu", cls: "SR (RS)", owner: "Samuel" }
+      ],
+      "Bednarik (Best WR)": [
+        { player: "Marvin Dykes", pos: "WR", team: "Boise St", cls: "SR", owner: "Jason" },
+        { player: "Kevynn Ballage", pos: "WR", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Damarr Richardson", pos: "WR", team: "Miami", cls: "JR (RS)", owner: "Zach" },
+        { player: "Bredell Richardson", pos: "WR", team: "UCF", cls: "SR (RS)", owner: "CPU" },
+        { player: "Kerry Love", pos: "WR", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Heath Johns", pos: "WR", team: "UConn", cls: "SR", owner: "CPU" },
+        { player: "Trey Horne", pos: "WR", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Gabe Lund", pos: "WR", team: "Hawaii", cls: "SO (RS)", owner: "CPU" },
+        { player: "TJ Abrams", pos: "WR", team: "Virginia Tech", cls: "SR", owner: "CPU" },
+        { player: "Malcolm Simmons", pos: "WR", team: "Auburn", cls: "SR (RS)", owner: "Tyler" },
+        { player: "Archer Higbee", pos: "WR", team: "App State", cls: "JR (RS)", owner: "CPU" },
+        { player: "Quentin Lefotu", pos: "WR", team: "Oklahoma", cls: "JR (RS)", owner: "Brennan" }
+      ],
+      "Mackey (Best TE)": [
+        { player: "Daryll Aldrich", pos: "TE", team: "Southern Miss", cls: "FR", owner: "User" },
+        { player: "K.C. Takeoff", pos: "TE", team: "TAMU", cls: "JR (RS)", owner: "Chris" },
+        { player: "Ja'Mario Talbot", pos: "TE", team: "Minnesota", cls: "FR", owner: "Nolan" },
+        { player: "Quincy Weeks", pos: "TE", team: "Duke", cls: "SO (RS)", owner: "Mitch" },
+        { player: "Alex Polanco", pos: "TE", team: "Texas Tech", cls: "FR", owner: "Jordan" },
+        { player: "Tucker Draft", pos: "TE", team: "Washington", cls: "FR", owner: "Chase" },
+        { player: "Harrison Bolan", pos: "TE", team: "Louisville", cls: "SR (RS)", owner: "Cael" },
+        { player: "Isaiah Penny", pos: "TE", team: "South Carolina", cls: "JR (RS)", owner: "Christian" },
+        { player: "Marquis Melveaux", pos: "TE", team: "Arkansas", cls: "JR (RS)", owner: "Tyler" },
+        { player: "Ivan Carreon", pos: "TE", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "C.J. Graves", pos: "TE", team: "Notre Dame", cls: "JR", owner: "CPU" },
+        { player: "Kevin Carden", pos: "TE", team: "Colorado St", cls: "JR", owner: "CPU" }
+      ],
+      "Outland (Best IOL)": [
+        { player: "Ty Fort", pos: "LG", team: "GT", cls: "JR (RS)", owner: "Ben" },
+        { player: "Alex Scioli", pos: "RG", team: "Washington", cls: "JR (RS)", owner: "Chase" },
+        { player: "David Griggs", pos: "LG", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "AJ Burtgon", pos: "LG", team: "Iowa St", cls: "SR (RS)", owner: "CPU" },
+        { player: "Grant Brix", pos: "C", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Rakeem Johnson", pos: "LG", team: "Michigan St", cls: "SR (RS)", owner: "CPU" },
+        { player: "John Okuyemi", pos: "RG", team: "SMU", cls: "JR", owner: "CPU" },
+        { player: "Kelton Smith Jr", pos: "RG", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Iosefa Choy", pos: "LG", team: "Fresno St", cls: "SO (RS)", owner: "User" },
+        { player: "Anthonie Knapp", pos: "LG", team: "ND", cls: "SR (RS)", owner: "CPU" },
+        { player: "Rayshon Ashe", pos: "LG", team: "Temple", cls: "JR (RS)", owner: "CPU" },
+        { player: "Tyler Hilton", pos: "LG", team: "Buffalo", cls: "SR (RS)", owner: "CPU" }
+      ],
+      "Rimington (Best C)": [
+        { player: "Grant Brix", pos: "C", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Louis Johns", pos: "C", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Greg Cargile", pos: "C", team: "BYU", cls: "SO (RS)", owner: "User" },
+        { player: "Eric Tinker", pos: "C", team: "TAMU", cls: "JR (RS)", owner: "Chris" },
+        { player: "Deandre Hook", pos: "C", team: "Louisville", cls: "JR (RS)", owner: "Cael" },
+        { player: "Kevin Braham", pos: "C", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+        { player: "Kona Salave'a", pos: "C", team: "Washington", cls: "SO (RS)", owner: "Chase" },
+        { player: "Dallas Ingold", pos: "C", team: "Utah", cls: "SR (RS)", owner: "User" },
+        { player: "Jason Zandamela", pos: "C", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Dell Smith", pos: "C", team: "Buffalo", cls: "SO (RS)", owner: "CPU" },
+        { player: "Javier Rivero", pos: "C", team: "USC", cls: "JR", owner: "CPU" },
+        { player: "Johnny Epstein", pos: "C", team: "Ohio", cls: "JR (RS)", owner: "CPU" }
+      ],
+      "Hendricks (Best DE)": [
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Allen Fasano", pos: "RE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Wyatt Gilmore", pos: "LE", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "Devon Baxter", pos: "RE", team: "Michigan", cls: "SR (RS)", owner: "CPU" },
+        { player: "Tucker Mixon", pos: "RE", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Leati Little", pos: "LE", team: "Georgia Tech", cls: "SR", owner: "Ben" },
+        { player: "Chad Wiseman", pos: "RE", team: "Nebraska", cls: "JR (RS)", owner: "Carter" },
+        { player: "Jalen Owens", pos: "LE", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Nigel Smith II", pos: "RE", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "Evan Aviles", pos: "LE", team: "Tennessee", cls: "SO (RS)", owner: "Will" },
+        { player: "Dalton Hamm", pos: "LE", team: "Nebraska", cls: "SO (RS)", owner: "Carter" }
+      ],
+      "Lombardi (Best DL)": [
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Allen Fasano", pos: "RE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Wyatt Gilmore", pos: "LE", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "Devon Baxter", pos: "RE", team: "Michigan", cls: "SR (RS)", owner: "CPU" },
+        { player: "Tucker Mixon", pos: "RE", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Chad Wiseman", pos: "RE", team: "Nebraska", cls: "JR (RS)", owner: "Carter" },
+        { player: "Leati Little", pos: "LE", team: "Georgia Tech", cls: "SR", owner: "Ben" },
+        { player: "Ramon Cuevas", pos: "RE", team: "Nebraska", cls: "JR", owner: "Carter" },
+        { player: "Dalton Hamm", pos: "RE", team: "Nebraska", cls: "SO (RS)", owner: "Carter" },
+        { player: "Jalen Owens", pos: "LE", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Nigel Smith II", pos: "RE", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" }
+      ],
+      "Butkus (Best LB)": [
+        { player: "Joel Giacobbe", pos: "LOLB", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Arthur Rainey", pos: "LOLB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Peyton Morgan", pos: "MLB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Ryan Holliday", pos: "MLB", team: "Washington", cls: "SR", owner: "Chase" },
+        { player: "Kris Jones", pos: "ROLB", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "Hugh Benson", pos: "ROLB", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Chuck Gilliam", pos: "MLB", team: "Duke", cls: "SO (RS)", owner: "Mitch" },
+        { player: "Damien Sweet", pos: "ROLB", team: "Utah", cls: "SR", owner: "User" },
+        { player: "Kamal Bonner", pos: "ROLB", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Jose Coronado", pos: "ROLB", team: "Southern Mississippi", cls: "SR", owner: "User" },
+        { player: "Jalen Baity", pos: "MLB", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Frank Trahan", pos: "MLB", team: "TAMU", cls: "SR", owner: "Chris" }
+      ],
+      "Bednarik (Best Defensive Player)": [
+        { player: "Jordan Ross", pos: "RE", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Kobe Smith", pos: "LE", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Joel Giacobbe", pos: "LOLB", team: "Miami", cls: "SR", owner: "Zach" },
+        { player: "Allen Fasano", pos: "RE", team: "Duke", cls: "JR (RS)", owner: "Mitch" },
+        { player: "Arthur Rainey", pos: "LOLB", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Ryan Holliday", pos: "MLB", team: "Washington", cls: "SR", owner: "Chase" },
+        { player: "Kris Jones", pos: "ROLB", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "Peyton Morgan", pos: "MLB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Hugh Benson", pos: "ROLB", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Wyatt Gilmore", pos: "LE", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "Sean Priest", pos: "CB", team: "Washington", cls: "JR", owner: "Chase" },
+        { player: "Chuck Gilliam", pos: "MLB", team: "Duke", cls: "SO (RS)", owner: "Mitch" }
+      ],
+      "Thorpe (Best DB)": [
+        { player: "Devondre McGee", pos: "SS", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Sean Priest", pos: "CB", team: "Washington", cls: "JR", owner: "Chase" },
+        { player: "Robert Doss", pos: "CB", team: "Nebraska", cls: "SO (RS)", owner: "Carter" },
+        { player: "Dylan Day", pos: "SS", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "P.J. Bragg", pos: "SS", team: "Oklahoma", cls: "SO (RS)", owner: "Brennan" },
+        { player: "Braxton Harris", pos: "SS", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Isaiah Collins", pos: "CB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Eric Bootle", pos: "SS", team: "TAMU", cls: "SO (RS)", owner: "Chris" },
+        { player: "Isaac Prince", pos: "CB", team: "Miami", cls: "SO (RS)", owner: "Zach" },
+        { player: "Jaylen Mbakwe", pos: "CB", team: "TAMU", cls: "SR", owner: "Chris" },
+        { player: "Vontae Floyd", pos: "SS", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+        { player: "Kaleb Hale", pos: "CB", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" }
+      ],
+      "Best ST Returner": [
+        { player: "DeMarcus Compton", pos: "HB", team: "Kansas St", cls: "SR (RS)", owner: "Tre" },
+        { player: "Quincy Ofodile", pos: "WR", team: "TAMU", cls: "FR", owner: "Chris" },
+        { player: "Tony Homez", pos: "WR", team: "TCU", cls: "JR (RS)", owner: "Cole" },
+        { player: "Jay Jay Etheridge", pos: "WR", team: "Air Force", cls: "SR", owner: "CPU" },
+        { player: "Dennis Trimble", pos: "WR", team: "Texas Tech", cls: "FR (RS)", owner: "Jordan" },
+        { player: "Bryce Carr", pos: "WR", team: "NC State", cls: "SO", owner: "CPU" },
+        { player: "Tank Hawkins", pos: "WR", team: "Ohio St", cls: "SR (RS)", owner: "User" },
+        { player: "Vince Proctor", pos: "HB", team: "Charlotte", cls: "JR", owner: "CPU" },
+        { player: "Josh Philostin", pos: "CB", team: "Indiana", cls: "SR (RS)", owner: "User" },
+        { player: "Zeed Havnes", pos: "WR", team: "Penn St", cls: "SR (RS)", owner: "CPU" },
+        { player: "Alex Taylor", pos: "WR", team: "North Carolina", cls: "SR (RS)", owner: "CPU" },
+        { player: "Raekwon Pounds", pos: "WR", team: "Duke", cls: "FR (RS)", owner: "Mitch" }
+      ]
+    }
+  },
+  2029: {
+    allAmericans: [
+      { pos: "QB", rank: 1, player: "Rashawn Abimiri", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+      { pos: "QB", rank: 2, player: "Santiago Esposito", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+      { pos: "HB", rank: 1, player: "Ron Warfield", team: "Minnesota", cls: "SR (RS)", owner: "Nolan" },
+      { pos: "HB", rank: 1, player: "Ashton Jeanty II", team: "Boise St", cls: "SR", owner: "Jason" },
+      { pos: "HB", rank: 2, player: "Erik Bridge", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
+      { pos: "HB", rank: 2, player: "Caden Durham", team: "Texas Tech", cls: "SR", owner: "Jordan" },
+      { pos: "WR", rank: 1, player: "Jason Rutter", team: "Tennessee", cls: "FR (RS)", owner: "Will" },
+      { pos: "WR", rank: 1, player: "Ross Leo", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+      { pos: "WR", rank: 1, player: "Kam Mikell", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+      { pos: "WR", rank: 2, player: "Nitro Tuggle", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+      { pos: "WR", rank: 2, player: "Cordale Russell", team: "Toledo", cls: "SR (RS)", owner: "CPU" },
+      { pos: "WR", rank: 2, player: "Terrell Mallory", team: "Akron", cls: "FR (RS)", owner: "CPU" },
+      { pos: "TE", rank: 1, player: "Daryll Aldrich", team: "Southern Miss", cls: "SO", owner: "User" },
+      { pos: "TE", rank: 2, player: "Tucker Draft", team: "Washington", cls: "SO", owner: "Chase" },
+      { pos: "LT", rank: 1, player: "Garrison Cherelus", team: "Ohio St", cls: "SR (RS)", owner: "User" },
+      { pos: "LT", rank: 2, player: "Zach Cantwell", team: "Georgia", cls: "SR (RS)", owner: "CPU" },
+      { pos: "LG", rank: 1, player: "Ty Fort", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+      { pos: "LG", rank: 2, player: "Antwuan Howard", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+      { pos: "C", rank: 1, player: "DeAndre Hook", team: "Louisville", cls: "SR (RS)", owner: "Cael" },
+      { pos: "C", rank: 2, player: "Kevin Braham", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+      { pos: "RG", rank: 1, player: "Gideon Okorafor", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+      { pos: "RG", rank: 2, player: "Alex Scioli", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+      { pos: "RT", rank: 1, player: "Joey Newhouse", team: "Michigan", cls: "SR (RS)", owner: "CPU" },
+      { pos: "RT", rank: 2, player: "Fetu Silatolu", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+      { pos: "LE", rank: 1, player: "Chad Wiseman", team: "Nebraska", cls: "SR (RS)", owner: "CPU" },
+      { pos: "LE", rank: 2, player: "Whitefield Powell", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+      { pos: "RE", rank: 1, player: "Tucker Mixon", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+      { pos: "RE", rank: 2, player: "Malachi Wrice", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+      { pos: "DT", rank: 1, player: "Sam Street", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+      { pos: "DT", rank: 1, player: "Mitch Sanders", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
+      { pos: "DT", rank: 2, player: "Trent Devoe", team: "South Carolina", cls: "JR (RS)", owner: "Christian" },
+      { pos: "DT", rank: 2, player: "Ben Latimer", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+      { pos: "LOLB", rank: 1, player: "Jason Kuechly", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
+      { pos: "LOLB", rank: 2, player: "DaWann Smalls", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+      { pos: "MLB", rank: 1, player: "Lynn Ankrah", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+      { pos: "MLB", rank: 2, player: "Mateo Comella", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+      { pos: "ROLB", rank: 1, player: "Maxwell Richardson", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+      { pos: "ROLB", rank: 2, player: "Sean Calmelat", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+      { pos: "CB", rank: 1, player: "Tylen Singleton", team: "Southern Miss", cls: "SR", owner: "User" },
+      { pos: "CB", rank: 1, player: "Sean Priest", team: "Washington", cls: "SR", owner: "Chase" },
+      { pos: "CB", rank: 2, player: "Treyvon Aviles", team: "Georgia", cls: "SR (RS)", owner: "CPU" },
+      { pos: "CB", rank: 2, player: "Nick Rich", team: "Houston", cls: "SR (RS)", owner: "CPU" },
+      { pos: "FS", rank: 1, player: "Zack Myers", team: "Southern Miss", cls: "SR (RS)", owner: "CPU" },
+      { pos: "FS", rank: 2, player: "Quentin Reddish", team: "Charlotte", cls: "SR (RS)", owner: "CPU" },
+      { pos: "SS", rank: 1, player: "Manny Carlos", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+      { pos: "SS", rank: 2, player: "Collin McLauring", team: "Penn St", cls: "JR (RS)", owner: "Cole" }
+    ],
+    awards: {
+      "Heisman": [
+        { player: "Rashawn Abimiri", pos: "QB", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Sean Priest", pos: "CB", team: "Washington", cls: "SR", owner: "Chase" },
+        { player: "Jason Rutter", pos: "WR", team: "Tennessee", cls: "FR (RS)", owner: "Will" },
+        { player: "Erik Bridge", pos: "HB", team: "Nebraska", cls: "SO (RS)", owner: "Carter" },
+        { player: "Ron Warfield", pos: "HB", team: "Minnesota", cls: "SR (RS)", owner: "Nolan" },
+        { player: "Ashton Jeanty II", pos: "HB", team: "Boise St", cls: "SR", owner: "Jason" },
+        { player: "Caden Durham", pos: "HB", team: "Texas Tech", cls: "SR", owner: "Jordan" },
+        { player: "Melvin Hagans", pos: "MLB", team: "Washington", cls: "SO (RS)", owner: "Chase" },
+        { player: "Santiago Esposito", pos: "QB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Dallas Yates", pos: "QB", team: "Nebraska", cls: "JR", owner: "Carter" },
+        { player: "Malachi Wrice", pos: "RE", team: "Southern Mississippi", cls: "SR (RS)", owner: "User" },
+        { player: "Ross Leo", pos: "WR", team: "Kansas St", cls: "JR (RS)", owner: "Tre" }
+      ],
+      "Coach of the Year": [
+        { player: "", team: "Washington" },
+        { player: "", team: "Nebraska" },
+        { player: "", team: "Tennessee" },
+        { player: "", team: "BYU" },
+        { player: "", team: "Miami" },
+        { player: "", team: "Alabama" },
+        { player: "", team: "Texas Tech" },
+        { player: "", team: "Georgia Tech" },
+        { player: "", team: "Arkansas St" },
+        { player: "", team: "UTSA" },
+        { player: "", team: "Middle Tennessee St" },
+        { player: "", team: "Cal" }
+      ],
+      "O'Brien (Best QB)": [
+        { player: "Rashawn Abiamiri", pos: "QB", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Santiago Esposito", pos: "QB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Dallas Yates", pos: "QB", team: "Nebraska", cls: "JR", owner: "Carter" },
+        { player: "Matt Glickowski", pos: "QB", team: "Cal", cls: "SR (RS)", owner: "CPU" },
+        { player: "Matthias Williams", pos: "QB", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Diondre Parris", pos: "QB", team: "South Carolina", cls: "SO", owner: "Christian" },
+        { player: "Barry Capps", pos: "QB", team: "NIU", cls: "SR (RS)", owner: "CPU" },
+        { player: "Coco Canaday", pos: "QB", team: "East Carolina", cls: "JR (RS)", owner: "CPU" },
+        { player: "Enrique Peacock", pos: "QB", team: "FIU", cls: "SR (RS)", owner: "CPU" },
+        { player: "Melvin Smoot", pos: "QB", team: "Ohio St", cls: "SR (RS)", owner: "User" },
+        { player: "Jeremy Foster", pos: "QB", team: "Middle Tennessee St", cls: "SR (RS)", owner: "CPU" },
+        { player: "Nathan Samuel", pos: "QB", team: "Troy", cls: "SO (RS)", owner: "CPU" }
+      ],
+      "Doak Walker (Best RB)": [
+        { player: "Ashton Jeanty II", pos: "HB", team: "Boise St", cls: "SR", owner: "Jason" },
+        { player: "Ron Warfield", pos: "HB", team: "Minnesota", cls: "SR (RS)", owner: "Nolan" },
+        { player: "Erik Bridge", pos: "HB", team: "Nebraska", cls: "SO (RS)", owner: "Carter" },
+        { player: "Caden Durham", pos: "HB", team: "Texas Tech", cls: "SR", owner: "Jordan" },
+        { player: "James Rodenhauser", pos: "HB", team: "Ohio St", cls: "SR (RS)", owner: "User" },
+        { player: "Taylor Swift", pos: "HB", team: "BYU", cls: "SR (RS)", owner: "User" },
+        { player: "Adrian Benn", pos: "HB", team: "Washington", cls: "FR (RS)", owner: "Chase" },
+        { player: "Ben Doman", pos: "HB", team: "Georgia Tech", cls: "SR", owner: "Ben" },
+        { player: "Mitch Tutt", pos: "HB", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Branden Malveaux", pos: "HB", team: "Arkansas", cls: "SR (RS)", owner: "Tyler" },
+        { player: "Earl Strange", pos: "HB", team: "Alabama", cls: "SO (RS)", owner: "User" },
+        { player: "Anthony Massey", pos: "HB", team: "Miami", cls: "SR (RS)", owner: "Zach" }
+      ],
+      "Bednarik (Best WR)": [
+        { player: "Jason Rutter", pos: "WR", team: "Tennessee", cls: "FR (RS)", owner: "Will" },
+        { player: "Ross Leo", pos: "WR", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+        { player: "Kam Mikell", pos: "WR", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Nitro Tuggle", pos: "WR", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "Cordale Russell", pos: "WR", team: "Toledo", cls: "SR (RS)", owner: "CPU" },
+        { player: "Shane Cantwell", pos: "WR", team: "Nebraska", cls: "JR (RS)", owner: "Carter" },
+        { player: "Terrell Mallory", pos: "WR", team: "Akron", cls: "FR (RS)", owner: "CPU" },
+        { player: "Fernando Alonso", pos: "WR", team: "UTSA", cls: "SR (RS)", owner: "CPU" },
+        { player: "Bryce Carr", pos: "WR", team: "NC State", cls: "JR", owner: "CPU" },
+        { player: "T.J. Newton", pos: "WR", team: "South Carolina", cls: "JR (RS)", owner: "Christian" },
+        { player: "Channing Egan", pos: "WR", team: "Georgia Tech", cls: "SR", owner: "Ben" },
+        { player: "Quincy Ofodile", pos: "WR", team: "TAMU", cls: "SO", owner: "Chris" }
+      ],
+      "Mackey (Best TE)": [
+        { player: "Daryll Aldrich", pos: "TE", team: "Southern Miss", cls: "SO", owner: "User" },
+        { player: "Tucker Draft", pos: "TE", team: "Washington", cls: "SO", owner: "Chase" },
+        { player: "Ja'Mario Talbot", pos: "TE", team: "Minnesota", cls: "SO", owner: "Nolan" },
+        { player: "Alex Polanco", pos: "TE", team: "Texas Tech", cls: "SO", owner: "Jordan" },
+        { player: "Jeremy Shockey Jr.", pos: "TE", team: "Miami", cls: "FR", owner: "Zach" },
+        { player: "Isaiah Penny", pos: "TE", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+        { player: "K.C. Takeoff", pos: "TE", team: "TAMU", cls: "SR (RS)", owner: "Chris" },
+        { player: "Larry Stead", pos: "TE", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
+        { player: "Dillon Hipp", pos: "TE", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Enrique Saavedra", pos: "TE", team: "Alabama", cls: "SR", owner: "User" },
+        { player: "Reshard Ogletree", pos: "TE", team: "Washington", cls: "SR", owner: "Chase" },
+        { player: "De'Angelo Balogh", pos: "TE", team: "Florida St", cls: "SO", owner: "Logan" }
+      ],
+      "Outland (Best IOL)": [
+        { player: "Alex Scioli", pos: "RG", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+        { player: "Ty Fort", pos: "LG", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Deandre Hook", pos: "C", team: "Louisville", cls: "SR (RS)", owner: "Cael" },
+        { player: "Adrian McCarthy", pos: "RG", team: "Charlotte", cls: "SO (RS)", owner: "CPU" },
+        { player: "Donte Badie", pos: "LG", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+        { player: "John Enemkpali", pos: "C", team: "Penn St", cls: "SR", owner: "Cole" },
+        { player: "Greg Cargile", pos: "C", team: "BYU", cls: "JR (RS)", owner: "Samuel" },
+        { player: "AJ Burton", pos: "LG", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Kevin Braham", pos: "C", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Troy Bulaga", pos: "C", team: "UCLA", cls: "SR (RS)", owner: "CPU" },
+        { player: "Sean McQueen", pos: "LG", team: "Duke", cls: "SR", owner: "Mitch" },
+        { player: "Avery Sweat", pos: "RG", team: "Arkansas", cls: "SR (RS)", owner: "Tyler" }
+      ],
+      "Rimington (Best C)": [
+        { player: "Deandre Hook", pos: "C", team: "Louisville", cls: "SR (RS)", owner: "Cael" },
+        { player: "John Enemkpali", pos: "C", team: "Penn St", cls: "SR", owner: "Cole" },
+        { player: "Greg Cargile", pos: "C", team: "BYU", cls: "JR (RS)", owner: "Samuel" },
+        { player: "Kevin Braham", pos: "C", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Troy Bulaga", pos: "C", team: "UCLA", cls: "SR (RS)", owner: "CPU" },
+        { player: "Miguel DeMarco", pos: "C", team: "Texas Tech", cls: "JR (RS)", owner: "Jordan" },
+        { player: "Vernon Gallimore", pos: "C", team: "South Carolina", cls: "SR", owner: "Christian" },
+        { player: "Louis Johns", pos: "C", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Kona Salave'a", pos: "C", team: "Washington", cls: "JR (RS)", owner: "Chase" },
+        { player: "Johnny Epstein", pos: "C", team: "Ohio", cls: "SR (RS)", owner: "CPU" },
+        { player: "Leon Priest", pos: "C", team: "Alabama", cls: "SO (RS)", owner: "User" },
+        { player: "Tevin Keke", pos: "C", team: "Colorado", cls: "JR (RS)", owner: "CPU" }
+      ],
+      "Hendricks (Best DE)": [
+        { player: "Malachi Wrice", pos: "RE", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Whitefield Powell", pos: "LE", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Evan Aviles", pos: "LE", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Curtis Simpson", pos: "LE", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Chad Wiseman", pos: "LE", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Jermaine Chesson", pos: "RE", team: "Kentucky", cls: "JR", owner: "CPU" },
+        { player: "Jamie Burress", pos: "LE", team: "Ohio St", cls: "SR (RS)", owner: "User" },
+        { player: "John Ximines", pos: "RE", team: "TAMU", cls: "SO (RS)", owner: "Chris" },
+        { player: "Brooks McMahan", pos: "LE", team: "Boston College", cls: "JR (RS)", owner: "CPU" },
+        { player: "Bruce Wayne", pos: "RE", team: "Boise St", cls: "SO (RS)", owner: "Jason" },
+        { player: "Greg President", pos: "LE", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+        { player: "Charles Word", pos: "RE", team: "Air Force", cls: "SR (RS)", owner: "CPU" }
+      ],
+      "Lombardi (Best DL)": [
+        { player: "Malachi Wrice", pos: "RE", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Whitefield Powell", pos: "LE", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Evan Aviles", pos: "LE", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Curtis Simpson", pos: "LE", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Chad Wiseman", pos: "LE", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Jermaine Chesson", pos: "RE", team: "Kentucky", cls: "JR", owner: "CPU" },
+        { player: "Greg President", pos: "LE", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+        { player: "John Ximines", pos: "RE", team: "TAMU", cls: "SO (RS)", owner: "Chris" },
+        { player: "Jamie Burress", pos: "LE", team: "Ohio St", cls: "SR (RS)", owner: "User" },
+        { player: "Jaleel Mauch", pos: "RE", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+        { player: "Brooks McMahan", pos: "LE", team: "Boston College", cls: "JR (RS)", owner: "CPU" },
+        { player: "Bruce Wayne", pos: "RE", team: "Boise St", cls: "SO (RS)", owner: "Jason" }
+      ],
+      "Butkus (Best LB)": [
+        { player: "Melvin Hagans", pos: "MLB", team: "Washington", cls: "SO (RS)", owner: "Chase" },
+        { player: "Lynn Ankrah", pos: "MLB", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Connor Hampton", pos: "ROLB", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+        { player: "Major Sisk", pos: "ROLB", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Kylo Ren", pos: "ROLB", team: "Boise St", cls: "JR (RS)", owner: "Jason" },
+        { player: "Gideon Ugoh", pos: "LOLB", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+        { player: "Malik Carraway", pos: "ROLB", team: "Middle Tennessee St", cls: "SR", owner: "CPU" },
+        { player: "Gio Abbott", pos: "MLB", team: "Texas Tech", cls: "FR (RS)", owner: "Jordan" },
+        { player: "Jason Keuchly", pos: "LOLB", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
+        { player: "Nyles Soto", pos: "MLB", team: "Auburn", cls: "FR (RS)", owner: "Tyler R" },
+        { player: "Taylor Gano", pos: "ROLB", team: "Temple", cls: "JR", owner: "CPU" },
+        { player: "Darren Isaacs", pos: "ROLB", team: "TCU", cls: "SR (RS)", owner: "CPU" }
+      ],
+      "Bednarik (Best Defensive Player)": [
+        { player: "Sean Priest", pos: "CB", team: "Washington", cls: "SR", owner: "Chase" },
+        { player: "Melvin Hagans", pos: "MLB", team: "Washington", cls: "SO (RS)", owner: "Chase" },
+        { player: "Malachi Wrice", pos: "RE", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Whitefield Powell", pos: "LE", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+        { player: "Evan Aviles", pos: "LE", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+        { player: "Connor Hampton", pos: "ROLB", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+        { player: "Curtis Simpson", pos: "LE", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+        { player: "Lynn Ankrah", pos: "MLB", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Major Sisk", pos: "ROLB", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Kylo Ren", pos: "ROLB", team: "Boise St", cls: "JR (RS)", owner: "Jason" },
+        { player: "Angel Lawrence", pos: "CB", team: "Washington", cls: "SO (RS)", owner: "Chase" },
+        { player: "Chad Wiseman", pos: "LE", team: "Nebraska", cls: "SR (RS)", owner: "Carter" }
+      ],
+      "Thorpe (Best DB)": [
+        { player: "Sean Priest", pos: "CB", team: "Washington", cls: "SR", owner: "Chase" },
+        { player: "Angel Lawrence", pos: "CB", team: "Washington", cls: "SO (RS)", owner: "Chase" },
+        { player: "Sterling Fries", pos: "CB", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Jordan Ferrell", pos: "SS", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+        { player: "Alejandro Manderino", pos: "FS", team: "Miami", cls: "FR", owner: "Zach" },
+        { player: "Juan Portilla", pos: "CB", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+        { player: "Tim Baldridge", pos: "CB", team: "South Carolina", cls: "SO (RS)", owner: "Christian" },
+        { player: "Enrique Mili", pos: "CB", team: "Miami", cls: "SR (RS)", owner: "Zach" },
+        { player: "Max Brents", pos: "FS", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+        { player: "Cornell Folk", pos: "CB", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
+        { player: "Mr Mosby", pos: "CB", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
+        { player: "Joshua Momah", pos: "CB", team: "Washington", cls: "JR (RS)", owner: "Chase" }
+      ],
+      "Best ST Returner": [
+        { player: "Rudy Yearby", pos: "WR", team: "Texas Tech", cls: "FR", owner: "Jordan" },
+        { player: "Josh Scioli", pos: "WR", team: "Kansas St", cls: "FR", owner: "Tre" },
+        { player: "Freddie Dubose", pos: "WR", team: "Toledo", cls: "SR (RS)", owner: "CPU" },
+        { player: "Dexter Spillman", pos: "WR", team: "Arkansas", cls: "FR", owner: "Tyler C" },
+        { player: "Jameel Cleveland", pos: "HB", team: "UCLA", cls: "JR", owner: "CPU" },
+        { player: "Ramon Browning", pos: "WR", team: "Tulsa", cls: "SO", owner: "CPU" },
+        { player: "Deontay Mast", pos: "WR", team: "Texas", cls: "SO", owner: "CPU" },
+        { player: "Joshua Centeio", pos: "WR", team: "Alabama", cls: "SO (RS)", owner: "User" },
+        { player: "Jimmy Procter", pos: "WR", team: "Navy", cls: "SO", owner: "CPU" },
+        { player: "Quincy Ofodile", pos: "WR", team: "TAMU", cls: "SO", owner: "Chris" },
+        { player: "Stephen Blade", pos: "WR", team: "Miami (OH)", cls: "SO", owner: "CPU" },
+        { player: "Roman Longacre", pos: "WR", team: "Wisconsin", cls: "FR", owner: "CPU" }
+      ]
+    }
+  }
+};
 
 let state = load();
-let currentYear = 2025;
+let currentYear = 2024;
+let currentView = "all-americans";
 
 function load() {
   try {
@@ -343,12 +1761,13 @@ function load() {
   } catch (e) {}
   const init = { years: {} };
   YEARS.forEach(y => {
+    const seed = SEED[y];
     init.years[y] = {
-      allAmericans: y === 2025 ? SEED_2025.slice() : [],
-      individualAwards: {}
+      allAmericans: seed ? seed.allAmericans.slice() : [],
+      awards: {}
     };
-    INDIVIDUAL_AWARDS.forEach(a => {
-      init.years[y].individualAwards[a] = { winner: "", team: "" };
+    AWARDS.forEach(a => {
+      init.years[y].awards[a] = seed && seed.awards && seed.awards[a] ? seed.awards[a].slice() : [];
     });
   });
   return init;
@@ -364,6 +1783,14 @@ function toast(msg) {
   t.classList.add("show");
   clearTimeout(t._h);
   t._h = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll(".view-tab").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === v);
+  });
+  render();
 }
 
 function renderTabs() {
@@ -384,45 +1811,14 @@ function render() {
   if (!yearData) return;
   const panel = document.getElementById("panel");
   panel.innerHTML = "";
-
-  panel.appendChild(renderIndividualAwards(yearData));
-
-  SECTIONS.forEach(sec => {
-    panel.appendChild(renderSection(sec, yearData));
-  });
+  if (currentView === "all-americans") {
+    SECTIONS.forEach(sec => panel.appendChild(renderAASection(sec, yearData)));
+  } else {
+    panel.appendChild(renderAwards(yearData));
+  }
 }
 
-function renderIndividualAwards(yearData) {
-  const wrap = document.createElement("div");
-  wrap.className = "section";
-  wrap.innerHTML = `<h2>Individual Awards</h2>`;
-  const grid = document.createElement("div");
-  grid.className = "award-grid";
-  INDIVIDUAL_AWARDS.forEach(name => {
-    const card = document.createElement("div");
-    card.className = "award-card";
-    const data = yearData.individualAwards[name] || { winner: "", team: "" };
-    card.innerHTML = `
-      <div class="name">${name}</div>
-      <div class="winner" contenteditable="true" data-field="winner" data-award="${name}">${escape(data.winner)}</div>
-      <div class="team" contenteditable="true" data-field="team" data-award="${name}">${escape(data.team)}</div>
-    `;
-    grid.appendChild(card);
-  });
-  grid.addEventListener("blur", e => {
-    const t = e.target;
-    if (!t.dataset.award) return;
-    const name = t.dataset.award;
-    const field = t.dataset.field;
-    if (!yearData.individualAwards[name]) yearData.individualAwards[name] = { winner: "", team: "" };
-    yearData.individualAwards[name][field] = t.textContent.trim();
-    save();
-  }, true);
-  wrap.appendChild(grid);
-  return wrap;
-}
-
-function renderSection(sec, yearData) {
+function renderAASection(sec, yearData) {
   const wrap = document.createElement("div");
   wrap.className = "section";
   wrap.innerHTML = `<h2>${sec.label}</h2>`;
@@ -451,16 +1847,14 @@ function renderSection(sec, yearData) {
         <td contenteditable="true" data-field="team">${escape(row.team)}</td>
         <td contenteditable="true" data-field="cls">${escape(row.cls)}</td>
         <td contenteditable="true" data-field="owner">${escape(row.owner)}</td>
-        <td class="row-actions"><button title="Remove" onclick="removeRow(${idx})">&times;</button></td>
+        <td class="row-actions"><button title="Remove" onclick="removeAA(${idx})">&times;</button></td>
       `;
       tr.addEventListener("blur", e => {
         const c = e.target;
         if (!c.dataset.field) return;
         const field = c.dataset.field;
         let v = c.textContent.trim();
-        if (field === "rank") {
-          v = v.startsWith("2") ? 2 : 1;
-        }
+        if (field === "rank") v = v.startsWith("2") ? 2 : 1;
         yearData.allAmericans[idx][field] = v;
         save();
         if (field === "rank") render();
@@ -473,14 +1867,7 @@ function renderSection(sec, yearData) {
   addBtn.className = "add-row";
   addBtn.textContent = `+ Add ${sec.label} selection`;
   addBtn.onclick = () => {
-    yearData.allAmericans.push({
-      pos: sec.positions[0],
-      rank: 1,
-      player: "",
-      team: "",
-      cls: "",
-      owner: ""
-    });
+    yearData.allAmericans.push({ pos: sec.positions[0], rank: 1, player: "", team: "", cls: "", owner: "" });
     save();
     render();
   };
@@ -488,7 +1875,91 @@ function renderSection(sec, yearData) {
   return wrap;
 }
 
-function removeRow(idx) {
+function renderAwards(yearData) {
+  const wrap = document.createElement("div");
+  wrap.className = "section";
+  const grid = document.createElement("div");
+  grid.className = "award-grid";
+  AWARDS.forEach(name => {
+    grid.appendChild(renderAwardCard(name, yearData));
+  });
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+function renderAwardCard(name, yearData) {
+  const isCoach = COACH_AWARDS.has(name);
+  const card = document.createElement("div");
+  card.className = "award-card";
+  card.innerHTML = `<h3>${name}</h3>`;
+  const finalists = yearData.awards[name] || [];
+  const table = document.createElement("table");
+  const headers = isCoach
+    ? `<tr><th></th><th>Coach</th><th>Team</th><th></th></tr>`
+    : `<tr><th></th><th>Player</th><th>Pos</th><th>Team</th><th>Cls</th><th>Owner</th><th></th></tr>`;
+  table.innerHTML = `<thead>${headers}</thead><tbody></tbody>`;
+  const tbody = table.querySelector("tbody");
+  finalists.forEach((f, idx) => {
+    const tr = document.createElement("tr");
+    if (f.winner) tr.classList.add("winner");
+    const winBtn = `<button class="winner-toggle ${f.winner ? "active" : ""}" title="Mark as winner" onclick="toggleWinner('${escapeJs(name)}', ${idx})">★</button>`;
+    const del = `<button title="Remove" onclick="removeFinalist('${escapeJs(name)}', ${idx})">&times;</button>`;
+    if (isCoach) {
+      tr.innerHTML = `
+        <td>${winBtn}</td>
+        <td contenteditable="true" data-field="player">${escape(f.player || "")}</td>
+        <td contenteditable="true" data-field="team">${escape(f.team || "")}</td>
+        <td class="row-actions">${del}</td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${winBtn}</td>
+        <td contenteditable="true" data-field="player">${escape(f.player || "")}</td>
+        <td contenteditable="true" data-field="pos">${escape(f.pos || "")}</td>
+        <td contenteditable="true" data-field="team">${escape(f.team || "")}</td>
+        <td contenteditable="true" data-field="cls">${escape(f.cls || "")}</td>
+        <td contenteditable="true" data-field="owner">${escape(f.owner || "")}</td>
+        <td class="row-actions">${del}</td>
+      `;
+    }
+    tr.addEventListener("blur", e => {
+      const c = e.target;
+      if (!c.dataset.field) return;
+      yearData.awards[name][idx][c.dataset.field] = c.textContent.trim();
+      save();
+    }, true);
+    tbody.appendChild(tr);
+  });
+  card.appendChild(table);
+  const addBtn = document.createElement("button");
+  addBtn.className = "add-row";
+  addBtn.textContent = `+ Add finalist`;
+  addBtn.onclick = () => {
+    if (!yearData.awards[name]) yearData.awards[name] = [];
+    yearData.awards[name].push(isCoach ? { player: "", team: "" } : { player: "", pos: "", team: "", cls: "", owner: "" });
+    save();
+    render();
+  };
+  card.appendChild(addBtn);
+  return card;
+}
+
+function toggleWinner(award, idx) {
+  const list = state.years[currentYear].awards[award];
+  const wasWinner = !!list[idx].winner;
+  list.forEach(f => delete f.winner);
+  if (!wasWinner) list[idx].winner = true;
+  save();
+  render();
+}
+
+function removeFinalist(award, idx) {
+  state.years[currentYear].awards[award].splice(idx, 1);
+  save();
+  render();
+}
+
+function removeAA(idx) {
   state.years[currentYear].allAmericans.splice(idx, 1);
   save();
   render();
@@ -497,6 +1968,7 @@ function removeRow(idx) {
 function escape(s) {
   return String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
 }
+function escapeJs(s) { return String(s).replace(/'/g, "\\'"); }
 
 function exportJSON() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
@@ -530,17 +2002,18 @@ function importJSON(e) {
 }
 
 function resetYear() {
-  if (!confirm(`Reset ${currentYear}? This wipes all data for this year only.`)) return;
-  state.years[currentYear] = { allAmericans: [], individualAwards: {} };
-  INDIVIDUAL_AWARDS.forEach(a => {
-    state.years[currentYear].individualAwards[a] = { winner: "", team: "" };
+  if (!confirm(`Reset ${currentYear}? Wipes both All-Americans and Awards for this year.`)) return;
+  const seed = SEED[currentYear];
+  state.years[currentYear] = {
+    allAmericans: seed ? seed.allAmericans.slice() : [],
+    awards: {}
+  };
+  AWARDS.forEach(a => {
+    state.years[currentYear].awards[a] = seed && seed.awards && seed.awards[a] ? seed.awards[a].slice() : [];
   });
-  if (currentYear === 2025 && confirm("Re-seed with 2025 starter data from the spreadsheet?")) {
-    state.years[2025].allAmericans = SEED_2025.slice();
-  }
   save();
   render();
-  toast("Year reset");
+  toast(`${currentYear} reset to seed`);
 }
 
 render();
