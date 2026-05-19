@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Trailer Console — Tiger Threads Auburn</title>
+<meta name="description" content="Owner operations console for Tiger Threads Auburn — pop-up schedule, the rolling rack inventory, home-party bookings, sales, and Auburn-family CRM." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0C2340;
+    --navy-deep:#06182d;
+    --navy-soft:#1c3a63;
+    --orange:#E87722;
+    --orange-deep:#c45c12;
+    --orange-soft:#fbe3cd;
+    --cream:#fdf8f1;
+    --paper:#f6f3ed;
+    --bg:#f0ece4;
+    --ink:#0C2340;
+    --muted:#5d6a7d;
+    --line:rgba(12,35,64,.12);
+    --line-soft:rgba(12,35,64,.06);
+    --green:#3b8c5e;
+    --red:#c3463a;
+    --yellow:#e0a52a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased;font-size:14px}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .serif{font-family:'Playfair Display',serif}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+  /* ===== LAYOUT ===== */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+  /* ===== SIDEBAR ===== */
+  aside{background:var(--navy-deep);color:#fff;padding:22px 18px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh}
+  .brand{display:flex;align-items:center;gap:11px;padding:6px 4px 18px;border-bottom:1px solid rgba(255,255,255,.10)}
+  .brand .mark{width:38px;height:38px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;flex-shrink:0}
+  .brand .name{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;line-height:1.1}
+  .brand .sub{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--orange);font-weight:700;margin-top:2px}
+  .nav-group{display:flex;flex-direction:column;gap:2px}
+  .nav-group h6{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.4);margin:8px 6px 6px;font-weight:600}
+  .nav-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border-radius:6px;color:rgba(255,255,255,.78);font-size:.86rem;font-weight:500;transition:.15s;cursor:pointer}
+  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav-item.active{background:var(--orange);color:#fff;font-weight:600}
+  .nav-item .label{display:flex;align-items:center;gap:10px}
+  .nav-item .icon{width:18px;text-align:center;opacity:.85;font-size:.92rem}
+  .nav-item .badge{background:rgba(255,255,255,.18);font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.04em}
+  .nav-item.active .badge{background:rgba(255,255,255,.25)}
+  .side-foot{margin-top:auto;padding-top:18px;border-top:1px solid rgba(255,255,255,.10);display:flex;align-items:center;gap:11px;color:rgba(255,255,255,.85);font-size:.82rem}
+  .side-foot .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--orange-deep));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:.84rem}
+  .side-foot .who{font-weight:600;color:#fff;line-height:1.2}
+  .side-foot .who small{display:block;font-weight:400;color:rgba(255,255,255,.55);font-size:.7rem;margin-top:2px}
+
+  /* ===== MAIN ===== */
+  main{padding:24px 28px 60px;display:flex;flex-direction:column;gap:22px;min-width:0}
+
+  /* topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+  .topbar h1{font-family:'Playfair Display',serif;font-size:1.65rem;font-weight:700;line-height:1.1}
+  .topbar .sub{color:var(--muted);font-size:.86rem;margin-top:4px}
+  .topbar-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:8px;background:#fff;padding:8px 14px;border-radius:999px;border:1px solid var(--line);font-size:.78rem;font-weight:600;color:var(--navy)}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+  .pill .dot.orange{background:var(--orange)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:7px;font-size:.8rem;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--navy);transition:.15s}
+  .btn:hover{border-color:var(--navy);transform:translateY(-1px)}
+  .btn-primary{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .btn-primary:hover{background:var(--orange-deep);border-color:var(--orange-deep);color:#fff}
+  .btn-dark{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .btn-dark:hover{background:var(--navy-deep);border-color:var(--navy-deep);color:#fff}
+
+  /* ===== KPI ROW ===== */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .kpi{background:#fff;border:1px solid var(--line-soft);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--orange)}
+  .kpi.k-navy::before{background:var(--navy)}
+  .kpi.k-green::before{background:var(--green)}
+  .kpi.k-yellow::before{background:var(--yellow)}
+  .kpi-label{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .kpi-val{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;color:var(--navy);line-height:1.05}
+  .kpi-foot{font-size:.74rem;color:var(--muted)}
+  .kpi-foot .up{color:var(--green);font-weight:700}
+  .kpi-foot .down{color:var(--red);font-weight:700}
+
+  /* ===== GRID ===== */
+  .grid{display:grid;gap:18px}
+  .row-1{grid-template-columns:1.6fr 1fr}
+  .row-2{grid-template-columns:1fr 1.4fr}
+  .row-3{grid-template-columns:1fr 1fr 1fr}
+
+  .card{background:#fff;border:1px solid var(--line-soft);border-radius:10px;padding:0;overflow:hidden;display:flex;flex-direction:column}
+  .card-head{padding:18px 22px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+  .card-head h3{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:var(--navy);line-height:1.1}
+  .card-head .sub{font-size:.78rem;color:var(--muted);margin-top:3px}
+  .card-head .tabs{display:flex;gap:4px;background:var(--paper);padding:3px;border-radius:7px}
+  .card-head .tabs button{font-size:.72rem;font-weight:600;padding:6px 12px;border-radius:5px;color:var(--muted)}
+  .card-head .tabs button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .card-head .link{color:var(--orange);font-size:.76rem;font-weight:700;letter-spacing:.04em}
+  .card-body{padding:20px 22px;flex:1}
+  .card-body.flush{padding:0}
+
+  /* ===== CALENDAR ===== */
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);border-radius:8px;overflow:hidden}
+  .cal .dow{background:var(--paper);padding:8px 6px;text-align:center;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .cal .day{background:#fff;min-height:88px;padding:7px 8px;display:flex;flex-direction:column;gap:4px;position:relative}
+  .cal .day.dim{background:var(--paper);color:var(--muted)}
+  .cal .day.today{background:var(--orange-soft);outline:2px solid var(--orange);outline-offset:-2px}
+  .cal .day .n{font-family:'Playfair Display',serif;font-weight:700;font-size:.92rem;color:var(--navy)}
+  .cal .day.dim .n{color:#b3b8c2}
+  .cal .ev{font-size:.66rem;font-weight:600;padding:3px 6px;border-radius:4px;background:var(--orange);color:#fff;line-height:1.3;display:flex;align-items:center;gap:4px;cursor:pointer}
+  .cal .ev.navy{background:var(--navy)}
+  .cal .ev.green{background:var(--green)}
+  .cal .ev.party{background:var(--orange-soft);color:var(--orange-deep);border:1px solid var(--orange)}
+
+  /* ===== RACK / INVENTORY ===== */
+  .rack{display:flex;flex-direction:column;gap:0}
+  .rack-row{display:grid;grid-template-columns:38px 1.6fr 1fr .6fr .6fr 100px;align-items:center;gap:14px;padding:13px 22px;border-bottom:1px solid var(--line-soft);transition:.12s}
+  .rack-row:hover{background:var(--paper)}
+  .rack-row:last-child{border-bottom:none}
+  .rack-row.head{background:var(--paper);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;padding-top:10px;padding-bottom:10px}
+  .swatch{width:34px;height:34px;border-radius:6px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;font-family:'Playfair Display',serif}
+  .swatch.orange{background:var(--orange)}
+  .swatch.cream{background:var(--cream);color:var(--navy);border:1px solid var(--line)}
+  .swatch.navy-soft{background:var(--navy-soft)}
+  .swatch.vintage{background:linear-gradient(135deg,var(--orange-deep),var(--orange));color:#fff}
+  .rack-name{font-weight:600;color:var(--navy)}
+  .rack-name small{display:block;font-weight:400;color:var(--muted);font-size:.74rem;margin-top:2px}
+  .rack-cat{font-size:.76rem;color:var(--muted)}
+  .rack-stock{font-family:'JetBrains Mono',monospace;font-weight:600}
+  .rack-stock.low{color:var(--red)}
+  .rack-stock.ok{color:var(--green)}
+  .rack-price{font-family:'Playfair Display',serif;font-weight:700;color:var(--navy);font-size:1rem;text-align:right}
+  .status{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;padding:4px 9px;border-radius:999px;font-weight:700;text-align:center;width:fit-content;justify-self:end}
+  .status.on{background:rgba(59,140,94,.12);color:var(--green)}
+  .status.low{background:rgba(195,70,58,.10);color:var(--red)}
+  .status.hold{background:rgba(224,165,42,.14);color:var(--yellow)}
+  .status.sold{background:var(--paper);color:var(--muted)}
+
+  /* ===== HOME PARTIES BOOKINGS ===== */
+  .booking{padding:16px 22px;border-bottom:1px solid var(--line-soft);display:flex;gap:14px;align-items:flex-start;transition:.12s}
+  .booking:hover{background:var(--paper)}
+  .booking:last-child{border-bottom:none}
+  .booking-date{flex-shrink:0;width:54px;text-align:center;padding:8px 0;border-radius:6px;background:var(--navy);color:#fff;font-family:'Playfair Display',serif}
+  .booking-date .day{font-size:1.25rem;font-weight:700;line-height:1}
+  .booking-date .mo{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;font-family:'Inter',sans-serif;font-weight:700;margin-top:4px;opacity:.85}
+  .booking-date.orange{background:var(--orange)}
+  .booking-info{flex:1;min-width:0}
+  .booking-info h5{font-family:'Playfair Display',serif;font-size:.98rem;color:var(--navy);font-weight:700;margin-bottom:4px}
+  .booking-info p{font-size:.78rem;color:var(--muted)}
+  .booking-info .tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+  .tag{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:var(--paper);color:var(--navy);font-weight:700;border:1px solid var(--line-soft)}
+  .tag.orange{background:var(--orange-soft);color:var(--orange-deep);border-color:transparent}
+  .tag.green{background:rgba(59,140,94,.12);color:var(--green);border-color:transparent}
+  .booking-amt{text-align:right;font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;color:var(--navy);flex-shrink:0;line-height:1}
+  .booking-amt small{display:block;font-weight:400;color:var(--muted);font-size:.7rem;margin-top:4px;font-family:'Inter',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+
+  /* ===== SALES CHART ===== */
+  .chart{display:flex;align-items:flex-end;gap:8px;height:160px;padding:10px 0 6px;border-bottom:1px dashed var(--line-soft);margin-bottom:12px}
+  .bar{flex:1;background:linear-gradient(180deg,var(--orange) 0%,var(--orange-deep) 100%);border-radius:5px 5px 0 0;min-height:6px;position:relative;cursor:pointer;transition:.15s}
+  .bar:hover{filter:brightness(1.08)}
+  .bar.navy{background:linear-gradient(180deg,var(--navy-soft) 0%,var(--navy) 100%)}
+  .bar .val{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:.66rem;font-weight:700;color:var(--navy);opacity:0;transition:.15s;background:#fff;padding:2px 6px;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.08);white-space:nowrap}
+  .bar:hover .val{opacity:1}
+  .chart-labels{display:flex;justify-content:space-between;gap:8px;font-size:.66rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+  .chart-labels span{flex:1;text-align:center}
+  .chart-legend{display:flex;gap:18px;font-size:.74rem;color:var(--muted);margin-top:14px;padding-top:14px;border-top:1px solid var(--line-soft)}
+  .chart-legend .lg{display:flex;align-items:center;gap:7px;font-weight:600}
+  .chart-legend .lg::before{content:"";width:10px;height:10px;border-radius:2px;background:var(--orange)}
+  .chart-legend .lg.navy::before{background:var(--navy)}
+
+  /* ===== ACTIVITY FEED ===== */
+  .feed{display:flex;flex-direction:column}
+  .feed-item{padding:12px 22px;border-bottom:1px solid var(--line-soft);display:flex;gap:12px;align-items:flex-start}
+  .feed-item:last-child{border-bottom:none}
+  .feed-dot{width:8px;height:8px;border-radius:50%;background:var(--orange);margin-top:7px;flex-shrink:0;box-shadow:0 0 0 3px var(--orange-soft)}
+  .feed-dot.green{background:var(--green);box-shadow:0 0 0 3px rgba(59,140,94,.18)}
+  .feed-dot.navy{background:var(--navy);box-shadow:0 0 0 3px rgba(12,35,64,.12)}
+  .feed-dot.yellow{background:var(--yellow);box-shadow:0 0 0 3px rgba(224,165,42,.18)}
+  .feed-body{flex:1;font-size:.84rem;color:var(--navy);line-height:1.5}
+  .feed-body strong{font-weight:700;color:var(--navy)}
+  .feed-time{font-size:.7rem;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace}
+
+  /* ===== STYLIST CRM ===== */
+  .crm-row{display:grid;grid-template-columns:36px 1.4fr 1fr .8fr 1fr;gap:12px;padding:12px 22px;border-bottom:1px solid var(--line-soft);align-items:center;font-size:.84rem;transition:.12s}
+  .crm-row:hover{background:var(--paper)}
+  .crm-row:last-child{border-bottom:none}
+  .crm-row.head{background:var(--paper);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;padding-top:10px;padding-bottom:10px}
+  .crm-av{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem}
+  .crm-av.o{background:var(--orange)}
+  .crm-av.ns{background:var(--navy-soft)}
+  .crm-name{font-weight:600;color:var(--navy)}
+  .crm-name small{display:block;color:var(--muted);font-weight:400;font-size:.74rem;margin-top:2px}
+  .crm-tag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:.66rem;font-weight:700;letter-spacing:.06em;background:var(--orange-soft);color:var(--orange-deep)}
+  .crm-tag.vip{background:var(--navy);color:#fff}
+  .crm-tag.host{background:rgba(59,140,94,.12);color:var(--green)}
+  .crm-spend{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--navy)}
+
+  /* preview-only sticky link */
+  .builder-link{position:fixed;bottom:18px;left:18px;z-index:9999;background:var(--navy);color:#fff;padding:9px 14px;border-radius:999px;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.3);text-decoration:none;border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;gap:10px}
+  .builder-link:hover{background:var(--orange);border-color:var(--orange)}
+  .builder-link::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--orange)}
+  .builder-link:hover::before{background:#fff}
+
+  @media (max-width:1100px){
+    .app{grid-template-columns:1fr}
+    aside{position:relative;height:auto}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .row-1,.row-2,.row-3{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside>
+    <div class="brand">
+      <div class="mark">T</div>
+      <div>
+        <div class="name">Tiger Threads</div>
+        <div class="sub">Trailer Console</div>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <h6>Operate</h6>
+      <div class="nav-item active"><span class="label"><span class="icon">▤</span> Today</span></div>
+      <div class="nav-item"><span class="label"><span class="icon">▦</span> Pop-Up Calendar</span><span class="badge">6</span></div>
+      <div class="nav-item"><span class="label"><span class="icon">▢</span> The Rolling Rack</span><span class="badge">214</span></div>
+      <div class="nav-item"><span class="label"><span class="icon">★</span> Home Parties</span><span class="badge">4</span></div>
+    </div>
+
+    <div class="nav-group">
+      <h6>Grow</h6>
+      <div class="nav-item"><span class="label"><span class="icon">$</span> Sales</span></div>
+      <div class="nav-item"><span class="label"><span class="icon">⌖</span> Auburn Family CRM</span></div>
+      <div class="nav-item"><span class="label"><span class="icon">↗</span> Marketing</span></div>
+      <div class="nav-item"><span class="label"><span class="icon">⌥</span> Vendors</span></div>
+    </div>
+
+    <div class="nav-group">
+      <h6>Account</h6>
+      <div class="nav-item"><span class="label"><span class="icon">⚙</span> Settings</span></div>
+      <div class="nav-item"><span class="label"><span class="icon">?</span> Help &amp; Support</span></div>
+    </div>
+
+    <div class="side-foot">
+      <div class="avatar">SS</div>
+      <div class="who">Sherrie Stanyard<small>Owner · Auburn, AL</small></div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+
+    <!-- topbar -->
+    <div class="topbar">
+      <div>
+        <h1>Welcome back, Sherrie</h1>
+        <div class="sub">Monday · May 18, 2026 · Game week build-up · 5 stops scheduled this weekend</div>
+      </div>
+      <div class="topbar-actions">
+        <span class="pill"><span class="dot"></span> Shopify synced · 2m ago</span>
+        <span class="pill"><span class="dot"></span> Square POS · Online</span>
+        <button class="btn">Export Day</button>
+        <button class="btn btn-dark">+ Schedule Pop-Up</button>
+        <button class="btn btn-primary">+ Add Inventory</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-label">Sales · Last 30 Days</div>
+        <div class="kpi-val">$18,420</div>
+        <div class="kpi-foot"><span class="up">▲ 22%</span> vs prior month · Square + Shopify combined</div>
+      </div>
+      <div class="kpi k-navy">
+        <div class="kpi-label">Pop-Ups Confirmed</div>
+        <div class="kpi-val">6 <small style="font-family:Inter;font-size:.74rem;color:var(--muted);font-weight:400">next 30 days</small></div>
+        <div class="kpi-foot">2 game day · 3 markets · 1 private</div>
+      </div>
+      <div class="kpi k-green">
+        <div class="kpi-label">Home Parties Booked</div>
+        <div class="kpi-val">4 <small style="font-family:Inter;font-size:.74rem;color:var(--muted);font-weight:400">Q3</small></div>
+        <div class="kpi-foot"><span class="up">▲ 2</span> from last quarter</div>
+      </div>
+      <div class="kpi k-yellow">
+        <div class="kpi-label">Low-Stock Alerts</div>
+        <div class="kpi-val">7 <small style="font-family:Inter;font-size:.74rem;color:var(--muted);font-weight:400">items</small></div>
+        <div class="kpi-foot">3 game-day tees · 2 hats · 2 vintage · Synced from Shopify</div>
+      </div>
+    </div>
+
+    <!-- Row 1: Calendar + Sales chart -->
+    <div class="grid row-1">
+
+      <!-- Pop-Up Calendar -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Pop-Up Calendar — May 2026</h3>
+            <div class="sub">Game day, market, and private bookings</div>
+          </div>
+          <div class="tabs">
+            <button class="on">Month</button>
+            <button>Week</button>
+            <button>Map</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="cal">
+            <div class="dow">Sun</div><div class="dow">Mon</div><div class="dow">Tue</div><div class="dow">Wed</div><div class="dow">Thu</div><div class="dow">Fri</div><div class="dow">Sat</div>
+
+            <div class="day dim"><span class="n">26</span></div>
+            <div class="day dim"><span class="n">27</span></div>
+            <div class="day dim"><span class="n">28</span></div>
+            <div class="day dim"><span class="n">29</span></div>
+            <div class="day dim"><span class="n">30</span></div>
+            <div class="day"><span class="n">1</span></div>
+            <div class="day"><span class="n">2</span><span class="ev">A-Day Tailgate</span></div>
+
+            <div class="day"><span class="n">3</span></div>
+            <div class="day"><span class="n">4</span></div>
+            <div class="day"><span class="n">5</span></div>
+            <div class="day"><span class="n">6</span></div>
+            <div class="day"><span class="n">7</span></div>
+            <div class="day"><span class="n">8</span></div>
+            <div class="day"><span class="n">9</span><span class="ev navy">Opelika Market</span></div>
+
+            <div class="day"><span class="n">10</span></div>
+            <div class="day"><span class="n">11</span></div>
+            <div class="day"><span class="n">12</span></div>
+            <div class="day"><span class="n">13</span></div>
+            <div class="day"><span class="n">14</span></div>
+            <div class="day"><span class="n">15</span><span class="ev party">Whitfield Home Party</span></div>
+            <div class="day"><span class="n">16</span><span class="ev">Lake Martin Mkt</span></div>
+
+            <div class="day"><span class="n">17</span></div>
+            <div class="day today"><span class="n">18</span><span class="ev navy">Inventory Day</span></div>
+            <div class="day"><span class="n">19</span></div>
+            <div class="day"><span class="n">20</span></div>
+            <div class="day"><span class="n">21</span></div>
+            <div class="day"><span class="n">22</span></div>
+            <div class="day"><span class="n">23</span><span class="ev">Hound Pop-Up</span></div>
+
+            <div class="day"><span class="n">24</span></div>
+            <div class="day"><span class="n">25</span></div>
+            <div class="day"><span class="n">26</span></div>
+            <div class="day"><span class="n">27</span></div>
+            <div class="day"><span class="n">28</span><span class="ev party">Tri-Delt Shower</span></div>
+            <div class="day"><span class="n">29</span></div>
+            <div class="day"><span class="n">30</span><span class="ev green">Beach Days Mkt</span></div>
+
+            <div class="day"><span class="n">31</span></div>
+            <div class="day dim"><span class="n">1</span></div>
+            <div class="day dim"><span class="n">2</span></div>
+            <div class="day dim"><span class="n">3</span></div>
+            <div class="day dim"><span class="n">4</span></div>
+            <div class="day dim"><span class="n">5</span></div>
+            <div class="day dim"><span class="n">6</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Sales — Last 6 Weeks</h3>
+            <div class="sub">Pop-up vs. home party revenue</div>
+          </div>
+          <a class="link">Open report →</a>
+        </div>
+        <div class="card-body">
+          <div class="chart">
+            <div class="bar" style="height:42%"><span class="val">$2.1k</span></div>
+            <div class="bar navy" style="height:18%"><span class="val">$900</span></div>
+            <div class="bar" style="height:64%"><span class="val">$3.2k</span></div>
+            <div class="bar navy" style="height:34%"><span class="val">$1.7k</span></div>
+            <div class="bar" style="height:88%"><span class="val">$4.4k</span></div>
+            <div class="bar navy" style="height:52%"><span class="val">$2.6k</span></div>
+            <div class="bar" style="height:72%"><span class="val">$3.6k</span></div>
+            <div class="bar navy" style="height:30%"><span class="val">$1.5k</span></div>
+            <div class="bar" style="height:96%"><span class="val">$4.8k</span></div>
+            <div class="bar navy" style="height:46%"><span class="val">$2.3k</span></div>
+            <div class="bar" style="height:78%"><span class="val">$3.9k</span></div>
+            <div class="bar navy" style="height:38%"><span class="val">$1.9k</span></div>
+          </div>
+          <div class="chart-labels">
+            <span>WK 14</span><span>WK 15</span><span>WK 16</span><span>WK 17</span><span>WK 18</span><span>WK 19</span>
+          </div>
+          <div class="chart-legend">
+            <span class="lg">Pop-ups</span>
+            <span class="lg navy">Home parties</span>
+            <span style="margin-left:auto;color:var(--navy);font-weight:700">Total · <span class="mono">$32,940</span></span>
+          </div>
+          <div style="margin-top:14px;padding:12px 14px;background:var(--paper);border-radius:7px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.78rem">
+            <span style="font-weight:600;color:var(--navy)">Sales channels</span>
+            <span style="color:var(--muted)"><strong style="color:var(--orange)">Square POS</strong> in-trailer · <strong style="color:var(--navy)">Shopify</strong> web · <span class="mono">82% / 18%</span> split</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Rolling Rack + Home Party Bookings -->
+    <div class="grid row-2">
+
+      <!-- Home Parties -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Upcoming Home Parties</h3>
+            <div class="sub">Hostess bookings &amp; private events</div>
+          </div>
+          <a class="link">+ New booking →</a>
+        </div>
+        <div class="card-body flush">
+          <div class="booking">
+            <div class="booking-date orange">
+              <div class="day">15</div>
+              <div class="mo">May</div>
+            </div>
+            <div class="booking-info">
+              <h5>Whitfield Family · Bridal Shower</h5>
+              <p>Auburn, AL · 14 guests confirmed · Hostess: Mary Whitfield</p>
+              <div class="tags"><span class="tag orange">Bridal</span><span class="tag">Jewelry focus</span><span class="tag green">Deposit paid</span></div>
+            </div>
+            <div class="booking-amt">$450<small>Est. revenue</small></div>
+          </div>
+          <div class="booking">
+            <div class="booking-date">
+              <div class="day">28</div>
+              <div class="mo">May</div>
+            </div>
+            <div class="booking-info">
+              <h5>Tri-Delta · Senior Send-Off</h5>
+              <p>Sorority house · 22 guests · Hostess: Madison Park</p>
+              <div class="tags"><span class="tag orange">Sorority</span><span class="tag">Game day</span><span class="tag">Pending deposit</span></div>
+            </div>
+            <div class="booking-amt">$780<small>Est. revenue</small></div>
+          </div>
+          <div class="booking">
+            <div class="booking-date">
+              <div class="day">11</div>
+              <div class="mo">Jun</div>
+            </div>
+            <div class="booking-info">
+              <h5>Caroline's 40th · Lake Martin</h5>
+              <p>Russell Crossroads · 18 guests · Hostess: Caroline Reese</p>
+              <div class="tags"><span class="tag orange">Birthday</span><span class="tag">Vintage rack</span><span class="tag green">Deposit paid</span></div>
+            </div>
+            <div class="booking-amt">$620<small>Est. revenue</small></div>
+          </div>
+          <div class="booking">
+            <div class="booking-date">
+              <div class="day">02</div>
+              <div class="mo">Jul</div>
+            </div>
+            <div class="booking-info">
+              <h5>AU Teacher Appreciation</h5>
+              <p>Yarbrough Elementary · 25 guests · Hostess: PTO</p>
+              <div class="tags"><span class="tag orange">School</span><span class="tag">Gifts</span><span class="tag">Inquiry</span></div>
+            </div>
+            <div class="booking-amt">$900<small>Est. revenue</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rolling Rack -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>The Rolling Rack — Loaded This Weekend</h3>
+            <div class="sub">214 SKUs · 7 low-stock alerts · Synced live from Shopify</div>
+          </div>
+          <div class="tabs">
+            <button class="on">All</button>
+            <button>Apparel</button>
+            <button>Hats</button>
+            <button>Jewelry</button>
+            <button>Vintage</button>
+          </div>
+        </div>
+        <div class="card-body flush">
+          <div class="rack">
+            <div class="rack-row head">
+              <span></span>
+              <span>Item</span>
+              <span>Category</span>
+              <span style="text-align:center">Stock</span>
+              <span style="text-align:right">Price</span>
+              <span style="text-align:right">Status</span>
+            </div>
+            <div class="rack-row">
+              <div class="swatch orange">T</div>
+              <div class="rack-name">Cropped War Eagle Tee<small>SKU · TT-AP-0241 · S/M/L/XL</small></div>
+              <div class="rack-cat">Apparel</div>
+              <div class="rack-stock ok" style="text-align:center">42</div>
+              <div class="rack-price">$36</div>
+              <span class="status on">In stock</span>
+            </div>
+            <div class="rack-row">
+              <div class="swatch navy-soft">H</div>
+              <div class="rack-name">Vintage-Wash Trucker<small>SKU · TT-HT-0118 · One size</small></div>
+              <div class="rack-cat">Hats</div>
+              <div class="rack-stock low" style="text-align:center">4</div>
+              <div class="rack-price">$32</div>
+              <span class="status low">Low stock</span>
+            </div>
+            <div class="rack-row">
+              <div class="swatch vintage">V</div>
+              <div class="rack-name">Vintage 1989 Auburn Crew<small>SKU · TT-VT-0042 · 1 of 1 · Size L</small></div>
+              <div class="rack-cat">Vintage</div>
+              <div class="rack-stock low" style="text-align:center">1</div>
+              <div class="rack-price">$78</div>
+              <span class="status hold">Reserved</span>
+            </div>
+            <div class="rack-row">
+              <div class="swatch">TT</div>
+              <div class="rack-name">Tailgate Tumbler Set (4)<small>SKU · TT-SV-0307 · Navy/Orange</small></div>
+              <div class="rack-cat">Serveware</div>
+              <div class="rack-stock ok" style="text-align:center">18</div>
+              <div class="rack-price">$48</div>
+              <span class="status on">In stock</span>
+            </div>
+            <div class="rack-row">
+              <div class="swatch cream">J</div>
+              <div class="rack-name">Auburn Charm Hoops<small>SKU · TT-JW-0089 · Gold-fill</small></div>
+              <div class="rack-cat">Jewelry</div>
+              <div class="rack-stock ok" style="text-align:center">22</div>
+              <div class="rack-price">$42</div>
+              <span class="status on">In stock</span>
+            </div>
+            <div class="rack-row">
+              <div class="swatch orange">D</div>
+              <div class="rack-name">"Welcome to the Plains" Pillow<small>SKU · TT-HD-0156 · Embroidered</small></div>
+              <div class="rack-cat">Home Decor</div>
+              <div class="rack-stock low" style="text-align:center">2</div>
+              <div class="rack-price">$58</div>
+              <span class="status low">Low stock</span>
+            </div>
+            <div class="rack-row">
+              <div class="swatch vintage">V</div>
+              <div class="rack-name">Vintage Aubie Plush '72<small>SKU · TT-VT-0008 · 1 of 1</small></div>
+              <div class="rack-cat">Vintage</div>
+              <div class="rack-stock" style="text-align:center;color:var(--muted)">0</div>
+              <div class="rack-price">$140</div>
+              <span class="status sold">Sold</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Activity + Top Customers + Marketing -->
+    <div class="grid row-3">
+
+      <!-- Activity Feed -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Trailer Activity</h3>
+            <div class="sub">Live feed · last 24 hours</div>
+          </div>
+        </div>
+        <div class="card-body flush">
+          <div class="feed">
+            <div class="feed-item">
+              <div class="feed-dot green"></div>
+              <div class="feed-body">
+                <strong>$284 sale</strong> at Opelika Market — 2 tees, charm hoops, tumbler set · Square POS
+                <div class="feed-time">12 min ago · Sq #4421 · Shopify stock updated</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot"></div>
+              <div class="feed-body">
+                <strong>New home party request</strong> — Hannah Lewis (Auburn) · bridal shower · 16 guests
+                <div class="feed-time">1h 12m ago</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot yellow"></div>
+              <div class="feed-body">
+                <strong>Low stock alert</strong> — "Welcome to the Plains" pillow at 2 units. Reorder?
+                <div class="feed-time">3h ago</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot navy"></div>
+              <div class="feed-body">
+                <strong>Instagram DM</strong> from @auburnmom_jess — pricing on vintage windbreaker
+                <div class="feed-time">5h ago</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot green"></div>
+              <div class="feed-body">
+                <strong>Deposit received</strong> — $150 for Whitfield Bridal Shower (5/15)
+                <div class="feed-time">Yesterday · 4:18p</div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-dot"></div>
+              <div class="feed-body">
+                <strong>Vendor PO sent</strong> — Comfort Colors restock · 48 tees · ETA Thursday
+                <div class="feed-time">Yesterday · 11:02a</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Auburn Family customers -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Top Auburn Family</h3>
+            <div class="sub">Most-loyal customers, last 90 days</div>
+          </div>
+          <a class="link">CRM →</a>
+        </div>
+        <div class="card-body flush">
+          <div class="crm-row head">
+            <span></span><span>Customer</span><span>Tier</span><span style="text-align:right">Visits</span><span style="text-align:right">Spend</span>
+          </div>
+          <div class="crm-row">
+            <div class="crm-av o">MW</div>
+            <div class="crm-name">Mary Whitfield<small>AU '04 · Auburn, AL</small></div>
+            <div><span class="crm-tag vip">VIP</span></div>
+            <div style="text-align:right" class="mono">12</div>
+            <div style="text-align:right" class="crm-spend">$1,840</div>
+          </div>
+          <div class="crm-row">
+            <div class="crm-av">CR</div>
+            <div class="crm-name">Caroline Reese<small>Lake Martin host</small></div>
+            <div><span class="crm-tag host">Host</span></div>
+            <div style="text-align:right" class="mono">8</div>
+            <div style="text-align:right" class="crm-spend">$1,210</div>
+          </div>
+          <div class="crm-row">
+            <div class="crm-av ns">JP</div>
+            <div class="crm-name">Jessica Pratt<small>Opelika · Game day regular</small></div>
+            <div><span class="crm-tag">Regular</span></div>
+            <div style="text-align:right" class="mono">9</div>
+            <div style="text-align:right" class="crm-spend">$880</div>
+          </div>
+          <div class="crm-row">
+            <div class="crm-av o">MP</div>
+            <div class="crm-name">Madison Park<small>Tri-Delta · Sorority host</small></div>
+            <div><span class="crm-tag host">Host</span></div>
+            <div style="text-align:right" class="mono">5</div>
+            <div style="text-align:right" class="crm-spend">$640</div>
+          </div>
+          <div class="crm-row">
+            <div class="crm-av">SH</div>
+            <div class="crm-name">Sara Hall<small>AU staff · Vintage collector</small></div>
+            <div><span class="crm-tag">Regular</span></div>
+            <div style="text-align:right" class="mono">6</div>
+            <div style="text-align:right" class="crm-spend">$590</div>
+          </div>
+          <div class="crm-row">
+            <div class="crm-av ns">BB</div>
+            <div class="crm-name">Beth Brown<small>Birmingham · Gifts buyer</small></div>
+            <div><span class="crm-tag">Regular</span></div>
+            <div style="text-align:right" class="mono">4</div>
+            <div style="text-align:right" class="crm-spend">$420</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Marketing -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Marketing &amp; Social</h3>
+            <div class="sub">Reach, engagement, &amp; this week's drops</div>
+          </div>
+          <a class="link">Schedule post →</a>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:18px">
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div style="background:var(--paper);border-radius:8px;padding:14px 16px">
+              <div style="font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700">Instagram</div>
+              <div class="serif" style="font-size:1.5rem;font-weight:700;color:var(--navy);line-height:1.1;margin-top:6px">4,820</div>
+              <div style="font-size:.74rem;color:var(--green);font-weight:700;margin-top:4px">▲ 142 this week</div>
+            </div>
+            <div style="background:var(--paper);border-radius:8px;padding:14px 16px">
+              <div style="font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700">Email list</div>
+              <div class="serif" style="font-size:1.5rem;font-weight:700;color:var(--navy);line-height:1.1;margin-top:6px">1,238</div>
+              <div style="font-size:.74rem;color:var(--green);font-weight:700;margin-top:4px">▲ 38 from last drop</div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px">Queued posts</div>
+
+            <div style="display:flex;gap:11px;padding:11px;border:1px solid var(--line-soft);border-radius:8px;margin-bottom:8px">
+              <div style="width:44px;height:44px;border-radius:6px;background:linear-gradient(135deg,var(--orange),var(--orange-deep));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Playfair Display',serif;flex-shrink:0">IG</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;color:var(--navy);font-size:.86rem">New cropped War Eagle tee drop reel</div>
+                <div style="font-size:.74rem;color:var(--muted);margin-top:2px">Auto-post · Wed 5/20 · 6:00pm CT</div>
+              </div>
+              <span class="tag green">Ready</span>
+            </div>
+
+            <div style="display:flex;gap:11px;padding:11px;border:1px solid var(--line-soft);border-radius:8px;margin-bottom:8px">
+              <div style="width:44px;height:44px;border-radius:6px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Playfair Display',serif;flex-shrink:0">EM</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;color:var(--navy);font-size:.86rem">"Where to find us this weekend"</div>
+                <div style="font-size:.74rem;color:var(--muted);margin-top:2px">Email · Fri 5/22 · 9:00am CT · 1,238 recipients</div>
+              </div>
+              <span class="tag orange">Drafting</span>
+            </div>
+
+            <div style="display:flex;gap:11px;padding:11px;border:1px solid var(--line-soft);border-radius:8px">
+              <div style="width:44px;height:44px;border-radius:6px;background:var(--orange-soft);color:var(--orange-deep);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Playfair Display',serif;flex-shrink:0">IG</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;color:var(--navy);font-size:.86rem">Vintage rack reveal · Lake Martin recap</div>
+                <div style="font-size:.74rem;color:var(--muted);margin-top:2px">Story series · needs assets</div>
+              </div>
+              <span class="tag">To do</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<a class="builder-link" href="index.html">View Public Site</a>
+
+</body>
+</html>
