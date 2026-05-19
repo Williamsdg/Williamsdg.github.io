@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dynasty Postseason Awards Tracker</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #131a30;
+    --panel-2: #1a2240;
+    --line: #283156;
+    --text: #e8ecf7;
+    --muted: #8a93b3;
+    --accent: #f5b94a;
+    --accent-2: #6aa6ff;
+    --first: #f5b94a;
+    --second: #b8bfd6;
+    --danger: #ff6a6a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(180deg, #0a0f1f, #0b1020 200px);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  header {
+    border-bottom: 1px solid var(--line);
+    padding: 22px 28px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: 0.3px;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  button, .btn {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  button:hover { border-color: var(--accent-2); }
+  button.primary { background: var(--accent); color: #1b1300; border-color: var(--accent); font-weight: 600; }
+  button.danger { color: var(--danger); border-color: #4a2a2a; }
+  .years {
+    display: flex;
+    gap: 6px;
+    padding: 14px 28px 0;
+    flex-wrap: wrap;
+  }
+  .year-tab {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    padding: 8px 14px;
+    border-radius: 6px 6px 0 0;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .year-tab.active {
+    background: var(--panel);
+    color: var(--accent);
+    border-color: var(--accent);
+    border-bottom-color: var(--panel);
+  }
+  main {
+    padding: 0 28px 60px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 0 8px 8px 8px;
+    padding: 18px;
+  }
+  .section {
+    margin-top: 22px;
+  }
+  .section:first-child { margin-top: 0; }
+  .section h2 {
+    margin: 0 0 10px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent-2);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th, td {
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  th {
+    background: var(--panel-2);
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td[contenteditable="true"]:focus {
+    outline: 1px solid var(--accent-2);
+    background: rgba(106, 166, 255, 0.06);
+  }
+  .rank-1 { color: var(--first); font-weight: 600; }
+  .rank-2 { color: var(--second); }
+  .row-actions { width: 36px; text-align: center; }
+  .row-actions button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .row-actions button:hover { color: var(--danger); }
+  .add-row {
+    margin-top: 8px;
+    background: transparent;
+    border: 1px dashed var(--line);
+    color: var(--muted);
+    padding: 8px;
+    border-radius: 6px;
+    width: 100%;
+    text-align: center;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .add-row:hover { color: var(--accent); border-color: var(--accent); }
+  .empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 40px 20px;
+    font-size: 13px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-2);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 1000;
+  }
+  .toast.show { opacity: 1; }
+  .meta {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 14px;
+  }
+  details summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 6px 0;
+  }
+  details[open] summary { color: var(--accent); }
+  .award-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .award-card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .award-card .name {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .award-card .winner {
+    margin-top: 4px;
+    font-size: 14px;
+    color: var(--text);
+    min-height: 18px;
+  }
+  .award-card .winner[contenteditable="true"]:empty::before {
+    content: "—";
+    color: var(--muted);
+  }
+  .award-card .team {
+    font-size: 11px;
+    color: var(--accent-2);
+    margin-top: 2px;
+    min-height: 14px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>CFB 25 Dynasty — Postseason Awards Tracker</h1>
+    <div class="sub">Internal · auto-saves to this browser · export to JSON to back up</div>
+  </div>
+  <div class="toolbar">
+    <button onclick="exportJSON()">Export JSON</button>
+    <button onclick="document.getElementById('importFile').click()">Import JSON</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importJSON(event)">
+    <button class="danger" onclick="resetYear()">Reset Year</button>
+  </div>
+</header>
+
+<div class="years" id="yearTabs"></div>
+
+<main>
+  <div class="panel" id="panel"></div>
+  <div class="meta">Data lives in <code>localStorage</code> under <code>postseason_awards_v1</code>. Clearing site data wipes it — export JSON regularly.</div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = "postseason_awards_v1";
+const YEARS = [2024, 2025, 2026, 2027, 2028, 2029];
+
+const SECTIONS = [
+  { id: "offense", label: "Offense (Skill)", positions: ["QB", "HB", "WR", "TE"] },
+  { id: "oline", label: "Offensive Line", positions: ["LT", "LG", "C", "RG", "RT"] },
+  { id: "dline", label: "Defensive Line", positions: ["LE", "RE", "DT"] },
+  { id: "lb", label: "Linebackers", positions: ["LOLB", "MLB", "ROLB"] },
+  { id: "secondary", label: "Secondary", positions: ["CB", "FS", "SS"] },
+  { id: "specialists", label: "Specialists", positions: ["K", "P", "RET"] }
+];
+
+const INDIVIDUAL_AWARDS = [
+  "Heisman Trophy",
+  "Maxwell Award (Best Player)",
+  "Walter Camp (Best Player)",
+  "Davey O'Brien (QB)",
+  "Manning Award (QB)",
+  "Doak Walker (RB)",
+  "Biletnikoff (WR)",
+  "John Mackey (TE)",
+  "Outland Trophy (Interior Lineman)",
+  "Rimington (Center)",
+  "Lombardi (Lineman)",
+  "Bednarik (Defensive Player)",
+  "Chuck Bednarik / Nagurski (Defender)",
+  "Dick Butkus (LB)",
+  "Jim Thorpe (DB)",
+  "Lou Groza (K)",
+  "Ray Guy (P)",
+  "Paul Hornung (Versatility)",
+  "Johnny Unitas (Senior QB)",
+  "Coach of the Year",
+  "Offensive Player of the Year",
+  "Defensive Player of the Year",
+  "Freshman of the Year"
+];
+
+const SEED_2025 = [
+  { pos: "QB", rank: 1, player: "Rashawn Abimiri", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+  { pos: "QB", rank: 2, player: "Santiago Esposito", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+  { pos: "HB", rank: 1, player: "Ron Warfield", team: "Minnesota", cls: "SR (RS)", owner: "Nolan" },
+  { pos: "HB", rank: 1, player: "Ashton Jeanty II", team: "Boise St", cls: "SR", owner: "Jason" },
+  { pos: "HB", rank: 2, player: "Erik Bridge", team: "Nebraska", cls: "FR (RS)", owner: "Carter" },
+  { pos: "HB", rank: 2, player: "Caden Durham", team: "Texas Tech", cls: "SR", owner: "Jordan" },
+  { pos: "WR", rank: 1, player: "Jason Rutter", team: "Tennessee", cls: "FR (RS)", owner: "Will" },
+  { pos: "WR", rank: 1, player: "Ross Leo", team: "Kansas St", cls: "JR (RS)", owner: "Tre" },
+  { pos: "WR", rank: 1, player: "Kam Mikell", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+  { pos: "WR", rank: 2, player: "Trent Devoe", team: "South Carolina", cls: "JR (RS)", owner: "Christian" },
+  { pos: "WR", rank: 2, player: "Ben Latimer", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+  { pos: "WR", rank: 2, player: "Nitro Tuggle", team: "South Carolina", cls: "SR (RS)", owner: "Christian" },
+  { pos: "TE", rank: 1, player: "Daryll Aldrich", team: "Southern Miss", cls: "SO", owner: "User" },
+  { pos: "TE", rank: 2, player: "Tucker Draft", team: "Washington", cls: "SO", owner: "Chase" },
+  { pos: "TE", rank: 2, player: "Mateo Comella", team: "Oklahoma", cls: "SR (RS)", owner: "Brennan" },
+  { pos: "LT", rank: 1, player: "Garrison Cherelus", team: "Ohio St", cls: "SR (RS)", owner: "User" },
+  { pos: "LT", rank: 2, player: "Sean Calmelat", team: "Tennessee", cls: "JR (RS)", owner: "Will" },
+  { pos: "LT", rank: 2, player: "Zach Cantwell", team: "Georgia", cls: "SR (RS)", owner: "CPU" },
+  { pos: "LG", rank: 1, player: "Ty Fort", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+  { pos: "LG", rank: 2, player: "Antwuan Howard", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+  { pos: "C", rank: 1, player: "DeAndre Hook", team: "Louisville", cls: "SR (RS)", owner: "Cael" },
+  { pos: "C", rank: 2, player: "Kevin Braham", team: "Georgia Tech", cls: "SR (RS)", owner: "Ben" },
+  { pos: "RG", rank: 1, player: "Gideon Okorafor", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+  { pos: "RG", rank: 2, player: "Alex Scioli", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+  { pos: "RT", rank: 1, player: "Joey Newhouse", team: "Michigan", cls: "SR (RS)", owner: "CPU" },
+  { pos: "RT", rank: 2, player: "Fetu Silatolu", team: "Washington", cls: "SR (RS)", owner: "Chase" },
+  { pos: "LE", rank: 1, player: "Chad Wiseman", team: "Nebraska", cls: "SR (RS)", owner: "CPU" },
+  { pos: "LE", rank: 2, player: "Whitefield Powell", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+  { pos: "RE", rank: 1, player: "Tucker Mixon", team: "Texas Tech", cls: "SR (RS)", owner: "Jordan" },
+  { pos: "RE", rank: 2, player: "Malachi Wrice", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+  { pos: "DT", rank: 1, player: "Sam Street", team: "Duke", cls: "SR (RS)", owner: "Mitch" },
+  { pos: "DT", rank: 1, player: "Caden Durham", team: "Texas Tech", cls: "SR", owner: "Jordan" },
+  { pos: "DT", rank: 1, player: "Mitch Sanders", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
+  { pos: "LOLB", rank: 1, player: "Jason Kuechly", team: "Boise St", cls: "SR (RS)", owner: "Jason" },
+  { pos: "LOLB", rank: 2, player: "DaWann Smalls", team: "Tennessee", cls: "SR (RS)", owner: "Will" },
+  { pos: "MLB", rank: 1, player: "Lynn Ankrah", team: "Nebraska", cls: "SR (RS)", owner: "Carter" },
+  { pos: "ROLB", rank: 1, player: "Maxwell Richardson", team: "Southern Miss", cls: "SR (RS)", owner: "User" },
+  { pos: "CB", rank: 1, player: "Tylen Singleton", team: "Southern Miss", cls: "SR", owner: "User" },
+  { pos: "CB", rank: 2, player: "Sean Priest", team: "Washington", cls: "SR", owner: "Chase" },
+  { pos: "CB", rank: 2, player: "Treyvon Aviles", team: "Georgia", cls: "SR (RS)", owner: "CPU" },
+  { pos: "CB", rank: 2, player: "Nick Rich", team: "Houston", cls: "SR (RS)", owner: "CPU" },
+  { pos: "FS", rank: 1, player: "Zack Myers", team: "Southern Miss", cls: "SR (RS)", owner: "CPU" },
+  { pos: "FS", rank: 2, player: "Quentin Reddish", team: "Charlotte", cls: "SR (RS)", owner: "CPU" },
+  { pos: "SS", rank: 1, player: "Manny Carlos", team: "Georgia Tech", cls: "JR (RS)", owner: "Ben" },
+  { pos: "SS", rank: 2, player: "Collin McLauring", team: "Penn St", cls: "JR (RS)", owner: "Cole" }
+];
+
+let state = load();
+let currentYear = 2025;
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  const init = { years: {} };
+  YEARS.forEach(y => {
+    init.years[y] = {
+      allAmericans: y === 2025 ? SEED_2025.slice() : [],
+      individualAwards: {}
+    };
+    INDIVIDUAL_AWARDS.forEach(a => {
+      init.years[y].individualAwards[a] = { winner: "", team: "" };
+    });
+  });
+  return init;
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+function renderTabs() {
+  const el = document.getElementById("yearTabs");
+  el.innerHTML = "";
+  YEARS.forEach(y => {
+    const b = document.createElement("button");
+    b.className = "year-tab" + (y === currentYear ? " active" : "");
+    b.textContent = y;
+    b.onclick = () => { currentYear = y; render(); };
+    el.appendChild(b);
+  });
+}
+
+function render() {
+  renderTabs();
+  const yearData = state.years[currentYear];
+  if (!yearData) return;
+  const panel = document.getElementById("panel");
+  panel.innerHTML = "";
+
+  panel.appendChild(renderIndividualAwards(yearData));
+
+  SECTIONS.forEach(sec => {
+    panel.appendChild(renderSection(sec, yearData));
+  });
+}
+
+function renderIndividualAwards(yearData) {
+  const wrap = document.createElement("div");
+  wrap.className = "section";
+  wrap.innerHTML = `<h2>Individual Awards</h2>`;
+  const grid = document.createElement("div");
+  grid.className = "award-grid";
+  INDIVIDUAL_AWARDS.forEach(name => {
+    const card = document.createElement("div");
+    card.className = "award-card";
+    const data = yearData.individualAwards[name] || { winner: "", team: "" };
+    card.innerHTML = `
+      <div class="name">${name}</div>
+      <div class="winner" contenteditable="true" data-field="winner" data-award="${name}">${escape(data.winner)}</div>
+      <div class="team" contenteditable="true" data-field="team" data-award="${name}">${escape(data.team)}</div>
+    `;
+    grid.appendChild(card);
+  });
+  grid.addEventListener("blur", e => {
+    const t = e.target;
+    if (!t.dataset.award) return;
+    const name = t.dataset.award;
+    const field = t.dataset.field;
+    if (!yearData.individualAwards[name]) yearData.individualAwards[name] = { winner: "", team: "" };
+    yearData.individualAwards[name][field] = t.textContent.trim();
+    save();
+  }, true);
+  wrap.appendChild(grid);
+  return wrap;
+}
+
+function renderSection(sec, yearData) {
+  const wrap = document.createElement("div");
+  wrap.className = "section";
+  wrap.innerHTML = `<h2>${sec.label}</h2>`;
+  const rows = yearData.allAmericans.filter(r => sec.positions.includes(r.pos));
+  if (rows.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No selections yet — add one below.";
+    wrap.appendChild(empty);
+  } else {
+    const table = document.createElement("table");
+    table.innerHTML = `
+      <thead><tr>
+        <th>Pos</th><th>Team</th><th>Player</th><th>School</th><th>Class</th><th>Owner</th><th></th>
+      </tr></thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector("tbody");
+    rows.forEach(row => {
+      const idx = yearData.allAmericans.indexOf(row);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td contenteditable="true" data-field="pos">${escape(row.pos)}</td>
+        <td class="rank-${row.rank}" contenteditable="true" data-field="rank">${row.rank === 1 ? "1st" : "2nd"}</td>
+        <td contenteditable="true" data-field="player">${escape(row.player)}</td>
+        <td contenteditable="true" data-field="team">${escape(row.team)}</td>
+        <td contenteditable="true" data-field="cls">${escape(row.cls)}</td>
+        <td contenteditable="true" data-field="owner">${escape(row.owner)}</td>
+        <td class="row-actions"><button title="Remove" onclick="removeRow(${idx})">&times;</button></td>
+      `;
+      tr.addEventListener("blur", e => {
+        const c = e.target;
+        if (!c.dataset.field) return;
+        const field = c.dataset.field;
+        let v = c.textContent.trim();
+        if (field === "rank") {
+          v = v.startsWith("2") ? 2 : 1;
+        }
+        yearData.allAmericans[idx][field] = v;
+        save();
+        if (field === "rank") render();
+      }, true);
+      tbody.appendChild(tr);
+    });
+    wrap.appendChild(table);
+  }
+  const addBtn = document.createElement("button");
+  addBtn.className = "add-row";
+  addBtn.textContent = `+ Add ${sec.label} selection`;
+  addBtn.onclick = () => {
+    yearData.allAmericans.push({
+      pos: sec.positions[0],
+      rank: 1,
+      player: "",
+      team: "",
+      cls: "",
+      owner: ""
+    });
+    save();
+    render();
+  };
+  wrap.appendChild(addBtn);
+  return wrap;
+}
+
+function removeRow(idx) {
+  state.years[currentYear].allAmericans.splice(idx, 1);
+  save();
+  render();
+}
+
+function escape(s) {
+  return String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `postseason-awards-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("Exported JSON");
+}
+
+function importJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.years) throw new Error("Invalid format");
+      state = data;
+      save();
+      render();
+      toast("Imported");
+    } catch (err) {
+      alert("Import failed: " + err.message);
+    }
+  };
+  r.readAsText(file);
+  e.target.value = "";
+}
+
+function resetYear() {
+  if (!confirm(`Reset ${currentYear}? This wipes all data for this year only.`)) return;
+  state.years[currentYear] = { allAmericans: [], individualAwards: {} };
+  INDIVIDUAL_AWARDS.forEach(a => {
+    state.years[currentYear].individualAwards[a] = { winner: "", team: "" };
+  });
+  if (currentYear === 2025 && confirm("Re-seed with 2025 starter data from the spreadsheet?")) {
+    state.years[2025].allAmericans = SEED_2025.slice();
+  }
+  save();
+  render();
+  toast("Year reset");
+}
+
+render();
+</script>
+</body>
+</html>
