@@ -27,8 +27,15 @@
         <option value="">No game loaded</option>
       </select>
       <button id="btnNewGame" class="btn btn-primary">+ New Game</button>
+      <div class="view-mode" role="tablist" aria-label="View mode">
+        <button class="vm" data-vm="review" title="Full review tools" aria-selected="true">Review</button>
+        <button class="vm" data-vm="gameday" title="Game-day mode — hide stats and telestrator">Game Day</button>
+        <button class="vm" data-vm="compare" title="Compare two games side-by-side">Compare</button>
+      </div>
       <button id="btnExport" class="btn btn-ghost" title="Export current game as JSON">Export</button>
+      <button id="btnExportCsv" class="btn btn-ghost" title="Export plays as CSV">CSV</button>
       <button id="btnImport" class="btn btn-ghost" title="Import game JSON">Import</button>
+      <button id="btnShare" class="btn btn-ghost" title="Get a read-only share link">Share</button>
       <a href="guide.html" target="_blank" rel="noopener" class="btn btn-ghost" title="Open the user guide in a new tab">Guide</a>
       <input type="file" id="importFile" accept="application/json" hidden>
     </div>
@@ -41,6 +48,25 @@
       <span id="markerCount" class="count">0</span>
     </div>
     <input id="markerSearch" class="search" placeholder="Search plays…">
+
+    <div class="list-filters">
+      <select id="listFilterPT" class="lf" title="Play type"><option value="">All</option><option value="offense">Off</option><option value="defense">Def</option><option value="st">ST</option></select>
+      <select id="listFilterQuarter" class="lf" title="Quarter"><option value="">Q —</option><option>1</option><option>2</option><option>3</option><option>4</option><option>OT</option></select>
+      <select id="listFilterDown" class="lf" title="Down"><option value="">Dn —</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      <select id="listFilterTag" class="lf" title="Tag"><option value="">Tag —</option></select>
+      <select id="listFilterDrive" class="lf" title="Drive"><option value="">Dr —</option></select>
+      <button id="listClearFilters" class="lf-clear" title="Clear filters">✕</button>
+    </div>
+
+    <div id="bulkBar" class="bulk-bar hidden">
+      <span id="bulkCount">0 selected</span>
+      <input id="bulkTagInput" class="bulk-tag-input" placeholder="Add tag…">
+      <button id="bulkTag" class="bulk-btn">+ Tag</button>
+      <button id="bulkPlayType" class="bulk-btn" title="Set play type for selected">Type…</button>
+      <button id="bulkDelete" class="bulk-btn danger">Delete</button>
+      <button id="bulkClear" class="bulk-btn">Done</button>
+    </div>
+
     <ul id="markerList" class="marker-list"></ul>
 
     <div class="panel-head" style="margin-top:18px;">
@@ -82,6 +108,13 @@
       </div>
     </div>
 
+    <!-- Quick-tag preset bar -->
+    <div class="quick-tag-bar" id="quickTagBar">
+      <span class="qt-label">Quick tags:</span>
+      <div id="quickTagChips" class="qt-chips"></div>
+      <button id="qtAdd" class="qt-add" title="Add a preset tag">+ preset</button>
+    </div>
+
     <!-- Transport -->
     <div class="transport">
       <button id="btnPrevPlay" class="t-btn" title="Previous play ([)">⟨⟨</button>
@@ -108,6 +141,10 @@
       </div>
 
       <button id="btnMark" class="t-btn t-btn-primary" title="Mark Play (M) — set IN and OUT first to capture a range, or hit alone for a single timestamp">⦿ Mark Play</button>
+      <button id="btnNewDrive" class="t-btn" title="Start a new drive — next marked play starts drive N+1">+ Drive</button>
+      <label class="auto-advance" title="When a play's auto-loop completes one cycle, jump to the next play">
+        <input type="checkbox" id="autoAdvance"> auto-next
+      </label>
       <button id="btnSetIn" class="t-btn" title="Set IN point (I)">[ IN</button>
       <button id="btnSetOut" class="t-btn" title="Set OUT point (O)">OUT ]</button>
       <button id="btnLoop" class="t-btn" title="Loop IN→OUT">↻ Loop</button>
@@ -173,6 +210,7 @@
       <div id="playPaneBody" class="hidden">
         <div class="play-head">
           <input id="playTitle" class="play-title" placeholder="Play title (e.g., 3rd & 7 — Mesh)">
+          <button id="btnDuplicatePlay" class="link-action" title="Duplicate this play (Shift+D)">Duplicate</button>
           <button id="btnDeletePlay" class="link-danger" title="Delete play">Delete</button>
         </div>
 
@@ -199,6 +237,20 @@
           <button class="t-btn play-range-btn" id="btnSetPlayOut" title="Set the end of this play to the current playback position">Set OUT here</button>
           <button class="t-btn play-range-btn" id="btnClearPlayRange" title="Remove the range — turns this back into a single-timestamp marker">Clear</button>
         </div>
+        <div class="play-range-row presnap-row">
+          <span class="play-range-label">Pre-snap: <strong id="playPreSnapLabel">—</strong></span>
+          <label class="presnap-toggle" title="Loop from pre-snap instead of from IN">
+            <input type="checkbox" id="loopFromPreSnap"> include cadence in loop
+          </label>
+          <button class="t-btn play-range-btn" id="btnSetPreSnap" title="Set pre-snap start to current playback position">Set pre-snap</button>
+          <button class="t-btn play-range-btn" id="btnClearPreSnap" title="Remove pre-snap">Clear</button>
+        </div>
+        <div class="play-drive-row">
+          <label>Drive
+            <input id="playDrive" type="number" min="0" placeholder="—" style="width:80px;">
+          </label>
+          <span class="drive-hint muted small">Use <kbd>+ Drive</kbd> in the transport to auto-advance for new plays.</span>
+        </div>
 
         <div class="playtype-toggle">
           <button class="pt" data-pt="offense" title="Offense (1)">Offense</button>
@@ -220,6 +272,19 @@
         <label class="notes-label">Notes
           <textarea id="playNotes" rows="4" placeholder="Read, coverage, coaching point…"></textarea>
         </label>
+
+        <div class="comments-section">
+          <div class="comments-head">
+            <h4>Comments &amp; Q&amp;A</h4>
+            <span class="muted small">Different from notes — use for back-and-forth with whoever's reviewing this</span>
+          </div>
+          <ul id="commentsList" class="comments-list"></ul>
+          <div class="comment-compose">
+            <input id="commentAuthor" class="comment-author" placeholder="Your name">
+            <textarea id="commentBody" rows="2" placeholder="Ask a question or leave a comment…"></textarea>
+            <button id="btnAddComment" class="btn btn-primary btn-sm">Post</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -239,6 +304,11 @@
         </label>
         <label>Tag
           <select id="filterTag">
+            <option value="">All</option>
+          </select>
+        </label>
+        <label>Drive
+          <select id="filterDrive">
             <option value="">All</option>
           </select>
         </label>
@@ -324,6 +394,68 @@
 <!-- Toast -->
 <div id="toast" class="toast hidden"></div>
 
+<!-- ===================== COMPARE VIEW ===================== -->
+<div class="compare-view hidden" id="compareView">
+  <header class="compare-head">
+    <h2>Compare Games</h2>
+    <button id="btnCompareClose" class="btn btn-ghost">← Back to Review</button>
+  </header>
+  <div class="compare-pickers">
+    <label>Game A
+      <select id="cmpGameA"></select>
+    </label>
+    <label>Game B
+      <select id="cmpGameB"></select>
+    </label>
+  </div>
+  <div id="compareBody" class="compare-body"></div>
+</div>
+
+<!-- ===================== SHARE MODAL ===================== -->
+<div class="modal hidden" id="shareModal">
+  <div class="modal-card">
+    <h2>Share read-only link</h2>
+    <p class="muted">Anyone with this link can watch the breakdown but can't edit it. Optionally filter to a subset of plays.</p>
+    <div class="share-filters">
+      <label>Filter by tag
+        <select id="shareTag"><option value="">All plays</option></select>
+      </label>
+      <label>Filter by play type
+        <select id="sharePT">
+          <option value="">All types</option>
+          <option value="offense">Offense</option>
+          <option value="defense">Defense</option>
+          <option value="st">Special Teams</option>
+        </select>
+      </label>
+    </div>
+    <label class="share-link-label">Link
+      <textarea id="shareLink" readonly rows="3"></textarea>
+    </label>
+    <p class="muted small" id="shareLinkSize"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btnShareCancel">Close</button>
+      <button class="btn btn-primary" id="btnShareCopy">Copy link</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== BULK PLAY-TYPE MINI MODAL ===================== -->
+<div class="modal hidden" id="bulkPTModal">
+  <div class="modal-card" style="max-width:340px;">
+    <h2>Set play type</h2>
+    <p class="muted small">Applies to <span id="bulkPTCount">0</span> selected plays.</p>
+    <div class="playtype-toggle" style="margin:14px 0;">
+      <button class="pt" data-bulkpt="offense">Offense</button>
+      <button class="pt" data-bulkpt="defense">Defense</button>
+      <button class="pt" data-bulkpt="st">Special Teams</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="bulkPTCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== HELP / SHORTCUTS MODAL ===================== -->
 <div class="modal hidden" id="helpModal">
   <div class="modal-card help-card">
@@ -342,8 +474,10 @@
         <ul>
           <li><kbd>I</kbd> at the snap, <kbd>O</kbd> at the whistle, then <kbd>M</kbd> — captures the whole play and auto-loops it</li>
           <li><kbd>M</kbd> alone — drops a single-timestamp marker (no range)</li>
-          <li><kbd>[</kbd> / <kbd>]</kbd> Previous / next play</li>
+          <li><kbd>[</kbd> / <kbd>]</kbd> Previous / next play (respects active filters)</li>
           <li><kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd> Offense / Defense / ST</li>
+          <li><kbd>Shift</kbd>+<kbd>D</kbd> Duplicate active play</li>
+          <li><kbd>Shift</kbd>+click in sidebar to range-select. <kbd>Cmd</kbd>+click to multi-select.</li>
         </ul>
       </div>
       <div class="help-col">

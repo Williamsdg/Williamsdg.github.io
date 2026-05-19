@@ -34,6 +34,21 @@ const state = {
   playbackRate: 1,
   autoClearOnPlay: false,
   pinDrawingsToClip: false,
+  filterDrive: '',
+  listFilterPT: '',
+  listFilterQuarter: '',
+  listFilterDown: '',
+  listFilterTag: '',
+  listFilterDrive: '',
+  selectedIds: new Set(),
+  selectAnchorId: null,     // for shift-click range selection
+  currentDrive: 1,
+  autoAdvance: false,
+  loopCycleCount: 0,
+  lastLoopReset: 0,
+  viewMode: 'review',       // review | gameday | compare
+  readOnly: false,          // true when loaded from #share=
+  shareFilters: null,       // { tag, pt } when loaded read-only
 };
 
 // =================== UTILITIES ====================
@@ -84,6 +99,7 @@ function loadGame(id) {
 }
 const persistGame = debounce(function () {
   if (!state.game) return;
+  if (state.readOnly) return; // shared/read-only games never persist
   state.game.updatedAt = nowISO();
   try {
     const json = JSON.stringify(state.game);
@@ -116,6 +132,8 @@ function newGameObj({ opponent, date, season, homeAway, source }) {
     source,
     markers: [],
     clips: [],
+    quickTags: ['3rd down', 'red zone', 'explosive', 'TFL'],
+    currentDrive: 1,
     createdAt: nowISO(),
     updatedAt: nowISO(),
   };
@@ -331,7 +349,16 @@ function onTimeUpdate(t) {
   // Play-range loop: if the active marker has inTime/outTime, loop within it while playing
   const am = activeMarker();
   if (am && playRange(am) && state.adapter && !state.adapter.isPaused()) {
-    if (t >= am.outTime) state.adapter.seek(am.inTime);
+    const loopStart = (am.loopFromPreSnap && am.preSnapTime != null) ? am.preSnapTime : am.inTime;
+    if (t >= am.outTime) {
+      state.loopCycleCount = (state.loopCycleCount || 0) + 1;
+      if (state.autoAdvance) {
+        // Advance to the next play instead of looping again
+        maybeAutoAdvance();
+      } else {
+        state.adapter.seek(loopStart);
+      }
+    }
   }
   // Track play state transitions for auto-clear / pin-to-clip
   if (state.adapter) {
@@ -598,12 +625,15 @@ function markPlay() {
     time: anchor,
     inTime: inT,
     outTime: outT,
+    preSnapTime: null,
+    drive: state.currentDrive || 1,
     quarter: '',
     title: haveRange
       ? `Play ${fmtTime(inT)}–${fmtTime(outT)}`
       : `Play at ${fmtTime(now)}`,
     playType: 'offense',
     notes: '',
+    comments: [],
     tags: [],
     offense: emptyOffense(),
     defense: null,
@@ -631,9 +661,11 @@ function playRange(m) { return playEnd(m) != null; }
 
 function setActiveMarker(id) {
   state.activeMarkerId = id;
+  state.loopCycleCount = 0;
   const m = state.game?.markers.find(x => x.id === id);
   if (m && state.adapter && state.adapter.capabilities.control) {
-    state.adapter.seek(playStart(m));
+    const seekTo = (m.loopFromPreSnap && m.preSnapTime != null) ? m.preSnapTime : playStart(m);
+    state.adapter.seek(seekTo);
     state.adapter.pause();
   }
   restoreDrawingForMarker(m);
@@ -663,7 +695,9 @@ function nudgeActiveMarkerTime(delta) {
 
 function gotoAdjacentMarker(dir) {
   if (!state.game || !state.game.markers.length) return;
-  const ms = state.game.markers.slice().sort((a, b) => playStart(a) - playStart(b));
+  // Walk only within the filtered list so [/] respects the active filter
+  const filtered = state.game.markers.filter(passesListFilters);
+  const ms = (filtered.length ? filtered : state.game.markers).slice().sort((a, b) => playStart(a) - playStart(b));
   const idx = ms.findIndex(x => x.id === state.activeMarkerId);
   let next;
   if (idx < 0) {
@@ -672,6 +706,420 @@ function gotoAdjacentMarker(dir) {
     next = ms[clamp(idx + dir, 0, ms.length - 1)];
   }
   if (next) setActiveMarker(next.id);
+}
+
+// =================== DUPLICATE PLAY (#1) ====================
+function duplicatePlay(id) {
+  if (!state.game) return;
+  const src = state.game.markers.find(m => m.id === id);
+  if (!src) return;
+  // Deep clone, give it a new id, offset the timestamp by the play duration (or +5s)
+  const offset = playRange(src) ? (src.outTime - src.inTime) : 5;
+  const clone = JSON.parse(JSON.stringify(src));
+  clone.id = uid('m');
+  clone.time = src.time + offset;
+  if (clone.inTime != null) clone.inTime = src.inTime + offset;
+  if (clone.outTime != null) clone.outTime = src.outTime + offset;
+  if (clone.preSnapTime != null) clone.preSnapTime = src.preSnapTime + offset;
+  clone.title = (src.title || 'Play') + ' (copy)';
+  clone.strokes = [];           // start with no drawings
+  clone.drawingPng = null;
+  clone.comments = [];          // fresh comment thread
+  state.game.markers.push(clone);
+  state.game.markers.sort((a, b) => playStart(a) - playStart(b));
+  setActiveMarker(clone.id);
+  renderMarkerList(); renderPlayPane(); renderQuickStats();
+  persistGame();
+  toast(`Duplicated "${src.title}"`);
+}
+
+// =================== LIST FILTERS (#5) ====================
+function passesListFilters(m) {
+  if (state.listFilterPT && m.playType !== state.listFilterPT) return false;
+  if (state.listFilterQuarter && m.quarter !== state.listFilterQuarter) return false;
+  if (state.listFilterDown) {
+    const bucket = m[m.playType];
+    if (!bucket || String(bucket.down || '') !== state.listFilterDown) return false;
+  }
+  if (state.listFilterTag && !(m.tags || []).includes(state.listFilterTag)) return false;
+  if (state.listFilterDrive && String(m.drive || '') !== state.listFilterDrive) return false;
+  // Search box
+  if (state.search) {
+    const q = state.search.toLowerCase();
+    const hay = `${m.title} ${m.notes || ''} ${(m.tags || []).join(' ')}`.toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function clearListFilters() {
+  state.listFilterPT = state.listFilterQuarter = state.listFilterDown = state.listFilterTag = state.listFilterDrive = '';
+  state.search = '';
+  $('#listFilterPT').value = '';
+  $('#listFilterQuarter').value = '';
+  $('#listFilterDown').value = '';
+  $('#listFilterTag').value = '';
+  $('#listFilterDrive').value = '';
+  $('#markerSearch').value = '';
+  renderMarkerList();
+}
+
+// =================== BULK SELECT (#2) ====================
+function toggleSelect(id, withShift, withCtrl) {
+  if (withShift && state.selectAnchorId) {
+    // Range select within the currently-visible (filtered) list
+    const visible = state.game.markers.filter(passesListFilters).sort((a, b) => playStart(a) - playStart(b));
+    const a = visible.findIndex(m => m.id === state.selectAnchorId);
+    const b = visible.findIndex(m => m.id === id);
+    if (a >= 0 && b >= 0) {
+      const [lo, hi] = a < b ? [a, b] : [b, a];
+      for (let i = lo; i <= hi; i++) state.selectedIds.add(visible[i].id);
+    }
+  } else if (withCtrl) {
+    if (state.selectedIds.has(id)) state.selectedIds.delete(id);
+    else state.selectedIds.add(id);
+    state.selectAnchorId = id;
+  } else {
+    // No modifier: treat as plain click — clear selection, navigate
+    state.selectedIds.clear();
+    state.selectAnchorId = id;
+  }
+  updateBulkBar();
+  renderMarkerList();
+}
+
+function clearSelection() {
+  state.selectedIds.clear();
+  state.selectAnchorId = null;
+  updateBulkBar();
+  renderMarkerList();
+}
+
+function updateBulkBar() {
+  const bar = $('#bulkBar');
+  const n = state.selectedIds.size;
+  if (n > 1) {
+    bar.classList.remove('hidden');
+    $('#bulkCount').textContent = `${n} selected`;
+  } else {
+    bar.classList.add('hidden');
+  }
+}
+
+function bulkTag(tag) {
+  if (!tag) return;
+  const v = tag.trim();
+  if (!v) return;
+  let count = 0;
+  for (const id of state.selectedIds) {
+    const m = state.game.markers.find(x => x.id === id);
+    if (!m) continue;
+    if (!Array.isArray(m.tags)) m.tags = [];
+    if (!m.tags.includes(v)) { m.tags.push(v); count++; }
+  }
+  persistGame();
+  renderMarkerList(); renderPlayPane();
+  refreshTagFilter(); refreshTagSuggestions();
+  toast(`Tagged ${count} plays with "${v}"`);
+}
+
+function bulkDelete() {
+  const n = state.selectedIds.size;
+  if (!n) return;
+  if (!confirm(`Delete ${n} plays? Can't be undone.`)) return;
+  for (const id of state.selectedIds) {
+    state.game.markers = state.game.markers.filter(m => m.id !== id);
+    delete state.strokes[id];
+    if (state.activeMarkerId === id) state.activeMarkerId = null;
+  }
+  clearSelection();
+  renderAll(); persistGame();
+  toast(`Deleted ${n} plays.`);
+}
+
+function bulkSetPlayType(pt) {
+  let count = 0;
+  for (const id of state.selectedIds) {
+    const m = state.game.markers.find(x => x.id === id);
+    if (!m) continue;
+    m.playType = pt;
+    if (pt === 'offense' && !m.offense) m.offense = emptyOffense();
+    if (pt === 'defense' && !m.defense) m.defense = emptyDefense();
+    if (pt === 'st' && !m.st) m.st = emptyST();
+    count++;
+  }
+  persistGame(); renderMarkerList(); renderPlayPane();
+  toast(`Set ${count} plays to ${pt}`);
+}
+
+// =================== DRIVES (#3) ====================
+function newDrive() {
+  if (!state.game) return;
+  state.currentDrive = (state.game.currentDrive || 1) + 1;
+  state.game.currentDrive = state.currentDrive;
+  persistGame();
+  toast(`Drive ${state.currentDrive} — next marked play starts the new drive.`);
+}
+
+function refreshDriveFilters() {
+  if (!state.game) return;
+  const drives = [...new Set(state.game.markers.map(m => m.drive).filter(Boolean))].sort((a, b) => a - b);
+  for (const id of ['filterDrive', 'listFilterDrive']) {
+    const sel = $('#' + id);
+    if (!sel) continue;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">' + (id === 'listFilterDrive' ? 'Dr —' : 'All') + '</option>' +
+      drives.map(d => `<option ${String(d)===cur?'selected':''}>${d}</option>`).join('');
+  }
+}
+
+// =================== QUICK TAGS (#4) ====================
+function renderQuickTagBar() {
+  const wrap = $('#quickTagChips');
+  if (!wrap) return;
+  if (!state.game) { wrap.innerHTML = ''; return; }
+  if (!Array.isArray(state.game.quickTags)) state.game.quickTags = [];
+  wrap.innerHTML = state.game.quickTags.map(t =>
+    `<button class="qt-chip" data-qt="${escapeHTML(t)}">${escapeHTML(t)} <span class="qt-x" title="Remove preset">×</span></button>`
+  ).join('');
+  wrap.querySelectorAll('.qt-chip').forEach(btn => {
+    btn.addEventListener('click', e => {
+      if (e.target.classList.contains('qt-x')) {
+        state.game.quickTags = state.game.quickTags.filter(t => t !== btn.dataset.qt);
+        persistGame(); renderQuickTagBar(); return;
+      }
+      const m = activeMarker();
+      if (!m) { toast('No active play. Mark a play first.'); return; }
+      if (!Array.isArray(m.tags)) m.tags = [];
+      const t = btn.dataset.qt;
+      if (m.tags.includes(t)) {
+        m.tags = m.tags.filter(x => x !== t);
+        toast(`Removed "${t}" from this play`);
+      } else {
+        m.tags.push(t);
+        toast(`Tagged with "${t}"`);
+      }
+      persistGame(); renderTagChips(); refreshTagFilter(); renderStatsIfActive();
+    });
+  });
+}
+
+function addQuickTagPreset() {
+  const v = prompt('Preset tag name:');
+  if (!v) return;
+  if (!state.game) return;
+  if (!Array.isArray(state.game.quickTags)) state.game.quickTags = [];
+  if (!state.game.quickTags.includes(v.trim())) {
+    state.game.quickTags.push(v.trim());
+    persistGame(); renderQuickTagBar();
+  }
+}
+
+// =================== AUTO-ADVANCE (#6) ====================
+function maybeAutoAdvance() {
+  if (!state.autoAdvance) return;
+  const am = activeMarker();
+  if (!am || !playRange(am)) return;
+  // Move to the next marker in the filtered list
+  gotoAdjacentMarker(+1);
+  state.adapter && state.adapter.play();
+}
+
+// =================== COMMENTS (#8) ====================
+function addComment() {
+  const m = activeMarker();
+  if (!m) return;
+  const author = $('#commentAuthor').value.trim() || 'Anonymous';
+  const body = $('#commentBody').value.trim();
+  if (!body) return;
+  if (!Array.isArray(m.comments)) m.comments = [];
+  m.comments.push({ id: uid('c'), author, body, at: nowISO() });
+  $('#commentBody').value = '';
+  renderComments(); persistGame();
+}
+
+function renderComments() {
+  const list = $('#commentsList');
+  const m = activeMarker();
+  if (!m || !Array.isArray(m.comments)) { if (list) list.innerHTML = ''; return; }
+  list.innerHTML = m.comments.map(c => `
+    <li class="comment">
+      <div class="comment-head">
+        <strong>${escapeHTML(c.author)}</strong>
+        <span class="muted small">${new Date(c.at).toLocaleString()}</span>
+        ${state.readOnly ? '' : `<button class="comment-del" data-cid="${c.id}" title="Delete">×</button>`}
+      </div>
+      <div class="comment-body">${escapeHTML(c.body)}</div>
+    </li>
+  `).join('');
+  list.querySelectorAll('.comment-del').forEach(b => b.addEventListener('click', () => {
+    m.comments = m.comments.filter(c => c.id !== b.dataset.cid);
+    renderComments(); persistGame();
+  }));
+}
+
+// =================== CSV EXPORT (#10) ====================
+function exportCSV() {
+  if (!state.game) { toast('No game loaded.'); return; }
+  const rows = [];
+  const header = [
+    'play_id','title','time','in_time','out_time','pre_snap','duration','drive','quarter','play_type',
+    'down','distance','yard_line','hash','personnel','formation','motion',
+    'off_play_type','concept','result_yards','success','explosive',
+    'def_front','def_coverage','blitz','blitzer','def_result','tfl','sack','pbu','int','missed_tackle',
+    'st_phase','st_result','return_yards',
+    'tags','notes','comment_count'
+  ];
+  rows.push(header.map(csvField).join(','));
+  for (const m of state.game.markers) {
+    const o = m.offense || {};
+    const d = m.defense || {};
+    const s = m.st || {};
+    const dur = playRange(m) ? (m.outTime - m.inTime).toFixed(2) : '';
+    const row = [
+      m.id, m.title, fmtTimePrecise(m.time),
+      m.inTime != null ? fmtTimePrecise(m.inTime) : '',
+      m.outTime != null ? fmtTimePrecise(m.outTime) : '',
+      m.preSnapTime != null ? fmtTimePrecise(m.preSnapTime) : '',
+      dur, m.drive || '', m.quarter || '', m.playType,
+      o.down || '', o.distance || '', o.yardLine || '', o.hash || '', o.personnel || '', o.formation || '', o.motion ? 'Y' : '',
+      o.playType || '', o.concept || '', o.resultYards != null ? o.resultYards : '', o.success ? 'Y' : '', o.explosive ? 'Y' : '',
+      d.front || '', d.coverage || '', d.blitz ? 'Y' : '', d.blitzer || '', d.resultYards != null ? d.resultYards : '',
+      d.tfl ? 'Y' : '', d.sack ? 'Y' : '', d.pbu ? 'Y' : '', d.int ? 'Y' : '', d.missedTackle ? 'Y' : '',
+      s.phase || '', s.result || '', s.returnYards != null ? s.returnYards : '',
+      (m.tags || []).join('; '), m.notes || '', (m.comments || []).length
+    ];
+    rows.push(row.map(csvField).join(','));
+  }
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const slug = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  downloadBlob(blob, `huddle-${slug(state.game.opponent)}-${state.game.date}.csv`);
+  toast('CSV exported.');
+}
+function csvField(v) {
+  const s = String(v == null ? '' : v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function fmtTimePrecise(s) { return Number(s || 0).toFixed(2); }
+
+// =================== SHARE LINK (#7) ====================
+function openShareModal() {
+  if (!state.game) { toast('No game loaded.'); return; }
+  refreshShareTagSelect();
+  $('#shareModal').classList.remove('hidden');
+  updateShareLink();
+}
+function refreshShareTagSelect() {
+  const sel = $('#shareTag');
+  sel.innerHTML = '<option value="">All plays</option>' +
+    allGameTags().map(t => `<option>${escapeHTML(t)}</option>`).join('');
+}
+function updateShareLink() {
+  if (!state.game) return;
+  const filterTag = $('#shareTag').value;
+  const filterPT = $('#sharePT').value;
+  let markers = state.game.markers;
+  if (filterTag) markers = markers.filter(m => (m.tags || []).includes(filterTag));
+  if (filterPT) markers = markers.filter(m => m.playType === filterPT);
+  const shareGame = {
+    opponent: state.game.opponent, date: state.game.date, season: state.game.season,
+    homeAway: state.game.homeAway, source: state.game.source,
+    markers, clips: state.game.clips, quickTags: state.game.quickTags,
+  };
+  const json = JSON.stringify(shareGame);
+  let payload;
+  try {
+    // Compress via simple base64 (most URLs handle it). For real size wins we'd need pako, but stay dependency-free.
+    payload = encodeURIComponent(btoa(unescape(encodeURIComponent(json))));
+  } catch {
+    payload = encodeURIComponent(json);
+  }
+  const url = `${location.origin}${location.pathname}#share=${payload}`;
+  $('#shareLink').value = url;
+  const kb = (url.length / 1024).toFixed(1);
+  $('#shareLinkSize').textContent = `${markers.length} plays · ~${kb} KB link${url.length > 8000 ? ' (browser limit ~8KB — consider exporting JSON instead)' : ''}`;
+}
+function loadShareFromURL() {
+  const h = location.hash || '';
+  const mm = h.match(/^#share=(.+)$/);
+  if (!mm) return false;
+  try {
+    const raw = decodeURIComponent(mm[1]);
+    let json;
+    try { json = decodeURIComponent(escape(atob(raw))); }
+    catch { json = raw; }
+    const g = JSON.parse(json);
+    g.id = uid('g_share');
+    g.updatedAt = nowISO();
+    state.game = g;
+    state.readOnly = true;
+    state.mp4File = null;
+    document.body.classList.add('read-only');
+    refreshGameSelect();
+    attachAdapter();
+    renderAll();
+    toast('Loaded shared breakdown (read-only).');
+    return true;
+  } catch (e) {
+    toast('Failed to load shared link: ' + e.message, 'error');
+    return false;
+  }
+}
+
+// =================== COMPARE (#11) ====================
+function openCompareView() {
+  $('#compareView').classList.remove('hidden');
+  const ix = loadIndex().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  for (const id of ['cmpGameA', 'cmpGameB']) {
+    const sel = $('#' + id);
+    sel.innerHTML = '<option value="">— Pick a game —</option>' +
+      ix.map(g => `<option value="${g.id}">${escapeHTML(g.opponent)} — ${g.date || ''}</option>`).join('');
+  }
+  if (state.game) $('#cmpGameA').value = state.game.id;
+  renderCompare();
+}
+function closeCompareView() {
+  $('#compareView').classList.add('hidden');
+}
+function renderCompare() {
+  const aId = $('#cmpGameA').value, bId = $('#cmpGameB').value;
+  const a = aId ? loadGame(aId) : null;
+  const b = bId ? loadGame(bId) : null;
+  if (!a || !b) {
+    $('#compareBody').innerHTML = '<p class="muted">Pick two games to compare.</p>';
+    return;
+  }
+  const sA = computeStats(a.markers), sB = computeStats(b.markers);
+  const rows = [
+    ['Plays', a.markers.length, b.markers.length],
+    ['Offense plays', sA.offPlays, sB.offPlays],
+    ['Off Y/P', num(sA.ypp, 1), num(sB.ypp, 1)],
+    ['Success rate', sA.offPlays ? pct(sA.success/sA.offPlays) : '—', sB.offPlays ? pct(sB.success/sB.offPlays) : '—'],
+    ['Explosive', sA.explosive, sB.explosive],
+    ['3rd-down %', sA.third ? pct(sA.thirdConv) : '—', sB.third ? pct(sB.thirdConv) : '—'],
+    ['Defense plays', sA.defPlays, sB.defPlays],
+    ['Yards allowed/play', num(sA.ypa, 1), num(sB.ypa, 1)],
+    ['TFLs', sA.tfls, sB.tfls],
+    ['Sacks', sA.sacks, sB.sacks],
+    ['Takeaways', sA.takeaways, sB.takeaways],
+    ['Missed tackles', sA.missed, sB.missed],
+  ];
+  $('#compareBody').innerHTML = `
+    <table class="compare-table">
+      <thead><tr><th></th><th>${escapeHTML(a.opponent)}<br><span class="muted small">${a.date}</span></th><th>${escapeHTML(b.opponent)}<br><span class="muted small">${b.date}</span></th></tr></thead>
+      <tbody>${rows.map(([k, va, vb]) => `<tr><td><strong>${k}</strong></td><td>${va}</td><td>${vb}</td></tr>`).join('')}</tbody>
+    </table>
+  `;
+}
+
+// =================== VIEW MODE (#14) ====================
+function setViewMode(mode) {
+  state.viewMode = mode;
+  document.body.classList.remove('vm-review', 'vm-gameday', 'vm-compare');
+  document.body.classList.add('vm-' + mode);
+  $$('.vm').forEach(b => b.classList.toggle('active', b.dataset.vm === mode));
+  if (mode === 'compare') openCompareView();
+  else closeCompareView();
 }
 
 function deletePlay(id) {
@@ -820,29 +1268,58 @@ function updateSchemaField(m, el) {
 }
 
 // =================== RENDER: MARKER LIST ====================
+function outcomeClass(m) {
+  if (m.playType === 'offense' && m.offense) {
+    if (m.offense.explosive) return 'outcome-explosive';
+    if (m.offense.success)   return 'outcome-success';
+    if (m.offense.resultYards != null && m.offense.resultYards !== '' && +m.offense.resultYards <= 0) return 'outcome-bad';
+    if (m.offense.resultYards != null && m.offense.resultYards !== '') return 'outcome-fail';
+  }
+  if (m.playType === 'defense' && m.defense) {
+    if (m.defense.sack || m.defense.tfl || m.defense.int) return 'outcome-success';
+    if (m.defense.missedTackle) return 'outcome-bad';
+  }
+  return '';
+}
+
 function renderMarkerList() {
   const list = $('#markerList');
   list.innerHTML = '';
   if (!state.game) { $('#markerCount').textContent = '0'; return; }
-  const q = state.search.toLowerCase();
-  const items = state.game.markers
-    .filter(m => !q || (m.title || '').toLowerCase().includes(q) || (m.notes || '').toLowerCase().includes(q));
-  $('#markerCount').textContent = String(state.game.markers.length);
+  const items = state.game.markers.filter(passesListFilters);
+  $('#markerCount').textContent = `${items.length}/${state.game.markers.length}`;
   for (const m of items) {
     const li = document.createElement('li');
-    li.className = 'marker-item' + (m.id === state.activeMarkerId ? ' active' : '');
+    const isActive   = m.id === state.activeMarkerId;
+    const isSelected = state.selectedIds.has(m.id);
+    li.className = 'marker-item ' + outcomeClass(m) +
+      (isActive ? ' active' : '') + (isSelected ? ' selected' : '');
     const tsLabel = playRange(m)
       ? `${fmtTime(m.inTime)}–${fmtTime(m.outTime)}`
       : fmtTime(m.time);
+    const driveBadge = m.drive ? `<span class="drive-chip" title="Drive ${m.drive}">D${m.drive}</span>` : '';
     li.innerHTML = `
       <span class="ts-chip ${playRange(m) ? 'ts-range' : ''}">${tsLabel}</span>
+      ${driveBadge}
       <span class="pt-chip ${m.playType}">${m.playType === 'st' ? 'ST' : m.playType.slice(0,3)}</span>
       <span class="marker-title">${escapeHTML(m.title || '(untitled)')}</span>
-      <button class="marker-del" title="Delete">×</button>
+      ${state.readOnly ? '' : '<button class="marker-del" title="Delete">×</button>'}
     `;
     li.addEventListener('click', (e) => {
       if (e.target.classList.contains('marker-del')) { deletePlay(m.id); return; }
+      // Shift / Ctrl = selection, plain click = navigate
+      if (e.shiftKey) { toggleSelect(m.id, true, false); return; }
+      if (e.ctrlKey || e.metaKey) { toggleSelect(m.id, false, true); return; }
+      // Plain click — clear any selection and navigate
+      if (state.selectedIds.size > 0) clearSelection();
       setActiveMarker(m.id);
+      state.selectAnchorId = m.id;
+    });
+    li.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (state.readOnly) return;
+      // Quick context menu: duplicate
+      if (confirm(`Duplicate "${m.title}"?`)) duplicatePlay(m.id);
     });
     list.appendChild(li);
   }
@@ -863,6 +1340,7 @@ function renderPlayPane() {
   $('#playTime').value = fmtTime(playStart(m));
   $('#playQuarter').value = m.quarter || '';
   $('#playNotes').value = m.notes || '';
+  if ($('#playDrive')) $('#playDrive').value = m.drive || '';
 
   // Range row
   const outLabel = $('#playOutLabel');
@@ -875,10 +1353,17 @@ function renderPlayPane() {
     durLabel.textContent = '';
   }
 
+  // Pre-snap row
+  const ps = $('#playPreSnapLabel');
+  if (ps) ps.textContent = m.preSnapTime != null ? fmtTime(m.preSnapTime) : '—';
+  const lps = $('#loopFromPreSnap');
+  if (lps) lps.checked = !!m.loopFromPreSnap;
+
   $$('.pt').forEach(b => b.classList.toggle('active', b.dataset.pt === m.playType));
   renderSchemaForm();
   renderTagChips();
   refreshTagSuggestions();
+  renderComments();
 }
 
 // =================== TAGS ====================
@@ -1047,6 +1532,7 @@ function applyFilters(markers) {
       if (!bucket || String(bucket.down || '') !== state.filterDown) return false;
     }
     if (state.filterTag && !(m.tags || []).includes(state.filterTag)) return false;
+    if (state.filterDrive && String(m.drive || '') !== state.filterDrive) return false;
     return true;
   });
 }
@@ -1235,7 +1721,11 @@ function renderAll() {
   renderQuickStats();
   refreshTagFilter();
   refreshConceptSuggestions();
+  refreshDriveFilters();
+  renderQuickTagBar();
   updateCapabilities();
+  // Sync drive counter from loaded game
+  if (state.game) state.currentDrive = state.game.currentDrive || 1;
 }
 
 // =================== EXPORT / IMPORT ====================
@@ -1330,6 +1820,8 @@ function wireHotkeys() {
       case '3': if (activeMarker()) setPlayType('st'); break;
       case '[': gotoAdjacentMarker(-1); break;
       case ']': gotoAdjacentMarker(+1); break;
+      case 'D': if (e.shiftKey) { const m = activeMarker(); if (m) duplicatePlay(m.id); } break;
+      case 'd': if (e.shiftKey) { const m = activeMarker(); if (m) duplicatePlay(m.id); } break;
       case '?':
       case '/':
         if (e.shiftKey || e.key === '?') {
@@ -1377,9 +1869,65 @@ function wireUI() {
   $('#btnNewGame').addEventListener('click', openNewGameModal);
   $('#btnNewGameInline').addEventListener('click', openNewGameModal);
   $('#btnExport').addEventListener('click', exportGameJSON);
+  $('#btnExportCsv').addEventListener('click', exportCSV);
   $('#btnImport').addEventListener('click', () => $('#importFile').click());
+  $('#btnShare').addEventListener('click', openShareModal);
   $('#importFile').addEventListener('change', e => { if (e.target.files[0]) importGameJSON(e.target.files[0]); e.target.value = ''; });
   $('#gameSelect').addEventListener('change', e => { if (e.target.value) loadGameById(e.target.value); });
+
+  // View mode
+  $$('.vm').forEach(b => b.addEventListener('click', () => setViewMode(b.dataset.vm)));
+
+  // Compare
+  $('#btnCompareClose').addEventListener('click', () => setViewMode('review'));
+  $('#cmpGameA').addEventListener('change', renderCompare);
+  $('#cmpGameB').addEventListener('change', renderCompare);
+
+  // Share modal
+  $('#shareTag').addEventListener('change', updateShareLink);
+  $('#sharePT').addEventListener('change', updateShareLink);
+  $('#btnShareCancel').addEventListener('click', () => $('#shareModal').classList.add('hidden'));
+  $('#btnShareCopy').addEventListener('click', async () => {
+    const link = $('#shareLink').value;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast('Link copied.');
+    } catch {
+      $('#shareLink').select();
+      document.execCommand('copy');
+      toast('Link copied.');
+    }
+  });
+
+  // List filters
+  $('#listFilterPT').addEventListener('change', e => { state.listFilterPT = e.target.value; renderMarkerList(); });
+  $('#listFilterQuarter').addEventListener('change', e => { state.listFilterQuarter = e.target.value; renderMarkerList(); });
+  $('#listFilterDown').addEventListener('change', e => { state.listFilterDown = e.target.value; renderMarkerList(); });
+  $('#listFilterTag').addEventListener('change', e => { state.listFilterTag = e.target.value; renderMarkerList(); });
+  $('#listFilterDrive').addEventListener('change', e => { state.listFilterDrive = e.target.value; renderMarkerList(); });
+  $('#listClearFilters').addEventListener('click', clearListFilters);
+
+  // Bulk bar
+  $('#bulkClear').addEventListener('click', clearSelection);
+  $('#bulkDelete').addEventListener('click', bulkDelete);
+  $('#bulkTag').addEventListener('click', () => { const v = $('#bulkTagInput').value.trim(); if (v) { bulkTag(v); $('#bulkTagInput').value = ''; } });
+  $('#bulkTagInput').addEventListener('keydown', e => { if (e.key === 'Enter') { const v = e.target.value.trim(); if (v) { bulkTag(v); e.target.value = ''; } } });
+  $('#bulkPlayType').addEventListener('click', () => {
+    $('#bulkPTCount').textContent = state.selectedIds.size;
+    $('#bulkPTModal').classList.remove('hidden');
+  });
+  $('#bulkPTCancel').addEventListener('click', () => $('#bulkPTModal').classList.add('hidden'));
+  $$('[data-bulkpt]').forEach(b => b.addEventListener('click', () => {
+    bulkSetPlayType(b.dataset.bulkpt);
+    $('#bulkPTModal').classList.add('hidden');
+  }));
+
+  // Quick tags
+  $('#qtAdd').addEventListener('click', addQuickTagPreset);
+
+  // Auto-advance + new drive
+  $('#autoAdvance').addEventListener('change', e => { state.autoAdvance = e.target.checked; });
+  $('#btnNewDrive').addEventListener('click', newDrive);
 
   // New Game modal
   $('#ng_cancel').addEventListener('click', closeNewGameModal);
@@ -1466,7 +2014,42 @@ function wireUI() {
   $('#playNotes').addEventListener('input', e => { const m = activeMarker(); if (m) { m.notes = e.target.value; persistGame(); } });
   $$('.pt').forEach(b => b.addEventListener('click', () => setPlayType(b.dataset.pt)));
   $('#btnDeletePlay').addEventListener('click', () => { const m = activeMarker(); if (m) deletePlay(m.id); });
+  $('#btnDuplicatePlay').addEventListener('click', () => { const m = activeMarker(); if (m) duplicatePlay(m.id); });
   $$('.nudge').forEach(b => b.addEventListener('click', () => nudgeActiveMarkerTime(+b.dataset.nudge)));
+
+  // Drive on play
+  if ($('#playDrive')) $('#playDrive').addEventListener('change', e => {
+    const m = activeMarker(); if (!m) return;
+    m.drive = e.target.value ? +e.target.value : null;
+    persistGame(); renderMarkerList(); refreshDriveFilters();
+  });
+
+  // Pre-snap controls
+  if ($('#btnSetPreSnap')) $('#btnSetPreSnap').addEventListener('click', () => {
+    const m = activeMarker(); if (!m || !state.adapter) return;
+    const t = state.adapter.getTime();
+    const start = playStart(m);
+    if (t >= start) { toast('Pre-snap must be before the play start.', 'error'); return; }
+    m.preSnapTime = t;
+    persistGame(); renderPlayPane();
+    toast(`Pre-snap set to ${fmtTime(t)}`);
+  });
+  if ($('#btnClearPreSnap')) $('#btnClearPreSnap').addEventListener('click', () => {
+    const m = activeMarker(); if (!m) return;
+    m.preSnapTime = null; m.loopFromPreSnap = false;
+    persistGame(); renderPlayPane();
+  });
+  if ($('#loopFromPreSnap')) $('#loopFromPreSnap').addEventListener('change', e => {
+    const m = activeMarker(); if (!m) return;
+    m.loopFromPreSnap = e.target.checked;
+    persistGame();
+  });
+
+  // Comments
+  if ($('#btnAddComment')) $('#btnAddComment').addEventListener('click', addComment);
+  if ($('#commentBody')) $('#commentBody').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addComment(); }
+  });
 
   $('#btnSetPlayOut').addEventListener('click', () => {
     const m = activeMarker();
@@ -1500,6 +2083,7 @@ function wireUI() {
   $('#filterQuarter').addEventListener('change', e => { state.filterQuarter = e.target.value; renderStats(); });
   $('#filterDown').addEventListener('change', e => { state.filterDown = e.target.value; renderStats(); });
   $('#filterTag').addEventListener('change', e => { state.filterTag = e.target.value; renderStats(); });
+  $('#filterDrive').addEventListener('change', e => { state.filterDrive = e.target.value; renderStats(); });
 
   // Resize
   window.addEventListener('resize', resizeOverlay);
@@ -1516,6 +2100,10 @@ function init() {
   wireStopwatch();
   refreshGameSelect();
   resizeOverlay();
+  document.body.classList.add('vm-review');
+
+  // Try share URL first
+  if (loadShareFromURL()) return;
 
   const ix = loadIndex();
   if (ix.length) {
