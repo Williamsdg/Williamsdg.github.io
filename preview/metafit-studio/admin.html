@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Studio Console — Meta Fitness</title>
+<meta name="description" content="Meta Fitness Studio admin console — members, scheduling, check-in, billing, retention, analytics." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0e1612;
+    --ink-2:#1c2a23;
+    --moss:#2c4a3a;
+    --moss-deep:#1f3429;
+    --sage:#7a9a85;
+    --bone:#f5f1e8;
+    --cream:#ede5d2;
+    --paper:#fbf8f1;
+    --line:#e3dcc7;
+    --line-2:#d8cfb8;
+    --gold:#c19a4a;
+    --rust:#b25a3a;
+    --red:#c4453f;
+    --green:#3e7a5a;
+    --amber:#c8901c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:400;letter-spacing:-.02em;line-height:1.1}
+  a{color:inherit;text-decoration:none}
+
+  .shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+  /* sidebar */
+  .side{background:var(--ink);color:var(--cream);padding:24px 18px;display:flex;flex-direction:column;border-right:1px solid var(--moss-deep);position:sticky;top:0;height:100vh;overflow-y:auto}
+  .side-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 26px;border-bottom:1px solid var(--moss-deep);margin-bottom:18px}
+  .side-brand .mark{width:36px;height:36px;border-radius:50%;background:var(--moss);color:var(--bone);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:18px}
+  .side-brand .name{font-family:'Fraunces',serif;font-size:20px;color:var(--bone)}
+  .side-brand .sub{font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-top:1px}
+
+  .side-section{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--sage);padding:14px 10px 8px;font-weight:600}
+  .side-link{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:7px;font-size:13px;color:var(--cream);margin-bottom:1px;cursor:pointer;transition:all .18s;font-weight:500;position:relative}
+  .side-link .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;color:var(--sage)}
+  .side-link:hover{background:var(--moss-deep);color:var(--bone)}
+  .side-link.active{background:var(--moss);color:var(--bone)}
+  .side-link.active .ic{color:var(--gold)}
+  .side-link .pill{position:absolute;right:10px;background:var(--gold);color:var(--ink);font-size:9px;padding:2px 6px;border-radius:999px;font-weight:700;letter-spacing:.04em}
+  .side-link .dot{position:absolute;right:14px;width:7px;height:7px;border-radius:50%;background:var(--rust)}
+
+  .side-foot{margin-top:auto;padding-top:18px;border-top:1px solid var(--moss-deep);display:flex;align-items:center;gap:10px}
+  .side-foot .ava{width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+  .side-foot .nm{font-size:12px;color:var(--bone);font-weight:600}
+  .side-foot .rl{font-size:10px;color:var(--sage);letter-spacing:.1em}
+
+  /* main */
+  .main{padding:28px 32px 60px;overflow-x:hidden}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px;flex-wrap:wrap;gap:18px}
+  .top-l h1{font-size:34px}
+  .top-l .crumb{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--moss);margin-bottom:8px}
+  .top-r{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .search{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 14px;width:280px}
+  .search input{border:none;outline:none;background:transparent;flex:1;font-size:13px;font-family:'Inter',sans-serif;color:var(--ink)}
+  .search .kbd{font-size:10px;background:var(--paper);padding:2px 6px;border:1px solid var(--line);border-radius:4px;color:var(--ink-2);letter-spacing:.04em}
+  .icon-btn{width:38px;height:38px;border-radius:8px;background:#fff;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-2);position:relative}
+  .icon-btn .dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--rust);border:2px solid #fff}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;letter-spacing:.04em;cursor:pointer;border:none;transition:all .2s ease;font-family:'Inter',sans-serif}
+  .btn-dark{background:var(--ink);color:var(--bone)}
+  .btn-dark:hover{background:var(--moss)}
+  .btn-gold{background:var(--gold);color:#fff}
+  .btn-outline{background:#fff;color:var(--ink);border:1px solid var(--line)}
+
+  /* KPI strip */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px 22px;position:relative}
+  .kpi .lbl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--moss);margin-bottom:14px;font-weight:600}
+  .kpi .val{font-family:'Fraunces',serif;font-size:32px;line-height:1;letter-spacing:-.01em}
+  .kpi .delta{font-size:11px;color:var(--green);margin-top:8px;display:flex;align-items:center;gap:6px;font-weight:600}
+  .kpi .delta.down{color:var(--rust)}
+  .kpi .delta .arrow{font-size:13px}
+  .kpi.feat{background:var(--ink);color:var(--bone);border-color:var(--ink)}
+  .kpi.feat .lbl{color:var(--gold)}
+  .kpi.feat .val{color:var(--bone)}
+  .kpi.feat .delta{color:var(--sage)}
+
+  /* grid layout */
+  .row{display:grid;gap:18px;margin-bottom:18px}
+  .row.r-2{grid-template-columns:1.6fr 1fr}
+  .row.r-3{grid-template-columns:1fr 1fr 1fr}
+  .row.r-2alt{grid-template-columns:1fr 1.4fr}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:24px;display:flex;flex-direction:column}
+  .card-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px}
+  .card-h h3{font-size:20px;margin-bottom:2px}
+  .card-h .sub{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--moss)}
+  .card-h .actions{display:flex;gap:8px}
+  .pill-btn{font-size:11px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;cursor:pointer;color:var(--ink-2);font-weight:500}
+  .pill-btn.on{background:var(--ink);color:var(--bone);border-color:var(--ink)}
+
+  /* today schedule */
+  .today-class{display:grid;grid-template-columns:90px 1fr auto;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);align-items:center}
+  .today-class:last-child{border-bottom:none}
+  .today-time{font-family:'Fraunces',serif;font-size:20px;color:var(--moss);line-height:1}
+  .today-time small{display:block;font-size:10px;font-family:'Inter',sans-serif;letter-spacing:.18em;color:var(--ink-2);margin-top:4px;font-weight:600}
+  .today-class .nm{font-weight:600;margin-bottom:3px}
+  .today-class .meta{font-size:11px;color:var(--ink-2);display:flex;gap:10px}
+  .today-class .meta .dot{width:3px;height:3px;border-radius:50%;background:var(--ink-2);align-self:center}
+  .today-class .status{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .occupancy{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--moss);font-weight:600}
+  .occ-bar{width:50px;height:5px;background:var(--paper);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+  .occ-fill{height:100%;background:var(--moss);border-radius:99px}
+  .occ-fill.warn{background:var(--amber)}
+  .occ-fill.full{background:var(--rust)}
+  .status-tag{font-size:9px;letter-spacing:.16em;text-transform:uppercase;padding:3px 8px;border-radius:99px;font-weight:600;border:1px solid}
+  .tag-live{background:var(--green);color:#fff;border-color:var(--green)}
+  .tag-soon{background:#fff;color:var(--moss);border-color:var(--moss)}
+  .tag-full{background:var(--rust);color:#fff;border-color:var(--rust)}
+  .tag-wait{background:var(--amber);color:#fff;border-color:var(--amber)}
+
+  /* check-in panel */
+  .checkin{background:linear-gradient(160deg,var(--moss-deep) 0%,var(--ink) 80%);color:var(--bone);border-color:var(--moss-deep);position:relative;overflow:hidden}
+  .checkin::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(193,154,74,.18),transparent 50%);pointer-events:none}
+  .checkin .card-h h3{color:var(--bone)}
+  .checkin .card-h .sub{color:var(--gold)}
+  .checkin-qr{aspect-ratio:1/1;background:var(--bone);border-radius:10px;margin:10px 0 20px;position:relative;display:flex;align-items:center;justify-content:center;padding:18px;max-width:220px;align-self:center}
+  .qr-grid{width:100%;height:100%;display:grid;grid-template-columns:repeat(14,1fr);grid-template-rows:repeat(14,1fr);gap:1px}
+  .qr-cell{background:var(--ink)}
+  .qr-cell.off{background:transparent}
+  .checkin-current{font-size:13px;text-align:center;color:var(--cream);font-weight:300;margin-bottom:8px}
+  .checkin-current strong{font-family:'Fraunces',serif;font-style:italic;color:var(--gold);font-size:18px;font-weight:400}
+  .checkin-recent{margin-top:16px;border-top:1px solid rgba(245,241,232,.14);padding-top:14px}
+  .checkin-recent .head{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--sage);margin-bottom:10px;font-weight:600}
+  .checkin-row{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;font-size:12px;padding:6px 0}
+  .checkin-row .av{width:24px;height:24px;border-radius:50%;background:var(--sage);color:var(--moss-deep);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+  .checkin-row .nm{color:var(--bone)}
+  .checkin-row .tm{color:var(--cream);font-size:10px;letter-spacing:.04em}
+
+  /* lead pipeline */
+  .pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .pipe-col{background:var(--paper);border-radius:8px;padding:14px;border:1px solid var(--line)}
+  .pipe-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed var(--line-2)}
+  .pipe-head .lbl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--moss);font-weight:600}
+  .pipe-head .ct{font-family:'Fraunces',serif;font-size:18px;color:var(--ink)}
+  .lead-card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:11px;margin-bottom:8px;cursor:grab;transition:transform .2s}
+  .lead-card:hover{transform:translateX(2px);border-color:var(--moss)}
+  .lead-card .nm{font-weight:600;font-size:13px;margin-bottom:3px}
+  .lead-card .meta{font-size:10px;color:var(--ink-2);display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .lead-card .src{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);font-weight:600}
+  .lead-card .days{font-size:9px;color:var(--ink-2)}
+  .lead-card.hot{border-left:3px solid var(--gold)}
+
+  /* revenue & analytics */
+  .rev-grid{display:grid;grid-template-columns:1fr;gap:0}
+  .rev-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px}
+  .rev-top .big{font-family:'Fraunces',serif;font-size:42px;line-height:1}
+  .rev-top .sub{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--moss);font-weight:600;margin-top:4px}
+  .rev-top .delta{font-size:12px;color:var(--green);font-weight:600;text-align:right}
+  .rev-top .delta .num{font-family:'Fraunces',serif;font-size:22px;display:block}
+  .chart{height:140px;position:relative;margin:10px 0 16px}
+  .chart svg{width:100%;height:100%}
+  .rev-breakdown{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding-top:16px;border-top:1px solid var(--line)}
+  .rev-cell .lbl{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--moss);margin-bottom:6px;font-weight:600}
+  .rev-cell .val{font-family:'Fraunces',serif;font-size:22px}
+  .rev-cell .pct{font-size:11px;color:var(--ink-2);margin-top:2px}
+
+  /* retention alerts */
+  .alert{display:grid;grid-template-columns:36px 1fr auto;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);align-items:center}
+  .alert:last-child{border-bottom:none}
+  .alert .av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff}
+  .av-red{background:var(--rust)}
+  .av-amber{background:var(--amber)}
+  .av-moss{background:var(--moss)}
+  .alert .nm{font-weight:600;font-size:13px;margin-bottom:2px}
+  .alert .reason{font-size:11px;color:var(--ink-2)}
+  .alert .reason .sev{font-weight:700}
+  .sev-red{color:var(--rust)}
+  .sev-amber{color:var(--amber)}
+  .alert .act{font-size:11px;padding:6px 12px;border-radius:6px;background:var(--ink);color:var(--bone);font-weight:600;border:none;cursor:pointer}
+
+  /* trainer payroll */
+  .trainer-row{display:grid;grid-template-columns:32px 1fr 90px 90px 70px;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:center;font-size:13px}
+  .trainer-row:first-of-type{border-top:1px solid var(--line);padding-top:14px;margin-top:6px}
+  .trainer-row .av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff}
+  .trainer-row .nm{font-weight:600}
+  .trainer-row .rl{font-size:10px;color:var(--ink-2);letter-spacing:.04em;margin-top:2px}
+  .trainer-row .num{font-family:'Fraunces',serif;font-size:17px;color:var(--ink);text-align:right}
+  .trainer-row .num small{display:block;font-size:9px;font-family:'Inter',sans-serif;color:var(--ink-2);letter-spacing:.14em;text-transform:uppercase;margin-top:1px;text-align:right}
+  .trainer-row .rating{font-family:'Fraunces',serif;font-style:italic;color:var(--gold);text-align:right}
+
+  /* on-demand library */
+  .vid-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .vid{position:relative;aspect-ratio:16/10;border-radius:8px;overflow:hidden;background:linear-gradient(140deg,var(--moss),var(--ink));display:flex;flex-direction:column;justify-content:flex-end;padding:12px;color:var(--bone);cursor:pointer;transition:transform .25s}
+  .vid:hover{transform:translateY(-3px)}
+  .vid.v2{background:linear-gradient(140deg,#b25a3a,#7a3825)}
+  .vid.v3{background:linear-gradient(140deg,#c19a4a,#7a5a1f)}
+  .vid.v4{background:linear-gradient(140deg,#7a9a85,#2c4a3a)}
+  .vid::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 10%,rgba(255,255,255,.18),transparent 55%)}
+  .vid-play{position:absolute;top:12px;left:12px;width:34px;height:34px;border-radius:50%;background:rgba(245,241,232,.18);backdrop-filter:blur(8px);border:1px solid rgba(245,241,232,.3);display:flex;align-items:center;justify-content:center;color:var(--bone);font-size:11px;padding-left:2px}
+  .vid-dur{position:absolute;top:16px;right:14px;font-size:10px;letter-spacing:.16em;color:var(--cream)}
+  .vid h4{font-family:'Fraunces',serif;font-size:16px;color:var(--bone);position:relative;z-index:2;line-height:1.15}
+  .vid .views{font-size:10px;color:var(--cream);letter-spacing:.08em;margin-top:4px;position:relative;z-index:2}
+
+  /* communication */
+  .campaigns{display:flex;flex-direction:column;gap:10px}
+  .camp-row{background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:grid;grid-template-columns:38px 1fr auto;gap:14px;align-items:center}
+  .camp-ic{width:38px;height:38px;border-radius:9px;background:var(--moss);color:var(--bone);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-style:italic;font-size:16px}
+  .camp-ic.alt{background:var(--gold);color:var(--ink)}
+  .camp-ic.alt2{background:var(--sage);color:var(--moss-deep)}
+  .camp-row .ttl{font-weight:600;font-size:13px;margin-bottom:2px}
+  .camp-row .mt{font-size:11px;color:var(--ink-2)}
+  .camp-row .stat{display:flex;gap:14px;align-items:center;font-size:11px;color:var(--ink-2)}
+  .camp-row .stat .v{font-family:'Fraunces',serif;font-size:17px;color:var(--ink);display:block}
+
+  @media (max-width:1200px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .vid-grid{grid-template-columns:repeat(2,1fr)}
+    .pipeline{grid-template-columns:1fr 1fr}
+    .row.r-2,.row.r-3,.row.r-2alt{grid-template-columns:1fr}
+  }
+  @media (max-width:900px){
+    .shell{grid-template-columns:1fr}
+    .side{position:relative;height:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="side-brand">
+      <span class="mark">M</span>
+      <div>
+        <div class="name">Meta</div>
+        <div class="sub">Studio Console</div>
+      </div>
+    </div>
+
+    <div class="side-section">Operations</div>
+    <a class="side-link active"><span class="ic">◆</span> Today<span class="pill">7</span></a>
+    <a class="side-link"><span class="ic">▣</span> Schedule</a>
+    <a class="side-link"><span class="ic">⟁</span> Check-In Mode</a>
+    <a class="side-link"><span class="ic">○</span> Rooms & Spaces</a>
+
+    <div class="side-section">People</div>
+    <a class="side-link"><span class="ic">◐</span> Members<span class="pill">428</span></a>
+    <a class="side-link"><span class="ic">⤴</span> Lead Pipeline<span class="dot"></span></a>
+    <a class="side-link"><span class="ic">⚐</span> Trainers</a>
+    <a class="side-link"><span class="ic">◓</span> Waivers</a>
+
+    <div class="side-section">Money</div>
+    <a class="side-link"><span class="ic">$</span> Billing</a>
+    <a class="side-link"><span class="ic">⊘</span> Failed Payments<span class="pill" style="background:var(--rust);color:#fff">4</span></a>
+    <a class="side-link"><span class="ic">⊗</span> POS / Retail</a>
+    <a class="side-link"><span class="ic">▤</span> Reports</a>
+
+    <div class="side-section">Growth</div>
+    <a class="side-link"><span class="ic">✉</span> Campaigns</a>
+    <a class="side-link"><span class="ic">⚡</span> Retention<span class="dot"></span></a>
+    <a class="side-link"><span class="ic">▶</span> Content Library</a>
+    <a class="side-link"><span class="ic">⌖</span> Challenges</a>
+
+    <div class="side-section">Settings</div>
+    <a class="side-link"><span class="ic">⚙</span> Studio Settings</a>
+    <a class="side-link"><span class="ic">↗</span> Integrations</a>
+
+    <div class="side-foot">
+      <div class="ava">WC</div>
+      <div>
+        <div class="nm">Whitney C.</div>
+        <div class="rl">Owner · Head Coach</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOP BAR -->
+    <div class="top">
+      <div class="top-l">
+        <div class="crumb">Studio Console · Tuesday, May 19</div>
+        <h1>Good morning, Whitney.</h1>
+        <div style="font-size:13px;color:var(--ink-2);margin-top:6px">12 classes scheduled today · 4 trial intros · $1,840 expected revenue · 2 retention alerts.</div>
+      </div>
+      <div class="top-r">
+        <div class="search">
+          <span style="color:var(--moss)">⌕</span>
+          <input placeholder="Search members, classes, payments…" />
+          <span class="kbd">⌘ K</span>
+        </div>
+        <button class="icon-btn"><span>◔</span><span class="dot"></span></button>
+        <button class="btn btn-outline">+ New Lead</button>
+        <button class="btn btn-dark">+ Add Class</button>
+      </div>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="kpis">
+      <div class="kpi feat">
+        <div class="lbl">Monthly Recurring</div>
+        <div class="val">$87,420</div>
+        <div class="delta"><span class="arrow">↗</span> +6.4% vs last mo</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Active Members</div>
+        <div class="val">428</div>
+        <div class="delta"><span class="arrow">↗</span> +14 this week</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">12-mo Retention</div>
+        <div class="val">94.1%</div>
+        <div class="delta"><span class="arrow">↗</span> +1.2 pt</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Class Occupancy</div>
+        <div class="val">82%</div>
+        <div class="delta down"><span class="arrow">↘</span> −3% vs last wk</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Trial → Member</div>
+        <div class="val">61%</div>
+        <div class="delta"><span class="arrow">↗</span> +8 pt MoM</div>
+      </div>
+    </div>
+
+    <!-- ROW: Today + Check-In -->
+    <div class="row r-2">
+      <div class="card">
+        <div class="card-h">
+          <div>
+            <h3>Today's Schedule</h3>
+            <div class="sub">Mountain Brook + Liberty Park</div>
+          </div>
+          <div class="actions">
+            <button class="pill-btn on">All</button>
+            <button class="pill-btn">MB</button>
+            <button class="pill-btn">LP</button>
+          </div>
+        </div>
+
+        <div class="today-class">
+          <div class="today-time">6:00<small>AM · MB</small></div>
+          <div>
+            <div class="nm">Strength & Sculpt</div>
+            <div class="meta"><span>Coach Whitney</span><span class="dot"></span><span>45 min</span><span class="dot"></span><span>Floor 1</span></div>
+          </div>
+          <div class="status">
+            <span class="status-tag tag-live">Live · 18 min in</span>
+            <div class="occupancy"><span>14/16</span><div class="occ-bar"><div class="occ-fill" style="width:88%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="today-class">
+          <div class="today-time">7:00<small>AM · MB</small></div>
+          <div>
+            <div class="nm">Sunrise HIIT</div>
+            <div class="meta"><span>Coach Reed</span><span class="dot"></span><span>45 min</span><span class="dot"></span><span>Floor 1</span></div>
+          </div>
+          <div class="status">
+            <span class="status-tag tag-soon">Up Next</span>
+            <div class="occupancy"><span>11/16</span><div class="occ-bar"><div class="occ-fill" style="width:69%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="today-class">
+          <div class="today-time">8:15<small>AM · LP</small></div>
+          <div>
+            <div class="nm">Reformer Flow</div>
+            <div class="meta"><span>Coach Mara</span><span class="dot"></span><span>50 min</span><span class="dot"></span><span>Pilates Studio</span></div>
+          </div>
+          <div class="status">
+            <span class="status-tag tag-full">Full · waitlist</span>
+            <div class="occupancy"><span>6/6</span><div class="occ-bar"><div class="occ-fill full" style="width:100%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="today-class">
+          <div class="today-time">9:15<small>AM · MB</small></div>
+          <div>
+            <div class="nm">Power Pilates</div>
+            <div class="meta"><span>Coach Mara</span><span class="dot"></span><span>50 min</span><span class="dot"></span><span>Pilates Studio</span></div>
+          </div>
+          <div class="status">
+            <span class="status-tag tag-wait">Sub needed</span>
+            <div class="occupancy"><span>5/10</span><div class="occ-bar"><div class="occ-fill warn" style="width:50%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="today-class">
+          <div class="today-time">12:00<small>PM · MB</small></div>
+          <div>
+            <div class="nm">Lunch Mobility</div>
+            <div class="meta"><span>Coach Jen</span><span class="dot"></span><span>30 min</span><span class="dot"></span><span>Floor 2</span></div>
+          </div>
+          <div class="status">
+            <div class="occupancy"><span>4/12</span><div class="occ-bar"><div class="occ-fill" style="width:33%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="today-class">
+          <div class="today-time">5:30<small>PM · MB</small></div>
+          <div>
+            <div class="nm">Sunset HIIT</div>
+            <div class="meta"><span>Coach Reed</span><span class="dot"></span><span>45 min</span><span class="dot"></span><span>Floor 1</span></div>
+          </div>
+          <div class="status">
+            <span class="status-tag tag-full">Full · waitlist 3</span>
+            <div class="occupancy"><span>16/16</span><div class="occ-bar"><div class="occ-fill full" style="width:100%"></div></div></div>
+          </div>
+        </div>
+
+        <div class="today-class">
+          <div class="today-time">6:30<small>PM · LP</small></div>
+          <div>
+            <div class="nm">Strength & Sculpt</div>
+            <div class="meta"><span>Coach Whitney</span><span class="dot"></span><span>45 min</span><span class="dot"></span><span>Floor 1</span></div>
+          </div>
+          <div class="status">
+            <div class="occupancy"><span>9/16</span><div class="occ-bar"><div class="occ-fill" style="width:56%"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card checkin">
+        <div class="card-h">
+          <div style="position:relative;z-index:2">
+            <h3>iPad Check-In</h3>
+            <div class="sub">Front Desk — Mountain Brook</div>
+          </div>
+          <button class="pill-btn" style="background:var(--gold);color:var(--ink);border-color:var(--gold);position:relative;z-index:2">Open Display</button>
+        </div>
+
+        <div class="checkin-qr">
+          <div class="qr-grid">
+            <!-- a coarse QR-ish pattern -->
+            <script>
+              document.write(Array.from({length:14*14}, (_,i)=>{
+                const x=i%14, y=Math.floor(i/14);
+                const corner=(x<3&&y<3)||(x>10&&y<3)||(x<3&&y>10);
+                const on = corner || (((x*y+x+y)*7+x)%5===0);
+                return `<div class="qr-cell ${on?'':'off'}"></div>`
+              }).join(''));
+            </script>
+          </div>
+        </div>
+
+        <div class="checkin-current" style="position:relative;z-index:2">Scan to check in to <strong>Sunrise HIIT · 7:00 AM</strong></div>
+
+        <div class="checkin-recent" style="position:relative;z-index:2">
+          <div class="head">Recent Check-Ins · Last 5 min</div>
+          <div class="checkin-row"><div class="av">CB</div><div class="nm">Caroline Bishop</div><div class="tm">6:18 AM</div></div>
+          <div class="checkin-row"><div class="av" style="background:var(--gold);color:var(--ink)">LM</div><div class="nm">Lauren Miller</div><div class="tm">6:17 AM</div></div>
+          <div class="checkin-row"><div class="av" style="background:var(--rust)">AS</div><div class="nm">Andrew Sloan</div><div class="tm">6:14 AM</div></div>
+          <div class="checkin-row"><div class="av" style="background:var(--cream);color:var(--moss-deep)">MR</div><div class="nm">Megan Reese</div><div class="tm">6:12 AM</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW: Lead Pipeline -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-h">
+        <div>
+          <h3>Lead Pipeline</h3>
+          <div class="sub">Trial → Member · Last 30 Days</div>
+        </div>
+        <div class="actions">
+          <button class="pill-btn">All Sources</button>
+          <button class="pill-btn">Instagram</button>
+          <button class="pill-btn">Referral</button>
+          <button class="pill-btn">Google</button>
+          <button class="btn btn-outline" style="padding:6px 14px;font-size:11px">+ Lead</button>
+        </div>
+      </div>
+
+      <div class="pipeline">
+        <div class="pipe-col">
+          <div class="pipe-head"><span class="lbl">New Lead</span><span class="ct">14</span></div>
+          <div class="lead-card hot">
+            <div class="nm">Anna Whitfield</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">"Friend recommended you" — IG DM</div>
+            <div class="meta"><span class="src">Instagram</span><span class="days">2h ago</span></div>
+          </div>
+          <div class="lead-card">
+            <div class="nm">Drew Halpern</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Liberty Park · husband already member</div>
+            <div class="meta"><span class="src">Referral</span><span class="days">Yesterday</span></div>
+          </div>
+          <div class="lead-card">
+            <div class="nm">Maya Patel</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Google form — Hybrid plan</div>
+            <div class="meta"><span class="src">Google</span><span class="days">2d</span></div>
+          </div>
+        </div>
+        <div class="pipe-col">
+          <div class="pipe-head"><span class="lbl">Booked Trial</span><span class="ct">9</span></div>
+          <div class="lead-card hot">
+            <div class="nm">Sarah Tomlin</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Strength & Sculpt · Thu 6AM</div>
+            <div class="meta"><span class="src">Instagram</span><span class="days">In 2 days</span></div>
+          </div>
+          <div class="lead-card">
+            <div class="nm">Brent McCallum</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Sunrise HIIT · Fri</div>
+            <div class="meta"><span class="src">Referral</span><span class="days">In 3 days</span></div>
+          </div>
+          <div class="lead-card">
+            <div class="nm">Priya Shah</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Reformer · LP · Mon</div>
+            <div class="meta"><span class="src">Walk-in</span><span class="days">In 6 days</span></div>
+          </div>
+        </div>
+        <div class="pipe-col">
+          <div class="pipe-head"><span class="lbl">Trial Done</span><span class="ct">7</span></div>
+          <div class="lead-card hot">
+            <div class="nm">Mark Pierson</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">"Loved it" — texted Whitney</div>
+            <div class="meta"><span class="src">Referral</span><span class="days">2d ago</span></div>
+          </div>
+          <div class="lead-card">
+            <div class="nm">Becca Chu</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Asked about pricing</div>
+            <div class="meta"><span class="src">IG Ad</span><span class="days">3d ago</span></div>
+          </div>
+          <div class="lead-card">
+            <div class="nm">Jamie Voss</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Hasn't responded — follow up</div>
+            <div class="meta"><span class="src">Google</span><span class="days">5d ago</span></div>
+          </div>
+        </div>
+        <div class="pipe-col">
+          <div class="pipe-head"><span class="lbl">Member</span><span class="ct" style="color:var(--green)">17</span></div>
+          <div class="lead-card">
+            <div class="nm">Caroline Davis</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Hybrid · $489/mo</div>
+            <div class="meta"><span class="src" style="color:var(--green)">Converted</span><span class="days">Yesterday</span></div>
+          </div>
+          <div class="lead-card">
+            <div class="nm">Will Brashier</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Studio · $239/mo</div>
+            <div class="meta"><span class="src" style="color:var(--green)">Converted</span><span class="days">3d ago</span></div>
+          </div>
+          <div class="lead-card">
+            <div class="nm">Eliza Tate</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:3px">Private · $895/mo</div>
+            <div class="meta"><span class="src" style="color:var(--green)">Converted</span><span class="days">1w ago</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW: Revenue + Retention -->
+    <div class="row r-2">
+      <div class="card">
+        <div class="card-h">
+          <div>
+            <h3>Revenue · May 2026</h3>
+            <div class="sub">Recurring + Sessions + Retail</div>
+          </div>
+          <div class="actions">
+            <button class="pill-btn on">Month</button>
+            <button class="pill-btn">Quarter</button>
+            <button class="pill-btn">YTD</button>
+          </div>
+        </div>
+        <div class="rev-top">
+          <div>
+            <div class="sub">Revenue this month</div>
+            <div class="big">$94,180</div>
+          </div>
+          <div class="delta">
+            <span class="num">+12.4%</span>
+            vs April · pacing ahead of plan
+          </div>
+        </div>
+
+        <div class="chart">
+          <svg viewBox="0 0 600 140" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2c4a3a" stop-opacity=".25"/>
+                <stop offset="100%" stop-color="#2c4a3a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,110 L40,98 L80,104 L120,82 L160,86 L200,68 L240,72 L280,54 L320,60 L360,42 L400,46 L440,30 L480,38 L520,22 L560,28 L600,18 L600,140 L0,140 Z" fill="url(#g)"/>
+            <path d="M0,110 L40,98 L80,104 L120,82 L160,86 L200,68 L240,72 L280,54 L320,60 L360,42 L400,46 L440,30 L480,38 L520,22 L560,28 L600,18" fill="none" stroke="#2c4a3a" stroke-width="2"/>
+            <circle cx="560" cy="28" r="4" fill="#c19a4a"/>
+            <line x1="0" y1="80" x2="600" y2="80" stroke="#d8cfb8" stroke-dasharray="2 4" stroke-width="1"/>
+          </svg>
+        </div>
+
+        <div class="rev-breakdown">
+          <div class="rev-cell">
+            <div class="lbl">Memberships</div>
+            <div class="val">$76,820</div>
+            <div class="pct">82% · 428 active</div>
+          </div>
+          <div class="rev-cell">
+            <div class="lbl">Private Sessions</div>
+            <div class="val">$13,640</div>
+            <div class="pct">14% · 108 sessions</div>
+          </div>
+          <div class="rev-cell">
+            <div class="lbl">Retail / Drinks</div>
+            <div class="val">$3,720</div>
+            <div class="pct">4% · POS</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div>
+            <h3>Retention Alerts</h3>
+            <div class="sub">AI-flagged · Members at risk</div>
+          </div>
+          <button class="pill-btn">View All (8)</button>
+        </div>
+        <div class="alert">
+          <div class="av av-red">JS</div>
+          <div>
+            <div class="nm">Jordan Stewart</div>
+            <div class="reason"><span class="sev sev-red">High risk</span> · No check-in in 19 days · Card declined twice</div>
+          </div>
+          <button class="act">Outreach</button>
+        </div>
+        <div class="alert">
+          <div class="av av-red">EM</div>
+          <div>
+            <div class="nm">Emma Morrison</div>
+            <div class="reason"><span class="sev sev-red">High risk</span> · Cancelled 3 of last 4 bookings</div>
+          </div>
+          <button class="act">Outreach</button>
+        </div>
+        <div class="alert">
+          <div class="av av-amber">TG</div>
+          <div>
+            <div class="nm">Tyler Greaves</div>
+            <div class="reason"><span class="sev sev-amber">Watch</span> · Attendance ↓ 40% MoM</div>
+          </div>
+          <button class="act">DM</button>
+        </div>
+        <div class="alert">
+          <div class="av av-amber">SK</div>
+          <div>
+            <div class="nm">Sara Kim</div>
+            <div class="reason"><span class="sev sev-amber">Watch</span> · Membership renewal in 5 days, no autopay</div>
+          </div>
+          <button class="act">Bill</button>
+        </div>
+        <div class="alert">
+          <div class="av av-moss">RD</div>
+          <div>
+            <div class="nm">Renee Daniels</div>
+            <div class="reason"><span class="sev" style="color:var(--moss)">Win-back</span> · Cancelled Apr 2 · Ready for a return offer</div>
+          </div>
+          <button class="act">Offer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW: Trainers + Communications -->
+    <div class="row r-2alt">
+      <div class="card">
+        <div class="card-h">
+          <div>
+            <h3>Trainer Roster</h3>
+            <div class="sub">Payroll · Hours · Rating</div>
+          </div>
+          <div class="actions">
+            <button class="pill-btn">May Cycle</button>
+          </div>
+        </div>
+        <div class="trainer-row">
+          <div class="av av-moss">WC</div>
+          <div>
+            <div class="nm">Whitney Caldwell</div>
+            <div class="rl">Head Coach · CSCS</div>
+          </div>
+          <div class="num">62<small>HRS</small></div>
+          <div class="num">$4,960<small>PAY</small></div>
+          <div class="rating">4.97</div>
+        </div>
+        <div class="trainer-row">
+          <div class="av" style="background:var(--rust)">ML</div>
+          <div>
+            <div class="nm">Mara Lindsay</div>
+            <div class="rl">Pilates Director</div>
+          </div>
+          <div class="num">48<small>HRS</small></div>
+          <div class="num">$3,360<small>PAY</small></div>
+          <div class="rating">4.92</div>
+        </div>
+        <div class="trainer-row">
+          <div class="av" style="background:var(--gold);color:var(--ink)">RB</div>
+          <div>
+            <div class="nm">Reed Brashier</div>
+            <div class="rl">Performance · PN1</div>
+          </div>
+          <div class="num">54<small>HRS</small></div>
+          <div class="num">$3,780<small>PAY</small></div>
+          <div class="rating">4.89</div>
+        </div>
+        <div class="trainer-row">
+          <div class="av" style="background:var(--sage);color:var(--moss-deep)">JH</div>
+          <div>
+            <div class="nm">Jen Hawkins</div>
+            <div class="rl">Mobility · FRC, FMS</div>
+          </div>
+          <div class="num">36<small>HRS</small></div>
+          <div class="num">$2,520<small>PAY</small></div>
+          <div class="rating">4.94</div>
+        </div>
+        <div class="trainer-row">
+          <div class="av" style="background:var(--moss)">DC</div>
+          <div>
+            <div class="nm">Drew Caldwell</div>
+            <div class="rl">Sub · Strength</div>
+          </div>
+          <div class="num">12<small>HRS</small></div>
+          <div class="num">$720<small>PAY</small></div>
+          <div class="rating">4.81</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div>
+            <h3>Active Campaigns</h3>
+            <div class="sub">SMS · Email · Push</div>
+          </div>
+          <button class="btn btn-dark" style="padding:6px 14px;font-size:11px">+ New Campaign</button>
+        </div>
+        <div class="campaigns">
+          <div class="camp-row">
+            <div class="camp-ic">✉</div>
+            <div>
+              <div class="ttl">"Summer Strong" — Class Pack Promo</div>
+              <div class="mt">Email · 412 recipients · Sent Mon 9:00 AM</div>
+            </div>
+            <div class="stat">
+              <div><span class="v">61%</span> Open</div>
+              <div><span class="v">22%</span> CTR</div>
+              <div><span class="v">14</span> Booked</div>
+            </div>
+          </div>
+          <div class="camp-row">
+            <div class="camp-ic alt">⚡</div>
+            <div>
+              <div class="ttl">"We Miss You" — Win-Back Series</div>
+              <div class="mt">SMS Auto · Triggered at 14d inactive · Ongoing</div>
+            </div>
+            <div class="stat">
+              <div><span class="v">38</span> Sent</div>
+              <div><span class="v">11</span> Replied</div>
+              <div><span class="v">4</span> Reactivated</div>
+            </div>
+          </div>
+          <div class="camp-row">
+            <div class="camp-ic alt2">★</div>
+            <div>
+              <div class="ttl">"Birthday Week" — Free Smoothie</div>
+              <div class="mt">Auto · Day-of birthday · Always on</div>
+            </div>
+            <div class="stat">
+              <div><span class="v">28</span> Sent (May)</div>
+              <div><span class="v">19</span> Redeemed</div>
+            </div>
+          </div>
+          <div class="camp-row">
+            <div class="camp-ic">▶</div>
+            <div>
+              <div class="ttl">"6:00 AM tomorrow" — Class Reminder</div>
+              <div class="mt">Push · Auto · 12hr before · Last 24h</div>
+            </div>
+            <div class="stat">
+              <div><span class="v">94</span> Sent</div>
+              <div><span class="v">2</span> Cancels</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW: Content Library -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-h">
+        <div>
+          <h3>On-Demand Library</h3>
+          <div class="sub">Available to all Members · Track engagement</div>
+        </div>
+        <div class="actions">
+          <button class="pill-btn on">All</button>
+          <button class="pill-btn">Strength</button>
+          <button class="pill-btn">Pilates</button>
+          <button class="pill-btn">Mobility</button>
+          <button class="btn btn-outline" style="padding:6px 14px;font-size:11px">↑ Upload</button>
+        </div>
+      </div>
+      <div class="vid-grid">
+        <div class="vid">
+          <div class="vid-play">▶</div>
+          <div class="vid-dur">22:14</div>
+          <h4>20-Min Travel Strength</h4>
+          <div class="views">Coach Whitney · 184 views this week</div>
+        </div>
+        <div class="vid v2">
+          <div class="vid-play">▶</div>
+          <div class="vid-dur">35:02</div>
+          <h4>Reformer Foundations II</h4>
+          <div class="views">Coach Mara · 92 views this week</div>
+        </div>
+        <div class="vid v3">
+          <div class="vid-play">▶</div>
+          <div class="vid-dur">18:30</div>
+          <h4>Lower Back Reset</h4>
+          <div class="views">Coach Jen · 211 views this week</div>
+        </div>
+        <div class="vid v4">
+          <div class="vid-play">▶</div>
+          <div class="vid-dur">28:48</div>
+          <h4>Conditioning Ladder #3</h4>
+          <div class="views">Coach Reed · 67 views this week</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW: Failed Payments + Quick Stats -->
+    <div class="row r-3">
+      <div class="card">
+        <div class="card-h">
+          <div>
+            <h3>Failed Payments</h3>
+            <div class="sub">Auto-retry queued</div>
+          </div>
+          <button class="pill-btn">Retry All</button>
+        </div>
+        <div style="font-family:'Fraunces',serif;font-size:42px;line-height:1;color:var(--rust);margin:8px 0 14px">$1,956</div>
+        <div style="font-size:12px;color:var(--ink-2);margin-bottom:18px">4 members · 3 will auto-retry tonight</div>
+        <div class="alert" style="padding:10px 0;border-bottom:1px solid var(--line)">
+          <div class="av av-red">JS</div>
+          <div><div class="nm">Jordan Stewart</div><div class="reason">Hybrid · $489 · Card expired</div></div>
+          <button class="act">Update</button>
+        </div>
+        <div class="alert" style="padding:10px 0;border-bottom:1px solid var(--line)">
+          <div class="av av-amber">RM</div>
+          <div><div class="nm">Ryan Marsh</div><div class="reason">Studio · $239 · Insufficient</div></div>
+          <button class="act">Retry</button>
+        </div>
+        <div class="alert" style="padding:10px 0;border:none">
+          <div class="av av-amber">PL</div>
+          <div><div class="nm">Paige Lee</div><div class="reason">Private · $895 · Bank declined</div></div>
+          <button class="act">Call</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div>
+            <h3>Popular Classes</h3>
+            <div class="sub">Last 30 days</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:4px">
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">Strength & Sculpt</span><span style="font-family:'Fraunces',serif;font-size:16px">96%</span></div>
+            <div class="occ-bar" style="width:100%;height:7px"><div class="occ-fill" style="width:96%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">Power Pilates</span><span style="font-family:'Fraunces',serif;font-size:16px">92%</span></div>
+            <div class="occ-bar" style="width:100%;height:7px"><div class="occ-fill" style="width:92%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">Sunset HIIT</span><span style="font-family:'Fraunces',serif;font-size:16px">89%</span></div>
+            <div class="occ-bar" style="width:100%;height:7px"><div class="occ-fill" style="width:89%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">Sunrise Strength</span><span style="font-family:'Fraunces',serif;font-size:16px">74%</span></div>
+            <div class="occ-bar" style="width:100%;height:7px"><div class="occ-fill warn" style="width:74%"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:600;font-size:13px">Mobility & Reset</span><span style="font-family:'Fraunces',serif;font-size:16px">52%</span></div>
+            <div class="occ-bar" style="width:100%;height:7px"><div class="occ-fill warn" style="width:52%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div>
+            <h3>Peak Hours</h3>
+            <div class="sub">Avg occupancy by time</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:140px;margin-top:6px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;height:42%;background:var(--moss);border-radius:3px"></div><span style="font-size:9px;color:var(--ink-2)">5A</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;height:88%;background:var(--moss);border-radius:3px"></div><span style="font-size:9px;color:var(--ink-2)">6A</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;height:72%;background:var(--moss);border-radius:3px"></div><span style="font-size:9px;color:var(--ink-2)">8A</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;height:38%;background:var(--sage);border-radius:3px"></div><span style="font-size:9px;color:var(--ink-2)">12P</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;height:30%;background:var(--sage);border-radius:3px"></div><span style="font-size:9px;color:var(--ink-2)">3P</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;height:92%;background:var(--gold);border-radius:3px"></div><span style="font-size:9px;color:var(--ink-2)">5P</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;height:64%;background:var(--gold);border-radius:3px"></div><span style="font-size:9px;color:var(--ink-2)">7P</span></div>
+        </div>
+        <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--ink-2);line-height:1.6">
+          <strong style="color:var(--moss);font-weight:700">Recommendation:</strong> Open a 7:30 AM signature class. Demand from 6A waitlist suggests 12+ bookings on day one.
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>
