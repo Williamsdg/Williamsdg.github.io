@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>School Portal — SEC Operating System</title>
+<meta name="description" content="Each SEC school's home base — requests, operations, credentials, travel, film submissions, and conference coordination." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  .school-switcher{display:flex;align-items:center;gap:12px;padding:16px 22px;background:linear-gradient(135deg, rgba(191,87,0,.18), rgba(7,13,30,.5));border:1px solid rgba(191,87,0,.3);border-radius:3px;margin-bottom:22px}
+  .school-helmet-lg{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.25rem;font-weight:600;color:#fff;background:#bf5700;border:2px solid rgba(255,255,255,.2);flex-shrink:0}
+  .school-name-block h2{font-family:'Fraunces',serif;font-size:1.4rem;color:#fff;font-weight:500;line-height:1.05;margin-bottom:3px}
+  .school-name-block p{font-size:.76rem;color:var(--muted);letter-spacing:.04em}
+  .school-name-block p strong{color:#fff;font-weight:600}
+  .school-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .school-chip{display:flex;align-items:center;gap:7px;padding:7px 12px;background:rgba(255,255,255,.06);border:1px solid var(--line-strong);border-radius:99px;font-size:.7rem;color:#fff;font-weight:600;letter-spacing:.04em;cursor:pointer}
+  .school-chip:hover{border-color:var(--gold);color:var(--gold-soft)}
+  .school-chip.active{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  .req-row{display:grid;grid-template-columns:80px 1fr 80px 80px;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem;cursor:pointer;transition:.15s}
+  .req-row:last-child{border-bottom:none}
+  .req-row:hover{background:rgba(201,165,88,.05)}
+  .req-type{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:center}
+  .rt-cred{background:rgba(111,169,230,.18);color:var(--info)}
+  .rt-film{background:rgba(224,184,115,.18);color:var(--warn)}
+  .rt-media{background:rgba(201,165,88,.15);color:var(--gold-soft)}
+  .rt-travel{background:rgba(77,201,126,.12);color:var(--good)}
+  .rt-ops{background:rgba(255,107,107,.12);color:var(--danger)}
+  .req-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .req-info small{color:var(--muted);font-size:.7rem}
+  .req-when{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;text-align:right;font-size:.72rem}
+  .req-when small{display:block;font-size:.58rem;color:var(--muted-soft);letter-spacing:.1em;margin-top:2px;font-weight:500}
+  .req-status{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;color:var(--muted)}
+  .req-status.open{color:var(--warn)}
+  .req-status.done{color:var(--good)}
+  .req-status.live{color:var(--live)}
+
+  .sport-card{padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;display:flex;flex-direction:column;gap:6px}
+  .sport-card-head{display:flex;align-items:center;justify-content:space-between}
+  .sc-sport{font-family:'Fraunces',serif;font-size:.92rem;color:#fff;font-weight:500}
+  .sc-rec{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--gold-soft);font-weight:700}
+  .sc-line{font-size:.7rem;color:var(--muted);letter-spacing:.04em;display:flex;justify-content:space-between}
+  .sc-line strong{color:#fff;font-weight:500}
+
+  .upcoming-row{display:grid;grid-template-columns:60px 1fr auto;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .upcoming-row:last-child{border-bottom:none}
+  .up-date{display:flex;flex-direction:column;align-items:center;text-align:center;padding:4px 0;background:rgba(201,165,88,.08);border-radius:2px;border:1px solid rgba(201,165,88,.2)}
+  .up-day{font-family:'Fraunces',serif;font-size:1rem;color:var(--gold-soft);font-weight:500;line-height:1}
+  .up-mo{font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-top:3px}
+  .up-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .up-info small{color:var(--muted);font-size:.7rem}
+  .up-net{font-family:'Fraunces',serif;font-size:.68rem;font-weight:700;color:var(--gold-soft);padding:3px 6px;background:rgba(201,165,88,.1);border:1px solid rgba(201,165,88,.25);border-radius:2px;text-align:center;letter-spacing:.04em}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SEC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html" class="active"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">AH</div>
+        <div>
+          <div class="user-name">A. Hardy</div>
+          <div class="user-role">Dir of FB Ops · AUB</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Executive · <strong>School Portal</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">+ New Request</button>
+        <button class="btn">Travel Desk</button>
+        <button class="btn btn-gold">Submit to Film Portal</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="school-switcher">
+        <div class="school-helmet-lg">AU</div>
+        <div class="school-name-block">
+          <h2>Auburn University · <em>Athletics</em></h2>
+          <p><strong>Director:</strong> J. Cohen · <strong>SEC liaison:</strong> A. Hardy · <strong>21 sports</strong> · 540 student-athletes</p>
+        </div>
+        <div class="school-actions">
+          <span class="school-chip">Switch school ▾</span>
+          <span class="school-chip active">Athletics</span>
+          <span class="school-chip">Compliance</span>
+          <span class="school-chip">Media Rel.</span>
+        </div>
+      </div>
+
+      <div class="ph">
+        <div>
+          <h1>Auburn · conference <em>coordination.</em></h1>
+          <div class="sub">14 open conference items · 21 active sports · Iron Bowl in progress</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">Open Items</button>
+          <button class="pill">This Week</button>
+          <button class="pill">Football</button>
+          <button class="pill">All Sports</button>
+        </div>
+      </div>
+
+      <div class="stat-row five">
+        <div class="stat warn"><span class="stat-label">Open Requests</span><span class="stat-value">14</span><span class="stat-delta">4 cred · 5 film · 5 ops</span></div>
+        <div class="stat info"><span class="stat-label">Active Events · 7d</span><span class="stat-value">18</span><span class="stat-delta">9 home · 9 away</span></div>
+        <div class="stat good"><span class="stat-label">Compliance Score</span><span class="stat-value">100 <small>%</small></span><span class="stat-delta up">all policies ack'd</span></div>
+        <div class="stat"><span class="stat-label">Film Submissions · 7d</span><span class="stat-value">12</span><span class="stat-delta">4 awaiting reply</span></div>
+        <div class="stat danger"><span class="stat-label">Iron Bowl Status</span><span class="stat-value">Q3</span><span class="stat-delta">24–17 · officiating req. open</span></div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">My Workspace</div>
+        <div class="tab">All Sports</div>
+        <div class="tab">Requests</div>
+        <div class="tab">Credentials</div>
+        <div class="tab">Travel &amp; Hotel</div>
+        <div class="tab">Conference Comms</div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Open Requests · Auburn → SEC</h3>
+            <span class="h-meta">14 items · auto-tracked</span>
+            <div class="spacer"></div>
+            <span class="h-action">New request →</span>
+          </div>
+          <div>
+            <div class="req-row">
+              <span class="req-type rt-film">FILM</span>
+              <div class="req-info"><strong>Holding interpretation · ALA-AUB Q3 5:02</strong><small>Posted to Film Portal · ID FB-26-0214</small></div>
+              <div class="req-when">18m<small>SLA 72H</small></div>
+              <span class="req-status live">IN REVIEW</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-cred">CRED</span>
+              <div class="req-info"><strong>Iron Bowl photographer field access</strong><small>3 staff photogs · pending SEC review</small></div>
+              <div class="req-when">2h<small>BY 6PM</small></div>
+              <span class="req-status open">PENDING</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-media">MEDIA</span>
+              <div class="req-info"><strong>SECN Cole Cubelic post-game avail</strong><small>Cubelic + 1 producer · 8:30 PM CT</small></div>
+              <div class="req-when">5h<small>POST-GAME</small></div>
+              <span class="req-status open">CONFIRMED</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-travel">TRAVEL</span>
+              <div class="req-info"><strong>MBB at Ole Miss · charter request</strong><small>Dec 4 · 40 pax · OXD return</small></div>
+              <div class="req-when">12d<small>SUBMITTED</small></div>
+              <span class="req-status open">REVIEW</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-ops">OPS</span>
+              <div class="req-info"><strong>Locker room build · SECCG visiting</strong><small>Only if AUB advances · contingency request</small></div>
+              <div class="req-when">2w<small>CONTINGENT</small></div>
+              <span class="req-status open">HOLD</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-film">FILM</span>
+              <div class="req-info"><strong>DPI 4th down · last week vs Vandy</strong><small>Memo received · clip archived</small></div>
+              <div class="req-when">3d<small>CLOSED 2D</small></div>
+              <span class="req-status done">REPLIED</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-cred">CRED</span>
+              <div class="req-info"><strong>WBB at Tennessee · 6 credentials</strong><small>Players, staff, media · standard</small></div>
+              <div class="req-when">6d<small>BY 11/28</small></div>
+              <span class="req-status done">ISSUED</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-media">MEDIA</span>
+              <div class="req-info"><strong>ESPN College GameDay site visit</strong><small>If selected · venue prep info request</small></div>
+              <div class="req-when">7d<small>CONTINGENT</small></div>
+              <span class="req-status open">PROCESSING</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-travel">TRAVEL</span>
+              <div class="req-info"><strong>Baseball at LSU · spring · hotel block</strong><small>March 27–29 weekend series</small></div>
+              <div class="req-when">90d<small>OPEN</small></div>
+              <span class="req-status open">SCHEDULING</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-ops">OPS</span>
+              <div class="req-info"><strong>Softball stadium signage compliance</strong><small>NCAA host requirements review</small></div>
+              <div class="req-when">14d<small>OPEN</small></div>
+              <span class="req-status open">REVIEW</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Auburn Sports · Live Status</h3>
+            <span class="h-meta">21 sports · in season + offseason</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full athletics view →</span>
+          </div>
+          <div class="panel-pad" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Football</span><span class="sc-rec">7–3</span></div>
+              <div class="sc-line"><span>Live</span><strong>vs Alabama · Q3 24–17</strong></div>
+              <div class="sc-line"><span>Next</span><strong>Bowl TBD</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Men's Basketball</span><span class="sc-rec">5–0</span></div>
+              <div class="sc-line"><span>Ranked</span><strong>#8 AP</strong></div>
+              <div class="sc-line"><span>Next</span><strong>vs South Alabama · Nov 24</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Women's Basketball</span><span class="sc-rec">4–1</span></div>
+              <div class="sc-line"><span>Next</span><strong>vs Mercer · Nov 25</strong></div>
+              <div class="sc-line"><span>SEC opener</span><strong>Jan 4 · UGA</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Volleyball</span><span class="sc-rec">22–7</span></div>
+              <div class="sc-line"><span>Live</span><strong>SEC Tournament · Reed Arena</strong></div>
+              <div class="sc-line"><span>Quarterfinal</span><strong>tonight 8 PM</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Soccer</span><span class="sc-rec">14–4–2</span></div>
+              <div class="sc-line"><span>Season</span><strong>Complete</strong></div>
+              <div class="sc-line"><span>NCAA</span><strong>Round of 16 · vs Stanford</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Equestrian</span><span class="sc-rec">6–2</span></div>
+              <div class="sc-line"><span>Next</span><strong>at TCU · Dec 6</strong></div>
+              <div class="sc-line"><span>SEC Cup</span><strong>March 21–23</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Swim &amp; Dive</span><span class="sc-rec">3–0</span></div>
+              <div class="sc-line"><span>Next</span><strong>vs Georgia · Dec 5</strong></div>
+              <div class="sc-line"><span>SEC Champ</span><strong>Feb 17–21 · home</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">+ 14 more sports</span><span class="sc-rec">VIEW</span></div>
+              <div class="sc-line"><span>Track · Gymnastics · Tennis</span><strong>→</strong></div>
+              <div class="sc-line"><span>Baseball · Softball · Golf · X-C</span><strong>→</strong></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Upcoming Auburn Events</h3>
+            <span class="h-meta">Conference-coordinated · 14 days</span>
+            <div class="spacer"></div>
+            <span class="h-action">Calendar →</span>
+          </div>
+          <div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">22</div><div class="up-mo">NOV</div></div>
+              <div class="up-info"><strong>FB · vs Alabama (Iron Bowl)</strong><small>Jordan-Hare · 3:30 CT · live now</small></div>
+              <div class="up-net">CBS</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">22</div><div class="up-mo">NOV</div></div>
+              <div class="up-info"><strong>VB · SEC Tournament QF</strong><small>Reed Arena · 8:00 CT</small></div>
+              <div class="up-net">SECN+</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">24</div><div class="up-mo">NOV</div></div>
+              <div class="up-info"><strong>MBB · vs South Alabama</strong><small>Neville Arena · 6:00 CT</small></div>
+              <div class="up-net">SECN+</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">25</div><div class="up-mo">NOV</div></div>
+              <div class="up-info"><strong>WBB · vs Mercer</strong><small>Neville Arena · 6:00 CT</small></div>
+              <div class="up-net">SECN+</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">28</div><div class="up-mo">NOV</div></div>
+              <div class="up-info"><strong>WBB · at Tennessee</strong><small>Knoxville · 7:00 ET · travel block</small></div>
+              <div class="up-net">SECN</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">04</div><div class="up-mo">DEC</div></div>
+              <div class="up-info"><strong>MBB · at Ole Miss</strong><small>Oxford · 7:00 CT · charter</small></div>
+              <div class="up-net">SECN</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">05</div><div class="up-mo">DEC</div></div>
+              <div class="up-info"><strong>S&amp;D · vs Georgia</strong><small>JSAC · 6:00 CT</small></div>
+              <div class="up-net">—</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">06</div><div class="up-mo">DEC</div></div>
+              <div class="up-info"><strong>EQ · at TCU</strong><small>Fort Worth · travel</small></div>
+              <div class="up-net">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Conference Comms (Auburn-tagged)</h3>
+            <span class="h-meta">Recent SEC office threads</span>
+            <div class="spacer"></div>
+            <span class="h-action">Open Comms Hub →</span>
+          </div>
+          <div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#fb-iron-bowl-2026 · J. Lacey</strong><small>"Shaw is drafting the holding memo now…" · 1m ago</small></div>
+              <div class="ri-stat info">LIVE<small>UNREAD</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#fb-school-liaisons · R. Shaw</strong><small>"Weekly officials memo 26-016 — pls ack" · 1h ago</small></div>
+              <div class="ri-stat warn">ACK<small>DUE</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>DM · A. Torres (Event Ops)</strong><small>"Sending updated Iron Bowl ops sheet" · 3h ago</small></div>
+              <div class="ri-stat info">READ<small></small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#mbb-ops · M. Vega</strong><small>"Dec 4 MBB officials assigned — Crew Patel" · 5h</small></div>
+              <div class="ri-stat info">READ<small></small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#fb-broadcast-partners · K. Brooks</strong><small>"SECN post-game window confirmed for AUB" · 8h</small></div>
+              <div class="ri-stat info">READ<small></small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#compliance · E. Walters</strong><small>"NIL disclosure refresher · v3.2 effective 11/1" · 2d</small></div>
+              <div class="ri-stat good">ACK'D<small>11/19</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Quick Submit</h3>
+            <span class="h-meta">Most-used school workflows</span>
+            <div class="spacer"></div>
+            <span class="h-action">All workflows →</span>
+          </div>
+          <div class="panel-pad" style="display:flex;flex-direction:column;gap:10px;">
+            <a href="film-portal.html" class="btn btn-gold" style="justify-content:center;padding:14px;">▶ Upload Film &amp; Submit Complaint</a>
+            <a href="#" class="btn" style="justify-content:center;padding:14px;">▤ Request Credentials</a>
+            <a href="#" class="btn" style="justify-content:center;padding:14px;">⇄ Travel / Hotel Request</a>
+            <a href="#" class="btn" style="justify-content:center;padding:14px;">○ Media Availability Request</a>
+            <a href="comms.html" class="btn" style="justify-content:center;padding:14px;">● Open Conference Comms</a>
+            <a href="compliance.html" class="btn" style="justify-content:center;padding:14px;">§ Compliance Submissions</a>
+            <a href="#" class="btn" style="justify-content:center;padding:14px;">⚠ Report Incident to SEC</a>
+            <div style="font-size:.7rem;color:var(--muted-soft);text-align:center;margin-top:8px;letter-spacing:.06em;">SLA-tracked · routed automatically to the right SEC team</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Executive Analytics — SEC Operating System</title>
+<meta name="description" content="Officiating performance, broadcast ratings, attendance, social engagement, revenue, response times — executive analytics across the conference." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  .big-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+  .kpi{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015));border:1px solid var(--line);border-radius:3px;padding:24px;position:relative;overflow:hidden}
+  .kpi::after{content:'';position:absolute;right:-20px;bottom:-20px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle, rgba(201,165,88,.07), transparent 70%)}
+  .kpi-lbl{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px}
+  .kpi-val{font-family:'Fraunces',serif;font-size:2.6rem;color:#fff;font-weight:300;line-height:1;font-feature-settings:"tnum"}
+  .kpi-val small{font-size:1rem;color:var(--muted);font-weight:300;font-style:italic;margin-left:6px}
+  .kpi-delta{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;margin-top:10px;display:flex;align-items:center;gap:8px}
+  .kpi-delta.up{color:var(--good)}
+  .kpi-delta.down{color:var(--danger)}
+  .kpi-spark{margin-top:12px;display:flex;align-items:flex-end;gap:3px;height:36px}
+  .kpi-spark .s{flex:1;background:linear-gradient(to top, rgba(201,165,88,.5), rgba(201,165,88,.15));border-radius:1px;min-height:6px}
+  .kpi-spark .s.peak{background:linear-gradient(to top, var(--gold), rgba(201,165,88,.4))}
+
+  .chart-area{padding:22px;display:flex;flex-direction:column;gap:18px}
+  .chart-bars{display:flex;align-items:flex-end;gap:6px;height:180px;padding:0 6px;border-bottom:1px solid var(--line);position:relative}
+  .chart-bars::before{content:'';position:absolute;top:0;left:0;right:0;border-top:1px dashed rgba(255,255,255,.05)}
+  .chart-bars::after{content:'';position:absolute;top:60%;left:0;right:0;border-top:1px dashed rgba(255,255,255,.04)}
+  .chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .chart-bar-stack{width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:1px}
+  .chart-bar{width:100%;background:var(--gold);border-radius:1px;min-height:2px;transition:opacity .15s;cursor:pointer}
+  .chart-bar:hover{opacity:.8}
+  .chart-bar.b1{background:var(--gold-deep)}
+  .chart-bar.b2{background:var(--gold)}
+  .chart-bar.b3{background:var(--gold-soft)}
+  .chart-bar.b4{background:rgba(201,165,88,.4)}
+  .chart-label{font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.06em}
+  .chart-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.7rem;color:var(--muted);letter-spacing:.06em}
+  .leg-swatch{display:inline-block;width:10px;height:10px;border-radius:1px;margin-right:6px;vertical-align:middle}
+
+  .leader-row{display:grid;grid-template-columns:32px 1fr 90px 80px;gap:10px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .leader-row:last-child{border-bottom:none}
+  .leader-rank{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--gold-soft);font-weight:700;text-align:center}
+  .leader-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .leader-info small{color:var(--muted);font-size:.7rem}
+  .leader-val{font-family:'JetBrains Mono',monospace;color:#fff;font-weight:600;text-align:right;font-size:.84rem}
+  .leader-delta{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:600;text-align:right}
+  .leader-delta.up{color:var(--good)} .leader-delta.down{color:var(--danger)} .leader-delta.flat{color:var(--muted)}
+
+  .donut{display:grid;grid-template-columns:140px 1fr;gap:18px;padding:18px;align-items:center}
+  .donut-svg{width:140px;height:140px;position:relative}
+  .donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .donut-center .big{font-family:'Fraunces',serif;font-size:1.5rem;color:#fff;line-height:1}
+  .donut-center .small{font-size:.58rem;letter-spacing:.18em;color:var(--muted-soft);text-transform:uppercase;margin-top:4px;font-weight:700}
+  .donut-legend{display:flex;flex-direction:column;gap:8px}
+  .dl-row{display:grid;grid-template-columns:12px 1fr auto;gap:8px;font-size:.78rem;color:var(--muted);align-items:center}
+  .dl-row strong{color:#fff;font-weight:500;font-family:'JetBrains Mono',monospace}
+  .dl-sw{width:10px;height:10px;border-radius:2px;align-self:center;margin-top:3px}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SEC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html" class="active"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">GS</div>
+        <div>
+          <div class="user-name">G. Sankey</div>
+          <div class="user-role">Commissioner</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Executive · <strong>Conference Analytics</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">Range · Season ▾</button>
+        <button class="btn">Export PDF Brief</button>
+        <button class="btn btn-gold">Schedule Board Pack</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Conference <em>executive analytics.</em></h1>
+          <div class="sub">'26 season · 14 schools · all sports · refreshed every 15 minutes</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">Season</button>
+          <button class="pill">Last 30d</button>
+          <button class="pill">Football</button>
+          <button class="pill">All Sports</button>
+        </div>
+      </div>
+
+      <div class="big-kpi">
+        <div class="kpi">
+          <div class="kpi-lbl">Total Attendance · YTD</div>
+          <div class="kpi-val">8.42<small>M</small></div>
+          <div class="kpi-delta up">▲ 4.2% vs '25 season</div>
+          <div class="kpi-spark">
+            <div class="s" style="height:42%"></div><div class="s" style="height:58%"></div><div class="s" style="height:62%"></div><div class="s peak" style="height:71%"></div><div class="s" style="height:68%"></div><div class="s peak" style="height:84%"></div><div class="s" style="height:76%"></div><div class="s peak" style="height:92%"></div><div class="s peak" style="height:96%"></div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-lbl">Avg Football Rating</div>
+          <div class="kpi-val">7.4 <small>M</small></div>
+          <div class="kpi-delta up">▲ 8.1% vs '25</div>
+          <div class="kpi-spark">
+            <div class="s" style="height:48%"></div><div class="s" style="height:54%"></div><div class="s" style="height:64%"></div><div class="s" style="height:60%"></div><div class="s peak" style="height:88%"></div><div class="s" style="height:72%"></div><div class="s peak" style="height:94%"></div><div class="s" style="height:76%"></div><div class="s peak" style="height:98%"></div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-lbl">Media Revenue · YTD</div>
+          <div class="kpi-val">$842<small>M</small></div>
+          <div class="kpi-delta up">▲ 12.4% vs plan</div>
+          <div class="kpi-spark">
+            <div class="s" style="height:38%"></div><div class="s" style="height:46%"></div><div class="s peak" style="height:72%"></div><div class="s" style="height:64%"></div><div class="s peak" style="height:84%"></div><div class="s peak" style="height:88%"></div><div class="s" style="height:78%"></div><div class="s peak" style="height:96%"></div><div class="s peak" style="height:100%"></div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-lbl">Officiating Accuracy · YTD</div>
+          <div class="kpi-val">96.8<small>%</small></div>
+          <div class="kpi-delta up">▲ 1.4 pts vs '25</div>
+          <div class="kpi-spark">
+            <div class="s" style="height:72%"></div><div class="s" style="height:68%"></div><div class="s peak" style="height:82%"></div><div class="s peak" style="height:88%"></div><div class="s" style="height:78%"></div><div class="s peak" style="height:92%"></div><div class="s peak" style="height:94%"></div><div class="s peak" style="height:96%"></div><div class="s peak" style="height:98%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">Executive Overview</div>
+        <div class="tab">Officiating</div>
+        <div class="tab">Broadcast &amp; Media</div>
+        <div class="tab">Attendance</div>
+        <div class="tab">Revenue</div>
+        <div class="tab">Operations Cost</div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Football Attendance · By Week (Wk 1–12)</h3>
+            <span class="h-meta">Stacked by school · season</span>
+            <div class="spacer"></div>
+            <span class="h-action">Drill in →</span>
+          </div>
+          <div class="chart-area">
+            <div class="chart-bars">
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:25%"></div><div class="chart-bar b2" style="height:30%"></div><div class="chart-bar b3" style="height:22%"></div></div><div class="chart-label">W1</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:30%"></div><div class="chart-bar b2" style="height:32%"></div><div class="chart-bar b3" style="height:25%"></div></div><div class="chart-label">W2</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:34%"></div><div class="chart-bar b2" style="height:36%"></div><div class="chart-bar b3" style="height:28%"></div></div><div class="chart-label">W3</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:32%"></div><div class="chart-bar b2" style="height:34%"></div><div class="chart-bar b3" style="height:30%"></div><div class="chart-bar b4" style="height:14%"></div></div><div class="chart-label">W4</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:38%"></div><div class="chart-bar b2" style="height:38%"></div><div class="chart-bar b3" style="height:34%"></div><div class="chart-bar b4" style="height:18%"></div></div><div class="chart-label">W5</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:36%"></div><div class="chart-bar b2" style="height:40%"></div><div class="chart-bar b3" style="height:36%"></div><div class="chart-bar b4" style="height:20%"></div></div><div class="chart-label">W6</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:42%"></div><div class="chart-bar b2" style="height:44%"></div><div class="chart-bar b3" style="height:38%"></div><div class="chart-bar b4" style="height:24%"></div></div><div class="chart-label">W7</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:40%"></div><div class="chart-bar b2" style="height:46%"></div><div class="chart-bar b3" style="height:38%"></div><div class="chart-bar b4" style="height:22%"></div></div><div class="chart-label">W8</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:44%"></div><div class="chart-bar b2" style="height:48%"></div><div class="chart-bar b3" style="height:40%"></div><div class="chart-bar b4" style="height:26%"></div></div><div class="chart-label">W9</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:48%"></div><div class="chart-bar b2" style="height:52%"></div><div class="chart-bar b3" style="height:44%"></div><div class="chart-bar b4" style="height:30%"></div></div><div class="chart-label">W10</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:50%"></div><div class="chart-bar b2" style="height:54%"></div><div class="chart-bar b3" style="height:46%"></div><div class="chart-bar b4" style="height:32%"></div></div><div class="chart-label">W11</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar b1" style="height:54%"></div><div class="chart-bar b2" style="height:60%"></div><div class="chart-bar b3" style="height:50%"></div><div class="chart-bar b4" style="height:38%"></div></div><div class="chart-label" style="color:var(--gold-soft);">W12</div></div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="leg-swatch" style="background:var(--gold-deep);"></span>SEC East · home</span>
+              <span><span class="leg-swatch" style="background:var(--gold);"></span>SEC West · home</span>
+              <span><span class="leg-swatch" style="background:var(--gold-soft);"></span>Cross-divisional</span>
+              <span><span class="leg-swatch" style="background:rgba(201,165,88,.4);"></span>Rivalry / neutral</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Officiating Accuracy · YTD Trend</h3>
+            <span class="h-meta">All crews · weekly composite</span>
+            <div class="spacer"></div>
+            <span class="h-action">Crew detail →</span>
+          </div>
+          <div class="chart-area">
+            <div class="chart-bars">
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:70%;background:var(--good);"></div></div><div class="chart-label">W1</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:65%;background:var(--good);"></div></div><div class="chart-label">W2</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:78%;background:var(--good);"></div></div><div class="chart-label">W3</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:62%;background:var(--warn);"></div></div><div class="chart-label">W4</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:84%;background:var(--good);"></div></div><div class="chart-label">W5</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:80%;background:var(--good);"></div></div><div class="chart-label">W6</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:88%;background:var(--good);"></div></div><div class="chart-label">W7</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:74%;background:var(--good);"></div></div><div class="chart-label">W8</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:90%;background:var(--good);"></div></div><div class="chart-label">W9</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:92%;background:var(--good);"></div></div><div class="chart-label">W10</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:88%;background:var(--good);"></div></div><div class="chart-label">W11</div></div>
+              <div class="chart-col"><div class="chart-bar-stack"><div class="chart-bar" style="height:96%;background:var(--gold);"></div></div><div class="chart-label" style="color:var(--gold-soft);">W12</div></div>
+            </div>
+            <div class="chart-legend">
+              <span><span class="leg-swatch" style="background:var(--good);"></span>≥ 92% (target)</span>
+              <span><span class="leg-swatch" style="background:var(--warn);"></span>88–92% (review)</span>
+              <span><span class="leg-swatch" style="background:var(--danger);"></span>&lt; 88% (intervention)</span>
+              <span style="color:var(--gold-soft);">Season composite · <strong style="color:#fff;">96.8%</strong></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Top Crews · YTD Grade</h3>
+            <span class="h-meta">102 active crews</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full leaderboard →</span>
+          </div>
+          <div>
+            <div class="leader-row"><span class="leader-rank">1</span><div class="leader-info"><strong>Crew Henderson</strong><small>7-man · FB · 11 games</small></div><div class="leader-val">95.2</div><div class="leader-delta up">▲ 2.1</div></div>
+            <div class="leader-row"><span class="leader-rank">2</span><div class="leader-info"><strong>Crew Okafor</strong><small>7-man · FB · 10 games</small></div><div class="leader-val">94.8</div><div class="leader-delta up">▲ 1.4</div></div>
+            <div class="leader-row"><span class="leader-rank">3</span><div class="leader-info"><strong>Crew Reyes</strong><small>7-man · FB · 11 games</small></div><div class="leader-val">94.1</div><div class="leader-delta up">▲ 0.8</div></div>
+            <div class="leader-row"><span class="leader-rank">4</span><div class="leader-info"><strong>Crew Patel</strong><small>7-man · FB · 10 games</small></div><div class="leader-val">92.6</div><div class="leader-delta flat">— 0.0</div></div>
+            <div class="leader-row"><span class="leader-rank">5</span><div class="leader-info"><strong>Crew Walker</strong><small>7-man · FB · 11 games</small></div><div class="leader-val">91.3</div><div class="leader-delta down">▼ 1.2</div></div>
+            <div class="leader-row"><span class="leader-rank">6</span><div class="leader-info"><strong>Crew Mitchell</strong><small>7-man · FB · 10 games</small></div><div class="leader-val">90.4</div><div class="leader-delta up">▲ 0.3</div></div>
+            <div class="leader-row"><span class="leader-rank">7</span><div class="leader-info"><strong>Crew Drummond</strong><small>7-man · FB · 10 games</small></div><div class="leader-val">88.7</div><div class="leader-delta down">▼ 1.8</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Revenue Mix · YTD</h3>
+            <span class="h-meta">$842M total</span>
+            <div class="spacer"></div>
+            <span class="h-action">Drill in →</span>
+          </div>
+          <div class="donut">
+            <div class="donut-svg">
+              <svg viewBox="0 0 36 36" style="transform:rotate(-90deg);">
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="3"></circle>
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#c9a558" stroke-width="3" stroke-dasharray="58 100" stroke-dashoffset="0"></circle>
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#d8b977" stroke-width="3" stroke-dasharray="22 100" stroke-dashoffset="-58"></circle>
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#a8862e" stroke-width="3" stroke-dasharray="12 100" stroke-dashoffset="-80"></circle>
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(201,165,88,.3)" stroke-width="3" stroke-dasharray="8 100" stroke-dashoffset="-92"></circle>
+              </svg>
+              <div class="donut-center">
+                <div class="big">$842M</div>
+                <div class="small">YTD Total</div>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="dl-row"><span class="dl-sw" style="background:var(--gold);"></span><span>Media rights</span><strong>$488M · 58%</strong></div>
+              <div class="dl-row"><span class="dl-sw" style="background:var(--gold-soft);"></span><span>Championships &amp; bowls</span><strong>$185M · 22%</strong></div>
+              <div class="dl-row"><span class="dl-sw" style="background:var(--gold-deep);"></span><span>Sponsorship</span><strong>$101M · 12%</strong></div>
+              <div class="dl-row"><span class="dl-sw" style="background:rgba(201,165,88,.3);"></span><span>Licensing &amp; other</span><strong>$68M · 8%</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Response &amp; Ops Health</h3>
+            <span class="h-meta">Conference-wide SLA</span>
+            <div class="spacer"></div>
+            <span class="h-action">Ops cost →</span>
+          </div>
+          <div class="panel-pad" style="display:flex;flex-direction:column;gap:18px;">
+            <div>
+              <div class="spark-bar-row"><span>Incident time-to-acknowledge (≤ 5min)</span><span class="mono" style="color:var(--good);">3.1 min</span></div>
+              <div class="spark-bar"><div class="spark-bar-fill good" style="width:96%"></div></div>
+            </div>
+            <div>
+              <div class="spark-bar-row"><span>Replay ruling time (target ≤ 120s)</span><span class="mono" style="color:var(--good);">92s</span></div>
+              <div class="spark-bar"><div class="spark-bar-fill good" style="width:92%"></div></div>
+            </div>
+            <div>
+              <div class="spark-bar-row"><span>School film portal SLA (≤ 72h)</span><span class="mono" style="color:var(--good);">100%</span></div>
+              <div class="spark-bar"><div class="spark-bar-fill good" style="width:100%"></div></div>
+            </div>
+            <div>
+              <div class="spark-bar-row"><span>Travel on-time arrival</span><span class="mono" style="color:var(--good);">98.4%</span></div>
+              <div class="spark-bar"><div class="spark-bar-fill good" style="width:98%"></div></div>
+            </div>
+            <div>
+              <div class="spark-bar-row"><span>Officials confirmation by Wed (target 100%)</span><span class="mono" style="color:var(--warn);">94%</span></div>
+              <div class="spark-bar"><div class="spark-bar-fill warn" style="width:94%"></div></div>
+            </div>
+            <div>
+              <div class="spark-bar-row"><span>Championship workstream completion (SECCG)</span><span class="mono" style="color:var(--gold-soft);">68%</span></div>
+              <div class="spark-bar"><div class="spark-bar-fill" style="width:68%"></div></div>
+            </div>
+            <div style="padding-top:8px;border-top:1px solid var(--line);font-size:.74rem;color:var(--muted);display:flex;justify-content:space-between;">
+              <span>Operational cost / event vs budget</span><span class="mono" style="color:var(--good);font-weight:700;">96.7%</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

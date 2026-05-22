@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Compliance & Governance — SEC Operating System</title>
+<meta name="description" content="NCAA documentation, rule updates, school submissions, violations tracking, education modules, and policy acknowledgments." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  .vio-row{display:grid;grid-template-columns:80px 1fr 110px 90px;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .vio-row:last-child{border-bottom:none}
+  .vio-cat{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:center}
+  .vc-1{background:rgba(255,107,107,.18);color:#ff8a8a}
+  .vc-2{background:rgba(224,184,115,.18);color:var(--warn)}
+  .vc-3{background:rgba(111,169,230,.18);color:var(--info)}
+  .vc-4{background:rgba(77,201,126,.12);color:var(--good)}
+  .vio-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .vio-info small{color:var(--muted);font-size:.7rem}
+  .vio-school{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--gold-soft);font-weight:700;letter-spacing:.06em;text-align:right}
+  .vio-status{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;color:var(--muted)}
+  .vio-status.open{color:var(--warn)}
+  .vio-status.review{color:var(--info)}
+  .vio-status.closed{color:var(--good)}
+
+  .ack-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;padding:18px}
+  .ack-cell{aspect-ratio:1;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;cursor:pointer;transition:.15s;position:relative}
+  .ack-cell:hover{border-color:var(--gold)}
+  .ack-cell.full{background:rgba(77,201,126,.1);border-color:rgba(77,201,126,.3)}
+  .ack-cell.part{background:rgba(224,184,115,.1);border-color:rgba(224,184,115,.3)}
+  .ack-cell.miss{background:rgba(255,107,107,.1);border-color:rgba(255,107,107,.3)}
+  .ack-school{font-family:'Fraunces',serif;font-size:.86rem;color:#fff;font-weight:600;line-height:1}
+  .ack-pct{font-size:.62rem;color:var(--muted-soft);letter-spacing:.06em;font-family:'JetBrains Mono',monospace;font-weight:600;margin-top:4px}
+  .ack-cell.full .ack-pct{color:var(--good)}
+  .ack-cell.part .ack-pct{color:var(--warn)}
+  .ack-cell.miss .ack-pct{color:var(--danger)}
+
+  .doc-row{display:grid;grid-template-columns:36px 1fr 80px 80px;gap:10px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem;cursor:pointer;transition:.15s}
+  .doc-row:last-child{border-bottom:none}
+  .doc-row:hover{background:rgba(201,165,88,.04)}
+  .doc-icon{width:30px;height:36px;border-radius:2px;background:rgba(201,165,88,.1);color:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.62rem;border:1px solid rgba(201,165,88,.25);letter-spacing:.05em}
+  .doc-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px;line-height:1.25}
+  .doc-info small{color:var(--muted);font-size:.7rem}
+  .doc-ver{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--gold-soft);font-weight:600;text-align:right}
+  .doc-ver small{display:block;font-size:.58rem;color:var(--muted-soft);letter-spacing:.1em;margin-top:2px;font-weight:500}
+  .doc-acks{font-family:'JetBrains Mono',monospace;font-size:.74rem;font-weight:600;text-align:right}
+  .doc-acks.good{color:var(--good)} .doc-acks.warn{color:var(--warn)} .doc-acks.danger{color:var(--danger)}
+
+  .edu-row{display:grid;grid-template-columns:1fr 70px 60px;gap:10px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .edu-row:last-child{border-bottom:none}
+  .edu-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:4px;line-height:1.25}
+  .edu-bar{height:5px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;position:relative}
+  .edu-bar-fill{height:100%;background:var(--gold);border-radius:2px}
+  .edu-bar-fill.good{background:var(--good)}
+  .edu-bar-fill.warn{background:var(--warn)}
+  .edu-pct{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;text-align:right;font-size:.74rem}
+  .edu-status{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--good);font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right}
+  .edu-status.due{color:var(--warn)}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SEC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html" class="active"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">EW</div>
+        <div>
+          <div class="user-name">E. Walters</div>
+          <div class="user-role">VP, Compliance &amp; Gov</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Executive · <strong>Compliance &amp; Governance</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">+ New Policy</button>
+        <button class="btn">Audit Log</button>
+        <button class="btn btn-gold">Distribute Memo</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Compliance &amp; <em>governance.</em></h1>
+          <div class="sub">14 schools · 412 policy documents · NCAA Division I FBS</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">'26 Season</button>
+          <button class="pill">Open Items</button>
+          <button class="pill">My Schools</button>
+        </div>
+      </div>
+
+      <div class="stat-row five">
+        <div class="stat warn"><span class="stat-label">Open Cases</span><span class="stat-value">11</span><span class="stat-delta">7 inquiry · 4 review</span></div>
+        <div class="stat danger"><span class="stat-label">L1 / L2 Violations</span><span class="stat-value">2</span><span class="stat-delta">both under NCAA review</span></div>
+        <div class="stat good"><span class="stat-label">Policy Ack Rate</span><span class="stat-value">96.4 <small>%</small></span><span class="stat-delta up">+2.1 vs '25</span></div>
+        <div class="stat info"><span class="stat-label">Education Module Compliance</span><span class="stat-value">91 <small>%</small></span><span class="stat-delta">due by 12/15</span></div>
+        <div class="stat"><span class="stat-label">NCAA Submissions · YTD</span><span class="stat-value">487</span><span class="stat-delta">avg cycle 4.2 days</span></div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">Overview</div>
+        <div class="tab">Violations</div>
+        <div class="tab">Policies &amp; Memos</div>
+        <div class="tab">Education Modules</div>
+        <div class="tab">NCAA Submissions</div>
+        <div class="tab">Audit Trail</div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Open Compliance Cases</h3>
+            <span class="h-meta">11 active · 4 schools</span>
+            <div class="spacer"></div>
+            <span class="h-action">All cases →</span>
+          </div>
+          <div>
+            <div class="vio-row">
+              <span class="vio-cat vc-2">L-II</span>
+              <div class="vio-info"><strong>Recruiting communication window — football</strong><small>Bylaw 13.1.3 · school-acknowledged · self-imposed</small></div>
+              <span class="vio-school">UGA</span>
+              <span class="vio-status review">NCAA REVIEW</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-2">L-II</span>
+              <div class="vio-info"><strong>Booster contact — track &amp; field</strong><small>Bylaw 13.02.4 · awaiting school response</small></div>
+              <span class="vio-school">A&amp;M</span>
+              <span class="vio-status open">SCHOOL DUE</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-3">L-III</span>
+              <div class="vio-info"><strong>Equipment usage — softball</strong><small>Bylaw 12.4.1 · processing self-report</small></div>
+              <span class="vio-school">LSU</span>
+              <span class="vio-status review">SEC REVIEW</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-3">L-III</span>
+              <div class="vio-info"><strong>Practice hours documentation</strong><small>Bylaw 17.1.7 · routine inquiry</small></div>
+              <span class="vio-school">SC</span>
+              <span class="vio-status open">SCHOOL DUE</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-4">L-IV</span>
+              <div class="vio-info"><strong>NIL disclosure timing</strong><small>SEC policy · 7-day window missed by 2 days</small></div>
+              <span class="vio-school">FLA</span>
+              <span class="vio-status review">SEC REVIEW</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-4">L-IV</span>
+              <div class="vio-info"><strong>NIL disclosure timing</strong><small>SEC policy · routine</small></div>
+              <span class="vio-school">AUB</span>
+              <span class="vio-status review">SEC REVIEW</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-3">L-III</span>
+              <div class="vio-info"><strong>Transfer portal contact window</strong><small>Bylaw 13.1.1.2 · interpretive request</small></div>
+              <span class="vio-school">UT</span>
+              <span class="vio-status open">SCHOOL DUE</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-3">L-III</span>
+              <div class="vio-info"><strong>Coach off-campus contact — MBB</strong><small>Bylaw 13.1.6 · self-report processing</small></div>
+              <span class="vio-school">UK</span>
+              <span class="vio-status review">SEC REVIEW</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-4">L-IV</span>
+              <div class="vio-info"><strong>Roster reporting late · women's soccer</strong><small>SEC policy · routine</small></div>
+              <span class="vio-school">VU</span>
+              <span class="vio-status closed">CLOSED · WARNING</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-4">L-IV</span>
+              <div class="vio-info"><strong>Game film submission delay · baseball</strong><small>SEC policy · admin</small></div>
+              <span class="vio-school">OLE</span>
+              <span class="vio-status closed">CLOSED</span>
+            </div>
+            <div class="vio-row">
+              <span class="vio-cat vc-3">L-III</span>
+              <div class="vio-info"><strong>Equipment trial — equestrian</strong><small>Bylaw 16.5 · self-report under review</small></div>
+              <span class="vio-school">ARK</span>
+              <span class="vio-status open">SCHOOL DUE</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Policy Acknowledgment · By School</h3>
+            <span class="h-meta">26 active policies · 14 schools</span>
+            <div class="spacer"></div>
+            <span class="h-action">Send reminder →</span>
+          </div>
+          <div class="ack-grid">
+            <div class="ack-cell full"><div class="ack-school">ALA</div><div class="ack-pct">100%</div></div>
+            <div class="ack-cell full"><div class="ack-school">AUB</div><div class="ack-pct">100%</div></div>
+            <div class="ack-cell full"><div class="ack-school">ARK</div><div class="ack-pct">96%</div></div>
+            <div class="ack-cell full"><div class="ack-school">FLA</div><div class="ack-pct">100%</div></div>
+            <div class="ack-cell full"><div class="ack-school">UGA</div><div class="ack-pct">100%</div></div>
+            <div class="ack-cell part"><div class="ack-school">UK</div><div class="ack-pct">88%</div></div>
+            <div class="ack-cell full"><div class="ack-school">LSU</div><div class="ack-pct">96%</div></div>
+            <div class="ack-cell full"><div class="ack-school">OLE</div><div class="ack-pct">100%</div></div>
+            <div class="ack-cell full"><div class="ack-school">MSU</div><div class="ack-pct">92%</div></div>
+            <div class="ack-cell part"><div class="ack-school">MIZ</div><div class="ack-pct">85%</div></div>
+            <div class="ack-cell full"><div class="ack-school">SC</div><div class="ack-pct">100%</div></div>
+            <div class="ack-cell full"><div class="ack-school">TENN</div><div class="ack-pct">100%</div></div>
+            <div class="ack-cell full"><div class="ack-school">A&amp;M</div><div class="ack-pct">96%</div></div>
+            <div class="ack-cell full"><div class="ack-school">VU</div><div class="ack-pct">92%</div></div>
+          </div>
+          <div class="panel-pad" style="display:flex;gap:14px;font-size:.7rem;color:var(--muted);letter-spacing:.06em;border-top:1px solid var(--line);">
+            <span style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(77,201,126,.4);border:1px solid var(--good);"></span>90%+ acknowledged</span>
+            <span style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(224,184,115,.4);border:1px solid var(--warn);"></span>80–89% (reminder)</span>
+            <span style="display:flex;align-items:center;gap:6px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(255,107,107,.4);border:1px solid var(--danger);"></span>&lt; 80% (escalate)</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Policies &amp; Memos · Recent</h3>
+            <span class="h-meta">412 docs · 14 distributed in 30d</span>
+            <div class="spacer"></div>
+            <span class="h-action">Policy library →</span>
+          </div>
+          <div>
+            <div class="doc-row">
+              <div class="doc-icon">POL</div>
+              <div class="doc-info"><strong>NIL Disclosure &amp; Reporting · v3.2</strong><small>Effective 11/01 · 7-day reporting window</small></div>
+              <div class="doc-ver">v3.2<small>11/01</small></div>
+              <div class="doc-acks good">14/14<small>100%</small></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon">MEMO</div>
+              <div class="doc-info"><strong>Replay Comms Protocol · 26-016</strong><small>New 90s+ review hand-off rule</small></div>
+              <div class="doc-ver">v1.0<small>11/21</small></div>
+              <div class="doc-acks warn">64/102<small>63%</small></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon">POL</div>
+              <div class="doc-info"><strong>Transfer Portal Operations · '26</strong><small>Inbound + outbound process · NCAA-aligned</small></div>
+              <div class="doc-ver">v2.4<small>10/15</small></div>
+              <div class="doc-acks good">14/14<small>100%</small></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon">SOP</div>
+              <div class="doc-info"><strong>Game-Day Officials Conduct</strong><small>Field, locker room, post-game media</small></div>
+              <div class="doc-ver">v4.1<small>09/01</small></div>
+              <div class="doc-acks good">102/102<small>100%</small></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon">POL</div>
+              <div class="doc-info"><strong>Recruiting Communication Standards</strong><small>Bylaw 13 implementation · annual refresh</small></div>
+              <div class="doc-ver">v6.0<small>08/01</small></div>
+              <div class="doc-acks good">14/14<small>100%</small></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon">MEMO</div>
+              <div class="doc-info"><strong>Lightning Hold Restart · 26-017</strong><small>Refresh on protocol + minimum warm-up</small></div>
+              <div class="doc-ver">v1.0<small>11/21</small></div>
+              <div class="doc-acks good">102/102<small>100%</small></div>
+            </div>
+            <div class="doc-row">
+              <div class="doc-icon">SOP</div>
+              <div class="doc-info"><strong>Crisis Communications Playbook</strong><small>Player incidents, off-field, social</small></div>
+              <div class="doc-ver">v3.0<small>07/15</small></div>
+              <div class="doc-acks good">14/14<small>100%</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Education Modules</h3>
+            <span class="h-meta">12 modules · due 12/15</span>
+            <div class="spacer"></div>
+            <span class="h-action">Push to schools →</span>
+          </div>
+          <div>
+            <div class="edu-row">
+              <div class="edu-info"><strong>NIL · Disclosure &amp; Reporting</strong><div class="edu-bar"><div class="edu-bar-fill good" style="width:96%"></div></div></div>
+              <div class="edu-pct">96%</div>
+              <div class="edu-status">DONE</div>
+            </div>
+            <div class="edu-row">
+              <div class="edu-info"><strong>Recruiting Conduct (Bylaw 13)</strong><div class="edu-bar"><div class="edu-bar-fill good" style="width:100%"></div></div></div>
+              <div class="edu-pct">100%</div>
+              <div class="edu-status">DONE</div>
+            </div>
+            <div class="edu-row">
+              <div class="edu-info"><strong>Transfer Portal Ops</strong><div class="edu-bar"><div class="edu-bar-fill good" style="width:98%"></div></div></div>
+              <div class="edu-pct">98%</div>
+              <div class="edu-status">DONE</div>
+            </div>
+            <div class="edu-row">
+              <div class="edu-info"><strong>Drug Education &amp; Testing</strong><div class="edu-bar"><div class="edu-bar-fill warn" style="width:84%"></div></div></div>
+              <div class="edu-pct">84%</div>
+              <div class="edu-status due">DUE 12/15</div>
+            </div>
+            <div class="edu-row">
+              <div class="edu-info"><strong>Mental Health · Athlete Wellness</strong><div class="edu-bar"><div class="edu-bar-fill good" style="width:92%"></div></div></div>
+              <div class="edu-pct">92%</div>
+              <div class="edu-status">DONE</div>
+            </div>
+            <div class="edu-row">
+              <div class="edu-info"><strong>Title IX · Annual Refresher</strong><div class="edu-bar"><div class="edu-bar-fill warn" style="width:78%"></div></div></div>
+              <div class="edu-pct">78%</div>
+              <div class="edu-status due">DUE 12/15</div>
+            </div>
+            <div class="edu-row">
+              <div class="edu-info"><strong>Sports Wagering Policy</strong><div class="edu-bar"><div class="edu-bar-fill good" style="width:94%"></div></div></div>
+              <div class="edu-pct">94%</div>
+              <div class="edu-status">DONE</div>
+            </div>
+            <div class="edu-row">
+              <div class="edu-info"><strong>+ 5 additional modules</strong><div class="edu-bar"><div class="edu-bar-fill" style="width:88%"></div></div></div>
+              <div class="edu-pct">88%</div>
+              <div class="edu-status">MIXED</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>NCAA Submission Log</h3>
+            <span class="h-meta">487 YTD · 4.2 day cycle</span>
+            <div class="spacer"></div>
+            <span class="h-action">Submissions →</span>
+          </div>
+          <div>
+            <div class="row-item">
+              <div class="ri-info"><strong>UGA · Recruiting violation self-report</strong><small>Bylaw 13.1.3 · submitted 11/19 · acknowledged</small></div>
+              <div class="ri-stat info">SUBMITTED<small>+ 3D</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>A&amp;M · Booster contact inquiry</strong><small>Bylaw 13.02.4 · awaiting NCAA response</small></div>
+              <div class="ri-stat warn">PENDING<small>+ 6D</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>LSU · Equipment usage admin</strong><small>Bylaw 12.4.1 · routine · SEC clearing</small></div>
+              <div class="ri-stat info">SEC REVIEW<small>+ 1D</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>SEC · Annual Bylaw Compliance Cert</strong><small>Filed on behalf of all 14 schools 10/31</small></div>
+              <div class="ri-stat good">ACCEPTED<small>+ 22D</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>UT · Coach contact MBB self-report</strong><small>Bylaw 13.1.6 · routine</small></div>
+              <div class="ri-stat info">FILED<small>+ 1D</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>UK · MBB practice hours documentation</strong><small>Bylaw 17.1.7 · interpretive request</small></div>
+              <div class="ri-stat warn">DRAFTING<small>SCHOOL</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>+ 11 in pipeline</strong><small>Various sports · all in SLA</small></div>
+              <div class="ri-stat info">VIEW<small>→</small></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>
