@@ -264,8 +264,8 @@ const io = new IntersectionObserver((entries) => {
 
 document.querySelectorAll(".reveal, .reveal-up, .card").forEach(el => io.observe(el));
 
-// Stagger hero title words
-document.querySelectorAll(".hero-title .word").forEach((w, i) => w.style.setProperty("--i", i));
+// Stagger banner title words
+document.querySelectorAll(".banner-title .word").forEach((w, i) => w.style.setProperty("--i", i));
 
 // ---- Nav scroll state ----
 const nav = document.querySelector(".nav");
