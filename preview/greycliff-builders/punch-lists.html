@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Punch Lists · The Site Office · Greycliff Builders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_dashboard.css">
+<style>
+  /* punch board (kanban style) */
+  .pb-board{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media (max-width:1100px){.pb-board{grid-template-columns:1fr}}
+  .pb-col{background:var(--paper);border:1px solid var(--line-soft);border-radius:6px;display:flex;flex-direction:column;overflow:hidden}
+  .pb-col-head{padding:16px 20px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;background:var(--bone)}
+  .pb-col-head h3{font-family:'Fraunces',serif;font-size:18px;font-weight:400;display:flex;align-items:center;gap:10px}
+  .pb-col-head h3::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--mute)}
+  .pb-col-head.open h3::before{background:var(--rust)}
+  .pb-col-head.progress h3::before{background:var(--warn)}
+  .pb-col-head.done h3::before{background:var(--sage-deep)}
+  .pb-col-count{font-size:11px;font-weight:700;color:var(--mute);letter-spacing:.06em;background:var(--paper);padding:4px 10px;border-radius:999px;border:1px solid var(--line-soft)}
+  .pb-col-body{display:flex;flex-direction:column;gap:10px;padding:14px;flex:1;background:linear-gradient(180deg,var(--paper) 0%,var(--bone) 100%)}
+
+  .pb-card{background:var(--paper);border:1px solid var(--line-soft);border-radius:5px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;cursor:grab;transition:transform .15s,box-shadow .15s}
+  .pb-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(20,25,18,.06)}
+  .pb-card-head{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+  .pb-card-title{font-weight:600;color:var(--ink);font-size:13.5px;line-height:1.4}
+  .pb-card-meta{font-size:11px;color:var(--mute);letter-spacing:.04em;line-height:1.5}
+  .pb-card-meta strong{color:var(--ink-2);font-weight:600}
+  .pb-card-tags{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .pb-card-prio{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px}
+  .pb-card-prio.high{background:var(--rust-pale);color:#7a3c25}
+  .pb-card-prio.med{background:var(--warn-pale);color:#7a5a18}
+  .pb-card-prio.low{background:var(--sage-pale);color:var(--sage-deep)}
+  .pb-card-photo{width:30px;height:30px;border-radius:3px;flex-shrink:0;margin-right:6px}
+
+  /* punch line items (table-ish) */
+  .punch-grouped{padding:0}
+  .pg-head{padding:14px 22px;background:var(--bone);border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700}
+  .pg-head .pg-build{color:var(--ink);font-family:'Fraunces',serif;font-style:italic;font-size:15px;font-weight:400;text-transform:none;letter-spacing:0}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="side" id="side"></aside>
+
+  <main class="main">
+
+    <div class="top">
+      <button class="hamburger" aria-label="Open menu"><span></span></button>
+      <div class="top-brand-mobile"><span class="mark">G</span>Greycliff <em>Builders</em></div>
+      <div class="top-search"><input type="text" placeholder="Search punch items by build, sub, or area…"></div>
+      <div class="top-actions">
+        <div class="top-pill">14 open across 4 builds</div>
+        <button class="top-icon" data-desktop>⏱<span class="badge">7</span></button>
+        <button class="top-icon">✉<span class="badge">3</span></button>
+        <button class="top-cta">+ Item</button>
+      </div>
+    </div>
+
+    <div class="page-head">
+      <div class="page-crumbs"><a href="dashboard.html">The Site Office</a> · Punch Lists</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Punch <em>lists.</em></h1>
+          <div class="page-sub">Final-stage punches, warranty issues, and follow-ups. Nothing closes without a completion photo.</div>
+        </div>
+        <div class="page-meta">
+          <div><strong>14</strong> open total</div>
+          <div><strong>5</strong> at Sycamore (closing)</div>
+          <div><strong>3</strong> high priority</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- KPIs -->
+      <div class="kpi-row k4">
+        <div class="kpi alert"><div class="kpi-label">Open · High</div><div class="kpi-value">3</div><div class="kpi-trend">2 at Sycamore · 1 warranty Brook</div></div>
+        <div class="kpi warn"><div class="kpi-label">Open · Med</div><div class="kpi-value">6</div><div class="kpi-trend">5 closing-prep · 1 warranty</div></div>
+        <div class="kpi"><div class="kpi-label">Open · Low</div><div class="kpi-value">5</div><div class="kpi-trend">Mostly cosmetic touch-ups</div></div>
+        <div class="kpi"><div class="kpi-label">Closed in 30d</div><div class="kpi-value">47</div><div class="kpi-trend">Avg close time 6 days</div></div>
+      </div>
+
+      <!-- toolbar -->
+      <div class="card">
+        <div class="toolbar">
+          <div class="toolbar-tabs">
+            <a class="active">Board</a>
+            <a>By build</a>
+            <a>By sub</a>
+            <a>All open (14)</a>
+            <a>Done (47)</a>
+          </div>
+          <div class="toolbar-spacer"></div>
+          <span class="toolbar-label">Build</span>
+          <select><option>All</option><option>Sycamore (5)</option><option>Brook House (3)</option><option>Pine Bluff (1)</option><option>Cahaba Ridge (5)</option></select>
+        </div>
+
+        <!-- kanban board -->
+        <div style="padding:18px">
+          <div class="pb-board">
+
+            <div class="pb-col">
+              <div class="pb-col-head open">
+                <h3>To do</h3>
+                <span class="pb-col-count">8 items</span>
+              </div>
+              <div class="pb-col-body">
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Foyer threshold settling — 2mm</div>
+                    <span class="pb-card-prio high">High</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · entry · reported by Caroline P. 2h ago</div>
+                  <div class="pb-card-tags">
+                    <div class="pb-card-photo photo p4"></div>
+                    <span class="chip muted">Assigned · Diego R.</span>
+                    <span class="chip muted">Due Tue</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Pool skimmer adjustment — east edge</div>
+                    <span class="pb-card-prio high">High</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · pool · reported by Bill P.</div>
+                  <div class="pb-card-tags">
+                    <div class="pb-card-photo photo p7"></div>
+                    <span class="chip muted">Assigned · Bham Pool</span>
+                    <span class="chip muted">Due Wed</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">HVAC vent rattle — guest bath ceiling</div>
+                    <span class="pb-card-prio high">High</span>
+                  </div>
+                  <div class="pb-card-meta">Brook House · warranty · reported by owner</div>
+                  <div class="pb-card-tags">
+                    <div class="pb-card-photo photo p3"></div>
+                    <span class="chip muted">Assigned · Coosa HVAC</span>
+                    <span class="chip muted">Due Mon</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Touch-up paint — primary closet, 3 spots</div>
+                    <span class="pb-card-prio med">Med</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · primary closet · 90d walk</div>
+                  <div class="pb-card-tags">
+                    <span class="chip muted">Assigned · Riverside Paint</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Kitchen drawer hardware re-tighten</div>
+                    <span class="pb-card-prio low">Low</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · kitchen · settling</div>
+                  <div class="pb-card-tags">
+                    <span class="chip muted">Assigned · Mason Mfg</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Soft-water resin tank pressure check</div>
+                    <span class="pb-card-prio low">Low</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · mechanical · routine 90d</div>
+                  <div class="pb-card-tags">
+                    <span class="chip muted">Assigned · Magic City</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Dishwasher leveler — slight tilt</div>
+                    <span class="pb-card-prio low">Low</span>
+                  </div>
+                  <div class="pb-card-meta">Brook House · kitchen · warranty 24mo</div>
+                  <div class="pb-card-tags">
+                    <span class="chip muted">Assigned · Diego R.</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Garden gate sticking — east side</div>
+                    <span class="pb-card-prio low">Low</span>
+                  </div>
+                  <div class="pb-card-meta">Pine Bluff · exterior · seasonal</div>
+                  <div class="pb-card-tags">
+                    <span class="chip muted">Unassigned</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="pb-col">
+              <div class="pb-col-head progress">
+                <h3>In progress</h3>
+                <span class="pb-col-count">4 items</span>
+              </div>
+              <div class="pb-col-body">
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Master shower grout cleanup — south corner</div>
+                    <span class="pb-card-prio med">Med</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · master bath · Riverside on site</div>
+                  <div class="pb-card-tags">
+                    <div class="pb-card-photo photo p6"></div>
+                    <span class="chip warn">On site now</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Stair tread nose — refinish 2 spots</div>
+                    <span class="pb-card-prio med">Med</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · main stair · finish carpenter</div>
+                  <div class="pb-card-tags">
+                    <span class="chip warn">Scheduled Tue</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Front porch ceiling — bowed board replace</div>
+                    <span class="pb-card-prio med">Med</span>
+                  </div>
+                  <div class="pb-card-meta">Brook House · warranty Y2 · Mason replaced</div>
+                  <div class="pb-card-tags">
+                    <div class="pb-card-photo photo p2"></div>
+                    <span class="chip warn">Awaiting paint</span>
+                  </div>
+                </div>
+
+                <div class="pb-card">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Pantry shelf — adjust pin holes</div>
+                    <span class="pb-card-prio low">Low</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · pantry · Mason Mfg adjusting</div>
+                  <div class="pb-card-tags">
+                    <span class="chip warn">In shop</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="pb-col">
+              <div class="pb-col-head done">
+                <h3>Done</h3>
+                <span class="pb-col-count">6 this week</span>
+              </div>
+              <div class="pb-col-body">
+
+                <div class="pb-card" style="opacity:.78">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Master closet light switch wiring</div>
+                    <span class="pb-card-prio low">Low</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · Bham Electric · closed Wed · photo</div>
+                  <div class="pb-card-tags">
+                    <div class="pb-card-photo photo p5"></div>
+                    <span class="chip ok">Closed 2d</span>
+                  </div>
+                </div>
+
+                <div class="pb-card" style="opacity:.78">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Mudroom bench refinish</div>
+                    <span class="pb-card-prio med">Med</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · Riverside Paint · closed Tue</div>
+                  <div class="pb-card-tags">
+                    <span class="chip ok">Closed 3d</span>
+                  </div>
+                </div>
+
+                <div class="pb-card" style="opacity:.78">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Powder room sconce alignment</div>
+                    <span class="pb-card-prio low">Low</span>
+                  </div>
+                  <div class="pb-card-meta">Brook House · Diego · closed Mon</div>
+                  <div class="pb-card-tags">
+                    <span class="chip ok">Closed 4d</span>
+                  </div>
+                </div>
+
+                <div class="pb-card" style="opacity:.78">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Driveway light controller reset</div>
+                    <span class="pb-card-prio low">Low</span>
+                  </div>
+                  <div class="pb-card-meta">Pine Bluff · Bham Electric · closed Mon</div>
+                  <div class="pb-card-tags">
+                    <span class="chip ok">Closed 4d</span>
+                  </div>
+                </div>
+
+                <div class="pb-card" style="opacity:.78">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Tile grout color match — guest bath</div>
+                    <span class="pb-card-prio med">Med</span>
+                  </div>
+                  <div class="pb-card-meta">Sycamore · Pratt &amp; Larson · closed Sun</div>
+                  <div class="pb-card-tags">
+                    <span class="chip ok">Closed 5d</span>
+                  </div>
+                </div>
+
+                <div class="pb-card" style="opacity:.78">
+                  <div class="pb-card-head">
+                    <div class="pb-card-title">Foyer light switch — relocate</div>
+                    <span class="pb-card-prio med">Med</span>
+                  </div>
+                  <div class="pb-card-meta">Brook House · Bham Electric · closed Sat</div>
+                  <div class="pb-card-tags">
+                    <span class="chip ok">Closed 6d</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- By build groupings -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Open punch · <em>by build</em></div>
+            <div class="card-sub">Same items grouped — useful for sub-by-sub scheduling</div>
+          </div>
+          <a href="#" class="card-action">Export all ↗</a>
+        </div>
+
+        <div class="punch-grouped">
+          <div class="pg-head"><span class="pg-build">Sycamore House <span style="color:var(--mute);font-style:normal;font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin-left:8px">5 open · closing prep</span></span><span>Sign-off scheduled <strong style="color:var(--ink)">Jun 1, 2026</strong></span></div>
+          <div class="punch">
+            <div class="punch-row"><div class="punch-check"></div><div class="punch-text"><strong>Foyer threshold settling</strong><small>2mm settle · Caroline reported · Diego scheduled Tue</small></div><div class="punch-assignee">Diego R.</div><span class="chip alert">High</span></div>
+            <div class="punch-row"><div class="punch-check"></div><div class="punch-text"><strong>Pool skimmer adjustment — east edge</strong><small>Bill reported via owner portal · Bham Pool</small></div><div class="punch-assignee">Bham Pool</div><span class="chip alert">High</span></div>
+            <div class="punch-row"><div class="punch-check"></div><div class="punch-text"><strong>Master shower grout cleanup</strong><small>Riverside on site this week</small></div><div class="punch-assignee">Riverside</div><span class="chip warn">Med</span></div>
+            <div class="punch-row"><div class="punch-check"></div><div class="punch-text"><strong>Stair tread nose refinish</strong><small>2 spots · scheduled Tue</small></div><div class="punch-assignee">Riverside</div><span class="chip warn">Med</span></div>
+            <div class="punch-row"><div class="punch-check"></div><div class="punch-text"><strong>Touch-up paint — primary closet</strong><small>3 spots · 90d walk findings</small></div><div class="punch-assignee">Riverside</div><span class="chip muted">Low</span></div>
+          </div>
+
+          <div class="pg-head" style="margin-top:14px"><span class="pg-build">Brook House <span style="color:var(--mute);font-style:normal;font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin-left:8px">3 open · warranty Y2</span></span><span>Y2 walk <strong style="color:var(--ink)">Jun 12, 2026</strong></span></div>
+          <div class="punch">
+            <div class="punch-row"><div class="punch-check"></div><div class="punch-text"><strong>HVAC vent rattle — guest bath</strong><small>Owner-reported · Coosa HVAC scheduled Mon</small></div><div class="punch-assignee">Coosa HVAC</div><span class="chip alert">High</span></div>
+            <div class="punch-row"><div class="punch-check"></div><div class="punch-text"><strong>Front porch ceiling — bowed board replaced</strong><small>Mason replaced · awaiting paint</small></div><div class="punch-assignee">Mason / Riverside</div><span class="chip warn">Med</span></div>
+            <div class="punch-row"><div class="punch-check"></div><div class="punch-text"><strong>Dishwasher leveler — slight tilt</strong><small>Reported during Y2 walk prep</small></div><div class="punch-assignee">Diego R.</div><span class="chip muted">Low</span></div>
+          </div>
+
+          <div class="pg-head" style="margin-top:14px"><span class="pg-build">Pine Bluff Estate <span style="color:var(--mute);font-style:normal;font-size:11px;letter-spacing:.18em;text-transform:uppercase;margin-left:8px">1 open · warranty</span></span><span>Y2 walk <strong style="color:var(--ink)">Jul 8, 2026</strong></span></div>
+          <div class="punch">
+            <div class="punch-row"><div class="punch-check"></div><div class="punch-text"><strong>Garden gate sticking — east side</strong><small>Seasonal · unassigned</small></div><div class="punch-assignee">Unassigned</div><span class="chip muted">Low</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="thumb-bar on">
+  <button class="tb-btn ghost" aria-label="Filter">⫹</button>
+  <button class="tb-btn saddle">+ Punch Item</button>
+  <button class="tb-btn sage">Mark Done →</button>
+</div>
+
+<script src="_sidebar.js" data-active="punch-lists"></script>
+</body>
+</html>

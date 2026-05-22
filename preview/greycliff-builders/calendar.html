@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calendar · The Site Office · Greycliff Builders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_dashboard.css">
+<style>
+  .month-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:var(--paper);border:1px solid var(--line-soft);border-radius:6px;padding:16px 22px}
+  .month-bar-l{display:flex;align-items:center;gap:14px}
+  .month-bar h2{font-family:'Fraunces',serif;font-size:26px;font-weight:300}
+  .month-bar h2 em{font-style:italic;color:var(--saddle);font-weight:300}
+  .month-nav{display:flex;gap:6px}
+  .mn-btn{width:38px;height:38px;border-radius:6px;background:var(--bone);border:1px solid var(--line-soft);font-size:14px;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-weight:600}
+  .mn-btn:hover{background:var(--cream)}
+  .mn-today{padding:0 16px;width:auto;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+  .view-tabs{display:flex;gap:2px;background:var(--bone);border:1px solid var(--line);border-radius:6px;padding:3px}
+  .view-tabs a{padding:8px 14px;font-size:12px;color:var(--ink-2);font-weight:600;letter-spacing:.04em;border-radius:4px;cursor:pointer;min-height:36px;display:inline-flex;align-items:center}
+  .view-tabs a.active{background:var(--ink);color:var(--paper)}
+
+  /* big calendar — taller cells with multiple events */
+  .big-cal{padding:0}
+  .bc-head{display:grid;grid-template-columns:repeat(7,1fr);background:var(--bone);border-bottom:1px solid var(--line-soft)}
+  .bc-head div{padding:14px 12px;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700;text-align:center;border-right:1px solid var(--line-soft)}
+  .bc-head div:last-child{border-right:none}
+  .bc-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+  .bc-day{min-height:140px;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:8px;display:flex;flex-direction:column;gap:4px;background:var(--paper);position:relative;cursor:pointer}
+  .bc-day:hover{background:var(--bone)}
+  .bc-day:nth-child(7n){border-right:none}
+  .bc-day.muted{background:var(--bone);opacity:.55}
+  .bc-day.today{background:linear-gradient(135deg,var(--sage-pale),var(--paper));border-left:3px solid var(--sage-deep)}
+  .bc-num{font-family:'Fraunces',serif;font-size:18px;font-weight:400;color:var(--ink);line-height:1;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+  .bc-day.today .bc-num{color:var(--sage-deep);font-weight:600}
+  .bc-num small{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--saddle);font-weight:700;font-family:'Inter',sans-serif}
+  .bc-evt{font-size:10.5px;background:var(--paper);border:1px solid var(--line-soft);border-left:3px solid var(--sage);border-radius:3px;padding:3px 7px;color:var(--ink);font-weight:600;letter-spacing:.02em;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bc-evt.sage{border-left-color:var(--sage-deep);background:var(--sage-pale)}
+  .bc-evt.tan{border-left-color:var(--warn);background:var(--warn-pale)}
+  .bc-evt.rust{border-left-color:var(--rust);background:var(--rust-pale)}
+  .bc-evt.saddle{border-left-color:var(--saddle);background:#f0e3d1}
+  .bc-evt.dark{border-left-color:var(--ink);background:var(--ink);color:var(--paper)}
+  .bc-evt.dashed{border-style:dashed;background:var(--bone);color:var(--mute);font-style:italic;font-family:'Fraunces',serif;font-weight:400}
+  .bc-evt-more{font-size:10px;color:var(--saddle);font-weight:700;letter-spacing:.04em;padding:2px 6px}
+
+  /* agenda fallback (mobile) */
+  .agenda{padding:0}
+  .agenda-day{padding:16px 22px;border-bottom:1px solid var(--line-soft)}
+  .agenda-day:last-child{border-bottom:none}
+  .agenda-day-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;gap:10px}
+  .agenda-day-date{font-family:'Fraunces',serif;font-size:18px;font-weight:400}
+  .agenda-day-date em{font-style:italic;color:var(--saddle);font-weight:300}
+  .agenda-day-date.today em{color:var(--sage-deep)}
+  .agenda-day-meta{font-size:11px;color:var(--mute);letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+  .agenda-evt{display:grid;grid-template-columns:60px 1fr auto;gap:14px;align-items:center;padding:10px 0;border-top:1px dashed var(--line-soft);font-size:13px}
+  .agenda-evt:first-of-type{border-top:none}
+  .agenda-evt-time{font-family:'Fraunces',serif;font-size:14px;font-weight:400;color:var(--saddle)}
+  .agenda-evt-text strong{font-weight:600;color:var(--ink);display:block;font-size:13.5px}
+  .agenda-evt-text span{font-size:11.5px;color:var(--mute);margin-top:2px;display:block}
+  @media (min-width:901px){.agenda{display:none}}
+  @media (max-width:900px){.big-cal{display:none}}
+
+  /* upcoming list (sidebar) */
+  .uc-list{padding:0}
+  .uc{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:12px 22px;border-bottom:1px solid var(--line-soft);align-items:flex-start}
+  .uc:last-child{border-bottom:none}
+  .uc-date{text-align:center;background:var(--bone);border-radius:4px;padding:8px 6px;border:1px solid var(--line-soft)}
+  .uc-date .d{font-family:'Fraunces',serif;font-size:18px;font-weight:300;line-height:1;color:var(--ink);display:block}
+  .uc-date .m{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--saddle);font-weight:700;margin-top:3px;display:block}
+  .uc-info strong{font-weight:600;color:var(--ink);font-size:13px;display:block;margin-bottom:2px}
+  .uc-info span{font-size:11px;color:var(--mute);line-height:1.4;display:block}
+  .uc-info .tag{display:inline-block;font-size:9px;background:var(--sage-pale);color:var(--sage-deep);padding:2px 7px;border-radius:999px;font-weight:700;letter-spacing:.06em;margin-top:6px;text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="side" id="side"></aside>
+
+  <main class="main">
+
+    <div class="top">
+      <button class="hamburger" aria-label="Open menu"><span></span></button>
+      <div class="top-brand-mobile"><span class="mark">G</span>Greycliff <em>Builders</em></div>
+      <div class="top-search"><input type="text" placeholder="Search events, inspections, deliveries…"></div>
+      <div class="top-actions">
+        <div class="top-pill">May 2026</div>
+        <button class="top-icon" data-desktop>⏱<span class="badge">7</span></button>
+        <button class="top-icon">✉<span class="badge">3</span></button>
+        <button class="top-cta">+ New Event</button>
+      </div>
+    </div>
+
+    <div class="page-head">
+      <div class="page-crumbs"><a href="dashboard.html">The Site Office</a> · Calendar</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">The <em>Calendar.</em></h1>
+          <div class="page-sub">Inspections, contractor blocks, deliveries, walkthroughs, closings — across all seven builds, synced to your phone.</div>
+        </div>
+        <div class="page-meta">
+          <div><strong>14</strong> events this week</div>
+          <div><strong>3</strong> inspections booked</div>
+          <div><strong>2</strong> client visits</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- month bar -->
+      <div class="month-bar">
+        <div class="month-bar-l">
+          <div class="month-nav">
+            <button class="mn-btn">‹</button>
+            <button class="mn-btn mn-today">Today</button>
+            <button class="mn-btn">›</button>
+          </div>
+          <h2>May <em>2026</em></h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <div class="view-tabs">
+            <a>Day</a>
+            <a>Week</a>
+            <a class="active">Month</a>
+            <a>Agenda</a>
+          </div>
+          <select style="padding:9px 14px;border:1px solid var(--line);border-radius:6px;background:var(--bone);font-size:12px;font-weight:600;min-height:40px"><option>All builds (7)</option><option>Cahaba Ridge</option><option>Pine Point</option><option>Old Leeds Way</option><option>Sycamore</option></select>
+        </div>
+      </div>
+
+      <!-- big calendar -->
+      <div class="card">
+        <div class="big-cal">
+          <div class="bc-head">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+          </div>
+          <div class="bc-grid">
+            <!-- week 1 (Apr 26 – May 2) -->
+            <div class="bc-day muted"><div class="bc-num">26</div></div>
+            <div class="bc-day muted"><div class="bc-num">27</div></div>
+            <div class="bc-day muted"><div class="bc-num">28</div></div>
+            <div class="bc-day muted"><div class="bc-num">29</div></div>
+            <div class="bc-day muted"><div class="bc-num">30</div></div>
+            <div class="bc-day"><div class="bc-num">1 <small>May</small></div>
+              <div class="bc-evt sage">Sycamore · 60d walk</div>
+              <div class="bc-evt">Friday Letter (×7)</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">2</div></div>
+
+            <!-- week 2 -->
+            <div class="bc-day"><div class="bc-num">3</div></div>
+            <div class="bc-day"><div class="bc-num">4</div>
+              <div class="bc-evt saddle">Cab review · 10a · Cahaba</div>
+              <div class="bc-evt tan">Drywall · Old Leeds</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">5</div>
+              <div class="bc-evt rust">⚠ Rain start · all sites</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">6</div>
+              <div class="bc-evt rust">⚠ Storm — Old Leeds</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">7</div></div>
+            <div class="bc-day"><div class="bc-num">8</div>
+              <div class="bc-evt">Friday Letter (×7)</div>
+              <div class="bc-evt saddle">CO-013 signed · pantry</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">9</div></div>
+
+            <!-- week 3 -->
+            <div class="bc-day"><div class="bc-num">10</div></div>
+            <div class="bc-day"><div class="bc-num">11</div>
+              <div class="bc-evt sage">Selections · Whitlows · 9a</div>
+              <div class="bc-evt">Riverside paint · Sycamore</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">12</div>
+              <div class="bc-evt tan">HVAC delivery · Pine Point</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">13</div>
+              <div class="bc-evt rust">Variance hearing · Russet · 2p</div>
+              <div class="bc-evt">Insurance renewal · Drexel</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">14</div>
+              <div class="bc-evt-more">+3 more</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">15</div>
+              <div class="bc-evt">Friday Letter (×7)</div>
+              <div class="bc-evt sage">Draw #4 closes · Pine Point</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">16</div></div>
+
+            <!-- week 4 -->
+            <div class="bc-day"><div class="bc-num">17</div></div>
+            <div class="bc-day"><div class="bc-num">18</div>
+              <div class="bc-evt tan">HVAC install · Pine Point</div>
+              <div class="bc-evt saddle">Framing wrap · Cahaba</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">19</div>
+              <div class="bc-evt sage">Sycamore 90d walk · 1p</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">20</div>
+              <div class="bc-evt-more">+2 more</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">21</div>
+              <div class="bc-evt sage">Pre-roof inspect · Cahaba · 8a</div>
+              <div class="bc-evt">Wallace · also Russet</div>
+            </div>
+            <div class="bc-day today"><div class="bc-num">22 <small>Today</small></div>
+              <div class="bc-evt sage">Roof start · Cahaba</div>
+              <div class="bc-evt tan">Drexel delivery · 8a</div>
+              <div class="bc-evt">Friday Letter · 4p</div>
+              <div class="bc-evt-more">+2 more</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">23</div>
+              <div class="bc-evt">Half day · Cahaba roof</div>
+              <div class="bc-evt sage">Roof walk · Whitlows</div>
+            </div>
+
+            <!-- week 5 -->
+            <div class="bc-day"><div class="bc-num">24</div></div>
+            <div class="bc-day"><div class="bc-num">25</div>
+              <div class="bc-evt sage">Holloways visit · 2p</div>
+              <div class="bc-evt">Dock walk · Pine Point</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">26</div>
+              <div class="bc-evt tan">Texture start · Old Leeds</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">27</div>
+              <div class="bc-evt rust">⚠ Storm window opens</div>
+              <div class="bc-evt saddle">Dry-in tarp · Cahaba</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">28</div>
+              <div class="bc-evt rust">⚠ Storm</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">29</div>
+              <div class="bc-evt">Friday Letter (×7)</div>
+              <div class="bc-evt sage">Master bath sconces · due</div>
+            </div>
+            <div class="bc-day"><div class="bc-num">30</div></div>
+
+            <!-- week 6 -->
+            <div class="bc-day"><div class="bc-num">31</div></div>
+            <div class="bc-day muted"><div class="bc-num">1 <small>Jun</small></div>
+              <div class="bc-evt dark">Sycamore signoff</div>
+            </div>
+            <div class="bc-day muted"><div class="bc-num">2</div>
+              <div class="bc-evt dashed">Draw #5 prep</div>
+            </div>
+            <div class="bc-day muted"><div class="bc-num">3</div></div>
+            <div class="bc-day muted"><div class="bc-num">4</div>
+              <div class="bc-evt sage">Roof complete · Cahaba</div>
+              <div class="bc-evt sage">Dry-in inspect · Wallace</div>
+            </div>
+            <div class="bc-day muted"><div class="bc-num">5</div></div>
+            <div class="bc-day muted"><div class="bc-num">6</div></div>
+          </div>
+        </div>
+
+        <!-- mobile agenda -->
+        <div class="agenda">
+          <div class="agenda-day">
+            <div class="agenda-day-head">
+              <div class="agenda-day-date today">Today, <em>Fri May 22</em></div>
+              <div class="agenda-day-meta">5 events</div>
+            </div>
+            <div class="agenda-evt"><div class="agenda-evt-time">7:00a</div><div class="agenda-evt-text"><strong>Roof crew start · Cahaba Ridge</strong><span>Diego + Drexel × 4 · half-day Sat</span></div><span class="chip ok">Today</span></div>
+            <div class="agenda-evt"><div class="agenda-evt-time">8:14a</div><div class="agenda-evt-text"><strong>Drexel delivery · 1,840 lf copper</strong><span>Cahaba Ridge · received</span></div><span class="chip ok">Done</span></div>
+            <div class="agenda-evt"><div class="agenda-evt-time">2:00p</div><div class="agenda-evt-text"><strong>Russet variance — attorney call</strong><span>Atty Bishop · 30 min</span></div><span class="chip warn">Today</span></div>
+            <div class="agenda-evt"><div class="agenda-evt-time">4:30p</div><div class="agenda-evt-text"><strong>Friday Letters open for send</strong><span>4 drafted · 3 still need writing</span></div><span class="chip warn">Today</span></div>
+            <div class="agenda-evt"><div class="agenda-evt-time">4:30p</div><div class="agenda-evt-text"><strong>Walk Whitlows through roof start</strong><span>Cahaba Ridge · 30 min</span></div><span class="chip ok">Today</span></div>
+          </div>
+          <div class="agenda-day">
+            <div class="agenda-day-head">
+              <div class="agenda-day-date">Saturday, <em>May 23</em></div>
+              <div class="agenda-day-meta">2 events</div>
+            </div>
+            <div class="agenda-evt"><div class="agenda-evt-time">7:00a</div><div class="agenda-evt-text"><strong>Half-day · roof continued</strong><span>Cahaba · 7a–12 · Diego + 4</span></div><span class="chip muted">Sat</span></div>
+            <div class="agenda-evt"><div class="agenda-evt-time">TBD</div><div class="agenda-evt-text"><strong>Roof walk with Whitlows</strong><span>Before crew arrives — reply Carter</span></div><span class="chip muted">Pending</span></div>
+          </div>
+          <div class="agenda-day">
+            <div class="agenda-day-head">
+              <div class="agenda-day-date">Monday, <em>May 25</em></div>
+              <div class="agenda-day-meta">3 events</div>
+            </div>
+            <div class="agenda-evt"><div class="agenda-evt-time">2:00p</div><div class="agenda-evt-text"><strong>Holloways visit · Pine Point</strong><span>First time seeing dock framing · 45m</span></div><span class="chip ok">Booked</span></div>
+            <div class="agenda-evt"><div class="agenda-evt-time">3:00p</div><div class="agenda-evt-text"><strong>Dock walk + photo set</strong><span>Marcus + Wes on site</span></div><span class="chip muted">Mon</span></div>
+            <div class="agenda-evt"><div class="agenda-evt-time">All day</div><div class="agenda-evt-text"><strong>Texture start · Old Leeds Way</strong><span>Riverside × 2 crews · recovery plan</span></div><span class="chip warn">Critical</span></div>
+          </div>
+          <div class="agenda-day">
+            <div class="agenda-day-head">
+              <div class="agenda-day-date">Wednesday, <em>May 27</em></div>
+              <div class="agenda-day-meta">2 events</div>
+            </div>
+            <div class="agenda-evt"><div class="agenda-evt-time">All day</div><div class="agenda-evt-text"><strong>Storm window opens (NWS)</strong><span>1.2"–2.1" expected through Thu evening</span></div><span class="chip alert">Risk</span></div>
+            <div class="agenda-evt"><div class="agenda-evt-time">3:00p</div><div class="agenda-evt-text"><strong>Cahaba dry-in tarp deadline</strong><span>Buttoning up before weather hits</span></div><span class="chip alert">Critical</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- side cards: legend + next 7 -->
+      <div class="grid-2-even">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Next <em>7 days</em></div>
+              <div class="card-sub">Across every active build</div>
+            </div>
+            <a href="#" class="card-action">Subscribe (.ics) →</a>
+          </div>
+          <div class="uc-list">
+            <div class="uc"><div class="uc-date"><span class="d">23</span><span class="m">Sat</span></div><div class="uc-info"><strong>Half-day roof · Cahaba</strong><span>Diego + Drexel × 4 · 7a–12</span><span class="tag">Cahaba Ridge</span></div></div>
+            <div class="uc"><div class="uc-date"><span class="d">25</span><span class="m">Mon</span></div><div class="uc-info"><strong>Holloways visit · Pine Point</strong><span>First dock framing walk · 2p</span><span class="tag">Pine Point</span></div></div>
+            <div class="uc"><div class="uc-date"><span class="d">25</span><span class="m">Mon</span></div><div class="uc-info"><strong>Texture start · Old Leeds</strong><span>Riverside × 2 crews · recovery</span><span class="tag" style="background:var(--warn-pale);color:#7a5a18">Old Leeds Way</span></div></div>
+            <div class="uc"><div class="uc-date"><span class="d">27</span><span class="m">Wed</span></div><div class="uc-info"><strong>Storm window opens</strong><span>1.2"–2.1" rain · NWS</span><span class="tag" style="background:var(--rust-pale);color:#7a3c25">All sites</span></div></div>
+            <div class="uc"><div class="uc-date"><span class="d">27</span><span class="m">Wed</span></div><div class="uc-info"><strong>Cahaba dry-in tarp deadline</strong><span>Diego · 3p before storm</span><span class="tag" style="background:var(--rust-pale);color:#7a3c25">Cahaba Ridge</span></div></div>
+            <div class="uc"><div class="uc-date"><span class="d">29</span><span class="m">Fri</span></div><div class="uc-info"><strong>Friday Letters × 7</strong><span>Send window 4:30–5:00p</span><span class="tag">Company</span></div></div>
+            <div class="uc"><div class="uc-date"><span class="d">29</span><span class="m">Fri</span></div><div class="uc-info"><strong>Master bath sconces · due</strong><span>Whitlows pick Cabot vs Mira</span><span class="tag">Selections</span></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Event <em>types</em></div>
+              <div class="card-sub">What the colors mean — drag to recolor</div>
+            </div>
+          </div>
+          <div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:14px;height:14px;border-radius:3px;background:var(--sage);border-left:3px solid var(--sage-deep)"></span><strong style="font-weight:600">Inspection / milestone</strong><span style="color:var(--mute);font-size:11.5px;margin-left:auto">3 this week</span></div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:14px;height:14px;border-radius:3px;background:var(--warn-pale);border-left:3px solid var(--warn)"></span><strong style="font-weight:600">Contractor block</strong><span style="color:var(--mute);font-size:11.5px;margin-left:auto">4 this week</span></div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:14px;height:14px;border-radius:3px;background:#f0e3d1;border-left:3px solid var(--saddle)"></span><strong style="font-weight:600">Delivery / materials</strong><span style="color:var(--mute);font-size:11.5px;margin-left:auto">2 this week</span></div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:14px;height:14px;border-radius:3px;background:var(--rust-pale);border-left:3px solid var(--rust)"></span><strong style="font-weight:600">Weather / risk</strong><span style="color:var(--mute);font-size:11.5px;margin-left:auto">2 this week</span></div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:14px;height:14px;border-radius:3px;background:var(--paper);border:1px solid var(--line-soft);border-left:3px solid var(--sage)"></span><strong style="font-weight:600">Client / homeowner</strong><span style="color:var(--mute);font-size:11.5px;margin-left:auto">2 this week</span></div>
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:14px;height:14px;border-radius:3px;background:var(--ink);border-left:3px solid var(--ink)"></span><strong style="font-weight:600">Closing / handover</strong><span style="color:var(--mute);font-size:11.5px;margin-left:auto">1 next week</span></div>
+            <div style="border-top:1px solid var(--line-soft);padding-top:14px;display:flex;flex-direction:column;gap:8px;margin-top:6px">
+              <div style="font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);font-weight:600">Integrations</div>
+              <div style="display:flex;justify-content:space-between;font-size:12.5px"><span>Google Calendar</span><span class="chip ok">Synced 12m ago</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12.5px"><span>SMS reminders</span><span class="chip ok">On</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12.5px"><span>Weather feed (NWS)</span><span class="chip ok">Active</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:12.5px"><span>Inspector portal (MB)</span><span class="chip warn">Re-auth Mon</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="thumb-bar on">
+  <button class="tb-btn ghost" aria-label="Today">⊙</button>
+  <button class="tb-btn saddle">+ Event</button>
+  <button class="tb-btn sage">Subscribe →</button>
+</div>
+
+<script src="_sidebar.js" data-active="calendar"></script>
+</body>
+</html>

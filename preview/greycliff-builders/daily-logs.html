@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Daily Logs · The Site Office · Greycliff Builders</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_dashboard.css">
+<style>
+  /* daily-logs page-specific */
+  .composer{background:linear-gradient(160deg,var(--ink) 0%,#2c352a 100%);color:var(--paper);border-radius:6px;padding:28px;position:relative;overflow:hidden}
+  .composer::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 90% 10%,rgba(212,184,150,.16),transparent 50%);pointer-events:none}
+  .composer-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px;position:relative;flex-wrap:wrap}
+  .composer-tag{font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--tan);font-weight:600}
+  .composer h2{font-family:'Fraunces',serif;font-size:24px;font-weight:300;color:var(--paper);margin-top:6px}
+  .composer h2 em{font-style:italic;color:var(--tan);font-weight:300}
+  .composer-pick{display:flex;flex-wrap:wrap;gap:6px;position:relative;margin-bottom:16px}
+  .composer-pick a{padding:8px 14px;background:rgba(244,241,234,.08);color:rgba(244,241,234,.7);border-radius:999px;font-size:11.5px;font-weight:600;letter-spacing:.04em;border:1px solid rgba(244,241,234,.15);min-height:36px;display:inline-flex;align-items:center;cursor:pointer}
+  .composer-pick a:hover{background:rgba(244,241,234,.14);color:var(--paper)}
+  .composer-pick a.on{background:var(--tan);color:var(--ink);border-color:var(--tan);font-weight:700}
+  .composer-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative}
+  .composer-grid input,.composer-grid select,.composer-grid textarea{width:100%;padding:11px 14px;background:rgba(244,241,234,.06);border:1px solid rgba(244,241,234,.18);border-radius:4px;font-size:13px;font-family:'Inter',sans-serif;color:var(--paper)}
+  .composer-grid input::placeholder,.composer-grid textarea::placeholder{color:rgba(244,241,234,.4)}
+  .composer-grid textarea{grid-column:1/-1;min-height:80px;resize:vertical;line-height:1.55}
+  .composer-row{display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:10px;position:relative}
+  .composer-attach{display:flex;gap:8px;flex-wrap:wrap}
+  .composer-attach button{padding:9px 14px;background:rgba(244,241,234,.08);color:var(--paper);border:1px solid rgba(244,241,234,.2);border-radius:4px;font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:38px}
+  .composer-attach button:hover{background:rgba(244,241,234,.14)}
+  .composer-save{padding:12px 22px;background:var(--tan);color:var(--ink);border:none;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;min-height:44px}
+  .composer-save:hover{background:var(--paper)}
+  @media (max-width:600px){.composer-grid{grid-template-columns:1fr}.composer{padding:22px 18px}}
+
+  /* log entry full card with photo strip */
+  .log-card{background:var(--paper);border:1px solid var(--line-soft);border-radius:6px;overflow:hidden}
+  .log-card + .log-card{margin-top:18px}
+  .log-card-head{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px;border-bottom:1px solid var(--line-soft);gap:14px;flex-wrap:wrap}
+  .log-card-date{font-family:'Fraunces',serif;font-size:20px;font-weight:400}
+  .log-card-date em{font-style:italic;color:var(--saddle);font-weight:300}
+  .log-card-sub{font-size:11.5px;color:var(--mute);margin-top:4px;letter-spacing:.04em}
+  .log-card-build{font-size:11px;color:var(--sage-deep);font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--sage-pale);padding:5px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
+  .log-card-build::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--sage-deep)}
+  .log-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:14px 22px;border-bottom:1px solid var(--line-soft)}
+  .log-strip .photo{aspect-ratio:1;font-size:9px}
+  @media (max-width:780px){.log-strip{grid-template-columns:repeat(3,1fr)}}
+
+  /* compact log list (for less-recent entries) */
+  .log-mini{display:grid;grid-template-columns:90px 1fr auto;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line-soft);align-items:center;font-size:13px;cursor:pointer}
+  .log-mini:last-child{border-bottom:none}
+  .log-mini:hover{background:var(--bone)}
+  .log-mini-date{text-align:center}
+  .log-mini-date .day{font-family:'Fraunces',serif;font-size:22px;font-weight:300;line-height:1;color:var(--ink)}
+  .log-mini-date .mo{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--saddle);font-weight:600;margin-top:4px}
+  .log-mini-info strong{font-family:'Fraunces',serif;font-size:14px;font-weight:400;color:var(--ink);display:block}
+  .log-mini-info span{font-size:11.5px;color:var(--mute);margin-top:2px;line-height:1.4;display:block}
+  .log-mini-meta{font-size:10px;color:var(--mute);letter-spacing:.06em;text-align:right;text-transform:uppercase;font-weight:600}
+  @media (max-width:600px){.log-mini{grid-template-columns:60px 1fr;row-gap:6px}.log-mini-meta{grid-column:2}}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <aside class="side" id="side"></aside>
+
+  <main class="main">
+
+    <div class="top">
+      <button class="hamburger" aria-label="Open menu"><span></span></button>
+      <div class="top-brand-mobile"><span class="mark">G</span>Greycliff <em>Builders</em></div>
+      <div class="top-search"><input type="text" placeholder="Search logs by build, super, or date…"></div>
+      <div class="top-actions">
+        <div class="top-pill">7 builds active</div>
+        <button class="top-icon" data-desktop>⏱<span class="badge">7</span></button>
+        <button class="top-icon">✉<span class="badge">3</span></button>
+        <button class="top-cta">+ New Log</button>
+      </div>
+    </div>
+
+    <div class="page-head">
+      <div class="page-crumbs"><a href="dashboard.html">The Site Office</a> · Daily Logs</div>
+      <div class="page-title-row">
+        <div>
+          <h1 class="page-title">Daily <em>Logs</em></h1>
+          <div class="page-sub">Every morning, every build. Filed before crews start. Legal-grade record, photo-backed.</div>
+        </div>
+        <div class="page-meta">
+          <div><strong>4 of 7</strong> filed today</div>
+          <div><strong>1,247</strong> logs this year</div>
+          <div><strong>14,830</strong> photos archived</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- COMPOSER — filing today's log -->
+      <div class="composer">
+        <div class="composer-head">
+          <div>
+            <div class="composer-tag">File Today's Log · Friday, May 22, 2026</div>
+            <h2>Which build are you <em>logging?</em></h2>
+          </div>
+          <div style="color:rgba(244,241,234,.65);font-size:11.5px;letter-spacing:.04em">4 already filed · 3 to go</div>
+        </div>
+        <div class="composer-pick">
+          <a class="on">Cahaba Ridge ✓</a>
+          <a>Pine Point ✓</a>
+          <a>Old Leeds Way</a>
+          <a>Sycamore (closed) ✓</a>
+          <a>Pine Bluff ✓</a>
+          <a>Brook House</a>
+          <a>Russet Lane</a>
+        </div>
+        <div class="composer-grid">
+          <input type="text" placeholder="Who was on site? (Wes, Diego, Drexel-4, Spectrum-2…)">
+          <input type="text" placeholder="Weather (clear, 71°F, light wind)">
+          <input type="text" placeholder="Deliveries (Drexel — 1,840 lf copper @ 8:14a)">
+          <input type="text" placeholder="Inspections (pre-roof passed — Wallace)">
+          <input type="text" placeholder="Hours (7a–4p, half day Sat 7–12)">
+          <input type="text" placeholder="Client touch (walking Whitlows at 4:30p)">
+          <textarea placeholder="The note — what actually happened today, what's worrying you, what you want a record of. 6–8 sentences max."></textarea>
+        </div>
+        <div class="composer-row">
+          <div class="composer-attach">
+            <button>📷 Add photos (14)</button>
+            <button>🎥 Video</button>
+            <button>📍 Geotag site</button>
+            <button>🎙 Voice note</button>
+          </div>
+          <button class="composer-save">File log + notify owner →</button>
+        </div>
+      </div>
+
+      <!-- TODAY's filed log (full card) -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Today, <em>so far</em></div>
+            <div class="card-sub">Logs filed this morning · 4 of 7 builds</div>
+          </div>
+          <a href="#" class="card-action">Send Friday Letters →</a>
+        </div>
+
+        <div class="log-card" style="border:none;border-radius:0">
+          <div class="log-card-head">
+            <div>
+              <div class="log-card-date">Friday, <em>May 22</em> — Cahaba Ridge</div>
+              <div class="log-card-sub">Filed 6:08 a.m. by Wes Greycliff · Day 147 of 285 · clear, 71°F</div>
+            </div>
+            <span class="log-card-build">On Schedule</span>
+          </div>
+          <div class="log-strip">
+            <div class="photo p1"><span>Roof start · 9a</span></div>
+            <div class="photo p2"><span>Copper delivery</span></div>
+            <div class="photo p6"><span>Inspection · 8a</span></div>
+            <div class="photo p5"><span>Crew tied off</span></div>
+            <div class="photo p7"><span>Drone · 7:30a</span></div>
+            <div class="photo p8"><span>Detail · ridge</span></div>
+          </div>
+          <div class="log-entry" style="border:none">
+            <div class="log-grid">
+              <div class="log-cell"><div class="lbl">On Site</div><div class="val">Wes G. · Diego R. · Drexel crew (4) · Spectrum framing (2)</div></div>
+              <div class="log-cell"><div class="lbl">Deliveries</div><div class="val">Drexel — 1,840 lf copper standing seam · 8:14a</div></div>
+              <div class="log-cell"><div class="lbl">Inspections</div><div class="val">Pre-roof framing — passed first time · Wallace</div></div>
+              <div class="log-cell"><div class="lbl">Safety</div><div class="val">All four roof crew tied off · harnesses checked</div></div>
+            </div>
+            <div class="log-note">Pre-roof passed first time — first time that's happened on a Greycliff job this year. Crew is in a good rhythm. Two-day storm tracking for Wed–Thu next week; pulling dry-in forward to button up Tuesday.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other logs filed today -->
+      <div class="grid-2-even">
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Pine Point · <em>May 22</em></div><div class="card-sub">Filed 5:52 a.m. by Marcus Mills</div></div><span class="chip ok">On Schedule</span></div>
+          <div class="log-entry" style="border:none">
+            <div class="log-grid">
+              <div class="log-cell"><div class="lbl">On Site</div><div class="val">Marcus · Magic City Plumbing (3)</div></div>
+              <div class="log-cell"><div class="lbl">Stage</div><div class="val">HVAC rough-in · trunk lines on the lake side</div></div>
+              <div class="log-cell"><div class="lbl">Owner</div><div class="val">Holloway flying in Wed for dock framing walk</div></div>
+              <div class="log-cell"><div class="lbl">Photos</div><div class="val">9 added</div></div>
+            </div>
+            <div class="log-note">Plumbing crew making clean progress on the lake-side trunk. Need to confirm shower drain location with Margaret before pour Friday.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Sycamore · <em>May 22</em></div><div class="card-sub">Filed 7:14 a.m. by Diego Ruiz</div></div><span class="chip muted">Warranty Y1</span></div>
+          <div class="log-entry" style="border:none">
+            <div class="log-grid">
+              <div class="log-cell"><div class="lbl">On Site</div><div class="val">Diego · Riverside Paint (1)</div></div>
+              <div class="log-cell"><div class="lbl">Punch</div><div class="val">3 of 5 cleared · threshold + skimmer pending</div></div>
+              <div class="log-cell"><div class="lbl">Owner</div><div class="val">Pendletons submitted warranty req. last night</div></div>
+              <div class="log-cell"><div class="lbl">Photos</div><div class="val">6 added · all closeups</div></div>
+            </div>
+            <div class="log-note">Foyer threshold confirmed — 2mm settle, classic 90-day. Booked masons for Tuesday morning, before crew arrives at Cahaba.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Awaiting today -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Still <em>awaiting</em></div>
+            <div class="card-sub">Three logs not yet filed for today · supers will be reminded at 7:30a</div>
+          </div>
+          <span class="chip warn">3 pending</span>
+        </div>
+        <div class="log">
+          <div class="log-entry" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:14px 22px">
+            <div><strong style="font-family:'Fraunces',serif;font-size:15px">Old Leeds Way</strong><div style="font-size:11px;color:var(--mute);margin-top:2px">Marcus Mills · last filed yesterday at 4:48 p.m.</div></div>
+            <button class="btn-sm ghost">Send reminder →</button>
+          </div>
+          <div class="log-entry" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:14px 22px">
+            <div><strong style="font-family:'Fraunces',serif;font-size:15px">Brook House (Warranty)</strong><div style="font-size:11px;color:var(--mute);margin-top:2px">Diego Ruiz · weekly cadence — next due today</div></div>
+            <button class="btn-sm ghost">Send reminder →</button>
+          </div>
+          <div class="log-entry" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:14px 22px;border:none">
+            <div><strong style="font-family:'Fraunces',serif;font-size:15px">Russet Lane (Permits)</strong><div style="font-size:11px;color:var(--mute);margin-top:2px">No active super — Wes covering</div></div>
+            <button class="btn-sm sage">File for Wes →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- This week archive -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">This <em>week</em></div>
+            <div class="card-sub">All logs across all builds · Mon May 18 – Thu May 21</div>
+          </div>
+          <div class="toolbar-tabs" style="background:var(--bone);border:1px solid var(--line);border-radius:4px;padding:2px;display:flex;gap:2px">
+            <a class="active" style="padding:6px 12px;font-size:11px;color:var(--paper);background:var(--ink);font-weight:600;letter-spacing:.04em;border-radius:3px">This week</a>
+            <a style="padding:6px 12px;font-size:11px;color:var(--ink-2);font-weight:600;letter-spacing:.04em;border-radius:3px">Last week</a>
+            <a style="padding:6px 12px;font-size:11px;color:var(--ink-2);font-weight:600;letter-spacing:.04em;border-radius:3px">All</a>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <span class="toolbar-label">Build</span>
+          <select><option>All builds (7)</option><option>Cahaba Ridge</option><option>Pine Point</option><option>Old Leeds Way</option><option>Sycamore</option><option>Brook House</option><option>Pine Bluff</option><option>Russet Lane</option></select>
+          <span class="toolbar-label">Super</span>
+          <select><option>All supers</option><option>Wes Greycliff</option><option>Marcus Mills</option><option>Diego Ruiz</option><option>Mason Greycliff</option></select>
+          <div class="toolbar-spacer"></div>
+          <span class="toolbar-label">Has photos</span>
+          <select><option>Any</option><option>With photos only</option><option>Logs with no photos</option></select>
+        </div>
+
+        <div class="log">
+          <div class="log-mini">
+            <div class="log-mini-date"><div class="day">21</div><div class="mo">Thu May</div></div>
+            <div class="log-mini-info"><strong>Cahaba Ridge · pre-roof prep</strong><span>Wes · final framing punch + storm-prep tarps · 11 photos · 1 inspection passed</span></div>
+            <div class="log-mini-meta">Filed 6:14a<br><span style="color:var(--sage-deep)">on time</span></div>
+          </div>
+          <div class="log-mini">
+            <div class="log-mini-date"><div class="day">21</div><div class="mo">Thu May</div></div>
+            <div class="log-mini-info"><strong>Old Leeds Way · drywall recovery</strong><span>Marcus · texture rescheduled to Mon — Riverside committed two crews · 7 photos</span></div>
+            <div class="log-mini-meta">Filed 4:48p<br><span style="color:var(--warn)">late</span></div>
+          </div>
+          <div class="log-mini">
+            <div class="log-mini-date"><div class="day">21</div><div class="mo">Thu May</div></div>
+            <div class="log-mini-info"><strong>Pine Point · plumbing rough</strong><span>Marcus · Magic City finished kitchen branch · 8 photos · no issues</span></div>
+            <div class="log-mini-meta">Filed 6:02a<br><span style="color:var(--sage-deep)">on time</span></div>
+          </div>
+          <div class="log-mini">
+            <div class="log-mini-date"><div class="day">20</div><div class="mo">Wed May</div></div>
+            <div class="log-mini-info"><strong>Cahaba Ridge · framing punch</strong><span>Wes · last bay closed · ready for pre-roof Thu · 9 photos · 2 client questions resolved</span></div>
+            <div class="log-mini-meta">Filed 5:58a<br><span style="color:var(--sage-deep)">on time</span></div>
+          </div>
+          <div class="log-mini">
+            <div class="log-mini-date"><div class="day">20</div><div class="mo">Wed May</div></div>
+            <div class="log-mini-info"><strong>Sycamore · 90-day walk prep</strong><span>Diego · pre-walk inspection · 4 minor punches identified · 12 photos</span></div>
+            <div class="log-mini-meta">Filed 7:21a<br><span style="color:var(--sage-deep)">on time</span></div>
+          </div>
+          <div class="log-mini">
+            <div class="log-mini-date"><div class="day">19</div><div class="mo">Tue May</div></div>
+            <div class="log-mini-info"><strong>Old Leeds Way · drywall slip</strong><span>Marcus · Tuesday rain delayed hang-out 5 days · recovery plan filed · 6 photos</span></div>
+            <div class="log-mini-meta">Filed 4:14p<br><span style="color:var(--rust)">delay</span></div>
+          </div>
+          <div class="log-mini">
+            <div class="log-mini-date"><div class="day">19</div><div class="mo">Tue May</div></div>
+            <div class="log-mini-info"><strong>Pine Point · HVAC delivery</strong><span>Marcus · Trane equipment received and staged · 4 photos · ready for Wed install</span></div>
+            <div class="log-mini-meta">Filed 5:48a<br><span style="color:var(--sage-deep)">on time</span></div>
+          </div>
+          <div class="log-mini">
+            <div class="log-mini-date"><div class="day">18</div><div class="mo">Mon May</div></div>
+            <div class="log-mini-info"><strong>Cahaba Ridge · framing continued</strong><span>Wes · roof rafters topped out · 14 photos · drone set from north bluff</span></div>
+            <div class="log-mini-meta">Filed 6:11a<br><span style="color:var(--sage-deep)">on time</span></div>
+          </div>
+          <div class="log-mini">
+            <div class="log-mini-date"><div class="day">18</div><div class="mo">Mon May</div></div>
+            <div class="log-mini-info"><strong>Russet Lane · variance prep</strong><span>Wes · attorney call summary · hearing pushed to Jun 4 · no photos (permits)</span></div>
+            <div class="log-mini-meta">Filed 8:42a<br><span style="color:var(--sage-deep)">on time</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- thumb bar -->
+<div class="thumb-bar on">
+  <button class="tb-btn ghost" aria-label="Search">⌕</button>
+  <button class="tb-btn saddle">+ New Log</button>
+  <button class="tb-btn sage">+ Photo Set</button>
+</div>
+
+<script src="_sidebar.js" data-active="daily-logs"></script>
+</body>
+</html>
