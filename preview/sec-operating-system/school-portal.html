@@ -10,6 +10,111 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="shared.css">
 <style>
+  /* Quick-Submit drawer system */
+  .drawer-mask{position:fixed;inset:0;background:rgba(2,6,18,.7);backdrop-filter:blur(4px);z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+  .drawer-mask.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px, 92vw);background:#06091a;border-left:1px solid var(--line-strong);z-index:101;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-30px 0 60px -20px rgba(0,0,0,.5)}
+  .drawer.open{transform:translateX(0)}
+  .drawer-head{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.25)}
+  .drawer-mark{width:38px;height:38px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:var(--gold-soft);background:rgba(201,165,88,.12);border:1px solid rgba(201,165,88,.25)}
+  .drawer-mark.med{color:var(--info);background:rgba(111,169,230,.15);border-color:rgba(111,169,230,.3)}
+  .drawer-mark.trv{color:var(--good);background:rgba(77,201,126,.12);border-color:rgba(77,201,126,.3)}
+  .drawer-mark.inc{color:var(--danger);background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.3)}
+  .drawer-mark.cmp{color:var(--gold-soft);background:rgba(201,165,88,.12);border-color:rgba(201,165,88,.3)}
+  .drawer-title{font-family:'Fraunces',serif;font-size:1.2rem;color:#fff;font-weight:500;line-height:1.1}
+  .drawer-title em{font-style:italic;color:var(--gold-soft);font-weight:300;display:block;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;font-family:'Inter',sans-serif}
+  .drawer-close{margin-left:auto;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;font-weight:300;transition:.15s}
+  .drawer-close:hover{color:#fff;border-color:var(--line-strong);background:rgba(255,255,255,.08)}
+  .drawer-body{flex:1;overflow-y:auto;padding:22px 26px;display:flex;flex-direction:column;gap:18px}
+  .drawer-body::-webkit-scrollbar{width:4px}
+  .drawer-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .drawer-foot{padding:16px 26px;border-top:1px solid var(--line);background:rgba(0,0,0,.25);display:flex;align-items:center;gap:10px}
+  .drawer-foot .sla{font-size:.7rem;color:var(--muted);letter-spacing:.04em;flex:1}
+  .drawer-foot .sla strong{color:var(--gold-soft);font-weight:600}
+
+  /* Form bits */
+  .form-row{display:flex;flex-direction:column;gap:6px}
+  .form-row.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-row.split-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .form-label{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .form-label .req{color:var(--gold-soft);margin-left:4px}
+  .form-input, .form-select, .form-textarea{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:3px;color:#fff;font-family:inherit;font-size:.86rem;padding:10px 12px;outline:none;transition:.15s;width:100%}
+  .form-input:focus, .form-select:focus, .form-textarea:focus{border-color:var(--gold);background:rgba(201,165,88,.05)}
+  .form-input::placeholder, .form-textarea::placeholder{color:var(--muted-soft)}
+  .form-select{cursor:pointer;appearance:none;background-image:linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);background-position:calc(100% - 16px) 50%, calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+  .form-textarea{resize:vertical;min-height:80px;font-family:inherit;line-height:1.5}
+  .form-hint{font-size:.66rem;color:var(--muted-soft);letter-spacing:.04em;line-height:1.5}
+  .form-hint strong{color:var(--gold-soft);font-weight:600}
+
+  /* Tag chips for multi-select */
+  .chip-group{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:.7rem;letter-spacing:.05em;padding:6px 11px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--muted);font-weight:600;transition:.15s;user-select:none}
+  .chip:hover{color:#fff;border-color:var(--line-strong)}
+  .chip.on{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  /* Upload zone */
+  .upload-zone{border:1.5px dashed var(--line-strong);border-radius:3px;padding:24px;text-align:center;color:var(--muted);font-size:.82rem;cursor:pointer;transition:.15s;background:rgba(255,255,255,.02)}
+  .upload-zone:hover{border-color:var(--gold);color:#fff;background:rgba(201,165,88,.04)}
+  .upload-zone strong{color:#fff;font-weight:600;display:block;margin-bottom:4px;font-size:.86rem}
+  .upload-zone small{display:block;font-size:.66rem;color:var(--muted-soft);letter-spacing:.04em;margin-top:6px}
+
+  /* Recent submissions chip-list inside drawer */
+  .recent-list{display:flex;flex-direction:column;gap:1px;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .recent-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 14px;background:rgba(255,255,255,.02);font-size:.76rem;align-items:center}
+  .recent-row strong{color:#fff;font-weight:500;display:block;font-size:.8rem;margin-bottom:2px}
+  .recent-row small{color:var(--muted);font-size:.68rem}
+  .recent-pill{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 7px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .recent-pill.good{background:rgba(77,201,126,.15);color:var(--good)}
+  .recent-pill.warn{background:rgba(224,184,115,.15);color:var(--warn)}
+  .recent-pill.info{background:rgba(111,169,230,.18);color:var(--info)}
+
+  /* Section heads inside drawer */
+  .ds-head{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-top:6px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+
+  /* Pickers */
+  .picker-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;cursor:pointer;align-items:center;transition:.15s}
+  .picker-row:hover{border-color:var(--gold-soft);background:rgba(201,165,88,.05)}
+  .picker-row.on{border-color:var(--gold);background:rgba(201,165,88,.08)}
+  .picker-row strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .picker-row small{color:var(--muted);font-size:.7rem}
+  .picker-check{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--navy-deep)}
+  .picker-row.on .picker-check{background:var(--gold);border-color:var(--gold);color:var(--navy-deep);font-weight:700}
+
+  /* Severity selector for incident */
+  .sev-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .sev-opt{padding:12px 8px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;cursor:pointer;text-align:center;transition:.15s}
+  .sev-opt:hover{border-color:var(--line-strong)}
+  .sev-opt.on{background:rgba(201,165,88,.1);border-color:var(--gold)}
+  .sev-opt .lbl{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#fff;font-weight:700;letter-spacing:.06em}
+  .sev-opt .desc{font-size:.6rem;color:var(--muted-soft);letter-spacing:.04em;margin-top:5px;line-height:1.3}
+  .sev-opt.s1.on{border-color:var(--danger);background:rgba(255,107,107,.1)}
+  .sev-opt.s1.on .lbl{color:var(--danger)}
+  .sev-opt.s2.on{border-color:var(--warn);background:rgba(224,184,115,.1)}
+  .sev-opt.s2.on .lbl{color:var(--warn)}
+  .sev-opt.s3.on .lbl{color:var(--info)}
+  .sev-opt.s4.on .lbl{color:var(--muted)}
+
+  /* Quick submit list shown in panel */
+  .qs-btn{justify-content:flex-start !important;padding:14px 16px !important;display:flex !important;align-items:center !important;gap:12px !important;width:100%;background:rgba(255,255,255,.03);border:1px solid var(--line);text-align:left}
+  .qs-btn:hover{border-color:var(--gold-soft);color:#fff !important;background:rgba(201,165,88,.05)}
+  .qs-btn .qs-icon{width:28px;height:28px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:var(--gold-soft);background:rgba(201,165,88,.12);border:1px solid rgba(201,165,88,.25);flex-shrink:0}
+  .qs-btn .qs-body{display:flex;flex-direction:column;gap:2px;flex:1}
+  .qs-btn .qs-title{font-size:.82rem;font-weight:600;color:#fff;letter-spacing:.02em;text-transform:none}
+  .qs-btn .qs-sub{font-size:.66rem;color:var(--muted);font-weight:500;letter-spacing:.04em;text-transform:none}
+  .qs-btn .qs-arrow{color:var(--muted-soft);font-size:.85rem}
+  .qs-btn.gold{background:linear-gradient(135deg, var(--gold), var(--gold-deep));border-color:var(--gold);color:var(--navy-deep) !important}
+  .qs-btn.gold .qs-icon{background:rgba(7,13,30,.2);border-color:rgba(7,13,30,.3);color:var(--navy-deep)}
+  .qs-btn.gold .qs-title{color:var(--navy-deep)}
+  .qs-btn.gold .qs-sub{color:rgba(7,13,30,.7)}
+  .qs-btn.gold .qs-arrow{color:rgba(7,13,30,.6)}
+
+  /* Toast */
+  .toast{position:fixed;bottom:24px;right:24px;background:rgba(7,13,30,.95);border:1px solid var(--good);border-left:4px solid var(--good);border-radius:3px;padding:14px 20px;color:#fff;font-size:.84rem;font-weight:500;z-index:200;transform:translateY(20px);opacity:0;transition:.25s;display:flex;align-items:center;gap:12px;max-width:380px;box-shadow:0 14px 30px -10px rgba(0,0,0,.5)}
+  .toast.show{transform:translateY(0);opacity:1}
+  .toast .ic{width:24px;height:24px;border-radius:50%;background:rgba(77,201,126,.15);color:var(--good);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+  .toast strong{display:block;font-weight:600;margin-bottom:2px}
+  .toast small{display:block;color:var(--muted);font-size:.68rem;letter-spacing:.04em;font-weight:500}
+</style>
   .school-switcher{display:flex;align-items:center;gap:12px;padding:16px 22px;background:linear-gradient(135deg, rgba(191,87,0,.18), rgba(7,13,30,.5));border:1px solid rgba(191,87,0,.3);border-radius:3px;margin-bottom:22px}
   .school-helmet-lg{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.25rem;font-weight:600;color:#fff;background:#bf5700;border:2px solid rgba(255,255,255,.2);flex-shrink:0}
   .school-name-block h2{font-family:'Fraunces',serif;font-size:1.4rem;color:#fff;font-weight:500;line-height:1.05;margin-bottom:3px}
@@ -380,15 +485,64 @@
             <div class="spacer"></div>
             <span class="h-action">All workflows →</span>
           </div>
-          <div class="panel-pad" style="display:flex;flex-direction:column;gap:10px;">
-            <a href="film-portal.html" class="btn btn-gold" style="justify-content:center;padding:14px;">▶ Upload Film &amp; Submit Complaint</a>
-            <a href="#" class="btn" style="justify-content:center;padding:14px;">▤ Request Credentials</a>
-            <a href="#" class="btn" style="justify-content:center;padding:14px;">⇄ Travel / Hotel Request</a>
-            <a href="#" class="btn" style="justify-content:center;padding:14px;">○ Media Availability Request</a>
-            <a href="comms.html" class="btn" style="justify-content:center;padding:14px;">● Open Conference Comms</a>
-            <a href="compliance.html" class="btn" style="justify-content:center;padding:14px;">§ Compliance Submissions</a>
-            <a href="#" class="btn" style="justify-content:center;padding:14px;">⚠ Report Incident to SEC</a>
-            <div style="font-size:.7rem;color:var(--muted-soft);text-align:center;margin-top:8px;letter-spacing:.06em;">SLA-tracked · routed automatically to the right SEC team</div>
+          <div class="panel-pad" style="display:flex;flex-direction:column;gap:8px;">
+            <a href="film-portal.html" class="btn qs-btn gold">
+              <span class="qs-icon">▶</span>
+              <span class="qs-body">
+                <span class="qs-title">Upload Film &amp; Submit Complaint</span>
+                <span class="qs-sub">Opens Film Portal → SLA 72h</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </a>
+            <button class="btn qs-btn" onclick="openDrawer('credentials')">
+              <span class="qs-icon">▤</span>
+              <span class="qs-body">
+                <span class="qs-title">Request Credentials</span>
+                <span class="qs-sub">Media, photo, sideline, suite — SLA 48h</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <button class="btn qs-btn" onclick="openDrawer('travel')">
+              <span class="qs-icon">⇄</span>
+              <span class="qs-body">
+                <span class="qs-title">Travel / Hotel Request</span>
+                <span class="qs-sub">Charter, commercial, hotel block — SLA 5 days</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <button class="btn qs-btn" onclick="openDrawer('media')">
+              <span class="qs-icon">○</span>
+              <span class="qs-body">
+                <span class="qs-title">Media Availability Request</span>
+                <span class="qs-sub">Pressers, sideline, talent — SLA 24h</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <a href="comms.html" class="btn qs-btn">
+              <span class="qs-icon">●</span>
+              <span class="qs-body">
+                <span class="qs-title">Open Conference Comms</span>
+                <span class="qs-sub">Direct to #school-liaisons channels</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </a>
+            <button class="btn qs-btn" onclick="openDrawer('compliance')">
+              <span class="qs-icon">§</span>
+              <span class="qs-body">
+                <span class="qs-title">Compliance Submission</span>
+                <span class="qs-sub">Self-report, inquiry, interpretive request</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <button class="btn qs-btn" onclick="openDrawer('incident')">
+              <span class="qs-icon" style="color:var(--danger);background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.3);">⚠</span>
+              <span class="qs-body">
+                <span class="qs-title">Report Incident to SEC</span>
+                <span class="qs-sub">Medical, security, weather, technical — immediate</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <div style="font-size:.66rem;color:var(--muted-soft);text-align:center;margin-top:6px;letter-spacing:.06em;">SLA-tracked · routed automatically to the right SEC team</div>
           </div>
         </div>
 
@@ -397,6 +551,474 @@
     </div>
   </main>
 </div>
+
+<!-- DRAWER · CREDENTIALS -->
+<div class="drawer-mask" data-drawer-mask></div>
+<aside class="drawer" data-drawer="credentials">
+  <div class="drawer-head">
+    <div class="drawer-mark">▤</div>
+    <div>
+      <div class="drawer-title">Request Credentials</div>
+      <span class="drawer-title"><em>Auburn · SLA 48 hours</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Event<span class="req">*</span></label>
+      <select class="form-select">
+        <option>Iron Bowl · ALA @ AUB · Nov 22</option>
+        <option>WBB at Tennessee · Nov 28</option>
+        <option>MBB at Ole Miss · Dec 4</option>
+        <option>S&amp;D vs Georgia · Dec 5</option>
+        <option>EQ at TCU · Dec 6</option>
+        <option>+ Other event (search…)</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Credential Type<span class="req">*</span></label>
+      <div class="chip-group">
+        <span class="chip on" onclick="toggleChip(this)">Photo · field</span>
+        <span class="chip" onclick="toggleChip(this)">Photo · sideline</span>
+        <span class="chip on" onclick="toggleChip(this)">Media · press box</span>
+        <span class="chip" onclick="toggleChip(this)">Media · workroom</span>
+        <span class="chip" onclick="toggleChip(this)">Suite / VIP</span>
+        <span class="chip" onclick="toggleChip(this)">Locker room</span>
+        <span class="chip" onclick="toggleChip(this)">Production</span>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Total credentials<span class="req">*</span></label>
+        <input type="number" class="form-input" value="3" />
+      </div>
+      <div>
+        <label class="form-label">Pickup window</label>
+        <select class="form-select">
+          <option>Game-day · 2 hours pre-kick</option>
+          <option>Day before · ops office</option>
+          <option>Will-call · gate access</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ds-head">Recipients</div>
+    <div class="form-row">
+      <label class="form-label">Names &amp; outlets / titles</label>
+      <textarea class="form-textarea" placeholder="One per line — e.g.&#10;Sarah Kim · Auburn Athletics Photography&#10;Marcus Lee · Inside Auburn (Rivals)&#10;Coach Hardy · Football Operations">Sarah Kim · Auburn Athletics Photography
+Marcus Lee · Inside Auburn (Rivals)
+Coach Hardy · Football Operations</textarea>
+    </div>
+
+    <div class="ds-head">Notes for SEC office</div>
+    <div class="form-row">
+      <textarea class="form-textarea" placeholder="Background-check status, special access, vehicle requests, etc."></textarea>
+    </div>
+
+    <div class="ds-head">Recent · last 30 days</div>
+    <div class="recent-list">
+      <div class="recent-row">
+        <div><strong>WBB at UT — 6 credentials</strong><small>Issued 11/19 · pickup confirmed</small></div>
+        <span class="recent-pill good">ISSUED</span>
+      </div>
+      <div class="recent-row">
+        <div><strong>Iron Bowl photographer — 3 staff</strong><small>Sent 11/20 · awaiting SEC review</small></div>
+        <span class="recent-pill warn">PENDING</span>
+      </div>
+      <div class="recent-row">
+        <div><strong>SECCG contingent (vs TBD) — 14</strong><small>Submitted 11/15 · contingent on advancing</small></div>
+        <span class="recent-pill info">HOLD</span>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>S. Pham · SEC Credentialing</strong> · SLA <strong>48h</strong></div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-gold" onclick="submitDrawer('Credential request submitted to S. Pham', '3 credentials · Iron Bowl · pickup 1:30 PM')">Submit Request</button>
+  </div>
+</aside>
+
+<!-- DRAWER · TRAVEL -->
+<aside class="drawer" data-drawer="travel">
+  <div class="drawer-head">
+    <div class="drawer-mark trv">⇄</div>
+    <div>
+      <div class="drawer-title">Travel / Hotel Request</div>
+      <span class="drawer-title"><em>Auburn · SLA 5 days</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Trip type<span class="req">*</span></label>
+      <div class="chip-group">
+        <span class="chip on" onclick="toggleChip(this)">Charter</span>
+        <span class="chip" onclick="toggleChip(this)">Commercial</span>
+        <span class="chip on" onclick="toggleChip(this)">Hotel block only</span>
+        <span class="chip" onclick="toggleChip(this)">Ground / motorcoach</span>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Origin<span class="req">*</span></label>
+        <input class="form-input" value="Auburn (AUO)" />
+      </div>
+      <div>
+        <label class="form-label">Destination<span class="req">*</span></label>
+        <input class="form-input" value="Oxford / MEM" />
+      </div>
+    </div>
+
+    <div class="form-row split-3">
+      <div>
+        <label class="form-label">Depart</label>
+        <input class="form-input" type="date" value="2026-12-03" />
+      </div>
+      <div>
+        <label class="form-label">Return</label>
+        <input class="form-input" type="date" value="2026-12-05" />
+      </div>
+      <div>
+        <label class="form-label">Pax</label>
+        <input class="form-input" type="number" value="40" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Sport / Event<span class="req">*</span></label>
+      <select class="form-select">
+        <option>MBB at Ole Miss · Dec 4</option>
+        <option>WBB at Tennessee · Nov 28</option>
+        <option>Baseball at LSU · spring weekend</option>
+        <option>+ Other</option>
+      </select>
+    </div>
+
+    <div class="ds-head">Hotel block</div>
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Property preference</label>
+        <input class="form-input" value="Hyatt Place Oxford (preferred)" />
+      </div>
+      <div>
+        <label class="form-label">Room count</label>
+        <input class="form-input" type="number" value="22" />
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Special requests</label>
+      <textarea class="form-textarea" placeholder="Team meal room, ADA access, security needs, late check-out, etc."></textarea>
+    </div>
+
+    <div class="ds-head">Approval</div>
+    <div class="form-row">
+      <div class="picker-row on">
+        <div><strong>Standard SEC charter program</strong><small>Pre-approved vendors · 5-day SLA</small></div>
+        <div class="picker-check">✓</div>
+      </div>
+      <div class="picker-row" style="margin-top:6px;">
+        <div><strong>Auburn-direct booking (notify only)</strong><small>School books, SEC tracks for reporting</small></div>
+        <div class="picker-check"></div>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>D. Ortiz · SEC Travel Ops</strong> · est. cost <strong>$24K</strong></div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-gold" onclick="submitDrawer('Travel request submitted to D. Ortiz', 'MBB at Ole Miss · charter · 40 pax · Dec 3–5')">Submit Request</button>
+  </div>
+</aside>
+
+<!-- DRAWER · MEDIA -->
+<aside class="drawer" data-drawer="media">
+  <div class="drawer-head">
+    <div class="drawer-mark cmp">○</div>
+    <div>
+      <div class="drawer-title">Media Availability Request</div>
+      <span class="drawer-title"><em>Auburn · SLA 24 hours</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Availability type<span class="req">*</span></label>
+      <div class="chip-group">
+        <span class="chip on" onclick="toggleChip(this)">Post-game presser</span>
+        <span class="chip" onclick="toggleChip(this)">Pre-game presser</span>
+        <span class="chip on" onclick="toggleChip(this)">Sideline talent</span>
+        <span class="chip" onclick="toggleChip(this)">One-on-one</span>
+        <span class="chip" onclick="toggleChip(this)">Locker room</span>
+        <span class="chip" onclick="toggleChip(this)">Weekly availability</span>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Event<span class="req">*</span></label>
+        <select class="form-select">
+          <option>Iron Bowl · ALA @ AUB · Nov 22</option>
+          <option>MBB · vs South Alabama · Nov 24</option>
+          <option>Bowl · TBD</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Window</label>
+        <select class="form-select">
+          <option>Post-game · 15 min after final whistle</option>
+          <option>10 min cool-down · then 20-min avail</option>
+          <option>Pre-game · 90 min to kick</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Talent &amp; subjects<span class="req">*</span></label>
+      <textarea class="form-textarea" placeholder="Head coach, coordinators, key players (jersey + position)">Head Coach Hugh Freeze
+QB #15 · Hank Brown
+DL #11 · Jalen McLeod
+OC · Derrick Nix (post-cool-down)</textarea>
+    </div>
+
+    <div class="ds-head">Requesting outlets</div>
+    <div class="form-row">
+      <textarea class="form-textarea" placeholder="One per line — SECN, ESPN, CBS, Inside Auburn, AL.com, etc.">SECN (Cole Cubelic · in-house)
+ESPN (Marty Smith + 1 producer)
+AL.com (Mark Heim · column)
+Auburn Athletics social team</textarea>
+    </div>
+
+    <div class="ds-head">Setup notes</div>
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Room / location</label>
+        <input class="form-input" value="Auburn Athletic Complex · Press Auditorium" />
+      </div>
+      <div>
+        <label class="form-label">Backdrop / branding</label>
+        <select class="form-select">
+          <option>Auburn standard step-and-repeat</option>
+          <option>SEC neutral backdrop</option>
+          <option>No backdrop</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>L. Stern · SEC Comms</strong> · SLA <strong>24h</strong></div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-gold" onclick="submitDrawer('Media availability submitted to L. Stern', 'Iron Bowl · post-game · Freeze + 3 players · 4 outlets')">Submit Request</button>
+  </div>
+</aside>
+
+<!-- DRAWER · COMPLIANCE -->
+<aside class="drawer" data-drawer="compliance">
+  <div class="drawer-head">
+    <div class="drawer-mark cmp">§</div>
+    <div>
+      <div class="drawer-title">Compliance Submission</div>
+      <span class="drawer-title"><em>Auburn · routed by category</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Submission type<span class="req">*</span></label>
+      <div class="picker-row on">
+        <div><strong>Self-report (potential violation)</strong><small>Triggers SEC review + NCAA filing if L1/L2</small></div>
+        <div class="picker-check">✓</div>
+      </div>
+      <div class="picker-row" style="margin-top:6px;">
+        <div><strong>Interpretive request</strong><small>Bylaw clarification before action</small></div>
+        <div class="picker-check"></div>
+      </div>
+      <div class="picker-row" style="margin-top:6px;">
+        <div><strong>Documentation upload</strong><small>NIL disclosure, practice hours, roster</small></div>
+        <div class="picker-check"></div>
+      </div>
+      <div class="picker-row" style="margin-top:6px;">
+        <div><strong>Policy acknowledgment</strong><small>Active memos awaiting school sign-off</small></div>
+        <div class="picker-check"></div>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Sport<span class="req">*</span></label>
+        <select class="form-select">
+          <option>Football</option>
+          <option>Men's Basketball</option>
+          <option>Women's Basketball</option>
+          <option>Baseball</option>
+          <option>Softball</option>
+          <option>Other (specify)</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">NCAA bylaw (if known)</label>
+        <input class="form-input" placeholder="e.g. 13.1.3 · Recruiting comm." />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Description<span class="req">*</span></label>
+      <textarea class="form-textarea" placeholder="What occurred, when, who was involved, corrective action already taken." rows="4">During the Nov 18 recruiting window, an Auburn assistant coach inadvertently exceeded the contact limit with PSA #04125 by one (1) phone call on 11/17 due to a scheduling tool sync error. Tool config corrected 11/18, coach completed refresher module same day. Self-reporting per Bylaw 13.1.3.</textarea>
+    </div>
+
+    <div class="ds-head">Attachments</div>
+    <div class="upload-zone">
+      <strong>Drop files or click to upload</strong>
+      Call log export · email thread · corrective-action memo
+      <small>PDF · CSV · TXT · max 25 MB total</small>
+    </div>
+
+    <div class="ds-head">Acknowledgment</div>
+    <div class="form-row">
+      <label class="form-label" style="display:flex;align-items:center;gap:9px;cursor:pointer;text-transform:none;letter-spacing:.02em;font-weight:500;color:var(--muted);">
+        <input type="checkbox" checked style="accent-color:var(--gold);width:14px;height:14px;" />
+        I confirm this submission is accurate and authorized by Auburn Compliance (J. Cohen)
+      </label>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>E. Walters · SEC Compliance</strong> · severity classified on intake</div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-gold" onclick="submitDrawer('Compliance self-report filed', 'Bylaw 13.1.3 · routed to E. Walters · case ID will be assigned within 1h')">File Submission</button>
+  </div>
+</aside>
+
+<!-- DRAWER · INCIDENT -->
+<aside class="drawer" data-drawer="incident">
+  <div class="drawer-head">
+    <div class="drawer-mark inc">⚠</div>
+    <div>
+      <div class="drawer-title">Report Incident to SEC</div>
+      <span class="drawer-title"><em>Auburn · immediate routing to incident desk</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Severity<span class="req">*</span></label>
+      <div class="sev-row">
+        <div class="sev-opt s1" onclick="setSev(this)"><div class="lbl">SEV-1</div><div class="desc">Crisis · evacuation · death</div></div>
+        <div class="sev-opt s2 on" onclick="setSev(this)"><div class="lbl">SEV-2</div><div class="desc">Major · game stoppage · injury</div></div>
+        <div class="sev-opt s3" onclick="setSev(this)"><div class="lbl">SEV-3</div><div class="desc">Standard · medical · ops</div></div>
+        <div class="sev-opt s4" onclick="setSev(this)"><div class="lbl">SEV-4</div><div class="desc">Routine · informational</div></div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Category<span class="req">*</span></label>
+      <div class="chip-group">
+        <span class="chip on" onclick="toggleChip(this)">Medical</span>
+        <span class="chip" onclick="toggleChip(this)">Security</span>
+        <span class="chip" onclick="toggleChip(this)">Weather</span>
+        <span class="chip" onclick="toggleChip(this)">Technical</span>
+        <span class="chip" onclick="toggleChip(this)">Facility</span>
+        <span class="chip" onclick="toggleChip(this)">Player conduct</span>
+        <span class="chip" onclick="toggleChip(this)">Fan conduct</span>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Venue<span class="req">*</span></label>
+        <select class="form-select">
+          <option>Jordan-Hare Stadium</option>
+          <option>Neville Arena</option>
+          <option>Plainsman Park</option>
+          <option>Auburn Soccer &amp; Track</option>
+          <option>JSAC (Aquatics)</option>
+          <option>Visiting venue (specify)</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Game / Event</label>
+        <select class="form-select">
+          <option>ALA @ AUB · Iron Bowl · live</option>
+          <option>Other (specify)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Description<span class="req">*</span></label>
+      <textarea class="form-textarea" rows="3" placeholder="Brief, factual. Who, what, where, when. Status of response."></textarea>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Owner on Auburn side</label>
+        <input class="form-input" value="A. Hardy · Dir of FB Ops" />
+      </div>
+      <div>
+        <label class="form-label">Auburn EMS / security notified?</label>
+        <select class="form-select">
+          <option>Yes — both notified</option>
+          <option>EMS only</option>
+          <option>Security only</option>
+          <option>No (explain in description)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ds-head">Photos / video (optional)</div>
+    <div class="upload-zone">
+      <strong>Attach evidence</strong>
+      Photos, video, scanner audio, etc.
+      <small>JPG · PNG · MP4 · WAV · max 100 MB</small>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>J. Armstead · SEC Incident Desk</strong> · joint comms opened automatically</div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-danger" onclick="submitDrawer('Incident reported to J. Armstead · SEV-2', 'Medical · Jordan-Hare · auto-routed to incident desk + Auburn EMS')">File Incident</button>
+  </div>
+</aside>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="ic">✓</div>
+  <div>
+    <strong id="toast-title">Submitted</strong>
+    <small id="toast-body">Routed to the right SEC team</small>
+  </div>
+</div>
+
+<script>
+  function openDrawer(name){
+    document.querySelector('[data-drawer-mask]').classList.add('open');
+    document.querySelectorAll('[data-drawer]').forEach(d => d.classList.remove('open'));
+    var d = document.querySelector('[data-drawer="' + name + '"]');
+    if(d) d.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer(){
+    document.querySelector('[data-drawer-mask]').classList.remove('open');
+    document.querySelectorAll('[data-drawer]').forEach(d => d.classList.remove('open'));
+    document.body.style.overflow = '';
+  }
+  document.querySelector('[data-drawer-mask]').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeDrawer(); });
+
+  function toggleChip(el){ el.classList.toggle('on'); }
+  function setSev(el){
+    el.parentElement.querySelectorAll('.sev-opt').forEach(s => s.classList.remove('on'));
+    el.classList.add('on');
+  }
+
+  function submitDrawer(title, body){
+    closeDrawer();
+    var t = document.getElementById('toast');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-body').textContent = body;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4200);
+  }
+</script>
 
 </body>
 </html>
