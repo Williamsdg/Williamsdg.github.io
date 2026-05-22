@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SEC Operating System — Conference Command Platform</title>
+<meta name="description" content="A unified operating platform for SEC conference operations — live game ops, officials management, replay intelligence, school film portal, and staff communications." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0f1c; --ink-soft:#162033; --navy:#0b1530; --navy-deep:#070d1e;
+    --paper:#f6f5f1; --paper-warm:#efece4; --bone:#e6e2d6; --canvas:#faf9f5;
+    --gold:#c9a558; --gold-soft:#d8b977; --gold-deep:#a8862e;
+    --field:#1f4a2e; --field-line:#2f6840;
+    --line:#dad4c4; --line-soft:#e6e0d2; --line-strong:#bcb2a0;
+    --muted:#5a6175; --muted-soft:#878d9c;
+    --good:#3c7a5a; --warn:#b07a2e; --danger:#a4423a; --info:#3a5a7a; --live:#d23535;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--canvas);line-height:1.55;-webkit-font-smoothing:antialiased;font-size:15px}
+  h1,h2,h3,h4,.serif{font-family:'Fraunces',serif;font-weight:400;letter-spacing:-.01em;color:var(--ink)}
+  .mono{font-family:'JetBrains Mono',monospace;font-feature-settings:"tnum"}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+
+  /* Top utility bar */
+  .util{background:var(--navy-deep);color:rgba(255,255,255,.7);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;padding:9px 0;font-weight:600}
+  .util .wrap{max-width:1440px;margin:0 auto;padding:0 36px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+  .util .left{display:flex;align-items:center;gap:18px}
+  .util .live-dot{width:7px;height:7px;border-radius:50%;background:var(--live);box-shadow:0 0 0 0 rgba(210,53,53,.6);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(210,53,53,.6)}70%{box-shadow:0 0 0 8px rgba(210,53,53,0)}100%{box-shadow:0 0 0 0 rgba(210,53,53,0)}}
+
+  /* Nav */
+  nav.main{background:var(--navy);color:#fff;padding:20px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+  nav.main .wrap{max-width:1440px;margin:0 auto;padding:0 36px;display:flex;align-items:center;gap:40px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand-mark{width:42px;height:42px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.05rem;color:var(--gold);font-weight:500}
+  .brand-name{font-family:'Fraunces',serif;font-size:1.2rem;color:#fff;font-weight:500;line-height:1.1}
+  .brand-name em{font-style:italic;font-weight:300;color:var(--gold-soft);display:block;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;margin-top:3px}
+  nav.main ul{list-style:none;display:flex;gap:30px;margin-left:auto;align-items:center}
+  nav.main a.lnk{font-size:.82rem;color:rgba(255,255,255,.78);font-weight:500;letter-spacing:.02em;transition:.2s}
+  nav.main a.lnk:hover{color:var(--gold-soft)}
+  nav.main .cta{padding:10px 20px;border:1px solid var(--gold);color:var(--gold);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;border-radius:2px;transition:.2s}
+  nav.main .cta:hover{background:var(--gold);color:var(--navy-deep)}
+
+  /* Hero */
+  .hero{background:var(--navy);color:#fff;padding:70px 0 90px;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:0;right:0;bottom:0;width:50%;background:radial-gradient(ellipse at top right, rgba(201,165,88,.12), transparent 60%)}
+  .hero .wrap{max-width:1440px;margin:0 auto;padding:0 36px;display:grid;grid-template-columns:1.05fr .95fr;gap:60px;position:relative;z-index:2;align-items:center}
+  .hero-eyebrow{font-size:.74rem;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:14px}
+  .hero-eyebrow::before{content:'';width:36px;height:1px;background:var(--gold)}
+  .hero h1{font-family:'Fraunces',serif;font-size:clamp(2.8rem, 5.2vw, 4.6rem);line-height:1.02;color:#fff;font-weight:300;margin-bottom:26px;letter-spacing:-.02em}
+  .hero h1 em{font-style:italic;color:var(--gold-soft);font-weight:300}
+  .hero p.lede{font-size:1.08rem;color:rgba(255,255,255,.78);max-width:560px;line-height:1.65;margin-bottom:34px}
+  .hero-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .btn{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;padding:14px 26px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:700;border-radius:2px;cursor:pointer;font-family:inherit;transition:.2s;display:inline-flex;align-items:center;gap:10px}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-gold{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+  .btn-gold:hover{background:var(--gold-soft);border-color:var(--gold-soft)}
+  .btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+  .btn-ghost:hover{border-color:var(--gold-soft);color:var(--gold-soft)}
+
+  /* Hero ops preview */
+  .ops-preview{background:linear-gradient(180deg, #0e1a36, #060b1a);border:1px solid rgba(201,165,88,.2);border-radius:4px;padding:22px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:rgba(255,255,255,.85);box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}
+  .ops-preview-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px}
+  .ops-preview-head .title{font-family:'Inter',sans-serif;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:700}
+  .ops-preview-head .clock{font-size:.78rem;color:rgba(255,255,255,.6)}
+  .ops-row{display:grid;grid-template-columns:50px 1fr 1fr 70px 80px;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:center;font-size:.76rem}
+  .ops-row:last-child{border-bottom:none}
+  .ops-status{font-size:.62rem;letter-spacing:.14em;font-weight:700;padding:3px 6px;border-radius:2px;text-align:center}
+  .ops-status.live{background:rgba(210,53,53,.18);color:#ff7878}
+  .ops-status.q4{background:rgba(176,122,46,.18);color:#e0b873}
+  .ops-status.half{background:rgba(58,90,122,.22);color:#86b0d8}
+  .ops-status.pre{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6)}
+  .ops-status.delay{background:rgba(210,53,53,.28);color:#ff9090}
+  .ops-team{display:flex;align-items:center;gap:7px;color:#fff}
+  .ops-team .helmet{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;color:#fff}
+  .ops-score{color:var(--gold-soft);font-weight:600;font-size:.82rem}
+  .ops-meta{color:rgba(255,255,255,.5);text-align:right;font-size:.7rem}
+  .ops-preview-foot{display:flex;gap:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);margin-top:8px;font-size:.68rem;color:rgba(255,255,255,.5);font-family:'Inter',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+  .ops-preview-foot span{display:flex;align-items:center;gap:6px}
+  .ops-preview-foot .dot{width:6px;height:6px;border-radius:50%}
+
+  /* Section base */
+  section{padding:90px 0}
+  .wrap{max-width:1440px;margin:0 auto;padding:0 36px}
+  .eyebrow{font-size:.7rem;letter-spacing:.28em;text-transform:uppercase;color:var(--gold-deep);font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:14px}
+  .eyebrow::before{content:'';width:30px;height:1px;background:var(--gold-deep)}
+  .section-h{font-family:'Fraunces',serif;font-size:clamp(2.2rem, 4vw, 3.4rem);font-weight:400;line-height:1.05;letter-spacing:-.015em;max-width:900px;margin-bottom:18px}
+  .section-h em{font-style:italic;color:var(--gold-deep);font-weight:300}
+  .section-sub{font-size:1.05rem;color:var(--muted);max-width:680px;line-height:1.65}
+
+  /* Problem section */
+  .problem{background:var(--paper)}
+  .problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start;margin-top:54px}
+  .problem-list{display:flex;flex-direction:column;gap:22px}
+  .problem-item{padding:24px 26px;background:#fff;border:1px solid var(--line-soft);border-radius:3px;display:grid;grid-template-columns:54px 1fr;gap:18px;align-items:flex-start}
+  .problem-num{font-family:'Fraunces',serif;font-size:1.6rem;color:var(--gold-deep);font-weight:400;font-style:italic;line-height:1}
+  .problem-item h4{font-size:1.05rem;font-weight:500;margin-bottom:6px;color:var(--ink)}
+  .problem-item p{font-size:.92rem;color:var(--muted);line-height:1.6}
+  .problem-quote{padding:38px 40px;background:var(--navy);color:#fff;border-radius:3px;position:sticky;top:30px}
+  .problem-quote .q-mark{font-family:'Fraunces',serif;font-style:italic;font-size:4rem;color:var(--gold);line-height:.7;margin-bottom:14px;font-weight:300}
+  .problem-quote p{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:300;font-style:italic;line-height:1.35;color:#fff;margin-bottom:24px}
+  .problem-quote .attr{font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);font-weight:600}
+  .problem-quote .attr em{display:block;font-style:normal;color:rgba(255,255,255,.55);letter-spacing:.1em;margin-top:6px;font-weight:400;font-size:.72rem}
+
+  /* Vision strip */
+  .vision-strip{background:var(--navy-deep);color:#fff;padding:60px 0}
+  .vision-strip .wrap{display:grid;grid-template-columns:1.1fr 2fr;gap:60px;align-items:center}
+  .vision-strip h2{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:300;color:#fff;line-height:1.1}
+  .vision-strip h2 em{font-style:italic;color:var(--gold-soft)}
+  .vision-strip .verses{display:grid;grid-template-columns:repeat(3, 1fr);gap:18px}
+  .verse{padding:20px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:3px}
+  .verse .role{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-soft);font-weight:700;margin-bottom:8px}
+  .verse p{font-size:.86rem;color:rgba(255,255,255,.78);line-height:1.55}
+
+  /* Modules */
+  .modules{background:var(--canvas)}
+  .modules-head{display:grid;grid-template-columns:1fr auto;align-items:end;gap:30px;margin-bottom:54px}
+  .module-grid{display:grid;grid-template-columns:repeat(2, 1fr);gap:22px}
+  .module-card{background:#fff;border:1px solid var(--line-soft);border-radius:4px;padding:30px;display:flex;flex-direction:column;gap:18px;transition:.25s;position:relative;overflow:hidden}
+  .module-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 20px 40px -20px rgba(10,15,28,.15)}
+  .module-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold)}
+  .module-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+  .module-num{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);letter-spacing:.14em;font-weight:600}
+  .module-card h3{font-family:'Fraunces',serif;font-size:1.55rem;font-weight:500;line-height:1.15;margin:4px 0 8px}
+  .module-card .sub{font-size:.82rem;color:var(--gold-deep);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
+  .module-card p{font-size:.94rem;color:var(--muted);line-height:1.6;margin-bottom:12px}
+  .module-card .feats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+  .module-card .feat{font-size:.72rem;padding:4px 10px;background:var(--paper-warm);border-radius:99px;color:var(--ink-soft);font-weight:500}
+  .module-link{margin-top:auto;display:inline-flex;align-items:center;gap:10px;font-size:.76rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);font-weight:700;padding-top:18px;border-top:1px solid var(--line-soft)}
+  .module-link .arrow{transition:.2s}
+  .module-card:hover .arrow{transform:translateX(4px)}
+  .module-card.featured{grid-column:span 2;background:linear-gradient(135deg, #0e1a36 0%, #1a2a4d 100%);color:#fff}
+  .module-card.featured::before{background:var(--gold)}
+  .module-card.featured h3{color:#fff}
+  .module-card.featured p{color:rgba(255,255,255,.78)}
+  .module-card.featured .module-num{color:var(--gold-soft)}
+  .module-card.featured .sub{color:var(--gold-soft)}
+  .module-card.featured .feat{background:rgba(201,165,88,.15);color:var(--gold-soft)}
+  .module-card.featured .module-link{color:var(--gold-soft);border-color:rgba(255,255,255,.12)}
+  .module-card.featured .featured-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center}
+  .module-card.featured .featured-img{background:rgba(0,0,0,.3);border-radius:3px;padding:18px;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.08)}
+  .mini-row{display:grid;grid-template-columns:40px 1fr 60px;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);align-items:center}
+  .mini-row:last-child{border-bottom:none}
+  .mini-status{font-size:.6rem;font-weight:700;padding:2px 5px;border-radius:2px;text-align:center;letter-spacing:.1em}
+
+  /* Other modules summary */
+  .more-modules{background:var(--paper)}
+  .more-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:14px;margin-top:50px}
+  .more-card{padding:24px;background:#fff;border:1px solid var(--line-soft);border-radius:3px;display:flex;flex-direction:column;gap:8px;min-height:170px}
+  .more-card .more-num{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--gold-deep);letter-spacing:.14em;font-weight:600;margin-bottom:8px}
+  .more-card h4{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:500;line-height:1.2;margin-bottom:4px}
+  .more-card p{font-size:.84rem;color:var(--muted);line-height:1.5}
+
+  /* Roles section */
+  .roles{background:#fff}
+  .roles-grid{display:grid;grid-template-columns:repeat(7, 1fr);gap:10px;margin-top:50px}
+  .role{padding:22px 16px;background:var(--paper);border:1px solid var(--line-soft);border-radius:3px;text-align:center;transition:.2s}
+  .role:hover{border-color:var(--gold);background:#fff}
+  .role-icon{width:46px;height:46px;border-radius:50%;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-family:'Fraunces',serif;font-size:1.05rem;font-weight:500}
+  .role-name{font-size:.84rem;font-weight:600;color:var(--ink);margin-bottom:4px;line-height:1.2}
+  .role-access{font-size:.7rem;color:var(--muted);line-height:1.4}
+
+  /* Wow features */
+  .wow{background:var(--navy);color:#fff}
+  .wow .section-h{color:#fff}
+  .wow .section-h em{color:var(--gold-soft)}
+  .wow .section-sub{color:rgba(255,255,255,.7)}
+  .wow .eyebrow{color:var(--gold);}
+  .wow .eyebrow::before{background:var(--gold)}
+  .wow-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:18px;margin-top:54px}
+  .wow-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:30px;display:flex;flex-direction:column;gap:14px;transition:.2s}
+  .wow-card:hover{border-color:var(--gold);background:rgba(201,165,88,.05)}
+  .wow-card .badge{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:700;padding:4px 10px;border:1px solid var(--gold);align-self:flex-start;border-radius:99px}
+  .wow-card h3{font-family:'Fraunces',serif;font-size:1.6rem;color:#fff;font-weight:500;line-height:1.15}
+  .wow-card p{font-size:.92rem;color:rgba(255,255,255,.72);line-height:1.6}
+  .wow-card .search-demo{background:rgba(0,0,0,.3);border-radius:3px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--gold-soft);border:1px solid rgba(255,255,255,.06);margin-top:8px}
+  .wow-card .search-demo .prompt{color:rgba(255,255,255,.4)}
+
+  /* Closing CTA */
+  .closing{background:linear-gradient(180deg, var(--paper-warm), var(--paper));padding:120px 0}
+  .closing .wrap{text-align:center;max-width:880px}
+  .closing h2{font-family:'Fraunces',serif;font-size:clamp(2.6rem, 5vw, 4rem);font-weight:300;line-height:1.05;letter-spacing:-.02em;margin-bottom:24px}
+  .closing h2 em{font-style:italic;color:var(--gold-deep)}
+  .closing p{font-size:1.1rem;color:var(--muted);line-height:1.65;margin-bottom:38px;max-width:620px;margin-left:auto;margin-right:auto}
+  .closing-actions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
+  .closing .btn-ink{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .closing .btn-ink:hover{background:var(--ink-soft)}
+
+  /* Footer */
+  footer{background:var(--navy-deep);color:rgba(255,255,255,.5);padding:50px 0 28px;font-size:.82rem}
+  footer .wrap{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center}
+  footer .brand-name{color:#fff;font-size:1rem;font-weight:500}
+  footer .brand-name em{color:var(--gold-soft);font-size:.7rem}
+  footer .built{font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+  footer .built a{color:var(--gold-soft);font-weight:600}
+
+  /* Responsive */
+  @media (max-width: 980px){
+    .hero .wrap, .problem-grid, .vision-strip .wrap, .module-card.featured .featured-grid{grid-template-columns:1fr}
+    .module-grid, .vision-strip .verses, .wow-grid{grid-template-columns:1fr}
+    .more-grid{grid-template-columns:repeat(2, 1fr)}
+    .roles-grid{grid-template-columns:repeat(3, 1fr)}
+    .module-card.featured{grid-column:auto}
+    nav.main ul{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="util">
+  <div class="wrap">
+    <div class="left">
+      <span><span class="live-dot" style="display:inline-block;margin-right:8px;vertical-align:middle;"></span>System Online — All Regions Operational</span>
+      <span style="opacity:.6">14 Schools · 102 Officials Crews · 6 Replay Centers</span>
+    </div>
+    <div>Birmingham, AL · SEC Office</div>
+  </div>
+</div>
+
+<nav class="main">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <div class="brand-mark">S</div>
+      <div class="brand-name">SEC Operating System<em>Conference Command Platform</em></div>
+    </a>
+    <ul>
+      <li><a class="lnk" href="#problem">The Problem</a></li>
+      <li><a class="lnk" href="#modules">Modules</a></li>
+      <li><a class="lnk" href="#roles">Roles</a></li>
+      <li><a class="lnk" href="#wow">Intelligence</a></li>
+      <li><a class="cta" href="ops-center.html">Live Demo →</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="hero-eyebrow">A Proposal · Williams Digital · Birmingham, AL</div>
+      <h1>One command center<br>for an entire <em>conference.</em></h1>
+      <p class="lede">Today, SEC operations live in twenty different tools — assignment spreadsheets, replay phone trees, school email chains, broadcast Slack rooms, and a thousand DocuSign envelopes. The SEC Operating System unifies them into a single platform where the office, schools, officials, replay centers, and media partners coordinate in real time.</p>
+      <div class="hero-actions">
+        <a href="ops-center.html" class="btn btn-gold">Open Live Ops Center →</a>
+        <a href="#modules" class="btn btn-ghost">See the modules</a>
+      </div>
+    </div>
+
+    <div class="ops-preview">
+      <div class="ops-preview-head">
+        <span class="title">Live Game Ops · Saturday</span>
+        <span class="clock mono">3:48:22 PM CT</span>
+      </div>
+      <div class="ops-row">
+        <span class="ops-status live">LIVE</span>
+        <span class="ops-team"><span class="helmet" style="background:#9e1b32;">A</span> ALA</span>
+        <span class="ops-team"><span class="helmet" style="background:#bf5700;">AUB</span> AUB</span>
+        <span class="ops-score">17–10</span>
+        <span class="ops-meta">Q3 · 4:12</span>
+      </div>
+      <div class="ops-row">
+        <span class="ops-status q4">Q4</span>
+        <span class="ops-team"><span class="helmet" style="background:#fa4616;">FLA</span> FLA</span>
+        <span class="ops-team"><span class="helmet" style="background:#990000;">UGA</span> UGA</span>
+        <span class="ops-score">24–28</span>
+        <span class="ops-meta">2:34 · Rev</span>
+      </div>
+      <div class="ops-row">
+        <span class="ops-status half">HALF</span>
+        <span class="ops-team"><span class="helmet" style="background:#500000;">A&M</span> A&M</span>
+        <span class="ops-team"><span class="helmet" style="background:#4d1979;">LSU</span> LSU</span>
+        <span class="ops-score">14–14</span>
+        <span class="ops-meta">12 min</span>
+      </div>
+      <div class="ops-row">
+        <span class="ops-status delay">WX</span>
+        <span class="ops-team"><span class="helmet" style="background:#0033a0;">UK</span> UK</span>
+        <span class="ops-team"><span class="helmet" style="background:#ff8200;">TENN</span> TENN</span>
+        <span class="ops-score">— —</span>
+        <span class="ops-meta">Delay 38m</span>
+      </div>
+      <div class="ops-row">
+        <span class="ops-status pre">PRE</span>
+        <span class="ops-team"><span class="helmet" style="background:#cc0000;">ARK</span> ARK</span>
+        <span class="ops-team"><span class="helmet" style="background:#003087;">OLE</span> OLE</span>
+        <span class="ops-score">— —</span>
+        <span class="ops-meta">6:30 CT</span>
+      </div>
+      <div class="ops-preview-foot">
+        <span><span class="dot" style="background:#ff7878;"></span>2 Live</span>
+        <span><span class="dot" style="background:#e0b873;"></span>1 Final Qtr</span>
+        <span><span class="dot" style="background:#86b0d8;"></span>1 Halftime</span>
+        <span><span class="dot" style="background:#ff9090;"></span>1 Weather</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="problem" id="problem">
+  <div class="wrap">
+    <div class="eyebrow">The case</div>
+    <h2 class="section-h">Conferences operate like a media company, a sports league, and a federal agency — <em>but run on email.</em></h2>
+    <div class="problem-grid">
+      <div class="problem-list">
+        <div class="problem-item">
+          <div class="problem-num">01</div>
+          <div>
+            <h4>Information lives in inboxes</h4>
+            <p>Officials assignments, replay rulings, school complaints, and weather delays all funnel through individual email threads that no one else can see.</p>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-num">02</div>
+          <div>
+            <h4>No shared situational awareness</h4>
+            <p>On a Saturday, no single dashboard shows the status of every SEC game — kickoffs, delays, scoring, injuries, replays — in one place.</p>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-num">03</div>
+          <div>
+            <h4>Schools can't see what's happening</h4>
+            <p>Athletic directors, compliance staff, and operations teams have no consistent portal for film submissions, complaints, or credentialing.</p>
+          </div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-num">04</div>
+          <div>
+            <h4>Replay is fast but invisible</h4>
+            <p>Replay decisions happen in 90 seconds but get explained to fans, media, and schools across the next 72 hours — usually badly.</p>
+          </div>
+        </div>
+      </div>
+      <div class="problem-quote">
+        <div class="q-mark">"</div>
+        <p>If you'd asked me on a Saturday at 3pm to tell you the status of every conference game — kickoffs, replays, weather, who's officiating — I couldn't have given you a single screen. It didn't exist.</p>
+        <div class="attr">Former Power-Conference Operations Lead<em>Composite quote from public AD interviews</em></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="vision-strip">
+  <div class="wrap">
+    <h2>The platform serves <em>seven constituencies</em> on one login layer.</h2>
+    <div class="verses">
+      <div class="verse">
+        <div class="role">SEC Office</div>
+        <p>Full operational visibility, executive analytics, policy distribution, and incident command.</p>
+      </div>
+      <div class="verse">
+        <div class="role">Schools</div>
+        <p>Compliance submissions, film review requests, credential desk, ops coordination, and ticket data.</p>
+      </div>
+      <div class="verse">
+        <div class="role">Officials & Replay</div>
+        <p>Assignments, travel, grading, rules updates, replay timelines, and crew chat.</p>
+      </div>
+      <div class="verse">
+        <div class="role">Media Partners</div>
+        <p>Broadcast feeds, credential requests, talent notes, content packages, and press archives.</p>
+      </div>
+      <div class="verse">
+        <div class="role">Championship Ops</div>
+        <p>Venue, hotel, transportation, security, volunteer, and ticketing workflows.</p>
+      </div>
+      <div class="verse">
+        <div class="role">Compliance</div>
+        <p>NCAA documentation, education modules, violations tracking, and policy acknowledgment.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="modules" id="modules">
+  <div class="wrap">
+    <div class="modules-head">
+      <div>
+        <div class="eyebrow">The Operating System</div>
+        <h2 class="section-h">Thirteen modules. <em>Four shipped first.</em></h2>
+        <p class="section-sub">The full platform spans every conference workflow. The four modules below are the highest-leverage first phase — built as interactive demos to walk through with leadership.</p>
+      </div>
+    </div>
+
+    <div class="module-grid">
+      <a href="ops-center.html" class="module-card featured">
+        <div class="featured-grid">
+          <div>
+            <div class="module-head">
+              <div>
+                <div class="module-num">MODULE 01 · FLAGSHIP</div>
+                <h3>Live Game Ops Center</h3>
+                <div class="sub">The air-traffic control view</div>
+              </div>
+            </div>
+            <p>Every SEC game, every Saturday, on one screen. Live status, score, officiating crew, replay activity, weather, incidents, kickoff times, and broadcast assignments — feeding into the conference incident desk in real time.</p>
+            <div class="feats">
+              <span class="feat">Live scoreboard</span>
+              <span class="feat">Weather radar</span>
+              <span class="feat">Replay activity</span>
+              <span class="feat">Incident log</span>
+              <span class="feat">Crew assignments</span>
+              <span class="feat">Broadcast status</span>
+            </div>
+            <div class="module-link">Open Ops Center <span class="arrow">→</span></div>
+          </div>
+          <div class="featured-img">
+            <div style="font-size:.6rem;letter-spacing:.2em;color:var(--gold-soft);font-family:'Inter',sans-serif;margin-bottom:10px;font-weight:700;">SATURDAY OVERVIEW · 14:48 CT</div>
+            <div class="mini-row"><span class="mini-status" style="background:rgba(210,53,53,.2);color:#ff7878;">LIVE</span><span>ALA @ AUB · Q3 4:12</span><span style="color:var(--gold-soft);text-align:right;">17–10</span></div>
+            <div class="mini-row"><span class="mini-status" style="background:rgba(176,122,46,.18);color:#e0b873;">Q4</span><span>FLA @ UGA · Replay</span><span style="color:var(--gold-soft);text-align:right;">24–28</span></div>
+            <div class="mini-row"><span class="mini-status" style="background:rgba(58,90,122,.22);color:#86b0d8;">HALF</span><span>A&M @ LSU</span><span style="color:var(--gold-soft);text-align:right;">14–14</span></div>
+            <div class="mini-row"><span class="mini-status" style="background:rgba(210,53,53,.28);color:#ff9090;">WX</span><span>UK @ TENN · Lightning</span><span style="color:rgba(255,255,255,.4);text-align:right;">DLY</span></div>
+            <div class="mini-row"><span class="mini-status" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);">PRE</span><span>ARK @ OLE · 6:30 CT</span><span style="color:rgba(255,255,255,.4);text-align:right;">—</span></div>
+            <div style="font-size:.62rem;color:rgba(255,255,255,.4);margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);font-family:'Inter',sans-serif;letter-spacing:.1em;text-transform:uppercase;">3 replays in review · 2 incidents open · 1 weather delay</div>
+          </div>
+        </div>
+      </a>
+
+      <a href="officials.html" class="module-card">
+        <div class="module-head">
+          <div>
+            <div class="module-num">MODULE 02</div>
+            <h3>Officials & Replay Management</h3>
+            <div class="sub">Assignments · Grading · Replay Intelligence</div>
+          </div>
+        </div>
+        <p>Full lifecycle for every official — assignments, travel, hotels, payments, performance grading, rule updates, and incident reporting. Plus a replay command view that logs every review and ties it back to the on-field crew.</p>
+        <div class="feats">
+          <span class="feat">Crew assignments</span>
+          <span class="feat">Travel & per diem</span>
+          <span class="feat">Grading AI</span>
+          <span class="feat">Replay timeline</span>
+          <span class="feat">Rule updates</span>
+        </div>
+        <div class="module-link">Open Officials Console <span class="arrow">→</span></div>
+      </a>
+
+      <a href="film-portal.html" class="module-card">
+        <div class="module-head">
+          <div>
+            <div class="module-num">MODULE 03</div>
+            <h3>Film & Complaint Portal</h3>
+            <div class="sub">School-side clip review queue</div>
+          </div>
+        </div>
+        <p>Schools upload tagged clips, request rule interpretations, and track every review. The SEC office sees a triaged queue with internal notes, assigned reviewers, ruling history, and the ability to convert clips into training examples.</p>
+        <div class="feats">
+          <span class="feat">School upload</span>
+          <span class="feat">Timestamps & tags</span>
+          <span class="feat">Review queue</span>
+          <span class="feat">Ruling history</span>
+          <span class="feat">Training library</span>
+        </div>
+        <div class="module-link">Open Film Portal <span class="arrow">→</span></div>
+      </a>
+
+      <a href="comms.html" class="module-card">
+        <div class="module-head">
+          <div>
+            <div class="module-num">MODULE 04</div>
+            <h3>Staff Communication Hub</h3>
+            <div class="sub">Conference-wide channels & threads</div>
+          </div>
+        </div>
+        <p>A purpose-built workspace for conference operations: sport channels, game-weekend threads, replay center crew chat, incident escalation, pinned rule references, and conference-only voice rooms.</p>
+        <div class="feats">
+          <span class="feat">Sport channels</span>
+          <span class="feat">Game-day threads</span>
+          <span class="feat">Voice rooms</span>
+          <span class="feat">Escalations</span>
+          <span class="feat">Pinned playbooks</span>
+        </div>
+        <div class="module-link">Open Comms Hub <span class="arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="more-modules">
+  <div class="wrap">
+    <div class="eyebrow">Phase Two</div>
+    <h2 class="section-h">Nine more modules to round out the platform.</h2>
+    <p class="section-sub">Built on the same data layer and identity system. Each can launch independently once the core four are in production.</p>
+
+    <div class="more-grid">
+      <div class="more-card">
+        <div class="more-num">05</div>
+        <h4>Scheduling & Event Ops</h4>
+        <p>Officials, SEC staff, credentialing, production, transportation, security.</p>
+      </div>
+      <div class="more-card">
+        <div class="more-num">06</div>
+        <h4>Conference Call Hub</h4>
+        <p>Recorded calls, transcripts, agendas, voting, archived sessions.</p>
+      </div>
+      <div class="more-card">
+        <div class="more-num">07</div>
+        <h4>Championship Management</h4>
+        <p>Venue, hotels, security, volunteers, ticketing — for all 21 sports.</p>
+      </div>
+      <div class="more-card">
+        <div class="more-num">08</div>
+        <h4>Media & Content Hub</h4>
+        <p>Asset distribution, broadcast notes, press archives, talent files.</p>
+      </div>
+      <div class="more-card">
+        <div class="more-num">09</div>
+        <h4>Incident & Crisis</h4>
+        <p>Weather, security, medical, escalation chains, real-time alerts.</p>
+      </div>
+      <div class="more-card">
+        <div class="more-num">10</div>
+        <h4>Executive Analytics</h4>
+        <p>Officiating, ratings, attendance, revenue, response times, costs.</p>
+      </div>
+      <div class="more-card">
+        <div class="more-num">11</div>
+        <h4>Compliance & Governance</h4>
+        <p>NCAA docs, violations, education modules, policy acknowledgments.</p>
+      </div>
+      <div class="more-card">
+        <div class="more-num">12</div>
+        <h4>School Operations Portal</h4>
+        <p>Each school's home base — requests, ops, credentials, travel.</p>
+      </div>
+      <div class="more-card">
+        <div class="more-num">13</div>
+        <h4>SEC Field App</h4>
+        <p>Mobile companion for officials, game-day staff, and traveling crews.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="roles" id="roles">
+  <div class="wrap">
+    <div class="eyebrow">Identity & access</div>
+    <h2 class="section-h">Seven role types. <em>One sign-on.</em></h2>
+    <p class="section-sub">Every screen, dataset, and action is gated by role. Schools see only their schools. Officials see only their crews. The SEC office sees everything.</p>
+
+    <div class="roles-grid">
+      <div class="role"><div class="role-icon">E</div><div class="role-name">SEC Executive</div><div class="role-access">All modules</div></div>
+      <div class="role"><div class="role-icon">S</div><div class="role-name">Sport Admin</div><div class="role-access">Sport-specific</div></div>
+      <div class="role"><div class="role-icon">Sc</div><div class="role-name">School</div><div class="role-access">School portal</div></div>
+      <div class="role"><div class="role-icon">O</div><div class="role-name">Official</div><div class="role-access">Assignments + travel</div></div>
+      <div class="role"><div class="role-icon">R</div><div class="role-name">Replay Center</div><div class="role-access">Replay systems</div></div>
+      <div class="role"><div class="role-icon">M</div><div class="role-name">Media Partner</div><div class="role-access">Content + broadcast</div></div>
+      <div class="role"><div class="role-icon">Ev</div><div class="role-name">Event Staff</div><div class="role-access">Event-specific</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="wow" id="wow">
+  <div class="wrap">
+    <div class="eyebrow">Premium intelligence</div>
+    <h2 class="section-h">The features that turn a dashboard <em>into an advantage.</em></h2>
+    <p class="section-sub">Once the core data is unified, a layer of conference-specific intelligence sits on top — search, grading, and pattern detection across years of officiating and operational data.</p>
+
+    <div class="wow-grid">
+      <div class="wow-card">
+        <span class="badge">AI Film Search</span>
+        <h3>Ask the entire archive in plain English.</h3>
+        <p>Index every play, every replay, every grade — and query across years of conference film with natural language.</p>
+        <div class="search-demo">
+          <span class="prompt">› </span>holding calls on 3rd down in Q4, 2024 season<br>
+          <span class="prompt">› </span>targeting reviews overturned, last 24 months<br>
+          <span class="prompt">› </span>crew Smith — late-game accuracy
+        </div>
+      </div>
+      <div class="wow-card">
+        <span class="badge">Officials Grading AI</span>
+        <h3>Auto-tag missed calls, trends, and consistency.</h3>
+        <p>Computer vision and rule-engine overlay flag potential missed calls, evaluate spot accuracy, and surface consistency drift across a crew's season — before the school complaint hits.</p>
+      </div>
+      <div class="wow-card">
+        <span class="badge">Conference Map</span>
+        <h3>One live map of the entire conference.</h3>
+        <p>Real-time positions of officials in transit, weather over every venue, championship event staff, and live game status — drawn onto a single regional map.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="closing">
+  <div class="wrap">
+    <div class="eyebrow" style="justify-content:center;display:inline-flex;">Next step</div>
+    <h2>A working prototype is more useful <em>than a slide deck.</em></h2>
+    <p>The four modules above are linked, interactive, and ready to walk through with your leadership team — no login required. Start with the Live Ops Center to see what game-day visibility looks like in one place.</p>
+    <div class="closing-actions">
+      <a href="ops-center.html" class="btn btn-ink">Open Live Ops Center →</a>
+      <a href="officials.html" class="btn">Officials Console</a>
+      <a href="film-portal.html" class="btn">Film Portal</a>
+      <a href="comms.html" class="btn">Comms Hub</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="./">
+      <div class="brand-mark" style="border-color:var(--gold-soft);color:var(--gold-soft);">S</div>
+      <div class="brand-name">SEC Operating System<em>A speculative proposal</em></div>
+    </a>
+    <div class="built">Concept by <a href="https://williamsdigital.io">Williams Digital</a> · Birmingham, AL</div>
+  </div>
+</footer>
+
+</body>
+</html>

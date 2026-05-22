@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Officials & Replay Console — SEC Operating System</title>
+<meta name="description" content="Officials management, crew grading, replay command, travel coordination, and rule update distribution — for the SEC conference office." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0f1c; --ink-soft:#162033; --navy:#0b1530; --navy-deep:#070d1e; --navy-glow:#0f1a3a;
+    --paper:#f6f5f1; --canvas:#faf9f5;
+    --gold:#c9a558; --gold-soft:#d8b977; --gold-deep:#a8862e;
+    --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+    --muted:rgba(255,255,255,.55); --muted-soft:rgba(255,255,255,.35);
+    --good:#4dc97e; --warn:#e0b873; --danger:#ff6b6b; --info:#6fa9e6; --live:#ff4f4f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:#fff;background:var(--navy-deep);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:13px;overflow-x:hidden}
+  h1,h2,h3,h4,.serif{font-family:'Fraunces',serif;font-weight:400;letter-spacing:-.01em;color:#fff}
+  .mono{font-family:'JetBrains Mono',monospace;font-feature-settings:"tnum"}
+  a{color:inherit;text-decoration:none}
+
+  /* Reused layout */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  .sidebar{background:#04081a;padding:22px 18px;display:flex;flex-direction:column;gap:24px;border-right:1px solid var(--line);position:sticky;top:0;height:100vh;overflow-y:auto}
+  .sidebar::-webkit-scrollbar{width:4px} .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .side-brand{display:flex;align-items:center;gap:11px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .side-mark{width:32px;height:32px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:.95rem;color:var(--gold);font-weight:500}
+  .side-name{font-family:'Fraunces',serif;font-size:.98rem;color:#fff;font-weight:500;line-height:1.1}
+  .side-name em{font-style:normal;font-weight:400;color:var(--gold-soft);display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;margin-top:3px}
+  .side-section h5{font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-bottom:12px}
+  .side-nav{list-style:none;display:flex;flex-direction:column;gap:2px}
+  .side-nav a{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:3px;font-size:.8rem;color:var(--muted);font-weight:500}
+  .side-nav a:hover{background:rgba(255,255,255,.04);color:#fff}
+  .side-nav a.active{background:rgba(201,165,88,.12);color:var(--gold-soft)}
+  .side-nav .ic{width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;opacity:.85;font-size:.78rem}
+  .side-nav .badge{margin-left:auto;font-size:.62rem;padding:2px 6px;border-radius:2px;background:var(--gold);color:var(--navy-deep);font-weight:700;font-family:'JetBrains Mono',monospace}
+  .side-nav .badge.live{background:var(--live);color:#fff;animation:badgePulse 2s infinite}
+  @keyframes badgePulse{0%,100%{opacity:1}50%{opacity:.7}}
+  .side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px}
+  .user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-soft));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;color:var(--navy-deep);font-weight:600;font-size:.8rem}
+  .user-name{color:#fff;font-size:.8rem;font-weight:500;line-height:1.1}
+  .user-role{color:var(--muted-soft);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+
+  main{padding:0;background:radial-gradient(ellipse at top, var(--navy-glow), var(--navy-deep) 70%);min-height:100vh}
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(7,13,30,.92);backdrop-filter:blur(10px);padding:14px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px}
+  .crumb{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .crumb strong{color:#fff;font-weight:700}
+  .topbar-spacer{flex:1}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .btn{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;padding:8px 14px;border:1px solid var(--line-strong);background:rgba(255,255,255,.04);color:#fff;font-weight:700;border-radius:2px;cursor:pointer;font-family:inherit;transition:.2s;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:var(--gold);color:var(--gold-soft)}
+  .btn-gold{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+  .btn-gold:hover{background:var(--gold-soft);color:var(--navy-deep)}
+
+  .content{padding:26px 28px 60px;max-width:1900px}
+  .ph{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px;flex-wrap:wrap}
+  .ph h1{font-family:'Fraunces',serif;font-size:2rem;font-weight:400;line-height:1.05;color:#fff;letter-spacing:-.01em}
+  .ph h1 em{font-style:italic;color:var(--gold-soft);font-weight:300}
+  .ph .sub{color:var(--muted);font-size:.86rem;margin-top:4px}
+  .ph-filters{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .pill{font-size:.7rem;letter-spacing:.08em;padding:6px 12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--muted);font-weight:600;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+  .pill:hover{color:#fff;border-color:var(--line-strong)}
+  .pill.active{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  .stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
+  .stat{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+  .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--line-strong)}
+  .stat.good::before{background:var(--good)} .stat.warn::before{background:var(--warn)} .stat.info::before{background:var(--info)}
+  .stat-label{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .stat-value{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;line-height:1;color:#fff;font-feature-settings:"tnum"}
+  .stat-value small{font-size:.85rem;color:var(--muted);font-weight:300;font-style:italic}
+  .stat-delta{font-size:.72rem;color:var(--muted-soft);font-family:'JetBrains Mono',monospace}
+  .stat-delta.up{color:var(--good)} .stat-delta.down{color:var(--danger)}
+
+  /* Tabs */
+  .tabs{display:flex;gap:2px;padding:4px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;margin-bottom:22px;width:fit-content}
+  .tab{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;padding:9px 18px;color:var(--muted);font-weight:700;cursor:pointer;border-radius:2px;transition:.15s}
+  .tab:hover{color:#fff}
+  .tab.active{background:var(--gold);color:var(--navy-deep)}
+
+  .grid{display:grid;gap:14px;margin-bottom:14px}
+  .grid-2{grid-template-columns:1.4fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+
+  .panel{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:3px;overflow:hidden;display:flex;flex-direction:column}
+  .panel-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.15)}
+  .panel-head h3{font-family:'Fraunces',serif;font-size:1rem;font-weight:500;color:#fff}
+  .panel-head .h-meta{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .panel-head .spacer{flex:1}
+  .panel-head .h-action{font-size:.7rem;color:var(--gold-soft);font-weight:600;letter-spacing:.06em;cursor:pointer}
+  .panel-head .h-action:hover{text-decoration:underline}
+
+  /* Crew table */
+  .crew-tbl{display:flex;flex-direction:column}
+  .crew-tbl-head, .crew-tbl-row{display:grid;grid-template-columns:1.4fr 1.6fr 1fr 70px 100px 60px;gap:12px;padding:12px 18px;align-items:center;border-bottom:1px solid var(--line);font-size:.78rem}
+  .crew-tbl-head{background:rgba(0,0,0,.2);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .crew-tbl-row{cursor:pointer;transition:.15s}
+  .crew-tbl-row:hover{background:rgba(201,165,88,.06)}
+  .crew-tbl-row:last-child{border-bottom:none}
+  .crew-name{display:flex;flex-direction:column;gap:2px}
+  .crew-name strong{color:#fff;font-weight:600;font-size:.84rem}
+  .crew-name small{color:var(--muted);font-size:.7rem;letter-spacing:.05em}
+  .crew-assign{color:var(--muted);font-size:.76rem}
+  .crew-assign strong{color:#fff;font-weight:500;display:block;font-size:.8rem;margin-bottom:1px}
+  .crew-status{font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:center;display:inline-block}
+  .cs-confirmed{background:rgba(77,201,126,.15);color:var(--good)}
+  .cs-traveling{background:rgba(111,169,230,.18);color:var(--info)}
+  .cs-pending{background:rgba(224,184,115,.18);color:var(--warn)}
+  .cs-onsite{background:rgba(201,165,88,.18);color:var(--gold-soft)}
+  .grade-cell{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--good)}
+  .grade-cell.warn{color:var(--warn)} .grade-cell.high{color:var(--gold-soft)}
+  .grade-cell small{display:block;font-size:.58rem;color:var(--muted-soft);letter-spacing:.12em;font-weight:400;margin-top:2px}
+  .grade-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;position:relative}
+  .grade-bar-fill{height:100%;background:var(--good);border-radius:2px}
+  .grade-bar-fill.warn{background:var(--warn)}
+  .grade-bar-fill.high{background:var(--gold)}
+  .row-action{color:var(--muted);text-align:right;cursor:pointer;font-size:.78rem;transition:.15s}
+  .row-action:hover{color:var(--gold-soft)}
+
+  /* Sparkline-ish grading panel */
+  .grade-summary{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:18px;border-bottom:1px solid var(--line)}
+  .grade-block{display:flex;flex-direction:column;gap:8px}
+  .grade-big{font-family:'Fraunces',serif;font-size:2.4rem;color:var(--gold-soft);font-weight:300;line-height:1}
+  .grade-lbl{font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .grade-spark{display:flex;align-items:flex-end;gap:3px;height:50px;padding-top:8px}
+  .spark{flex:1;background:linear-gradient(to top, var(--gold), var(--gold-soft));border-radius:1px;opacity:.7;min-height:8px}
+  .spark.peak{opacity:1;background:linear-gradient(to top, var(--gold-deep), var(--gold))}
+
+  /* Replay timeline */
+  .replay-list{padding:0}
+  .replay-card{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+  .replay-card:last-child{border-bottom:none}
+  .replay-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .replay-game{font-size:.84rem;font-weight:600;color:#fff;display:flex;align-items:center;gap:9px}
+  .replay-game .helmet{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;color:#fff;flex-shrink:0}
+  .replay-result{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;padding:4px 8px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .rr-confirmed{background:rgba(77,201,126,.15);color:var(--good)}
+  .rr-overturned{background:rgba(255,107,107,.15);color:var(--danger)}
+  .rr-stands{background:rgba(224,184,115,.15);color:var(--warn)}
+  .rr-active{background:rgba(255,79,79,.18);color:var(--live)}
+  .replay-progress{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;height:6px;margin-top:2px}
+  .replay-progress span{height:100%}
+  .pp-trigger{background:var(--muted);flex:0 0 12%}
+  .pp-review{background:var(--warn);flex:0 0 38%}
+  .pp-confer{background:var(--info);flex:0 0 22%}
+  .pp-rule{background:var(--good);flex:0 0 18%}
+  .pp-comm{background:var(--gold);flex:0 0 10%}
+  .replay-stages{display:flex;justify-content:space-between;font-size:.62rem;letter-spacing:.08em;color:var(--muted-soft);font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-top:4px}
+  .replay-meta{font-size:.74rem;color:var(--muted);display:flex;align-items:center;gap:14px}
+  .replay-meta .mono{color:var(--gold-soft);font-weight:600}
+  .replay-call{font-size:.78rem;color:var(--muted);line-height:1.5}
+  .replay-call strong{color:#fff;font-weight:500;display:block;margin-bottom:2px}
+
+  /* Travel panel */
+  .travel-item{display:grid;grid-template-columns:1fr auto;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .travel-item:last-child{border-bottom:none}
+  .travel-who{color:#fff;font-weight:500}
+  .travel-who small{display:block;color:var(--muted);font-size:.7rem;margin-top:2px;font-weight:400}
+  .travel-stat{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--good);font-weight:700}
+  .travel-stat.warn{color:var(--warn)}
+  .travel-stat small{display:block;font-size:.6rem;color:var(--muted-soft);letter-spacing:.1em;text-align:right;margin-top:2px;font-weight:400}
+
+  /* Rule updates */
+  .rule-item{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .rule-item:last-child{border-bottom:none}
+  .rule-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .rule-num{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--gold-soft);font-weight:700}
+  .rule-status{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 7px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace;background:rgba(77,201,126,.15);color:var(--good)}
+  .rule-status.pending{background:rgba(224,184,115,.18);color:var(--warn)}
+  .rule-title{font-size:.86rem;font-weight:500;color:#fff;margin-bottom:4px}
+  .rule-desc{font-size:.76rem;color:var(--muted);line-height:1.5}
+  .rule-meta{margin-top:8px;font-size:.66rem;color:var(--muted-soft);letter-spacing:.08em;font-family:'JetBrains Mono',monospace}
+
+  /* Right-side bigger grading detail */
+  .grading-detail{padding:18px;display:flex;flex-direction:column;gap:14px}
+  .gd-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.78rem}
+  .gd-row:last-child{border-bottom:none}
+  .gd-label{color:var(--muted)}
+  .gd-value{font-family:'JetBrains Mono',monospace;color:#fff;font-weight:600}
+  .gd-value.good{color:var(--good)} .gd-value.warn{color:var(--warn)}
+
+  @media (max-width: 1280px){ .grid-2{grid-template-columns:1fr} .stat-row{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width: 880px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:relative;height:auto;display:none}
+    .stat-row{grid-template-columns:repeat(2,1fr)}
+    .grid-3{grid-template-columns:1fr}
+    .crew-tbl-head, .crew-tbl-row{grid-template-columns:1fr 80px}
+    .crew-tbl-head > *:nth-child(n+3), .crew-tbl-row > *:nth-child(n+3){display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SEC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html" class="active"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="#"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="#"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="#"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="#"><span class="ic">⚠</span>Incidents</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="#"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="#"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="#"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">SS</div>
+        <div>
+          <div class="user-name">S. Shaw</div>
+          <div class="user-role">VP, Officiating</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Operations · <strong>Officials & Replay</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">Assign Crew</button>
+        <button class="btn">Export Grades</button>
+        <button class="btn btn-gold">Open Replay Center</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Officials &amp; Replay <em>command console.</em></h1>
+          <div class="sub">102 active crews · 14 on the field today · 7 replay centers online</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">Football</button>
+          <button class="pill">Basketball</button>
+          <button class="pill">Baseball</button>
+          <button class="pill">Other</button>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat good">
+          <span class="stat-label">Crews Assigned</span>
+          <span class="stat-value">14 <small>/ 14</small></span>
+          <span class="stat-delta up">All confirmed by Wed</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Avg Crew Grade · YTD</span>
+          <span class="stat-value">93.4</span>
+          <span class="stat-delta up">+1.2 vs '24 season</span>
+        </div>
+        <div class="stat warn">
+          <span class="stat-label">Replays — Today</span>
+          <span class="stat-value">17</span>
+          <span class="stat-delta">avg ruling 92s</span>
+        </div>
+        <div class="stat info">
+          <span class="stat-label">In Transit</span>
+          <span class="stat-value">3</span>
+          <span class="stat-delta">2 weather-rerouted</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">School Complaints — 7d</span>
+          <span class="stat-value">9</span>
+          <span class="stat-delta">6 resolved · 3 in review</span>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active">Saturday Assignments</div>
+        <div class="tab">Crew Directory</div>
+        <div class="tab">Grading</div>
+        <div class="tab">Replay Center</div>
+        <div class="tab">Travel</div>
+        <div class="tab">Rules &amp; Memos</div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Saturday Crew Board</h3>
+            <span class="h-meta">14 crews · 7 games</span>
+            <div class="spacer"></div>
+            <span class="h-action">Reassign view →</span>
+          </div>
+          <div class="crew-tbl">
+            <div class="crew-tbl-head">
+              <span>Crew</span><span>Assignment</span><span>Travel</span><span>Status</span><span>Season Grade</span><span></span>
+            </div>
+
+            <div class="crew-tbl-row">
+              <div class="crew-name"><strong>Crew Henderson</strong><small>R: B. Henderson · 7-man</small></div>
+              <div class="crew-assign"><strong>ALA @ AUB</strong>Jordan-Hare · 3:30 CT</div>
+              <div class="crew-assign">DTW → ATL → AUO<small style="color:var(--muted-soft);">Onsite Friday 6:14 PM</small></div>
+              <div><span class="crew-status cs-onsite">On Site</span></div>
+              <div class="grade-cell high">95<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row">
+              <div class="crew-name"><strong>Crew Walker</strong><small>R: D. Walker · 7-man</small></div>
+              <div class="crew-assign"><strong>FLA @ UGA</strong>Sanford · 3:30 CT</div>
+              <div class="crew-assign">ATL local<small style="color:var(--muted-soft);">Hotel: AC Athens</small></div>
+              <div><span class="crew-status cs-onsite">On Site</span></div>
+              <div class="grade-cell">91<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row">
+              <div class="crew-name"><strong>Crew Reyes</strong><small>R: M. Reyes · 7-man</small></div>
+              <div class="crew-assign"><strong>A&amp;M @ LSU</strong>Tiger Stadium · 6:00 CT</div>
+              <div class="crew-assign">DAL → MSY<small style="color:var(--muted-soft);">Per diem $382/crew</small></div>
+              <div><span class="crew-status cs-onsite">On Site</span></div>
+              <div class="grade-cell">94<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row">
+              <div class="crew-name"><strong>Crew Patel</strong><small>R: A. Patel · 7-man</small></div>
+              <div class="crew-assign"><strong>UK @ TENN</strong>Neyland · weather hold</div>
+              <div class="crew-assign">CVG → TYS<small style="color:var(--muted-soft);">Backup hotel held</small></div>
+              <div><span class="crew-status cs-onsite">Holding</span></div>
+              <div class="grade-cell">92<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row">
+              <div class="crew-name"><strong>Crew Drummond</strong><small>R: C. Drummond · 7-man</small></div>
+              <div class="crew-assign"><strong>ARK @ OLE</strong>Vaught-Hemingway · 6:30 CT</div>
+              <div class="crew-assign">XNA → MEM → OXD<small style="color:var(--muted-soft);">Charter ETA 5:10 PM</small></div>
+              <div><span class="crew-status cs-traveling">Inbound</span></div>
+              <div class="grade-cell warn">88<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row">
+              <div class="crew-name"><strong>Crew Mitchell</strong><small>R: J. Mitchell · 7-man</small></div>
+              <div class="crew-assign"><strong>VU @ SC</strong>Williams-Brice · 7:00 CT</div>
+              <div class="crew-assign">BNA → CAE<small style="color:var(--muted-soft);">Hotel: Sheraton CAE</small></div>
+              <div><span class="crew-status cs-confirmed">Confirmed</span></div>
+              <div class="grade-cell">90<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row">
+              <div class="crew-name"><strong>Crew Okafor</strong><small>R: K. Okafor · 7-man</small></div>
+              <div class="crew-assign"><strong>MIZ @ MSU</strong>Faurot · final</div>
+              <div class="crew-assign">Returning STL<small style="color:var(--muted-soft);">Wheels up 11:40 PM</small></div>
+              <div><span class="crew-status cs-confirmed">Wrapping</span></div>
+              <div class="grade-cell high">96<small>game</small></div>
+              <div class="row-action">→</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Crew Henderson · Profile</h3>
+            <span class="h-meta">7-man · YTD #1 grade</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full file →</span>
+          </div>
+          <div class="grade-summary">
+            <div class="grade-block">
+              <span class="grade-lbl">YTD Composite</span>
+              <span class="grade-big">95.2</span>
+              <span style="font-size:.7rem;color:var(--good);font-weight:600;letter-spacing:.06em;">↑ 2.1 vs 2024</span>
+            </div>
+            <div class="grade-block">
+              <span class="grade-lbl">Week-by-week (10 games)</span>
+              <div class="grade-spark">
+                <div class="spark" style="height:60%"></div>
+                <div class="spark" style="height:75%"></div>
+                <div class="spark" style="height:70%"></div>
+                <div class="spark" style="height:88%"></div>
+                <div class="spark peak" style="height:95%"></div>
+                <div class="spark" style="height:82%"></div>
+                <div class="spark peak" style="height:97%"></div>
+                <div class="spark" style="height:90%"></div>
+                <div class="spark peak" style="height:94%"></div>
+                <div class="spark peak" style="height:96%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="grading-detail">
+            <div class="gd-row"><span class="gd-label">Spot accuracy (AI overlay)</span><span class="gd-value good">98.4%</span></div>
+            <div class="gd-row"><span class="gd-label">Holding consistency (3rd down)</span><span class="gd-value good">94.1%</span></div>
+            <div class="gd-row"><span class="gd-label">Targeting reviews — confirmed rate</span><span class="gd-value">11 / 12</span></div>
+            <div class="gd-row"><span class="gd-label">Pace of game (avg play interval)</span><span class="gd-value">31.4s</span></div>
+            <div class="gd-row"><span class="gd-label">School complaints (8 schools, season)</span><span class="gd-value">2 · resolved</span></div>
+            <div class="gd-row"><span class="gd-label">Trend vs season avg</span><span class="gd-value good">↑ outperforming</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Replay Timeline · Today</h3>
+            <span class="h-meta">17 reviews</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full center →</span>
+          </div>
+          <div class="replay-list">
+
+            <div class="replay-card">
+              <div class="replay-card-head">
+                <div class="replay-game"><span class="helmet" style="background:#fa4616;">F</span><span class="helmet" style="background:#ba0c2f;">UGA</span>FLA @ UGA</div>
+                <span class="replay-result rr-active">REVIEWING</span>
+              </div>
+              <div class="replay-call"><strong>Catch / no catch</strong>TD pass to #11 UGA — toe drag at sideline / endzone.</div>
+              <div class="replay-progress">
+                <span class="pp-trigger"></span><span class="pp-review"></span><span class="pp-confer"></span><span style="background:rgba(255,255,255,.05);flex:1;"></span>
+              </div>
+              <div class="replay-meta"><span class="mono">42s</span><span>Atlanta · Carmichael</span></div>
+            </div>
+
+            <div class="replay-card">
+              <div class="replay-card-head">
+                <div class="replay-game"><span class="helmet" style="background:#9e1b32;">A</span><span class="helmet" style="background:#bf5700;">AU</span>ALA @ AUB</div>
+                <span class="replay-result rr-confirmed">CONFIRMED</span>
+              </div>
+              <div class="replay-call"><strong>Targeting — #22 AUB</strong>Crown contact upheld, player disqualified, half assessed.</div>
+              <div class="replay-progress">
+                <span class="pp-trigger"></span><span class="pp-review"></span><span class="pp-confer"></span><span class="pp-rule"></span><span class="pp-comm"></span>
+              </div>
+              <div class="replay-meta"><span class="mono">1m 18s</span><span>Birmingham · Park</span></div>
+            </div>
+
+            <div class="replay-card">
+              <div class="replay-card-head">
+                <div class="replay-game"><span class="helmet" style="background:#500000;">A&amp;M</span><span class="helmet" style="background:#461d7c;">LSU</span>A&amp;M @ LSU</div>
+                <span class="replay-result rr-overturned">OVERTURNED</span>
+              </div>
+              <div class="replay-call"><strong>Targeting Q2 11:08</strong>Overturned — angle from end-zone HD showed shoulder lead, not crown.</div>
+              <div class="replay-progress">
+                <span class="pp-trigger"></span><span class="pp-review"></span><span class="pp-confer"></span><span class="pp-rule"></span><span class="pp-comm"></span>
+              </div>
+              <div class="replay-meta"><span class="mono">2m 04s</span><span>Birmingham · Vega</span></div>
+            </div>
+
+            <div class="replay-card">
+              <div class="replay-card-head">
+                <div class="replay-game"><span class="helmet" style="background:#002868;">MIZ</span><span class="helmet" style="background:#13294b;">MSU</span>MIZ @ MSU</div>
+                <span class="replay-result rr-stands">STANDS</span>
+              </div>
+              <div class="replay-call"><strong>Fumble recovery</strong>Pile too tight to overturn — ruling on field stands.</div>
+              <div class="replay-progress">
+                <span class="pp-trigger"></span><span class="pp-review"></span><span class="pp-confer"></span><span class="pp-rule"></span><span class="pp-comm"></span>
+              </div>
+              <div class="replay-meta"><span class="mono">1m 47s</span><span>Atlanta · Liu</span></div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Travel &amp; Logistics</h3>
+            <span class="h-meta">102 segments this week</span>
+            <div class="spacer"></div>
+            <span class="h-action">Travel board →</span>
+          </div>
+          <div>
+            <div class="travel-item">
+              <div class="travel-who">Crew Patel (UK @ TENN)<small>Lodging extended overnight due to WX hold</small></div>
+              <div class="travel-stat warn">+$1,420<small>HOLD COST</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Crew Drummond (ARK @ OLE)<small>Charter MEM → OXD via Williams Air</small></div>
+              <div class="travel-stat">On Time<small>ETA 5:10</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Crew Henderson (ALA @ AUB)<small>Hotel: Hilton Auburn · per diem cleared</small></div>
+              <div class="travel-stat">Confirmed<small>4 rooms</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Crew Okafor (MIZ @ MSU return)<small>STL departure 11:40 PM via STL-DFW</small></div>
+              <div class="travel-stat">Booked<small>$2,140</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Replay Center · Birmingham<small>Carmichael / Park / Vega — 12hr shift</small></div>
+              <div class="travel-stat">Local<small>3 staffed</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Replay Center · Atlanta<small>Liu / Carmichael cross-cover</small></div>
+              <div class="travel-stat">Local<small>2 staffed</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Week-to-date travel spend<small>14 crews · 21 hotel nights · 38 segments</small></div>
+              <div class="travel-stat">$94,820<small>vs $98K bud</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Rules &amp; Memos</h3>
+            <span class="h-meta">Distributed this week</span>
+            <div class="spacer"></div>
+            <span class="h-action">Memo library →</span>
+          </div>
+          <div>
+            <div class="rule-item">
+              <div class="rule-head">
+                <span class="rule-num">MEMO 26-014</span>
+                <span class="rule-status">DISTRIBUTED</span>
+              </div>
+              <div class="rule-title">Targeting — crown contact emphasis</div>
+              <div class="rule-desc">Re-affirms 2025 emphasis on lowered helmet contact with defenseless receivers. Includes 6 video examples.</div>
+              <div class="rule-meta">Sent 11/18 · 102 acks · 100% read</div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-head">
+                <span class="rule-num">MEMO 26-015</span>
+                <span class="rule-status">DISTRIBUTED</span>
+              </div>
+              <div class="rule-title">Spot accuracy — short-yardage 3rd downs</div>
+              <div class="rule-desc">Standardizes secondary spot conferencing protocol for 3rd-and-2 or shorter situations.</div>
+              <div class="rule-meta">Sent 11/19 · 99 acks · 97% read</div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-head">
+                <span class="rule-num">MEMO 26-016</span>
+                <span class="rule-status pending">PENDING ACK</span>
+              </div>
+              <div class="rule-title">Replay communication — sideline access</div>
+              <div class="rule-desc">New protocol for head referee → coach communication during long reviews (over 90s).</div>
+              <div class="rule-meta">Sent 11/21 · 64 of 102 acks · sending reminder</div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-head">
+                <span class="rule-num">MEMO 26-017</span>
+                <span class="rule-status">DISTRIBUTED</span>
+              </div>
+              <div class="rule-title">Weather hold — restart protocol</div>
+              <div class="rule-desc">Refresher on lightning hold restart sequence and minimum warm-up window.</div>
+              <div class="rule-meta">Sent 11/21 · 102 acks · 100% read</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Live Game Ops Center — SEC Operating System</title>
+<meta name="description" content="The conference-wide game-day command center — live status of every SEC game, with replay activity, weather, incidents, and crew assignments in one screen." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0f1c; --ink-soft:#162033; --navy:#0b1530; --navy-deep:#070d1e; --navy-glow:#0f1a3a;
+    --paper:#f6f5f1; --canvas:#faf9f5;
+    --gold:#c9a558; --gold-soft:#d8b977; --gold-deep:#a8862e;
+    --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+    --muted:rgba(255,255,255,.55); --muted-soft:rgba(255,255,255,.35);
+    --good:#4dc97e; --warn:#e0b873; --danger:#ff6b6b; --info:#6fa9e6; --live:#ff4f4f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:#fff;background:var(--navy-deep);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:13px;overflow-x:hidden}
+  h1,h2,h3,h4,.serif{font-family:'Fraunces',serif;font-weight:400;letter-spacing:-.01em;color:#fff}
+  .mono{font-family:'JetBrains Mono',monospace;font-feature-settings:"tnum"}
+  a{color:inherit;text-decoration:none}
+
+  /* App layout */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+
+  /* Sidebar */
+  .sidebar{background:#04081a;padding:22px 18px;display:flex;flex-direction:column;gap:24px;border-right:1px solid var(--line);position:sticky;top:0;height:100vh;overflow-y:auto}
+  .sidebar::-webkit-scrollbar{width:4px}
+  .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .side-brand{display:flex;align-items:center;gap:11px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .side-mark{width:32px;height:32px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:.95rem;color:var(--gold);font-weight:500}
+  .side-name{font-family:'Fraunces',serif;font-size:.98rem;color:#fff;font-weight:500;line-height:1.1}
+  .side-name em{font-style:normal;font-weight:400;color:var(--gold-soft);display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;margin-top:3px}
+  .side-section h5{font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-bottom:12px}
+  .side-nav{list-style:none;display:flex;flex-direction:column;gap:2px}
+  .side-nav a{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:3px;font-size:.8rem;color:var(--muted);font-weight:500}
+  .side-nav a:hover{background:rgba(255,255,255,.04);color:#fff}
+  .side-nav a.active{background:rgba(201,165,88,.12);color:var(--gold-soft)}
+  .side-nav .ic{width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;opacity:.85;font-size:.78rem}
+  .side-nav .badge{margin-left:auto;font-size:.62rem;padding:2px 6px;border-radius:2px;background:var(--gold);color:var(--navy-deep);font-weight:700;font-family:'JetBrains Mono',monospace}
+  .side-nav .badge.live{background:var(--live);color:#fff;animation:badgePulse 2s infinite}
+  @keyframes badgePulse{0%,100%{opacity:1}50%{opacity:.7}}
+  .side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px}
+  .user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-soft));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;color:var(--navy-deep);font-weight:600;font-size:.8rem}
+  .user-name{color:#fff;font-size:.8rem;font-weight:500;line-height:1.1}
+  .user-role{color:var(--muted-soft);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+
+  /* Main */
+  main{padding:0;background:radial-gradient(ellipse at top, var(--navy-glow), var(--navy-deep) 70%);min-height:100vh}
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(7,13,30,.92);backdrop-filter:blur(10px);padding:14px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px}
+  .crumb{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .crumb strong{color:#fff;font-weight:700}
+  .clock-block{display:flex;align-items:center;gap:14px;padding-left:20px;border-left:1px solid var(--line)}
+  .clock-label{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .clock-time{font-family:'JetBrains Mono',monospace;font-size:.95rem;color:var(--gold-soft);font-weight:600;font-feature-settings:"tnum"}
+  .live-indicator{display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(255,79,79,.12);border:1px solid rgba(255,79,79,.3);border-radius:3px;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--live);font-weight:700}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--live);box-shadow:0 0 0 0 rgba(255,79,79,.6);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,79,79,.6)}70%{box-shadow:0 0 0 8px rgba(255,79,79,0)}100%{box-shadow:0 0 0 0 rgba(255,79,79,0)}}
+  .topbar-spacer{flex:1}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .btn{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;padding:8px 14px;border:1px solid var(--line-strong);background:rgba(255,255,255,.04);color:#fff;font-weight:700;border-radius:2px;cursor:pointer;font-family:inherit;transition:.2s;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:var(--gold);color:var(--gold-soft)}
+  .btn-gold{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+  .btn-gold:hover{background:var(--gold-soft);color:var(--navy-deep)}
+
+  /* Content */
+  .content{padding:26px 28px 60px;max-width:1900px}
+
+  /* Page hero */
+  .ph{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px;flex-wrap:wrap}
+  .ph h1{font-family:'Fraunces',serif;font-size:2rem;font-weight:400;line-height:1.05;color:#fff;letter-spacing:-.01em}
+  .ph h1 em{font-style:italic;color:var(--gold-soft);font-weight:300}
+  .ph .sub{color:var(--muted);font-size:.86rem;margin-top:4px}
+  .ph-filters{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .pill{font-size:.7rem;letter-spacing:.08em;padding:6px 12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--muted);font-weight:600;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+  .pill:hover{color:#fff;border-color:var(--line-strong)}
+  .pill.active{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  /* Top stat row */
+  .stat-row{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:22px}
+  .stat{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+  .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--line-strong)}
+  .stat.live::before{background:var(--live)}
+  .stat.good::before{background:var(--good)}
+  .stat.warn::before{background:var(--warn)}
+  .stat.info::before{background:var(--info)}
+  .stat-label{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .stat-value{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;line-height:1;color:#fff;font-feature-settings:"tnum"}
+  .stat-value small{font-size:.85rem;color:var(--muted);font-weight:300;font-style:italic}
+  .stat-delta{font-size:.72rem;color:var(--muted-soft);font-family:'JetBrains Mono',monospace}
+  .stat-delta.up{color:var(--good)}
+  .stat-delta.down{color:var(--danger)}
+
+  /* Main grid */
+  .grid{display:grid;gap:14px;margin-bottom:14px}
+  .grid-main{grid-template-columns:1.55fr 1fr}
+  .grid-thirds{grid-template-columns:1fr 1fr 1fr}
+
+  /* Panels */
+  .panel{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:3px;overflow:hidden;display:flex;flex-direction:column}
+  .panel-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.15)}
+  .panel-head h3{font-family:'Fraunces',serif;font-size:1rem;font-weight:500;color:#fff;letter-spacing:0}
+  .panel-head .h-meta{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .panel-head .spacer{flex:1}
+  .panel-head .h-action{font-size:.7rem;color:var(--gold-soft);font-weight:600;letter-spacing:.06em;cursor:pointer}
+  .panel-head .h-action:hover{text-decoration:underline}
+  .panel-body{padding:0;flex:1}
+
+  /* Games table */
+  .game-board{display:flex;flex-direction:column}
+  .game-row{display:grid;grid-template-columns:62px 1fr 80px 1.1fr 90px 60px;gap:14px;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s;position:relative}
+  .game-row:last-child{border-bottom:none}
+  .game-row:hover{background:rgba(201,165,88,.05)}
+  .game-row.is-active{background:rgba(201,165,88,.08);border-left:2px solid var(--gold)}
+  .game-status{font-size:.62rem;letter-spacing:.14em;font-weight:700;padding:4px 7px;border-radius:2px;text-align:center;font-family:'JetBrains Mono',monospace}
+  .gs-live{background:rgba(255,79,79,.18);color:var(--danger);position:relative;padding-left:14px}
+  .gs-live::before{content:'';position:absolute;left:5px;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%;background:var(--live);animation:pulse 1.6s infinite}
+  .gs-q4{background:rgba(224,184,115,.18);color:var(--warn)}
+  .gs-half{background:rgba(111,169,230,.2);color:var(--info)}
+  .gs-pre{background:rgba(255,255,255,.06);color:var(--muted)}
+  .gs-final{background:rgba(77,201,126,.12);color:var(--good)}
+  .gs-delay{background:rgba(255,79,79,.28);color:#ffa0a0}
+  .team-block{display:flex;flex-direction:column;gap:4px;font-size:.86rem}
+  .team-row{display:flex;align-items:center;gap:9px;color:#fff;font-weight:500}
+  .team-row.win{color:var(--gold-soft)}
+  .helmet{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;color:#fff;flex-shrink:0}
+  .score{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--gold-soft);font-size:.92rem;text-align:right;font-feature-settings:"tnum"}
+  .score small{display:block;font-size:.66rem;color:var(--muted-soft);font-weight:400;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+  .crew{display:flex;flex-direction:column;gap:3px;font-size:.74rem;color:var(--muted)}
+  .crew strong{color:#fff;font-weight:500;font-size:.78rem}
+  .game-icons{display:flex;justify-content:flex-end;gap:6px}
+  .gicon{width:22px;height:22px;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted)}
+  .gicon.active{color:var(--gold-soft);border-color:rgba(201,165,88,.4);background:rgba(201,165,88,.08)}
+  .gicon.alert{color:var(--danger);border-color:rgba(255,107,107,.4);background:rgba(255,107,107,.08)}
+  .gicon.wx{color:var(--info);border-color:rgba(111,169,230,.4);background:rgba(111,169,230,.08)}
+
+  /* Game detail panel */
+  .detail-panel{display:flex;flex-direction:column}
+  .detail-hero{padding:22px;background:linear-gradient(135deg, rgba(158,27,50,.25), rgba(191,87,0,.22));border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+  .matchup{display:flex;align-items:center;justify-content:center;gap:22px}
+  .matchup .team-card{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1}
+  .matchup .helmet-lg{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.4rem;font-weight:500;color:#fff;border:2px solid rgba(255,255,255,.15)}
+  .matchup .team-name{font-family:'Fraunces',serif;font-size:1.05rem;color:#fff;font-weight:500}
+  .matchup .team-rec{font-size:.7rem;color:var(--muted-soft);letter-spacing:.1em;text-transform:uppercase}
+  .matchup .team-score{font-family:'Fraunces',serif;font-size:3rem;color:var(--gold-soft);font-weight:300;line-height:1;font-feature-settings:"tnum"}
+  .matchup-vs{font-family:'Fraunces',serif;font-style:italic;font-size:.9rem;color:var(--muted)}
+  .game-meta-row{display:flex;align-items:center;justify-content:space-between;font-size:.74rem;color:var(--muted);padding-top:10px;border-top:1px solid rgba(255,255,255,.08);letter-spacing:.06em}
+  .game-meta-row strong{color:#fff;font-weight:600}
+
+  .detail-tabs{display:flex;border-bottom:1px solid var(--line);background:rgba(0,0,0,.2)}
+  .detail-tab{flex:1;padding:11px;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;text-align:center;cursor:pointer;border-bottom:2px solid transparent;transition:.15s}
+  .detail-tab:hover{color:#fff}
+  .detail-tab.active{color:var(--gold-soft);border-bottom-color:var(--gold)}
+
+  .detail-body{padding:18px;display:flex;flex-direction:column;gap:14px}
+  .timeline-item{display:grid;grid-template-columns:48px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:.78rem;align-items:flex-start}
+  .timeline-item:last-child{border-bottom:none}
+  .timeline-time{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-size:.72rem;font-weight:600;padding-top:2px}
+  .timeline-content{color:var(--muted)}
+  .timeline-content strong{color:#fff;font-weight:500;display:block;margin-bottom:2px;font-size:.84rem}
+  .timeline-content .tag{font-size:.6rem;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:2px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-left:6px}
+  .timeline-content .tag.review{background:rgba(224,184,115,.18);color:var(--warn)}
+  .timeline-content .tag.score{background:rgba(77,201,126,.15);color:var(--good)}
+  .timeline-content .tag.incident{background:rgba(255,107,107,.18);color:var(--danger)}
+
+  /* Right column panels */
+  .right-stack{display:flex;flex-direction:column;gap:14px}
+
+  /* Replay panel */
+  .replay-item{display:grid;grid-template-columns:1fr;gap:6px;padding:12px 18px;border-bottom:1px solid var(--line)}
+  .replay-item:last-child{border-bottom:none}
+  .replay-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .replay-game{font-size:.78rem;font-weight:600;color:#fff;display:flex;align-items:center;gap:8px}
+  .replay-stage{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;padding:3px 7px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .replay-stage.reviewing{background:rgba(224,184,115,.18);color:var(--warn)}
+  .replay-stage.ruling{background:rgba(111,169,230,.18);color:var(--info)}
+  .replay-stage.final{background:rgba(77,201,126,.15);color:var(--good)}
+  .replay-meta{font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:10px}
+  .replay-meta .mono{color:var(--gold-soft)}
+  .replay-call{font-size:.76rem;color:var(--muted);font-style:italic}
+  .replay-call strong{color:#fff;font-style:normal;font-weight:500}
+
+  /* Incident panel */
+  .incident-item{display:grid;grid-template-columns:32px 1fr 60px;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);align-items:flex-start}
+  .incident-item:last-child{border-bottom:none}
+  .incident-icon{width:30px;height:30px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;flex-shrink:0}
+  .ii-wx{background:rgba(111,169,230,.18);color:var(--info);border:1px solid rgba(111,169,230,.3)}
+  .ii-med{background:rgba(255,107,107,.18);color:var(--danger);border:1px solid rgba(255,107,107,.3)}
+  .ii-sec{background:rgba(224,184,115,.18);color:var(--warn);border:1px solid rgba(224,184,115,.3)}
+  .incident-content{font-size:.78rem;color:var(--muted);line-height:1.4}
+  .incident-content strong{color:#fff;display:block;margin-bottom:3px;font-weight:500;font-size:.82rem}
+  .incident-time{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted-soft);text-align:right;font-weight:600}
+
+  /* Weather panel */
+  .weather-grid{padding:14px 18px}
+  .weather-venue{display:grid;grid-template-columns:30px 1fr auto auto;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .weather-venue:last-child{border-bottom:none}
+  .wx-icon{font-size:1rem;text-align:center}
+  .wx-venue{color:#fff;font-weight:500}
+  .wx-venue small{color:var(--muted);font-weight:400;display:block;font-size:.66rem;letter-spacing:.06em}
+  .wx-temp{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600}
+  .wx-cond{font-size:.7rem;color:var(--muted);padding:2px 7px;background:rgba(255,255,255,.04);border-radius:2px;letter-spacing:.06em}
+  .wx-cond.alert{background:rgba(255,107,107,.15);color:var(--danger);font-weight:600}
+
+  /* Broadcast panel */
+  .bcast-item{display:grid;grid-template-columns:46px 1fr auto;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);align-items:center}
+  .bcast-item:last-child{border-bottom:none}
+  .bcast-net{font-family:'Fraunces',serif;font-size:.74rem;font-weight:700;color:var(--gold-soft);padding:4px 8px;background:rgba(201,165,88,.1);border:1px solid rgba(201,165,88,.25);border-radius:2px;text-align:center;letter-spacing:.04em}
+  .bcast-game{font-size:.78rem;color:#fff;font-weight:500}
+  .bcast-game small{display:block;color:var(--muted);font-size:.7rem;margin-top:2px;font-weight:400}
+  .bcast-status{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .bcast-status.on{color:var(--live)}
+  .bcast-status.up{color:var(--gold-soft)}
+
+  /* Bottom row */
+  .bottom-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+  /* Crew on field */
+  .crew-list{padding:0}
+  .crew-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .crew-row:last-child{border-bottom:none}
+  .crew-game{color:#fff;font-weight:500}
+  .crew-game small{display:block;color:var(--muted);font-size:.7rem;margin-top:2px}
+  .crew-grade{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--good);font-weight:700}
+  .crew-grade.warn{color:var(--warn)}
+  .crew-grade small{display:block;font-size:.6rem;color:var(--muted-soft);letter-spacing:.12em;text-align:right;margin-top:2px;font-weight:400}
+
+  /* Notification feed */
+  .feed{padding:0;max-height:340px;overflow-y:auto}
+  .feed::-webkit-scrollbar{width:4px}
+  .feed::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .feed-item{padding:11px 18px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:48px 1fr;gap:10px;font-size:.76rem;color:var(--muted)}
+  .feed-item:last-child{border-bottom:none}
+  .feed-time{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted-soft);font-weight:600;padding-top:2px}
+  .feed-content strong{color:#fff;font-weight:500;display:block;margin-bottom:2px;font-size:.8rem}
+  .feed-content .src{font-size:.62rem;color:var(--gold-soft);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-top:4px;display:block}
+
+  /* Responsive */
+  @media (max-width: 1280px){
+    .grid-main{grid-template-columns:1fr}
+    .stat-row{grid-template-columns:repeat(3,1fr)}
+    .bottom-grid{grid-template-columns:1fr}
+  }
+  @media (max-width: 880px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:relative;height:auto;display:none}
+    .stat-row{grid-template-columns:repeat(2,1fr)}
+    .game-row{grid-template-columns:48px 1fr 70px;gap:10px}
+    .game-row .crew, .game-row .game-icons{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SEC OS<em>Operating System</em></div>
+    </a>
+
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html" class="active"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="#"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="#"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="#"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="#"><span class="ic">⚠</span>Incidents</a></li>
+      </ul>
+    </div>
+
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="#"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="#"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="#"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">GS</div>
+        <div>
+          <div class="user-name">G. Sankey</div>
+          <div class="user-role">Commissioner</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Operations · <strong>Live Game Ops Center</strong></div>
+      <div class="clock-block">
+        <span class="clock-label">CT</span>
+        <span class="clock-time" id="clock">3:48:22 PM</span>
+      </div>
+      <div class="live-indicator"><span class="live-dot"></span>Live Saturday</div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">Wall Mode</button>
+        <button class="btn">Export Brief</button>
+        <button class="btn btn-gold">Open Incident Desk</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Saturday <em>conference overview.</em></h1>
+          <div class="sub">7 games · 5 venues · 12 broadcast teams · 14 crews on the field</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">All Sports</button>
+          <button class="pill">Football</button>
+          <button class="pill">Basketball</button>
+          <button class="pill">Baseball</button>
+          <button class="pill">Other</button>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat live">
+          <span class="stat-label">Games Live</span>
+          <span class="stat-value">2 <small>of 7</small></span>
+          <span class="stat-delta up">3 finished · 2 upcoming</span>
+        </div>
+        <div class="stat warn">
+          <span class="stat-label">Replays in Review</span>
+          <span class="stat-value">3</span>
+          <span class="stat-delta">avg ruling time 87s</span>
+        </div>
+        <div class="stat info">
+          <span class="stat-label">Weather Holds</span>
+          <span class="stat-value">1</span>
+          <span class="stat-delta">UK @ TENN · lightning</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Incidents Open</span>
+          <span class="stat-value">2</span>
+          <span class="stat-delta">1 medical · 1 security</span>
+        </div>
+        <div class="stat good">
+          <span class="stat-label">Crews On Schedule</span>
+          <span class="stat-value">14 <small>/ 14</small></span>
+          <span class="stat-delta up">0 travel issues</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Total Attendance</span>
+          <span class="stat-value">543K</span>
+          <span class="stat-delta up">+4.2% vs LY</span>
+        </div>
+      </div>
+
+      <div class="grid grid-main">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Game Board</h3>
+            <span class="h-meta">7 games · live status</span>
+            <div class="spacer"></div>
+            <span class="h-action">Wall view →</span>
+          </div>
+          <div class="panel-body game-board">
+
+            <div class="game-row is-active" onclick="setActive(this)">
+              <span class="game-status gs-live">LIVE</span>
+              <div class="team-block">
+                <span class="team-row"><span class="helmet" style="background:#9e1b32;">A</span>Alabama <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">9-1</small></span>
+                <span class="team-row win"><span class="helmet" style="background:#bf5700;">AU</span>Auburn <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">7-3</small></span>
+              </div>
+              <div class="score">17<br><span style="color:var(--gold-soft);">24</span><small>Q3 4:12</small></div>
+              <div class="crew">
+                <strong>Crew Henderson</strong>
+                <span>Jordan-Hare · 87,451</span>
+              </div>
+              <div class="game-icons">
+                <span class="gicon active" title="Replay active">⏵</span>
+                <span class="gicon" title="Weather clear">☀</span>
+                <span class="gicon" title="No incidents">✓</span>
+              </div>
+              <div></div>
+            </div>
+
+            <div class="game-row" onclick="setActive(this)">
+              <span class="game-status gs-q4">Q4</span>
+              <div class="team-block">
+                <span class="team-row"><span class="helmet" style="background:#fa4616;">F</span>Florida <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">6-4</small></span>
+                <span class="team-row win"><span class="helmet" style="background:#ba0c2f;">UGA</span>Georgia <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">10-0</small></span>
+              </div>
+              <div class="score">24<br><span style="color:var(--gold-soft);">28</span><small>Q4 2:34</small></div>
+              <div class="crew">
+                <strong>Crew Walker</strong>
+                <span>Sanford Stadium · 92,746</span>
+              </div>
+              <div class="game-icons">
+                <span class="gicon active" title="Replay reviewing">⏵</span>
+                <span class="gicon" title="Weather clear">☀</span>
+                <span class="gicon" title="No incidents">✓</span>
+              </div>
+              <div></div>
+            </div>
+
+            <div class="game-row" onclick="setActive(this)">
+              <span class="game-status gs-half">HALF</span>
+              <div class="team-block">
+                <span class="team-row"><span class="helmet" style="background:#500000;">A&amp;M</span>Texas A&amp;M <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">5-5</small></span>
+                <span class="team-row"><span class="helmet" style="background:#461d7c;">LSU</span>LSU <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">8-2</small></span>
+              </div>
+              <div class="score">14<br>14<small>HALF</small></div>
+              <div class="crew">
+                <strong>Crew Reyes</strong>
+                <span>Tiger Stadium · 102,321</span>
+              </div>
+              <div class="game-icons">
+                <span class="gicon" title="Replay idle">⏵</span>
+                <span class="gicon" title="Weather clear">☀</span>
+                <span class="gicon alert" title="1 medical">⚕</span>
+              </div>
+              <div></div>
+            </div>
+
+            <div class="game-row" onclick="setActive(this)">
+              <span class="game-status gs-delay">WX</span>
+              <div class="team-block">
+                <span class="team-row"><span class="helmet" style="background:#0033a0;">UK</span>Kentucky <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">7-3</small></span>
+                <span class="team-row"><span class="helmet" style="background:#ff8200;">TN</span>Tennessee <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">9-1</small></span>
+              </div>
+              <div class="score">—<br>—<small>WX HOLD</small></div>
+              <div class="crew">
+                <strong>Crew Patel</strong>
+                <span>Neyland · 101,915 · DLY 38m</span>
+              </div>
+              <div class="game-icons">
+                <span class="gicon" title="Replay idle">⏵</span>
+                <span class="gicon wx" title="Lightning">⚡</span>
+                <span class="gicon alert" title="Active delay">⚠</span>
+              </div>
+              <div></div>
+            </div>
+
+            <div class="game-row" onclick="setActive(this)">
+              <span class="game-status gs-pre">PRE</span>
+              <div class="team-block">
+                <span class="team-row"><span class="helmet" style="background:#9d2235;">ARK</span>Arkansas <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">6-4</small></span>
+                <span class="team-row"><span class="helmet" style="background:#14213d;">OM</span>Ole Miss <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">8-2</small></span>
+              </div>
+              <div class="score">—<br>—<small>KO 6:30</small></div>
+              <div class="crew">
+                <strong>Crew Drummond</strong>
+                <span>Vaught-Hemingway · 64,038</span>
+              </div>
+              <div class="game-icons">
+                <span class="gicon" title="Crew arrived">✓</span>
+                <span class="gicon" title="Weather clear">☀</span>
+                <span class="gicon" title="No incidents">✓</span>
+              </div>
+              <div></div>
+            </div>
+
+            <div class="game-row" onclick="setActive(this)">
+              <span class="game-status gs-pre">PRE</span>
+              <div class="team-block">
+                <span class="team-row"><span class="helmet" style="background:#231f20;">VU</span>Vanderbilt <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">4-6</small></span>
+                <span class="team-row"><span class="helmet" style="background:#73000a;">SC</span>South Carolina <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">7-3</small></span>
+              </div>
+              <div class="score">—<br>—<small>KO 7:00</small></div>
+              <div class="crew">
+                <strong>Crew Mitchell</strong>
+                <span>Williams-Brice · 78,432</span>
+              </div>
+              <div class="game-icons">
+                <span class="gicon" title="Crew arrived">✓</span>
+                <span class="gicon wx" title="Light rain">☂</span>
+                <span class="gicon" title="No incidents">✓</span>
+              </div>
+              <div></div>
+            </div>
+
+            <div class="game-row" onclick="setActive(this)">
+              <span class="game-status gs-final">FNL</span>
+              <div class="team-block">
+                <span class="team-row win"><span class="helmet" style="background:#002868;">MIZ</span>Missouri <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">9-1</small></span>
+                <span class="team-row"><span class="helmet" style="background:#13294b;">MSU</span>Miss. State <small style="margin-left:auto;color:var(--muted-soft);font-weight:400;">5-5</small></span>
+              </div>
+              <div class="score" style="color:var(--gold-soft);">31<br><span style="color:var(--muted);">17</span><small>FINAL</small></div>
+              <div class="crew">
+                <strong>Crew Okafor</strong>
+                <span>Faurot · 61,872 · A+ grade</span>
+              </div>
+              <div class="game-icons">
+                <span class="gicon" title="Reviews complete">✓</span>
+                <span class="gicon" title="Weather clear">☀</span>
+                <span class="gicon" title="No incidents">✓</span>
+              </div>
+              <div></div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="right-stack">
+
+          <div class="panel detail-panel">
+            <div class="panel-head">
+              <h3>Game Detail</h3>
+              <span class="h-meta">ALA @ AUB · Q3</span>
+              <div class="spacer"></div>
+              <span class="h-action">Full view →</span>
+            </div>
+            <div class="detail-hero">
+              <div class="matchup">
+                <div class="team-card">
+                  <div class="helmet-lg" style="background:#9e1b32;">A</div>
+                  <div class="team-name">Alabama</div>
+                  <div class="team-rec">9-1 · #5 AP</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:20px;">
+                  <div class="team-score">17</div>
+                  <div class="matchup-vs">at</div>
+                  <div class="team-score" style="color:var(--gold);">24</div>
+                </div>
+                <div class="team-card">
+                  <div class="helmet-lg" style="background:#bf5700;">AU</div>
+                  <div class="team-name">Auburn</div>
+                  <div class="team-rec">7-3 · #16</div>
+                </div>
+              </div>
+              <div class="game-meta-row">
+                <span><strong>Q3 4:12</strong> · Jordan-Hare Stadium</span>
+                <span>Crew <strong>Henderson</strong> · Replay <strong>Birmingham</strong></span>
+              </div>
+            </div>
+
+            <div class="detail-tabs">
+              <div class="detail-tab active">Timeline</div>
+              <div class="detail-tab">Officials</div>
+              <div class="detail-tab">Replays</div>
+              <div class="detail-tab">Notes</div>
+            </div>
+
+            <div class="detail-body">
+              <div class="timeline-item">
+                <span class="timeline-time">3:46</span>
+                <div class="timeline-content">
+                  <strong>Targeting review — confirmed</strong>
+                  Replay official J. Carmichael upheld targeting on #22 AUB. 18s communication, ruling logged.
+                  <span class="tag review">REPLAY</span>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-time">3:41</span>
+                <div class="timeline-content">
+                  <strong>AUB rushing TD · #4 — 8 yd run</strong>
+                  Lead goes from 7 to 14, kick good.
+                  <span class="tag score">SCORE</span>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-time">3:34</span>
+                <div class="timeline-content">
+                  <strong>Spotters cleared section 38 medical</strong>
+                  Fan in section 38, row 22 transported by AUB EMS. No game stoppage.
+                  <span class="tag incident">INCIDENT</span>
+                </div>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-time">3:22</span>
+                <div class="timeline-content">
+                  <strong>Holding declined — AUB drive continues</strong>
+                  Crew Henderson conferenced 22s, returned to play. School notified post-play.
+                </div>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-time">3:12</span>
+                <div class="timeline-content">
+                  <strong>Halftime ops handoff complete</strong>
+                  Production, security, and medical handed off Q3 staffing. All stations confirmed.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Replay Activity</h3>
+              <span class="h-meta">3 in review</span>
+              <div class="spacer"></div>
+              <span class="h-action">Replay center →</span>
+            </div>
+            <div class="panel-body">
+              <div class="replay-item">
+                <div class="replay-head">
+                  <div class="replay-game"><span class="helmet" style="background:#fa4616;">F</span>FLA @ UGA</div>
+                  <span class="replay-stage reviewing">REVIEWING</span>
+                </div>
+                <div class="replay-call"><strong>Catch / no catch</strong> — TD pass to #11 UGA, sideline at endzone</div>
+                <div class="replay-meta"><span class="mono">⏱ 00:42</span><span>Replay: Atlanta · Carmichael</span></div>
+              </div>
+              <div class="replay-item">
+                <div class="replay-head">
+                  <div class="replay-game"><span class="helmet" style="background:#9e1b32;">A</span>ALA @ AUB</div>
+                  <span class="replay-stage ruling">RULING</span>
+                </div>
+                <div class="replay-call"><strong>Spot of the ball</strong> — 3rd-and-2 conversion, AUB drive</div>
+                <div class="replay-meta"><span class="mono">⏱ 01:18</span><span>Replay: Birmingham · Park</span></div>
+              </div>
+              <div class="replay-item">
+                <div class="replay-head">
+                  <div class="replay-game"><span class="helmet" style="background:#500000;">A&amp;M</span>A&amp;M @ LSU</div>
+                  <span class="replay-stage final">RULING POSTED</span>
+                </div>
+                <div class="replay-call"><strong>Targeting Q2 11:08</strong> — overturned. Replay note attached for crew review.</div>
+                <div class="replay-meta"><span class="mono">⏱ 02:04</span><span>Replay: Birmingham · Vega</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="grid grid-thirds">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Weather Radar</h3>
+            <span class="h-meta">5 venues</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full map →</span>
+          </div>
+          <div class="weather-grid">
+            <div class="weather-venue">
+              <span class="wx-icon">⚡</span>
+              <span class="wx-venue">Neyland Stadium <small>UK @ TENN · Knoxville</small></span>
+              <span class="wx-temp">62°</span>
+              <span class="wx-cond alert">Lightning</span>
+            </div>
+            <div class="weather-venue">
+              <span class="wx-icon">☂</span>
+              <span class="wx-venue">Williams-Brice <small>VU @ SC · Columbia</small></span>
+              <span class="wx-temp">68°</span>
+              <span class="wx-cond">Rain</span>
+            </div>
+            <div class="weather-venue">
+              <span class="wx-icon">☁</span>
+              <span class="wx-venue">Sanford Stadium <small>FLA @ UGA · Athens</small></span>
+              <span class="wx-temp">71°</span>
+              <span class="wx-cond">Cloudy</span>
+            </div>
+            <div class="weather-venue">
+              <span class="wx-icon">☀</span>
+              <span class="wx-venue">Jordan-Hare <small>ALA @ AUB · Auburn</small></span>
+              <span class="wx-temp">74°</span>
+              <span class="wx-cond">Clear</span>
+            </div>
+            <div class="weather-venue">
+              <span class="wx-icon">☀</span>
+              <span class="wx-venue">Tiger Stadium <small>A&amp;M @ LSU · Baton Rouge</small></span>
+              <span class="wx-temp">77°</span>
+              <span class="wx-cond">Clear</span>
+            </div>
+            <div class="weather-venue">
+              <span class="wx-icon">☀</span>
+              <span class="wx-venue">Vaught-Hemingway <small>ARK @ OLE · Oxford</small></span>
+              <span class="wx-temp">72°</span>
+              <span class="wx-cond">Clear</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Active Incidents</h3>
+            <span class="h-meta">2 open · 1 monitor</span>
+            <div class="spacer"></div>
+            <span class="h-action">Incident desk →</span>
+          </div>
+          <div class="panel-body">
+            <div class="incident-item">
+              <div class="incident-icon ii-wx">⚡</div>
+              <div class="incident-content">
+                <strong>Lightning hold — Neyland Stadium</strong>
+                30-min weather hold initiated 3:10 PM. Field cleared, players in tunnels. Next assessment 3:50.
+              </div>
+              <div class="incident-time">38m</div>
+            </div>
+            <div class="incident-item">
+              <div class="incident-icon ii-med">⚕</div>
+              <div class="incident-content">
+                <strong>Section 38 medical — Jordan-Hare</strong>
+                Fan transported by AUB EMS, stable. No game stoppage required. AD office notified.
+              </div>
+              <div class="incident-time">14m</div>
+            </div>
+            <div class="incident-item">
+              <div class="incident-icon ii-sec">!</div>
+              <div class="incident-content">
+                <strong>Tunnel access dispute — Tiger Stadium</strong>
+                Visiting media credential conflict resolved by event ops. Logged for credential review.
+              </div>
+              <div class="incident-time">6m</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Broadcast Status</h3>
+            <span class="h-meta">12 windows</span>
+            <div class="spacer"></div>
+            <span class="h-action">Media hub →</span>
+          </div>
+          <div class="panel-body">
+            <div class="bcast-item">
+              <span class="bcast-net">CBS</span>
+              <div class="bcast-game">Alabama @ Auburn<small>Iron Bowl · 3:30 CT window</small></div>
+              <span class="bcast-status on">● ON</span>
+            </div>
+            <div class="bcast-item">
+              <span class="bcast-net">ABC</span>
+              <div class="bcast-game">Florida @ Georgia<small>Cocktail Party · 3:30 CT</small></div>
+              <span class="bcast-status on">● ON</span>
+            </div>
+            <div class="bcast-item">
+              <span class="bcast-net">SECN</span>
+              <div class="bcast-game">A&amp;M @ LSU<small>Halftime · returning 4:08 CT</small></div>
+              <span class="bcast-status up">● HALF</span>
+            </div>
+            <div class="bcast-item">
+              <span class="bcast-net">ESPN</span>
+              <div class="bcast-game">Arkansas @ Ole Miss<small>Up next · 6:30 CT</small></div>
+              <span class="bcast-status up">UP NEXT</span>
+            </div>
+            <div class="bcast-item">
+              <span class="bcast-net">SECN+</span>
+              <div class="bcast-game">Vandy @ South Carolina<small>Streaming · 7:00 CT</small></div>
+              <span class="bcast-status up">7:00</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bottom-grid">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Crew Grades (live)</h3>
+            <span class="h-meta">Today's running grade</span>
+            <div class="spacer"></div>
+            <span class="h-action">Grading AI →</span>
+          </div>
+          <div class="panel-body crew-list">
+            <div class="crew-row">
+              <div class="crew-game">Crew Okafor <small>MIZ @ MSU · final</small></div>
+              <div class="crew-grade">96<small>AI grade</small></div>
+            </div>
+            <div class="crew-row">
+              <div class="crew-game">Crew Henderson <small>ALA @ AUB · Q3</small></div>
+              <div class="crew-grade">94<small>AI grade</small></div>
+            </div>
+            <div class="crew-row">
+              <div class="crew-game">Crew Walker <small>FLA @ UGA · Q4</small></div>
+              <div class="crew-grade warn">88<small>AI grade</small></div>
+            </div>
+            <div class="crew-row">
+              <div class="crew-game">Crew Reyes <small>A&amp;M @ LSU · half</small></div>
+              <div class="crew-grade">93<small>AI grade</small></div>
+            </div>
+            <div class="crew-row">
+              <div class="crew-game">Crew Patel <small>UK @ TENN · hold</small></div>
+              <div class="crew-grade">—<small>pre-restart</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Field Communications</h3>
+            <span class="h-meta">Crew + replay channel</span>
+            <div class="spacer"></div>
+            <span class="h-action">Open channel →</span>
+          </div>
+          <div class="panel-body feed">
+            <div class="feed-item">
+              <span class="feed-time">3:48</span>
+              <div class="feed-content"><strong>"Confirming spot — back to play."</strong>Crew Henderson · ALA @ AUB<span class="src">CREW CHANNEL · ALA-AUB</span></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-time">3:46</span>
+              <div class="feed-content"><strong>"Targeting confirmed. Player disqualified, half assessed."</strong>Replay Birmingham → Field<span class="src">REPLAY → CREW</span></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-time">3:42</span>
+              <div class="feed-content"><strong>"Need ruling on catch — toe in?"</strong>Walker → Atlanta replay<span class="src">FLA-UGA REPLAY</span></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-time">3:38</span>
+              <div class="feed-content"><strong>"Hold extended 30 min, next check 4:08."</strong>Patel → Operations<span class="src">UK-TENN WX HOLD</span></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-time">3:34</span>
+              <div class="feed-content"><strong>"Medical clear, returning to standby."</strong>AUB EMS · Section 38<span class="src">JORDAN-HARE MED</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>SEC Office Feed</h3>
+            <span class="h-meta">All channels</span>
+            <div class="spacer"></div>
+            <span class="h-action">All notifications →</span>
+          </div>
+          <div class="panel-body feed">
+            <div class="feed-item">
+              <span class="feed-time">3:47</span>
+              <div class="feed-content"><strong>UGA AD office requests interpretation memo on catch/no-catch when posted.</strong><span class="src">SCHOOL · UGA</span></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-time">3:45</span>
+              <div class="feed-content"><strong>ESPN PR requests sideline access at Vaught-Hemingway for 6:00 CT pregame.</strong><span class="src">MEDIA · ESPN</span></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-time">3:41</span>
+              <div class="feed-content"><strong>Crew Henderson grading note auto-attached: spot accuracy +2 vs season avg.</strong><span class="src">GRADING AI</span></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-time">3:38</span>
+              <div class="feed-content"><strong>Knoxville EMS standby confirmed for restart of UK @ TENN.</strong><span class="src">INCIDENT DESK</span></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-time">3:30</span>
+              <div class="feed-content"><strong>Mississippi State AD acknowledged final ops report — closing MIZ @ MSU.</strong><span class="src">SCHOOL · MSU</span></div>
+            </div>
+            <div class="feed-item">
+              <span class="feed-time">3:24</span>
+              <div class="feed-content"><strong>Championship Ops: SEC FB Championship venue walkthrough confirmed 11/26.</strong><span class="src">CHAMPIONSHIPS</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // Live clock
+  function tick(){
+    const d = new Date();
+    let h = d.getHours();
+    const m = String(d.getMinutes()).padStart(2,'0');
+    const s = String(d.getSeconds()).padStart(2,'0');
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if(h === 0) h = 12;
+    const el = document.getElementById('clock');
+    if(el) el.textContent = `${h}:${m}:${s} ${ap}`;
+  }
+  tick(); setInterval(tick, 1000);
+
+  // Active game row
+  function setActive(row){
+    document.querySelectorAll('.game-row.is-active').forEach(r => r.classList.remove('is-active'));
+    row.classList.add('is-active');
+  }
+</script>
+
+</body>
+</html>
