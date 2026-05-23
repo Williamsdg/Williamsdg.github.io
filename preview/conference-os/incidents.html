@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%23070d1e%22 stroke=%22%23c9a558%22 stroke-width=%221.5%22/><text x=%2216%22 y=%2222%22 font-family=%22serif%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23c9a558%22>S</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Incidents — SAC Operating System</title>
+<meta name="description" content="Incident and crisis management — weather, security, medical, escalation chains, and real-time conference-wide alerts." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  .inc-card{display:grid;grid-template-columns:42px 1fr auto;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line);align-items:flex-start;cursor:pointer;transition:.15s}
+  .inc-card:last-child{border-bottom:none}
+  .inc-card:hover{background:rgba(201,165,88,.05)}
+  .inc-card.is-active{background:rgba(201,165,88,.08);border-left:3px solid var(--gold)}
+  .inc-icon{width:36px;height:36px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;flex-shrink:0}
+  .ii-wx{background:rgba(111,169,230,.18);color:var(--info);border:1px solid rgba(111,169,230,.3)}
+  .ii-med{background:rgba(255,107,107,.18);color:var(--danger);border:1px solid rgba(255,107,107,.3)}
+  .ii-sec{background:rgba(224,184,115,.18);color:var(--warn);border:1px solid rgba(224,184,115,.3)}
+  .ii-tech{background:rgba(77,201,126,.15);color:var(--good);border:1px solid rgba(77,201,126,.3)}
+  .ii-pr{background:rgba(201,165,88,.15);color:var(--gold-soft);border:1px solid rgba(201,165,88,.3)}
+  .inc-body{font-size:.78rem;color:var(--muted);line-height:1.5}
+  .inc-body strong{color:#fff;font-weight:500;display:block;font-size:.86rem;margin-bottom:3px}
+  .inc-body .loc{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600;margin-top:5px;display:block}
+  .inc-stat{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+  .inc-sev{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .sev-1{background:rgba(255,107,107,.22);color:#ff8a8a}
+  .sev-2{background:rgba(224,184,115,.22);color:var(--warn)}
+  .sev-3{background:rgba(111,169,230,.18);color:var(--info)}
+  .sev-info{background:rgba(255,255,255,.06);color:var(--muted)}
+  .inc-time{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted-soft);font-weight:600}
+
+  .chain{padding:18px;display:flex;flex-direction:column;gap:8px;position:relative}
+  .chain-step{display:grid;grid-template-columns:28px 1fr auto;gap:12px;padding:10px 0;font-size:.78rem;align-items:center;position:relative}
+  .chain-dot{width:14px;height:14px;border-radius:50%;background:var(--gold);position:relative;z-index:2;justify-self:center;margin-top:3px}
+  .chain-dot.done{background:var(--good)}
+  .chain-dot.active{background:var(--gold);box-shadow:0 0 0 4px rgba(201,165,88,.2);animation:badgePulse 1.6s infinite}
+  .chain-dot.pending{background:var(--muted-soft)}
+  .chain-line{position:absolute;left:24px;top:0;bottom:0;width:2px;background:rgba(255,255,255,.08);z-index:1}
+  .chain-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .chain-info small{color:var(--muted);font-size:.7rem}
+  .chain-time{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--gold-soft);font-weight:600}
+
+  .map-wrap{position:relative;aspect-ratio:16/9;background:linear-gradient(135deg, #0f1a36, #0a1228);border-bottom:1px solid var(--line);overflow:hidden}
+  .map-grid{position:absolute;inset:0;background:repeating-linear-gradient(0deg, transparent 0, transparent 39px, rgba(255,255,255,.04) 39px, rgba(255,255,255,.04) 40px),repeating-linear-gradient(90deg, transparent 0, transparent 39px, rgba(255,255,255,.04) 39px, rgba(255,255,255,.04) 40px)}
+  .map-label{position:absolute;font-family:'Fraunces',serif;font-style:italic;color:rgba(201,165,88,.3);font-size:.78rem;letter-spacing:.1em}
+  .pin{position:absolute;width:18px;height:18px;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%);cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .pin::after{content:'';position:absolute;inset:-6px;border-radius:50%;animation:pulseRing 2s infinite}
+  @keyframes pulseRing{0%,100%{opacity:.7;transform:scale(.9)}50%{opacity:.2;transform:scale(1.4)}}
+  .pin.wx{background:var(--info);border-color:#a8cff0}
+  .pin.wx::after{border:2px solid var(--info)}
+  .pin.med{background:var(--danger);border-color:#ffa0a0}
+  .pin.med::after{border:2px solid var(--danger)}
+  .pin.sec{background:var(--warn);border-color:#e8caa0}
+  .pin.sec::after{border:2px solid var(--warn)}
+  .pin.green{background:var(--good);border-color:#a0e8c0}
+  .pin.green::after{display:none}
+  .pin-tip{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;font-size:.66rem;padding:4px 8px;border-radius:2px;white-space:nowrap;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;pointer-events:none;border:1px solid var(--line-strong)}
+
+  .ic-meta-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .ic-meta-cell strong{display:block;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-bottom:5px}
+  .ic-meta-cell span{font-size:.82rem;color:#fff;font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SAC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html" class="active"><span class="ic">⚠</span>Incidents<span class="badge live">3</span></a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">JA</div>
+        <div>
+          <div class="user-name">R. Castillo</div>
+          <div class="user-role">Head, Security &amp; Incidents</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Operations Suite · <strong>Incident Command</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">+ Log Incident</button>
+        <button class="btn">Escalation Chains</button>
+        <button class="btn btn-danger">Declare Major Incident</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Incident <em>command desk.</em></h1>
+          <div class="sub">3 open · 1 monitoring · joint command with school + local agencies</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">Active</button>
+          <button class="pill">Last 24h</button>
+          <button class="pill">Season</button>
+          <button class="pill">Major Only</button>
+        </div>
+      </div>
+
+      <div class="stat-row five">
+        <div class="stat danger"><span class="stat-label">Active Incidents</span><span class="stat-value">3</span><span class="stat-delta">1 wx · 1 med · 1 sec</span></div>
+        <div class="stat warn"><span class="stat-label">Monitoring</span><span class="stat-value">1</span><span class="stat-delta">PR · social mention spike</span></div>
+        <div class="stat good"><span class="stat-label">Closed Today</span><span class="stat-value">6</span><span class="stat-delta up">avg time-to-close 28m</span></div>
+        <div class="stat info"><span class="stat-label">Avg Response</span><span class="stat-value">3.1 <small>min</small></span><span class="stat-delta up">target ≤ 5 min</span></div>
+        <div class="stat"><span class="stat-label">Season · Incidents Logged</span><span class="stat-value">412</span><span class="stat-delta">94% closed in SLA</span></div>
+      </div>
+
+      <div class="tabs-host">
+      <div class="tabs">
+        <div class="tab active" data-tab="overview">Active Board</div>
+        <div class="tab" data-tab="map">Conference Map</div>
+        <div class="tab" data-tab="chains">Escalation Chains</div>
+        <div class="tab" data-tab="playbooks">Playbooks</div>
+        <div class="tab" data-tab="aar">After-Action Reports</div>
+      </div>
+
+      <div class="sport-bar">
+        <span class="sport-bar-label">Sport</span>
+        <span class="sport-pill active" data-sport="all"><span class="sp-ic">◎</span>All Sports</span>
+        <span class="sport-pill" data-sport="fb"><span class="sp-ic">●</span>Football</span>
+        <span class="sport-pill" data-sport="mbb"><span class="sp-ic">●</span>Men&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="wbb"><span class="sp-ic">●</span>Women&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="bsb"><span class="sp-ic">●</span>Baseball</span>
+        <span class="sport-pill" data-sport="sb"><span class="sp-ic">●</span>Softball</span>
+        <span class="sport-pill" data-sport="vb"><span class="sp-ic">●</span>Volleyball</span>
+        <span class="sport-pill" data-sport="other"><span class="sp-ic">○</span>Other Sports</span>
+      </div>
+
+      <div data-tab-panel="overview">
+
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>Active Incidents · by Sport</h3><span class="h-meta">filter via Sport bar above</span><div class="spacer"></div><span class="h-action">Full list →</span></div>
+        <div data-sport-scope>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · Lightning hold — Falcon Hill (HC @ MV)</strong><small>SEV-2 · 38 min · joint command active</small></div><div class="ri-stat warn">OPEN<small>WX</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · Section 38 medical — Mariner Stadium</strong><small>SEV-3 · fan stable · no game stoppage</small></div><div class="ri-stat warn">OPEN<small>MED</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · Tunnel access dispute — Wolfgate Stadium</strong><small>SEV-3 · 2 photogs removed · credentials flagged</small></div><div class="ri-stat warn">OPEN<small>SAC</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · Social mention spike — Crew Whitaker</strong><small>SEV-MON · routed from Social Listening</small></div><div class="ri-stat info">MONITOR<small>PR</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · Section dispute at HC vs TC (Rupp)</strong><small>SEV-4 · resolved by event ops · no escalation</small></div><div class="ri-stat good">CLOSED<small>30 MIN</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · Travel delay (Glenn Park → NT)</strong><small>SEV-3 · weather delay 90 min · contingency activated</small></div><div class="ri-stat warn">MONITOR<small>TRAVEL</small></div></div>
+          <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB · Player medical (TC vs KE)</strong><small>SEV-3 · ankle injury · ambulance not required</small></div><div class="ri-stat good">CLOSED<small>NORMAL</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>VB · Crowd noise complaint (Reed Arena)</strong><small>SEV-4 · standard · no game impact</small></div><div class="ri-stat good">CLOSED<small>VENUE</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>VB · Replay system brief outage (Reed)</strong><small>SEV-3 · 4 min · backup activated cleanly</small></div><div class="ri-stat good">CLOSED<small>TECH</small></div></div>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>Baseball · No active incidents</strong><small>Off-season standby · last incident 6/24/'25</small></div><div class="ri-stat good">STANDBY<small>OFFSEASON</small></div></div>
+          <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>Softball · No active incidents</strong><small>Off-season standby · last incident 5/18/'25</small></div><div class="ri-stat good">STANDBY<small>OFFSEASON</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Cross Country · NCAA hosting (Atlantic City)</strong><small>SAC presence onsite · no incidents reported</small></div><div class="ri-stat good">NORMAL<small>NCAA</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Soccer · TC post-match crowd surge</strong><small>SEV-4 · controlled by venue · no injuries</small></div><div class="ri-stat good">CLOSED<small>NORMAL</small></div></div>
+          <div data-sport-empty hidden class="sport-empty"><strong>No incidents for this sport today</strong>Try selecting another sport — or All Sports to see all incident activity.</div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Active Incident Board</h3>
+            <span class="h-meta">3 open · 1 monitor · auto-refresh 10s</span>
+            <div class="spacer"></div>
+            <span class="h-action">All incidents →</span>
+          </div>
+          <div>
+            <div class="inc-card is-active">
+              <div class="inc-icon ii-wx">⚡</div>
+              <div class="inc-body">
+                <strong>Lightning hold — Falcon Hill Stadium</strong>
+                30-min lightning hold initiated 3:10 PM CT. Field cleared, players in tunnels. Next assessment 3:50 PM. Monteverde City EMS &amp; UTPD staged. Patel crew briefed on restart protocol.
+                <span class="loc">HC @ MV · KNOXVILLE · INC-26-0418</span>
+              </div>
+              <div class="inc-stat">
+                <span class="inc-sev sev-2">SEV-2</span>
+                <span class="inc-time">38m</span>
+              </div>
+            </div>
+            <div class="inc-card">
+              <div class="inc-icon ii-med">⚕</div>
+              <div class="inc-body">
+                <strong>Section 38 medical — Mariner Stadium</strong>
+                Fan in section 38, row 22 transported by WB EMS at 3:34 PM. Patient stable, conscious. No game stoppage required. AD office notified, family notification routed.
+                <span class="loc">LIB @ WB · AUBURN · INC-26-0419</span>
+              </div>
+              <div class="inc-stat">
+                <span class="inc-sev sev-3">SEV-3</span>
+                <span class="inc-time">14m</span>
+              </div>
+            </div>
+            <div class="inc-card">
+              <div class="inc-icon ii-sec">!</div>
+              <div class="inc-body">
+                <strong>Tunnel access dispute — Wolfgate Stadium</strong>
+                Visiting media credential conflict at west tunnel resolved by event ops. Two non-credentialed photographers removed, credentials flagged for review. No injuries, no game impact.
+                <span class="loc">KE @ FV · BATON ROUGE · INC-26-0420</span>
+              </div>
+              <div class="inc-stat">
+                <span class="inc-sev sev-3">SEV-3</span>
+                <span class="inc-time">6m</span>
+              </div>
+            </div>
+            <div class="inc-card">
+              <div class="inc-icon ii-pr">●</div>
+              <div class="inc-body">
+                <strong>Social mention spike — Crew Whitaker</strong>
+                Mention volume 18× baseline following targeting overturn ruling. Sentiment 64% negative. Comms reviewing for proactive memo. Routed to <a href="social.html" style="color:var(--gold-soft);text-decoration:underline;">Social Listening</a>.
+                <span class="loc">TC @ HC · ATHENS · INC-26-0421</span>
+              </div>
+              <div class="inc-stat">
+                <span class="inc-sev sev-info">MON</span>
+                <span class="inc-time">9m</span>
+              </div>
+            </div>
+            <div class="inc-card">
+              <div class="inc-icon ii-tech">⚙</div>
+              <div class="inc-body">
+                <strong>Replay center comms — Capital City · CLOSED</strong>
+                Brief audio dropout between Capital City replay &amp; on-field crew Whitaker at 2:48 PM. Switched to backup feed within 24s. Coastline Wireless circuit logged for follow-up.
+                <span class="loc">REPLAY-CAP · INC-26-0417</span>
+              </div>
+              <div class="inc-stat">
+                <span class="inc-sev sev-info">CLOSED</span>
+                <span class="inc-time">1h</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>INC-26-0418 · Lightning Hold</h3>
+            <span class="h-meta">SEV-2 · Joint UTPD / SACP / EMS</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full incident →</span>
+          </div>
+          <div class="ic-meta-row">
+            <div class="ic-meta-cell"><strong>Initiated</strong><span>3:10 PM CT</span></div>
+            <div class="ic-meta-cell"><strong>Owner</strong><span>A. Petrov (R)</span></div>
+            <div class="ic-meta-cell"><strong>Escalated to</strong><span>R. Castillo</span></div>
+            <div class="ic-meta-cell"><strong>Next assess</strong><span>3:50 PM CT</span></div>
+          </div>
+          <div class="chain" style="position:relative;">
+            <div class="chain-line"></div>
+            <div class="chain-step">
+              <div class="chain-dot done"></div>
+              <div class="chain-info"><strong>NWS lightning advisory triggered</strong><small>Automated alert from venue weather feed (Monteverde VWX)</small></div>
+              <span class="chain-time">3:08 PM</span>
+            </div>
+            <div class="chain-step">
+              <div class="chain-dot done"></div>
+              <div class="chain-info"><strong>Field cleared · players to tunnels</strong><small>Crew Petrov + venue ops · 90-second protocol executed</small></div>
+              <span class="chain-time">3:10 PM</span>
+            </div>
+            <div class="chain-step">
+              <div class="chain-dot done"></div>
+              <div class="chain-info"><strong>Joint command established</strong><small>UTPD + SACP + Monteverde City EMS · radio channel 4</small></div>
+              <span class="chain-time">3:12 PM</span>
+            </div>
+            <div class="chain-step">
+              <div class="chain-dot done"></div>
+              <div class="chain-info"><strong>Broadcast partner notified (ABC)</strong><small>Programming bumped to studio · weather window posted</small></div>
+              <span class="chain-time">3:14 PM</span>
+            </div>
+            <div class="chain-step">
+              <div class="chain-dot done"></div>
+              <div class="chain-info"><strong>School ADs notified (HC, MV)</strong><small>Both ADs in joint comms channel · acknowledgments received</small></div>
+              <span class="chain-time">3:16 PM</span>
+            </div>
+            <div class="chain-step">
+              <div class="chain-dot active"></div>
+              <div class="chain-info"><strong>30-min hold in effect · monitoring</strong><small>Next NWS check 3:50 PM · backup hotel rooms held for crews</small></div>
+              <span class="chain-time">NOW</span>
+            </div>
+            <div class="chain-step">
+              <div class="chain-dot pending"></div>
+              <div class="chain-info"><strong>Reassessment &amp; restart decision</strong><small>If clear, 30-min warm-up window before kick</small></div>
+              <span class="chain-time">3:50 PM</span>
+            </div>
+            <div class="chain-step">
+              <div class="chain-dot pending"></div>
+              <div class="chain-info"><strong>After-action report</strong><small>Auto-generated within 24h, routed to ops review</small></div>
+              <span class="chain-time">+ 24h</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-2-eq">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Conference Live Map</h3>
+            <span class="h-meta">12 venues · 3 incidents · 1 monitor</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full map →</span>
+          </div>
+          <div class="map-wrap">
+            <div class="map-grid"></div>
+            <span class="map-label" style="top:14%;left:10%;">TEXAS</span>
+            <span class="map-label" style="top:6%;left:42%;">MISSOURI</span>
+            <span class="map-label" style="top:18%;left:30%;">ARKANSAS</span>
+            <span class="map-label" style="top:34%;left:40%;">MISS</span>
+            <span class="map-label" style="top:62%;left:34%;">LOUISIANA</span>
+            <span class="map-label" style="top:30%;left:54%;">TENNESSEE</span>
+            <span class="map-label" style="top:48%;left:54%;">ALABAMA</span>
+            <span class="map-label" style="top:24%;left:74%;">KENTUCKY</span>
+            <span class="map-label" style="top:52%;left:74%;">GEORGIA</span>
+            <span class="map-label" style="top:46%;left:90%;">BH</span>
+            <span class="map-label" style="top:78%;left:74%;">FLORIDA</span>
+
+            <div class="pin green" style="top:14%;left:42%;" title="NT @ PR · final"></div>
+            <div class="pin green" style="top:36%;left:46%;" title="CC @ RD · pre"></div>
+            <div class="pin green" style="top:46%;left:54%;" title="LIB @ WB · live"></div>
+            <div class="pin green" style="top:62%;left:38%;" title="KE @ FV · half"></div>
+            <div class="pin med" style="top:48%;left:55%;"><div class="pin-tip">JORDAN-HARE · MED</div></div>
+            <div class="pin sec" style="top:64%;left:36%;"><div class="pin-tip">TIGER STADIUM · TUNNEL</div></div>
+            <div class="pin wx" style="top:32%;left:60%;"><div class="pin-tip">NEYLAND · LIGHTNING HOLD</div></div>
+            <div class="pin green" style="top:52%;left:74%;" title="TC @ HC · live"></div>
+            <div class="pin green" style="top:48%;left:88%;" title="GP @ BH · pre"></div>
+          </div>
+          <div class="panel-pad" style="display:flex;gap:18px;font-size:.7rem;color:var(--muted);letter-spacing:.08em;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:6px;"><span class="pin green" style="position:relative;top:0;left:0;transform:none;width:10px;height:10px;border-width:1px;"></span>Venue OK</span>
+            <span style="display:flex;align-items:center;gap:6px;"><span class="pin wx" style="position:relative;top:0;left:0;transform:none;width:10px;height:10px;border-width:1px;"></span>Weather hold</span>
+            <span style="display:flex;align-items:center;gap:6px;"><span class="pin med" style="position:relative;top:0;left:0;transform:none;width:10px;height:10px;border-width:1px;"></span>Medical incident</span>
+            <span style="display:flex;align-items:center;gap:6px;"><span class="pin sec" style="position:relative;top:0;left:0;transform:none;width:10px;height:10px;border-width:1px;"></span>Security incident</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Playbooks · Quick Launch</h3>
+            <span class="h-meta">26 playbooks · 14 most-used</span>
+            <div class="spacer"></div>
+            <span class="h-action">All playbooks →</span>
+          </div>
+          <div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Lightning / Severe Weather Hold</strong><small>30-min protocol · field clear · joint comms · restart window</small></div>
+              <div class="ri-stat info">RUN<small>→</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Fan Medical · Mass Casualty</strong><small>EMS staging, family notification, AD escalation, scribe</small></div>
+              <div class="ri-stat info">RUN<small>→</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Field Rush / Sideline Breach</strong><small>Security perimeter, broadcast cut, communications</small></div>
+              <div class="ri-stat info">RUN<small>→</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Player Targeting / Disqualification Comms</strong><small>Memo to school, broadcast acknowledgment, social</small></div>
+              <div class="ri-stat info">RUN<small>→</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Broadcast Feed Loss</strong><small>Backup feed, network coordination, on-air comms</small></div>
+              <div class="ri-stat info">RUN<small>→</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Officials Crew Travel Disruption</strong><small>Backup crew activation, charter, hotel block</small></div>
+              <div class="ri-stat info">RUN<small>→</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Off-Field Player Incident · PR</strong><small>Comms briefing, statement template, social monitoring</small></div>
+              <div class="ri-stat info">RUN<small>→</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Bomb Threat / Venue Evacuation</strong><small>Joint command, evacuation plan, media coordination</small></div>
+              <div class="ri-stat info">RUN<small>→</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Conference-Wide Cyber Incident</strong><small>System isolation, partner notification, legal</small></div>
+              <div class="ri-stat info">RUN<small>→</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>+ 17 additional playbooks</strong><small>Heat illness, transit, riot, championship-specific, etc.</small></div>
+              <div class="ri-stat info">BROWSE<small>→</small></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </div><!-- /overview -->
+
+      <div data-tab-panel="map" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Full-Screen Conference Map</h3><span class="h-meta">12 venues · live · auto-refresh 30s</span><div class="spacer"></div><span class="h-action">Export →</span></div>
+          <div class="panel-pad" style="font-size:.84rem;color:var(--muted);line-height:1.55;">
+            <p style="margin-bottom:14px;">The full-screen map view replicates the overview pin map at maximum resolution. Each pin is interactive: click to open the venue's live ops feed, escalation chain, weather radar overlay, and assigned crew/replay personnel.</p>
+            <p style="margin-bottom:14px;">Map layers (toggle):</p>
+            <ul style="list-style:none;padding-left:0;display:flex;flex-direction:column;gap:8px;">
+              <li style="display:flex;align-items:center;gap:10px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--good);"></span><span style="color:#fff;font-weight:500;">All conference venues</span><span style="color:var(--muted);">— 12 active</span></li>
+              <li style="display:flex;align-items:center;gap:10px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--info);"></span><span style="color:#fff;font-weight:500;">Live weather radar overlay</span><span style="color:var(--muted);">— NWS feed</span></li>
+              <li style="display:flex;align-items:center;gap:10px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--danger);"></span><span style="color:#fff;font-weight:500;">Active incidents (all categories)</span><span style="color:var(--muted);">— 3 open</span></li>
+              <li style="display:flex;align-items:center;gap:10px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--warn);"></span><span style="color:#fff;font-weight:500;">Crews in transit</span><span style="color:var(--muted);">— 2 inbound</span></li>
+              <li style="display:flex;align-items:center;gap:10px;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--gold);"></span><span style="color:#fff;font-weight:500;">Championship event sites</span><span style="color:var(--muted);">— SACCG + VB Tourn.</span></li>
+            </ul>
+            <p style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line);"><strong style="color:var(--gold-soft);">Tip:</strong> Wall-mounted display mode available — fills 4K monitors with no chrome, auto-rotates between map and active-incident board every 30 seconds.</p>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="chains" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Escalation Chains · By Category</h3><span class="h-meta">9 chains · auto-routed</span><div class="spacer"></div><span class="h-action">Edit chain →</span></div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>Weather (severe / lightning)</strong><small>Crew R → Venue ops → SACP joint cmd → AD office → Whitfield</small></div><div class="ri-stat info">5 STEPS<small>3 MIN</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Medical (player)</strong><small>Team trainer → Crew R → Venue medical → AD → Conf comms</small></div><div class="ri-stat info">5 STEPS<small>1 MIN</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Medical (fan)</strong><small>Section spotters → Venue EMS → Ops desk → AD → Conf log</small></div><div class="ri-stat info">5 STEPS<small>2 MIN</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Security (field rush / breach)</strong><small>Venue security → Crew R → SACP → APD/local → AD → Whitfield</small></div><div class="ri-stat info">6 STEPS<small>1 MIN</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Player conduct (off-field)</strong><small>School compliance → Conf compliance → Legal → Comms</small></div><div class="ri-stat info">4 STEPS<small>24 HR</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Technical (broadcast / replay)</strong><small>Replay center → Broadcast partner → SAC ops → notify school</small></div><div class="ri-stat info">4 STEPS<small>2 MIN</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>PR / social spike</strong><small>Social listening → Comms team → AD office → Whitfield if needed</small></div><div class="ri-stat info">4 STEPS<small>10 MIN</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Cyber / data incident</strong><small>IT → Legal → Insurance broker → NCAA · 3rd party DFIR</small></div><div class="ri-stat info">4 STEPS<small>1 HR</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Crisis / evacuation</strong><small>Venue ops → All agencies → All schools → All partners (broadcast cut)</small></div><div class="ri-stat danger">ALL STAFF<small>IMMEDIATE</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="playbooks" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Playbook Library · 26 Active</h3><span class="h-meta">runnable + audit-logged</span><div class="spacer"></div><span class="h-action">+ New Playbook →</span></div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>Lightning / Severe Weather Hold</strong><small>30-min protocol · field clear · joint comms · restart window</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Fan Medical · Single Patient</strong><small>EMS triage, family notification, AD escalation, scribe</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Fan Medical · Mass Casualty</strong><small>Mutual-aid request, triage zone, broadcast cut, hospitals</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Field Rush / Sideline Breach</strong><small>Security perimeter, broadcast cut, communications</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Player Targeting / Disqualification Comms</strong><small>Memo to school, broadcast acknowledgment, social</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Broadcast Feed Loss</strong><small>Backup feed, network coordination, on-air comms</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Officials Crew Travel Disruption</strong><small>Backup crew activation, charter, hotel block</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Off-Field Player Incident · PR</strong><small>Comms briefing, statement template, social monitoring</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Bomb Threat / Venue Evacuation</strong><small>Joint command, evacuation plan, media coordination</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Active Shooter Response (joint training)</strong><small>SAC + local LE coordinated playbook</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Heat Illness · Player Safety</strong><small>Hot-weather protocol · stoppage thresholds · cooling stations</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Conference-Wide Cyber Incident</strong><small>System isolation, partner notification, legal</small></div><div class="ri-stat info">RUN<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>+ 14 additional playbooks</strong><small>Transit, riot, championship-specific, fan death, lightning at championship, etc.</small></div><div class="ri-stat info">BROWSE<small>→</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="aar" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>After-Action Reports · '26 Season</h3><span class="h-meta">412 incidents · 396 AARs filed</span><div class="spacer"></div><span class="h-action">+ Open AAR →</span></div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>INC-26-0418 · Lightning hold (HC @ MV)</strong><small>SEV-2 · 38 min hold · restart clean · auto-AAR drafting</small></div><div class="ri-stat info">DRAFTING<small>+ 24H</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>INC-26-0419 · Section 38 medical (Mariner Stadium)</strong><small>SEV-3 · fan transported · stable · AAR scheduled</small></div><div class="ri-stat info">SCHED<small>+ 24H</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>INC-26-0408 · HC Q2 field rush (TC @ HC)</strong><small>SEV-2 · 4 ejected · 1 injury · AAR complete · lessons captured</small></div><div class="ri-stat good">FILED<small>11/19</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>INC-26-0394 · Hurricane prep (FV vs GP)</strong><small>SEV-2 · contingency moved · no incidents · AAR complete</small></div><div class="ri-stat good">FILED<small>10/28</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>INC-26-0382 · MBS power flicker (Falcons preseason)</strong><small>SEV-3 · 90s flicker · backup feed activated · AAR complete</small></div><div class="ri-stat good">FILED<small>09/12</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>INC-26-0371 · Sec 142 fan altercation (SACN+ stream)</strong><small>SEV-2 · 2 ejected · misdemeanor citation · AAR complete</small></div><div class="ri-stat good">FILED<small>09/04</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>+ 388 additional AARs</strong><small>'26 season-to-date · searchable + cross-referenced</small></div><div class="ri-stat info">BROWSE<small>→</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /tabs-host -->
+
+    </div>
+  </main>
+</div>
+
+<script src="shared.js"></script>
+</body>
+</html>

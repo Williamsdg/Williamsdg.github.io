@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%23070d1e%22 stroke=%22%23c9a558%22 stroke-width=%221.5%22/><text x=%2216%22 y=%2222%22 font-family=%22serif%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23c9a558%22>S</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scheduling & Event Ops — SAC Operating System</title>
+<meta name="description" content="Scheduling officials, SAC staff, credentialing, event staffing, hotels, transportation, security, and venue operations." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* === Sport-specific scheduling styles === */
+  .sport-row-color{position:absolute;left:0;top:0;bottom:0;width:3px}
+  .row-item{position:relative}
+
+  /* Annual sport calendar */
+  .annual-cal{padding:18px;display:flex;flex-direction:column;gap:6px}
+  .annual-cal-head{display:grid;grid-template-columns:140px repeat(12, 1fr);gap:3px;padding-bottom:8px;border-bottom:1px solid var(--line);font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .annual-cal-head .ac-month{text-align:center;font-family:'JetBrains Mono',monospace}
+  .annual-cal-head .ac-month.now{color:var(--gold-soft);background:rgba(201,165,88,.12);border-radius:2px;padding:2px 0}
+  .annual-cal-row{display:grid;grid-template-columns:140px repeat(12, 1fr);gap:3px;padding:5px 0;align-items:center;font-size:.74rem;color:var(--muted);border-bottom:1px solid rgba(255,255,255,.04)}
+  .annual-cal-row:last-child{border-bottom:none}
+  .annual-cal-row strong{color:#fff;font-weight:500}
+  .annual-cal-row small{display:block;color:var(--muted-soft);font-size:.6rem;letter-spacing:.04em;margin-top:1px}
+  .ac-cell{height:18px;border-radius:2px;background:rgba(255,255,255,.03);position:relative}
+  .ac-cell.regular{background:rgba(201,165,88,.18)}
+  .ac-cell.postseason{background:rgba(201,165,88,.4);border:1px solid rgba(201,165,88,.6)}
+  .ac-cell.champ{background:var(--gold);border:1px solid var(--gold-soft)}
+  .ac-cell.preseason{background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.1)}
+  .ac-cell.now{box-shadow:0 0 0 1.5px var(--gold-soft);position:relative;z-index:2}
+  .ac-cell.now::after{content:'';position:absolute;inset:0;border-radius:2px;animation:nowPulse 2s ease-in-out infinite}
+  @keyframes nowPulse{0%,100%{box-shadow:0 0 0 1px var(--gold-soft) inset}50%{box-shadow:0 0 0 1.5px #fff inset}}
+  .ac-legend{display:flex;flex-wrap:wrap;gap:14px;padding-top:12px;border-top:1px solid var(--line);margin-top:8px;font-size:.66rem;color:var(--muted);letter-spacing:.04em}
+  .ac-legend span{display:inline-flex;align-items:center;gap:6px}
+  .ac-legend .leg-cell{width:16px;height:10px;border-radius:1px}
+
+  /* Sport tile mini-card */
+  .sport-tile-row{display:grid;grid-template-columns:80px 1fr auto auto;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+  .sport-tile-row:last-child{border-bottom:none}
+  .sport-tile-row:hover{background:rgba(201,165,88,.04)}
+  .sport-tile-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold)}
+  .sport-tile-row.fb::before{background:#bf5700}
+  .sport-tile-row.mbb::before{background:#cc6600}
+  .sport-tile-row.wbb::before{background:#9a3a86}
+  .sport-tile-row.bsb::before{background:#3c7a5a}
+  .sport-tile-row.sb::before{background:#d2691e}
+  .sport-tile-row.vb::before{background:#6a3e9c}
+  .sport-tile-row.soc::before{background:#1a4d2e}
+  .sport-tile-row.xc::before{background:#3a5a7a}
+  .sport-tile-row.td::before{background:#a8862e}
+  .sport-tile-row.sd::before{background:#3a7aa5}
+  .sport-tile-row.ten::before{background:#7a9e3e}
+  .sport-tile-row.glf::before{background:#5e7a3a}
+  .sport-tile-row.eq::before{background:#7a5e3e}
+  .sport-tile-row.gym::before{background:#c95858}
+  .sport-tile-row.row::before{background:#3a8e9e}
+  .sport-tile-row.offseason::before{background:rgba(255,255,255,.1)}
+  .st-sport{font-family:'Fraunces',serif;font-size:.92rem;color:#fff;font-weight:500;padding-left:8px}
+  .st-sport small{display:block;color:var(--muted);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;margin-top:2px;font-weight:600}
+  .st-event strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .st-event small{color:var(--muted);font-size:.7rem}
+  .st-when{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--gold-soft);font-weight:600;text-align:right;white-space:nowrap}
+  .st-when small{display:block;color:var(--muted-soft);font-size:.6rem;letter-spacing:.1em;font-weight:500;margin-top:2px}
+  .st-status{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:2px;font-weight:700;text-align:center;white-space:nowrap}
+  .st-status.live{background:rgba(255,79,79,.18);color:#ff7878;animation:pulse 1.6s infinite}
+  .st-status.upcoming{background:rgba(224,184,115,.18);color:var(--warn)}
+  .st-status.travel{background:rgba(111,169,230,.18);color:var(--info)}
+  .st-status.confirmed{background:rgba(77,201,126,.15);color:var(--good)}
+  .st-status.offseason{background:rgba(255,255,255,.04);color:var(--muted)}
+
+  /* Sport balance summary tiles */
+  .sport-balance{display:grid;grid-template-columns:repeat(7, 1fr);gap:8px;padding:14px}
+  .sb-tile{padding:10px 8px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;text-align:center;border-top:3px solid var(--gold);cursor:pointer;transition:.15s}
+  .sb-tile:hover{background:rgba(201,165,88,.06)}
+  .sb-tile.live{border-top-color:var(--live)}
+  .sb-tile.upcoming{border-top-color:var(--warn)}
+  .sb-tile.offseason{border-top-color:rgba(255,255,255,.1);opacity:.55}
+  .sb-tile-sport{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.16em;color:var(--muted-soft);font-weight:700;margin-bottom:4px}
+  .sb-tile-count{font-family:'Fraunces',serif;font-size:1.3rem;color:#fff;font-weight:400;line-height:1}
+  .sb-tile-label{font-size:.6rem;color:var(--muted);letter-spacing:.04em;margin-top:3px}
+
+  /* NCAA postseason workspace alert */
+  .ncaa-banner{margin-bottom:18px;padding:14px 18px;background:linear-gradient(90deg, rgba(60,122,90,.15), rgba(7,13,30,.5) 80%);border:1px solid rgba(60,122,90,.3);border-left:4px solid var(--good);border-radius:3px;display:flex;align-items:center;gap:14px;font-size:.84rem;color:#fff}
+  .ncaa-banner .nb-icon{width:36px;height:36px;border-radius:50%;background:rgba(60,122,90,.2);color:var(--good);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-family:'Fraunces',serif}
+  .ncaa-banner strong{color:var(--good);font-weight:600}
+  .ncaa-banner em{font-style:normal;color:var(--muted);font-size:.78rem;display:block;margin-top:2px}
+  .ncaa-banner .nb-cta{margin-left:auto;padding:7px 14px;background:rgba(60,122,90,.2);border:1px solid var(--good);color:var(--good);font-weight:700;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;border-radius:2px;font-family:inherit}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SAC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html" class="active"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">AT</div>
+        <div>
+          <div class="user-name">A. Torres</div>
+          <div class="user-role">Dir, Event Ops</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Operations Suite · <strong>Scheduling &amp; Events</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">+ New Assignment</button>
+        <button class="btn">Bulk Import</button>
+        <button class="btn btn-gold">Publish Week</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>SAC <em>scheduling board.</em></h1>
+          <div class="sub">14 schools · 21 sports · 412 staff · 89 venues · all sport calendars, in season + offseason, one view</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">This Week · May 23</button>
+          <button class="pill">Spring Postseason</button>
+          <button class="pill">'26 Football Pre-Season</button>
+          <button class="pill">'26 Year View</button>
+        </div>
+      </div>
+
+      <div class="ncaa-banner">
+        <div class="nb-icon">N</div>
+        <div>
+          <strong>NCAA postseason peak week</strong>
+          <em>Baseball Regionals open Friday (May 29) · Softball Super Regionals Sat–Sun · NCAA Outdoor Track Championships finals Wed–Sat (Coastal Federal City) · NCAA Tennis &amp; Golf Championships active · SAC has 11 teams across 5 sports advancing</em>
+        </div>
+        <button class="nb-cta">Open NCAA Ops Brief →</button>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat live">
+          <span class="stat-label">Events Live · This Week</span>
+          <span class="stat-value">84</span>
+          <span class="stat-delta">across 8 active sports</span>
+        </div>
+        <div class="stat info">
+          <span class="stat-label">Officials Assigned</span>
+          <span class="stat-value">218</span>
+          <span class="stat-delta">spring + summer rotations</span>
+        </div>
+        <div class="stat warn">
+          <span class="stat-label">Pending Confirmations</span>
+          <span class="stat-value">7</span>
+          <span class="stat-delta">5 NCAA host crews · 2 staff</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Travel Segments</span>
+          <span class="stat-value">142</span>
+          <span class="stat-delta">28 charters · 114 commercial</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Hotel Nights</span>
+          <span class="stat-value">682</span>
+          <span class="stat-delta">$118K week budget</span>
+        </div>
+        <div class="stat good">
+          <span class="stat-label">Schedule Conflicts</span>
+          <span class="stat-value">0</span>
+          <span class="stat-delta up">all clear</span>
+        </div>
+      </div>
+
+      <div class="tabs-host">
+      <div class="tabs">
+        <div class="tab active" data-tab="overview">Week View</div>
+        <div class="tab" data-tab="staffing">Staffing Board</div>
+        <div class="tab" data-tab="credentialing">Credentialing</div>
+        <div class="tab" data-tab="travel">Travel</div>
+        <div class="tab" data-tab="venues">Venues</div>
+        <div class="tab" data-tab="templates">Templates</div>
+      </div>
+
+      <div class="sport-bar">
+        <span class="sport-bar-label">Sport</span>
+        <span class="sport-pill active" data-sport="all"><span class="sp-ic">◎</span>All Sports</span>
+        <span class="sport-pill" data-sport="fb"><span class="sp-ic">●</span>Football</span>
+        <span class="sport-pill" data-sport="mbb"><span class="sp-ic">●</span>Men&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="wbb"><span class="sp-ic">●</span>Women&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="bsb"><span class="sp-ic">●</span>Baseball</span>
+        <span class="sport-pill" data-sport="sb"><span class="sp-ic">●</span>Softball</span>
+        <span class="sport-pill" data-sport="vb"><span class="sp-ic">●</span>Volleyball</span>
+        <span class="sport-pill" data-sport="other"><span class="sp-ic">○</span>Other Sports</span>
+      </div>
+
+      <div data-tab-panel="overview">
+
+      <!-- SPORT BALANCE TILES · at-a-glance "which sports are live this week" -->
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>Sport Balance · This Week</h3><span class="h-meta">21 SAC sports · live vs upcoming vs offseason</span><div class="spacer"></div><span class="h-action">Annual view →</span></div>
+        <div class="sport-balance">
+          <div class="sb-tile live"><div class="sb-tile-sport">BSB</div><div class="sb-tile-count">14</div><div class="sb-tile-label">NCAA Regionals open Fri</div></div>
+          <div class="sb-tile live"><div class="sb-tile-sport">SB</div><div class="sb-tile-count">8</div><div class="sb-tile-label">NCAA Super Regionals</div></div>
+          <div class="sb-tile live"><div class="sb-tile-sport">TD</div><div class="sb-tile-count">24</div><div class="sb-tile-label">NCAA Outdoor (Coastal Federal City)</div></div>
+          <div class="sb-tile live"><div class="sb-tile-sport">TEN</div><div class="sb-tile-count">6</div><div class="sb-tile-label">NCAA Champ matches</div></div>
+          <div class="sb-tile live"><div class="sb-tile-sport">GLF</div><div class="sb-tile-count">8</div><div class="sb-tile-label">NCAA M Champ · final round</div></div>
+          <div class="sb-tile upcoming"><div class="sb-tile-sport">ROW</div><div class="sb-tile-count">1</div><div class="sb-tile-label">NCAA event May 30–Jun 1</div></div>
+          <div class="sb-tile offseason"><div class="sb-tile-sport">FB</div><div class="sb-tile-count">0</div><div class="sb-tile-label">Offseason · spring practice</div></div>
+        </div>
+        <div class="sport-balance" style="border-top:1px solid var(--line);padding-top:0;">
+          <div class="sb-tile offseason"><div class="sb-tile-sport">MBB</div><div class="sb-tile-count">0</div><div class="sb-tile-label">Offseason · recruiting</div></div>
+          <div class="sb-tile offseason"><div class="sb-tile-sport">WBB</div><div class="sb-tile-count">0</div><div class="sb-tile-label">Offseason · recruiting</div></div>
+          <div class="sb-tile offseason"><div class="sb-tile-sport">VB</div><div class="sb-tile-count">0</div><div class="sb-tile-label">Spring camps · Fall opens Aug</div></div>
+          <div class="sb-tile offseason"><div class="sb-tile-sport">SOC</div><div class="sb-tile-count">0</div><div class="sb-tile-label">Offseason · Fall opens Aug</div></div>
+          <div class="sb-tile offseason"><div class="sb-tile-sport">XC</div><div class="sb-tile-count">0</div><div class="sb-tile-label">Offseason · Fall opens Sep</div></div>
+          <div class="sb-tile offseason"><div class="sb-tile-sport">S&amp;D</div><div class="sb-tile-count">0</div><div class="sb-tile-label">Offseason · Fall opens Oct</div></div>
+          <div class="sb-tile offseason"><div class="sb-tile-sport">+7</div><div class="sb-tile-count">0</div><div class="sb-tile-label">Other sports · offseason</div></div>
+        </div>
+      </div>
+
+      <!-- SPORT-SPECIFIC SNAPSHOT (filterable via Sport bar above) -->
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>This Week's Activity · by Sport</h3><span class="h-meta">filter via Sport bar above</span><div class="spacer"></div><span class="h-action">Drill in →</span></div>
+        <div data-sport-scope>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>Baseball · NCAA Regionals open Friday May 29</strong><small>SAC has 9 teams in field of 64 · 4 hosting (FV · MV · HC · AT) · 5 traveling</small></div><div class="ri-stat good">9 TEAMS<small>HOST 4</small></div></div>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>BSB · SAC Tournament wrapped Saturday May 24</strong><small>Summit Park · FV defeated WB 8–2 in final · AAR filing in progress</small></div><div class="ri-stat info">CLOSING<small>HOOVER</small></div></div>
+          <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>Softball · NCAA Super Regionals · 4 SAC teams active</strong><small>GP host vs Western U · KE host vs TC · RD at Pacific Tech · TEN at OR</small></div><div class="ri-stat good">4 TEAMS<small>SUPER</small></div></div>
+          <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>SB · WNCAA Baseball Final Eight field set Sunday · SAC eyeing 3+ bids</strong><small>GP + KE + TEN highest probability per RPI</small></div><div class="ri-stat info">SET SUN<small>WNCAA Baseball Final Eight</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>NCAA Outdoor Track &amp; Field Championships · Coastal Federal City OR</strong><small>Wed–Sat at Coastal Federal Field · SAC has 24 athletes across 18 events · TC + CC favored</small></div><div class="ri-stat good">24 ATH<small>EUGENE</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>NCAA Tennis Championships · Pacific Tech City OK</strong><small>SAC has 6 entrants (singles+doubles) · HC semifinalist on women's side</small></div><div class="ri-stat good">6 ENTRY<small>STILLWATER</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>NCAA Men's Golf Championship · Coastal Resort, CA</strong><small>Final round today · AT qualified for match play · FV eliminated 6th</small></div><div class="ri-stat good">AT ADV<small>COASTAL</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>NCAA Women's Golf Championship · Coastal Resort, CA</strong><small>Wrapped May 21 · KE finished 4th nationally · trophy presentation tracked</small></div><div class="ri-stat good">KE 4th<small>WRAPPED</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Rowing · NCAA Championship pre-arrival</strong><small>May 30–Jun 1 · Sarasota Bay · KE + TEN qualified · charter requests in</small></div><div class="ri-stat warn">TRAVEL<small>+ 7D</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>Football · SPRING PRACTICE wrapped · summer prep underway</strong><small>14 coaches on recruiting trail · '26 season opens Aug 30 · Wk1 ops planning</small></div><div class="ri-stat info">OFFSEASON<small>+ 99D</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · The Lighthouse Rivalry '26 venue contracts signed</strong><small>Westbrook host Nov 28 · Apex Game of the Week window confirmed</small></div><div class="ri-stat info">CONFIRMED<small>NOV 28</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · Offseason · transfer portal + coach hires tracked</strong><small>'27 season opens Nov 2 · 14 schools on recruiting calendars · 0 events</small></div><div class="ri-stat info">OFFSEASON<small>+ 162D</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · SAC Tournament '27 venue confirmed</strong><small>Boulder Convention Center Boulder City · Mar 10–14 · early-phase planning</small></div><div class="ri-stat info">PLAN<small>+ 9 MO</small></div></div>
+          <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB · Offseason · recruiting + coach moves</strong><small>'27 season opens Nov 5 · SAC Tourn '27 venue: Stonecreek Mar 3–7</small></div><div class="ri-stat info">OFFSEASON<small>+ 165D</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>Volleyball · spring camps wrap · Fall opens Aug 28</strong><small>15 conference matches per school · KE defending SAC Tourn champ</small></div><div class="ri-stat info">OFFSEASON<small>+ 97D</small></div></div>
+          <div data-sport-empty hidden class="sport-empty"><strong>No activity for this sport this week</strong>Try selecting another sport — or All Sports to see the full slate.</div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>This Week · May 18–24, 2026</h3>
+            <span class="h-meta">all 21 sports · density grid</span>
+            <div class="spacer"></div>
+            <span class="h-action">Export grid →</span>
+          </div>
+          <div class="week-grid">
+            <div class="week-head">
+              <span></span>
+              <span>MON 18</span><span>TUE 19</span><span>WED 20</span><span>THU 21</span><span>FRI 22</span><span class="today">SAT 23</span><span>SUN 24</span>
+            </div>
+            <div class="week-row"><span class="wr-label">BSB</span><span></span><span class="wr-cell">SECT</span><span class="wr-cell">SECT</span><span class="wr-cell">SECT</span><span class="wr-cell hi">SECT QF</span><span class="wr-cell hi">SECT FINAL</span><span class="wr-cell low">AAR</span></div>
+            <div class="week-row"><span class="wr-label">SB</span><span class="wr-cell">REG</span><span class="wr-cell">REG</span><span class="wr-cell hi">SREG</span><span class="wr-cell hi">SREG</span><span class="wr-cell hi">SREG</span><span class="wr-cell">SREG</span><span class="wr-cell">SREG</span></div>
+            <div class="week-row"><span class="wr-label">TD</span><span class="wr-cell low">prelims</span><span class="wr-cell low">prelims</span><span class="wr-cell">NCAA</span><span class="wr-cell">NCAA</span><span class="wr-cell hi">NCAA</span><span class="wr-cell hi">NCAA FIN</span><span></span></div>
+            <div class="week-row"><span class="wr-label">TEN</span><span class="wr-cell">NCAA</span><span class="wr-cell">NCAA</span><span class="wr-cell">NCAA</span><span class="wr-cell">NCAA QF</span><span class="wr-cell hi">NCAA SF</span><span class="wr-cell hi">NCAA FIN</span><span></span></div>
+            <div class="week-row"><span class="wr-label">GLF</span><span class="wr-cell">M Match</span><span class="wr-cell">M Match</span><span class="wr-cell hi">M FINAL</span><span></span><span></span><span></span><span></span></div>
+            <div class="week-row"><span class="wr-label">ROW</span><span></span><span></span><span></span><span></span><span class="wr-cell low">travel</span><span class="wr-cell low">travel</span><span class="wr-cell low">arrive</span></div>
+            <div class="week-row"><span class="wr-label">EQ</span><span></span><span class="wr-cell low">offseason</span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="week-row"><span class="wr-label">CHMP</span><span class="wr-cell warn">NCAA Ops</span><span class="wr-cell warn">NCAA Ops</span><span class="wr-cell warn">NCAA Ops</span><span class="wr-cell warn">NCAA Ops</span><span class="wr-cell warn">NCAA Ops</span><span class="wr-cell warn">NCAA Ops</span><span class="wr-cell warn">NCAA Ops</span></div>
+            <div class="week-row"><span class="wr-label">FB</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span></span><span></span></div>
+            <div class="week-row"><span class="wr-label">MBB</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span></span><span></span></div>
+            <div class="week-row"><span class="wr-label">WBB</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span class="wr-cell low">recruit</span><span></span><span></span></div>
+            <div class="week-row"><span class="wr-label">VB</span><span class="wr-cell low">spring</span><span class="wr-cell low">spring</span><span></span><span></span><span></span><span></span><span></span></div>
+            <div class="week-row"><span class="wr-label">SOC</span><span></span><span></span><span></span><span></span><span class="wr-cell low">spring tnmt</span><span class="wr-cell low">spring tnmt</span><span></span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Saturday May 23 · multi-sport slate</h3>
+            <span class="h-meta">8 active sports · 32 events</span>
+            <div class="spacer"></div>
+            <span class="h-action">Print sheet →</span>
+          </div>
+          <div>
+            <div class="sport-tile-row bsb"><div class="st-sport">BSB<small>Summit Diamond</small></div><div class="st-event"><strong>SAC Tournament · Final · FV vs Westbrook</strong>1:00 PM CT · Vista · Crew Adams (umpire crew)</div><div class="st-when">1:00 CT<small>2 PM ET</small></div><div class="st-status live">LIVE</div></div>
+            <div class="sport-tile-row sb"><div class="st-sport">SB<small>Glenn Park City, OK</small></div><div class="st-event"><strong>NCAA Super Regional · Glenn Park vs Western U · Gm 1</strong>1:30 PM CT · Vista U · Crew Robles</div><div class="st-when">1:30 CT<small>2:30 ET</small></div><div class="st-status live">LIVE</div></div>
+            <div class="sport-tile-row sb"><div class="st-sport">SB<small>Kestrel City, TX</small></div><div class="st-event"><strong>NCAA Super Regional · KE vs Tidewater · Gm 1</strong>4:00 PM CT · Vista 2 · Crew Vega</div><div class="st-when">4:00 CT<small>5 PM ET</small></div><div class="st-status upcoming">UPCOMING</div></div>
+            <div class="sport-tile-row sb"><div class="st-sport">SB<small>Pacific Tech City, OK</small></div><div class="st-event"><strong>NCAA Super Regional · Pacific Tech vs Redmoor · Gm 1</strong>6:00 PM CT · Vista U · Crew Diaz</div><div class="st-when">6:00 CT<small>7 PM ET</small></div><div class="st-status upcoming">UPCOMING</div></div>
+            <div class="sport-tile-row sb"><div class="st-sport">SB<small>Coastal Federal City, OR</small></div><div class="st-event"><strong>NCAA Super Regional · Coastal Federal vs Monteverde · Gm 1</strong>9:00 PM CT · Vista 2 · Crew Park</div><div class="st-when">9:00 CT<small>10 PM ET</small></div><div class="st-status upcoming">UPCOMING</div></div>
+            <div class="sport-tile-row td"><div class="st-sport">TD<small>Coastal Federal City, OR</small></div><div class="st-event"><strong>NCAA Outdoor T&amp;F Championships · Day 4 · Men's finals</strong>Coastal Federal Field · Vista+ · 24 SAC athletes in finals across 18 events</div><div class="st-when">12-9 PT<small>2-11 CT</small></div><div class="st-status live">LIVE</div></div>
+            <div class="sport-tile-row ten"><div class="st-sport">TEN<small>Pacific Tech City, OK</small></div><div class="st-event"><strong>NCAA Tennis Championships · Singles SF · HC Reagan vs Atlantic State</strong>Greenwood Tennis Ctr · Court Network</div><div class="st-when">11:00 CT<small>noon ET</small></div><div class="st-status live">LIVE</div></div>
+            <div class="sport-tile-row glf"><div class="st-sport">GLF<small>Coastal Resort, CA</small></div><div class="st-event"><strong>NCAA Men's Golf Champ · Match Play QF · Texas vs Kestrel State</strong>Coastal Resort · Fairway Network</div><div class="st-when">All day<small>PST</small></div><div class="st-status live">LIVE</div></div>
+            <div class="sport-tile-row offseason"><div class="st-sport">FB<small>·</small></div><div class="st-event"><strong>Football · OFFSEASON · spring practice wrapped</strong>14 schools on recruiting trail · '26 season opens Aug 30 · Wk 1 ops planning ahead</div><div class="st-when">—<small>+ 99D</small></div><div class="st-status offseason">OFFSEASON</div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Pending Confirmations</h3>
+            <span class="h-meta">7 outstanding · NCAA hosts + travel</span>
+            <div class="spacer"></div>
+            <span class="h-action">Auto-remind →</span>
+          </div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>J. Park (Replay · Capital City)</strong><small>NCAA Softball Super Regional cross-cover (Pacific Tech City)</small></div><div class="ri-stat warn">Awaiting<small>SENT 6h</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>M. Robles (SB Crew)</strong><small>Glenn Park City host site walk Thursday</small></div><div class="ri-stat warn">Awaiting<small>SENT 4h</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>K. Brooks (Sideline · Vista)</strong><small>NCAA Baseball Regional · FV host</small></div><div class="ri-stat warn">Awaiting<small>SENT 2h</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>R. Lin (Event Ops · NCAA Baseball Final Eight advance)</strong><small>Heartland City site walkthrough · June 13</small></div><div class="ri-stat warn">Awaiting<small>SENT 1d</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>D. Kuo (T&amp;F field judge)</strong><small>Coastal Federal City relays final · Sat 9 PM CT</small></div><div class="ri-stat warn">Awaiting<small>SENT 3h</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>S. Pham (NCAA Rowing advance)</strong><small>Sarasota Bay site walk · May 28</small></div><div class="ri-stat warn">Awaiting<small>SENT 18h</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>+ 1 more (FB '26 season ops planning)</strong><small>Aug 30 opener prep — early phase</small></div><div class="ri-stat" style="color:var(--muted-soft);">Review<small>→</small></div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Credentialing Queue</h3>
+            <span class="h-meta">This week · 142 credentials</span>
+            <div class="spacer"></div>
+            <span class="h-action">Issue badge →</span>
+          </div>
+          <div>
+            <div class="cred-row"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>Vista College Sports · 18 pax</strong><small>Baseball Regionals broadcast crews · 4 host sites</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>Vista+ streaming · 12 pax</strong><small>SB Super Regionals + NCAA T&amp;F coverage</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type photo">PHOTO</span><div class="cred-info"><strong>Global Press / Imagewire · 14 pax</strong><small>Multi-site NCAA postseason coverage</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type vip">VIP</span><div class="cred-info"><strong>SAC Trustees · WNCAA Baseball Final Eight prep visit (OKC)</strong><small>11 trustees · venue walkthrough June 2</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type official">OFF</span><div class="cred-info"><strong>NCAA officiating access · 38 officials</strong><small>BSB + SB crews · NCAA-coordinated</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type photo">PHOTO</span><div class="cred-info"><strong>School photog · GP softball — 4 pax</strong><small>Glenn Park City field access</small></div><span class="cred-stat warn">PENDING</span></div>
+            <div class="cred-row"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>Fairway Network · Texas advance — 6 pax</strong><small>Match play coverage credential</small></div><span class="cred-stat warn">REVIEW</span></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Venue Operations</h3>
+            <span class="h-meta">12 active sites · multi-sport</span>
+            <div class="spacer"></div>
+            <span class="h-action">Venue map →</span>
+          </div>
+          <div>
+            <div class="ven-row"><div class="ven-info"><strong>Summit Diamond</strong><small>BSB · SAC Tournament final · cap 10,800 · gates 10:30 CT</small></div><span class="ven-stat good">●  Open</span></div>
+            <div class="ven-row"><div class="ven-info"><strong>Greyhound Diamond (GP)</strong><small>SB · NCAA Super Regional · cap 4,900 · gates 12:00 CT</small></div><span class="ven-stat good">●  Open</span></div>
+            <div class="ven-row"><div class="ven-info"><strong>Engineer Diamond (KE)</strong><small>SB · NCAA Super Regional · cap 2,800 · gates 2:30 CT</small></div><span class="ven-stat good">●  Open</span></div>
+            <div class="ven-row"><div class="ven-info"><strong>Coastal Federal Field (Coastal Federal)</strong><small>NCAA Outdoor T&amp;F Championships · cap 12,650 · NCAA-managed</small></div><span class="ven-stat info">●  NCAA-Host</span></div>
+            <div class="ven-row"><div class="ven-info"><strong>Greenwood Tennis Ctr (Pacific Tech)</strong><small>NCAA Tennis Championships · NCAA-managed</small></div><span class="ven-stat info">●  NCAA-Host</span></div>
+            <div class="ven-row"><div class="ven-info"><strong>Coastal Resort, CA</strong><small>NCAA Men's Golf · match play · NCAA-managed</small></div><span class="ven-stat info">●  NCAA-Host</span></div>
+            <div class="ven-row"><div class="ven-info"><strong>Wolfgate Diamond (FV)</strong><small>NCAA BSB Regional host pre-arrival · cap 10,326 · gates Fri</small></div><span class="ven-stat warn">●  Prep</span></div>
+            <div class="ven-row"><div class="ven-info"><strong>Falcon Hill Diamond (MV)</strong><small>NCAA BSB Regional host pre-arrival · cap 4,283 · gates Fri</small></div><span class="ven-stat warn">●  Prep</span></div>
+            <div class="ven-row"><div class="ven-info"><strong>Mariner Stadium / Bobcat Field + 12 FB venues</strong><small>FOOTBALL · all 14 stadiums in offseason · summer maintenance</small></div><span class="ven-stat" style="color:var(--muted);">○  Offseason</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ANNUAL SPORT CALENDAR -->
+      <div class="panel" style="margin-top:14px;">
+        <div class="panel-head">
+          <h3>'26 Annual Sport Calendar · all 21 sports</h3>
+          <span class="h-meta">season windows · regular + postseason · current month highlighted</span>
+          <div class="spacer"></div>
+          <span class="h-action">Per-sport detail →</span>
+        </div>
+        <div class="annual-cal">
+          <div class="annual-cal-head">
+            <span>Sport</span>
+            <span class="ac-month">JAN</span><span class="ac-month">FEB</span><span class="ac-month">MAR</span><span class="ac-month">APR</span><span class="ac-month now">MAY</span><span class="ac-month">JUN</span><span class="ac-month">JUL</span><span class="ac-month">AUG</span><span class="ac-month">SEP</span><span class="ac-month">OCT</span><span class="ac-month">NOV</span><span class="ac-month">DEC</span>
+          </div>
+          <div class="annual-cal-row"><div><strong>Football</strong><small>14 schools</small></div>
+            <div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell preseason"></div><div class="ac-cell preseason now"></div><div class="ac-cell preseason"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Men's Basketball</strong><small>14 schools</small></div>
+            <div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason"></div><div class="ac-cell now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Women's Basketball</strong><small>14 schools</small></div>
+            <div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason"></div><div class="ac-cell now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Baseball</strong><small>14 schools</small></div>
+            <div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ now"></div><div class="ac-cell postseason"></div><div class="ac-cell postseason"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Softball</strong><small>13 schools</small></div>
+            <div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ now"></div><div class="ac-cell postseason"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Volleyball</strong><small>14 schools</small></div>
+            <div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell preseason"></div><div class="ac-cell preseason now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Soccer (W)</strong><small>14 schools</small></div>
+            <div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell preseason"></div><div class="ac-cell preseason now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Cross Country</strong><small>14 schools</small></div>
+            <div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason"></div><div class="ac-cell"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Track &amp; Field</strong><small>indoor + outdoor</small></div>
+            <div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason"></div><div class="ac-cell regular"></div><div class="ac-cell champ now"></div><div class="ac-cell postseason"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Swimming &amp; Diving</strong><small>14 schools</small></div>
+            <div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason"></div><div class="ac-cell"></div><div class="ac-cell now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Tennis (M+W)</strong><small>14 schools</small></div>
+            <div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell"></div><div class="ac-cell"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Golf (M+W)</strong><small>14 schools</small></div>
+            <div class="ac-cell"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Gymnastics</strong><small>women's</small></div>
+            <div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason"></div><div class="ac-cell now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Equestrian</strong><small>8 schools</small></div>
+            <div class="ac-cell regular"></div><div class="ac-cell regular"></div><div class="ac-cell champ"></div><div class="ac-cell postseason"></div><div class="ac-cell now"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell regular"></div>
+          </div>
+          <div class="annual-cal-row"><div><strong>Rowing</strong><small>3 schools</small></div>
+            <div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell preseason"></div><div class="ac-cell regular"></div><div class="ac-cell champ now"></div><div class="ac-cell postseason"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div><div class="ac-cell"></div>
+          </div>
+          <div class="ac-legend">
+            <span><span class="leg-cell" style="background:rgba(255,255,255,.05);border:1px dashed rgba(255,255,255,.15);"></span>Preseason / camps</span>
+            <span><span class="leg-cell" style="background:rgba(201,165,88,.18);"></span>Regular season</span>
+            <span><span class="leg-cell" style="background:rgba(201,165,88,.4);"></span>Postseason</span>
+            <span><span class="leg-cell" style="background:var(--gold);"></span>Championship window</span>
+            <span><span class="leg-cell" style="background:rgba(255,255,255,.03);"></span>Offseason</span>
+            <span style="margin-left:auto;color:var(--gold-soft);">⬛ NOW = May 2026</span>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /overview -->
+
+      <div data-tab-panel="staffing" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Staffing Board · This Week (May 18–24)</h3><span class="h-meta">218 staff · 84 events · 8 active sports</span><div class="spacer"></div><span class="h-action">+ Assign Shift →</span></div>
+          <div data-sport-scope>
+            <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>BSB · SAC Tournament (Summit Park) · final-day staffing</strong><small>4-umpire crew Adams + 18 ops staff + medical + security · standard SECT footprint</small></div><div class="ri-stat good">CONFIRMED<small>FULL</small></div></div>
+            <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>BSB · NCAA Regional host sites pre-arrival (4 venues)</strong><small>FV · MV · HC · AT hosting · venue advance teams of 4 deployed Thu</small></div><div class="ri-stat good">CONFIRMED<small>4/4</small></div></div>
+            <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>SB · NCAA Super Regional crews (4 sites)</strong><small>Glenn Park City / Coll. Stn / Pacific Tech City / Coastal Federal City — 4-umpire crews + replay cross-cover</small></div><div class="ri-stat good">CONFIRMED<small>4/4</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>T&amp;F · NCAA Outdoor Championships (Coastal Federal City)</strong><small>D. Kuo + 2 field judges on assignment · 24 SAC athletes in field</small></div><div class="ri-stat warn">PARTIAL<small>2/3</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Tennis NCAA Champ + Golf NCAA Champ</strong><small>NCAA-managed officiating · SAC liaisons only · 2 SAC ops staff per site</small></div><div class="ri-stat good">CONFIRMED<small>4/4</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Rowing · NCAA Champ advance (Sarasota Bay)</strong><small>S. Pham site walkthrough May 28 · 2-day setup</small></div><div class="ri-stat warn">PENDING<small>+ 5D</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>SAC Office · NCAA postseason coordination team</strong><small>14 staff across BSB / SB / T&amp;F / Tennis / Golf · daily 4 PM ops call</small></div><div class="ri-stat good">CONFIRMED<small>FULL</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Broadcast partner liaisons (Vista + Vista+)</strong><small>14 staff across 8 NCAA postseason events</small></div><div class="ri-stat good">CONFIRMED<small>FULL</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>SAC Replay Centers · summer rotation</strong><small>Portsmouth + Capital City on reduced spring/summer staffing · 4 officials per shift</small></div><div class="ri-stat good">ON SHIFT<small>2 CTR</small></div></div>
+            <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · '26 Season Ops planning team (forward-look)</strong><small>R. Lin + 6 · weekly meetings · '26 Wk 1 opens Aug 30 · 99 days out</small></div><div class="ri-stat info">PLAN<small>+ 99D</small></div></div>
+            <div data-sport-empty hidden class="sport-empty"><strong>No staffing items for this sport this week</strong>Most sports are in offseason. Try All Sports or a current spring-postseason sport.</div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="credentialing" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Credentialing Queue · This Week</h3><span class="h-meta">142 credentials issued · multi-site NCAA postseason</span><div class="spacer"></div><span class="h-action">Bulk issue →</span></div>
+          <div data-sport-scope>
+            <div class="cred-row" data-sport-row="bsb"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>Vista/Vista+ Baseball — 24 pax</strong><small>SAC Tournament final + Regional pre-arrival crews · 4 venues</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row" data-sport-row="sb"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>Vista Softball Super Regional — 18 pax</strong><small>4 sites · Glenn Park City / Coll. Stn / Pacific Tech City / Coastal Federal City</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row" data-sport-row="other"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>Vista+ NCAA Outdoor T&amp;F — 14 pax</strong><small>Coastal Federal Field broadcast team · 4-day window</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row" data-sport-row="bsb"><span class="cred-type photo">PHOTO</span><div class="cred-info"><strong>Global Press / Imagewire · Summit Park SECT — 8 pax</strong><small>Final-day all-access · trophy ceremony</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row" data-sport-row="other"><span class="cred-type photo">PHOTO</span><div class="cred-info"><strong>Court Network · Pacific Tech City NCAA — 4 pax</strong><small>Singles SF + final court access</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row" data-sport-row="other"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>Fairway Network · Coastal Resort — 6 pax</strong><small>Match play coverage credential</small></div><span class="cred-stat warn">REVIEW</span></div>
+            <div class="cred-row"><span class="cred-type vip">VIP</span><div class="cred-info"><strong>SAC Trustees · WNCAA Baseball Final Eight prep visit (OKC)</strong><small>11 trustees · OKC venue walkthrough June 2 · contingent</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type official">OFF</span><div class="cred-info"><strong>NCAA-issued official access (BSB+SB)</strong><small>38 officials across NCAA postseason sites · NCAA-coordinated</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row" data-sport-row="sb"><span class="cred-type photo">PHOTO</span><div class="cred-info"><strong>School photog · GP softball — 4 pax</strong><small>Glenn Park City field access · pending GP AD approval</small></div><span class="cred-stat warn">PENDING</span></div>
+            <div data-sport-empty hidden class="sport-empty"><strong>No credentials for this sport this week</strong>Try All Sports or a current postseason sport.</div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="travel" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Conference Travel · This Week</h3><span class="h-meta">142 segments · 28 charters · multi-site NCAA postseason</span><div class="spacer"></div><span class="h-action">Travel desk →</span></div>
+          <div data-sport-scope>
+            <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>BSB · Summit Park team charters (14 teams in/out)</strong><small>Tournament wrap travel · SAC-coordinated · 4 nights average</small></div><div class="ri-stat good">CONFIRMED<small>$62K</small></div></div>
+            <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>BSB · NCAA Regional team travel (5 visiting SAC teams)</strong><small>WB→Atlantic State · CC→Tucson · TC→Conway · KE→Pacific Tech · NT→Midland College</small></div><div class="ri-stat good">CONFIRMED<small>$84K</small></div></div>
+            <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>SB · NCAA Super Regional team travel (2 visiting)</strong><small>RD→Pacific Tech City · MV→Coastal Federal City · charters via team partner</small></div><div class="ri-stat good">CONFIRMED<small>$38K</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>T&amp;F · 24 SAC athletes individual travel (Coastal Federal City)</strong><small>NCAA per diem + commercial flights · school-managed</small></div><div class="ri-stat info">NOTIFY<small>NCAA</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Tennis · 6 entrants travel (Pacific Tech City)</strong><small>Singles + doubles · NCAA + school co-managed</small></div><div class="ri-stat good">CONFIRMED<small>$12K</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Golf · AT advance to Coastal Resort, CA (8 + coaching)</strong><small>Charter + Coastal Resort block · 6 nights</small></div><div class="ri-stat good">CONFIRMED<small>$22K</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Rowing · KE + MV to Sarasota Bay (May 30)</strong><small>Equipment transport + team charters · planning</small></div><div class="ri-stat warn">PENDING<small>$28K est</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>SAC Office · NCAA postseason advance team</strong><small>14 staff across 8 sites · rolling deployment</small></div><div class="ri-stat good">CONFIRMED<small>$18K</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Week total travel spend</strong><small>vs $128K weekly NCAA-postseason budget</small></div><div class="ri-stat good">$118K<small>vs $128K</small></div></div>
+            <div data-sport-empty hidden class="sport-empty"><strong>No travel items for this sport this week</strong>Try All Sports or a current postseason sport.</div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="venues" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Venue Operations · Saturday May 23</h3><span class="h-meta">12 active sites · 7 SAC-hosted · 5 NCAA-hosted</span><div class="spacer"></div><span class="h-action">Venue map →</span></div>
+          <div data-sport-scope>
+            <div class="ven-row" data-sport-row="bsb"><div class="ven-info"><strong>Summit Diamond · Summit Park AL</strong><small>BSB · SAC Tournament final · cap 10,800 · Vista · gates 10:30 CT</small></div><span class="ven-stat good">●  Open</span></div>
+            <div class="ven-row" data-sport-row="bsb"><div class="ven-info"><strong>Wolfgate Diamond · FV</strong><small>BSB · NCAA Regional host pre-arrival · cap 10,326 · gates Fri</small></div><span class="ven-stat warn">●  Prep</span></div>
+            <div class="ven-row" data-sport-row="bsb"><div class="ven-info"><strong>Falcon Hill Diamond · Monteverde</strong><small>BSB · NCAA Regional host pre-arrival · cap 4,283</small></div><span class="ven-stat warn">●  Prep</span></div>
+            <div class="ven-row" data-sport-row="bsb"><div class="ven-info"><strong>Hawks Diamond · Hillstone</strong><small>BSB · NCAA Regional host pre-arrival · cap 3,291</small></div><span class="ven-stat warn">●  Prep</span></div>
+            <div class="ven-row" data-sport-row="bsb"><div class="ven-info"><strong>TCCU Disch-Falk Field · Texas</strong><small>BSB · NCAA Regional host pre-arrival · cap 7,373</small></div><span class="ven-stat warn">●  Prep</span></div>
+            <div class="ven-row" data-sport-row="sb"><div class="ven-info"><strong>Greyhound Diamond · Glenn Park</strong><small>SB · NCAA Super Regional · cap 4,900 · Vista U · gates 12:00 CT</small></div><span class="ven-stat good">●  Open</span></div>
+            <div class="ven-row" data-sport-row="sb"><div class="ven-info"><strong>Engineer Diamond · Kestrel State</strong><small>SB · NCAA Super Regional · cap 2,800 · Vista 2 · gates 2:30 CT</small></div><span class="ven-stat good">●  Open</span></div>
+            <div class="ven-row" data-sport-row="other"><div class="ven-info"><strong>Coastal Federal Field · University of Coastal Federal</strong><small>T&amp;F · NCAA Outdoor Championships · cap 12,650 · NCAA-managed</small></div><span class="ven-stat info">●  NCAA</span></div>
+            <div class="ven-row" data-sport-row="other"><div class="ven-info"><strong>Michael &amp; Suzanne Greenwood Tennis Ctr · Pacific Tech</strong><small>NCAA Tennis Championships · NCAA-managed</small></div><span class="ven-stat info">●  NCAA</span></div>
+            <div class="ven-row" data-sport-row="other"><div class="ven-info"><strong>Coastal Resort Resort · Coastal Resort, CA</strong><small>NCAA Men's Golf · match play · NCAA-managed</small></div><span class="ven-stat info">●  NCAA</span></div>
+            <div class="ven-row" data-sport-row="fb"><div class="ven-info"><strong>All 14 SAC football stadiums</strong><small>FOOTBALL · offseason · summer turf + facility maintenance underway</small></div><span class="ven-stat" style="color:var(--muted);">○  Offseason</span></div>
+            <div data-sport-empty hidden class="sport-empty"><strong>No venues for this sport this week</strong>Try All Sports or a current postseason sport.</div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="templates" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Event Templates · Reusable Across All 21 Sports</h3><span class="h-meta">26 templates · spawn-from-template · sport + event-type</span><div class="spacer"></div><span class="h-action">+ New Template →</span></div>
+          <div data-sport-scope>
+            <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · Regular-season conference game</strong><small>7-man crew + replay + 18 staff · standard FB stadium</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · Rivalry game (Apex Game of the Week)</strong><small>Adds Apex pre-game window + 14 extra credentials + extended security</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · SACCG (Capital City)</strong><small>SACCG · 18 workstreams · vendor block · charters · trophy</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · Conference regular season</strong><small>3-man crew + 6 staff · standard arena · single-game</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · SAC Tournament (Boulder City)</strong><small>5-day operations · neutral venue · 18 workstreams</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB · SAC Tournament (Stonecreek)</strong><small>5-day · 16 workstreams · Vista broadcast windows</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>BSB · Summit Park SAC Tournament</strong><small>6-day · double-elimination · championship village</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>BSB · NCAA Regional host site</strong><small>4-day · 4-team double-elim · NCAA per diem package</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>SB · SAC Tournament (Lexington/Westbrook)</strong><small>4-day · single-elim · 14-workstream package</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>SB · NCAA Super Regional host</strong><small>3-game · 2-day · NCAA per diem package</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>VB · SAC Tournament (Reed Arena)</strong><small>4-day · single-elim · 14 workstreams</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Soccer · NCAA host site package</strong><small>1-2 day · SAC ops light · field marshal + medical + media</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>T&amp;F · SAC + NCAA championship hosting</strong><small>3-4 day · multi-event timing · NCAA-officiated</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>S&amp;D · SAC Championship (Westbrook JSAC)</strong><small>5-day · timing + judging · 14 workstreams</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Tennis · SAC Championship (Boulder City)</strong><small>4-day · M+W combined · 10 workstreams</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Golf · SAC Championship (Sea Island)</strong><small>5-day · M+W concurrent · stroke + match play</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Gymnastics · SAC Championship (Portsmouth)</strong><small>1-day · 6 schools · trophy + media</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Equestrian · SAC Cup (Hillstone City)</strong><small>4-day · 8-school · NCEA-officiated</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Rowing · NCAA event prep</strong><small>3-day · venue advance · KE + MV + alt</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>NCAA postseason host generic</strong><small>Any sport · NCAA-managed officiating · SAC liaison-only roles</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Olympic-sport standard meet</strong><small>2-3 day · venue-side hosting · light SAC presence</small></div><div class="ri-stat info">USE<small>→</small></div></div>
+            <div data-sport-empty hidden class="sport-empty"><strong>No templates for this sport</strong>Try All Sports for the full template library.</div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /tabs-host -->
+
+    </div>
+  </main>
+</div>
+
+<script src="shared.js"></script>
+
+</body>
+</html>

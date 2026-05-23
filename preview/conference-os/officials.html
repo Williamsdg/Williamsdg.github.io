@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%23070d1e%22 stroke=%22%23c9a558%22 stroke-width=%221.5%22/><text x=%2216%22 y=%2222%22 font-family=%22serif%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23c9a558%22>S</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Officials & Replay Console — SAC Operating System</title>
+<meta name="description" content="Officials management, crew grading, replay command, travel coordination, and rule update distribution — for the SAC conference office." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0f1c; --ink-soft:#162033; --navy:#0b1530; --navy-deep:#070d1e; --navy-glow:#0f1a3a;
+    --paper:#f6f5f1; --canvas:#faf9f5;
+    --gold:#c9a558; --gold-soft:#d8b977; --gold-deep:#a8862e;
+    --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+    --muted:rgba(255,255,255,.55); --muted-soft:rgba(255,255,255,.35);
+    --good:#4dc97e; --warn:#e0b873; --danger:#ff6b6b; --info:#6fa9e6; --live:#ff4f4f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:#fff;background:var(--navy-deep);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:13px;overflow-x:hidden}
+  h1,h2,h3,h4,.serif{font-family:'Fraunces',serif;font-weight:400;letter-spacing:-.01em;color:#fff}
+  .mono{font-family:'JetBrains Mono',monospace;font-feature-settings:"tnum"}
+  a{color:inherit;text-decoration:none}
+
+  /* Reused layout */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  .sidebar{background:#04081a;padding:22px 18px;display:flex;flex-direction:column;gap:24px;border-right:1px solid var(--line);position:sticky;top:0;height:100vh;overflow-y:auto}
+  .sidebar::-webkit-scrollbar{width:4px} .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .side-brand{display:flex;align-items:center;gap:11px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .side-mark{width:32px;height:32px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:.95rem;color:var(--gold);font-weight:500}
+  .side-name{font-family:'Fraunces',serif;font-size:.98rem;color:#fff;font-weight:500;line-height:1.1}
+  .side-name em{font-style:normal;font-weight:400;color:var(--gold-soft);display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;margin-top:3px}
+  .side-section h5{font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-bottom:12px}
+  .side-nav{list-style:none;display:flex;flex-direction:column;gap:2px}
+  .side-nav a{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:3px;font-size:.8rem;color:var(--muted);font-weight:500}
+  .side-nav a:hover{background:rgba(255,255,255,.04);color:#fff}
+  .side-nav a.active{background:rgba(201,165,88,.12);color:var(--gold-soft)}
+  .side-nav .ic{width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;opacity:.85;font-size:.78rem}
+  .side-nav .badge{margin-left:auto;font-size:.62rem;padding:2px 6px;border-radius:2px;background:var(--gold);color:var(--navy-deep);font-weight:700;font-family:'JetBrains Mono',monospace}
+  .side-nav .badge.live{background:var(--live);color:#fff;animation:badgePulse 2s infinite}
+  @keyframes badgePulse{0%,100%{opacity:1}50%{opacity:.7}}
+  .side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px}
+  .user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-soft));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;color:var(--navy-deep);font-weight:600;font-size:.8rem}
+  .user-name{color:#fff;font-size:.8rem;font-weight:500;line-height:1.1}
+  .user-role{color:var(--muted-soft);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+
+  main{padding:0;background:radial-gradient(ellipse at top, var(--navy-glow), var(--navy-deep) 70%);min-height:100vh}
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(7,13,30,.92);backdrop-filter:blur(10px);padding:14px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px}
+  .crumb{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .crumb strong{color:#fff;font-weight:700}
+  .topbar-spacer{flex:1}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .btn{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;padding:8px 14px;border:1px solid var(--line-strong);background:rgba(255,255,255,.04);color:#fff;font-weight:700;border-radius:2px;cursor:pointer;font-family:inherit;transition:.2s;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:var(--gold);color:var(--gold-soft)}
+  .btn-gold{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+  .btn-gold:hover{background:var(--gold-soft);color:var(--navy-deep)}
+
+  .content{padding:26px 28px 60px;max-width:1900px}
+  .ph{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px;flex-wrap:wrap}
+  .ph h1{font-family:'Fraunces',serif;font-size:2rem;font-weight:400;line-height:1.05;color:#fff;letter-spacing:-.01em}
+  .ph h1 em{font-style:italic;color:var(--gold-soft);font-weight:300}
+  .ph .sub{color:var(--muted);font-size:.86rem;margin-top:4px}
+  .ph-filters{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .pill{font-size:.7rem;letter-spacing:.08em;padding:6px 12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--muted);font-weight:600;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+  .pill:hover{color:#fff;border-color:var(--line-strong)}
+  .pill.active{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  .stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
+  .stat{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+  .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--line-strong)}
+  .stat.good::before{background:var(--good)} .stat.warn::before{background:var(--warn)} .stat.info::before{background:var(--info)}
+  .stat-label{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .stat-value{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;line-height:1;color:#fff;font-feature-settings:"tnum"}
+  .stat-value small{font-size:.85rem;color:var(--muted);font-weight:300;font-style:italic}
+  .stat-delta{font-size:.72rem;color:var(--muted-soft);font-family:'JetBrains Mono',monospace}
+  .stat-delta.up{color:var(--good)} .stat-delta.down{color:var(--danger)}
+
+  /* Tabs */
+  .tabs{display:flex;gap:2px;padding:4px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;margin-bottom:22px;width:fit-content}
+  .tab{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;padding:9px 18px;color:var(--muted);font-weight:700;cursor:pointer;border-radius:2px;transition:.15s}
+  .tab:hover{color:#fff}
+  .tab.active{background:var(--gold);color:var(--navy-deep)}
+
+  .grid{display:grid;gap:14px;margin-bottom:14px}
+  .grid-2{grid-template-columns:1.4fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+
+  .panel{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:3px;overflow:hidden;display:flex;flex-direction:column}
+  .panel-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.15)}
+  .panel-head h3{font-family:'Fraunces',serif;font-size:1rem;font-weight:500;color:#fff}
+  .panel-head .h-meta{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .panel-head .spacer{flex:1}
+  .panel-head .h-action{font-size:.7rem;color:var(--gold-soft);font-weight:600;letter-spacing:.06em;cursor:pointer}
+  .panel-head .h-action:hover{text-decoration:underline}
+
+  /* Crew table */
+  .crew-tbl{display:flex;flex-direction:column}
+  .crew-tbl-head, .crew-tbl-row{display:grid;grid-template-columns:1.4fr 1.6fr 1fr 70px 100px 60px;gap:12px;padding:12px 18px;align-items:center;border-bottom:1px solid var(--line);font-size:.78rem}
+  .crew-tbl-head{background:rgba(0,0,0,.2);font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .crew-tbl-row{cursor:pointer;transition:.15s}
+  .crew-tbl-row:hover{background:rgba(201,165,88,.06)}
+  .crew-tbl-row:last-child{border-bottom:none}
+  .crew-name{display:flex;flex-direction:column;gap:2px}
+  .crew-name strong{color:#fff;font-weight:600;font-size:.84rem}
+  .crew-name small{color:var(--muted);font-size:.7rem;letter-spacing:.05em}
+  .crew-assign{color:var(--muted);font-size:.76rem}
+  .crew-assign strong{color:#fff;font-weight:500;display:block;font-size:.8rem;margin-bottom:1px}
+  .crew-status{font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:center;display:inline-block}
+  .cs-confirmed{background:rgba(77,201,126,.15);color:var(--good)}
+  .cs-traveling{background:rgba(111,169,230,.18);color:var(--info)}
+  .cs-pending{background:rgba(224,184,115,.18);color:var(--warn)}
+  .cs-onsite{background:rgba(201,165,88,.18);color:var(--gold-soft)}
+  .grade-cell{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--good)}
+  .grade-cell.warn{color:var(--warn)} .grade-cell.high{color:var(--gold-soft)}
+  .grade-cell small{display:block;font-size:.58rem;color:var(--muted-soft);letter-spacing:.12em;font-weight:400;margin-top:2px}
+  .grade-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;position:relative}
+  .grade-bar-fill{height:100%;background:var(--good);border-radius:2px}
+  .grade-bar-fill.warn{background:var(--warn)}
+  .grade-bar-fill.high{background:var(--gold)}
+  .row-action{color:var(--muted);text-align:right;cursor:pointer;font-size:.78rem;transition:.15s}
+  .row-action:hover{color:var(--gold-soft)}
+
+  /* Sparkline-ish grading panel */
+  .grade-summary{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:18px;border-bottom:1px solid var(--line)}
+  .grade-block{display:flex;flex-direction:column;gap:8px}
+  .grade-big{font-family:'Fraunces',serif;font-size:2.4rem;color:var(--gold-soft);font-weight:300;line-height:1}
+  .grade-lbl{font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .grade-spark{display:flex;align-items:flex-end;gap:3px;height:50px;padding-top:8px}
+  .spark{flex:1;background:linear-gradient(to top, var(--gold), var(--gold-soft));border-radius:1px;opacity:.7;min-height:8px}
+  .spark.peak{opacity:1;background:linear-gradient(to top, var(--gold-deep), var(--gold))}
+
+  /* Replay timeline */
+  .replay-list{padding:0}
+  .replay-card{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+  .replay-card:last-child{border-bottom:none}
+  .replay-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .replay-game{font-size:.84rem;font-weight:600;color:#fff;display:flex;align-items:center;gap:9px}
+  .replay-game .helmet{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:800;color:#fff;flex-shrink:0}
+  .replay-result{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;padding:4px 8px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .rr-confirmed{background:rgba(77,201,126,.15);color:var(--good)}
+  .rr-overturned{background:rgba(255,107,107,.15);color:var(--danger)}
+  .rr-stands{background:rgba(224,184,115,.15);color:var(--warn)}
+  .rr-active{background:rgba(255,79,79,.18);color:var(--live)}
+  .replay-progress{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;height:6px;margin-top:2px}
+  .replay-progress span{height:100%}
+  .pp-trigger{background:var(--muted);flex:0 0 12%}
+  .pp-review{background:var(--warn);flex:0 0 38%}
+  .pp-confer{background:var(--info);flex:0 0 22%}
+  .pp-rule{background:var(--good);flex:0 0 18%}
+  .pp-comm{background:var(--gold);flex:0 0 10%}
+  .replay-stages{display:flex;justify-content:space-between;font-size:.62rem;letter-spacing:.08em;color:var(--muted-soft);font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-top:4px}
+  .replay-meta{font-size:.74rem;color:var(--muted);display:flex;align-items:center;gap:14px}
+  .replay-meta .mono{color:var(--gold-soft);font-weight:600}
+  .replay-call{font-size:.78rem;color:var(--muted);line-height:1.5}
+  .replay-call strong{color:#fff;font-weight:500;display:block;margin-bottom:2px}
+
+  /* Travel panel */
+  .travel-item{display:grid;grid-template-columns:1fr auto;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .travel-item:last-child{border-bottom:none}
+  .travel-who{color:#fff;font-weight:500}
+  .travel-who small{display:block;color:var(--muted);font-size:.7rem;margin-top:2px;font-weight:400}
+  .travel-stat{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--good);font-weight:700}
+  .travel-stat.warn{color:var(--warn)}
+  .travel-stat small{display:block;font-size:.6rem;color:var(--muted-soft);letter-spacing:.1em;text-align:right;margin-top:2px;font-weight:400}
+
+  /* Rule updates */
+  .rule-item{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .rule-item:last-child{border-bottom:none}
+  .rule-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .rule-num{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--gold-soft);font-weight:700}
+  .rule-status{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 7px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace;background:rgba(77,201,126,.15);color:var(--good)}
+  .rule-status.pending{background:rgba(224,184,115,.18);color:var(--warn)}
+  .rule-title{font-size:.86rem;font-weight:500;color:#fff;margin-bottom:4px}
+  .rule-desc{font-size:.76rem;color:var(--muted);line-height:1.5}
+  .rule-meta{margin-top:8px;font-size:.66rem;color:var(--muted-soft);letter-spacing:.08em;font-family:'JetBrains Mono',monospace}
+
+  /* Right-side bigger grading detail */
+  .grading-detail{padding:18px;display:flex;flex-direction:column;gap:14px}
+  .gd-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.78rem}
+  .gd-row:last-child{border-bottom:none}
+  .gd-label{color:var(--muted)}
+  .gd-value{font-family:'JetBrains Mono',monospace;color:#fff;font-weight:600}
+  .gd-value.good{color:var(--good)} .gd-value.warn{color:var(--warn)}
+
+  /* === NEW: Sticky deadline banner === */
+  .deadline-banner{margin-bottom:18px;padding:11px 18px;display:flex;align-items:center;gap:14px;background:linear-gradient(90deg, rgba(224,184,115,.14), rgba(7,13,30,.4) 70%);border:1px solid rgba(224,184,115,.35);border-left:4px solid var(--warn);border-radius:3px;font-size:.78rem;color:#fff;animation:bannerPulse 3s ease-in-out infinite}
+  @keyframes bannerPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,184,115,0)}50%{box-shadow:0 0 0 3px rgba(224,184,115,.08)}}
+  .deadline-banner .db-icon{width:28px;height:28px;border-radius:50%;background:rgba(224,184,115,.2);color:var(--warn);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:.9rem}
+  .deadline-banner strong{color:var(--warn);font-weight:600}
+  .deadline-banner .db-cta{margin-left:auto;padding:6px 12px;background:var(--warn);color:var(--navy-deep);border:none;border-radius:2px;font-family:inherit;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;cursor:pointer}
+
+  /* === NEW: Live Crews strip === */
+  .live-crews{margin-bottom:14px;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .live-crews-head{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.2)}
+  .live-crews-head h3{font-family:'Fraunces',serif;font-size:1rem;font-weight:500;color:#fff;display:flex;align-items:center;gap:10px}
+  .live-crews-head h3 em{font-style:italic;color:var(--gold-soft);font-weight:300}
+  .live-crews-head .lc-dot{width:8px;height:8px;border-radius:50%;background:var(--live);animation:pulse 1.6s infinite}
+  .live-crews-head .lc-meta{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .live-crews-head .spacer{flex:1}
+  .live-crews-head .lc-action{font-size:.7rem;color:var(--gold-soft);font-weight:600;letter-spacing:.06em;cursor:pointer}
+  .live-crews-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:1px;background:var(--line)}
+  .lc-card{background:var(--navy-deep);padding:14px 16px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+  .lc-card:hover{background:rgba(201,165,88,.05)}
+  .lc-card.alert::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--warn);animation:lcAlertBar 2s ease-in-out infinite}
+  @keyframes lcAlertBar{0%,100%{opacity:.6}50%{opacity:1}}
+  .lc-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .lc-crew{font-size:.84rem;font-weight:600;color:#fff;letter-spacing:.01em}
+  .lc-status{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 7px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .lc-status.live{background:rgba(255,79,79,.18);color:#ff7878}
+  .lc-status.half{background:rgba(111,169,230,.2);color:#86b0d8}
+  .lc-status.hold{background:rgba(255,79,79,.28);color:#ffa0a0}
+  .lc-status.final{background:rgba(77,201,126,.15);color:#86d8a8}
+  .lc-game{font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .lc-game .lc-helm{width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.5rem;font-weight:800;color:#fff;flex-shrink:0}
+  .lc-game strong{color:#fff;font-weight:500;font-family:'JetBrains Mono',monospace}
+  .lc-details{display:grid;grid-template-columns:auto 1fr auto;gap:8px;font-size:.7rem;color:var(--muted-soft);padding-top:8px;border-top:1px solid var(--line);align-items:center}
+  .lc-details .lc-dd{color:var(--gold-soft);font-family:'JetBrains Mono',monospace;font-weight:600}
+  .lc-details .lc-replay{font-size:.6rem;letter-spacing:.1em;padding:2px 6px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .lc-replay.idle{background:rgba(255,255,255,.04);color:var(--muted)}
+  .lc-replay.active{background:rgba(224,184,115,.18);color:var(--warn);animation:pulse 1.6s infinite}
+  .lc-grade{font-family:'JetBrains Mono',monospace;font-size:.84rem;font-weight:700;color:var(--good)}
+  .lc-grade.warn{color:var(--warn)}
+  .lc-grade.danger{color:var(--danger)}
+  .lc-grade .trend{font-size:.62rem;margin-left:3px}
+
+  /* === NEW: Crew row enhancements (postseason, complaints, travel risk, chemistry) === */
+  .crew-tbl-head, .crew-tbl-row{grid-template-columns:1.3fr 1.5fr 80px 80px 70px 90px 60px !important;gap:10px !important}
+  .crew-row-extras{display:flex;flex-direction:column;gap:3px}
+  .row-postseason{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 6px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace;display:inline-flex;align-items:center;gap:5px;width:fit-content}
+  .row-postseason.eligible{background:rgba(77,201,126,.15);color:var(--good)}
+  .row-postseason.review{background:rgba(224,184,115,.18);color:var(--warn)}
+  .row-postseason.ineligible{background:rgba(255,107,107,.15);color:var(--danger)}
+  .row-postseason .ps-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .row-complaints{display:flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted)}
+  .row-complaints .cmp-count{color:#fff;font-weight:600}
+  .row-complaints .cmp-dot{width:6px;height:6px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 0 rgba(255,107,107,.6);animation:pulse 1.6s infinite}
+  .row-travel-risk{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted)}
+  .row-travel-risk .tr-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .row-travel-risk .tr-dot.low{background:var(--good)}
+  .row-travel-risk .tr-dot.med{background:var(--warn)}
+  .row-travel-risk .tr-dot.high{background:var(--danger)}
+  .crew-name small .chem{color:var(--gold-soft);font-family:'JetBrains Mono',monospace;font-weight:600}
+
+  /* === NEW: Grade breakdown popover === */
+  .grade-cell{position:relative;cursor:help}
+  .grade-popover{position:absolute;top:calc(100% + 8px);right:0;width:300px;background:rgba(7,13,30,.98);border:1px solid var(--line-strong);border-radius:4px;padding:14px;box-shadow:0 20px 40px -16px rgba(0,0,0,.6);z-index:50;opacity:0;visibility:hidden;transition:.15s;backdrop-filter:blur(8px)}
+  .grade-cell:hover .grade-popover{opacity:1;visibility:visible;transform:translateY(0)}
+  .grade-popover-head{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-soft);font-weight:700;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .gp-row{display:grid;grid-template-columns:1fr 50px 60px;gap:8px;align-items:center;padding:6px 0;font-size:.72rem;color:var(--muted)}
+  .gp-row strong{color:#fff;font-weight:500}
+  .gp-row .gp-spark{display:flex;align-items:flex-end;gap:1px;height:18px}
+  .gp-row .gp-spark span{flex:1;background:var(--gold);border-radius:1px;opacity:.5;min-height:3px}
+  .gp-row .gp-spark span.peak{opacity:1}
+  .gp-row .gp-val{font-family:'JetBrains Mono',monospace;color:var(--good);font-weight:700;text-align:right}
+  .gp-row .gp-val.warn{color:var(--warn)}
+  .gp-row .gp-val.danger{color:var(--danger)}
+  .gp-foot{padding-top:8px;border-top:1px solid var(--line);font-size:.66rem;color:var(--muted-soft);margin-top:6px;line-height:1.5;letter-spacing:.04em}
+
+  /* === NEW: Replay Disagreement Alert === */
+  .disagree-alert{margin-bottom:14px;background:linear-gradient(90deg, rgba(224,184,115,.1), rgba(7,13,30,.4) 80%);border:1px solid rgba(224,184,115,.3);border-left:4px solid var(--warn);border-radius:3px;padding:14px 18px;display:flex;align-items:center;gap:18px}
+  .disagree-alert .da-icon{width:36px;height:36px;border-radius:3px;background:rgba(224,184,115,.18);color:var(--warn);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0}
+  .disagree-alert .da-content{flex:1}
+  .disagree-alert strong{color:#fff;font-weight:600;display:block;font-size:.86rem;margin-bottom:2px}
+  .disagree-alert span{font-size:.74rem;color:var(--muted);line-height:1.5}
+  .disagree-alert span em{font-style:normal;color:var(--gold-soft);font-weight:600}
+  .disagree-alert .da-cta{padding:7px 14px;background:rgba(255,255,255,.06);border:1px solid var(--warn);color:var(--warn);font-weight:700;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;border-radius:2px;font-family:inherit;flex-shrink:0}
+
+  /* === NEW: Grading AI panel === */
+  .ai-anomaly{padding:14px 18px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:flex-start;cursor:pointer;transition:.15s}
+  .ai-anomaly:last-child{border-bottom:none}
+  .ai-anomaly:hover{background:rgba(201,165,88,.04)}
+  .ai-icon{width:28px;height:28px;border-radius:3px;background:linear-gradient(135deg, rgba(201,165,88,.18), rgba(201,165,88,.08));color:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;border:1px solid rgba(201,165,88,.3)}
+  .ai-body strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:3px}
+  .ai-body .ai-detail{font-size:.74rem;color:var(--muted);line-height:1.5}
+  .ai-body .ai-detail em{font-style:normal;color:var(--gold-soft);font-weight:600}
+  .ai-confidence{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted-soft);text-align:right;letter-spacing:.06em;font-weight:600;flex-shrink:0}
+  .ai-confidence strong{color:#fff;font-weight:700;display:block;font-size:.84rem;margin-bottom:1px}
+
+  /* === NEW: 8-Week Assignment Heat Map === */
+  .heatmap{padding:18px}
+  .heatmap-head{display:grid;grid-template-columns:120px repeat(8, 1fr);gap:4px;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:8px}
+  .heatmap-head .hm-week{text-align:center;font-family:'JetBrains Mono',monospace}
+  .heatmap-row{display:grid;grid-template-columns:120px repeat(8, 1fr);gap:4px;padding:5px 0;align-items:center;font-size:.74rem;color:var(--muted)}
+  .heatmap-row strong{color:#fff;font-weight:500}
+  .heatmap-row small{display:block;color:var(--muted-soft);font-size:.62rem;letter-spacing:.04em;margin-top:1px}
+  .hm-cell{height:28px;border-radius:2px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:700;color:var(--muted-soft);cursor:pointer;transition:.15s;border:1px solid transparent}
+  .hm-cell:hover{border-color:var(--gold-soft)}
+  .hm-cell.assigned{background:rgba(201,165,88,.18);color:var(--gold-soft)}
+  .hm-cell.assigned.hi{background:rgba(201,165,88,.4);color:#fff}
+  .hm-cell.over{background:rgba(255,107,107,.2);color:var(--danger);animation:pulse 1.6s infinite}
+  .hm-cell.bye{color:var(--muted-soft);font-style:italic}
+  .hm-legend{display:flex;gap:14px;padding-top:12px;border-top:1px solid var(--line);margin-top:8px;font-size:.66rem;color:var(--muted);letter-spacing:.04em}
+  .hm-legend span{display:inline-flex;align-items:center;gap:6px}
+  .hm-legend .leg-cell{width:16px;height:10px;border-radius:1px}
+
+  /* === NEW: Crew profile drawer === */
+  .crew-drawer-mask{position:fixed;inset:0;background:rgba(2,6,18,.7);backdrop-filter:blur(4px);z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+  .crew-drawer-mask.open{opacity:1;pointer-events:auto}
+  .crew-drawer{position:fixed;top:0;right:0;bottom:0;width:min(640px, 92vw);background:#06091a;border-left:1px solid var(--line-strong);z-index:101;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-30px 0 60px -20px rgba(0,0,0,.5)}
+  .crew-drawer.open{transform:translateX(0)}
+  .cd-head{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;background:rgba(0,0,0,.25)}
+  .cd-mark{width:46px;height:46px;border-radius:3px;background:rgba(201,165,88,.12);color:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.1rem;font-weight:600;border:1px solid rgba(201,165,88,.3)}
+  .cd-name{font-family:'Fraunces',serif;font-size:1.3rem;color:#fff;font-weight:500;line-height:1.1}
+  .cd-name em{font-style:normal;display:block;font-size:.7rem;color:var(--gold-soft);letter-spacing:.12em;text-transform:uppercase;margin-top:3px;font-family:'Inter',sans-serif;font-weight:500}
+  .cd-close{margin-left:auto;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;font-weight:300;transition:.15s}
+  .cd-close:hover{color:#fff;border-color:var(--line-strong);background:rgba(255,255,255,.08)}
+  .cd-body{flex:1;overflow-y:auto;padding:22px 26px;display:flex;flex-direction:column;gap:22px}
+  .cd-body::-webkit-scrollbar{width:4px}
+  .cd-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .cd-stat-row{display:grid;grid-template-columns:repeat(4, 1fr);gap:10px}
+  .cd-stat-tile{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:3px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+  .cd-stat-label{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .cd-stat-value{font-family:'Fraunces',serif;font-size:1.4rem;color:#fff;font-weight:400;line-height:1}
+  .cd-stat-value small{font-size:.7rem;color:var(--muted);font-weight:400;font-style:italic}
+  .cd-section h4{font-family:'Fraunces',serif;font-size:.95rem;color:#fff;font-weight:500;margin-bottom:10px}
+  .cd-foot{padding:14px 26px;border-top:1px solid var(--line);background:rgba(0,0,0,.25);display:flex;gap:8px}
+
+  /* === NEW: Enhanced Directory Filters panel === */
+  .dir-search{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:3px;margin-bottom:14px}
+  .dir-search:focus-within{border-color:var(--gold)}
+  .dir-search .ds-ic{color:var(--muted-soft);font-size:.9rem}
+  .dir-search input{background:transparent;border:none;outline:none;color:#fff;font-family:inherit;font-size:.84rem;flex:1}
+  .dir-search input::placeholder{color:var(--muted-soft)}
+  .dir-search .ds-clear{color:var(--muted-soft);cursor:pointer;font-size:.86rem;padding:0 4px;display:none}
+  .dir-search.has-value .ds-clear{display:inline}
+  .dir-active-chips{display:flex;flex-wrap:wrap;gap:5px;padding:10px 12px;background:rgba(201,165,88,.04);border:1px dashed rgba(201,165,88,.3);border-radius:3px;margin-bottom:14px;min-height:42px;align-items:center;font-size:.74rem;color:var(--muted)}
+  .dir-active-chips.empty{justify-content:center;font-style:italic;color:var(--muted-soft);font-size:.74rem;letter-spacing:.04em}
+  .dir-active-chips strong{color:#fff;font-weight:600}
+  .active-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;background:var(--gold);color:var(--navy-deep);border-radius:99px;font-size:.66rem;font-weight:700;letter-spacing:.04em}
+  .active-chip .chip-x{cursor:pointer;font-size:.82rem;opacity:.75;line-height:1}
+  .active-chip .chip-x:hover{opacity:1}
+  .dir-reset{margin-left:auto;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;padding:4px 10px;background:transparent;border:1px solid var(--line-strong);color:var(--muted);font-weight:700;cursor:pointer;border-radius:2px;font-family:inherit}
+  .dir-reset:hover{color:#fff;border-color:#fff}
+  .dir-filter-group{display:flex;flex-direction:column;gap:8px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+  .dir-filter-group:last-of-type{border-bottom:none}
+  .dir-group-head{display:flex;align-items:center;justify-content:space-between;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .dir-group-head .dgh-count{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-size:.66rem;font-weight:700}
+  .dir-pills{display:flex;flex-wrap:wrap;gap:5px}
+  .dir-pill{font-size:.7rem;letter-spacing:.04em;padding:5px 10px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--muted);font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:5px;user-select:none}
+  .dir-pill:hover{color:#fff;border-color:var(--line-strong)}
+  .dir-pill.active{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+  .dir-pill .dp-count{font-family:'JetBrains Mono',monospace;font-size:.62rem;opacity:.7;font-weight:700}
+  .dir-pill.active .dp-count{opacity:.85}
+
+  /* Live summary panel */
+  .dir-summary{padding:16px;background:linear-gradient(180deg, rgba(201,165,88,.08), rgba(7,13,30,.4));border:1px solid rgba(201,165,88,.25);border-radius:3px;margin-top:6px;display:flex;flex-direction:column;gap:10px}
+  .ds-head{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-soft);font-weight:700}
+  .ds-big{font-family:'Fraunces',serif;font-size:1.6rem;color:#fff;font-weight:400;line-height:1}
+  .ds-big em{font-style:italic;color:var(--gold-soft);font-weight:300;font-size:.86rem}
+  .ds-row{display:flex;justify-content:space-between;align-items:center;font-size:.76rem;color:var(--muted);padding:5px 0;border-top:1px solid rgba(255,255,255,.06)}
+  .ds-row strong{color:#fff;font-weight:600;font-family:'JetBrains Mono',monospace}
+  .ds-row.warn strong{color:var(--warn)}
+  .ds-row.good strong{color:var(--good)}
+  .ds-row.danger strong{color:var(--danger)}
+  .dir-empty{padding:24px 18px;text-align:center;color:var(--muted);font-size:.86rem;font-style:italic;background:rgba(255,255,255,.02);border:1px dashed var(--line);border-radius:3px;margin:8px 18px}
+  .dir-empty strong{display:block;color:#fff;font-weight:500;font-style:normal;font-size:.92rem;margin-bottom:4px}
+
+  @media (max-width: 1280px){
+    .grid-2{grid-template-columns:1fr} .stat-row{grid-template-columns:repeat(3,1fr)}
+    .live-crews-grid{grid-template-columns:repeat(2,1fr)}
+    .crew-tbl-head, .crew-tbl-row{grid-template-columns:1.3fr 1.4fr 70px 70px 60px 80px 50px !important}
+  }
+  @media (max-width: 880px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:relative;height:auto;display:none}
+    .stat-row{grid-template-columns:repeat(2,1fr)}
+    .grid-3{grid-template-columns:1fr}
+    .live-crews-grid{grid-template-columns:1fr}
+    .crew-tbl-head, .crew-tbl-row{grid-template-columns:1fr 80px !important}
+    .crew-tbl-head > *:nth-child(n+3), .crew-tbl-row > *:nth-child(n+3){display:none}
+    .heatmap-head, .heatmap-row{grid-template-columns:80px repeat(4, 1fr)}
+    .heatmap-row > *:nth-child(n+6){display:none}
+    .heatmap-head > *:nth-child(n+6){display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SAC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html" class="active"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">SS</div>
+        <div>
+          <div class="user-name">M. Reyes-Albright</div>
+          <div class="user-role">VP, Officiating</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Operations · <strong>Officials & Replay</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">Assign Crew</button>
+        <button class="btn">Export Grades</button>
+        <button class="btn btn-gold">Open Replay Center</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Officials &amp; Replay <em>command console.</em></h1>
+          <div class="sub">102 active crews · 14 on the field today · 7 replay centers online</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">Football</button>
+          <button class="pill">Basketball</button>
+          <button class="pill">Baseball</button>
+          <button class="pill">Other</button>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat good">
+          <span class="stat-label">Crews Assigned</span>
+          <span class="stat-value">14 <small>/ 14</small></span>
+          <span class="stat-delta up">All confirmed by Wed</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Avg Crew Grade · YTD</span>
+          <span class="stat-value">93.4</span>
+          <span class="stat-delta up">+1.2 vs '24 season</span>
+        </div>
+        <div class="stat warn">
+          <span class="stat-label">Replays — Today</span>
+          <span class="stat-value">17</span>
+          <span class="stat-delta">avg ruling 92s</span>
+        </div>
+        <div class="stat info">
+          <span class="stat-label">In Transit</span>
+          <span class="stat-value">3</span>
+          <span class="stat-delta">2 weather-rerouted</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">School Complaints — 7d</span>
+          <span class="stat-value">9</span>
+          <span class="stat-delta">6 resolved · 3 in review</span>
+        </div>
+      </div>
+
+      <!-- STICKY DEADLINE BANNER -->
+      <div class="deadline-banner">
+        <div class="db-icon">!</div>
+        <div>
+          <strong>3 confirmations outstanding</strong> · within 24h of Wednesday deadline · D. Henderson (The Lighthouse Rivalry backup R) · M. Vance (Sunday MBB swap) · S. Pham (Redmoor credential pickup)
+        </div>
+        <button class="db-cta">Send Reminders</button>
+      </div>
+
+      <!-- LIVE CREWS · RIGHT NOW -->
+      <div class="live-crews">
+        <div class="live-crews-head">
+          <h3><span class="lc-dot"></span>Live Crews <em>· right now</em></h3>
+          <span class="lc-meta">7 on field · auto-refresh 10s</span>
+          <div class="spacer"></div>
+          <span class="lc-action">Open game ops →</span>
+        </div>
+        <div class="live-crews-grid">
+          <div class="lc-card" onclick="openCrewDrawer('henderson')">
+            <div class="lc-card-head"><span class="lc-crew">Henderson</span><span class="lc-status live">LIVE</span></div>
+            <div class="lc-game"><span class="lc-helm" style="background:#9e1b32;">A</span>LIB <strong>17</strong>·<strong>24</strong> <span class="lc-helm" style="background:#bf5700;">WB</span>WB</div>
+            <div class="lc-details"><span class="lc-dd">Q3 4:12</span><span class="lc-replay idle">Replay idle</span><span class="lc-grade">94<span class="trend">▲</span></span></div>
+          </div>
+          <div class="lc-card alert" onclick="openCrewDrawer('walker')">
+            <div class="lc-card-head"><span class="lc-crew">Whitaker</span><span class="lc-status live">LIVE</span></div>
+            <div class="lc-game"><span class="lc-helm" style="background:#fa4616;">F</span>TC <strong>24</strong>·<strong>28</strong> <span class="lc-helm" style="background:#ba0c2f;">HC</span>HC</div>
+            <div class="lc-details"><span class="lc-dd">Q4 2:34</span><span class="lc-replay active">Reviewing 42s</span><span class="lc-grade warn">87<span class="trend">▼</span></span></div>
+          </div>
+          <div class="lc-card" onclick="openCrewDrawer('reyes')">
+            <div class="lc-card-head"><span class="lc-crew">Reyes</span><span class="lc-status half">HALF</span></div>
+            <div class="lc-game"><span class="lc-helm" style="background:#500000;">KE</span>KE <strong>14</strong>·<strong>14</strong> <span class="lc-helm" style="background:#461d7c;">FV</span>FV</div>
+            <div class="lc-details"><span class="lc-dd">Half · 12m</span><span class="lc-replay idle">Replay idle</span><span class="lc-grade">93</span></div>
+          </div>
+          <div class="lc-card alert" onclick="openCrewDrawer('patel')">
+            <div class="lc-card-head"><span class="lc-crew">Patel</span><span class="lc-status hold">WX HOLD</span></div>
+            <div class="lc-game"><span class="lc-helm" style="background:#0033a0;">HC</span>HC <strong>—</strong>·<strong>—</strong> <span class="lc-helm" style="background:#ff8200;">MV</span>MV</div>
+            <div class="lc-details"><span class="lc-dd">Hold 38m</span><span class="lc-replay idle">Standby</span><span class="lc-grade">—</span></div>
+          </div>
+          <div class="lc-card" onclick="openCrewDrawer('drummond')">
+            <div class="lc-card-head"><span class="lc-crew">Drummond</span><span class="lc-status half">PRE</span></div>
+            <div class="lc-game"><span class="lc-helm" style="background:#9d2235;">CC</span>CC <strong>—</strong>·<strong>—</strong> <span class="lc-helm" style="background:#14213d;">RD</span>RD</div>
+            <div class="lc-details"><span class="lc-dd">KO 6:30 CT</span><span class="lc-replay idle">Inbound</span><span class="lc-grade">88</span></div>
+          </div>
+          <div class="lc-card" onclick="openCrewDrawer('mitchell')">
+            <div class="lc-card-head"><span class="lc-crew">Mitchell</span><span class="lc-status half">PRE</span></div>
+            <div class="lc-game"><span class="lc-helm" style="background:#231f20;">GP</span>GP <strong>—</strong>·<strong>—</strong> <span class="lc-helm" style="background:#73000a;">BH</span>BH</div>
+            <div class="lc-details"><span class="lc-dd">KO 7:00 CT</span><span class="lc-replay idle">On site</span><span class="lc-grade">90</span></div>
+          </div>
+          <div class="lc-card" onclick="openCrewDrawer('okafor')">
+            <div class="lc-card-head"><span class="lc-crew">Okafor</span><span class="lc-status final">FINAL</span></div>
+            <div class="lc-game"><span class="lc-helm" style="background:#002868;">NT</span>NT <strong>31</strong>·<strong>17</strong> <span class="lc-helm" style="background:#13294b;">PR</span>PR</div>
+            <div class="lc-details"><span class="lc-dd">A+ grade</span><span class="lc-replay idle">Wrapped</span><span class="lc-grade">96</span></div>
+          </div>
+          <div class="lc-card" style="background:rgba(255,255,255,.02);">
+            <div class="lc-card-head"><span class="lc-crew" style="color:var(--muted);">· · ·</span><span class="lc-status final">SLOT</span></div>
+            <div class="lc-game" style="color:var(--muted-soft);">Reserve crew available</div>
+            <div class="lc-details"><span class="lc-dd" style="color:var(--muted-soft);">Standby</span><span></span><span class="lc-grade" style="color:var(--muted-soft);">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPLAY DISAGREEMENT ALERT -->
+      <div class="disagree-alert">
+        <div class="da-icon">⏵</div>
+        <div class="da-content">
+          <strong>Replay disagreement spike · Crew Whitaker (TC @ HC)</strong>
+          <span>Capital City replay has <em>overturned 2 of 4 calls</em> this game (50% vs 22% season norm). Crew running 4 pts below YTD grade. Coordinator review recommended at next stoppage. <em>Auto-routed to incident desk · SEV-MON</em>.</span>
+        </div>
+        <button class="da-cta">Open Review</button>
+      </div>
+
+      <!-- GRADING AI ANOMALIES -->
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head">
+          <h3>Grading AI · Anomalies Detected</h3>
+          <span class="h-meta">last 7 days · 4 flagged</span>
+          <div class="spacer"></div>
+          <span class="h-action">Methodology →</span>
+        </div>
+        <div>
+          <div class="ai-anomaly" onclick="openCrewDrawer('drummond')">
+            <div class="ai-icon">⚠</div>
+            <div class="ai-body">
+              <strong>Crew Donovan · 3 missed holdings vs season pattern</strong>
+              <div class="ai-detail">AI overlay flagged <em>3 likely holding non-calls</em> in last 2 games — 87% vs season norm of 96%. Pattern: <em>left-tackle restrictor situations on 3rd-and-medium</em>. Suggest emphasis memo or pre-The Lighthouse Rivalry review.</div>
+            </div>
+            <div class="ai-confidence"><strong>92%</strong>confidence</div>
+          </div>
+          <div class="ai-anomaly" onclick="openCrewDrawer('walker')">
+            <div class="ai-icon">⏵</div>
+            <div class="ai-body">
+              <strong>Crew Whitaker · targeting overturn rate up 18% MoM</strong>
+              <div class="ai-detail">Whitaker's targeting calls <em>overturned 4 of 8</em> in last 4 weeks (50%) vs 32% season prior. Crown-contact judgment trending toward over-flagging. <em>Possible refresher candidate.</em></div>
+            </div>
+            <div class="ai-confidence"><strong>88%</strong>confidence</div>
+          </div>
+          <div class="ai-anomaly" onclick="openCrewDrawer('patel')">
+            <div class="ai-icon">↑</div>
+            <div class="ai-body">
+              <strong>Crew Petrov · weather-hold protocol exemplary</strong>
+              <div class="ai-detail">Patel's lightning-hold execution <em>(field clear in 78s vs target 90s)</em> is the fastest in conference. Worth distributing as training example for other crews this offseason.</div>
+            </div>
+            <div class="ai-confidence"><strong>96%</strong>confidence</div>
+          </div>
+          <div class="ai-anomaly" onclick="openCrewDrawer('henderson')">
+            <div class="ai-icon">★</div>
+            <div class="ai-body">
+              <strong>Crew Holloway · spot accuracy outperforming +2σ</strong>
+              <div class="ai-detail">Henderson's spot accuracy (98.4%) is <em>2 standard deviations above conference mean</em> over 11 games. Postseason-eligibility lock; SACCG primary if WB-LIB winner advances.</div>
+            </div>
+            <div class="ai-confidence"><strong>99%</strong>confidence</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs-host">
+      <div class="tabs">
+        <div class="tab active" data-tab="overview">Saturday Assignments</div>
+        <div class="tab" data-tab="directory">Crew Directory</div>
+        <div class="tab" data-tab="grading">Grading</div>
+        <div class="tab" data-tab="replay">Replay Center</div>
+        <div class="tab" data-tab="travel">Travel</div>
+        <div class="tab" data-tab="rules">Rules &amp; Memos</div>
+      </div>
+
+      <div class="sport-bar">
+        <span class="sport-bar-label">Sport</span>
+        <span class="sport-pill active" data-sport="all"><span class="sp-ic">◎</span>All Sports</span>
+        <span class="sport-pill" data-sport="fb"><span class="sp-ic">●</span>Football</span>
+        <span class="sport-pill" data-sport="mbb"><span class="sp-ic">●</span>Men&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="wbb"><span class="sp-ic">●</span>Women&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="bsb"><span class="sp-ic">●</span>Baseball</span>
+        <span class="sport-pill" data-sport="sb"><span class="sp-ic">●</span>Softball</span>
+        <span class="sport-pill" data-sport="vb"><span class="sp-ic">●</span>Volleyball</span>
+        <span class="sport-pill" data-sport="other"><span class="sp-ic">○</span>Other Sports</span>
+      </div>
+
+      <div data-tab-panel="overview">
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Saturday Crew Board</h3>
+            <span class="h-meta">14 crews · 7 games</span>
+            <div class="spacer"></div>
+            <span class="h-action">Reassign view →</span>
+          </div>
+          <div class="crew-tbl" data-sport-scope>
+            <div class="crew-tbl-head">
+              <span>Crew</span><span>Assignment</span><span>Postseason</span><span>Complaints</span><span>Travel</span><span>Grade · YTD</span><span></span>
+            </div>
+
+            <div class="crew-tbl-row" data-sport-row="fb" onclick="openCrewDrawer('henderson')">
+              <div class="crew-name"><strong>Crew Holloway</strong><small>R: B. Holloway · 7-man · <span class="chem">11 wks together</span></small></div>
+              <div class="crew-assign"><strong>LIB @ WB</strong>Mariner Stadium · 3:30 CT</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>SACCG</span></div>
+              <div class="row-complaints"><span class="cmp-count">2</span> / 11g</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Low</div>
+              <div class="grade-cell high">95.2<small>YTD</small>
+                <div class="grade-popover">
+                  <div class="grade-popover-head">Composite breakdown · 10-game trend</div>
+                  <div class="gp-row"><span><strong>Spot accuracy</strong></span><div class="gp-spark"><span style="height:60%"></span><span style="height:72%"></span><span style="height:84%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:98%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:99%"></span><span class="peak" style="height:97%"></span><span class="peak" style="height:98%"></span></div><span class="gp-val">98.4</span></div>
+                  <div class="gp-row"><span><strong>Penalty correctness</strong></span><div class="gp-spark"><span style="height:62%"></span><span style="height:70%"></span><span style="height:78%"></span><span style="height:82%"></span><span style="height:88%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span></div><span class="gp-val">94.6</span></div>
+                  <div class="gp-row"><span><strong>Game management</strong></span><div class="gp-spark"><span style="height:50%"></span><span style="height:62%"></span><span style="height:70%"></span><span style="height:74%"></span><span style="height:80%"></span><span style="height:82%"></span><span class="peak" style="height:90%"></span><span class="peak" style="height:88%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:94%"></span></div><span class="gp-val">93.1</span></div>
+                  <div class="gp-row"><span><strong>Replay calibration</strong></span><div class="gp-spark"><span style="height:48%"></span><span style="height:60%"></span><span style="height:64%"></span><span style="height:72%"></span><span style="height:80%"></span><span style="height:88%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:91%"></span><span class="peak" style="height:97%"></span></div><span class="gp-val">94.8</span></div>
+                  <div class="gp-foot">Composite: <strong style="color:var(--good);">95.2</strong> · top-quartile across all 102 crews · postseason-locked.</div>
+                </div>
+              </div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row" data-sport-row="fb" onclick="openCrewDrawer('walker')">
+              <div class="crew-name"><strong>Crew Whitaker</strong><small>R: D. Whitaker · 7-man · <span class="chem">14 wks together</span></small></div>
+              <div class="crew-assign"><strong>TC @ HC</strong>Hillstone Field · 3:30 CT</div>
+              <div><span class="row-postseason review"><span class="ps-dot"></span>Review</span></div>
+              <div class="row-complaints"><span class="cmp-count">4</span> / 11g <span class="cmp-dot" title="Unresolved"></span></div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Local</div>
+              <div class="grade-cell">91.3<small>YTD</small>
+                <div class="grade-popover">
+                  <div class="grade-popover-head">Composite breakdown · 10-game trend</div>
+                  <div class="gp-row"><span><strong>Spot accuracy</strong></span><div class="gp-spark"><span class="peak" style="height:94%"></span><span class="peak" style="height:92%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:86%"></span><span style="height:88%"></span><span style="height:84%"></span><span style="height:90%"></span><span class="peak" style="height:94%"></span><span style="height:88%"></span></div><span class="gp-val">90.4</span></div>
+                  <div class="gp-row"><span><strong>Penalty correctness</strong></span><div class="gp-spark"><span class="peak" style="height:96%"></span><span class="peak" style="height:92%"></span><span style="height:88%"></span><span style="height:86%"></span><span style="height:82%"></span><span style="height:84%"></span><span style="height:80%"></span><span style="height:78%"></span><span style="height:80%"></span><span style="height:82%"></span></div><span class="gp-val warn">85.1</span></div>
+                  <div class="gp-row"><span><strong>Game management</strong></span><div class="gp-spark"><span style="height:90%"></span><span style="height:92%"></span><span class="peak" style="height:94%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:92%"></span><span style="height:90%"></span><span style="height:92%"></span><span class="peak" style="height:94%"></span><span style="height:88%"></span></div><span class="gp-val">91.2</span></div>
+                  <div class="gp-row"><span><strong>Replay calibration</strong></span><div class="gp-spark"><span style="height:80%"></span><span style="height:82%"></span><span style="height:78%"></span><span style="height:76%"></span><span style="height:72%"></span><span style="height:68%"></span><span style="height:64%"></span><span style="height:62%"></span><span style="height:60%"></span><span style="height:54%"></span></div><span class="gp-val danger">73.8</span></div>
+                  <div class="gp-foot">Composite: <strong style="color:var(--warn);">91.3</strong> · ▼ 1.2 vs '25 · <strong style="color:var(--danger);">replay calibration declining</strong> — postseason eligibility under review.</div>
+                </div>
+              </div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row" data-sport-row="fb" onclick="openCrewDrawer('reyes')">
+              <div class="crew-name"><strong>Crew Riordan</strong><small>R: M. Riordan · 7-man · <span class="chem">9 wks together</span></small></div>
+              <div class="crew-assign"><strong>KE @ FV</strong>Wolfgate Stadium · 6:00 CT</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>Bowl</span></div>
+              <div class="row-complaints"><span class="cmp-count">1</span> / 11g</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Low</div>
+              <div class="grade-cell">94.1<small>YTD</small>
+                <div class="grade-popover">
+                  <div class="grade-popover-head">Composite breakdown · 10-game trend</div>
+                  <div class="gp-row"><span><strong>Spot accuracy</strong></span><div class="gp-spark"><span style="height:84%"></span><span style="height:88%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:97%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:97%"></span></div><span class="gp-val">96.4</span></div>
+                  <div class="gp-row"><span><strong>Penalty correctness</strong></span><div class="gp-spark"><span style="height:78%"></span><span style="height:82%"></span><span style="height:86%"></span><span style="height:90%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:93%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:95%"></span></div><span class="gp-val">92.8</span></div>
+                  <div class="gp-row"><span><strong>Game management</strong></span><div class="gp-spark"><span style="height:84%"></span><span style="height:88%"></span><span style="height:92%"></span><span style="height:94%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:94%"></span><span style="height:96%"></span><span style="height:94%"></span><span style="height:96%"></span></div><span class="gp-val">93.4</span></div>
+                  <div class="gp-row"><span><strong>Replay calibration</strong></span><div class="gp-spark"><span style="height:88%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:88%"></span><span style="height:94%"></span><span style="height:96%"></span><span style="height:92%"></span><span style="height:94%"></span><span style="height:96%"></span><span style="height:94%"></span></div><span class="gp-val">93.6</span></div>
+                  <div class="gp-foot">Composite: <strong style="color:var(--good);">94.1</strong> · ▲ 0.8 vs '25 · bowl-eligible.</div>
+                </div>
+              </div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row" data-sport-row="fb" onclick="openCrewDrawer('patel')">
+              <div class="crew-name"><strong>Crew Petrov</strong><small>R: A. Petrov · 7-man · <span class="chem">8 wks together</span></small></div>
+              <div class="crew-assign"><strong>HC @ MV</strong>Falcon Hill · weather hold</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>Bowl</span></div>
+              <div class="row-complaints"><span class="cmp-count">1</span> / 10g</div>
+              <div class="row-travel-risk"><span class="tr-dot med"></span>WX</div>
+              <div class="grade-cell">92.6<small>YTD</small>
+                <div class="grade-popover">
+                  <div class="grade-popover-head">Composite breakdown · 10-game trend</div>
+                  <div class="gp-row"><span><strong>Spot accuracy</strong></span><div class="gp-spark"><span style="height:80%"></span><span style="height:84%"></span><span style="height:88%"></span><span style="height:90%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:94%"></span><span style="height:88%"></span><span style="height:90%"></span><span class="peak" style="height:96%"></span></div><span class="gp-val">95.1</span></div>
+                  <div class="gp-row"><span><strong>Penalty correctness</strong></span><div class="gp-spark"><span style="height:84%"></span><span style="height:86%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:92%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:92%"></span></div><span class="gp-val">91.0</span></div>
+                  <div class="gp-row"><span><strong>Game management</strong></span><div class="gp-spark"><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:98%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:98%"></span><span class="peak" style="height:99%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:98%"></span><span class="peak" style="height:99%"></span><span class="peak" style="height:99%"></span></div><span class="gp-val">96.8</span></div>
+                  <div class="gp-row"><span><strong>Replay calibration</strong></span><div class="gp-spark"><span style="height:82%"></span><span style="height:84%"></span><span style="height:86%"></span><span style="height:88%"></span><span style="height:84%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:92%"></span></div><span class="gp-val">88.4</span></div>
+                  <div class="gp-foot">Composite: <strong style="color:var(--good);">92.6</strong> · game-management exemplary (lightning protocol).</div>
+                </div>
+              </div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row" data-sport-row="fb" onclick="openCrewDrawer('drummond')">
+              <div class="crew-name"><strong>Crew Donovan</strong><small>R: C. Donovan · 7-man · <span class="chem">5 wks together</span></small></div>
+              <div class="crew-assign"><strong>CC @ RD</strong>Stormpetrel Stadium · 6:30 CT</div>
+              <div><span class="row-postseason review"><span class="ps-dot"></span>Review</span></div>
+              <div class="row-complaints"><span class="cmp-count">3</span> / 10g <span class="cmp-dot" title="Unresolved"></span></div>
+              <div class="row-travel-risk"><span class="tr-dot high"></span>Charter</div>
+              <div class="grade-cell warn">88.7<small>YTD</small>
+                <div class="grade-popover">
+                  <div class="grade-popover-head">Composite breakdown · 10-game trend</div>
+                  <div class="gp-row"><span><strong>Spot accuracy</strong></span><div class="gp-spark"><span style="height:90%"></span><span style="height:88%"></span><span style="height:86%"></span><span style="height:84%"></span><span style="height:82%"></span><span style="height:84%"></span><span style="height:80%"></span><span style="height:82%"></span><span style="height:80%"></span><span style="height:82%"></span></div><span class="gp-val warn">85.4</span></div>
+                  <div class="gp-row"><span><strong>Penalty correctness</strong></span><div class="gp-spark"><span style="height:84%"></span><span style="height:82%"></span><span style="height:80%"></span><span style="height:78%"></span><span style="height:74%"></span><span style="height:72%"></span><span style="height:70%"></span><span style="height:72%"></span><span style="height:68%"></span><span style="height:70%"></span></div><span class="gp-val danger">79.2</span></div>
+                  <div class="gp-row"><span><strong>Game management</strong></span><div class="gp-spark"><span style="height:88%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:92%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:94%"></span><span style="height:92%"></span><span style="height:90%"></span><span style="height:92%"></span></div><span class="gp-val">91.6</span></div>
+                  <div class="gp-row"><span><strong>Replay calibration</strong></span><div class="gp-spark"><span style="height:84%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:92%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:94%"></span><span style="height:92%"></span><span style="height:94%"></span></div><span class="gp-val">92.2</span></div>
+                  <div class="gp-foot">Composite: <strong style="color:var(--warn);">88.7</strong> · ▼ 1.8 · <strong style="color:var(--danger);">below 90 postseason threshold</strong>. AI flagged 3 missed holdings — refresher recommended.</div>
+                </div>
+              </div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row" data-sport-row="fb" onclick="openCrewDrawer('mitchell')">
+              <div class="crew-name"><strong>Crew Marsden</strong><small>R: J. Marsden · 7-man · <span class="chem">7 wks together</span></small></div>
+              <div class="crew-assign"><strong>GP @ BH</strong>Stormpetrel Stadium · 7:00 CT</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>Bowl</span></div>
+              <div class="row-complaints"><span class="cmp-count">2</span> / 10g</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Low</div>
+              <div class="grade-cell">90.4<small>YTD</small>
+                <div class="grade-popover">
+                  <div class="grade-popover-head">Composite breakdown · 10-game trend</div>
+                  <div class="gp-row"><span><strong>Spot accuracy</strong></span><div class="gp-spark"><span style="height:84%"></span><span style="height:86%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:94%"></span></div><span class="gp-val">93.8</span></div>
+                  <div class="gp-row"><span><strong>Penalty correctness</strong></span><div class="gp-spark"><span style="height:80%"></span><span style="height:82%"></span><span style="height:84%"></span><span style="height:86%"></span><span style="height:84%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:88%"></span></div><span class="gp-val">88.6</span></div>
+                  <div class="gp-row"><span><strong>Game management</strong></span><div class="gp-spark"><span style="height:86%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:92%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:94%"></span></div><span class="gp-val">91.2</span></div>
+                  <div class="gp-row"><span><strong>Replay calibration</strong></span><div class="gp-spark"><span style="height:82%"></span><span style="height:84%"></span><span style="height:86%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:88%"></span><span style="height:90%"></span><span style="height:92%"></span><span style="height:90%"></span><span style="height:92%"></span></div><span class="gp-val">89.4</span></div>
+                  <div class="gp-foot">Composite: <strong style="color:var(--good);">90.4</strong> · ▲ 0.3 · bowl-eligible.</div>
+                </div>
+              </div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row" data-sport-row="fb" onclick="openCrewDrawer('okafor')">
+              <div class="crew-name"><strong>Crew Otieno</strong><small>R: K. Otieno · 7-man · <span class="chem">13 wks together</span></small></div>
+              <div class="crew-assign"><strong>NT @ PR</strong>Faurot · final</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>SACCG</span></div>
+              <div class="row-complaints"><span class="cmp-count">1</span> / 10g</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Local</div>
+              <div class="grade-cell high">94.8<small>YTD</small>
+                <div class="grade-popover">
+                  <div class="grade-popover-head">Composite breakdown · 10-game trend</div>
+                  <div class="gp-row"><span><strong>Spot accuracy</strong></span><div class="gp-spark"><span class="peak" style="height:92%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:97%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:98%"></span><span class="peak" style="height:97%"></span><span class="peak" style="height:99%"></span><span class="peak" style="height:98%"></span></div><span class="gp-val">97.2</span></div>
+                  <div class="gp-row"><span><strong>Penalty correctness</strong></span><div class="gp-spark"><span style="height:88%"></span><span style="height:90%"></span><span style="height:92%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:95%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:97%"></span></div><span class="gp-val">93.8</span></div>
+                  <div class="gp-row"><span><strong>Game management</strong></span><div class="gp-spark"><span class="peak" style="height:92%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:98%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:97%"></span><span class="peak" style="height:98%"></span><span class="peak" style="height:97%"></span></div><span class="gp-val">95.6</span></div>
+                  <div class="gp-row"><span><strong>Replay calibration</strong></span><div class="gp-spark"><span style="height:88%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:94%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:97%"></span><span class="peak" style="height:95%"></span><span class="peak" style="height:96%"></span><span class="peak" style="height:97%"></span></div><span class="gp-val">94.4</span></div>
+                  <div class="gp-foot">Composite: <strong style="color:var(--good);">94.8</strong> · ▲ 1.4 · SACCG-eligible.</div>
+                </div>
+              </div>
+              <div class="row-action">→</div>
+            </div>
+
+            <div class="crew-tbl-row" data-sport-row="mbb" hidden onclick="openCrewDrawer('larson')">
+              <div class="crew-name"><strong>Crew Larson</strong><small>R: T. Larson · 3-man · <span class="chem">4 wks together</span></small></div>
+              <div class="crew-assign"><strong>GP vs NT</strong>Mizzou Arena · 7 PM</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>SAC Tourn</span></div>
+              <div class="row-complaints"><span class="cmp-count">0</span> / 8g</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Local</div>
+              <div class="grade-cell">93<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+            <div class="crew-tbl-row" data-sport-row="mbb" hidden onclick="openCrewDrawer('diaz')">
+              <div class="crew-name"><strong>Crew Diaz</strong><small>R: A. Diaz · 3-man · <span class="chem">6 wks together</span></small></div>
+              <div class="crew-assign"><strong>HC vs TC</strong>Rupp Arena · 8 PM</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>SAC Tourn</span></div>
+              <div class="row-complaints"><span class="cmp-count">1</span> / 9g</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Local</div>
+              <div class="grade-cell">94<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+            <div class="crew-tbl-row" data-sport-row="wbb" hidden onclick="openCrewDrawer('murphy')">
+              <div class="crew-name"><strong>Crew Murphy</strong><small>R: K. Murphy · 3-man · <span class="chem">5 wks together</span></small></div>
+              <div class="crew-assign"><strong>HC vs KE</strong>Stegeman · 5 PM</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>SAC Tourn</span></div>
+              <div class="row-complaints"><span class="cmp-count">0</span> / 7g</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Local</div>
+              <div class="grade-cell">93<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+            <div class="crew-tbl-row" data-sport-row="vb" hidden onclick="openCrewDrawer('bishop')">
+              <div class="crew-name"><strong>Crew Bishop</strong><small>R: L. Bishop · 2-man + line · <span class="chem">12 wks together</span></small></div>
+              <div class="crew-assign"><strong>SAC Tournament · QF</strong>Reed Arena · 8 PM</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>NCAA</span></div>
+              <div class="row-complaints"><span class="cmp-count">0</span> / 22g</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Local</div>
+              <div class="grade-cell high">95<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+            <div class="crew-tbl-row" data-sport-row="sb" hidden>
+              <div class="crew-name"><strong>Crew Robles</strong><small>R: M. Robles · 4-man · <span class="chem">offseason</span></small></div>
+              <div class="crew-assign"><strong>Off-season standby</strong>Spring opens Feb 5</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>WNCAA Baseball Final Eight</span></div>
+              <div class="row-complaints"><span class="cmp-count">2</span> / '25</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>—</div>
+              <div class="grade-cell">—<small>OFFSN</small></div>
+              <div class="row-action">→</div>
+            </div>
+            <div class="crew-tbl-row" data-sport-row="bsb" hidden>
+              <div class="crew-name"><strong>Crew Adams</strong><small>R: J. Adams · 4-man · <span class="chem">offseason</span></small></div>
+              <div class="crew-assign"><strong>Off-season standby</strong>Spring opens Feb 13</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>NCAA Baseball Final Eight</span></div>
+              <div class="row-complaints"><span class="cmp-count">1</span> / '25</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>—</div>
+              <div class="grade-cell">—<small>OFFSN</small></div>
+              <div class="row-action">→</div>
+            </div>
+            <div class="crew-tbl-row" data-sport-row="other" hidden onclick="openCrewDrawer('park')">
+              <div class="crew-name"><strong>Crew Park</strong><small>R: J. Park · soccer 3-man · <span class="chem">8 wks together</span></small></div>
+              <div class="crew-assign"><strong>NCAA R16 · TC home</strong>Pressly Stadium · Sunday</div>
+              <div><span class="row-postseason eligible"><span class="ps-dot"></span>NCAA</span></div>
+              <div class="row-complaints"><span class="cmp-count">0</span> / 14g</div>
+              <div class="row-travel-risk"><span class="tr-dot low"></span>Local</div>
+              <div class="grade-cell">91<small>YTD</small></div>
+              <div class="row-action">→</div>
+            </div>
+            <div data-sport-empty hidden style="padding:24px;text-align:center;color:var(--muted);font-size:.84rem;font-style:italic;"><strong style="color:#fff;display:block;font-weight:500;font-style:normal;margin-bottom:4px;font-size:.92rem;">No crews for this sport this week</strong>The selected sport has no live crew assignments today.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Crew Holloway · Profile</h3>
+            <span class="h-meta">7-man · YTD #1 grade</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full file →</span>
+          </div>
+          <div class="grade-summary">
+            <div class="grade-block">
+              <span class="grade-lbl">YTD Composite</span>
+              <span class="grade-big">95.2</span>
+              <span style="font-size:.7rem;color:var(--good);font-weight:600;letter-spacing:.06em;">↑ 2.1 vs 2024</span>
+            </div>
+            <div class="grade-block">
+              <span class="grade-lbl">Week-by-week (10 games)</span>
+              <div class="grade-spark">
+                <div class="spark" style="height:60%"></div>
+                <div class="spark" style="height:75%"></div>
+                <div class="spark" style="height:70%"></div>
+                <div class="spark" style="height:88%"></div>
+                <div class="spark peak" style="height:95%"></div>
+                <div class="spark" style="height:82%"></div>
+                <div class="spark peak" style="height:97%"></div>
+                <div class="spark" style="height:90%"></div>
+                <div class="spark peak" style="height:94%"></div>
+                <div class="spark peak" style="height:96%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="grading-detail">
+            <div class="gd-row"><span class="gd-label">Spot accuracy (AI overlay)</span><span class="gd-value good">98.4%</span></div>
+            <div class="gd-row"><span class="gd-label">Holding consistency (3rd down)</span><span class="gd-value good">94.1%</span></div>
+            <div class="gd-row"><span class="gd-label">Targeting reviews — confirmed rate</span><span class="gd-value">11 / 12</span></div>
+            <div class="gd-row"><span class="gd-label">Pace of game (avg play interval)</span><span class="gd-value">31.4s</span></div>
+            <div class="gd-row"><span class="gd-label">School complaints (8 schools, season)</span><span class="gd-value">2 · resolved</span></div>
+            <div class="gd-row"><span class="gd-label">Trend vs season avg</span><span class="gd-value good">↑ outperforming</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Replay Timeline · Today</h3>
+            <span class="h-meta">17 reviews</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full center →</span>
+          </div>
+          <div class="replay-list">
+
+            <div class="replay-card">
+              <div class="replay-card-head">
+                <div class="replay-game"><span class="helmet" style="background:#fa4616;">F</span><span class="helmet" style="background:#ba0c2f;">HC</span>TC @ HC</div>
+                <span class="replay-result rr-active">REVIEWING</span>
+              </div>
+              <div class="replay-call"><strong>Catch / no catch</strong>TD pass to #11 HC — toe drag at sideline / endzone.</div>
+              <div class="replay-progress">
+                <span class="pp-trigger"></span><span class="pp-review"></span><span class="pp-confer"></span><span style="background:rgba(255,255,255,.05);flex:1;"></span>
+              </div>
+              <div class="replay-meta"><span class="mono">42s</span><span>Capital City · Coleman</span></div>
+            </div>
+
+            <div class="replay-card">
+              <div class="replay-card-head">
+                <div class="replay-game"><span class="helmet" style="background:#9e1b32;">A</span><span class="helmet" style="background:#bf5700;">WB</span>LIB @ WB</div>
+                <span class="replay-result rr-confirmed">CONFIRMED</span>
+              </div>
+              <div class="replay-call"><strong>Targeting — #22 WB</strong>Crown contact upheld, player disqualified, half assessed.</div>
+              <div class="replay-progress">
+                <span class="pp-trigger"></span><span class="pp-review"></span><span class="pp-confer"></span><span class="pp-rule"></span><span class="pp-comm"></span>
+              </div>
+              <div class="replay-meta"><span class="mono">1m 18s</span><span>Portsmouth · Park</span></div>
+            </div>
+
+            <div class="replay-card">
+              <div class="replay-card-head">
+                <div class="replay-game"><span class="helmet" style="background:#500000;">KE</span><span class="helmet" style="background:#461d7c;">FV</span>KE @ FV</div>
+                <span class="replay-result rr-overturned">OVERTURNED</span>
+              </div>
+              <div class="replay-call"><strong>Targeting Q2 11:08</strong>Overturned — angle from end-zone HD showed shoulder lead, not crown.</div>
+              <div class="replay-progress">
+                <span class="pp-trigger"></span><span class="pp-review"></span><span class="pp-confer"></span><span class="pp-rule"></span><span class="pp-comm"></span>
+              </div>
+              <div class="replay-meta"><span class="mono">2m 04s</span><span>Portsmouth · Vega</span></div>
+            </div>
+
+            <div class="replay-card">
+              <div class="replay-card-head">
+                <div class="replay-game"><span class="helmet" style="background:#002868;">NT</span><span class="helmet" style="background:#13294b;">PR</span>NT @ PR</div>
+                <span class="replay-result rr-stands">STANDS</span>
+              </div>
+              <div class="replay-call"><strong>Fumble recovery</strong>Pile too tight to overturn — ruling on field stands.</div>
+              <div class="replay-progress">
+                <span class="pp-trigger"></span><span class="pp-review"></span><span class="pp-confer"></span><span class="pp-rule"></span><span class="pp-comm"></span>
+              </div>
+              <div class="replay-meta"><span class="mono">1m 47s</span><span>Capital City · Liu</span></div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Travel &amp; Logistics</h3>
+            <span class="h-meta">102 segments this week</span>
+            <div class="spacer"></div>
+            <span class="h-action">Travel board →</span>
+          </div>
+          <div>
+            <div class="travel-item">
+              <div class="travel-who">Crew Petrov (HC @ MV)<small>Lodging extended overnight due to WX hold</small></div>
+              <div class="travel-stat warn">+$1,420<small>HOLD COST</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Crew Donovan (CC @ RD)<small>Charter PMH → RDM via Williams Air</small></div>
+              <div class="travel-stat">On Time<small>ETA 5:10</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Crew Holloway (LIB @ WB)<small>Hotel: Hilton Westbrook · per diem cleared</small></div>
+              <div class="travel-stat">Confirmed<small>4 rooms</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Crew Otieno (NT @ PR return)<small>NTH departure 11:40 PM via NTH-AUS</small></div>
+              <div class="travel-stat">Booked<small>$2,140</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Replay Center · Portsmouth<small>Coleman / Park / Vega — 12hr shift</small></div>
+              <div class="travel-stat">Local<small>3 staffed</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Replay Center · Capital City<small>Liu / Coleman cross-cover</small></div>
+              <div class="travel-stat">Local<small>2 staffed</small></div>
+            </div>
+            <div class="travel-item">
+              <div class="travel-who">Week-to-date travel spend<small>14 crews · 21 hotel nights · 38 segments</small></div>
+              <div class="travel-stat">$94,820<small>vs $98K bud</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Rules &amp; Memos</h3>
+            <span class="h-meta">Distributed this week</span>
+            <div class="spacer"></div>
+            <span class="h-action">Memo library →</span>
+          </div>
+          <div>
+            <div class="rule-item">
+              <div class="rule-head">
+                <span class="rule-num">PMHO 26-014</span>
+                <span class="rule-status">DISTRIBUTED</span>
+              </div>
+              <div class="rule-title">Targeting — crown contact emphasis</div>
+              <div class="rule-desc">Re-affirms 2025 emphasis on lowered helmet contact with defenseless receivers. Includes 6 video examples.</div>
+              <div class="rule-meta">Sent 11/18 · 102 acks · 100% read</div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-head">
+                <span class="rule-num">PMHO 26-015</span>
+                <span class="rule-status">DISTRIBUTED</span>
+              </div>
+              <div class="rule-title">Spot accuracy — short-yardage 3rd downs</div>
+              <div class="rule-desc">Standardizes secondary spot conferencing protocol for 3rd-and-2 or shorter situations.</div>
+              <div class="rule-meta">Sent 11/19 · 99 acks · 97% read</div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-head">
+                <span class="rule-num">PMHO 26-016</span>
+                <span class="rule-status pending">PENDING ACK</span>
+              </div>
+              <div class="rule-title">Replay communication — sideline access</div>
+              <div class="rule-desc">New protocol for head referee → coach communication during long reviews (over 90s).</div>
+              <div class="rule-meta">Sent 11/21 · 64 of 102 acks · sending reminder</div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-head">
+                <span class="rule-num">PMHO 26-017</span>
+                <span class="rule-status">DISTRIBUTED</span>
+              </div>
+              <div class="rule-title">Weather hold — restart protocol</div>
+              <div class="rule-desc">Refresher on lightning hold restart sequence and minimum warm-up window.</div>
+              <div class="rule-meta">Sent 11/21 · 102 acks · 100% read</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 8-WEEK ASSIGNMENT HEAT MAP -->
+      <div class="panel" style="margin-top:14px;">
+        <div class="panel-head">
+          <h3>Assignment Heat Map · Next 8 Weeks</h3>
+          <span class="h-meta">FB · 14 crews · over-assignment auto-flagged</span>
+          <div class="spacer"></div>
+          <span class="h-action">Full schedule →</span>
+        </div>
+        <div class="heatmap">
+          <div class="heatmap-head">
+            <span>Crew</span>
+            <span class="hm-week">W12</span><span class="hm-week">W13</span><span class="hm-week">W14</span><span class="hm-week">CHMP</span><span class="hm-week">BOWL 1</span><span class="hm-week">BOWL 2</span><span class="hm-week">BOWL 3</span><span class="hm-week">CFP</span>
+          </div>
+          <div class="heatmap-row"><div><strong>Henderson</strong><small>R: B. Holloway</small></div><div class="hm-cell assigned hi">LIB-WB</div><div class="hm-cell assigned">HC-AS</div><div class="hm-cell assigned">CFP P</div><div class="hm-cell assigned hi">SACCG P</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell assigned hi">SF P</div></div>
+          <div class="heatmap-row"><div><strong>Whitaker</strong><small>R: D. Whitaker</small></div><div class="hm-cell assigned">TC-HC</div><div class="hm-cell assigned">FV-GP</div><div class="hm-cell bye">BYE</div><div class="hm-cell bye">—</div><div class="hm-cell assigned">Bowl</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div></div>
+          <div class="heatmap-row"><div><strong>Reyes</strong><small>R: M. Riordan</small></div><div class="hm-cell assigned">KE-FV</div><div class="hm-cell assigned">AT-KE</div><div class="hm-cell bye">BYE</div><div class="hm-cell assigned">SACCG A</div><div class="hm-cell bye">—</div><div class="hm-cell assigned">Bowl</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div></div>
+          <div class="heatmap-row"><div><strong>Patel</strong><small>R: A. Petrov</small></div><div class="hm-cell assigned">HC-MV</div><div class="hm-cell assigned">GP-MV</div><div class="hm-cell assigned">CFP A</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell assigned">Bowl</div><div class="hm-cell bye">—</div></div>
+          <div class="heatmap-row"><div><strong>Drummond</strong><small>R: C. Donovan</small></div><div class="hm-cell assigned">CC-RD</div><div class="hm-cell over" title="Over-assigned: 2 games in 5 days">NT-CC</div><div class="hm-cell bye">BYE</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div></div>
+          <div class="heatmap-row"><div><strong>Mitchell</strong><small>R: J. Marsden</small></div><div class="hm-cell assigned">GP-BH</div><div class="hm-cell assigned">BH-CLEM</div><div class="hm-cell bye">BYE</div><div class="hm-cell bye">—</div><div class="hm-cell assigned">Bowl</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div></div>
+          <div class="heatmap-row"><div><strong>Okafor</strong><small>R: K. Otieno</small></div><div class="hm-cell assigned hi">NT-PR</div><div class="hm-cell assigned">PR-RD</div><div class="hm-cell assigned">CFP A</div><div class="hm-cell assigned">SACCG A</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell assigned">SF A</div></div>
+          <div class="heatmap-row"><div><strong>Carter</strong><small>R: T. Calloway</small></div><div class="hm-cell bye">BYE</div><div class="hm-cell assigned">HC-Ga Tech</div><div class="hm-cell assigned">Army-Navy</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell assigned">Bowl</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div></div>
+          <div class="heatmap-row"><div><strong>Foster</strong><small>R: M. Forsberg</small></div><div class="hm-cell bye">BYE</div><div class="hm-cell bye">BYE</div><div class="hm-cell assigned">UNC-NCSU</div><div class="hm-cell bye">—</div><div class="hm-cell assigned">Bowl</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div></div>
+          <div class="heatmap-row"><div><strong>Klein</strong><small>R: H. Kim</small></div><div class="hm-cell assigned">TC-AS</div><div class="hm-cell bye">BYE</div><div class="hm-cell bye">BYE</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell bye">—</div><div class="hm-cell assigned">Bowl</div><div class="hm-cell bye">—</div></div>
+          <div class="hm-legend">
+            <span><span class="leg-cell" style="background:rgba(255,255,255,.04);"></span>Bye / open</span>
+            <span><span class="leg-cell" style="background:rgba(201,165,88,.18);"></span>Assigned</span>
+            <span><span class="leg-cell" style="background:rgba(201,165,88,.4);"></span>Marquee / postseason</span>
+            <span><span class="leg-cell" style="background:rgba(255,107,107,.2);"></span>Over-assigned (flagged)</span>
+            <span style="color:var(--muted-soft);margin-left:auto;">P = primary · A = alternate</span>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /overview -->
+
+      <div data-tab-panel="directory" hidden>
+        <div class="grid grid-2" id="directoryHost">
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Crew Directory</h3>
+              <span class="h-meta"><span id="dirMatchCount">14</span> of 102 active</span>
+              <div class="spacer"></div>
+              <span class="h-action">+ Add Official →</span>
+            </div>
+            <div class="crew-tbl" id="dirTable">
+              <div class="crew-tbl-head"><span>Crew</span><span>Sport · Role</span><span>Tenure</span><span>Status</span><span>YTD Grade</span><span></span></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="senior" data-d-grade="high" data-d-status="active" data-d-postseason="seccg" data-d-name="Henderson Brad" onclick="openCrewDrawer('henderson')"><div class="crew-name"><strong>Crew Holloway</strong><small>R: B. Holloway · 7-man</small></div><div class="crew-assign"><strong>Football · Senior</strong>SAC since '13</div><div class="crew-assign">13 yrs<small style="color:var(--muted-soft);">198 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell high">95.2<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="senior" data-d-grade="mid" data-d-status="active" data-d-postseason="review" data-d-name="Whitaker Don" onclick="openCrewDrawer('walker')"><div class="crew-name"><strong>Crew Whitaker</strong><small>R: D. Whitaker · 7-man</small></div><div class="crew-assign"><strong>Football · Senior</strong>SAC since '11</div><div class="crew-assign">15 yrs<small style="color:var(--muted-soft);">228 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">91.3<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="senior" data-d-grade="mid" data-d-status="active" data-d-postseason="bowl" data-d-name="Reyes Marco" onclick="openCrewDrawer('reyes')"><div class="crew-name"><strong>Crew Riordan</strong><small>R: M. Riordan · 7-man</small></div><div class="crew-assign"><strong>Football · Senior</strong>SAC since '15</div><div class="crew-assign">11 yrs<small style="color:var(--muted-soft);">164 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">94.1<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="mid" data-d-grade="mid" data-d-status="active" data-d-postseason="bowl" data-d-name="Patel Anil" onclick="openCrewDrawer('patel')"><div class="crew-name"><strong>Crew Petrov</strong><small>R: A. Petrov · 7-man</small></div><div class="crew-assign"><strong>Football · Mid-Career</strong>SAC since '18</div><div class="crew-assign">8 yrs<small style="color:var(--muted-soft);">118 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">92.6<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="mid" data-d-grade="low" data-d-status="review" data-d-postseason="review" data-d-name="Drummond Carl" onclick="openCrewDrawer('drummond')"><div class="crew-name"><strong>Crew Donovan</strong><small>R: C. Donovan · 7-man</small></div><div class="crew-assign"><strong>Football · Mid-Career</strong>SAC since '19</div><div class="crew-assign">7 yrs<small style="color:var(--muted-soft);">98 games</small></div><div><span class="crew-status cs-pending">Review</span></div><div class="grade-cell warn">88.7<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="mid" data-d-grade="mid" data-d-status="active" data-d-postseason="bowl" data-d-name="Mitchell Jeff" onclick="openCrewDrawer('mitchell')"><div class="crew-name"><strong>Crew Marsden</strong><small>R: J. Marsden · 7-man</small></div><div class="crew-assign"><strong>Football · Mid-Career</strong>SAC since '17</div><div class="crew-assign">9 yrs<small style="color:var(--muted-soft);">136 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">90.4<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="senior" data-d-grade="high" data-d-status="active" data-d-postseason="seccg" data-d-name="Okafor Kwame" onclick="openCrewDrawer('okafor')"><div class="crew-name"><strong>Crew Otieno</strong><small>R: K. Otieno · 7-man</small></div><div class="crew-assign"><strong>Football · Senior</strong>SAC since '12</div><div class="crew-assign">14 yrs<small style="color:var(--muted-soft);">214 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell high">94.8<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="senior" data-d-grade="mid" data-d-status="active" data-d-postseason="bowl" data-d-name="Carter Terrell"><div class="crew-name"><strong>Crew Calloway</strong><small>R: T. Calloway · 7-man</small></div><div class="crew-assign"><strong>Football · Senior</strong>SAC since '14</div><div class="crew-assign">12 yrs<small style="color:var(--muted-soft);">172 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">92.1<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="mid" data-d-grade="mid" data-d-status="active" data-d-postseason="bowl" data-d-name="Foster Marcus"><div class="crew-name"><strong>Crew Forsberg</strong><small>R: M. Forsberg · 7-man</small></div><div class="crew-assign"><strong>Football · Mid-Career</strong>SAC since '18</div><div class="crew-assign">8 yrs<small style="color:var(--muted-soft);">114 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">91.6<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="early" data-d-grade="mid" data-d-status="active" data-d-postseason="ineligible" data-d-name="Klein Hannah"><div class="crew-name"><strong>Crew Kim</strong><small>R: H. Kim · 7-man</small></div><div class="crew-assign"><strong>Football · Early-Career</strong>SAC since '23</div><div class="crew-assign">3 yrs<small style="color:var(--muted-soft);">42 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">90.1<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="fb" data-d-tenure="early" data-d-grade="low" data-d-status="onboarding" data-d-postseason="ineligible" data-d-name="Nguyen Lily"><div class="crew-name"><strong>Crew Nguyenberg</strong><small>R: L. Nguyenberg · 7-man</small></div><div class="crew-assign"><strong>Football · Early-Career</strong>SAC since '25</div><div class="crew-assign">1 yr<small style="color:var(--muted-soft);">14 games</small></div><div><span class="crew-status cs-pending">Onboarding</span></div><div class="grade-cell warn">87.4<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="mbb" data-d-tenure="early" data-d-grade="mid" data-d-status="active" data-d-postseason="tournament" data-d-name="Larson Trevor" onclick="openCrewDrawer('larson')"><div class="crew-name"><strong>Crew Larson</strong><small>R: T. Larson · 3-man</small></div><div class="crew-assign"><strong>MBB · Early-Career</strong>SAC since '20</div><div class="crew-assign">6 yrs<small style="color:var(--muted-soft);">72 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">93.0<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="mbb" data-d-tenure="mid" data-d-grade="mid" data-d-status="active" data-d-postseason="tournament" data-d-name="Diaz Antonio" onclick="openCrewDrawer('diaz')"><div class="crew-name"><strong>Crew Diaz</strong><small>R: A. Diaz · 3-man</small></div><div class="crew-assign"><strong>MBB · Mid-Career</strong>SAC since '17</div><div class="crew-assign">9 yrs<small style="color:var(--muted-soft);">114 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">94.0<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="wbb" data-d-tenure="mid" data-d-grade="mid" data-d-status="active" data-d-postseason="tournament" data-d-name="Murphy Kara" onclick="openCrewDrawer('murphy')"><div class="crew-name"><strong>Crew Murphy</strong><small>R: K. Murphy · 3-man</small></div><div class="crew-assign"><strong>WBB · Mid-Career</strong>SAC since '19</div><div class="crew-assign">7 yrs<small style="color:var(--muted-soft);">88 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell">93.0<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="vb" data-d-tenure="senior" data-d-grade="high" data-d-status="active" data-d-postseason="ncaa" data-d-name="Bishop Linda" onclick="openCrewDrawer('bishop')"><div class="crew-name"><strong>Crew Bishop</strong><small>R: L. Bishop · 2-man + line</small></div><div class="crew-assign"><strong>VB · Senior</strong>SAC since '14</div><div class="crew-assign">12 yrs<small style="color:var(--muted-soft);">186 games</small></div><div><span class="crew-status cs-confirmed">Active</span></div><div class="grade-cell high">95.0<small>YTD</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="bsb" data-d-tenure="senior" data-d-grade="mid" data-d-status="standby" data-d-postseason="cws" data-d-name="Adams John"><div class="crew-name"><strong>Crew Adams</strong><small>R: J. Adams · 4-man</small></div><div class="crew-assign"><strong>BSB · Senior</strong>SAC since '13</div><div class="crew-assign">13 yrs<small style="color:var(--muted-soft);">142 games</small></div><div><span class="crew-status cs-pending">Standby</span></div><div class="grade-cell">93.4<small>'25</small></div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-dir-row data-d-sport="sb" data-d-tenure="senior" data-d-grade="mid" data-d-status="standby" data-d-postseason="wcws" data-d-name="Robles Maria"><div class="crew-name"><strong>Crew Robles</strong><small>R: M. Robles · 4-man</small></div><div class="crew-assign"><strong>SB · Senior</strong>SAC since '12</div><div class="crew-assign">14 yrs<small style="color:var(--muted-soft);">168 games</small></div><div><span class="crew-status cs-pending">Standby</span></div><div class="grade-cell">94.2<small>'25</small></div><div class="row-action">→</div></div>
+              <div class="dir-empty" data-dir-empty hidden><strong>No crews match these filters</strong>Try clearing one of the active filters above, or expand your selection.</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>Directory Filters</h3><span class="h-meta">live</span></div>
+            <div class="panel-pad" style="display:flex;flex-direction:column;gap:16px;">
+
+              <div class="dir-search" id="dirSearchBox">
+                <span class="ds-ic">⌕</span>
+                <input id="dirSearchInput" placeholder="Search by crew or referee name…" oninput="applyDirFilters()" />
+                <span class="ds-clear" onclick="clearDirSearch()">✕</span>
+              </div>
+
+              <div class="dir-active-chips empty" id="dirActiveChips">
+                <span>No filters active · showing all <strong>17</strong> visible crews</span>
+              </div>
+
+              <div class="dir-filter-group">
+                <div class="dir-group-head"><span>Sport</span><span class="dgh-count" id="dgcSport"></span></div>
+                <div class="dir-pills" data-filter-group="sport">
+                  <span class="dir-pill" data-value="fb">Football <span class="dp-count">88</span></span>
+                  <span class="dir-pill" data-value="mbb">MBB <span class="dp-count">38</span></span>
+                  <span class="dir-pill" data-value="wbb">WBB <span class="dp-count">34</span></span>
+                  <span class="dir-pill" data-value="bsb">BSB <span class="dp-count">28</span></span>
+                  <span class="dir-pill" data-value="sb">SB <span class="dp-count">26</span></span>
+                  <span class="dir-pill" data-value="vb">VB <span class="dp-count">22</span></span>
+                </div>
+              </div>
+
+              <div class="dir-filter-group">
+                <div class="dir-group-head"><span>Tenure</span><span class="dgh-count" id="dgcTenure"></span></div>
+                <div class="dir-pills" data-filter-group="tenure">
+                  <span class="dir-pill" data-value="early">≤ 3 yrs <span class="dp-count">14</span></span>
+                  <span class="dir-pill" data-value="mid">4–7 yrs <span class="dp-count">42</span></span>
+                  <span class="dir-pill" data-value="senior">8+ yrs <span class="dp-count">46</span></span>
+                </div>
+              </div>
+
+              <div class="dir-filter-group">
+                <div class="dir-group-head"><span>Grade Tier · YTD</span><span class="dgh-count" id="dgcGrade"></span></div>
+                <div class="dir-pills" data-filter-group="grade">
+                  <span class="dir-pill" data-value="high">≥ 95 <span class="dp-count">14</span></span>
+                  <span class="dir-pill" data-value="mid">90–94 <span class="dp-count">62</span></span>
+                  <span class="dir-pill" data-value="low">&lt; 90 <span class="dp-count">26</span></span>
+                </div>
+              </div>
+
+              <div class="dir-filter-group">
+                <div class="dir-group-head"><span>Status</span><span class="dgh-count" id="dgcStatus"></span></div>
+                <div class="dir-pills" data-filter-group="status">
+                  <span class="dir-pill" data-value="active">Active <span class="dp-count">86</span></span>
+                  <span class="dir-pill" data-value="standby">Standby <span class="dp-count">8</span></span>
+                  <span class="dir-pill" data-value="review">Review <span class="dp-count">4</span></span>
+                  <span class="dir-pill" data-value="onboarding">Onboarding <span class="dp-count">4</span></span>
+                </div>
+              </div>
+
+              <div class="dir-filter-group">
+                <div class="dir-group-head"><span>Postseason Eligibility</span><span class="dgh-count" id="dgcPostseason"></span></div>
+                <div class="dir-pills" data-filter-group="postseason">
+                  <span class="dir-pill" data-value="seccg">SACCG</span>
+                  <span class="dir-pill" data-value="bowl">Bowl</span>
+                  <span class="dir-pill" data-value="tournament">SAC Tourn</span>
+                  <span class="dir-pill" data-value="ncaa">NCAA</span>
+                  <span class="dir-pill" data-value="cws">NCAA Baseball Final Eight / WNCAA Baseball Final Eight</span>
+                  <span class="dir-pill" data-value="wcws">WNCAA Baseball Final Eight only</span>
+                  <span class="dir-pill" data-value="review">Under Review</span>
+                  <span class="dir-pill" data-value="ineligible">Ineligible</span>
+                </div>
+              </div>
+
+              <div class="dir-summary">
+                <span class="ds-head">Live Summary · Filtered View</span>
+                <div class="ds-big"><span id="dsCount">17</span> <em>of 102 crews</em></div>
+                <div class="ds-row"><span>Avg YTD grade</span><strong id="dsAvgGrade">92.5</strong></div>
+                <div class="ds-row good"><span>Postseason-eligible</span><strong id="dsPostseason">12</strong></div>
+                <div class="ds-row warn"><span>Under review</span><strong id="dsReview">2</strong></div>
+                <div class="ds-row"><span>In onboarding</span><strong id="dsOnboarding">1</strong></div>
+                <div class="ds-row"><span>Avg career games</span><strong id="dsCareer">128</strong></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="grading" hidden>
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Grading Leaderboard · '26 YTD</h3><span class="h-meta">all FB crews · weighted composite</span><div class="spacer"></div><span class="h-action">Methodology →</span></div>
+            <div class="crew-tbl">
+              <div class="crew-tbl-head"><span>Rank</span><span>Crew</span><span>Trend</span><span>Spot Acc.</span><span>Grade</span><span></span></div>
+              <div class="crew-tbl-row" data-sport-row="fb"><div class="crew-name"><strong>1</strong></div><div class="crew-assign"><strong>Crew Holloway</strong>SAC since '13</div><div class="crew-assign" style="color:var(--good);">▲ +2.1 vs '25</div><div class="crew-assign">98.4%</div><div class="grade-cell high">95.2</div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-sport-row="fb"><div class="crew-name"><strong>2</strong></div><div class="crew-assign"><strong>Crew Otieno</strong>SAC since '12</div><div class="crew-assign" style="color:var(--good);">▲ +1.4</div><div class="crew-assign">97.2%</div><div class="grade-cell high">94.8</div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-sport-row="fb"><div class="crew-name"><strong>3</strong></div><div class="crew-assign"><strong>Crew Riordan</strong>SAC since '15</div><div class="crew-assign" style="color:var(--good);">▲ +0.8</div><div class="crew-assign">96.4%</div><div class="grade-cell">94.1</div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-sport-row="fb"><div class="crew-name"><strong>4</strong></div><div class="crew-assign"><strong>Crew Petrov</strong>SAC since '18</div><div class="crew-assign" style="color:var(--muted);">— 0.0</div><div class="crew-assign">95.1%</div><div class="grade-cell">92.6</div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-sport-row="fb"><div class="crew-name"><strong>5</strong></div><div class="crew-assign"><strong>Crew Whitaker</strong>SAC since '11</div><div class="crew-assign" style="color:var(--danger);">▼ −1.2</div><div class="crew-assign">94.6%</div><div class="grade-cell">91.3</div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-sport-row="fb"><div class="crew-name"><strong>6</strong></div><div class="crew-assign"><strong>Crew Marsden</strong>SAC since '17</div><div class="crew-assign" style="color:var(--good);">▲ +0.3</div><div class="crew-assign">93.8%</div><div class="grade-cell">90.4</div><div class="row-action">→</div></div>
+              <div class="crew-tbl-row" data-sport-row="fb"><div class="crew-name"><strong>7</strong></div><div class="crew-assign"><strong>Crew Donovan</strong>SAC since '19</div><div class="crew-assign" style="color:var(--danger);">▼ −1.8</div><div class="crew-assign">91.2%</div><div class="grade-cell warn">88.7</div><div class="row-action">→</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Grading Methodology</h3><span class="h-meta">composite formula</span></div>
+            <div class="panel-pad" style="display:flex;flex-direction:column;gap:12px;font-size:.78rem;color:var(--muted);line-height:1.55;">
+              <p>Each crew grade is a weighted composite scored by the SAC Coordinator of Officiating + AI overlay across:</p>
+              <ul style="list-style:none;padding-left:0;display:flex;flex-direction:column;gap:6px;">
+                <li>· <strong style="color:#fff;font-weight:500;">Spot accuracy (35%)</strong> — frame-by-frame ball spot vs play-end</li>
+                <li>· <strong style="color:#fff;font-weight:500;">Penalty correctness (25%)</strong> — called/declined accuracy</li>
+                <li>· <strong style="color:#fff;font-weight:500;">Game management (15%)</strong> — pace, conferencing, clock</li>
+                <li>· <strong style="color:#fff;font-weight:500;">Replay decisions (15%)</strong> — confirm/overturn rate calibration</li>
+                <li>· <strong style="color:#fff;font-weight:500;">School complaint resolution (10%)</strong> — interpretation requests, outcome quality</li>
+              </ul>
+              <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,.08);"><strong style="color:#fff;font-weight:500;">Postseason eligibility:</strong> 90.0+ to be considered for Championship Week assignments.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="replay" hidden>
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Replay Centers · 6 Active</h3><span class="h-meta">Portsmouth · Capital City · others</span><div class="spacer"></div><span class="h-action">Staffing roster →</span></div>
+            <div>
+              <div class="row-item"><div class="ri-info"><strong>Portsmouth — Primary Replay</strong><small>3 staffed · Coleman · Park · Vega · 12hr shift</small></div><div class="ri-stat good">ONLINE<small>FULL</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Capital City — Cross-Cover</strong><small>2 staffed · Liu · backup rotation</small></div><div class="ri-stat good">ONLINE<small>2/3</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Boulder City — Basketball Primary</strong><small>2 staffed · MBB/WBB live</small></div><div class="ri-stat good">ONLINE<small>FULL</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Portsmouth — Baseball / Softball</strong><small>Off-season standby</small></div><div class="ri-stat info">STANDBY<small>OFFSEASON</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Dallas — Cross-Cover (FB West)</strong><small>1 staffed · regional backup</small></div><div class="ri-stat good">ONLINE<small>1/2</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Mobile Unit · Championship</strong><small>Reserved for SACCG, MBB Tourn., NCAA Baseball Final Eight</small></div><div class="ri-stat info">RESERVED<small>SACCG</small></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Replay Performance · YTD</h3><span class="h-meta">avg ruling 92s · 1,247 reviews</span></div>
+            <div class="panel-pad" style="display:flex;flex-direction:column;gap:14px;">
+              <div><div class="spark-bar-row"><span>Confirmed rate</span><span class="mono" style="color:var(--good);">62%</span></div><div class="spark-bar"><div class="spark-bar-fill good" style="width:62%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Overturned</span><span class="mono" style="color:var(--gold-soft);">22%</span></div><div class="spark-bar"><div class="spark-bar-fill" style="width:22%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Stands (insufficient angle)</span><span class="mono" style="color:var(--warn);">16%</span></div><div class="spark-bar"><div class="spark-bar-fill warn" style="width:16%"></div></div></div>
+              <div style="padding-top:8px;border-top:1px solid var(--line);font-size:.74rem;color:var(--muted);display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;justify-content:space-between;"><span>Avg ruling time</span><span class="mono" style="color:var(--good);font-weight:700;">92s</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>Targeting reviews</span><span class="mono" style="color:#fff;font-weight:700;">142 YTD</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>Crew-Replay disagreement rate</span><span class="mono" style="color:var(--gold-soft);font-weight:700;">22.4%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="travel" hidden>
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Travel Activity · This Week</h3><span class="h-meta">102 segments · 14 crews</span><div class="spacer"></div><span class="h-action">Travel board →</span></div>
+            <div>
+              <div class="row-item"><div class="ri-info"><strong>Crew Petrov (HC @ MV)</strong><small>Lodging extended overnight due to WX hold</small></div><div class="ri-stat warn">+$1,420<small>HOLD COST</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Crew Donovan (CC @ RD)</strong><small>Charter PMH → RDM via Williams Air</small></div><div class="ri-stat good">On Time<small>ETA 5:10</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Crew Holloway (LIB @ WB)</strong><small>Hotel: Hilton Westbrook · per diem cleared</small></div><div class="ri-stat good">Confirmed<small>4 rooms</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Crew Otieno (NT @ PR return)</strong><small>NTH departure 11:40 PM via NTH-AUS</small></div><div class="ri-stat info">Booked<small>$2,140</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Crew Riordan (KE @ FV)</strong><small>Local · Fairview City hotel · day-of return</small></div><div class="ri-stat good">Local<small>$612</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Crew Whitaker (TC @ HC)</strong><small>CAP local · AC Lexington · 4 rooms</small></div><div class="ri-stat good">Local<small>$1,840</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Replay Center · Portsmouth</strong><small>Local staffing · 3 officials × 12hr</small></div><div class="ri-stat good">Local<small>—</small></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Travel Spend · '26 Season</h3><span class="h-meta">YTD + week summary</span></div>
+            <div class="panel-pad" style="display:flex;flex-direction:column;gap:14px;font-size:.78rem;color:var(--muted);">
+              <div><div class="spark-bar-row"><span>Week 12 spend vs budget</span><span class="mono" style="color:var(--good);">$94.8K / $98K</span></div><div class="spark-bar"><div class="spark-bar-fill good" style="width:97%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Season-to-date</span><span class="mono" style="color:var(--gold-soft);">$1.42M / $1.55M</span></div><div class="spark-bar"><div class="spark-bar-fill" style="width:92%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Charter usage rate</span><span class="mono" style="color:var(--gold-soft);">22%</span></div><div class="spark-bar"><div class="spark-bar-fill" style="width:22%"></div></div></div>
+              <div style="padding-top:8px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;justify-content:space-between;"><span>Total segments YTD</span><span class="mono" style="color:#fff;font-weight:700;">2,418</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>Hotel nights YTD</span><span class="mono" style="color:#fff;font-weight:700;">8,420</span></div>
+                <div style="display:flex;justify-content:space-between;"><span>Weather-extended nights</span><span class="mono" style="color:var(--warn);font-weight:700;">14</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="rules" hidden>
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Memos &amp; Rule Distribution · '26</h3><span class="h-meta">17 memos sent this season</span><div class="spacer"></div><span class="h-action">+ New Memo →</span></div>
+            <div>
+              <div class="rule-item">
+                <div class="rule-head"><span class="rule-num">PMHO 26-014</span><span class="rule-status">DISTRIBUTED</span></div>
+                <div class="rule-title">Targeting — crown contact emphasis</div>
+                <div class="rule-desc">Re-affirms 2025 emphasis on lowered helmet contact with defenseless receivers. Includes 6 video examples.</div>
+                <div class="rule-meta">Sent 11/18 · 102 acks · 100% read</div>
+              </div>
+              <div class="rule-item">
+                <div class="rule-head"><span class="rule-num">PMHO 26-015</span><span class="rule-status">DISTRIBUTED</span></div>
+                <div class="rule-title">Spot accuracy — short-yardage 3rd downs</div>
+                <div class="rule-desc">Standardizes secondary spot conferencing protocol for 3rd-and-2 or shorter situations.</div>
+                <div class="rule-meta">Sent 11/19 · 99 acks · 97% read</div>
+              </div>
+              <div class="rule-item">
+                <div class="rule-head"><span class="rule-num">PMHO 26-016</span><span class="rule-status pending">PENDING ACK</span></div>
+                <div class="rule-title">Replay communication — sideline access</div>
+                <div class="rule-desc">New protocol for head referee → coach communication during long reviews (over 90s).</div>
+                <div class="rule-meta">Sent 11/21 · 64 of 102 acks · sending reminder</div>
+              </div>
+              <div class="rule-item">
+                <div class="rule-head"><span class="rule-num">PMHO 26-017</span><span class="rule-status">DISTRIBUTED</span></div>
+                <div class="rule-title">Weather hold — restart protocol</div>
+                <div class="rule-desc">Refresher on lightning hold restart sequence and minimum warm-up window.</div>
+                <div class="rule-meta">Sent 11/21 · 102 acks · 100% read</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Rule Reference Library</h3><span class="h-meta">NCAA + SAC supplements</span></div>
+            <div class="panel-pad" style="display:flex;flex-direction:column;gap:10px;">
+              <div class="row-item" style="border-bottom:1px solid var(--line);"><div class="ri-info"><strong>NCAA Football Rule Book · 2026 ed.</strong><small>Master rule book · annotated</small></div><div class="ri-stat info">v26.1<small>11/01</small></div></div>
+              <div class="row-item" style="border-bottom:1px solid var(--line);"><div class="ri-info"><strong>NCAA Approved Rulings · 2026 supplement</strong><small>Clarifications + interpretive examples</small></div><div class="ri-stat info">v26.3<small>11/15</small></div></div>
+              <div class="row-item" style="border-bottom:1px solid var(--line);"><div class="ri-info"><strong>SAC Officiating Manual · '26</strong><small>SAC-specific procedures + conduct</small></div><div class="ri-stat info">v8.0<small>09/01</small></div></div>
+              <div class="row-item" style="border-bottom:1px solid var(--line);"><div class="ri-info"><strong>Replay Protocol Manual</strong><small>Joint NCAA/SAC replay procedures</small></div><div class="ri-stat info">v4.2<small>11/21</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Mechanics &amp; Positioning Guide</strong><small>Crew movement standards by formation</small></div><div class="ri-stat info">v6.4<small>08/15</small></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /tabs-host -->
+
+    </div>
+  </main>
+</div>
+
+<!-- CREW PROFILE DRAWER -->
+<div class="crew-drawer-mask" id="crewDrawerMask" onclick="closeCrewDrawer()"></div>
+<aside class="crew-drawer" id="crewDrawer">
+  <div class="cd-head">
+    <div class="cd-mark" id="cdMark">H</div>
+    <div>
+      <div class="cd-name" id="cdName">Crew Holloway</div>
+      <span class="cd-name"><em id="cdSubtitle">R: B. Holloway · 7-man · SAC since '13</em></span>
+    </div>
+    <button class="cd-close" onclick="closeCrewDrawer()">✕</button>
+  </div>
+  <div class="cd-body">
+    <div class="cd-stat-row">
+      <div class="cd-stat-tile"><span class="cd-stat-label">YTD Grade</span><span class="cd-stat-value" id="cdGrade">95.2</span></div>
+      <div class="cd-stat-tile"><span class="cd-stat-label">Games YTD</span><span class="cd-stat-value" id="cdGames">11</span></div>
+      <div class="cd-stat-tile"><span class="cd-stat-label">Career Games</span><span class="cd-stat-value" id="cdCareer">198</span></div>
+      <div class="cd-stat-tile"><span class="cd-stat-label">Complaints (YTD)</span><span class="cd-stat-value" id="cdComplaints">2</span></div>
+    </div>
+
+    <div class="cd-section">
+      <h4>Composite Grade Breakdown</h4>
+      <div class="grading-detail" style="padding:0;">
+        <div class="gd-row"><span class="gd-label">Spot accuracy</span><span class="gd-value good" id="cdSpot">98.4%</span></div>
+        <div class="gd-row"><span class="gd-label">Penalty correctness</span><span class="gd-value good" id="cdPenalty">94.6%</span></div>
+        <div class="gd-row"><span class="gd-label">Game management</span><span class="gd-value good" id="cdMgmt">93.1%</span></div>
+        <div class="gd-row"><span class="gd-label">Replay calibration</span><span class="gd-value good" id="cdReplay">94.8%</span></div>
+      </div>
+    </div>
+
+    <div class="cd-section">
+      <h4>Recent Schedule</h4>
+      <div id="cdSchedule" style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden;">
+        <div style="display:grid;grid-template-columns:1fr 60px 70px;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);align-items:center;font-size:.78rem;"><div><strong style="color:#fff;">LIB @ WB · The Lighthouse Rivalry</strong><small style="display:block;color:var(--muted);font-size:.7rem;">Saturday Nov 22 · Mariner Stadium</small></div><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;text-align:right;font-size:.74rem;">LIVE</span><span style="font-family:'JetBrains Mono',monospace;color:var(--good);font-weight:700;text-align:right;">94</span></div>
+        <div style="display:grid;grid-template-columns:1fr 60px 70px;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);align-items:center;font-size:.78rem;"><div><strong style="color:#fff;">HC vs AS</strong><small style="display:block;color:var(--muted);font-size:.7rem;">Wk 13 · Doak Campbell</small></div><span style="font-family:'JetBrains Mono',monospace;color:var(--muted-soft);font-weight:600;text-align:right;font-size:.74rem;">UPCOMING</span><span style="font-family:'JetBrains Mono',monospace;color:var(--muted-soft);font-weight:700;text-align:right;">—</span></div>
+        <div style="display:grid;grid-template-columns:1fr 60px 70px;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);align-items:center;font-size:.78rem;"><div><strong style="color:#fff;">SACCG Primary</strong><small style="display:block;color:var(--muted);font-size:.7rem;">Dec 5 · Capital City Stadium</small></div><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;text-align:right;font-size:.74rem;">ASSIGNED</span><span style="font-family:'JetBrains Mono',monospace;color:var(--muted-soft);font-weight:700;text-align:right;">—</span></div>
+        <div style="display:grid;grid-template-columns:1fr 60px 70px;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);align-items:center;font-size:.78rem;"><div><strong style="color:#fff;">CFP Semifinal Primary</strong><small style="display:block;color:var(--muted);font-size:.7rem;">Tentative · pending bracket</small></div><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;text-align:right;font-size:.74rem;">TENT</span><span style="font-family:'JetBrains Mono',monospace;color:var(--muted-soft);font-weight:700;text-align:right;">—</span></div>
+      </div>
+    </div>
+
+    <div class="cd-section">
+      <h4>Crew Roster</h4>
+      <div style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden;font-size:.78rem;">
+        <div style="display:grid;grid-template-columns:36px 1fr 80px;gap:10px;padding:9px 14px;background:rgba(255,255,255,.04);align-items:center;"><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:700;font-size:.66rem;">R</span><div><strong style="color:#fff;">Brad Holloway</strong> · 13 yrs</div><span style="font-family:'JetBrains Mono',monospace;color:var(--good);font-weight:700;text-align:right;">95.2</span></div>
+        <div style="display:grid;grid-template-columns:36px 1fr 80px;gap:10px;padding:9px 14px;background:rgba(255,255,255,.04);align-items:center;"><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:700;font-size:.66rem;">U</span><div><strong style="color:#fff;">James Kestrel</strong> · 9 yrs</div><span style="font-family:'JetBrains Mono',monospace;color:var(--good);font-weight:700;text-align:right;">93.4</span></div>
+        <div style="display:grid;grid-template-columns:36px 1fr 80px;gap:10px;padding:9px 14px;background:rgba(255,255,255,.04);align-items:center;"><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:700;font-size:.66rem;">HL</span><div><strong style="color:#fff;">Marcus Riordan</strong> · 11 yrs</div><span style="font-family:'JetBrains Mono',monospace;color:var(--good);font-weight:700;text-align:right;">95.8</span></div>
+        <div style="display:grid;grid-template-columns:36px 1fr 80px;gap:10px;padding:9px 14px;background:rgba(255,255,255,.04);align-items:center;"><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:700;font-size:.66rem;">LJ</span><div><strong style="color:#fff;">Sarah Parsons</strong> · 6 yrs</div><span style="font-family:'JetBrains Mono',monospace;color:var(--good);font-weight:700;text-align:right;">93.1</span></div>
+        <div style="display:grid;grid-template-columns:36px 1fr 80px;gap:10px;padding:9px 14px;background:rgba(255,255,255,.04);align-items:center;"><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:700;font-size:.66rem;">FJ</span><div><strong style="color:#fff;">Devin Lyle</strong> · 4 yrs</div><span style="font-family:'JetBrains Mono',monospace;color:var(--good);font-weight:700;text-align:right;">91.8</span></div>
+        <div style="display:grid;grid-template-columns:36px 1fr 80px;gap:10px;padding:9px 14px;background:rgba(255,255,255,.04);align-items:center;"><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:700;font-size:.66rem;">SJ</span><div><strong style="color:#fff;">Tom Vance</strong> · 8 yrs</div><span style="font-family:'JetBrains Mono',monospace;color:var(--good);font-weight:700;text-align:right;">94.2</span></div>
+        <div style="display:grid;grid-template-columns:36px 1fr 80px;gap:10px;padding:9px 14px;background:rgba(255,255,255,.04);align-items:center;"><span style="font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:700;font-size:.66rem;">BJ</span><div><strong style="color:#fff;">Carmen Lockwood</strong> · 3 yrs</div><span style="font-family:'JetBrains Mono',monospace;color:var(--good);font-weight:700;text-align:right;">92.6</span></div>
+      </div>
+    </div>
+
+    <div class="cd-section">
+      <h4>Complaints (Active)</h4>
+      <div id="cdComplaintsList" style="display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:3px;overflow:hidden;font-size:.78rem;">
+        <div style="display:grid;grid-template-columns:1fr 90px;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);align-items:center;"><div><strong style="color:#fff;">Holding interpretation — LIB-WB Q3 5:02</strong><small style="display:block;color:var(--muted);font-size:.7rem;margin-top:2px;">Westbrook AD · FB-26-0214 · in review</small></div><span style="font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;color:var(--warn);font-weight:700;text-align:right;">IN REVIEW</span></div>
+        <div style="display:grid;grid-template-columns:1fr 90px;gap:10px;padding:10px 14px;background:rgba(255,255,255,.04);align-items:center;"><div><strong style="color:#fff;">DPI 4th down — vs Kestrel</strong><small style="display:block;color:var(--muted);font-size:.7rem;margin-top:2px;">Kestrel State AD · memo issued 2d ago</small></div><span style="font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.14em;color:var(--good);font-weight:700;text-align:right;">REPLIED</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="cd-foot">
+    <button class="btn">Send Memo</button>
+    <button class="btn">Open in Film Portal</button>
+    <button class="btn btn-gold" style="margin-left:auto;">View Full Profile</button>
+  </div>
+</aside>
+
+<script>
+  // === Directory Filters ===
+  const dirFilterState = { sport: new Set(), tenure: new Set(), grade: new Set(), status: new Set(), postseason: new Set() };
+  const filterLabels = {
+    sport: { fb:'Football', mbb:'MBB', wbb:'WBB', bsb:'BSB', sb:'SB', vb:'VB' },
+    tenure: { early:'≤ 3 yrs', mid:'4–7 yrs', senior:'8+ yrs' },
+    grade: { high:'≥ 95', mid:'90–94', low:'< 90' },
+    status: { active:'Active', standby:'Standby', review:'Review', onboarding:'Onboarding' },
+    postseason: { seccg:'SACCG', bowl:'Bowl', tournament:'SAC Tourn', ncaa:'NCAA', cws:'NCAA Baseball Final Eight', wcws:'WNCAA Baseball Final Eight', review:'Under Review', ineligible:'Ineligible' }
+  };
+
+  function toggleDirPill(pill){
+    const group = pill.parentElement.getAttribute('data-filter-group');
+    const value = pill.getAttribute('data-value');
+    if(dirFilterState[group].has(value)){
+      dirFilterState[group].delete(value);
+      pill.classList.remove('active');
+    } else {
+      dirFilterState[group].add(value);
+      pill.classList.add('active');
+    }
+    applyDirFilters();
+  }
+
+  function clearDirSearch(){
+    const inp = document.getElementById('dirSearchInput');
+    inp.value = '';
+    document.getElementById('dirSearchBox').classList.remove('has-value');
+    applyDirFilters();
+  }
+
+  function removeFilterChip(group, value){
+    dirFilterState[group].delete(value);
+    document.querySelectorAll(`[data-filter-group="${group}"] .dir-pill`).forEach(p => {
+      if(p.getAttribute('data-value') === value) p.classList.remove('active');
+    });
+    applyDirFilters();
+  }
+
+  function resetDirFilters(){
+    Object.keys(dirFilterState).forEach(k => dirFilterState[k].clear());
+    document.querySelectorAll('.dir-pill.active').forEach(p => p.classList.remove('active'));
+    clearDirSearch();
+  }
+
+  function applyDirFilters(){
+    const searchInp = document.getElementById('dirSearchInput');
+    const search = searchInp.value.trim().toLowerCase();
+    document.getElementById('dirSearchBox').classList.toggle('has-value', search.length > 0);
+
+    const rows = document.querySelectorAll('[data-dir-row]');
+    let visible = 0, grades = [], careers = [], psEligible = 0, reviewing = 0, onboarding = 0;
+    rows.forEach(row => {
+      let show = true;
+      // Sport filter
+      if(dirFilterState.sport.size && !dirFilterState.sport.has(row.dataset.dSport)) show = false;
+      // Tenure
+      if(show && dirFilterState.tenure.size && !dirFilterState.tenure.has(row.dataset.dTenure)) show = false;
+      // Grade
+      if(show && dirFilterState.grade.size && !dirFilterState.grade.has(row.dataset.dGrade)) show = false;
+      // Status
+      if(show && dirFilterState.status.size && !dirFilterState.status.has(row.dataset.dStatus)) show = false;
+      // Postseason
+      if(show && dirFilterState.postseason.size && !dirFilterState.postseason.has(row.dataset.dPostseason)) show = false;
+      // Search
+      if(show && search){
+        const name = (row.dataset.dName || '').toLowerCase();
+        if(!name.includes(search)) show = false;
+      }
+      row.hidden = !show;
+      if(show){
+        visible++;
+        const gradeEl = row.querySelector('.grade-cell');
+        if(gradeEl){
+          const g = parseFloat(gradeEl.textContent);
+          if(!isNaN(g)) grades.push(g);
+        }
+        const careerText = row.querySelector('.crew-assign:nth-of-type(2) small');
+        if(careerText){
+          const c = parseInt(careerText.textContent.replace(/[^\d]/g, ''));
+          if(!isNaN(c)) careers.push(c);
+        }
+        const ps = row.dataset.dPostseason;
+        if(['seccg','bowl','tournament','ncaa','cws','wcws'].includes(ps)) psEligible++;
+        if(row.dataset.dStatus === 'review' || ps === 'review') reviewing++;
+        if(row.dataset.dStatus === 'onboarding') onboarding++;
+      }
+    });
+
+    // Update header count
+    document.getElementById('dirMatchCount').textContent = visible;
+    // Update empty state
+    document.querySelector('[data-dir-empty]').hidden = visible > 0;
+    // Update summary
+    document.getElementById('dsCount').textContent = visible;
+    document.getElementById('dsAvgGrade').textContent = grades.length ? (grades.reduce((a,b)=>a+b,0)/grades.length).toFixed(1) : '—';
+    document.getElementById('dsPostseason').textContent = psEligible;
+    document.getElementById('dsReview').textContent = reviewing;
+    document.getElementById('dsOnboarding').textContent = onboarding;
+    document.getElementById('dsCareer').textContent = careers.length ? Math.round(careers.reduce((a,b)=>a+b,0)/careers.length) : '—';
+
+    // Update group counts
+    ['sport','tenure','grade','status','postseason'].forEach(g => {
+      const n = dirFilterState[g].size;
+      const tag = document.getElementById('dgc' + g.charAt(0).toUpperCase() + g.slice(1));
+      if(tag) tag.textContent = n ? `${n} active` : '';
+    });
+
+    // Render active chip strip
+    renderActiveChips(visible, search);
+  }
+
+  function renderActiveChips(visible, search){
+    const host = document.getElementById('dirActiveChips');
+    const chips = [];
+    Object.keys(dirFilterState).forEach(group => {
+      dirFilterState[group].forEach(v => {
+        const lbl = (filterLabels[group] || {})[v] || v;
+        chips.push(`<span class="active-chip">${lbl}<span class="chip-x" onclick="removeFilterChip('${group}','${v}')">✕</span></span>`);
+      });
+    });
+    if(search) chips.push(`<span class="active-chip">"${search}"<span class="chip-x" onclick="clearDirSearch()">✕</span></span>`);
+    if(chips.length === 0){
+      host.classList.add('empty');
+      host.innerHTML = `<span>No filters active · showing all <strong>${visible}</strong> visible crews</span>`;
+    } else {
+      host.classList.remove('empty');
+      host.innerHTML = `<span style="font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-right:4px;">Active:</span>` +
+                       chips.join('') +
+                       `<button class="dir-reset" onclick="resetDirFilters()">Reset all</button>`;
+    }
+  }
+
+  // Wire pills
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.dir-pill').forEach(p => p.addEventListener('click', () => toggleDirPill(p)));
+    applyDirFilters();
+  });
+
+  // Crew data (lightweight — drawer uses this to populate)
+  const crewData = {
+    henderson: { name:'Crew Holloway', mark:'H', subtitle:"R: B. Holloway · 7-man · SAC since '13", grade:'95.2', games:'11', career:'198', complaints:'2', spot:'98.4%', penalty:'94.6%', mgmt:'93.1%', replay:'94.8%' },
+    walker:    { name:'Crew Whitaker',    mark:'W', subtitle:"R: D. Whitaker · 7-man · SAC since '11",    grade:'91.3', games:'11', career:'228', complaints:'4', spot:'90.4%', penalty:'85.1%', mgmt:'91.2%', replay:'73.8%' },
+    reyes:     { name:'Crew Riordan',     mark:'R', subtitle:"R: M. Riordan · 7-man · SAC since '15",     grade:'94.1', games:'11', career:'164', complaints:'1', spot:'96.4%', penalty:'92.8%', mgmt:'93.4%', replay:'93.6%' },
+    patel:     { name:'Crew Petrov',     mark:'P', subtitle:"R: A. Petrov · 7-man · SAC since '18",     grade:'92.6', games:'10', career:'118', complaints:'1', spot:'95.1%', penalty:'91.0%', mgmt:'96.8%', replay:'88.4%' },
+    drummond:  { name:'Crew Donovan',  mark:'D', subtitle:"R: C. Donovan · 7-man · SAC since '19",  grade:'88.7', games:'10', career:'98',  complaints:'3', spot:'85.4%', penalty:'79.2%', mgmt:'91.6%', replay:'92.2%' },
+    mitchell:  { name:'Crew Marsden',  mark:'M', subtitle:"R: J. Marsden · 7-man · SAC since '17",  grade:'90.4', games:'10', career:'136', complaints:'2', spot:'93.8%', penalty:'88.6%', mgmt:'91.2%', replay:'89.4%' },
+    okafor:    { name:'Crew Otieno',    mark:'O', subtitle:"R: K. Otieno · 7-man · SAC since '12",    grade:'94.8', games:'10', career:'214', complaints:'1', spot:'97.2%', penalty:'93.8%', mgmt:'95.6%', replay:'94.4%' },
+    larson:    { name:'Crew Larson',    mark:'L', subtitle:"R: T. Larson · MBB 3-man · SAC since '20", grade:'93.0', games:'8',  career:'72',  complaints:'0', spot:'94.0%', penalty:'92.5%', mgmt:'93.2%', replay:'92.2%' },
+    diaz:      { name:'Crew Diaz',      mark:'D', subtitle:"R: A. Diaz · MBB 3-man · SAC since '17",   grade:'94.0', games:'9',  career:'114', complaints:'1', spot:'95.0%', penalty:'93.4%', mgmt:'94.6%', replay:'93.0%' },
+    murphy:    { name:'Crew Murphy',    mark:'M', subtitle:"R: K. Murphy · WBB 3-man · SAC since '19", grade:'93.0', games:'7',  career:'88',  complaints:'0', spot:'94.2%', penalty:'92.0%', mgmt:'93.6%', replay:'92.4%' },
+    bishop:    { name:'Crew Bishop',    mark:'B', subtitle:"R: L. Bishop · VB 2-man + line · SAC since '14", grade:'95.0', games:'22', career:'186', complaints:'0', spot:'96.5%', penalty:'94.2%', mgmt:'94.8%', replay:'94.4%' },
+    park:      { name:'Crew Park',      mark:'P', subtitle:"R: J. Park · Soccer 3-man · SAC since '21", grade:'91.0', games:'14', career:'46',  complaints:'0', spot:'92.0%', penalty:'90.4%', mgmt:'91.6%', replay:'89.8%' }
+  };
+
+  function openCrewDrawer(key){
+    const c = crewData[key];
+    if(!c) return;
+    document.getElementById('cdName').textContent = c.name;
+    document.getElementById('cdMark').textContent = c.mark;
+    document.getElementById('cdSubtitle').textContent = c.subtitle;
+    document.getElementById('cdGrade').textContent = c.grade;
+    document.getElementById('cdGames').textContent = c.games;
+    document.getElementById('cdCareer').textContent = c.career;
+    document.getElementById('cdComplaints').textContent = c.complaints;
+    document.getElementById('cdSpot').textContent = c.spot;
+    document.getElementById('cdPenalty').textContent = c.penalty;
+    document.getElementById('cdMgmt').textContent = c.mgmt;
+    document.getElementById('cdReplay').textContent = c.replay;
+    // Color the bar values per crew strength
+    const setClass = (id, v) => {
+      const el = document.getElementById(id);
+      const n = parseFloat(v);
+      el.className = 'gd-value ' + (n >= 92 ? 'good' : (n >= 85 ? 'warn' : 'danger'));
+    };
+    setClass('cdSpot', c.spot); setClass('cdPenalty', c.penalty); setClass('cdMgmt', c.mgmt); setClass('cdReplay', c.replay);
+    document.getElementById('crewDrawer').classList.add('open');
+    document.getElementById('crewDrawerMask').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeCrewDrawer(){
+    document.getElementById('crewDrawer').classList.remove('open');
+    document.getElementById('crewDrawerMask').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') closeCrewDrawer();
+  });
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

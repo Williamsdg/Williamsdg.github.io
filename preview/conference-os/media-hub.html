@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%23070d1e%22 stroke=%22%23c9a558%22 stroke-width=%221.5%22/><text x=%2216%22 y=%2222%22 font-family=%22serif%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23c9a558%22>S</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Media Hub — SAC Operating System</title>
+<meta name="description" content="Broadcast asset distribution, school content packages, press archives, talent files, and media credentialing across the SAC." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  .asset-grid{display:grid;grid-template-columns:repeat(3, 1fr);gap:12px;padding:18px}
+  .asset-tile{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;overflow:hidden;cursor:pointer;transition:.15s}
+  .asset-tile:hover{border-color:var(--gold);transform:translateY(-2px)}
+  .asset-thumb{aspect-ratio:16/9;background:linear-gradient(135deg, var(--field), #143820);position:relative;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:1.4rem}
+  .asset-thumb.broadcast{background:linear-gradient(135deg, #2a1a4d, #1a0f33)}
+  .asset-thumb.photo{background:linear-gradient(135deg, #4d2a1a, #331a0f)}
+  .asset-thumb.graphic{background:linear-gradient(135deg, #1a3a4d, #0f2433)}
+  .asset-thumb.audio{background:linear-gradient(135deg, #1a4d2a, #0f331a)}
+  .asset-thumb .ic{font-size:1.6rem;color:rgba(255,255,255,.4)}
+  .asset-thumb .tag{position:absolute;top:7px;left:7px;font-size:.58rem;letter-spacing:.14em;padding:2px 6px;background:rgba(0,0,0,.7);color:#fff;border-radius:2px;font-family:'JetBrains Mono',monospace;font-weight:700}
+  .asset-thumb .dur{position:absolute;bottom:7px;right:7px;font-size:.6rem;background:rgba(0,0,0,.7);padding:2px 5px;border-radius:1px;color:#fff;font-family:'JetBrains Mono',monospace}
+  .asset-meta{padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+  .asset-title{font-size:.78rem;color:#fff;font-weight:500;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .asset-sub{font-size:.66rem;color:var(--muted);letter-spacing:.04em;display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace}
+  .asset-sub .sep{color:var(--muted-soft)}
+
+  .pkg-row{display:grid;grid-template-columns:40px 1fr 90px 80px;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .pkg-row:last-child{border-bottom:none}
+  .pkg-icon{width:32px;height:32px;border-radius:3px;background:rgba(111,169,230,.15);color:var(--info);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;border:1px solid rgba(111,169,230,.25)}
+  .pkg-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .pkg-info small{color:var(--muted);font-size:.7rem}
+  .pkg-count{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;text-align:right;font-size:.78rem}
+  .pkg-count small{display:block;font-size:.58rem;color:var(--muted-soft);letter-spacing:.1em;margin-top:2px;font-weight:500}
+
+  .bcast-window{display:grid;grid-template-columns:60px 1fr auto;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .bcast-window:last-child{border-bottom:none}
+  .bcast-net-tag{font-family:'Fraunces',serif;font-size:.78rem;font-weight:700;color:var(--gold-soft);padding:6px 9px;background:rgba(201,165,88,.12);border:1px solid rgba(201,165,88,.3);border-radius:2px;text-align:center;letter-spacing:.04em}
+  .bcast-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .bcast-info small{color:var(--muted);font-size:.7rem}
+  .bcast-status{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .bcast-status.on{color:var(--live)}
+  .bcast-status.up{color:var(--gold-soft)}
+  .bcast-status.fin{color:var(--good)}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SAC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html" class="active"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">LS</div>
+        <div>
+          <div class="user-name">P. Patel</div>
+          <div class="user-role">VP, Communications</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Operations Suite · <strong>Media Hub</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">+ Upload Package</button>
+        <button class="btn">Press Archive</button>
+        <button class="btn btn-gold">Distribute to Partners</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Media &amp; content <em>distribution.</em></h1>
+          <div class="sub">14 broadcast partners · 14 schools · 1,247 asset packages this season</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">All Sports</button>
+          <button class="pill">Football</button>
+          <button class="pill">Basketball</button>
+          <button class="pill">SACN Talent</button>
+        </div>
+      </div>
+
+      <div class="stat-row five">
+        <div class="stat info"><span class="stat-label">Asset Packages · 7d</span><span class="stat-value">87</span><span class="stat-delta up">+12% vs avg week</span></div>
+        <div class="stat"><span class="stat-label">Broadcast Windows</span><span class="stat-value">38</span><span class="stat-delta">Apex · Vista · Vista · SACN · SACN+</span></div>
+        <div class="stat good"><span class="stat-label">Press Releases</span><span class="stat-value">14</span><span class="stat-delta up">all schools active</span></div>
+        <div class="stat warn"><span class="stat-label">Pending Media Requests</span><span class="stat-value">23</span><span class="stat-delta">avg response 4.2h</span></div>
+        <div class="stat"><span class="stat-label">CDN Egress · MTD</span><span class="stat-value">4.2 <small>TB</small></span><span class="stat-delta">$1,840 spend</span></div>
+      </div>
+
+      <div class="tabs-host">
+      <div class="tabs">
+        <div class="tab active" data-tab="overview">Distribution</div>
+        <div class="tab" data-tab="schools">School Packages</div>
+        <div class="tab" data-tab="partners">Broadcast Partners</div>
+        <div class="tab" data-tab="press">Press Archive</div>
+        <div class="tab" data-tab="talent">Talent &amp; Sideline</div>
+        <div class="tab" data-tab="sponsor">Sponsor Assets</div>
+      </div>
+
+      <div class="sport-bar">
+        <span class="sport-bar-label">Sport</span>
+        <span class="sport-pill active" data-sport="all"><span class="sp-ic">◎</span>All Sports</span>
+        <span class="sport-pill" data-sport="fb"><span class="sp-ic">●</span>Football</span>
+        <span class="sport-pill" data-sport="mbb"><span class="sp-ic">●</span>Men&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="wbb"><span class="sp-ic">●</span>Women&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="bsb"><span class="sp-ic">●</span>Baseball</span>
+        <span class="sport-pill" data-sport="sb"><span class="sp-ic">●</span>Softball</span>
+        <span class="sport-pill" data-sport="vb"><span class="sp-ic">●</span>Volleyball</span>
+        <span class="sport-pill" data-sport="other"><span class="sp-ic">○</span>Other Sports</span>
+      </div>
+
+      <div data-tab-panel="overview">
+
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>Asset Activity · by Sport · 24h</h3><span class="h-meta">filter via Sport bar above</span><div class="spacer"></div><span class="h-action">Library →</span></div>
+        <div data-sport-scope>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>Football · 32 asset packages distributed</strong><small>The Lighthouse Rivalry coverage · highlights · b-roll · talent files</small></div><div class="ri-stat good">32 PKG<small>SACN + CBS</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · Apex world feed live (LIB @ WB)</strong><small>SDI to all conference + national distribution</small></div><div class="ri-stat good">LIVE<small>4.2M VIEWERS</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · 14 highlight packages today</strong><small>SACN+ secondary distribution + school exchanges</small></div><div class="ri-stat good">14 PKG<small>SACN+</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · Westbrook coach Pearson avail clip drafted</strong><small>Post-game · 4 min · transcript ready</small></div><div class="ri-stat info">QUEUED<small>POST-GAME</small></div></div>
+          <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB · 6 highlight packages today</strong><small>SACN linear + school sharing</small></div><div class="ri-stat good">6 PKG<small>SACN</small></div></div>
+          <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB · Atlantic State preview package (HC hosting Jan 4)</strong><small>Pre-season ad spots cleared by both schools</small></div><div class="ri-stat good">DELIVERED<small>11/20</small></div></div>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>Baseball · Off-season highlight reel</strong><small>'25 season retrospective · ad-prep for spring</small></div><div class="ri-stat info">DRAFTED<small>SPRING PREP</small></div></div>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>Summit Park '26 promotional package</strong><small>Ticket sales spot launches Dec 1</small></div><div class="ri-stat info">SCHEDULED<small>DEC 1</small></div></div>
+          <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>Softball · Off-season conference promo</strong><small>SAC champ trophy unveiling clip</small></div><div class="ri-stat info">SCHEDULED<small>JAN 15</small></div></div>
+          <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>SB · FV run-back from '25 NCAA WS</strong><small>Athletic dept ad rotation · live now</small></div><div class="ri-stat good">LIVE<small>SCHOOL</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>Volleyball · SAC Tournament live feeds</strong><small>3 simultaneous court feeds · SACN+ exclusive</small></div><div class="ri-stat good">LIVE<small>3 FEEDS</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>VB · Semifinal highlight pack drafted</strong><small>Ready for post-game distribution to all schools</small></div><div class="ri-stat info">DRAFT<small>POST-GAME</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Cross Country · NCAA Champ live stream</strong><small>SAC pool reporter onsite · clip drops every 30 min</small></div><div class="ri-stat good">LIVE<small>NCAA</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Soccer · NCAA R16 Westbrook home (Sunday)</strong><small>SACN+ stream · pre-game package drafting</small></div><div class="ri-stat info">PRE<small>SUN</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Swim &amp; Dive · TC feature for SACN documentary</strong><small>"Trail to the Pool" series ep. 4 · in edit</small></div><div class="ri-stat info">EDIT<small>DEC AIR</small></div></div>
+          <div data-sport-empty hidden class="sport-empty"><strong>No asset activity for this sport in 24h</strong>Try selecting another sport — or All Sports to see the full slate.</div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Latest Asset Drops</h3>
+            <span class="h-meta">12 packages · last 24h</span>
+            <div class="spacer"></div>
+            <span class="h-action">Library →</span>
+          </div>
+          <div class="asset-grid">
+            <div class="asset-tile">
+              <div class="asset-thumb broadcast"><span class="ic">▶</span><span class="tag">B-ROLL</span><span class="dur">2:14</span></div>
+              <div class="asset-meta">
+                <div class="asset-title">The Lighthouse Rivalry Pre-Game B-Roll</div>
+                <div class="asset-sub"><span>4K</span><span class="sep">·</span><span>Nov 22</span><span class="sep">·</span><span>SACN</span></div>
+              </div>
+            </div>
+            <div class="asset-tile">
+              <div class="asset-thumb"><span class="ic">▶</span><span class="tag">HIGHLIGHTS</span><span class="dur">0:42</span></div>
+              <div class="asset-meta">
+                <div class="asset-title">NT–PR Top Plays</div>
+                <div class="asset-sub"><span>1080p</span><span class="sep">·</span><span>Nov 22</span><span class="sep">·</span><span>All</span></div>
+              </div>
+            </div>
+            <div class="asset-tile">
+              <div class="asset-thumb photo"><span class="ic">▦</span><span class="tag">PHOTO</span><span class="dur">38 IMG</span></div>
+              <div class="asset-meta">
+                <div class="asset-title">Global Press / Imagewire · Mariner Stadium</div>
+                <div class="asset-sub"><span>RAW + JPG</span><span class="sep">·</span><span>Live</span></div>
+              </div>
+            </div>
+            <div class="asset-tile">
+              <div class="asset-thumb graphic"><span class="ic">▤</span><span class="tag">GRAPHIC</span><span class="dur">8 PKG</span></div>
+              <div class="asset-meta">
+                <div class="asset-title">SACN Lower-Thirds Kit · Wk 12</div>
+                <div class="asset-sub"><span>AEP</span><span class="sep">·</span><span>SACN</span></div>
+              </div>
+            </div>
+            <div class="asset-tile">
+              <div class="asset-thumb audio"><span class="ic">♪</span><span class="tag">AUDIO</span><span class="dur">12:08</span></div>
+              <div class="asset-meta">
+                <div class="asset-title">Whitfield Pre-The Lighthouse Rivalry Avail</div>
+                <div class="asset-sub"><span>WAV</span><span class="sep">·</span><span>Press</span></div>
+              </div>
+            </div>
+            <div class="asset-tile">
+              <div class="asset-thumb broadcast"><span class="ic">▶</span><span class="tag">LIVE</span><span class="dur">LIVE</span></div>
+              <div class="asset-meta">
+                <div class="asset-title">CBS World Feed · LIB@WB</div>
+                <div class="asset-sub"><span>HD</span><span class="sep">·</span><span>SDI</span><span class="sep">·</span><span>CBS</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>School Content Packages</h3>
+            <span class="h-meta">14 schools · weekly distribution</span>
+            <div class="spacer"></div>
+            <span class="h-action">Per-school report →</span>
+          </div>
+          <div>
+            <div class="pkg-row">
+              <span class="pkg-icon">A</span>
+              <div class="pkg-info"><strong>Liberty State Athletics</strong><small>The Lighthouse Rivalry talent + b-roll package · 18 assets</small></div>
+              <div class="pkg-count">→</div>
+              <div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21 09:42</small></div>
+            </div>
+            <div class="pkg-row">
+              <span class="pkg-icon">WB</span>
+              <div class="pkg-info"><strong>Westbrook Athletics</strong><small>The Lighthouse Rivalry home package · 24 assets + 6 talent files</small></div>
+              <div class="pkg-count">→</div>
+              <div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21 09:42</small></div>
+            </div>
+            <div class="pkg-row">
+              <span class="pkg-icon">HC</span>
+              <div class="pkg-info"><strong>Caldwell Athletics</strong><small>TC-HC cocktail party package · 22 assets</small></div>
+              <div class="pkg-count">→</div>
+              <div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21 09:42</small></div>
+            </div>
+            <div class="pkg-row">
+              <span class="pkg-icon">F</span>
+              <div class="pkg-info"><strong>Tidewater Athletics</strong><small>TC-HC travel package · 16 assets</small></div>
+              <div class="pkg-count">→</div>
+              <div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21 09:42</small></div>
+            </div>
+            <div class="pkg-row">
+              <span class="pkg-icon">MV</span>
+              <div class="pkg-info"><strong>Monteverde Athletics</strong><small>HC-MV package · holding for weather restart</small></div>
+              <div class="pkg-count">→</div>
+              <div class="pkg-count" style="color:var(--warn);">QUEUED<small>WX HOLD</small></div>
+            </div>
+            <div class="pkg-row">
+              <span class="pkg-icon">+9</span>
+              <div class="pkg-info"><strong>9 additional schools</strong><small>Weekly distribution · 142 assets total · 100% delivery</small></div>
+              <div class="pkg-count">→</div>
+              <div class="pkg-count" style="color:var(--good);">DELIVERED<small>VARIOUS</small></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Broadcast Windows · Saturday</h3>
+            <span class="h-meta">12 windows live + upcoming</span>
+            <div class="spacer"></div>
+            <span class="h-action">All partners →</span>
+          </div>
+          <div>
+            <div class="bcast-window">
+              <span class="bcast-net-tag">CBS</span>
+              <div class="bcast-info"><strong>The Lighthouse Rivalry · LIB @ WB</strong><small>3:30 CT · 87,451 attendance · world feed live</small></div>
+              <span class="bcast-status on">● ON</span>
+            </div>
+            <div class="bcast-window">
+              <span class="bcast-net-tag">ABC</span>
+              <div class="bcast-info"><strong>The Capital Classic · TC @ HC</strong><small>3:30 CT · 92,746 · Q4 review pending</small></div>
+              <span class="bcast-status on">● ON</span>
+            </div>
+            <div class="bcast-window">
+              <span class="bcast-net-tag">SACN</span>
+              <div class="bcast-info"><strong>KE @ FV</strong><small>6:00 CT · halftime · returning 4:08</small></div>
+              <span class="bcast-status on">● ON</span>
+            </div>
+            <div class="bcast-window">
+              <span class="bcast-net-tag">ESPN</span>
+              <div class="bcast-info"><strong>CC @ RD</strong><small>6:30 CT · pregame on SACN+</small></div>
+              <span class="bcast-status up">UP NEXT</span>
+            </div>
+            <div class="bcast-window">
+              <span class="bcast-net-tag">ABC</span>
+              <div class="bcast-info"><strong>HC @ MV</strong><small>WX hold · field clear · restart TBD</small></div>
+              <span class="bcast-status up">HOLD</span>
+            </div>
+            <div class="bcast-window">
+              <span class="bcast-net-tag">SACN+</span>
+              <div class="bcast-info"><strong>GP @ BH</strong><small>7:00 CT · pregame in progress</small></div>
+              <span class="bcast-status up">7:00 CT</span>
+            </div>
+            <div class="bcast-window">
+              <span class="bcast-net-tag">ASN+</span>
+              <div class="bcast-info"><strong>NT @ PR · FINAL</strong><small>Post-game presser · 31-17 NT</small></div>
+              <span class="bcast-status fin">CLOSED</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Talent &amp; Sideline</h3>
+            <span class="h-meta">Live assignments</span>
+            <div class="spacer"></div>
+            <span class="h-action">Talent roster →</span>
+          </div>
+          <div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Janice Dell</strong><small>Sideline · LIB @ WB · Apex</small></div>
+              <div class="ri-stat good">ON AIR<small>Q3</small></div>
+            </div>
+            <div class="ri-info" style="display:none;"></div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Helena Rowan</strong><small>Sideline · TC @ HC · Vista</small></div>
+              <div class="ri-stat good">ON AIR<small>Q4</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Cole Carver</strong><small>Color · SACN · KE @ FV</small></div>
+              <div class="ri-stat good">ON AIR<small>HALF</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Layla Russo</strong><small>SAC Nation host · live remote (Westbrook)</small></div>
+              <div class="ri-stat good">LIVE<small>PRE-IB</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Tim Tate</strong><small>SAC Nation analyst · live remote (Westbrook)</small></div>
+              <div class="ri-stat good">LIVE<small>PRE-IB</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>K. Brooks</strong><small>Sideline · CC @ RD · ESPN</small></div>
+              <div class="ri-stat warn">PENDING<small>CONFIRM</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>+ 18 additional</strong><small>Talent across SACN, SACN+, ABC, ESPN</small></div>
+              <div class="ri-stat info">View<small>→</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Press Archive · Last 7d</h3>
+            <span class="h-meta">42 sessions · 6.4 hrs</span>
+            <div class="spacer"></div>
+            <span class="h-action">Search archive →</span>
+          </div>
+          <div>
+            <div class="row-item">
+              <div class="ri-info"><strong>E. Whitfield · Pre-The Lighthouse Rivalry</strong><small>12 min · transcript ready · Apex / SACN</small></div>
+              <div class="ri-stat good">PUBLISHED<small>11/21</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>K. DeWitt (LIB) presser</strong><small>18 min · transcript + clips · weekly</small></div>
+              <div class="ri-stat good">PUBLISHED<small>11/20</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>H. Forsyth (WB) presser</strong><small>16 min · transcript ready · weekly</small></div>
+              <div class="ri-stat good">PUBLISHED<small>11/20</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>K. Sharpe (HC) presser</strong><small>22 min · transcript ready · weekly</small></div>
+              <div class="ri-stat good">PUBLISHED<small>11/19</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>J. Hartwell (MV) presser</strong><small>15 min · transcript ready · weekly</small></div>
+              <div class="ri-stat good">PUBLISHED<small>11/19</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>SAC Officiating · Memo Brief</strong><small>M. Reyes-Albright weekly · 8 min · officials only</small></div>
+              <div class="ri-stat info">INTERNAL<small>11/19</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>+ 36 additional sessions</strong><small>All schools · all sports · all transcribed</small></div>
+              <div class="ri-stat info">Browse<small>→</small></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </div><!-- /overview -->
+
+      <div data-tab-panel="schools" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>School Content Packages · All 16 Schools</h3><span class="h-meta">weekly distribution · 142 assets/wk</span><div class="spacer"></div><span class="h-action">Per-school report →</span></div>
+          <div>
+            <div class="pkg-row"><span class="pkg-icon">A</span><div class="pkg-info"><strong>Liberty State Athletics</strong><small>The Lighthouse Rivalry talent + b-roll package · 18 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">WB</span><div class="pkg-info"><strong>Westbrook Athletics</strong><small>The Lighthouse Rivalry home package · 24 assets + 6 talent</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">CC</span><div class="pkg-info"><strong>Caldwell Athletics</strong><small>The Crossing Cup vs NT · 12 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">F</span><div class="pkg-info"><strong>Tidewater Athletics</strong><small>TC-AS rivalry travel package · 16 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">HC</span><div class="pkg-info"><strong>Caldwell Athletics</strong><small>HC-Highland Polytechnic (The Continental Standoff) · 22 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">HC</span><div class="pkg-info"><strong>Hillstone Athletics</strong><small>The State Trophy at Midland College · 14 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">FV</span><div class="pkg-info"><strong>Fairview Athletics</strong><small>vs Glenn Park home package · 20 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">RD</span><div class="pkg-info"><strong>Redmoor Athletics</strong><small>The Stone Rivalry home package · 22 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">PR</span><div class="pkg-info"><strong>Pinerock Athletics</strong><small>The Stone Rivalry travel package · 14 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">NT</span><div class="pkg-info"><strong>Northland Tech Athletics</strong><small>The Crossing Cup travel package · 10 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">GP</span><div class="pkg-info"><strong>Glenn Park Athletics</strong><small>at FV travel package · 16 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">BH</span><div class="pkg-info"><strong>Bayhaven Athletics</strong><small>Off-week · MBB feature set</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">MV</span><div class="pkg-info"><strong>Monteverde Athletics</strong><small>vs Kestrel home package · 18 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">AT</span><div class="pkg-info"><strong>Ashford Tech Athletics</strong><small>at Kestrel State (rivalry renewal) · 26 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">KE</span><div class="pkg-info"><strong>Kestrel State Athletics</strong><small>Texas rivalry home package · 24 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+            <div class="pkg-row"><span class="pkg-icon">GP</span><div class="pkg-info"><strong>Glenn Park Athletics</strong><small>at Monteverde travel package · 10 assets</small></div><div class="pkg-count">→</div><div class="pkg-count" style="color:var(--good);">DELIVERED<small>11/21</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="partners" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Broadcast Partners · '26 Rights Holders</h3><span class="h-meta">Apex · Vista · Vista · SACN · SACN+</span><div class="spacer"></div><span class="h-action">Rights matrix →</span></div>
+          <div>
+            <div class="bcast-window"><span class="bcast-net-tag">CBS</span><div class="bcast-info"><strong>Apex Sports Network — Game of the Week</strong><small>Top SAC matchup each week · 3:30 CT window · season-long</small></div><span class="bcast-status on">PRIMARY</span></div>
+            <div class="bcast-window"><span class="bcast-net-tag">ABC</span><div class="bcast-info"><strong>ABC / Vista — Multi-window</strong><small>Saturday Night Football · Saturday Showcase · Vista marquee windows</small></div><span class="bcast-status on">PRIMARY</span></div>
+            <div class="bcast-window"><span class="bcast-net-tag">ESPN</span><div class="bcast-info"><strong>Vista linear + streaming</strong><small>Conference matchups across windows · MBB · WBB · baseball</small></div><span class="bcast-status on">PRIMARY</span></div>
+            <div class="bcast-window"><span class="bcast-net-tag">SACN</span><div class="bcast-info"><strong>SAC Network</strong><small>Dedicated conference channel · SAC Nation · weekly studio</small></div><span class="bcast-status on">CO-OWNED</span></div>
+            <div class="bcast-window"><span class="bcast-net-tag">SACN+</span><div class="bcast-info"><strong>SAC Network+ streaming</strong><small>Olympic sports, secondary games, school-produced productions</small></div><span class="bcast-status on">DIGITAL</span></div>
+            <div class="bcast-window"><span class="bcast-net-tag">ASN+</span><div class="bcast-info"><strong>Apex Sports Network Network — ancillary</strong><small>Selected secondary windows · MBB/baseball overflow</small></div><span class="bcast-status up">SECONDARY</span></div>
+            <div class="bcast-window"><span class="bcast-net-tag">P+</span><div class="bcast-info"><strong>Apex+ streaming</strong><small>ASN GotW streaming distribution</small></div><span class="bcast-status up">DIGITAL</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="press" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Press Archive · Last 7d</h3><span class="h-meta">42 sessions · 6.4 hrs · all transcribed</span><div class="spacer"></div><span class="h-action">Search archive →</span></div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>E. Whitfield · Pre-The Lighthouse Rivalry avail</strong><small>12 min · transcript · Apex / SACN</small></div><div class="ri-stat good">PUBLISHED<small>11/21</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>K. DeWitt (LIB) presser</strong><small>18 min · transcript + clips · weekly</small></div><div class="ri-stat good">PUBLISHED<small>11/20</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>H. Forsyth (WB) presser</strong><small>16 min · transcript ready · weekly</small></div><div class="ri-stat good">PUBLISHED<small>11/20</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>K. Sharpe (HC) presser</strong><small>22 min · transcript · weekly</small></div><div class="ri-stat good">PUBLISHED<small>11/19</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>J. Hartwell (MV) presser</strong><small>15 min · transcript · weekly</small></div><div class="ri-stat good">PUBLISHED<small>11/19</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>S. Sutton (AT) presser</strong><small>17 min · transcript · weekly</small></div><div class="ri-stat good">PUBLISHED<small>11/19</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>B. Vance (GP) presser</strong><small>14 min · transcript · weekly</small></div><div class="ri-stat good">PUBLISHED<small>11/19</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>SAC Officiating · Memo Brief (M. Reyes-Albright)</strong><small>8 min · officials only · internal</small></div><div class="ri-stat info">INTERNAL<small>11/19</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>+ 34 additional sessions</strong><small>All schools · all sports · all transcribed</small></div><div class="ri-stat info">BROWSE<small>→</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="talent" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Talent &amp; Sideline · Live Assignments</h3><span class="h-meta">22 assignments today</span><div class="spacer"></div><span class="h-action">Talent roster →</span></div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>Janice Dell</strong><small>Sideline · LIB @ WB · Apex</small></div><div class="ri-stat good">ON AIR<small>Q3</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Helena Rowan</strong><small>Sideline · TC @ HC · Vista</small></div><div class="ri-stat good">ON AIR<small>Q4</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Cole Carver</strong><small>Color · SACN · KE @ FV</small></div><div class="ri-stat good">ON AIR<small>HALF</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Layla Russo</strong><small>SAC Nation host · live remote (Westbrook)</small></div><div class="ri-stat good">LIVE<small>PRE-IB</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Tim Tate</strong><small>SAC Nation analyst · live remote (Westbrook)</small></div><div class="ri-stat good">LIVE<small>PRE-IB</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Roman Hart</strong><small>SAC Nation analyst · live remote (Westbrook)</small></div><div class="ri-stat good">LIVE<small>PRE-IB</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Patrick Finley</strong><small>The Patrick Finley Show · Vista/SACN · live</small></div><div class="ri-stat good">ON AIR<small>3-6 ET</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>K. Brooks</strong><small>Sideline · CC @ RD · ESPN</small></div><div class="ri-stat warn">PENDING<small>CONFIRM</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>+ 14 additional</strong><small>SACN, SACN+, ASN+, Vista, ABC</small></div><div class="ri-stat info">VIEW<small>→</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="sponsor" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Sponsor Assets &amp; Activations</h3><span class="h-meta">SACCG · partner deliverables</span><div class="spacer"></div><span class="h-action">Asset library →</span></div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>Atlas Beverage · SACCG presenting sponsor</strong><small>In-venue activation + halftime asset package · 14 deliverables</small></div><div class="ri-stat good">DELIVERED<small>11/15</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Vivid Beverage · Conference partner</strong><small>Season-long b-roll + logo overlay kit · 22 assets</small></div><div class="ri-stat good">DELIVERED<small>09/01</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Sentinel Insurance · SACCG kicking competition</strong><small>Activation rights + signage + sponsor billboards</small></div><div class="ri-stat good">DELIVERED<small>11/10</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Lumina Motors · Heisman House sponsor</strong><small>Whitfield availability + featured ad set · 8 deliverables</small></div><div class="ri-stat good">DELIVERED<small>11/15</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Heritage Bank · championship trophy presenting</strong><small>Trophy ceremony assets + premium suite hospitality</small></div><div class="ri-stat warn">PENDING<small>11/26</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Coastline Wireless · SACN Saturday Selects</strong><small>Featured promo asset · weekly</small></div><div class="ri-stat good">DELIVERED<small>WEEKLY</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /tabs-host -->
+
+    </div>
+  </main>
+</div>
+
+<script src="shared.js"></script>
+</body>
+</html>

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%23070d1e%22 stroke=%22%23c9a558%22 stroke-width=%221.5%22/><text x=%2216%22 y=%2222%22 font-family=%22serif%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23c9a558%22>S</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Comms Hub — SAC Operating System</title>
+<meta name="description" content="A purpose-built workspace for conference operations — sport channels, game-weekend threads, replay center voice rooms, and escalation chains." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0f1c; --ink-soft:#162033; --navy:#0b1530; --navy-deep:#070d1e; --navy-glow:#0f1a3a;
+    --paper:#f6f5f1; --canvas:#faf9f5;
+    --gold:#c9a558; --gold-soft:#d8b977; --gold-deep:#a8862e;
+    --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+    --muted:rgba(255,255,255,.55); --muted-soft:rgba(255,255,255,.35);
+    --good:#4dc97e; --warn:#e0b873; --danger:#ff6b6b; --info:#6fa9e6; --live:#ff4f4f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:#fff;background:var(--navy-deep);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:13px;overflow:hidden;height:100vh}
+  h1,h2,h3,h4,.serif{font-family:'Fraunces',serif;font-weight:400;letter-spacing:-.01em;color:#fff}
+  .mono{font-family:'JetBrains Mono',monospace;font-feature-settings:"tnum"}
+  a{color:inherit;text-decoration:none}
+
+  /* Top app */
+  .app{display:grid;grid-template-columns:240px 280px 1fr 320px;height:100vh}
+
+  /* Sidebar */
+  .sidebar{background:#04081a;padding:22px 18px;display:flex;flex-direction:column;gap:24px;border-right:1px solid var(--line);overflow-y:auto}
+  .sidebar::-webkit-scrollbar{width:4px} .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .side-brand{display:flex;align-items:center;gap:11px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .side-mark{width:32px;height:32px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:.95rem;color:var(--gold);font-weight:500}
+  .side-name{font-family:'Fraunces',serif;font-size:.98rem;color:#fff;font-weight:500;line-height:1.1}
+  .side-name em{font-style:normal;font-weight:400;color:var(--gold-soft);display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;margin-top:3px}
+  .side-section h5{font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-bottom:12px}
+  .side-nav{list-style:none;display:flex;flex-direction:column;gap:2px}
+  .side-nav a{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:3px;font-size:.8rem;color:var(--muted);font-weight:500}
+  .side-nav a:hover{background:rgba(255,255,255,.04);color:#fff}
+  .side-nav a.active{background:rgba(201,165,88,.12);color:var(--gold-soft)}
+  .side-nav .ic{width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;opacity:.85;font-size:.78rem}
+  .side-nav .badge{margin-left:auto;font-size:.62rem;padding:2px 6px;border-radius:2px;background:var(--gold);color:var(--navy-deep);font-weight:700;font-family:'JetBrains Mono',monospace}
+  .side-nav .badge.live{background:var(--live);color:#fff;animation:badgePulse 2s infinite}
+  @keyframes badgePulse{0%,100%{opacity:1}50%{opacity:.7}}
+  .side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px}
+  .user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-soft));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;color:var(--navy-deep);font-weight:600;font-size:.8rem}
+  .user-name{color:#fff;font-size:.8rem;font-weight:500;line-height:1.1}
+  .user-role{color:var(--muted-soft);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+
+  /* Channel rail */
+  .rail{background:#070e21;border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+  .rail-head{padding:18px 18px 14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+  .rail-title{font-family:'Fraunces',serif;font-size:1.05rem;color:#fff;font-weight:500;display:flex;align-items:center;gap:10px}
+  .rail-sub{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .rail-search{padding:10px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.2)}
+  .rail-search input{background:transparent;border:none;outline:none;color:#fff;font-family:inherit;font-size:.78rem;flex:1}
+  .rail-search input::placeholder{color:var(--muted-soft)}
+  .rail-scroll{flex:1;overflow-y:auto;padding:14px 0}
+  .rail-scroll::-webkit-scrollbar{width:4px} .rail-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .ch-group{padding:0 18px;margin-bottom:18px}
+  .ch-group-head{display:flex;align-items:center;justify-content:space-between;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-bottom:9px;padding:0 4px}
+  .ch-group-head .ic{cursor:pointer;color:var(--gold-soft);font-size:.84rem}
+  .ch-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:2px;cursor:pointer;font-size:.82rem;color:var(--muted);font-weight:500;transition:.15s}
+  .ch-item:hover{background:rgba(255,255,255,.04);color:#fff}
+  .ch-item.active{background:rgba(201,165,88,.12);color:#fff;font-weight:600}
+  .ch-item.unread{color:#fff}
+  .ch-item.unread .ch-name{font-weight:700}
+  .ch-icon{font-family:'JetBrains Mono',monospace;color:var(--muted-soft);font-weight:500;width:14px;text-align:center}
+  .ch-item.active .ch-icon{color:var(--gold-soft)}
+  .ch-icon.priv{color:var(--gold-soft)}
+  .ch-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ch-badge{font-size:.6rem;padding:2px 6px;border-radius:99px;background:var(--gold);color:var(--navy-deep);font-weight:700;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+  .ch-badge.alert{background:var(--live);color:#fff}
+  .ch-live{display:flex;align-items:center;gap:5px;color:var(--live);font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;flex-shrink:0}
+  .ch-live::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--live);animation:badgePulse 1.6s infinite}
+  .dm-avatar{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:700;color:#fff;font-family:'Fraunces',serif;flex-shrink:0}
+  .dm-status{width:7px;height:7px;border-radius:50%;background:var(--good);position:relative;top:-7px;left:-9px;border:2px solid #070e21}
+  .dm-status.away{background:var(--warn)} .dm-status.offline{background:var(--muted-soft)}
+
+  /* Main channel */
+  .chan{display:flex;flex-direction:column;background:radial-gradient(ellipse at top, var(--navy-glow), var(--navy-deep) 70%);overflow:hidden}
+  .chan-head{padding:14px 24px;border-bottom:1px solid var(--line);background:rgba(7,13,30,.7);backdrop-filter:blur(10px);display:flex;align-items:center;gap:14px}
+  .chan-title{display:flex;flex-direction:column;gap:2px}
+  .chan-name{font-family:'Fraunces',serif;font-size:1.15rem;color:#fff;font-weight:500;display:flex;align-items:center;gap:9px}
+  .chan-name .ic{color:var(--muted-soft);font-family:'JetBrains Mono',monospace}
+  .chan-meta{font-size:.7rem;color:var(--muted);letter-spacing:.04em}
+  .chan-meta strong{color:var(--gold-soft);font-weight:600}
+  .chan-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .chan-btn{padding:7px 12px;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;background:rgba(255,255,255,.04);border:1px solid var(--line-strong);color:#fff;font-weight:700;border-radius:2px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:.15s}
+  .chan-btn:hover{border-color:var(--gold);color:var(--gold-soft)}
+  .chan-btn.voice{background:rgba(255,79,79,.15);border-color:rgba(255,79,79,.3);color:var(--danger)}
+  .chan-btn.voice:hover{background:rgba(255,79,79,.25);color:#fff}
+  .chan-btn .pulse-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:badgePulse 1.6s infinite}
+
+  /* Pinned bar */
+  .pinned{padding:9px 24px;background:rgba(201,165,88,.06);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;font-size:.74rem;color:var(--muted)}
+  .pinned-icon{color:var(--gold);font-size:.85rem}
+  .pinned strong{color:#fff;font-weight:600}
+  .pinned .pin-link{color:var(--gold-soft);font-weight:600;cursor:pointer}
+  .pinned .pin-link:hover{text-decoration:underline}
+
+  /* Messages */
+  .messages{flex:1;overflow-y:auto;padding:14px 0}
+  .messages::-webkit-scrollbar{width:6px} .messages::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+
+  .day-sep{display:flex;align-items:center;gap:12px;padding:14px 24px 10px;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .day-sep::before, .day-sep::after{content:'';flex:1;height:1px;background:var(--line)}
+
+  .msg{display:grid;grid-template-columns:42px 1fr;gap:12px;padding:6px 24px;transition:background .12s}
+  .msg:hover{background:rgba(255,255,255,.02)}
+  .msg-grouped{padding-top:0}
+  .msg-grouped .msg-avatar, .msg-grouped .msg-head{visibility:hidden}
+  .msg-grouped:hover .msg-time-side{visibility:visible}
+  .msg-time-side{visibility:hidden;font-size:.6rem;color:var(--muted-soft);text-align:right;font-family:'JetBrains Mono',monospace;padding-top:2px}
+  .msg-avatar{width:36px;height:36px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:.95rem;flex-shrink:0}
+  .ava-sec{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:var(--navy-deep)}
+  .ava-rep{background:linear-gradient(135deg,#3a5a7a,#1f3a5a)}
+  .ava-aub{background:linear-gradient(135deg,#bf5700,#8e3f00)}
+  .ava-ala{background:linear-gradient(135deg,#9e1b32,#7c1326)}
+  .ava-uga{background:linear-gradient(135deg,#ba0c2f,#8c0823)}
+  .ava-bot{background:linear-gradient(135deg,#2a2a3a,#1a1a2a);border:1px solid var(--gold)}
+  .ava-tn{background:linear-gradient(135deg,#ff8200,#cc6800)}
+  .ava-lsu{background:linear-gradient(135deg,#461d7c,#2e1255)}
+  .msg-head{display:flex;align-items:baseline;gap:8px;margin-bottom:3px}
+  .msg-author{color:#fff;font-weight:600;font-size:.92rem}
+  .msg-role{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;padding:2px 6px;border-radius:2px;font-weight:700;background:rgba(255,255,255,.06);color:var(--muted)}
+  .msg-role.sec{background:rgba(201,165,88,.18);color:var(--gold-soft)}
+  .msg-role.rep{background:rgba(58,90,122,.25);color:var(--info)}
+  .msg-role.bot{background:rgba(77,201,126,.15);color:var(--good)}
+  .msg-time{color:var(--muted-soft);font-size:.66rem;font-family:'JetBrains Mono',monospace}
+  .msg-body{font-size:.88rem;color:rgba(255,255,255,.85);line-height:1.55}
+  .msg-body strong{color:#fff;font-weight:600}
+  .msg-body code{font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:2px;font-size:.8rem;color:var(--gold-soft)}
+  .msg-body a{color:var(--gold-soft);text-decoration:underline;text-underline-offset:2px}
+
+  /* Attachments */
+  .msg-attach{margin-top:8px;padding:10px 14px;background:rgba(255,255,255,.03);border-left:3px solid var(--gold);border-radius:2px;max-width:520px}
+  .msg-attach-head{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);font-weight:700;margin-bottom:4px}
+  .msg-attach-title{font-size:.86rem;color:#fff;font-weight:500;margin-bottom:2px}
+  .msg-attach-meta{font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+  /* Clip card */
+  .msg-clip{margin-top:8px;display:grid;grid-template-columns:120px 1fr;gap:12px;max-width:540px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .clip-thumb{height:80px;background:linear-gradient(135deg,#1f4a2e,#143820);position:relative;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.6);font-size:1.2rem}
+  .clip-thumb .dur{position:absolute;bottom:4px;right:5px;font-size:.6rem;background:rgba(0,0,0,.7);padding:1px 5px;border-radius:1px;color:#fff;font-family:'JetBrains Mono',monospace}
+  .clip-body{padding:10px 12px;display:flex;flex-direction:column;gap:3px;justify-content:center}
+  .clip-title{font-size:.84rem;color:#fff;font-weight:500}
+  .clip-meta{font-size:.7rem;color:var(--muted)}
+
+  /* Reactions */
+  .reactions{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+  .rxn{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:99px;font-size:.72rem;color:var(--muted);cursor:pointer;font-family:'JetBrains Mono',monospace}
+  .rxn:hover{background:rgba(201,165,88,.1);border-color:rgba(201,165,88,.3);color:var(--gold-soft)}
+  .rxn.mine{background:rgba(201,165,88,.12);border-color:var(--gold);color:var(--gold-soft)}
+  .rxn-mark{font-family:'Inter',sans-serif;font-size:.8rem}
+
+  /* Thread reply count */
+  .thread-link{margin-top:6px;display:inline-flex;align-items:center;gap:7px;font-size:.72rem;color:var(--info);font-weight:600;cursor:pointer;padding:4px 8px;border-radius:2px;background:rgba(58,90,122,.1)}
+  .thread-link:hover{background:rgba(58,90,122,.2)}
+  .thread-avatars{display:inline-flex}
+  .thread-avatars .av{width:16px;height:16px;border-radius:50%;font-size:.5rem;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;border:1.5px solid var(--navy-deep);margin-left:-4px}
+  .thread-avatars .av:first-child{margin-left:0}
+
+  /* Alert block */
+  .alert-block{margin:0 24px 8px;padding:14px;background:rgba(255,79,79,.08);border:1px solid rgba(255,79,79,.3);border-left:4px solid var(--danger);border-radius:3px;display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center}
+  .alert-block .ic{font-size:1.1rem;color:var(--danger)}
+  .alert-block strong{color:#fff;font-weight:600;display:block;font-size:.86rem;margin-bottom:3px}
+  .alert-block .desc{font-size:.76rem;color:var(--muted);line-height:1.5}
+  .alert-block .acks{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:.66rem;color:var(--muted);letter-spacing:.06em;font-family:'JetBrains Mono',monospace}
+  .alert-block .ack-pill{padding:3px 8px;background:var(--danger);color:#fff;border-radius:2px;letter-spacing:.1em;font-weight:700;cursor:pointer;text-transform:uppercase;font-size:.62rem}
+
+  /* Composer */
+  .composer{padding:14px 24px 18px;border-top:1px solid var(--line);background:rgba(0,0,0,.2)}
+  .composer-box{background:rgba(255,255,255,.04);border:1px solid var(--line-strong);border-radius:4px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;transition:.15s}
+  .composer-box:focus-within{border-color:var(--gold)}
+  .composer-input{background:transparent;border:none;outline:none;color:#fff;font-family:inherit;font-size:.92rem;width:100%;resize:none;line-height:1.5}
+  .composer-input::placeholder{color:var(--muted-soft)}
+  .composer-tools{display:flex;align-items:center;gap:6px}
+  .tool-btn{width:28px;height:28px;border-radius:3px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem;transition:.15s}
+  .tool-btn:hover{color:#fff;border-color:var(--line-strong)}
+  .composer-spacer{flex:1}
+  .send-btn{padding:7px 16px;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;background:var(--gold);color:var(--navy-deep);border:1px solid var(--gold);font-weight:700;border-radius:2px;cursor:pointer;font-family:inherit}
+  .send-btn:hover{background:var(--gold-soft)}
+
+  /* Right panel */
+  .right{background:#070e21;border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+  .right-head{padding:18px 18px 14px;border-bottom:1px solid var(--line)}
+  .right-title{font-family:'Fraunces',serif;font-size:1rem;color:#fff;font-weight:500;margin-bottom:4px}
+  .right-sub{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .right-scroll{flex:1;overflow-y:auto;padding:14px 0}
+  .right-scroll::-webkit-scrollbar{width:4px} .right-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+
+  .right-section{padding:0 18px;margin-bottom:24px}
+  .right-section-head{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-bottom:11px;padding:0 4px}
+
+  /* Voice room */
+  .voice-room{padding:14px;background:rgba(255,79,79,.06);border:1px solid rgba(255,79,79,.25);border-radius:3px;display:flex;flex-direction:column;gap:12px}
+  .vr-head{display:flex;align-items:center;gap:9px;font-size:.78rem;font-weight:600;color:#fff}
+  .vr-head .live-dot{width:7px;height:7px;border-radius:50%;background:var(--live);animation:badgePulse 1.6s infinite}
+  .vr-people{display:flex;gap:-4px}
+  .vr-person{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:.78rem;border:2px solid #070e21;margin-left:-6px;position:relative}
+  .vr-person:first-child{margin-left:0}
+  .vr-person.speaking::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--gold);animation:speakingPulse 1.4s infinite}
+  @keyframes speakingPulse{0%,100%{opacity:.6}50%{opacity:1}}
+  .vr-meta{font-size:.7rem;color:var(--muted);letter-spacing:.04em}
+  .vr-meta strong{color:var(--gold-soft);font-weight:600}
+  .vr-actions{display:flex;gap:6px}
+  .vr-btn{flex:1;padding:7px;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#fff;font-weight:700;border-radius:2px;cursor:pointer;font-family:inherit;text-align:center}
+  .vr-btn.join{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  /* Pinned resource */
+  .pin-card{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;margin-bottom:6px;cursor:pointer;transition:.15s}
+  .pin-card:hover{border-color:var(--gold)}
+  .pin-icon{width:28px;height:28px;border-radius:3px;background:rgba(201,165,88,.15);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .pin-info strong{display:block;color:#fff;font-size:.78rem;font-weight:500;line-height:1.2;margin-bottom:2px}
+  .pin-info small{color:var(--muted);font-size:.66rem;letter-spacing:.04em}
+
+  /* Members */
+  .mem-row{display:flex;align-items:center;gap:9px;padding:6px 4px;font-size:.78rem;color:var(--muted)}
+  .mem-row.online{color:#fff}
+  .mem-avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-weight:600;font-size:.66rem;flex-shrink:0;position:relative}
+  .mem-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+  .mem-role{font-size:.62rem;color:var(--muted-soft);letter-spacing:.06em}
+  .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .sd-on{background:var(--good)} .sd-aw{background:var(--warn)} .sd-of{background:var(--muted-soft)}
+
+  /* Game thread (top of channel pinned widget) */
+  .game-widget{padding:14px;background:rgba(201,165,88,.05);border:1px solid rgba(201,165,88,.18);border-radius:3px;display:flex;flex-direction:column;gap:8px}
+  .gw-head{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-soft);font-weight:700}
+  .gw-game{font-family:'Fraunces',serif;font-size:1rem;color:#fff;font-weight:500;display:flex;align-items:center;justify-content:space-between}
+  .gw-score{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600}
+  .gw-meta{font-size:.7rem;color:var(--muted);letter-spacing:.04em}
+  .gw-row{display:flex;justify-content:space-between;font-size:.74rem;color:var(--muted)}
+  .gw-row strong{color:#fff;font-weight:500}
+
+  /* Responsive: degrade gracefully */
+  @media (max-width: 1280px){
+    .app{grid-template-columns:240px 260px 1fr}
+    .right{display:none}
+  }
+  @media (max-width: 980px){
+    .app{grid-template-columns:1fr}
+    .sidebar, .rail{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SAC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html" class="active"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">JL</div>
+        <div>
+          <div class="user-name">K. Larkin</div>
+          <div class="user-role">Coordinator, FB</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <aside class="rail">
+    <div class="rail-head">
+      <div class="rail-title">Conference Workspace</div>
+      <div class="rail-sub">SAC · 8,422 members</div>
+    </div>
+    <div class="rail-search">
+      <span style="color:var(--muted-soft);">⌕</span>
+      <input placeholder="Search channels, people, files…" />
+    </div>
+    <div class="rail-scroll">
+
+      <div class="ch-group">
+        <div class="ch-group-head"><span>★ Starred</span><span class="ic">+</span></div>
+        <div class="ch-item active"><span class="ch-icon">#</span><span class="ch-name">fb-lighthouse-rivalry-2026</span><span class="ch-live">LIVE</span></div>
+        <div class="ch-item unread"><span class="ch-icon">#</span><span class="ch-name">fb-game-day-ops</span><span class="ch-badge">12</span></div>
+        <div class="ch-item"><span class="ch-icon priv">⌬</span><span class="ch-name">replay-center-bham</span></div>
+        <div class="ch-item unread"><span class="ch-icon">#</span><span class="ch-name">incidents-active</span><span class="ch-badge alert">3</span></div>
+      </div>
+
+      <div class="ch-group">
+        <div class="ch-group-head"><span>Football Ops</span><span class="ic">+</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">fb-officials</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">fb-replay-center</span></div>
+        <div class="ch-item unread"><span class="ch-icon">#</span><span class="ch-name">fb-school-liaisons</span><span class="ch-badge">4</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">fb-broadcast-partners</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">fb-championship</span></div>
+      </div>
+
+      <div class="ch-group">
+        <div class="ch-group-head"><span>Other Sports</span><span class="ic">+</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">bb-ops</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">bsb-ops</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">sb-ops</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">wbb-ops</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">olympic-sports</span></div>
+      </div>
+
+      <div class="ch-group">
+        <div class="ch-group-head"><span>Conference Office</span><span class="ic">+</span></div>
+        <div class="ch-item"><span class="ch-icon priv">⌬</span><span class="ch-name">leadership</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">media-relations</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">compliance</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">legal</span></div>
+        <div class="ch-item"><span class="ch-icon">#</span><span class="ch-name">marketing</span></div>
+      </div>
+
+      <div class="ch-group">
+        <div class="ch-group-head"><span>Direct Messages</span><span class="ic">+</span></div>
+        <div class="ch-item">
+          <span class="dm-avatar" style="background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:var(--navy-deep);">GS</span><span class="dm-status"></span>
+          <span class="ch-name" style="margin-left:-6px;">E. Whitfield</span>
+        </div>
+        <div class="ch-item unread">
+          <span class="dm-avatar" style="background:linear-gradient(135deg,#3a5a7a,#1f3a5a);">SS</span><span class="dm-status"></span>
+          <span class="ch-name" style="margin-left:-6px;">M. Reyes-Albright</span><span class="ch-badge">2</span>
+        </div>
+        <div class="ch-item">
+          <span class="dm-avatar" style="background:linear-gradient(135deg,#9e1b32,#7c1326);">RH</span><span class="dm-status away"></span>
+          <span class="ch-name" style="margin-left:-6px;">R. Holloway (R)</span>
+        </div>
+        <div class="ch-item">
+          <span class="dm-avatar" style="background:linear-gradient(135deg,#bf5700,#8e3f00);">AH</span><span class="dm-status"></span>
+          <span class="ch-name" style="margin-left:-6px;">P. Quinn (Westbrook)</span>
+        </div>
+        <div class="ch-item">
+          <span class="dm-avatar" style="background:linear-gradient(135deg,#ff8200,#cc6800);">DJ</span><span class="dm-status offline"></span>
+          <span class="ch-name" style="margin-left:-6px;">D. Jefferson (MV)</span>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <main class="chan">
+    <div class="chan-head">
+      <div class="chan-title">
+        <div class="chan-name"><span class="ic">#</span>fb-lighthouse-rivalry-2026 <span class="ch-live" style="font-size:.62rem;color:var(--live);">LIVE</span></div>
+        <div class="chan-meta">Game-day thread · <strong>Crew Holloway</strong> · <strong>Mariner Stadium</strong> · <strong>87,451</strong> in attendance · 142 in channel</div>
+      </div>
+      <div class="chan-actions">
+        <button class="chan-btn">📌 4 Pinned</button>
+        <button class="chan-btn">👥 142</button>
+        <button class="chan-btn voice"><span class="pulse-dot"></span>Voice · 6 in room</button>
+      </div>
+    </div>
+
+    <div class="pinned">
+      <span class="pinned-icon">📌</span>
+      <span><strong>Game-Day Playbook v3.4</strong> · pre-game ops checklist, halftime hand-off, post-game wrap. <span class="pin-link">Open ↗</span></span>
+    </div>
+
+    <div class="messages">
+
+      <div class="day-sep">Saturday · Nov 22</div>
+
+      <div class="msg">
+        <div class="msg-avatar ava-bot">🤖</div>
+        <div>
+          <div class="msg-head">
+            <span class="msg-author">SAC Ops Bot</span>
+            <span class="msg-role bot">AUTOMATION</span>
+            <span class="msg-time">1:30 PM</span>
+          </div>
+          <div class="msg-body">Channel opened for <strong>Liberty State @ Westbrook · 3:30 CT</strong>. Pre-game ops checklist auto-attached, crew Henderson confirmed on site, broadcast partner <strong>CBS</strong>. Weather: clear, 74°. Last sync from <a href="ops-center.html">Ops Center</a> 4 min ago.</div>
+        </div>
+      </div>
+
+      <div class="msg">
+        <div class="msg-avatar ava-sec">JL</div>
+        <div>
+          <div class="msg-head">
+            <span class="msg-author">K. Larkin</span>
+            <span class="msg-role sec">SAC OFFICE · COORD FB</span>
+            <span class="msg-time">2:14 PM</span>
+          </div>
+          <div class="msg-body">Both schools confirmed walkthrough complete. Marching bands in tunnels at 3:15. Hold all media availability requests until after the coin toss — Whitfield is doing a brief CBS open at 3:25.</div>
+          <div class="reactions">
+            <span class="rxn mine"><span class="rxn-mark">✓</span>12</span>
+            <span class="rxn"><span class="rxn-mark">👀</span>3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg">
+        <div class="msg-avatar ava-rep">RC</div>
+        <div>
+          <div class="msg-head">
+            <span class="msg-author">R. Coleman</span>
+            <span class="msg-role rep">REPLAY · BHAM</span>
+            <span class="msg-time">3:02 PM</span>
+          </div>
+          <div class="msg-body">Replay Portsmouth staffed and online. Henderson crew comms test green, sideline 1 + sideline 2 mic check complete. Ready for kick.</div>
+        </div>
+      </div>
+
+      <div class="msg msg-grouped">
+        <div class="msg-time-side">3:04 PM</div>
+        <div>
+          <div class="msg-body">Cross-cover on TC/HC from Capital City as well — Park &amp; Vega on bench rotation.</div>
+        </div>
+      </div>
+
+      <div class="day-sep">Now · Q3 4:12 — 3:46 PM CT</div>
+
+      <div class="msg">
+        <div class="msg-avatar ava-bot">🤖</div>
+        <div>
+          <div class="msg-head">
+            <span class="msg-author">SAC Ops Bot</span>
+            <span class="msg-role bot">AUTOMATION</span>
+            <span class="msg-time">3:46 PM</span>
+          </div>
+          <div class="msg-body"><strong>Replay Ruling — Targeting · CONFIRMED</strong> on WB #22. Player disqualified, half assessed. Ruling time 1m 18s. Auto-attached to crew file + film portal.</div>
+          <div class="msg-clip">
+            <div class="clip-thumb">▶<span class="dur">0:42</span></div>
+            <div class="clip-body">
+              <div class="clip-title">REP-26-LIB-WB-Q3-409 · Targeting confirmed</div>
+              <div class="clip-meta">3 angles · 1.18 min · Replay: R. Coleman</div>
+            </div>
+          </div>
+          <div class="reactions">
+            <span class="rxn"><span class="rxn-mark">👍</span>8</span>
+            <span class="rxn"><span class="rxn-mark">⚖</span>3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-block">
+        <div class="ic">⚡</div>
+        <div>
+          <strong>Weather Hold — Falcon Hill Stadium (HC @ MV)</strong>
+          <div class="desc">30-minute lightning hold initiated 3:10 PM. Field cleared, players in tunnels. Next assessment 3:50 PM. Monteverde City EMS on standby. <a href="ops-center.html">View in Ops Center →</a></div>
+        </div>
+        <div class="acks">
+          <span class="ack-pill">ACK 17/22</span>
+          <span>Coord: A. Petrov</span>
+        </div>
+      </div>
+
+      <div class="msg">
+        <div class="msg-avatar ava-aub">AH</div>
+        <div>
+          <div class="msg-head">
+            <span class="msg-author">P. Quinn</span>
+            <span class="msg-role">AUBURN · DIR FB OPS</span>
+            <span class="msg-time">3:47 PM</span>
+          </div>
+          <div class="msg-body">@K. Larkin — submitting an interpretation request on the holding no-call Q3 5:02. Not asking for a reversal, just want the written note for our staff. Clip uploaded to Film Portal as <code>FB-26-0214</code>.</div>
+          <div class="thread-link">
+            <span>↳ 4 replies</span>
+            <div class="thread-avatars">
+              <span class="av ava-sec">JL</span>
+              <span class="av ava-sec">RS</span>
+              <span class="av ava-aub">AH</span>
+            </div>
+            <span style="color:var(--muted);font-weight:400;font-size:.68rem;margin-left:6px;">Last reply 3m ago</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg">
+        <div class="msg-avatar ava-uga">MC</div>
+        <div>
+          <div class="msg-head">
+            <span class="msg-author">M. Cole</span>
+            <span class="msg-role">HC · DIR FB OPS</span>
+            <span class="msg-time">3:48 PM</span>
+          </div>
+          <div class="msg-body">Slightly off-topic — HC office is also requesting the catch/no-catch memo on the Q4 2:34 play in our game whenever Capital City posts the ruling. Just flagging here so it doesn't get lost.</div>
+        </div>
+      </div>
+
+      <div class="msg">
+        <div class="msg-avatar ava-sec">JL</div>
+        <div>
+          <div class="msg-head">
+            <span class="msg-author">K. Larkin</span>
+            <span class="msg-role sec">SAC OFFICE · COORD FB</span>
+            <span class="msg-time">3:48 PM</span>
+          </div>
+          <div class="msg-body">Confirmed on both. <strong>@P. Quinn</strong> — Reyes-Albright is drafting the holding memo now, 24-hr turnaround as usual. <strong>@M. Cole</strong> — Coleman is finalizing the HC ruling, will post here and route to your office the moment it's signed.</div>
+          <div class="reactions">
+            <span class="rxn mine"><span class="rxn-mark">✓</span>5</span>
+            <span class="rxn"><span class="rxn-mark">🙏</span>2</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="composer">
+      <div class="composer-box">
+        <textarea class="composer-input" rows="2" placeholder="Message #fb-lighthouse-rivalry-2026  ·  @ to mention  ·  / for commands  ·  ↳ to reply in thread"></textarea>
+        <div class="composer-tools">
+          <span class="tool-btn">B</span>
+          <span class="tool-btn"><em>i</em></span>
+          <span class="tool-btn">{}</span>
+          <span class="tool-btn">+</span>
+          <span class="tool-btn">@</span>
+          <span class="tool-btn">▶</span>
+          <span class="tool-btn">📎</span>
+          <span class="composer-spacer"></span>
+          <button class="send-btn">Send →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <aside class="right">
+    <div class="right-head">
+      <div class="right-title">Channel Context</div>
+      <div class="right-sub">Live game · 4 pinned · 142 members</div>
+    </div>
+    <div class="right-scroll">
+
+      <div class="right-section">
+        <div class="right-section-head">Game Status</div>
+        <div class="game-widget">
+          <div class="gw-head">LIVE · Q3 4:12 · Mariner Stadium</div>
+          <div class="gw-game">
+            <span>Liberty State (9-1)</span>
+            <span class="gw-score">17</span>
+          </div>
+          <div class="gw-game">
+            <span style="color:var(--gold-soft);">Westbrook (7-3)</span>
+            <span class="gw-score">24</span>
+          </div>
+          <div class="gw-meta">Apex broadcast · 87,451 attendance</div>
+          <div class="gw-row"><span>Crew</span><strong>Henderson</strong></div>
+          <div class="gw-row"><span>Replay</span><strong>Portsmouth · Coleman</strong></div>
+          <div class="gw-row"><span>Reviews</span><strong>2 · 1 confirmed</strong></div>
+        </div>
+      </div>
+
+      <div class="right-section">
+        <div class="right-section-head">Live Voice Room · 6</div>
+        <div class="voice-room">
+          <div class="vr-head"><span class="live-dot"></span>Replay Coordination · live</div>
+          <div class="vr-people">
+            <span class="vr-person ava-rep speaking">RC</span>
+            <span class="vr-person ava-sec">JL</span>
+            <span class="vr-person ava-rep">LP</span>
+            <span class="vr-person ava-rep">MV</span>
+            <span class="vr-person ava-sec">RS</span>
+            <span class="vr-person ava-ala">DH</span>
+          </div>
+          <div class="vr-meta">In room: <strong>R. Coleman, K. Larkin, L. Parsons, M. Vance, M. Reyes-Albright, D. Holloway (R)</strong></div>
+          <div class="vr-actions">
+            <button class="vr-btn join">▶ Join Room</button>
+            <button class="vr-btn">Listen Only</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="right-section">
+        <div class="right-section-head">Pinned Resources</div>
+        <div class="pin-card">
+          <div class="pin-icon">PB</div>
+          <div class="pin-info"><strong>Game-Day Playbook v3.4</strong><small>Updated 11/19 · 24 pgs</small></div>
+        </div>
+        <div class="pin-card">
+          <div class="pin-icon">M</div>
+          <div class="pin-info"><strong>Targeting Memo 26-014</strong><small>Crown contact emphasis · 6 examples</small></div>
+        </div>
+        <div class="pin-card">
+          <div class="pin-icon">M</div>
+          <div class="pin-info"><strong>Replay Comms Protocol 26-016</strong><small>New 90s+ review hand-off</small></div>
+        </div>
+        <div class="pin-card">
+          <div class="pin-icon">CH</div>
+          <div class="pin-info"><strong>Crew Holloway roster &amp; mic IDs</strong><small>7 officials · 2 alternates</small></div>
+        </div>
+      </div>
+
+      <div class="right-section">
+        <div class="right-section-head">In Channel · 142</div>
+        <div class="mem-row online">
+          <span class="mem-avatar ava-sec">JL</span>
+          <span class="mem-name">K. Larkin</span>
+          <span class="status-dot sd-on"></span>
+        </div>
+        <div class="mem-row online">
+          <span class="mem-avatar ava-sec">RS</span>
+          <span class="mem-name">M. Reyes-Albright</span>
+          <span class="status-dot sd-on"></span>
+        </div>
+        <div class="mem-row online">
+          <span class="mem-avatar ava-rep">RC</span>
+          <span class="mem-name">R. Coleman</span>
+          <span class="status-dot sd-on"></span>
+        </div>
+        <div class="mem-row online">
+          <span class="mem-avatar ava-aub">AH</span>
+          <span class="mem-name">P. Quinn (WB)</span>
+          <span class="status-dot sd-on"></span>
+        </div>
+        <div class="mem-row online">
+          <span class="mem-avatar ava-ala">SK</span>
+          <span class="mem-name">S. Kallen (LIB)</span>
+          <span class="status-dot sd-on"></span>
+        </div>
+        <div class="mem-row">
+          <span class="mem-avatar ava-uga">MC</span>
+          <span class="mem-name">M. Cole (HC)</span>
+          <span class="status-dot sd-aw"></span>
+        </div>
+        <div class="mem-row">
+          <span class="mem-avatar ava-tn">DJ</span>
+          <span class="mem-name">D. Jefferson (MV)</span>
+          <span class="status-dot sd-aw"></span>
+        </div>
+        <div class="mem-row">
+          <span class="mem-avatar" style="background:linear-gradient(135deg,#3a3a4a,#1a1a2a);">+</span>
+          <span class="mem-name" style="color:var(--muted-soft);">135 more…</span>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

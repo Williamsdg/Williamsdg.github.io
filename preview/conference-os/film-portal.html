@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%23070d1e%22 stroke=%22%23c9a558%22 stroke-width=%221.5%22/><text x=%2216%22 y=%2222%22 font-family=%22serif%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23c9a558%22>S</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Film & Complaint Portal — SAC Operating System</title>
+<meta name="description" content="School-side clip upload and SAC office review queue — NFL-style officiating review infrastructure." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a0f1c; --ink-soft:#162033; --navy:#0b1530; --navy-deep:#070d1e; --navy-glow:#0f1a3a;
+    --paper:#f6f5f1; --canvas:#faf9f5;
+    --gold:#c9a558; --gold-soft:#d8b977; --gold-deep:#a8862e;
+    --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+    --muted:rgba(255,255,255,.55); --muted-soft:rgba(255,255,255,.35);
+    --good:#4dc97e; --warn:#e0b873; --danger:#ff6b6b; --info:#6fa9e6; --live:#ff4f4f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:#fff;background:var(--navy-deep);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:13px;overflow-x:hidden}
+  h1,h2,h3,h4,.serif{font-family:'Fraunces',serif;font-weight:400;letter-spacing:-.01em;color:#fff}
+  .mono{font-family:'JetBrains Mono',monospace;font-feature-settings:"tnum"}
+  a{color:inherit;text-decoration:none}
+
+  /* Reused layout */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  .sidebar{background:#04081a;padding:22px 18px;display:flex;flex-direction:column;gap:24px;border-right:1px solid var(--line);position:sticky;top:0;height:100vh;overflow-y:auto}
+  .sidebar::-webkit-scrollbar{width:4px} .sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .side-brand{display:flex;align-items:center;gap:11px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .side-mark{width:32px;height:32px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:.95rem;color:var(--gold);font-weight:500}
+  .side-name{font-family:'Fraunces',serif;font-size:.98rem;color:#fff;font-weight:500;line-height:1.1}
+  .side-name em{font-style:normal;font-weight:400;color:var(--gold-soft);display:block;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;margin-top:3px}
+  .side-section h5{font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-bottom:12px}
+  .side-nav{list-style:none;display:flex;flex-direction:column;gap:2px}
+  .side-nav a{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:3px;font-size:.8rem;color:var(--muted);font-weight:500}
+  .side-nav a:hover{background:rgba(255,255,255,.04);color:#fff}
+  .side-nav a.active{background:rgba(201,165,88,.12);color:var(--gold-soft)}
+  .side-nav .ic{width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;opacity:.85;font-size:.78rem}
+  .side-nav .badge{margin-left:auto;font-size:.62rem;padding:2px 6px;border-radius:2px;background:var(--gold);color:var(--navy-deep);font-weight:700;font-family:'JetBrains Mono',monospace}
+  .side-nav .badge.live{background:var(--live);color:#fff;animation:badgePulse 2s infinite}
+  @keyframes badgePulse{0%,100%{opacity:1}50%{opacity:.7}}
+  .side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line)}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px}
+  .user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-soft));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;color:var(--navy-deep);font-weight:600;font-size:.8rem}
+  .user-name{color:#fff;font-size:.8rem;font-weight:500;line-height:1.1}
+  .user-role{color:var(--muted-soft);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+
+  main{padding:0;background:radial-gradient(ellipse at top, var(--navy-glow), var(--navy-deep) 70%);min-height:100vh}
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(7,13,30,.92);backdrop-filter:blur(10px);padding:14px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px}
+  .crumb{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .crumb strong{color:#fff;font-weight:700}
+  .topbar-spacer{flex:1}
+  .top-actions{display:flex;align-items:center;gap:8px}
+  .btn{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;padding:8px 14px;border:1px solid var(--line-strong);background:rgba(255,255,255,.04);color:#fff;font-weight:700;border-radius:2px;cursor:pointer;font-family:inherit;transition:.2s;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:var(--gold);color:var(--gold-soft)}
+  .btn-gold{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+  .btn-gold:hover{background:var(--gold-soft);color:var(--navy-deep)}
+
+  .content{padding:26px 28px 60px;max-width:1900px}
+
+  .ph{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:18px;flex-wrap:wrap}
+  .ph h1{font-family:'Fraunces',serif;font-size:2rem;font-weight:400;line-height:1.05;color:#fff;letter-spacing:-.01em}
+  .ph h1 em{font-style:italic;color:var(--gold-soft);font-weight:300}
+  .ph .sub{color:var(--muted);font-size:.86rem;margin-top:4px}
+
+  /* View toggle */
+  .view-toggle{display:inline-flex;gap:0;padding:4px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:3px;margin-bottom:22px}
+  .vt-opt{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;padding:8px 18px;color:var(--muted);font-weight:700;cursor:pointer;border-radius:2px;transition:.15s;display:inline-flex;align-items:center;gap:8px}
+  .vt-opt:hover{color:#fff}
+  .vt-opt.active{background:var(--gold);color:var(--navy-deep)}
+  .vt-opt .helmet{width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.5rem;font-weight:800;color:#fff;background:#9e1b32}
+  .vt-opt.active .helmet{background:var(--navy-deep);color:var(--gold)}
+
+  /* Stat bar */
+  .stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
+  .stat{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;position:relative;overflow:hidden}
+  .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--line-strong)}
+  .stat.good::before{background:var(--good)} .stat.warn::before{background:var(--warn)} .stat.info::before{background:var(--info)} .stat.danger::before{background:var(--danger)}
+  .stat-label{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .stat-value{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:400;line-height:1;color:#fff;font-feature-settings:"tnum"}
+  .stat-value small{font-size:.85rem;color:var(--muted);font-weight:300;font-style:italic}
+  .stat-delta{font-size:.72rem;color:var(--muted-soft);font-family:'JetBrains Mono',monospace}
+
+  .grid{display:grid;gap:14px;margin-bottom:14px}
+  .grid-main{grid-template-columns:1fr 1.6fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+
+  .panel{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:3px;overflow:hidden;display:flex;flex-direction:column}
+  .panel-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.15)}
+  .panel-head h3{font-family:'Fraunces',serif;font-size:1rem;font-weight:500;color:#fff}
+  .panel-head .h-meta{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .panel-head .spacer{flex:1}
+  .panel-head .h-action{font-size:.7rem;color:var(--gold-soft);font-weight:600;letter-spacing:.06em;cursor:pointer}
+  .panel-head .h-action:hover{text-decoration:underline}
+
+  /* Queue list */
+  .queue-list{display:flex;flex-direction:column}
+  .queue-item{display:grid;grid-template-columns:80px 1fr auto;gap:14px;padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s;align-items:center}
+  .queue-item:last-child{border-bottom:none}
+  .queue-item:hover{background:rgba(201,165,88,.06)}
+  .queue-item.is-active{background:rgba(201,165,88,.1);border-left:2px solid var(--gold)}
+  .q-thumb{width:80px;height:50px;background:linear-gradient(135deg, #1f4a2e, #143820);border-radius:2px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+  .q-thumb::before, .q-thumb::after{content:'';position:absolute;background:rgba(255,255,255,.12)}
+  .q-thumb::before{left:0;right:0;top:50%;height:1px}
+  .q-thumb::after{left:50%;top:0;bottom:0;width:1px}
+  .q-thumb .play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.6rem;border:1px solid rgba(255,255,255,.3)}
+  .q-thumb .dur{position:absolute;right:3px;bottom:3px;font-size:.55rem;color:#fff;background:rgba(0,0,0,.7);padding:1px 4px;border-radius:1px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+  .q-info{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .q-game{display:flex;align-items:center;gap:7px;font-size:.74rem;color:var(--muted)}
+  .q-game .helmet{width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.5rem;font-weight:800;color:#fff;flex-shrink:0}
+  .q-title{font-size:.82rem;color:#fff;font-weight:500;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .q-meta{display:flex;align-items:center;gap:8px;font-size:.66rem;color:var(--muted-soft);letter-spacing:.06em;font-family:'JetBrains Mono',monospace}
+  .q-stat{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+  .q-status{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 7px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .qs-new{background:rgba(255,79,79,.18);color:var(--live)}
+  .qs-review{background:rgba(224,184,115,.18);color:var(--warn)}
+  .qs-replied{background:rgba(77,201,126,.15);color:var(--good)}
+  .qs-archived{background:rgba(255,255,255,.06);color:var(--muted)}
+
+  /* Player */
+  .player{padding:18px;display:flex;flex-direction:column;gap:14px}
+  .player-frame{aspect-ratio:16 / 9;background:radial-gradient(ellipse at center, #2a6a3a 0%, #1f4a2e 60%, #0f2d1c 100%);border-radius:3px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+  .yard-lines{position:absolute;inset:0;background:repeating-linear-gradient(to right, transparent 0, transparent 9%, rgba(255,255,255,.07) 9%, rgba(255,255,255,.07) 9.4%)}
+  .endzone-l, .endzone-r{position:absolute;top:0;bottom:0;width:12%;background:rgba(158,27,50,.5);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.4rem;font-weight:600;color:rgba(255,255,255,.65);letter-spacing:.2em}
+  .endzone-l{left:0;border-right:2px solid rgba(255,255,255,.2)}
+  .endzone-r{right:0;background:rgba(191,87,0,.5);border-left:2px solid rgba(255,255,255,.2)}
+  .ball-marker{position:absolute;top:50%;left:62%;width:10px;height:10px;background:#fff;border-radius:50%;box-shadow:0 0 0 3px rgba(0,0,0,.4);transform:translate(-50%,-50%)}
+  .annotation{position:absolute;top:30%;left:45%;width:80px;height:80px;border:2px dashed var(--gold);border-radius:50%;animation:pulseRing 2s infinite}
+  @keyframes pulseRing{0%,100%{opacity:.7}50%{opacity:1}}
+  .ann-label{position:absolute;top:24%;left:54%;font-size:.7rem;color:var(--gold);background:rgba(0,0,0,.7);padding:3px 8px;border-radius:2px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;border:1px solid var(--gold)}
+  .player-controls{position:absolute;left:0;right:0;bottom:0;padding:10px 14px;background:linear-gradient(to top, rgba(0,0,0,.8), transparent);display:flex;align-items:center;gap:12px}
+  .player-time{font-family:'JetBrains Mono',monospace;color:#fff;font-size:.74rem;font-weight:600}
+  .player-time span{color:var(--muted-soft)}
+  .scrub{flex:1;height:4px;background:rgba(255,255,255,.15);border-radius:2px;position:relative;cursor:pointer}
+  .scrub-fill{position:absolute;left:0;top:0;bottom:0;width:42%;background:var(--gold);border-radius:2px}
+  .scrub-marker{position:absolute;width:3px;height:8px;background:var(--gold-soft);top:-2px;border-radius:1px}
+  .scrub-marker.m1{left:18%}
+  .scrub-marker.m2{left:42%}
+  .scrub-marker.m3{left:68%}
+  .player-btn{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem}
+
+  .clip-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .cm-block{display:flex;flex-direction:column;gap:3px}
+  .cm-label{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .cm-value{font-size:.84rem;color:#fff;font-weight:500}
+
+  .clip-thread{display:flex;flex-direction:column;gap:12px;padding-top:6px}
+  .msg{display:grid;grid-template-columns:32px 1fr;gap:10px;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px}
+  .msg-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#bf5700,#a04600);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fraunces',serif;font-size:.8rem;font-weight:600}
+  .msg-avatar.sec{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:var(--navy-deep)}
+  .msg-avatar.ala{background:linear-gradient(135deg,#9e1b32,#7c1326);color:#fff}
+  .msg-avatar.uga{background:linear-gradient(135deg,#ba0c2f,#8c0823);color:#fff}
+  .msg-head{display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:.74rem}
+  .msg-author{color:#fff;font-weight:600}
+  .msg-tag{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;padding:2px 6px;border-radius:2px;font-weight:700;background:rgba(255,255,255,.06);color:var(--muted)}
+  .msg-tag.sec{background:rgba(201,165,88,.18);color:var(--gold-soft)}
+  .msg-time{color:var(--muted-soft);font-size:.66rem;margin-left:auto;font-family:'JetBrains Mono',monospace}
+  .msg-body{font-size:.8rem;color:var(--muted);line-height:1.5}
+  .msg-body strong{color:#fff;font-weight:500}
+
+  .reply-box{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px;padding:10px;background:rgba(255,255,255,.03);border:1px dashed var(--line-strong);border-radius:3px}
+  .reply-box input{background:transparent;border:none;outline:none;color:#fff;font-family:inherit;font-size:.82rem;padding:4px 6px}
+  .reply-box input::placeholder{color:var(--muted-soft)}
+
+  /* Bottom row */
+  .breakdown{padding:18px;display:flex;flex-direction:column;gap:11px}
+  .bd-row{display:grid;grid-template-columns:1fr 60px 80px;gap:10px;align-items:center;font-size:.78rem}
+  .bd-label{color:var(--muted)}
+  .bd-bar{height:6px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;position:relative;grid-column:span 2;width:100%}
+  .bd-bar-fill{height:100%;background:var(--gold);border-radius:2px}
+  .bd-pct{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#fff;font-weight:600;text-align:right}
+
+  .training-card{padding:14px 16px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:center;font-size:.78rem}
+  .training-card:last-child{border-bottom:none}
+  .training-thumb{width:60px;height:38px;background:linear-gradient(135deg,#1f4a2e,#0f2d1c);border-radius:2px;border:1px solid rgba(255,255,255,.08);position:relative}
+  .training-thumb::after{content:'★';position:absolute;top:2px;right:3px;color:var(--gold);font-size:.6rem}
+  .training-info{display:flex;flex-direction:column;gap:2px}
+  .training-info strong{color:#fff;font-weight:500;font-size:.8rem}
+  .training-info small{color:var(--muted);font-size:.68rem}
+  .training-meta{text-align:right;font-size:.66rem;color:var(--gold-soft);letter-spacing:.06em;font-family:'JetBrains Mono',monospace;font-weight:600}
+
+  .school-row{display:grid;grid-template-columns:32px 1fr 60px 70px;gap:10px;align-items:center;padding:9px 16px;border-bottom:1px solid var(--line);font-size:.78rem}
+  .school-row:last-child{border-bottom:none}
+  .school-row .helmet{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:800;color:#fff}
+  .school-name{color:#fff;font-weight:500}
+  .school-count{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;text-align:right}
+  .school-trend{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:600;text-align:right}
+  .school-trend.up{color:var(--danger)} .school-trend.down{color:var(--good)} .school-trend.flat{color:var(--muted)}
+
+  /* === NEW: Queue stage headers (Ops-Center pattern) === */
+  .q-section{padding:6px 16px;background:rgba(0,0,0,.2);border-bottom:1px solid var(--line);font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;display:flex;align-items:center;gap:10px}
+  .q-section .q-dot{width:6px;height:6px;border-radius:50%;background:var(--muted-soft)}
+  .q-section.new .q-dot{background:var(--live);animation:pulse 1.6s infinite}
+  .q-section.triage .q-dot{background:var(--warn)}
+  .q-section.reviewing .q-dot{background:var(--info)}
+  .q-section.awaiting .q-dot{background:var(--gold-soft)}
+  .q-section.replied .q-dot{background:var(--good)}
+  .q-section.archived .q-dot{background:var(--muted-soft)}
+  .q-section .q-count{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;margin-left:auto}
+  .q-section .q-avg{font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--muted);font-weight:600;letter-spacing:.06em}
+
+  /* === NEW: SLA pressure bar on each queue row === */
+  .queue-item{position:relative}
+  .queue-item .sla-bar{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--good)}
+  .queue-item.sla-warn .sla-bar{background:var(--warn);animation:slaP 2s ease-in-out infinite}
+  .queue-item.sla-danger .sla-bar{background:var(--danger);animation:slaP 1.4s ease-in-out infinite}
+  .queue-item.sla-overdue .sla-bar{background:var(--danger);box-shadow:0 0 8px var(--danger)}
+  @keyframes slaP{0%,100%{opacity:.7}50%{opacity:1}}
+  .queue-item .sla-time{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.06em;font-weight:700;padding:2px 6px;border-radius:2px;margin-top:3px;display:inline-block}
+  .queue-item.sla-warn .sla-time{background:rgba(176,122,46,.18);color:var(--warn)}
+  .queue-item.sla-danger .sla-time{background:rgba(255,107,107,.18);color:var(--danger)}
+
+  /* === NEW: Bulk-action checkbox column + bulk bar === */
+  .queue-list{position:relative}
+  .queue-item{padding-left:16px}
+  .q-check{position:absolute;left:18px;top:50%;transform:translateY(-50%);width:16px;height:16px;border:1.5px solid var(--line-strong);border-radius:2px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.78rem;color:var(--navy-deep);opacity:0;transition:.15s;z-index:2}
+  .queue-item:hover .q-check, .queue-item.q-checked .q-check{opacity:1}
+  .queue-item.q-checked .q-check{background:var(--gold);border-color:var(--gold)}
+  .queue-item.q-checked .q-check::after{content:'✓';font-weight:700}
+  .queue-item.q-checked{background:rgba(201,165,88,.06)}
+  .queue-item.has-checkbox{padding-left:42px}
+  .queue-item.has-checkbox .sla-bar{left:38px}
+  .bulk-bar{position:sticky;bottom:18px;margin:14px 0 0;padding:10px 16px;background:rgba(7,13,30,.96);border:1px solid var(--gold);border-radius:3px;display:none;align-items:center;gap:12px;font-size:.78rem;color:#fff;box-shadow:0 14px 30px -12px rgba(0,0,0,.5);z-index:5;backdrop-filter:blur(10px)}
+  .bulk-bar.show{display:flex}
+  .bulk-bar strong{color:var(--gold-soft);font-family:'JetBrains Mono',monospace}
+  .bulk-bar .bb-actions{margin-left:auto;display:flex;gap:6px}
+  .bulk-bar button{padding:6px 12px;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;background:rgba(255,255,255,.06);border:1px solid var(--line-strong);color:#fff;border-radius:2px;cursor:pointer;font-family:inherit}
+  .bulk-bar button:hover{border-color:var(--gold);color:var(--gold-soft)}
+  .bulk-bar button.gold{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  /* === NEW: Video player upgrades === */
+  .player-frame{position:relative}
+  .player-toolbar{position:absolute;top:10px;left:10px;right:10px;display:flex;align-items:center;gap:6px;z-index:5}
+  .pt-grp{display:flex;align-items:center;gap:0;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.12);border-radius:2px;backdrop-filter:blur(8px)}
+  .pt-btn{padding:6px 9px;background:transparent;border:none;color:rgba(255,255,255,.75);font-size:.7rem;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:.04em;transition:.15s}
+  .pt-btn:hover{color:#fff;background:rgba(255,255,255,.06)}
+  .pt-btn.active{background:var(--gold);color:var(--navy-deep)}
+  .pt-btn:not(:last-child){border-right:1px solid rgba(255,255,255,.1)}
+  .pt-label{padding:6px 8px;font-size:.58rem;color:rgba(255,255,255,.6);letter-spacing:.14em;text-transform:uppercase;font-weight:700;background:rgba(0,0,0,.5)}
+  .pt-grp.spacer{margin-left:auto}
+
+  /* Annotation toolbar (left side) */
+  .ann-toolbar{position:absolute;left:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:0;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.12);border-radius:2px;z-index:5;backdrop-filter:blur(8px)}
+  .ann-btn{width:30px;height:30px;background:transparent;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .ann-btn:hover{color:#fff;background:rgba(255,255,255,.06)}
+  .ann-btn.active{background:var(--gold);color:var(--navy-deep)}
+  .ann-btn:not(:last-child){border-bottom:1px solid rgba(255,255,255,.1)}
+
+  /* Labeled scrub markers */
+  .scrub-marker{position:absolute;width:3px;height:8px;background:var(--gold-soft);top:-2px;border-radius:1px;cursor:pointer;transition:.15s}
+  .scrub-marker:hover{width:5px;background:#fff;height:10px;top:-3px}
+  .scrub-marker .sm-label{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:.56rem;letter-spacing:.08em;color:var(--gold-soft);font-weight:700;white-space:nowrap;text-transform:uppercase;background:rgba(0,0,0,.7);padding:2px 5px;border-radius:1px;opacity:0;transition:.15s;pointer-events:none}
+  .scrub-marker:hover .sm-label{opacity:1}
+
+  .scrub-labels{display:flex;justify-content:space-between;padding:6px 0 0;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-soft);font-family:'JetBrains Mono',monospace;font-weight:700}
+  .scrub-labels span{cursor:pointer;padding:3px 7px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:2px;transition:.15s}
+  .scrub-labels span:hover{color:var(--gold-soft);border-color:var(--gold-soft)}
+
+  /* === NEW: AI Ruling Card === */
+  .ai-ruling{margin-top:14px;padding:14px 16px;background:linear-gradient(135deg, rgba(201,165,88,.08), rgba(7,13,30,.4));border:1px solid rgba(201,165,88,.3);border-left:3px solid var(--gold);border-radius:3px;display:flex;flex-direction:column;gap:10px}
+  .ai-ruling-head{display:flex;align-items:center;gap:9px}
+  .ai-ruling-head .ai-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;background:rgba(201,165,88,.18);color:var(--gold-soft);border-radius:99px;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .ai-ruling-head .ai-confidence{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--good);font-weight:700;margin-left:auto}
+  .ai-ruling-body{font-size:.82rem;color:rgba(255,255,255,.85);line-height:1.55}
+  .ai-ruling-body strong{color:#fff;font-weight:600}
+  .ai-ruling-body em{font-style:normal;color:var(--gold-soft);font-weight:600}
+  .ai-ruling-cites{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .ai-cite{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:3px 7px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--muted);border-radius:2px;cursor:pointer;letter-spacing:.04em;font-weight:600;transition:.15s}
+  .ai-cite:hover{color:var(--gold-soft);border-color:var(--gold-soft)}
+  .ai-ruling-actions{display:flex;gap:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)}
+  .ai-ruling-actions button{padding:6px 12px;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;border-radius:2px;cursor:pointer;font-family:inherit;border:1px solid var(--line-strong);background:rgba(255,255,255,.04);color:#fff}
+  .ai-ruling-actions button:hover{border-color:var(--gold-soft);color:var(--gold-soft)}
+  .ai-ruling-actions button.gold{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  /* === NEW: Similar Past Clips sidebar === */
+  .similar-clips{margin-top:14px;padding:0}
+  .similar-clips-head{padding:10px 14px;display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.2);border:1px solid var(--line);border-bottom:none;border-radius:3px 3px 0 0;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-soft);font-weight:700}
+  .similar-clips-head .h-meta{margin-left:auto;color:var(--gold-soft);font-family:'JetBrains Mono',monospace;font-size:.66rem}
+  .similar-clip{display:grid;grid-template-columns:60px 1fr 50px;gap:10px;padding:9px 14px;border:1px solid var(--line);border-top:none;align-items:center;font-size:.74rem;cursor:pointer;transition:.15s;background:rgba(255,255,255,.02)}
+  .similar-clip:hover{background:rgba(201,165,88,.05)}
+  .similar-clip:last-child{border-radius:0 0 3px 3px}
+  .sc-thumb{width:60px;height:36px;background:linear-gradient(135deg,#1f4a2e,#143820);border-radius:2px;border:1px solid rgba(255,255,255,.08);position:relative;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:.7rem}
+  .sc-info strong{color:#fff;font-weight:500;display:block;font-size:.78rem;line-height:1.25}
+  .sc-info small{color:var(--muted);font-size:.66rem;letter-spacing:.04em}
+  .sc-match{text-align:right;font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:700;font-size:.78rem}
+  .sc-match small{display:block;color:var(--muted-soft);font-size:.54rem;letter-spacing:.1em;font-weight:600;margin-top:2px}
+
+  /* === NEW: Crew Impact card === */
+  .crew-impact{margin-top:14px;padding:14px 16px;background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:3px}
+  .ci-head{display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:10px}
+  .ci-head .ci-icon{width:24px;height:24px;border-radius:50%;background:rgba(201,165,88,.15);color:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem}
+  .ci-head h4{font-family:'Fraunces',serif;font-size:.9rem;color:#fff;font-weight:500}
+  .ci-head .ci-action{margin-left:auto;font-size:.66rem;color:var(--gold-soft);font-weight:600;letter-spacing:.06em;cursor:pointer}
+  .ci-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:6px 0;font-size:.78rem;color:var(--muted);align-items:center}
+  .ci-row strong{color:#fff;font-weight:500}
+  .ci-row .ci-val{font-family:'JetBrains Mono',monospace;color:#fff;font-weight:700}
+  .ci-row .ci-val.good{color:var(--good)}
+  .ci-row .ci-val.warn{color:var(--warn)}
+  .ci-row .ci-val.danger{color:var(--danger)}
+  .ci-note{padding:10px 12px;background:rgba(77,201,126,.06);border:1px solid rgba(77,201,126,.2);border-left:3px solid var(--good);border-radius:2px;margin-top:8px;font-size:.74rem;color:var(--muted);line-height:1.5}
+  .ci-note strong{color:#fff;font-weight:500}
+
+  /* === NEW: Recurring Patterns panel === */
+  .pattern-row{padding:14px 18px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;cursor:pointer;transition:.15s}
+  .pattern-row:last-child{border-bottom:none}
+  .pattern-row:hover{background:rgba(201,165,88,.05)}
+  .pat-icon{width:28px;height:28px;border-radius:3px;background:linear-gradient(135deg, rgba(201,165,88,.18), rgba(201,165,88,.08));color:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;border:1px solid rgba(201,165,88,.3)}
+  .pat-body strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:3px}
+  .pat-body .pat-detail{font-size:.72rem;color:var(--muted);line-height:1.5}
+  .pat-body .pat-detail em{font-style:normal;color:var(--gold-soft);font-weight:600}
+  .pat-count{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--muted-soft);text-align:right;letter-spacing:.06em;font-weight:600}
+  .pat-count strong{color:#fff;font-weight:700;display:block;font-size:.94rem;margin-bottom:1px}
+
+  /* === NEW: School row sparkline === */
+  .school-row{grid-template-columns:32px 1fr 60px 50px 60px !important;gap:10px !important}
+  .school-spark{display:flex;align-items:flex-end;gap:1px;height:14px}
+  .school-spark span{flex:1;background:var(--gold);border-radius:1px;opacity:.5;min-height:2px}
+  .school-spark span.peak{opacity:1}
+  .school-spark.declining span{background:var(--good)}
+  .school-spark.rising span{background:var(--danger)}
+
+  /* === NEW: School-view shell === */
+  body.school-view .sec-only{display:none !important}
+  body.school-view .school-only{display:block !important}
+  .school-only{display:none}
+  .school-view-banner{margin-bottom:18px;padding:14px 18px;background:linear-gradient(90deg, rgba(191,87,0,.18), rgba(7,13,30,.5) 80%);border:1px solid rgba(191,87,0,.3);border-left:4px solid #bf5700;border-radius:3px;display:flex;align-items:center;gap:14px;font-size:.86rem;color:#fff}
+  .school-view-banner .svb-helm{width:38px;height:38px;border-radius:50%;background:#bf5700;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;color:#fff;font-weight:600;font-size:1rem;flex-shrink:0}
+  .school-view-banner strong{color:#fff;font-weight:600}
+  .school-view-banner em{color:var(--muted);font-style:normal;font-size:.78rem;display:block;margin-top:2px}
+  .school-view-banner .svb-action{margin-left:auto;padding:7px 14px;background:rgba(255,255,255,.06);border:1px solid var(--line-strong);color:#fff;font-weight:700;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;border-radius:2px;font-family:inherit}
+
+  @media (max-width: 1280px){ .grid-main{grid-template-columns:1fr} .stat-row{grid-template-columns:repeat(3,1fr)} .grid-3{grid-template-columns:1fr 1fr} }
+  @media (max-width: 880px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:relative;height:auto;display:none}
+    .stat-row{grid-template-columns:repeat(2,1fr)}
+    .grid-3{grid-template-columns:1fr}
+    .clip-meta{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SAC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html" class="active"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">JL</div>
+        <div>
+          <div class="user-name">K. Larkin</div>
+          <div class="user-role">Coordinator, Football</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Officiating · <strong>Film &amp; Complaint Portal</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">Filter Schools</button>
+        <button class="btn">Export Report</button>
+        <button class="btn btn-gold">+ New Ruling</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Film &amp; complaint <em>review queue.</em></h1>
+          <div class="sub">14 schools · 9 active submissions · NFL-style review infrastructure</div>
+        </div>
+      </div>
+
+      <div class="view-toggle">
+        <div class="vt-opt active"><span style="background:var(--navy-deep);color:var(--gold);width:14px;height:14px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;">S</span>SAC Office View</div>
+        <div class="vt-opt"><span class="helmet" style="background:#9e1b32;">A</span>School View</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat danger">
+          <span class="stat-label">New This Week</span>
+          <span class="stat-value">9</span>
+          <span class="stat-delta">+2 today (Westbrook, HC)</span>
+        </div>
+        <div class="stat warn">
+          <span class="stat-label">In Review</span>
+          <span class="stat-value">5</span>
+          <span class="stat-delta">avg time to ruling 2.4d</span>
+        </div>
+        <div class="stat good">
+          <span class="stat-label">Replied — 7d</span>
+          <span class="stat-value">22</span>
+          <span class="stat-delta">100% in SLA</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Promoted to Training</span>
+          <span class="stat-value">4</span>
+          <span class="stat-delta">added to crew study</span>
+        </div>
+        <div class="stat info">
+          <span class="stat-label">School Satisfaction</span>
+          <span class="stat-value">87 <small>/ 100</small></span>
+          <span class="stat-delta">+6 vs prior season</span>
+        </div>
+      </div>
+
+      <div class="grid grid-main">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Review Queue</h3>
+            <span class="h-meta">14 items · filter: all</span>
+            <div class="spacer"></div>
+            <span class="h-action">SLA report →</span>
+          </div>
+          <div class="queue-list" id="queueList">
+
+            <div class="q-section new"><span class="q-dot"></span><span>New · awaiting triage</span><span class="q-avg">avg in stage 22 min</span><span class="q-count">4</span></div>
+
+            <div class="queue-item is-active has-checkbox sla-warn" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">0:42</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#9e1b32;">A</span><span class="helmet" style="background:#bf5700;">WB</span>LIB @ WB · Q3 4:12</div>
+                <div class="q-title">Holding declined on WB drive — request interpretation</div>
+                <div class="q-meta"><span>SUBMITTED 18m ago</span><span>·</span><span>Westbrook AD Office</span><span class="sla-time">SLA 71h 42m</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-new">NEW</span>
+                <span style="font-size:.62rem;color:var(--muted-soft);letter-spacing:.1em;">Priority A</span>
+              </div>
+            </div>
+
+            <div class="queue-item has-checkbox" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">1:08</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#fa4616;">F</span><span class="helmet" style="background:#ba0c2f;">HC</span>TC @ HC · Q4 2:34</div>
+                <div class="q-title">Catch / no catch — toe drag review request</div>
+                <div class="q-meta"><span>SUBMITTED 6m ago</span><span>·</span><span>Tidewater AD</span><span class="sla-time" style="background:rgba(77,201,126,.15);color:var(--good);">SLA 71h 54m</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-new">NEW</span>
+                <span style="font-size:.62rem;color:var(--muted-soft);letter-spacing:.1em;">Priority A</span>
+              </div>
+            </div>
+
+            <div class="queue-item has-checkbox" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">0:27</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#0033a0;">HC</span><span class="helmet" style="background:#ff8200;">MV</span>HC @ MV · pre-restart</div>
+                <div class="q-title">Pre-snap movement — HC requesting clarification on flagging</div>
+                <div class="q-meta"><span>SUBMITTED 28m ago</span><span>·</span><span>Hillstone AD</span><span class="sla-time" style="background:rgba(77,201,126,.15);color:var(--good);">SLA 71h 32m</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-new">NEW</span>
+                <span style="font-size:.62rem;color:var(--muted-soft);letter-spacing:.1em;">Priority B</span>
+              </div>
+            </div>
+
+            <div class="queue-item has-checkbox" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">0:38</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#ba0c2f;">HC</span><span class="helmet" style="background:#fa4616;">F</span>TC @ HC · Q1 7:44</div>
+                <div class="q-title">RPS — HC defensive line technique review</div>
+                <div class="q-meta"><span>SUBMITTED 14m ago</span><span>·</span><span>Hillstone AD</span><span class="sla-time" style="background:rgba(77,201,126,.15);color:var(--good);">SLA 71h 46m</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-new">NEW</span>
+                <span style="font-size:.62rem;color:var(--muted-soft);letter-spacing:.1em;">Priority B</span>
+              </div>
+            </div>
+
+            <div class="q-section reviewing"><span class="q-dot"></span><span>In Review · with coordinator</span><span class="q-avg">avg time-to-ruling 2.4d</span><span class="q-count">3</span></div>
+
+            <div class="queue-item has-checkbox sla-warn" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">2:14</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#500000;">KE</span><span class="helmet" style="background:#461d7c;">FV</span>KE @ FV · Q2 11:08</div>
+                <div class="q-title">Targeting overturn — KE requesting written explanation</div>
+                <div class="q-meta"><span>SUBMITTED 1h ago</span><span>·</span><span>Kestrel State Compliance</span><span class="sla-time">SLA 47h 12m</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-review">IN REVIEW</span>
+                <span style="font-size:.62rem;color:var(--muted-soft);letter-spacing:.1em;">L. Parsons</span>
+              </div>
+            </div>
+
+            <div class="queue-item has-checkbox sla-danger" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">0:33</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#9d2235;">CC</span><span class="helmet" style="background:#14213d;">RD</span>vs Redmoor · last wk</div>
+                <div class="q-title">Sideline interference — Caldwell request for crew note</div>
+                <div class="q-meta"><span>SUBMITTED 2d ago</span><span>·</span><span>Caldwell AD</span><span class="sla-time">SLA 8h left</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-review">IN REVIEW</span>
+                <span style="font-size:.62rem;color:var(--muted-soft);letter-spacing:.1em;">M. Vance</span>
+              </div>
+            </div>
+
+            <div class="queue-item has-checkbox sla-warn" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">0:51</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#002868;">NT</span><span class="helmet" style="background:#13294b;">PR</span>NT @ PR · final</div>
+                <div class="q-title">Late hit — PR staff complaint logged</div>
+                <div class="q-meta"><span>SUBMITTED 4h ago</span><span>·</span><span>Pinerock AD</span><span class="sla-time">SLA 44h left</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-review">IN REVIEW</span>
+                <span style="font-size:.62rem;color:var(--muted-soft);letter-spacing:.1em;">K. Lockwood</span>
+              </div>
+            </div>
+
+            <div class="q-section awaiting"><span class="q-dot"></span><span>Awaiting School · ack required</span><span class="q-avg">avg roundtrip 18h</span><span class="q-count">2</span></div>
+
+            <div class="queue-item has-checkbox" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">0:54</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#9e1b32;">A</span><span class="helmet" style="background:#bf5700;">WB</span>LIB-WB · Q1 12:08</div>
+                <div class="q-title">Offsides interpretation memo sent — Westbrook ack required</div>
+                <div class="q-meta"><span>RULED 3h ago</span><span>·</span><span>Awaiting Westbrook AD ack</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-replied" style="background:rgba(201,165,88,.18);color:var(--gold-soft);">SENT</span>
+                <span style="font-size:.62rem;color:var(--muted-soft);letter-spacing:.1em;">Ack &lt; 24h</span>
+              </div>
+            </div>
+
+            <div class="queue-item has-checkbox" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">0:42</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#ff8200;">MV</span><span class="helmet" style="background:#231f20;">GP</span>GP-MV · Q2 5:14</div>
+                <div class="q-title">Roughing-the-passer memo sent — Kestrel State ack required</div>
+                <div class="q-meta"><span>RULED 8h ago</span><span>·</span><span>Awaiting Kestrel AD ack</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-replied" style="background:rgba(201,165,88,.18);color:var(--gold-soft);">SENT</span>
+                <span style="font-size:.62rem;color:var(--muted-soft);letter-spacing:.1em;">Ack &lt; 24h</span>
+              </div>
+            </div>
+
+            <div class="q-section replied"><span class="q-dot"></span><span>Replied · closed in SLA</span><span class="q-avg">last 7 days</span><span class="q-count">22</span></div>
+
+            <div class="queue-item has-checkbox" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">0:18</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#231f20;">GP</span><span class="helmet" style="background:#ff8200;">MV</span>vs Monteverde · last wk</div>
+                <div class="q-title">DPI 4th down — Kestrel State requesting interpretation memo</div>
+                <div class="q-meta"><span>SUBMITTED 3d ago</span><span>·</span><span>Kestrel State AD</span><span class="sla-time" style="background:rgba(77,201,126,.15);color:var(--good);">CLOSED 3d → 2d</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-replied">REPLIED</span>
+                <span style="font-size:.62rem;color:var(--good);letter-spacing:.1em;">In SLA</span>
+              </div>
+            </div>
+
+            <div class="q-section archived"><span class="q-dot"></span><span>Archived · promoted to training</span><span class="q-avg">YTD 32</span><span class="q-count">1</span></div>
+
+            <div class="queue-item has-checkbox" onclick="toggleQueueRow(this, event)">
+              <span class="sla-bar"></span>
+              <span class="q-check" onclick="toggleCheck(event, this.parentElement)"></span>
+              <div class="q-thumb"><span class="play">▶</span><span class="dur">0:27</span></div>
+              <div class="q-info">
+                <div class="q-game"><span class="helmet" style="background:#73000a;">BH</span><span class="helmet" style="background:#003087;">RD</span>BH @ RD · 2 wks ago</div>
+                <div class="q-title">Block-in-back interpretation — clip archived</div>
+                <div class="q-meta"><span>SUBMITTED 12d ago</span><span>·</span><span>Bayhaven</span><span class="sla-time" style="background:rgba(201,165,88,.15);color:var(--gold-soft);">→ training</span></div>
+              </div>
+              <div class="q-stat">
+                <span class="q-status qs-archived">ARCHIVED</span>
+                <span style="font-size:.62rem;color:var(--good);letter-spacing:.1em;">→ training</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="bulk-bar" id="bulkBar">
+            <strong id="bulkCount">0</strong> selected
+            <span style="color:var(--muted);font-size:.72rem;">·</span>
+            <span style="color:var(--muted);font-size:.74rem;">bulk action:</span>
+            <div class="bb-actions">
+              <button onclick="bulkAck()">Send Memo Template</button>
+              <button onclick="bulkArchive()">Archive →</button>
+              <button onclick="bulkAssign()">Reassign Reviewer</button>
+              <button class="gold" onclick="bulkClose()">Mark Resolved</button>
+              <button onclick="clearBulkSelection()" style="background:transparent;border-color:var(--line);">✕ Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Westbrook AD Submission · #FB-26-0214</h3>
+            <span class="h-meta">LIB @ WB · Q3 4:12 · Holding declined</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full record →</span>
+          </div>
+          <div class="player">
+            <div class="player-frame">
+              <div class="yard-lines"></div>
+              <div class="endzone-l">WB</div>
+              <div class="endzone-r">LIB</div>
+              <div class="annotation" id="vidAnnotation"></div>
+              <div class="ann-label">OL · #76</div>
+              <div class="ball-marker"></div>
+
+              <!-- Top toolbar: angle + speed -->
+              <div class="player-toolbar">
+                <div class="pt-grp">
+                  <span class="pt-label">Angle</span>
+                  <button class="pt-btn active" data-angle="wide" onclick="setAngle(this)">Wide</button>
+                  <button class="pt-btn" data-angle="endzone" onclick="setAngle(this)">Endzone</button>
+                  <button class="pt-btn" data-angle="all22" onclick="setAngle(this)">All-22</button>
+                  <button class="pt-btn" data-angle="sideline" onclick="setAngle(this)">Sideline</button>
+                </div>
+                <div class="pt-grp spacer">
+                  <span class="pt-label">Speed</span>
+                  <button class="pt-btn" data-speed=".25" onclick="setSpeed(this)">¼×</button>
+                  <button class="pt-btn" data-speed=".5" onclick="setSpeed(this)">½×</button>
+                  <button class="pt-btn active" data-speed="1" onclick="setSpeed(this)">1×</button>
+                  <button class="pt-btn" data-speed="2" onclick="setSpeed(this)">2×</button>
+                </div>
+              </div>
+
+              <!-- Annotation toolbar (left side) -->
+              <div class="ann-toolbar">
+                <button class="ann-btn" onclick="setTool(this, 'select')" title="Select">↖</button>
+                <button class="ann-btn active" onclick="setTool(this, 'circle')" title="Circle">○</button>
+                <button class="ann-btn" onclick="setTool(this, 'arrow')" title="Arrow">→</button>
+                <button class="ann-btn" onclick="setTool(this, 'freeze')" title="Freeze frame">❄</button>
+                <button class="ann-btn" onclick="setTool(this, 'measure')" title="Measure">⊥</button>
+                <button class="ann-btn" onclick="setTool(this, 'note')" title="Note">📝</button>
+              </div>
+
+              <div class="player-controls">
+                <button class="player-btn" onclick="frameStep(-1)" title="Previous frame">◁◁</button>
+                <button class="player-btn" id="playBtn" onclick="togglePlay()" title="Play / Pause">▶</button>
+                <button class="player-btn" onclick="frameStep(1)" title="Next frame">▷▷</button>
+                <button class="player-btn" id="loopBtn" onclick="toggleLoop()" title="Loop selection" style="font-size:.7rem;">↻</button>
+                <div class="player-time"><span id="playTime">00:18</span> <span style="color:rgba(255,255,255,.5);">/ 00:42</span></div>
+                <div class="scrub" style="position:relative;">
+                  <div class="scrub-fill" id="scrubFill"></div>
+                  <div class="scrub-marker m1" onclick="seekMarker('contact')"><span class="sm-label">Contact 0:08</span></div>
+                  <div class="scrub-marker m2" onclick="seekMarker('holding')"><span class="sm-label">Holding window 0:18</span></div>
+                  <div class="scrub-marker m3" onclick="seekMarker('ball')"><span class="sm-label">Ball thrown 0:28</span></div>
+                </div>
+                <button class="player-btn" title="Fullscreen">⛶</button>
+              </div>
+            </div>
+
+            <div class="scrub-labels">
+              <span onclick="seekMarker('contact')">Contact · 0:08</span>
+              <span onclick="seekMarker('holding')">Holding window · 0:18</span>
+              <span onclick="seekMarker('ball')">Ball thrown · 0:28</span>
+            </div>
+
+            <div class="clip-meta">
+              <div class="cm-block"><span class="cm-label">Submitting school</span><span class="cm-value">Westbrook University</span></div>
+              <div class="cm-block"><span class="cm-label">Crew on field</span><span class="cm-value">Henderson</span></div>
+              <div class="cm-block"><span class="cm-label">Replay reference</span><span class="cm-value">— none</span></div>
+              <div class="cm-block"><span class="cm-label">Down &amp; distance</span><span class="cm-value">3rd &amp; 7 · WB 32</span></div>
+              <div class="cm-block"><span class="cm-label">SLA target</span><span class="cm-value">72 hours</span></div>
+              <div class="cm-block"><span class="cm-label">Tags</span><span class="cm-value">holding · interpretation</span></div>
+            </div>
+
+            <!-- AI-SUGGESTED RULING -->
+            <div class="ai-ruling">
+              <div class="ai-ruling-head">
+                <span class="ai-badge">◎ AI Ruling Suggestion</span>
+                <span class="ai-confidence">94% match</span>
+              </div>
+              <div class="ai-ruling-body">
+                Based on 2 highly-similar past submissions, this clip looks like <strong>a no-call holding</strong> — restrictor contact was within the legal block window, no clear restriction. Suggested template: <em>"Holding · no-call · within block window"</em> · 4 paragraphs · cites Bylaw 7-3-8.
+                <div class="ai-ruling-cites">
+                  <span class="ai-cite">FB-25-0102 · 96% match</span>
+                  <span class="ai-cite">FB-25-0218 · 91% match</span>
+                  <span class="ai-cite">FB-24-0334 · 88% match</span>
+                </div>
+              </div>
+              <div class="ai-ruling-actions">
+                <button class="gold">Accept &amp; Send</button>
+                <button>Edit Template</button>
+                <button>Override</button>
+                <button style="margin-left:auto;color:var(--muted);">Why this suggestion?</button>
+              </div>
+            </div>
+
+            <!-- CREW IMPACT -->
+            <div class="crew-impact">
+              <div class="ci-head">
+                <span class="ci-icon">H</span>
+                <h4>Crew Holloway · impact preview</h4>
+                <span class="ci-action">Open crew →</span>
+              </div>
+              <div class="ci-row"><span>Current YTD grade</span><span class="ci-val good">95.2</span></div>
+              <div class="ci-row"><span>Projected after this ruling</span><span class="ci-val good">95.2 (unchanged)</span></div>
+              <div class="ci-row"><span>Active complaints (incl. this)</span><span class="ci-val">2 of 11 games</span></div>
+              <div class="ci-row"><span>Refresher recommendation</span><span class="ci-val">None triggered</span></div>
+              <div class="ci-note"><strong>Clean resolution.</strong> No grade impact, no refresher needed, no postseason eligibility change. AI suggests this is a good outcome for both school and crew.</div>
+            </div>
+
+            <!-- SIMILAR PAST CLIPS -->
+            <div class="similar-clips">
+              <div class="similar-clips-head">
+                <span>↻ Similar Past Clips</span>
+                <span class="h-meta">3 found · sorted by match</span>
+              </div>
+              <div class="similar-clip">
+                <div class="sc-thumb">▶</div>
+                <div class="sc-info"><strong>Holding no-call · 3rd-and-medium</strong><small>FB-25-0102 · HC @ TC · Crew Adams · ruling: no-call upheld</small></div>
+                <div class="sc-match">96%<small>MATCH</small></div>
+              </div>
+              <div class="similar-clip">
+                <div class="sc-thumb">▶</div>
+                <div class="sc-info"><strong>Restrictor contact · 4th-and-2</strong><small>FB-25-0218 · FV @ KE · Crew Riordan · ruling: incidental contact</small></div>
+                <div class="sc-match">91%<small>MATCH</small></div>
+              </div>
+              <div class="similar-clip">
+                <div class="sc-thumb">▶</div>
+                <div class="sc-info"><strong>Holding declined · OL pull right</strong><small>FB-24-0334 · LIB @ MV · Crew Holloway · ruling: declined upheld</small></div>
+                <div class="sc-match">88%<small>MATCH</small></div>
+              </div>
+            </div>
+
+            <div class="clip-thread">
+              <div class="msg">
+                <div class="msg-avatar ala">WB</div>
+                <div>
+                  <div class="msg-head">
+                    <span class="msg-author">Paul Q. · Westbrook Director of Football Ops</span>
+                    <span class="msg-tag">SCHOOL</span>
+                    <span class="msg-time">18m ago</span>
+                  </div>
+                  <div class="msg-body">Requesting interpretation on this rep — our OL #76 was contacted at the snap and pushed past the shoulder. We're not asking for a reversal, but would like a written note for our staff on what crew Henderson conferenced on. Annotated clip and 2 alt angles attached.</div>
+                </div>
+              </div>
+
+              <div class="msg">
+                <div class="msg-avatar sec">JL</div>
+                <div>
+                  <div class="msg-head">
+                    <span class="msg-author">K. Larkin · SAC Office</span>
+                    <span class="msg-tag sec">SAC OFFICE</span>
+                    <span class="msg-time">12m ago</span>
+                  </div>
+                  <div class="msg-body">Acknowledged. Pulling crew Henderson's mic audio for the conference. Will route to coordinator <strong>M. Reyes-Albright</strong> for review and a written interpretation memo. Expected turnaround under 24 hours.</div>
+                </div>
+              </div>
+
+              <div class="msg">
+                <div class="msg-avatar sec">RS</div>
+                <div>
+                  <div class="msg-head">
+                    <span class="msg-author">M. Reyes-Albright · Coordinator of Officiating</span>
+                    <span class="msg-tag sec">REVIEWER</span>
+                    <span class="msg-time">3m ago</span>
+                  </div>
+                  <div class="msg-body">Reviewed the play with mic audio. Crew correctly conferenced — restrictor's hand contact was incidental, no clear restriction within the legal block window. Drafting school memo + adding clip to training library as a good example of "no-call holding."</div>
+                </div>
+              </div>
+
+              <div class="reply-box">
+                <input placeholder="Reply with attachment, ruling, or training tag…" />
+                <button class="btn btn-gold">Send Ruling</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Call-Type Breakdown · YTD</h3>
+            <span class="h-meta">Across 487 submissions</span>
+            <div class="spacer"></div>
+            <span class="h-action">Trend report →</span>
+          </div>
+          <div class="breakdown">
+            <div>
+              <div class="bd-row"><span class="bd-label">Holding (offensive)</span><span class="bd-pct">22%</span></div>
+              <div class="bd-bar"><div class="bd-bar-fill" style="width:22%"></div></div>
+            </div>
+            <div>
+              <div class="bd-row"><span class="bd-label">Targeting</span><span class="bd-pct">18%</span></div>
+              <div class="bd-bar"><div class="bd-bar-fill" style="width:18%"></div></div>
+            </div>
+            <div>
+              <div class="bd-row"><span class="bd-label">DPI / OPI</span><span class="bd-pct">16%</span></div>
+              <div class="bd-bar"><div class="bd-bar-fill" style="width:16%"></div></div>
+            </div>
+            <div>
+              <div class="bd-row"><span class="bd-label">Spot of the ball</span><span class="bd-pct">12%</span></div>
+              <div class="bd-bar"><div class="bd-bar-fill" style="width:12%"></div></div>
+            </div>
+            <div>
+              <div class="bd-row"><span class="bd-label">Catch / no catch</span><span class="bd-pct">10%</span></div>
+              <div class="bd-bar"><div class="bd-bar-fill" style="width:10%"></div></div>
+            </div>
+            <div>
+              <div class="bd-row"><span class="bd-label">Block in back / clip</span><span class="bd-pct">8%</span></div>
+              <div class="bd-bar"><div class="bd-bar-fill" style="width:8%"></div></div>
+            </div>
+            <div>
+              <div class="bd-row"><span class="bd-label">Procedural / pre-snap</span><span class="bd-pct">8%</span></div>
+              <div class="bd-bar"><div class="bd-bar-fill" style="width:8%"></div></div>
+            </div>
+            <div>
+              <div class="bd-row"><span class="bd-label">Other</span><span class="bd-pct">6%</span></div>
+              <div class="bd-bar"><div class="bd-bar-fill" style="width:6%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Promoted to Training Library</h3>
+            <span class="h-meta">This season · 32 clips</span>
+            <div class="spacer"></div>
+            <span class="h-action">Browse library →</span>
+          </div>
+          <div>
+            <div class="training-card">
+              <div class="training-thumb"></div>
+              <div class="training-info"><strong>Holding no-call — restrictor contact within window</strong><small>From LIB-WB clip · added by M. Reyes-Albright</small></div>
+              <div class="training-meta">USED 14×</div>
+            </div>
+            <div class="training-card">
+              <div class="training-thumb"></div>
+              <div class="training-info"><strong>Targeting — shoulder lead vs crown</strong><small>From KE-FV clip · added by L. Parsons</small></div>
+              <div class="training-meta">USED 27×</div>
+            </div>
+            <div class="training-card">
+              <div class="training-thumb"></div>
+              <div class="training-info"><strong>Catch reception — toe drag at sideline</strong><small>From BH-RD clip · added by M. Vance</small></div>
+              <div class="training-meta">USED 19×</div>
+            </div>
+            <div class="training-card">
+              <div class="training-thumb"></div>
+              <div class="training-info"><strong>RPS / DPI — picked routes vs natural rub</strong><small>From TC-HC clip · added by M. Reyes-Albright</small></div>
+              <div class="training-meta">USED 22×</div>
+            </div>
+            <div class="training-card">
+              <div class="training-thumb"></div>
+              <div class="training-info"><strong>Spot accuracy — short yardage protocol</strong><small>From GP-MV clip · added by K. Lockwood</small></div>
+              <div class="training-meta">USED 11×</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>School Activity</h3>
+            <span class="h-meta">Submissions · 30 days</span>
+            <div class="spacer"></div>
+            <span class="h-action">Compare schools →</span>
+          </div>
+          <div>
+            <div class="school-row"><span class="helmet" style="background:#9e1b32;">A</span><span class="school-name">Liberty State</span><div class="school-spark rising"><span style="height:30%"></span><span style="height:40%"></span><span style="height:48%"></span><span style="height:60%"></span><span style="height:55%"></span><span style="height:65%"></span><span style="height:78%"></span><span style="height:72%"></span><span style="height:82%"></span><span style="height:90%"></span><span class="peak" style="height:88%"></span><span class="peak" style="height:96%"></span></div><span class="school-count">14</span><span class="school-trend up">↑ 3</span></div>
+            <div class="school-row"><span class="helmet" style="background:#bf5700;">WB</span><span class="school-name">Westbrook</span><div class="school-spark rising"><span style="height:18%"></span><span style="height:22%"></span><span style="height:30%"></span><span style="height:36%"></span><span style="height:44%"></span><span style="height:52%"></span><span style="height:60%"></span><span style="height:72%"></span><span style="height:80%"></span><span style="height:84%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:96%"></span></div><span class="school-count">12</span><span class="school-trend up">↑ 5</span></div>
+            <div class="school-row"><span class="helmet" style="background:#ba0c2f;">HC</span><span class="school-name">Hillstone</span><div class="school-spark"><span style="height:60%"></span><span style="height:62%"></span><span style="height:58%"></span><span style="height:64%"></span><span style="height:60%"></span><span style="height:66%"></span><span style="height:62%"></span><span style="height:64%"></span><span style="height:68%"></span><span style="height:62%"></span><span style="height:66%"></span><span style="height:64%"></span></div><span class="school-count">11</span><span class="school-trend flat">— 0</span></div>
+            <div class="school-row"><span class="helmet" style="background:#fa4616;">F</span><span class="school-name">Tidewater</span><div class="school-spark rising"><span style="height:42%"></span><span style="height:48%"></span><span style="height:50%"></span><span style="height:54%"></span><span style="height:58%"></span><span style="height:60%"></span><span style="height:64%"></span><span style="height:68%"></span><span style="height:72%"></span><span style="height:76%"></span><span style="height:80%"></span><span class="peak" style="height:84%"></span></div><span class="school-count">10</span><span class="school-trend up">↑ 2</span></div>
+            <div class="school-row"><span class="helmet" style="background:#461d7c;">FV</span><span class="school-name">FV</span><div class="school-spark declining"><span class="peak" style="height:92%"></span><span class="peak" style="height:88%"></span><span style="height:84%"></span><span style="height:78%"></span><span style="height:72%"></span><span style="height:68%"></span><span style="height:64%"></span><span style="height:58%"></span><span style="height:54%"></span><span style="height:50%"></span><span style="height:48%"></span><span style="height:42%"></span></div><span class="school-count">9</span><span class="school-trend down">↓ 2</span></div>
+            <div class="school-row"><span class="helmet" style="background:#ff8200;">MV</span><span class="school-name">Monteverde</span><div class="school-spark"><span style="height:54%"></span><span style="height:58%"></span><span style="height:56%"></span><span style="height:60%"></span><span style="height:58%"></span><span style="height:54%"></span><span style="height:58%"></span><span style="height:60%"></span><span style="height:56%"></span><span style="height:60%"></span><span style="height:58%"></span><span style="height:56%"></span></div><span class="school-count">8</span><span class="school-trend flat">— 0</span></div>
+            <div class="school-row"><span class="helmet" style="background:#500000;">KE</span><span class="school-name">Kestrel State</span><div class="school-spark rising"><span style="height:38%"></span><span style="height:42%"></span><span style="height:46%"></span><span style="height:48%"></span><span style="height:50%"></span><span style="height:54%"></span><span style="height:56%"></span><span style="height:60%"></span><span style="height:62%"></span><span style="height:66%"></span><span style="height:68%"></span><span class="peak" style="height:72%"></span></div><span class="school-count">7</span><span class="school-trend up">↑ 1</span></div>
+            <div class="school-row"><span class="helmet" style="background:#003087;">RD</span><span class="school-name">Redmoor</span><div class="school-spark declining"><span class="peak" style="height:90%"></span><span class="peak" style="height:86%"></span><span style="height:80%"></span><span style="height:72%"></span><span style="height:64%"></span><span style="height:58%"></span><span style="height:50%"></span><span style="height:44%"></span><span style="height:40%"></span><span style="height:36%"></span><span style="height:32%"></span><span style="height:30%"></span></div><span class="school-count">6</span><span class="school-trend down">↓ 3</span></div>
+            <div class="school-row"><span class="helmet" style="background:#0033a0;">HC</span><span class="school-name">Hillstone</span><div class="school-spark declining"><span style="height:64%"></span><span style="height:60%"></span><span style="height:56%"></span><span style="height:52%"></span><span style="height:48%"></span><span style="height:46%"></span><span style="height:44%"></span><span style="height:40%"></span><span style="height:38%"></span><span style="height:36%"></span><span style="height:34%"></span><span style="height:32%"></span></div><span class="school-count">5</span><span class="school-trend down">↓ 1</span></div>
+            <div class="school-row"><span class="helmet" style="background:#73000a;">BH</span><span class="school-name">Bayhaven</span><div class="school-spark"><span style="height:42%"></span><span style="height:40%"></span><span style="height:44%"></span><span style="height:42%"></span><span style="height:38%"></span><span style="height:42%"></span><span style="height:44%"></span><span style="height:40%"></span><span style="height:42%"></span><span style="height:46%"></span><span style="height:44%"></span><span style="height:40%"></span></div><span class="school-count">5</span><span class="school-trend flat">— 0</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RECURRING PATTERNS · AI -->
+      <div class="panel" style="margin-top:14px;">
+        <div class="panel-head">
+          <h3>Recurring Patterns · AI Clustering</h3>
+          <span class="h-meta">last 30 days · 4 patterns flagged · auto-suggests memo opportunities</span>
+          <div class="spacer"></div>
+          <span class="h-action">Methodology →</span>
+        </div>
+        <div>
+          <div class="pattern-row" onclick="alert('Pattern detail would open similar-clip cluster')">
+            <div class="pat-icon">⏵</div>
+            <div class="pat-body">
+              <strong>Holding on 3rd-and-medium · left-tackle restrictor</strong>
+              <div class="pat-detail">12 submissions in 30 days clustered around <em>OL holding-vs-restrictor calls on 3rd-and-4 through 3rd-and-8</em>. 8 ruled "no call within block window," 4 ruled "holding upheld." <em>Memo opportunity:</em> clarify the block-window decision tree.</div>
+            </div>
+            <div class="pat-count"><strong>12</strong>clips · 30d</div>
+          </div>
+          <div class="pattern-row" onclick="alert('Pattern detail would open similar-clip cluster')">
+            <div class="pat-icon">!</div>
+            <div class="pat-body">
+              <strong>Targeting overturn rate climbing · all crews</strong>
+              <div class="pat-detail">Targeting overturn rate up 18% MoM across the conference. Cluster of <em>"crown contact vs shoulder lead"</em> submissions suggests a <em>refresher memo on crown-contact judgment</em> would be timely.</div>
+            </div>
+            <div class="pat-count"><strong>9</strong>clips · 30d</div>
+          </div>
+          <div class="pattern-row" onclick="alert('Pattern detail would open similar-clip cluster')">
+            <div class="pat-icon">↗</div>
+            <div class="pat-body">
+              <strong>Catch / no-catch sideline · toe-drag rulings consistent</strong>
+              <div class="pat-detail">7 of 7 toe-drag-at-sideline submissions confirmed by replay. Pattern <em>validates current coaching emphasis</em>. No memo needed; consider distributing as a training-library positive example set.</div>
+            </div>
+            <div class="pat-count"><strong>7</strong>clips · 30d</div>
+          </div>
+          <div class="pattern-row" onclick="alert('Pattern detail would open similar-clip cluster')">
+            <div class="pat-icon">⚠</div>
+            <div class="pat-body">
+              <strong>Late-hit interpretation requests · increasing</strong>
+              <div class="pat-detail">Late-hit / unnecessary-roughness requests up <em>+22% MoM</em>. Concentrated around <em>QB-sliding situations</em>. Coordinator should consider adding to next weekly memo or training video.</div>
+            </div>
+            <div class="pat-count"><strong>6</strong>clips · 30d</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // === SAC / School view toggle ===
+  function setView(opt){
+    document.querySelectorAll('.vt-opt').forEach(o => o.classList.remove('active'));
+    opt.classList.add('active');
+    const isSchool = opt.dataset.view === 'school';
+    document.body.classList.toggle('school-view', isSchool);
+    // Add the banner if in school view
+    let banner = document.getElementById('schoolBanner');
+    if(isSchool && !banner){
+      banner = document.createElement('div');
+      banner.id = 'schoolBanner';
+      banner.className = 'school-view-banner school-only';
+      banner.innerHTML = `
+        <div class="svb-helm">WB</div>
+        <div>
+          <strong>Westbrook University · School View</strong>
+          <em>Only your submissions visible · SAC office triage and internal reviewer notes hidden</em>
+        </div>
+        <button class="svb-action">+ New Submission</button>
+      `;
+      const content = document.querySelector('.content');
+      content.insertBefore(banner, content.children[1]);
+    }
+    if(banner) banner.style.display = isSchool ? 'flex' : 'none';
+
+    // Hide internal-only elements in school view (AI ruling card, crew impact, etc.)
+    document.querySelectorAll('.ai-ruling, .crew-impact, .bulk-bar').forEach(el => {
+      el.classList.toggle('sec-only', true);
+      el.style.display = isSchool ? 'none' : '';
+    });
+
+    // Filter queue to Westbrook-only in school view
+    document.querySelectorAll('.queue-item').forEach(row => {
+      const txt = row.textContent.toLowerCase();
+      const isWestbrook = txt.includes('auburn') || txt.includes('aub');
+      if(isSchool){
+        row.style.display = isWestbrook ? '' : 'none';
+      } else {
+        row.style.display = '';
+      }
+    });
+    document.querySelectorAll('.q-section').forEach(s => s.style.display = isSchool ? 'none' : '');
+  }
+
+  // Wire view toggle
+  document.addEventListener('DOMContentLoaded', () => {
+    const opts = document.querySelectorAll('.vt-opt');
+    opts.forEach((o, i) => {
+      o.dataset.view = i === 0 ? 'sec' : 'school';
+      o.addEventListener('click', () => setView(o));
+    });
+  });
+
+  // === Bulk action checkboxes ===
+  let bulkSelected = new Set();
+  function toggleCheck(e, row){
+    e.stopPropagation();
+    const id = Array.from(row.parentElement.children).indexOf(row);
+    if(row.classList.toggle('q-checked')){
+      bulkSelected.add(id);
+    } else {
+      bulkSelected.delete(id);
+    }
+    updateBulkBar();
+  }
+  function toggleQueueRow(row, e){
+    if(e.target.classList.contains('q-check')) return;
+    document.querySelectorAll('.queue-item.is-active').forEach(r => r.classList.remove('is-active'));
+    row.classList.add('is-active');
+  }
+  function updateBulkBar(){
+    const bar = document.getElementById('bulkBar');
+    const count = bulkSelected.size;
+    document.getElementById('bulkCount').textContent = count;
+    bar.classList.toggle('show', count > 0);
+  }
+  function clearBulkSelection(){
+    document.querySelectorAll('.queue-item.q-checked').forEach(r => r.classList.remove('q-checked'));
+    bulkSelected.clear();
+    updateBulkBar();
+  }
+  function bulkAck(){ alert(`Sent memo template to ${bulkSelected.size} submissions`); clearBulkSelection(); }
+  function bulkArchive(){ alert(`Archived ${bulkSelected.size} submissions`); clearBulkSelection(); }
+  function bulkAssign(){ alert(`Reassign drawer would open for ${bulkSelected.size} submissions`); }
+  function bulkClose(){ alert(`Marked ${bulkSelected.size} submissions as resolved`); clearBulkSelection(); }
+
+  // === Video player controls (demo) ===
+  let isPlaying = false;
+  let isLooping = false;
+  let currentSpeed = 1;
+  let currentFrame = 18; // out of 42 seconds at 30fps → just demo
+  function togglePlay(){
+    isPlaying = !isPlaying;
+    document.getElementById('playBtn').textContent = isPlaying ? '⏸' : '▶';
+  }
+  function frameStep(direction){
+    currentFrame = Math.max(0, Math.min(42, currentFrame + direction));
+    document.getElementById('playTime').textContent = `00:${String(currentFrame).padStart(2,'0')}`;
+    document.getElementById('scrubFill').style.width = `${(currentFrame/42)*100}%`;
+  }
+  function toggleLoop(){
+    isLooping = !isLooping;
+    document.getElementById('loopBtn').style.color = isLooping ? 'var(--gold-soft)' : '';
+  }
+  function setSpeed(btn){
+    btn.parentElement.querySelectorAll('.pt-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSpeed = parseFloat(btn.dataset.speed);
+  }
+  function setAngle(btn){
+    btn.parentElement.querySelectorAll('.pt-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Visual swap demo: tint the field by angle
+    const frame = document.querySelector('.player-frame');
+    const map = { wide: 'none', endzone: 'hue-rotate(20deg)', all22: 'saturate(.7)', sideline: 'hue-rotate(-15deg)' };
+    if(frame) frame.style.filter = map[btn.dataset.angle] || 'none';
+  }
+  function setTool(btn, tool){
+    btn.parentElement.querySelectorAll('.ann-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.body.dataset.tool = tool;
+  }
+  function seekMarker(name){
+    const map = { contact: 8, holding: 18, ball: 28 };
+    currentFrame = map[name] || 0;
+    document.getElementById('playTime').textContent = `00:${String(currentFrame).padStart(2,'0')}`;
+    document.getElementById('scrubFill').style.width = `${(currentFrame/42)*100}%`;
+  }
+</script>
+<script src="shared.js"></script>
+</body>
+</html>

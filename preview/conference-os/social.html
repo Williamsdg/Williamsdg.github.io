@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%23070d1e%22 stroke=%22%23c9a558%22 stroke-width=%221.5%22/><text x=%2216%22 y=%2222%22 font-family=%22serif%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23c9a558%22>S</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Social Listening — SAC Operating System</title>
+<meta name="description" content="Real-time monitoring of public mentions of SAC officials, crews, and replay decisions across X/Twitter, Reddit, sports media, and broadcast clips." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  .alert-banner{display:grid;grid-template-columns:42px 1fr auto;gap:14px;align-items:center;padding:14px 18px;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.3);border-left:4px solid var(--danger);border-radius:3px;margin-bottom:22px}
+  .alert-banner .ic{width:36px;height:36px;border-radius:50%;background:rgba(255,107,107,.18);color:var(--danger);display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;border:1px solid rgba(255,107,107,.3)}
+  .alert-banner-body strong{color:#fff;display:block;font-size:.92rem;margin-bottom:3px;font-weight:600}
+  .alert-banner-body span{font-size:.78rem;color:var(--muted);line-height:1.5}
+  .alert-banner-actions{display:flex;align-items:center;gap:8px}
+
+  .mention-card{padding:16px 18px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:38px 1fr;gap:12px}
+  .mention-card:last-child{border-bottom:none}
+  .mention-card.flag{background:rgba(255,107,107,.04);border-left:3px solid var(--danger)}
+  .mention-card.spike{background:rgba(224,184,115,.04);border-left:3px solid var(--warn)}
+  .src-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;flex-shrink:0;font-family:'Fraunces',serif}
+  .src-x{background:linear-gradient(135deg,#1d1d1f,#000)}
+  .src-reddit{background:linear-gradient(135deg,#ff4500,#cc3700)}
+  .src-espn{background:linear-gradient(135deg,#d40000,#8c0000)}
+  .src-cbs{background:linear-gradient(135deg,#003366,#001a33)}
+  .src-news{background:linear-gradient(135deg,#3a5a7a,#1f3a5a)}
+  .src-tt{background:linear-gradient(135deg,#000,#222)}
+  .mention-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .mention-author{color:#fff;font-weight:600;font-size:.84rem}
+  .mention-handle{color:var(--muted);font-size:.74rem;font-family:'JetBrains Mono',monospace}
+  .mention-platform{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;padding:2px 6px;border-radius:2px;font-weight:700;background:rgba(255,255,255,.06);color:var(--muted)}
+  .mention-time{color:var(--muted-soft);font-size:.66rem;margin-left:auto;font-family:'JetBrains Mono',monospace}
+  .mention-body{font-size:.86rem;color:rgba(255,255,255,.85);line-height:1.55;margin-bottom:8px}
+  .mention-body .hl{background:rgba(201,165,88,.18);color:var(--gold-soft);padding:1px 5px;border-radius:2px;font-weight:600}
+  .mention-meta{display:flex;align-items:center;gap:14px;font-size:.7rem;color:var(--muted-soft);font-family:'JetBrains Mono',monospace;letter-spacing:.04em;flex-wrap:wrap}
+  .sentiment-pill{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 7px;border-radius:99px;font-weight:700}
+  .s-neg{background:rgba(255,107,107,.18);color:#ff8a8a}
+  .s-pos{background:rgba(77,201,126,.15);color:var(--good)}
+  .s-neu{background:rgba(255,255,255,.06);color:var(--muted)}
+  .mention-actions{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+  .mention-btn{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--muted);border-radius:2px;cursor:pointer;font-family:inherit;font-weight:700}
+  .mention-btn:hover{color:#fff;border-color:var(--line-strong)}
+  .mention-btn.flag{color:var(--danger);border-color:rgba(255,107,107,.3)}
+  .mention-btn.flag:hover{background:rgba(255,107,107,.1)}
+  .mention-btn.brief{color:var(--gold-soft);border-color:rgba(201,165,88,.3)}
+  .mention-btn.brief:hover{background:rgba(201,165,88,.1)}
+
+  .crew-trend{display:grid;grid-template-columns:1fr 60px 80px;gap:10px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem;cursor:pointer;transition:.15s}
+  .crew-trend:last-child{border-bottom:none}
+  .crew-trend:hover{background:rgba(201,165,88,.04)}
+  .ct-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:3px}
+  .ct-info small{color:var(--muted);font-size:.7rem}
+  .ct-info .mini-spark{display:flex;align-items:flex-end;gap:1px;height:18px;margin-top:5px}
+  .ct-info .mini-spark span{flex:1;background:var(--gold);border-radius:1px;opacity:.5;min-height:3px}
+  .ct-info .mini-spark span.peak{opacity:1}
+  .ct-vol{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;text-align:right;font-size:.84rem}
+  .ct-vol small{display:block;font-size:.56rem;color:var(--muted-soft);letter-spacing:.1em;margin-top:2px;font-weight:500}
+  .ct-sent{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;text-align:right}
+  .ct-sent.neg{color:var(--danger)}
+  .ct-sent.pos{color:var(--good)}
+  .ct-sent.mix{color:var(--warn)}
+
+  .platform-bar{display:flex;gap:6px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .platform-stat{flex:1;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:2px;text-align:center}
+  .ps-name{font-size:.58rem;letter-spacing:.16em;color:var(--muted-soft);text-transform:uppercase;font-weight:700;margin-bottom:5px}
+  .ps-val{font-family:'JetBrains Mono',monospace;font-size:.92rem;color:#fff;font-weight:700}
+  .ps-val small{display:block;font-size:.58rem;color:var(--muted-soft);font-weight:500;letter-spacing:.08em;margin-top:2px}
+
+  .topic-tag{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:99px;font-size:.74rem;color:#fff;font-weight:500;margin:4px}
+  .topic-tag .count{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:700;font-size:.7rem}
+  .topic-tag .trend{font-family:'JetBrains Mono',monospace;font-size:.64rem;font-weight:700;padding:1px 6px;border-radius:99px}
+  .topic-tag .trend.up{color:var(--danger);background:rgba(255,107,107,.12)}
+  .topic-tag .trend.down{color:var(--good);background:rgba(77,201,126,.12)}
+  .topic-tag .trend.flat{color:var(--muted);background:rgba(255,255,255,.04)}
+
+  .vol-bars{padding:18px;display:flex;flex-direction:column;gap:12px}
+  .vol-bar-row{display:grid;grid-template-columns:1fr;gap:6px}
+  .vol-bar-head{display:flex;justify-content:space-between;font-size:.74rem;color:var(--muted)}
+  .vol-bar-head strong{color:#fff;font-weight:500}
+  .vol-bar{display:flex;gap:1px;height:32px;align-items:flex-end}
+  .vol-bar .h{flex:1;background:rgba(201,165,88,.3);min-height:3px;border-radius:1px}
+  .vol-bar .h.peak{background:var(--gold)}
+  .vol-bar .h.spike{background:var(--danger);box-shadow:0 0 8px rgba(255,107,107,.4)}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SAC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html" class="active"><span class="ic">◎</span>Social Listening<span class="badge live">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">LS</div>
+        <div>
+          <div class="user-name">P. Patel</div>
+          <div class="user-role">VP, Communications</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Operations Suite · <strong>Social Listening</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">+ Add Watch Term</button>
+        <button class="btn">Briefing Mode</button>
+        <button class="btn btn-danger">Open Crisis Desk</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Officials &amp; replay <em>social monitor.</em></h1>
+          <div class="sub">Real-time mention tracking — X / Reddit / TikTok / sports media · auto-routes to incident desk on spike</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">Live</button>
+          <button class="pill">Last 24h</button>
+          <button class="pill">Past Week</button>
+          <button class="pill">Crew Profiles</button>
+        </div>
+      </div>
+
+      <div class="alert-banner">
+        <div class="ic">⚡</div>
+        <div class="alert-banner-body">
+          <strong>Spike alert · Crew Whitaker mention volume 18× baseline</strong>
+          <span>Following targeting overturn ruling at TC @ HC Q2 11:08 · 64% negative sentiment · already routed as <a href="incidents.html" style="color:var(--gold-soft);text-decoration:underline;">INC-26-0421</a> to incident desk for monitoring.</span>
+        </div>
+        <div class="alert-banner-actions">
+          <button class="btn btn-gold">View Cluster</button>
+          <button class="btn">Draft Comms Brief</button>
+        </div>
+      </div>
+
+      <div class="stat-row five">
+        <div class="stat live"><span class="stat-label">Active Mentions · Now</span><span class="stat-value">1,247</span><span class="stat-delta">+842% vs hourly baseline</span></div>
+        <div class="stat warn"><span class="stat-label">Officials Tagged</span><span class="stat-value">7</span><span class="stat-delta">3 crews · 4 individual</span></div>
+        <div class="stat danger"><span class="stat-label">Negative Sentiment</span><span class="stat-value">58 <small>%</small></span><span class="stat-delta">↑ vs 22% rolling avg</span></div>
+        <div class="stat info"><span class="stat-label">Auto-Flagged Posts</span><span class="stat-value">38</span><span class="stat-delta">12 verified accounts</span></div>
+        <div class="stat"><span class="stat-label">Reach · Today</span><span class="stat-value">14.2 <small>M</small></span><span class="stat-delta">impressions est.</span></div>
+      </div>
+
+      <div class="tabs-host">
+      <div class="tabs">
+        <div class="tab active" data-tab="overview">Live Feed</div>
+        <div class="tab" data-tab="crews">Crew Profiles</div>
+        <div class="tab" data-tab="topics">Topics &amp; Clusters</div>
+        <div class="tab" data-tab="sentiment">Sentiment Trends</div>
+        <div class="tab" data-tab="voices">Verified Voices</div>
+        <div class="tab" data-tab="alerts">Alerts &amp; Routing</div>
+      </div>
+
+      <div class="sport-bar">
+        <span class="sport-bar-label">Sport</span>
+        <span class="sport-pill active" data-sport="all"><span class="sp-ic">◎</span>All Sports</span>
+        <span class="sport-pill" data-sport="fb"><span class="sp-ic">●</span>Football</span>
+        <span class="sport-pill" data-sport="mbb"><span class="sp-ic">●</span>Men&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="wbb"><span class="sp-ic">●</span>Women&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="bsb"><span class="sp-ic">●</span>Baseball</span>
+        <span class="sport-pill" data-sport="sb"><span class="sp-ic">●</span>Softball</span>
+        <span class="sport-pill" data-sport="vb"><span class="sp-ic">●</span>Volleyball</span>
+        <span class="sport-pill" data-sport="other"><span class="sp-ic">○</span>Other Sports</span>
+      </div>
+
+      <div data-tab-panel="overview">
+
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>Social Activity · by Sport · 24h</h3><span class="h-meta">filter via Sport bar above</span><div class="spacer"></div><span class="h-action">Crew profiles →</span></div>
+        <div data-sport-scope>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · 28K mentions · spike on Crew Whitaker</strong><small>−0.74 sentiment · 1 active monitor case (Capital City replay)</small></div><div class="ri-stat danger">−0.74<small>SPIKE</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · Crew Holloway trending positive</strong><small>+0.62 sentiment · The Lighthouse Rivalry tempo praised</small></div><div class="ri-stat good">+0.62<small>POS</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · 4.2K mentions · routine baseline</strong><small>Early-season ranking conversations · neutral sentiment</small></div><div class="ri-stat good">+0.18<small>NEU</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · Coach Pearson trending (Westbrook)</strong><small>+0.41 · pre-game presser clip widely shared</small></div><div class="ri-stat good">+0.41<small>POS</small></div></div>
+          <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB · 1.8K mentions · season builds</strong><small>Conversation centered on BH defending champ status</small></div><div class="ri-stat good">+0.32<small>POS</small></div></div>
+          <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB · Dawn Staley sustained positive</strong><small>+0.58 · multi-week trend · national WBB spokesperson</small></div><div class="ri-stat good">+0.58<small>POS</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>VB · 920 mentions · SAC tournament live</strong><small>Quarterfinal hype + recruiting talk</small></div><div class="ri-stat good">+0.44<small>POS</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>VB · Reed Arena atmosphere widely praised</strong><small>+0.52 · KE crowd reputation reinforced</small></div><div class="ri-stat good">+0.52<small>POS</small></div></div>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>Baseball · 420 mentions · off-season recruiting</strong><small>Class rankings + transfer portal discussion</small></div><div class="ri-stat good">+0.22<small>NEU</small></div></div>
+          <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>Softball · 318 mentions · off-season class rankings</strong><small>'27 recruit announcements driving conversation</small></div><div class="ri-stat good">+0.34<small>POS</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Soccer · 1.4K mentions · NCAA Tournament</strong><small>SAC team success driving conversation</small></div><div class="ri-stat good">+0.48<small>POS</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>X-Country · 420 mentions · NCAA Champ today</strong><small>SAC has 4 schools qualified</small></div><div class="ri-stat good">+0.38<small>POS</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Gymnastics · 220 mentions · pre-season</strong><small>SAC routine releases on TikTok</small></div><div class="ri-stat good">+0.62<small>POS</small></div></div>
+          <div data-sport-empty hidden class="sport-empty"><strong>No social activity for this sport in 24h</strong>Try selecting another sport — or All Sports to see the full feed.</div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Live Mention Feed</h3>
+            <span class="h-meta">Auto-updating · X · Reddit · TikTok · sports media</span>
+            <div class="spacer"></div>
+            <span class="h-action">Filters →</span>
+          </div>
+          <div>
+
+            <div class="mention-card flag">
+              <div class="src-avatar src-x">𝕏</div>
+              <div>
+                <div class="mention-head">
+                  <span class="mention-author">Patrick Finley</span>
+                  <span class="mention-handle">@finley</span>
+                  <span class="mention-platform">X · VERIFIED</span>
+                  <span class="mention-time">2m ago</span>
+                </div>
+                <div class="mention-body">That <span class="hl">targeting</span> overturn by <span class="hl">crew Whitaker</span> in Lexington just changed the cocktail party. Going to be a long Monday for Marcus Reyes-Albright's office.</div>
+                <div class="mention-meta">
+                  <span>↻ 2,418</span><span>♡ 8,742</span><span>▸ 1.2M reach</span>
+                  <span class="sentiment-pill s-neg">NEGATIVE 0.74</span>
+                </div>
+                <div class="mention-actions">
+                  <span class="mention-btn brief">Draft Brief</span>
+                  <span class="mention-btn">Add to Cluster</span>
+                  <span class="mention-btn">Route to Comms</span>
+                  <span class="mention-btn flag">Crisis Flag</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mention-card flag">
+              <div class="src-avatar src-x">𝕏</div>
+              <div>
+                <div class="mention-head">
+                  <span class="mention-author">SAC Mike</span>
+                  <span class="mention-handle">@SECMike</span>
+                  <span class="mention-platform">X · 480K followers</span>
+                  <span class="mention-time">4m ago</span>
+                </div>
+                <div class="mention-body">Whoever is in <span class="hl">Capital City replay</span> deciding to overturn that <span class="hl">targeting</span> call should answer for it on national TV tonight. <span class="hl">Crew Whitaker</span> got hung out.</div>
+                <div class="mention-meta">
+                  <span>↻ 1,842</span><span>♡ 6,210</span><span>▸ 920K reach</span>
+                  <span class="sentiment-pill s-neg">NEGATIVE 0.81</span>
+                </div>
+                <div class="mention-actions">
+                  <span class="mention-btn">Add to Cluster</span>
+                  <span class="mention-btn">Route to Comms</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mention-card spike">
+              <div class="src-avatar src-reddit">R</div>
+              <div>
+                <div class="mention-head">
+                  <span class="mention-author">u/DawgPound2026</span>
+                  <span class="mention-handle">r/CFB · 1.8K upvotes</span>
+                  <span class="mention-platform">REDDIT · TOP POST</span>
+                  <span class="mention-time">7m ago</span>
+                </div>
+                <div class="mention-body">[Megathread] TC vs HC <span class="hl">targeting</span> overturn — full breakdown frame-by-frame. <span class="hl">Crew Whitaker</span> + <span class="hl">replay official Coleman</span> getting absolutely roasted in comments.</div>
+                <div class="mention-meta">
+                  <span>↑ 1,842</span><span>💬 384 cmts</span><span>▸ r/CFB · 2.3M subs</span>
+                  <span class="sentiment-pill s-neg">NEGATIVE 0.68</span>
+                </div>
+                <div class="mention-actions">
+                  <span class="mention-btn brief">Draft Brief</span>
+                  <span class="mention-btn">Monitor Thread</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mention-card">
+              <div class="src-avatar src-espn">E</div>
+              <div>
+                <div class="mention-head">
+                  <span class="mention-author">Vista College Football</span>
+                  <span class="mention-handle">@CollegeGameDay</span>
+                  <span class="mention-platform">X · 4.2M followers</span>
+                  <span class="mention-time">9m ago</span>
+                </div>
+                <div class="mention-body">Replay official confirmed targeting on WB #22 in the The Lighthouse Rivalry — <span class="hl">crew Henderson</span> handled it cleanly. Calm, fast, clear. Textbook.</div>
+                <div class="mention-meta">
+                  <span>↻ 642</span><span>♡ 2,840</span><span>▸ 4.2M reach</span>
+                  <span class="sentiment-pill s-pos">POSITIVE 0.72</span>
+                </div>
+                <div class="mention-actions">
+                  <span class="mention-btn brief">Save to Wins Folder</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mention-card">
+              <div class="src-avatar src-news">B</div>
+              <div>
+                <div class="mention-head">
+                  <span class="mention-author">The Athletic — SAC</span>
+                  <span class="mention-handle">theathletic.com</span>
+                  <span class="mention-platform">SPORTS MEDIA</span>
+                  <span class="mention-time">14m ago</span>
+                </div>
+                <div class="mention-body">"<em>Inside the SAC replay center: a closer look at Portsmouth's role in the targeting era — and why <span class="hl">crew Whitaker's</span> overturn will fuel a week of debate.</em>" · Stewart Marin</div>
+                <div class="mention-meta">
+                  <span>▸ Paywalled · 14M MAU</span><span>📰 Feature</span>
+                  <span class="sentiment-pill s-neu">NEUTRAL 0.51</span>
+                </div>
+                <div class="mention-actions">
+                  <span class="mention-btn brief">Add to Press Kit</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mention-card spike">
+              <div class="src-avatar src-tt">T</div>
+              <div>
+                <div class="mention-head">
+                  <span class="mention-author">@gatorsbreakdown</span>
+                  <span class="mention-handle">TikTok · 218K followers</span>
+                  <span class="mention-platform">TIKTOK · TRENDING</span>
+                  <span class="mention-time">22m ago</span>
+                </div>
+                <div class="mention-body">"Frame-by-frame: why this <span class="hl">targeting</span> call should NEVER have been overturned" — 84K views in 22min, comments overwhelmingly negative toward <span class="hl">SAC officiating</span>.</div>
+                <div class="mention-meta">
+                  <span>▸ 84K views</span><span>♡ 11K</span><span>💬 1.4K cmts</span>
+                  <span class="sentiment-pill s-neg">NEGATIVE 0.77</span>
+                </div>
+                <div class="mention-actions">
+                  <span class="mention-btn">Add to Cluster</span>
+                  <span class="mention-btn flag">Watch for Virality</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mention-card">
+              <div class="src-avatar src-cbs">C</div>
+              <div>
+                <div class="mention-head">
+                  <span class="mention-author">Apex Sports Network HQ</span>
+                  <span class="mention-handle">@CBSSportsHQ</span>
+                  <span class="mention-platform">BROADCAST CLIP</span>
+                  <span class="mention-time">28m ago</span>
+                </div>
+                <div class="mention-body">Live on-air segment discussing <span class="hl">The Lighthouse Rivalry officiating</span> through Q3 — analysts crediting <span class="hl">crew Henderson</span> for tempo and clarity. 90-second clip extracted.</div>
+                <div class="mention-meta">
+                  <span>▸ Broadcast TV</span><span>▶ Clip ready</span>
+                  <span class="sentiment-pill s-pos">POSITIVE 0.62</span>
+                </div>
+                <div class="mention-actions">
+                  <span class="mention-btn brief">Save to Wins Folder</span>
+                  <span class="mention-btn">Share to Media Hub</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="right-stack" style="display:flex;flex-direction:column;gap:14px;">
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Crew Mention Volume · 24h</h3>
+              <span class="h-meta">7 crews tagged today</span>
+              <div class="spacer"></div>
+              <span class="h-action">Crew profiles →</span>
+            </div>
+            <div>
+              <div class="crew-trend">
+                <div class="ct-info">
+                  <strong>Crew Whitaker</strong>
+                  <small>TC @ HC · targeting overturn fallout</small>
+                  <div class="mini-spark"><span style="height:20%"></span><span style="height:24%"></span><span style="height:30%"></span><span style="height:40%"></span><span style="height:55%"></span><span style="height:70%"></span><span class="peak" style="height:95%"></span><span class="peak" style="height:100%"></span></div>
+                </div>
+                <div class="ct-vol">12.4K<small>MENTIONS</small></div>
+                <div class="ct-sent neg">−0.74</div>
+              </div>
+              <div class="crew-trend">
+                <div class="ct-info">
+                  <strong>Replay · Capital City (Coleman)</strong>
+                  <small>Capital City replay official under fire</small>
+                  <div class="mini-spark"><span style="height:10%"></span><span style="height:15%"></span><span style="height:22%"></span><span style="height:30%"></span><span style="height:45%"></span><span style="height:60%"></span><span class="peak" style="height:88%"></span><span class="peak" style="height:92%"></span></div>
+                </div>
+                <div class="ct-vol">4.8K<small>MENTIONS</small></div>
+                <div class="ct-sent neg">−0.68</div>
+              </div>
+              <div class="crew-trend">
+                <div class="ct-info">
+                  <strong>Crew Holloway</strong>
+                  <small>The Lighthouse Rivalry · widely praised tempo</small>
+                  <div class="mini-spark"><span style="height:18%"></span><span style="height:22%"></span><span style="height:35%"></span><span style="height:48%"></span><span class="peak" style="height:80%"></span><span class="peak" style="height:88%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:96%"></span></div>
+                </div>
+                <div class="ct-vol">8.1K<small>MENTIONS</small></div>
+                <div class="ct-sent pos">+0.62</div>
+              </div>
+              <div class="crew-trend">
+                <div class="ct-info">
+                  <strong>Crew Petrov</strong>
+                  <small>HC @ MV · WX hold professionalism</small>
+                  <div class="mini-spark"><span style="height:12%"></span><span style="height:14%"></span><span style="height:18%"></span><span style="height:22%"></span><span style="height:28%"></span><span style="height:38%"></span><span style="height:48%"></span><span class="peak" style="height:62%"></span></div>
+                </div>
+                <div class="ct-vol">1.8K<small>MENTIONS</small></div>
+                <div class="ct-sent pos">+0.41</div>
+              </div>
+              <div class="crew-trend">
+                <div class="ct-info">
+                  <strong>Crew Riordan</strong>
+                  <small>KE @ FV · neutral mention volume</small>
+                  <div class="mini-spark"><span style="height:22%"></span><span style="height:20%"></span><span style="height:24%"></span><span style="height:22%"></span><span style="height:28%"></span><span style="height:24%"></span><span style="height:30%"></span><span style="height:26%"></span></div>
+                </div>
+                <div class="ct-vol">920<small>MENTIONS</small></div>
+                <div class="ct-sent mix">±0.08</div>
+              </div>
+              <div class="crew-trend">
+                <div class="ct-info">
+                  <strong>Crew Donovan</strong>
+                  <small>CC @ RD · pre-game</small>
+                  <div class="mini-spark"><span style="height:10%"></span><span style="height:8%"></span><span style="height:12%"></span><span style="height:10%"></span><span style="height:14%"></span><span style="height:12%"></span><span style="height:16%"></span><span style="height:18%"></span></div>
+                </div>
+                <div class="ct-vol">410<small>MENTIONS</small></div>
+                <div class="ct-sent mix">−0.04</div>
+              </div>
+              <div class="crew-trend">
+                <div class="ct-info">
+                  <strong>Crew Otieno</strong>
+                  <small>NT @ PR · final · clean game</small>
+                  <div class="mini-spark"><span style="height:14%"></span><span style="height:16%"></span><span style="height:20%"></span><span style="height:18%"></span><span style="height:22%"></span><span style="height:20%"></span><span style="height:14%"></span><span style="height:12%"></span></div>
+                </div>
+                <div class="ct-vol">620<small>MENTIONS</small></div>
+                <div class="ct-sent pos">+0.38</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Sources · Last Hour</h3>
+              <span class="h-meta">Where the conversation lives</span>
+              <div class="spacer"></div>
+              <span class="h-action">All channels →</span>
+            </div>
+            <div class="platform-bar">
+              <div class="platform-stat"><div class="ps-name">X / Twitter</div><div class="ps-val">8.4K<small>62% of vol</small></div></div>
+              <div class="platform-stat"><div class="ps-name">Reddit</div><div class="ps-val">1.9K<small>14%</small></div></div>
+              <div class="platform-stat"><div class="ps-name">TikTok</div><div class="ps-val">1.4K<small>11%</small></div></div>
+              <div class="platform-stat"><div class="ps-name">Sports Media</div><div class="ps-val">312<small>+ 4 features</small></div></div>
+              <div class="platform-stat"><div class="ps-name">Broadcast</div><div class="ps-val">22<small>clips</small></div></div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Mention Volume · 24h</h3>
+            <span class="h-meta">Hourly · all crews</span>
+            <div class="spacer"></div>
+            <span class="h-action">Custom window →</span>
+          </div>
+          <div class="vol-bars">
+            <div class="vol-bar-row">
+              <div class="vol-bar-head"><strong>Crew Whitaker</strong><span class="mono">+842%</span></div>
+              <div class="vol-bar">
+                <span class="h" style="height:12%"></span><span class="h" style="height:14%"></span><span class="h" style="height:12%"></span><span class="h" style="height:18%"></span><span class="h" style="height:14%"></span><span class="h" style="height:18%"></span><span class="h" style="height:24%"></span><span class="h" style="height:22%"></span><span class="h" style="height:32%"></span><span class="h" style="height:34%"></span><span class="h" style="height:42%"></span><span class="h" style="height:46%"></span><span class="h peak" style="height:62%"></span><span class="h peak" style="height:74%"></span><span class="h peak" style="height:88%"></span><span class="h spike" style="height:100%"></span><span class="h spike" style="height:96%"></span><span class="h peak" style="height:82%"></span><span class="h peak" style="height:78%"></span><span class="h peak" style="height:72%"></span><span class="h peak" style="height:68%"></span><span class="h" style="height:54%"></span><span class="h" style="height:46%"></span><span class="h" style="height:42%"></span>
+              </div>
+            </div>
+            <div class="vol-bar-row">
+              <div class="vol-bar-head"><strong>Crew Holloway</strong><span class="mono">+412%</span></div>
+              <div class="vol-bar">
+                <span class="h" style="height:18%"></span><span class="h" style="height:20%"></span><span class="h" style="height:16%"></span><span class="h" style="height:22%"></span><span class="h" style="height:20%"></span><span class="h" style="height:24%"></span><span class="h" style="height:28%"></span><span class="h" style="height:30%"></span><span class="h" style="height:34%"></span><span class="h" style="height:42%"></span><span class="h" style="height:48%"></span><span class="h" style="height:54%"></span><span class="h" style="height:62%"></span><span class="h peak" style="height:74%"></span><span class="h peak" style="height:84%"></span><span class="h peak" style="height:92%"></span><span class="h peak" style="height:96%"></span><span class="h peak" style="height:100%"></span><span class="h peak" style="height:94%"></span><span class="h peak" style="height:88%"></span><span class="h peak" style="height:82%"></span><span class="h peak" style="height:76%"></span><span class="h peak" style="height:70%"></span><span class="h peak" style="height:68%"></span>
+              </div>
+            </div>
+            <div class="vol-bar-row">
+              <div class="vol-bar-head"><strong>Replay Capital City</strong><span class="mono">+688%</span></div>
+              <div class="vol-bar">
+                <span class="h" style="height:8%"></span><span class="h" style="height:10%"></span><span class="h" style="height:8%"></span><span class="h" style="height:12%"></span><span class="h" style="height:10%"></span><span class="h" style="height:14%"></span><span class="h" style="height:16%"></span><span class="h" style="height:18%"></span><span class="h" style="height:22%"></span><span class="h" style="height:26%"></span><span class="h" style="height:32%"></span><span class="h" style="height:38%"></span><span class="h peak" style="height:52%"></span><span class="h peak" style="height:64%"></span><span class="h peak" style="height:76%"></span><span class="h spike" style="height:92%"></span><span class="h spike" style="height:96%"></span><span class="h peak" style="height:82%"></span><span class="h peak" style="height:74%"></span><span class="h peak" style="height:68%"></span><span class="h peak" style="height:62%"></span><span class="h" style="height:48%"></span><span class="h" style="height:42%"></span><span class="h" style="height:38%"></span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--muted-soft);font-family:'JetBrains Mono',monospace;letter-spacing:.06em;padding-top:6px;border-top:1px solid var(--line);">
+              <span>−24h</span><span>−18h</span><span>−12h</span><span>−6h</span><span>NOW</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Trending Topics &amp; Phrases</h3>
+            <span class="h-meta">Auto-clustered · last hour</span>
+            <div class="spacer"></div>
+            <span class="h-action">Clusters →</span>
+          </div>
+          <div class="panel-pad" style="line-height:2.2;">
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">overturn</span>"<span class="count">2,418</span><span class="trend up">↑ 942%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">crew walker</span>"<span class="count">1,820</span><span class="trend up">↑ 884%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">targeting</span>"<span class="count">3,210</span><span class="trend up">↑ 614%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">atlanta replay</span>"<span class="count">1,142</span><span class="trend up">↑ 728%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">crown contact</span>"<span class="count">684</span><span class="trend up">↑ 412%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">steve shaw</span>"<span class="count">562</span><span class="trend up">↑ 188%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">crew henderson</span>"<span class="count">2,140</span><span class="trend up">↑ 392%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">iron bowl officiating</span>"<span class="count">1,840</span><span class="trend up">↑ 320%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">sec officiating</span>"<span class="count">3,840</span><span class="trend up">↑ 462%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">replay official</span>"<span class="count">972</span><span class="trend up">↑ 318%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">lightning hold</span>"<span class="count">412</span><span class="trend flat">— stable</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">crew patel</span>"<span class="count">218</span><span class="trend up">↑ 88%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">disqualification</span>"<span class="count">340</span><span class="trend down">↓ 14%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">refs got it right</span>"<span class="count">622</span><span class="trend up">↑ 144%</span></span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Comms Brief · Auto-Drafted</h3>
+            <span class="h-meta">Ready for P. Patel review</span>
+            <div class="spacer"></div>
+            <span class="h-action">Brief library →</span>
+          </div>
+          <div class="panel-pad" style="font-size:.84rem;color:rgba(255,255,255,.85);line-height:1.65;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-soft);font-weight:700;margin-bottom:10px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--gold);"></span>Draft · 14:48 CT · auto-generated
+            </div>
+            <div style="font-family:'Fraunces',serif;font-size:1.05rem;color:#fff;font-weight:500;margin-bottom:12px;">Targeting overturn — TC @ HC Q2 11:08</div>
+            <p style="margin-bottom:10px;color:var(--muted);"><strong style="color:#fff;">Situation:</strong> Replay Capital City (Coleman) overturned a targeting call on the field. Endzone HD angle showed shoulder-lead contact, not crown. Decision time 2m 04s. Within protocol.</p>
+            <p style="margin-bottom:10px;color:var(--muted);"><strong style="color:#fff;">Reaction:</strong> Mention volume 18× baseline within 22 minutes. 58% negative sentiment, concentrated on Crew Whitaker and Capital City replay. Reddit megathread + verified analyst (Finley) amplification.</p>
+            <p style="margin-bottom:14px;color:var(--muted);"><strong style="color:#fff;">Recommended:</strong> Post 90s explainer with frame breakdown by end of game. Standard officials-only memo to schools within 24h. No public official statement required unless coordinated with Capital City network coverage.</p>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-gold" style="font-size:.66rem;">Approve &amp; Send</button>
+              <button class="btn" style="font-size:.66rem;">Edit Draft</button>
+              <button class="btn" style="font-size:.66rem;">Suppress</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </div><!-- /overview -->
+
+      <div data-tab-panel="crews" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Crew &amp; Replay Profiles · Public Footprint</h3><span class="h-meta">102 officials · individual + crew aggregate</span><div class="spacer"></div><span class="h-action">Configure tracking →</span></div>
+          <div>
+            <div class="crew-trend"><div class="ct-info"><strong>Crew Whitaker</strong><small>TC @ HC · targeting overturn fallout · 7-man crew</small><div class="mini-spark"><span style="height:20%"></span><span style="height:24%"></span><span style="height:30%"></span><span style="height:40%"></span><span style="height:55%"></span><span style="height:70%"></span><span class="peak" style="height:95%"></span><span class="peak" style="height:100%"></span></div></div><div class="ct-vol">12.4K<small>MENTIONS</small></div><div class="ct-sent neg">−0.74</div></div>
+            <div class="crew-trend"><div class="ct-info"><strong>Replay · Capital City (R. Coleman)</strong><small>Replay official primary lightning rod</small><div class="mini-spark"><span style="height:10%"></span><span style="height:15%"></span><span style="height:22%"></span><span style="height:30%"></span><span style="height:45%"></span><span style="height:60%"></span><span class="peak" style="height:88%"></span><span class="peak" style="height:92%"></span></div></div><div class="ct-vol">4.8K<small>MENTIONS</small></div><div class="ct-sent neg">−0.68</div></div>
+            <div class="crew-trend"><div class="ct-info"><strong>Crew Holloway</strong><small>The Lighthouse Rivalry · widely praised tempo + clarity</small><div class="mini-spark"><span style="height:18%"></span><span style="height:22%"></span><span style="height:35%"></span><span style="height:48%"></span><span class="peak" style="height:80%"></span><span class="peak" style="height:88%"></span><span class="peak" style="height:92%"></span><span class="peak" style="height:96%"></span></div></div><div class="ct-vol">8.1K<small>MENTIONS</small></div><div class="ct-sent pos">+0.62</div></div>
+            <div class="crew-trend"><div class="ct-info"><strong>Crew Petrov</strong><small>HC @ MV · WX hold professionalism</small><div class="mini-spark"><span style="height:12%"></span><span style="height:14%"></span><span style="height:18%"></span><span style="height:22%"></span><span style="height:28%"></span><span style="height:38%"></span><span style="height:48%"></span><span class="peak" style="height:62%"></span></div></div><div class="ct-vol">1.8K<small>MENTIONS</small></div><div class="ct-sent pos">+0.41</div></div>
+            <div class="crew-trend"><div class="ct-info"><strong>Crew Riordan</strong><small>KE @ FV · neutral mention volume</small><div class="mini-spark"><span style="height:22%"></span><span style="height:20%"></span><span style="height:24%"></span><span style="height:22%"></span><span style="height:28%"></span><span style="height:24%"></span><span style="height:30%"></span><span style="height:26%"></span></div></div><div class="ct-vol">920<small>MENTIONS</small></div><div class="ct-sent mix">±0.08</div></div>
+            <div class="crew-trend"><div class="ct-info"><strong>Crew Donovan</strong><small>CC @ RD · pre-game</small><div class="mini-spark"><span style="height:10%"></span><span style="height:8%"></span><span style="height:12%"></span><span style="height:10%"></span><span style="height:14%"></span><span style="height:12%"></span><span style="height:16%"></span><span style="height:18%"></span></div></div><div class="ct-vol">410<small>MENTIONS</small></div><div class="ct-sent mix">−0.04</div></div>
+            <div class="crew-trend"><div class="ct-info"><strong>Crew Otieno</strong><small>NT @ PR · final · clean game</small><div class="mini-spark"><span style="height:14%"></span><span style="height:16%"></span><span style="height:20%"></span><span style="height:18%"></span><span style="height:22%"></span><span style="height:20%"></span><span style="height:14%"></span><span style="height:12%"></span></div></div><div class="ct-vol">620<small>MENTIONS</small></div><div class="ct-sent pos">+0.38</div></div>
+            <div class="crew-trend"><div class="ct-info"><strong>Crew Marsden</strong><small>GP @ MV · low-profile · clean game</small><div class="mini-spark"><span style="height:8%"></span><span style="height:10%"></span><span style="height:14%"></span><span style="height:12%"></span><span style="height:16%"></span><span style="height:14%"></span><span style="height:18%"></span><span style="height:20%"></span></div></div><div class="ct-vol">340<small>MENTIONS</small></div><div class="ct-sent pos">+0.22</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="topics" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Trending Topics &amp; Auto-Clusters</h3><span class="h-meta">last hour · 1,247 mentions clustered</span><div class="spacer"></div><span class="h-action">Cluster detail →</span></div>
+          <div class="panel-pad" style="line-height:2.2;">
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">overturn</span>"<span class="count">2,418</span><span class="trend up">↑ 942%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">crew walker</span>"<span class="count">1,820</span><span class="trend up">↑ 884%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">targeting</span>"<span class="count">3,210</span><span class="trend up">↑ 614%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">atlanta replay</span>"<span class="count">1,142</span><span class="trend up">↑ 728%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">crown contact</span>"<span class="count">684</span><span class="trend up">↑ 412%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">steve shaw</span>"<span class="count">562</span><span class="trend up">↑ 188%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">crew henderson</span>"<span class="count">2,140</span><span class="trend up">↑ 392%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">iron bowl officiating</span>"<span class="count">1,840</span><span class="trend up">↑ 320%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">sec officiating</span>"<span class="count">3,840</span><span class="trend up">↑ 462%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">replay official</span>"<span class="count">972</span><span class="trend up">↑ 318%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">lightning hold</span>"<span class="count">412</span><span class="trend flat">— stable</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">crew patel</span>"<span class="count">218</span><span class="trend up">↑ 88%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">disqualification</span>"<span class="count">340</span><span class="trend down">↓ 14%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">refs got it right</span>"<span class="count">622</span><span class="trend up">↑ 144%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">egg bowl</span>"<span class="count">1,480</span><span class="trend up">↑ 222%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">texas a&amp;m rivalry</span>"<span class="count">2,840</span><span class="trend up">↑ 488%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">cocktail party</span>"<span class="count">1,140</span><span class="trend up">↑ 184%</span></span>
+            <span class="topic-tag">"<span class="hl" style="background:none;color:#fff;font-weight:600;">commissioner sankey</span>"<span class="count">218</span><span class="trend flat">— flat</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="sentiment" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Sentiment Trends · Officials &amp; Replay</h3><span class="h-meta">7-day rolling · all monitored entities</span><div class="spacer"></div><span class="h-action">Export →</span></div>
+          <div class="panel-pad" style="display:flex;flex-direction:column;gap:18px;">
+            <div><div class="spark-bar-row"><span><strong style="color:#fff;font-weight:500;">Crew Whitaker</strong> — 7d sentiment</span><span class="mono" style="color:var(--danger);font-weight:700;">−0.74 (now)</span></div><div class="spark-bar"><div class="spark-bar-fill danger" style="width:74%"></div></div></div>
+            <div><div class="spark-bar-row"><span><strong style="color:#fff;font-weight:500;">Replay Capital City</strong></span><span class="mono" style="color:var(--danger);font-weight:700;">−0.68</span></div><div class="spark-bar"><div class="spark-bar-fill danger" style="width:68%"></div></div></div>
+            <div><div class="spark-bar-row"><span><strong style="color:#fff;font-weight:500;">Crew Holloway</strong></span><span class="mono" style="color:var(--good);font-weight:700;">+0.62</span></div><div class="spark-bar"><div class="spark-bar-fill good" style="width:62%"></div></div></div>
+            <div><div class="spark-bar-row"><span><strong style="color:#fff;font-weight:500;">Crew Petrov</strong></span><span class="mono" style="color:var(--good);font-weight:700;">+0.41</span></div><div class="spark-bar"><div class="spark-bar-fill good" style="width:41%"></div></div></div>
+            <div><div class="spark-bar-row"><span><strong style="color:#fff;font-weight:500;">Crew Otieno</strong></span><span class="mono" style="color:var(--good);font-weight:700;">+0.38</span></div><div class="spark-bar"><div class="spark-bar-fill good" style="width:38%"></div></div></div>
+            <div><div class="spark-bar-row"><span><strong style="color:#fff;font-weight:500;">SAC Officiating (umbrella)</strong></span><span class="mono" style="color:var(--warn);font-weight:700;">−0.18</span></div><div class="spark-bar"><div class="spark-bar-fill warn" style="width:18%"></div></div></div>
+            <div><div class="spark-bar-row"><span><strong style="color:#fff;font-weight:500;">Marcus Reyes-Albright (named)</strong></span><span class="mono" style="color:var(--warn);font-weight:700;">−0.22</span></div><div class="spark-bar"><div class="spark-bar-fill warn" style="width:22%"></div></div></div>
+            <div style="padding-top:12px;border-top:1px solid var(--line);font-size:.74rem;color:var(--muted);"><strong style="color:#fff;display:block;margin-bottom:4px;font-weight:500;">Baseline note</strong>Official-side sentiment runs −0.22 baseline year-round (officials are an unpopular profession even in calm news weeks). Spikes below −0.65 trigger auto-routing.</div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="voices" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Verified Voices · Sports Media Watchlist</h3><span class="h-meta">62 accounts tracked · auto-prioritized</span><div class="spacer"></div><span class="h-action">+ Add Voice →</span></div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>Patrick Finley · @finley</strong><small>SACN/Vista · 480K followers · highest-impact SAC voice</small></div><div class="ri-stat danger">PRIORITY 1<small>ALL</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Peter Talmadge · @PeteThamel</strong><small>Vista insider · 720K · breaking news</small></div><div class="ri-stat danger">PRIORITY 1<small>ALL</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Chris Lowe · @ClowESPN</strong><small>Vista SAC reporter · 240K · officiating coverage</small></div><div class="ri-stat warn">PRIORITY 2<small>ON SPIKE</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Andy Stapleton · @Andy_Staples</strong><small>On3 · 380K · feature voice on rules + officiating</small></div><div class="ri-stat warn">PRIORITY 2<small>ON SPIKE</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Stewart Marin · @slmandel</strong><small>The Athletic · 320K · long-form analysis</small></div><div class="ri-stat warn">PRIORITY 2<small>ON SPIKE</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Bruce Falk · @BruceFeldmanCFB</strong><small>FOX/On3 · 280K · player-side coverage</small></div><div class="ri-stat warn">PRIORITY 2<small>ON SPIKE</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>Holly Anders · @HollyAnderson</strong><small>SI/freelance · 142K · style voice on rivalry weeks</small></div><div class="ri-stat info">PRIORITY 3<small>DAILY</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>RJ Yates · @RJ_Young</strong><small>FOX/CFB · 188K · pro-officials-context perspective</small></div><div class="ri-stat info">PRIORITY 3<small>DAILY</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>+ 54 additional voices</strong><small>school beat writers · Vista talent · regional sports radio</small></div><div class="ri-stat info">MANAGE<small>→</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="alerts" hidden>
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Active Alert Rules</h3><span class="h-meta">14 rules · auto-routed to ops</span><div class="spacer"></div><span class="h-action">+ New Rule →</span></div>
+            <div>
+              <div class="row-item"><div class="ri-info"><strong>Crew mention ≥ 10× baseline</strong><small>Routes to: Incidents (SEV-3) · Comms (brief)</small></div><div class="ri-stat info">ACTIVE<small>14 FIRED</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Sentiment ≤ −0.65 on any monitored entity</strong><small>Routes to: Comms only (advisory)</small></div><div class="ri-stat info">ACTIVE<small>22 FIRED</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Verified voice mentions officials by name</strong><small>Routes to: Comms + Whitfield daily brief</small></div><div class="ri-stat info">ACTIVE<small>8 FIRED</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Reddit megathread on conference topic</strong><small>Routes to: Comms monitor</small></div><div class="ri-stat info">ACTIVE<small>3 FIRED</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>TikTok virality (≥ 100K views in 4h)</strong><small>Routes to: Comms · monitor for crisis flag</small></div><div class="ri-stat info">ACTIVE<small>2 FIRED</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Player off-field mention spike</strong><small>Routes to: School compliance + SAC compliance</small></div><div class="ri-stat info">ACTIVE<small>4 FIRED</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Bot / brigade detection (auto-suppress)</strong><small>Routes to: Internal log only</small></div><div class="ri-stat info">ACTIVE<small>14 BLOCKED</small></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Routes · 24h</h3><span class="h-meta">where alerts ended up</span></div>
+            <div>
+              <div class="row-item"><div class="ri-info"><strong>→ Incidents (INC-26-0421)</strong><small>Crew Whitaker spike · 14:48 CT · SEV-MON</small></div><div class="ri-stat warn">MONITOR<small>OPEN</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>→ Comms brief (auto-draft)</strong><small>Crew Whitaker brief drafted · P. Patel review</small></div><div class="ri-stat warn">PENDING<small>REVIEW</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>→ Whitfield daily brief</strong><small>Finley mention added · evening digest</small></div><div class="ri-stat good">QUEUED<small>6 PM</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>→ Comms monitor</strong><small>Reddit megathread added to watch · 22 min ago</small></div><div class="ri-stat good">MONITORING<small>OPEN</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>→ Internal log (suppressed)</strong><small>14 bot-network mentions auto-suppressed · no humans paged</small></div><div class="ri-stat good">SUPPRESSED<small>AUTO</small></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /tabs-host -->
+
+    </div>
+  </main>
+</div>
+
+<script src="shared.js"></script>
+</body>
+</html>

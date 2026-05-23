@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%23070d1e%22 stroke=%22%23c9a558%22 stroke-width=%221.5%22/><text x=%2216%22 y=%2222%22 font-family=%22serif%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23c9a558%22>S</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Championships — SAC Operating System</title>
+<meta name="description" content="Championship event management — venue, hotels, transportation, security, volunteers, ticketing, and media for SAC championships across 21 sports." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  .champ-hero{background:linear-gradient(135deg, rgba(201,165,88,.18), rgba(15,29,58,.6));border:1px solid rgba(201,165,88,.25);border-radius:3px;padding:24px;margin-bottom:22px;display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:center}
+  .champ-hero h2{font-family:'Fraunces',serif;font-size:1.6rem;color:#fff;font-weight:400;margin-bottom:8px}
+  .champ-hero h2 em{font-style:italic;color:var(--gold-soft)}
+  .champ-hero .meta{font-size:.78rem;color:var(--muted);margin-bottom:16px;line-height:1.6}
+  .champ-hero .meta strong{color:#fff;font-weight:600}
+  .countdown{display:flex;gap:12px}
+  .cd-block{background:rgba(0,0,0,.3);border:1px solid rgba(201,165,88,.2);border-radius:3px;padding:14px 18px;text-align:center;flex:1}
+  .cd-val{font-family:'Fraunces',serif;font-size:1.8rem;color:var(--gold-soft);font-weight:300;line-height:1}
+  .cd-lbl{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:6px}
+  .champ-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .champ-stat{padding:14px;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:3px}
+  .champ-stat .v{font-family:'Fraunces',serif;font-size:1.4rem;color:#fff;font-weight:400;line-height:1}
+  .champ-stat .l{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-top:6px}
+
+  .wl-row{display:grid;grid-template-columns:40px 1fr 80px 90px;gap:10px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .wl-row:last-child{border-bottom:none}
+  .wl-icon{width:32px;height:32px;border-radius:3px;background:rgba(201,165,88,.12);color:var(--gold-soft);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:600;font-size:.78rem;border:1px solid rgba(201,165,88,.2)}
+  .wl-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .wl-info small{color:var(--muted);font-size:.7rem}
+  .wl-prog{font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--gold-soft);font-weight:600;text-align:right}
+  .wl-prog small{display:block;font-size:.58rem;color:var(--muted-soft);letter-spacing:.1em;margin-top:2px;font-weight:500}
+
+  .sport-tile{padding:18px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:.15s}
+  .sport-tile:hover{border-color:var(--gold);background:rgba(201,165,88,.05)}
+  .sport-tile-head{display:flex;align-items:center;justify-content:space-between}
+  .st-sport{font-family:'Fraunces',serif;font-size:.95rem;color:#fff;font-weight:500}
+  .st-status{font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 6px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .st-status.live{background:rgba(255,79,79,.18);color:var(--live)}
+  .st-status.up{background:rgba(224,184,115,.18);color:var(--warn)}
+  .st-status.plan{background:rgba(255,255,255,.06);color:var(--muted)}
+  .st-status.done{background:rgba(77,201,126,.12);color:var(--good)}
+  .st-venue{font-size:.7rem;color:var(--muted);letter-spacing:.04em}
+  .st-date{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--gold-soft);font-weight:600}
+  .st-row{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:4px}
+  .st-row strong{color:#fff;font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SAC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html" class="active"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">CM</div>
+        <div>
+          <div class="user-name">D. Hartley</div>
+          <div class="user-role">Dir, Championships</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Operations Suite · <strong>Championships</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">+ New Workstream</button>
+        <button class="btn">Volunteer Portal</button>
+        <button class="btn btn-gold">Open SACCG Brief</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="ph">
+        <div>
+          <h1>Championship event <em>operations.</em></h1>
+          <div class="sub">21 SAC championships · active phase: SAC Football Championship (Capital City)</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">SACCG · Capital City</button>
+          <button class="pill">Summit Park · Baseball</button>
+          <button class="pill">Boulder City · MBB</button>
+          <button class="pill">All Sports</button>
+        </div>
+      </div>
+
+      <div class="champ-hero">
+        <div>
+          <h2>SAC Football Championship · <em>Capital City '26.</em></h2>
+          <div class="meta"><strong>Capital City Stadium</strong> · Saturday, December 6 · 3:30 PM CT · <strong>CBS</strong> broadcast<br>Operations lead: D. Hartley · Field ops: R. Lin · Hospitality: J. Park · Security: SACP / APD joint command</div>
+          <div class="countdown">
+            <div class="cd-block"><div class="cd-val">14</div><div class="cd-lbl">Days</div></div>
+            <div class="cd-block"><div class="cd-val">08</div><div class="cd-lbl">Hours</div></div>
+            <div class="cd-block"><div class="cd-val">42</div><div class="cd-lbl">Min</div></div>
+            <div class="cd-block"><div class="cd-val">11</div><div class="cd-lbl">Sec</div></div>
+          </div>
+        </div>
+        <div class="champ-stats">
+          <div class="champ-stat"><div class="v">68%</div><div class="l">Workstreams Complete</div></div>
+          <div class="champ-stat"><div class="v">71,000</div><div class="l">Tickets Distributed</div></div>
+          <div class="champ-stat"><div class="v">1,420</div><div class="l">Credentials Issued</div></div>
+          <div class="champ-stat"><div class="v">$4.8M</div><div class="l">Event Budget · 96% on track</div></div>
+        </div>
+      </div>
+
+      <div class="stat-row five">
+        <div class="stat good"><span class="stat-label">Workstreams Green</span><span class="stat-value">14 <small>/ 18</small></span><span class="stat-delta up">+2 since last week</span></div>
+        <div class="stat warn"><span class="stat-label">Workstreams Yellow</span><span class="stat-value">3</span><span class="stat-delta">Transportation · Volunteer · ADA</span></div>
+        <div class="stat danger"><span class="stat-label">Workstreams Red</span><span class="stat-value">1</span><span class="stat-delta">Hospitality vendor swap</span></div>
+        <div class="stat info"><span class="stat-label">Volunteers Onboarded</span><span class="stat-value">412 <small>/ 480</small></span><span class="stat-delta">target 480 by 12/1</span></div>
+        <div class="stat"><span class="stat-label">Hotel Block</span><span class="stat-value">1,840</span><span class="stat-delta up">94% picked up</span></div>
+      </div>
+
+      <div class="tabs-host">
+      <div class="tabs">
+        <div class="tab active" data-tab="overview">SACCG Capital City</div>
+        <div class="tab" data-tab="all">All Championships</div>
+        <div class="tab" data-tab="volunteers">Volunteer Mgmt</div>
+        <div class="tab" data-tab="hospitality">Hospitality &amp; Travel</div>
+        <div class="tab" data-tab="ticketing">Ticketing</div>
+        <div class="tab" data-tab="security">Security &amp; Joint Cmd</div>
+      </div>
+
+      <div class="sport-bar">
+        <span class="sport-bar-label">Sport</span>
+        <span class="sport-pill active" data-sport="all"><span class="sp-ic">◎</span>All Sports</span>
+        <span class="sport-pill" data-sport="fb"><span class="sp-ic">●</span>Football</span>
+        <span class="sport-pill" data-sport="mbb"><span class="sp-ic">●</span>Men&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="wbb"><span class="sp-ic">●</span>Women&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="bsb"><span class="sp-ic">●</span>Baseball</span>
+        <span class="sport-pill" data-sport="sb"><span class="sp-ic">●</span>Softball</span>
+        <span class="sport-pill" data-sport="vb"><span class="sp-ic">●</span>Volleyball</span>
+        <span class="sport-pill" data-sport="other"><span class="sp-ic">○</span>Other Sports</span>
+      </div>
+
+      <div data-tab-panel="overview">
+
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>Championship Status · by Sport</h3><span class="h-meta">filter via Sport bar above</span><div class="spacer"></div><span class="h-action">Calendar →</span></div>
+        <div data-sport-scope>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>SACCG · Capital City · 14 days out</strong><small>18 workstreams · 14 green · 3 yellow · 1 red (vendor swap)</small></div><div class="ri-stat good">71K TIX<small>SOLD OUT</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · Trophy presenting + halftime show signed</strong><small>Heritage Bank + Atlas Beverage sponsors confirmed</small></div><div class="ri-stat good">CONFIRMED<small>$4.2M</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB SAC Tournament · Boulder City · 90 days out</strong><small>Boulder Convention Center · 11 of 18 workstreams complete</small></div><div class="ri-stat info">PLAN<small>+ 90D</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · Hotel block at Omni Boulder City (140 rooms)</strong><small>Confirmed for teams + officials + media</small></div><div class="ri-stat good">CONFIRMED<small>FULL</small></div></div>
+          <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB SAC Tournament · Stonecreek · 95 days out</strong><small>Stonecreek Arena · 10 of 18 workstreams</small></div><div class="ri-stat info">PLAN<small>+ 95D</small></div></div>
+          <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB · Local LE coordination meeting (Stonecreek PD)</strong><small>Scheduled Jan 12 · venue + perimeter</small></div><div class="ri-stat info">SCHEDULED<small>JAN 12</small></div></div>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>Baseball · Summit Diamond · 6-day tournament</strong><small>May 19–24 · 3 of 16 workstreams complete · early phase</small></div><div class="ri-stat info">PLAN<small>+ 6 MO</small></div></div>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>Baseball · RFQ phase for tournament services</strong><small>Concessions + media · 2 of 5 bids received</small></div><div class="ri-stat info">RFQ<small>2/5</small></div></div>
+          <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>Softball SAC Tournament · Lexington, KY (Hillstone Sports Complex)</strong><small>May 6–10 · 2 of 14 workstreams · early phase</small></div><div class="ri-stat info">PLAN<small>+ 5 MO</small></div></div>
+          <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>SB · HC host venue walk scheduled</strong><small>Feb 15 · ops + AD + SAC team</small></div><div class="ri-stat info">SCHEDULED<small>FEB 15</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>VB SAC Tournament · LIVE · Reed Arena</strong><small>Nov 21–24 · semifinal tonight 8 PM</small></div><div class="ri-stat good">LIVE<small>SEMIS</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>VB · Trophy ceremony team activated</strong><small>Champion to be presented Sunday at 6 PM CT</small></div><div class="ri-stat info">ACTIVE<small>SUN 6 PM</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Swimming &amp; Diving SAC Champ · Westbrook (JSAC)</strong><small>Feb 17–21 · 2 of 5 RFQs in</small></div><div class="ri-stat info">PLAN<small>+ 90D</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Gymnastics SAC Champ · Portsmouth (Legacy Arena)</strong><small>March 21 · 4 of 16 workstreams complete</small></div><div class="ri-stat info">PLAN<small>+ 4 MO</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Equestrian SAC Cup · Hillstone City · March 26–29</strong><small>2 of 10 workstreams complete · early phase</small></div><div class="ri-stat info">PLAN<small>+ 4 MO</small></div></div>
+          <div data-sport-empty hidden class="sport-empty"><strong>No championship for this sport right now</strong>Try selecting another sport — or All Sports to see the full slate.</div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>SACCG · 18 Workstreams</h3>
+            <span class="h-meta">14 green · 3 yellow · 1 red</span>
+            <div class="spacer"></div>
+            <span class="h-action">Gantt view →</span>
+          </div>
+          <div>
+            <div class="wl-row">
+              <span class="wl-icon">V</span>
+              <div class="wl-info"><strong>Venue Operations</strong><small>MBS staging, signage, locker room build</small></div>
+              <span class="cs-confirmed">GREEN</span>
+              <div class="wl-prog">100%<small>R. LIN</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">B</span>
+              <div class="wl-info"><strong>Broadcast Coordination</strong><small>Apex production + SACN ancillary feeds</small></div>
+              <span class="cs-confirmed">GREEN</span>
+              <div class="wl-prog">96%<small>K. BROOKS</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">T</span>
+              <div class="wl-info"><strong>Ticketing &amp; Box Office</strong><small>71K tickets · school + neutral distro</small></div>
+              <span class="cs-confirmed">GREEN</span>
+              <div class="wl-prog">98%<small>M. ALI</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">C</span>
+              <div class="wl-info"><strong>Credentialing</strong><small>1,420 credentials issued · 80 pending</small></div>
+              <span class="cs-confirmed">GREEN</span>
+              <div class="wl-prog">94%<small>S. PHAM</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">S</span>
+              <div class="wl-info"><strong>Security &amp; Joint Command</strong><small>SACP + APD + venue ops walkthrough done</small></div>
+              <span class="cs-confirmed">GREEN</span>
+              <div class="wl-prog">100%<small>J. ARMSTEAD</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">H</span>
+              <div class="wl-info"><strong>Hospitality / VIP Suites</strong><small>Vendor swap underway after caterer breach</small></div>
+              <span class="cs-danger">RED</span>
+              <div class="wl-prog" style="color:var(--danger);">42%<small>J. PARK</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">Tr</span>
+              <div class="wl-info"><strong>Transportation</strong><small>Team buses confirmed · media shuttles pending</small></div>
+              <span class="cs-pending">YELLOW</span>
+              <div class="wl-prog" style="color:var(--warn);">71%<small>D. ORTIZ</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">Vo</span>
+              <div class="wl-info"><strong>Volunteer Onboarding</strong><small>412 of 480 onboarded · push to 480 by 12/1</small></div>
+              <span class="cs-pending">YELLOW</span>
+              <div class="wl-prog" style="color:var(--warn);">86%<small>R. TAYLOR</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">A</span>
+              <div class="wl-info"><strong>ADA &amp; Accessible Seating</strong><small>Awaiting MBS final wheelchair routing</small></div>
+              <span class="cs-pending">YELLOW</span>
+              <div class="wl-prog" style="color:var(--warn);">68%<small>R. LIN</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">M</span>
+              <div class="wl-info"><strong>Media Workroom &amp; Pressers</strong><small>Workroom layout signed · pre-game presser plan</small></div>
+              <span class="cs-confirmed">GREEN</span>
+              <div class="wl-prog">92%<small>L. STERN</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">F</span>
+              <div class="wl-info"><strong>FanFare / Activation Zone</strong><small>Centennial Park footprint approved by city</small></div>
+              <span class="cs-confirmed">GREEN</span>
+              <div class="wl-prog">88%<small>K. ELLIS</small></div>
+            </div>
+            <div class="wl-row">
+              <span class="wl-icon">+8</span>
+              <div class="wl-info"><strong>8 additional workstreams</strong><small>Trophy ceremony, post-game, weather, signage, F&amp;B, sponsor, awards, parade</small></div>
+              <span class="cs-confirmed">VARIOUS</span>
+              <div class="wl-prog">→</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Hospitality Vendor Swap · RED</h3>
+            <span class="h-meta">Open since 11/19 · ETA 11/26</span>
+            <div class="spacer"></div>
+            <span class="h-action">Open IR-26-041 →</span>
+          </div>
+          <div class="panel-pad">
+            <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.25);border-left:4px solid var(--danger);padding:14px;border-radius:3px;margin-bottom:14px;">
+              <div style="font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--danger);font-weight:700;margin-bottom:6px;">CRITICRI · VENDOR INCIDENT</div>
+              <div style="font-size:.86rem;color:#fff;line-height:1.5;font-weight:500;margin-bottom:6px;">Primary VIP caterer (Magnolia Hospitality) cancelled 11/18 after data breach notification. Replacement RFQ closed 11/22, vendor selection in final review.</div>
+              <div style="font-size:.74rem;color:var(--muted);">Owner: J. Park · Escalated to: D. Hartley, E. Whitfield</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px;font-size:.78rem;padding:8px 0;border-bottom:1px solid var(--line);"><span style="color:var(--muted);">Vendor RFQs received</span><span class="mono" style="color:var(--gold-soft);font-weight:600;">4 / 5</span></div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px;font-size:.78rem;padding:8px 0;border-bottom:1px solid var(--line);"><span style="color:var(--muted);">Insurance &amp; security review</span><span class="mono" style="color:var(--good);font-weight:600;">COMPLETE</span></div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px;font-size:.78rem;padding:8px 0;border-bottom:1px solid var(--line);"><span style="color:var(--muted);">Menu approval (Brand)</span><span class="mono" style="color:var(--warn);font-weight:600;">11/24 ETA</span></div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px;font-size:.78rem;padding:8px 0;border-bottom:1px solid var(--line);"><span style="color:var(--muted);">Contract sign + deposit</span><span class="mono" style="color:var(--warn);font-weight:600;">11/26 TARGET</span></div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:10px;font-size:.78rem;padding:8px 0;"><span style="color:var(--muted);">Slip-day buffer to event</span><span class="mono" style="color:var(--good);font-weight:600;">10 days</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>All 21 Championships · '26 Cycle</h3>
+            <span class="h-meta">3 live · 5 upcoming · 9 planning</span>
+            <div class="spacer"></div>
+            <span class="h-action">Calendar →</span>
+          </div>
+          <div class="panel-pad" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Football</span><span class="st-status up">14d</span></div>
+              <span class="st-venue">Capital City Stadium · Capital City</span>
+              <span class="st-date">DEC 6, 2026</span>
+              <div class="st-row"><span>Tickets sold</span><strong>71K / 71K</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Volleyball</span><span class="st-status live">LIVE</span></div>
+              <span class="st-venue">Kestrel State (Reed Arena)</span>
+              <span class="st-date">NOV 21–24</span>
+              <div class="st-row"><span>Semifinal</span><strong>tonight</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Cross Country</span><span class="st-status done">CLOSED</span></div>
+              <span class="st-venue">Atlantic City, FL</span>
+              <span class="st-date">OCT 31</span>
+              <div class="st-row"><span>Final report</span><strong>filed</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Soccer</span><span class="st-status done">CLOSED</span></div>
+              <span class="st-venue">Coastal Bay, FL</span>
+              <span class="st-date">NOV 3–10</span>
+              <div class="st-row"><span>Final report</span><strong>filed</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Swimming &amp; Diving</span><span class="st-status plan">PLAN</span></div>
+              <span class="st-venue">Westbrook (JSAC)</span>
+              <span class="st-date">FEB 17–21</span>
+              <div class="st-row"><span>RFQ phase</span><strong>2 of 5</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Gymnastics</span><span class="st-status plan">PLAN</span></div>
+              <span class="st-venue">Portsmouth (Legacy Arena)</span>
+              <span class="st-date">MAR 21</span>
+              <div class="st-row"><span>Workstreams</span><strong>4 / 16</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Men's Basketball</span><span class="st-status up">90d</span></div>
+              <span class="st-venue">Boulder City (Bridgestone)</span>
+              <span class="st-date">MAR 11–15</span>
+              <div class="st-row"><span>Workstreams</span><strong>11 / 18</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Women's Basketball</span><span class="st-status up">95d</span></div>
+              <span class="st-venue">Stonecreek (Bon Secours)</span>
+              <span class="st-date">MAR 4–8</span>
+              <div class="st-row"><span>Workstreams</span><strong>10 / 18</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Baseball (Summit Park)</span><span class="st-status plan">PLAN</span></div>
+              <span class="st-venue">Summit Diamond</span>
+              <span class="st-date">MAY 19–24</span>
+              <div class="st-row"><span>Workstreams</span><strong>3 / 16</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">Softball</span><span class="st-status plan">PLAN</span></div>
+              <span class="st-venue">Lexington, KY (Hillstone Sports Complex)</span>
+              <span class="st-date">MAY 6–10</span>
+              <div class="st-row"><span>Workstreams</span><strong>2 / 14</strong></div>
+            </div>
+            <div class="sport-tile">
+              <div class="sport-tile-head"><span class="st-sport">+ 11 more</strong></span><span class="st-status plan">PLAN</span></div>
+              <span class="st-venue">Tennis · Track · Golf · Equestrian · Rowing</span>
+              <span class="st-date">SPRING '26</span>
+              <div class="st-row"><span>View all</span><strong>→</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Volunteer Onboarding</h3>
+            <span class="h-meta">SACCG · 412 / 480</span>
+            <div class="spacer"></div>
+            <span class="h-action">Open shifts →</span>
+          </div>
+          <div class="panel-pad">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <div class="spark-bar-row"><span>Game Day Operations</span><span class="mono" style="color:var(--gold-soft);">142/150</span></div>
+                <div class="spark-bar"><div class="spark-bar-fill good" style="width:95%"></div></div>
+              </div>
+              <div>
+                <div class="spark-bar-row"><span>Media Workroom</span><span class="mono" style="color:var(--gold-soft);">38/40</span></div>
+                <div class="spark-bar"><div class="spark-bar-fill good" style="width:95%"></div></div>
+              </div>
+              <div>
+                <div class="spark-bar-row"><span>Hospitality / Suites</span><span class="mono" style="color:var(--warn);">62/80</span></div>
+                <div class="spark-bar"><div class="spark-bar-fill warn" style="width:78%"></div></div>
+              </div>
+              <div>
+                <div class="spark-bar-row"><span>FanFare / Activation Zone</span><span class="mono" style="color:var(--gold-soft);">86/100</span></div>
+                <div class="spark-bar"><div class="spark-bar-fill" style="width:86%"></div></div>
+              </div>
+              <div>
+                <div class="spark-bar-row"><span>Wayfinding &amp; ADA</span><span class="mono" style="color:var(--warn);">42/60</span></div>
+                <div class="spark-bar"><div class="spark-bar-fill warn" style="width:70%"></div></div>
+              </div>
+              <div>
+                <div class="spark-bar-row"><span>Trophy Ceremony &amp; Locker Room</span><span class="mono" style="color:var(--gold-soft);">22/30</span></div>
+                <div class="spark-bar"><div class="spark-bar-fill" style="width:73%"></div></div>
+              </div>
+              <div>
+                <div class="spark-bar-row"><span>Security Augmentation</span><span class="mono" style="color:var(--good);">20/20</span></div>
+                <div class="spark-bar"><div class="spark-bar-fill good" style="width:100%"></div></div>
+              </div>
+              <div style="padding-top:8px;border-top:1px solid var(--line);font-size:.74rem;color:var(--muted);display:flex;justify-content:space-between;">
+                <span>Background-check pass rate</span><span class="mono" style="color:var(--good);font-weight:700;">98.4%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Hotel Block · SACCG</h3>
+            <span class="h-meta">1,840 nights · 12 properties</span>
+            <div class="spacer"></div>
+            <span class="h-action">Manage block →</span>
+          </div>
+          <div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Omni Capital City CNN Center</strong><small>HQ hotel · Whitfield suite + ops · 420 nights</small></div>
+              <div class="ri-stat good">100%<small>PICKED UP</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Hyatt Regency Capital City</strong><small>Teams + officials · 380 nights</small></div>
+              <div class="ri-stat good">100%<small>PICKED UP</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Loews Capital City</strong><small>Broadcast crews · 240 nights</small></div>
+              <div class="ri-stat good">96%<small>231 / 240</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Marriott Marquis</strong><small>Sponsors + VIP · 280 nights</small></div>
+              <div class="ri-stat warn">82%<small>230 / 280</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Westin Peachtree Plaza</strong><small>Media + general · 220 nights</small></div>
+              <div class="ri-stat good">94%<small>207 / 220</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>+ 7 additional properties</strong><small>Conference staff overflow, school groups</small></div>
+              <div class="ri-stat info">300<small>NIGHTS</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>Block release deadline</strong><small>Unsold nights release to public 11/29</small></div>
+              <div class="ri-stat warn">7 days<small>TO ACT</small></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      </div><!-- /overview -->
+
+      <div data-tab-panel="all" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>All 21 SAC Championships · '26 Cycle</h3><span class="h-meta">3 live · 5 upcoming · 13 planning</span><div class="spacer"></div><span class="h-action">Calendar →</span></div>
+          <div class="panel-pad" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;">
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Football (SACCG)</span><span class="st-status up">14d</span></div><span class="st-venue">Capital City Stadium · Capital City</span><span class="st-date">DEC 5, 2026</span><div class="st-row"><span>Tickets sold</span><strong>71K / 71K</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Volleyball</span><span class="st-status live">LIVE</span></div><span class="st-venue">Kestrel State (Reed Arena)</span><span class="st-date">NOV 21–24</span><div class="st-row"><span>Semifinal</span><strong>tonight</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Cross Country</span><span class="st-status done">CLOSED</span></div><span class="st-venue">Atlantic City, FL</span><span class="st-date">OCT 31</span><div class="st-row"><span>Final report</span><strong>filed</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Soccer</span><span class="st-status done">CLOSED</span></div><span class="st-venue">Coastal Bay, FL</span><span class="st-date">NOV 3–10</span><div class="st-row"><span>Final report</span><strong>filed</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Swimming &amp; Diving</span><span class="st-status plan">PLAN</span></div><span class="st-venue">Westbrook (JSAC)</span><span class="st-date">FEB 17–21</span><div class="st-row"><span>RFQ phase</span><strong>2 of 5</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Gymnastics</span><span class="st-status plan">PLAN</span></div><span class="st-venue">Portsmouth (Legacy Arena)</span><span class="st-date">MAR 21</span><div class="st-row"><span>Workstreams</span><strong>4 / 16</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Men's Basketball</span><span class="st-status up">90d</span></div><span class="st-venue">Boulder City (Bridgestone)</span><span class="st-date">MAR 11–15</span><div class="st-row"><span>Workstreams</span><strong>11 / 18</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Women's Basketball</span><span class="st-status up">95d</span></div><span class="st-venue">Stonecreek (Bon Secours)</span><span class="st-date">MAR 4–8</span><div class="st-row"><span>Workstreams</span><strong>10 / 18</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Baseball (Summit Park)</span><span class="st-status plan">PLAN</span></div><span class="st-venue">Summit Diamond</span><span class="st-date">MAY 19–24</span><div class="st-row"><span>Workstreams</span><strong>3 / 16</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Softball</span><span class="st-status plan">PLAN</span></div><span class="st-venue">Lexington, KY (Hillstone Sports Complex)</span><span class="st-date">MAY 6–10</span><div class="st-row"><span>Workstreams</span><strong>2 / 14</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Tennis (M/W)</span><span class="st-status plan">PLAN</span></div><span class="st-venue">Boulder City</span><span class="st-date">APR 16–19</span><div class="st-row"><span>Workstreams</span><strong>1 / 12</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Track &amp; Field (outdoor)</span><span class="st-status plan">PLAN</span></div><span class="st-venue">Caldwell City</span><span class="st-date">MAY 14–16</span><div class="st-row"><span>Workstreams</span><strong>2 / 12</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Golf (M/W)</span><span class="st-status plan">PLAN</span></div><span class="st-venue">Sea Island, GA</span><span class="st-date">APR 21–26</span><div class="st-row"><span>Workstreams</span><strong>1 / 10</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Equestrian</span><span class="st-status plan">PLAN</span></div><span class="st-venue">Hillstone City, KY</span><span class="st-date">MAR 26–29</span><div class="st-row"><span>Workstreams</span><strong>2 / 10</strong></div></div>
+            <div class="sport-tile"><div class="sport-tile-head"><span class="st-sport">Rowing</span><span class="st-status plan">PLAN</span></div><span class="st-venue">Oak Ridge, MV</span><span class="st-date">MAY 9–10</span><div class="st-row"><span>Workstreams</span><strong>1 / 8</strong></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="volunteers" hidden>
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Volunteer Onboarding · SACCG</h3><span class="h-meta">412 / 480 onboarded</span><div class="spacer"></div><span class="h-action">Open shifts →</span></div>
+            <div class="panel-pad" style="display:flex;flex-direction:column;gap:14px;">
+              <div><div class="spark-bar-row"><span>Game Day Operations</span><span class="mono" style="color:var(--gold-soft);">142/150</span></div><div class="spark-bar"><div class="spark-bar-fill good" style="width:95%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Media Workroom</span><span class="mono" style="color:var(--gold-soft);">38/40</span></div><div class="spark-bar"><div class="spark-bar-fill good" style="width:95%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Hospitality / Suites</span><span class="mono" style="color:var(--warn);">62/80</span></div><div class="spark-bar"><div class="spark-bar-fill warn" style="width:78%"></div></div></div>
+              <div><div class="spark-bar-row"><span>FanFare / Activation Zone</span><span class="mono" style="color:var(--gold-soft);">86/100</span></div><div class="spark-bar"><div class="spark-bar-fill" style="width:86%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Wayfinding &amp; ADA</span><span class="mono" style="color:var(--warn);">42/60</span></div><div class="spark-bar"><div class="spark-bar-fill warn" style="width:70%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Trophy Ceremony &amp; Locker Room</span><span class="mono" style="color:var(--gold-soft);">22/30</span></div><div class="spark-bar"><div class="spark-bar-fill" style="width:73%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Security Augmentation</span><span class="mono" style="color:var(--good);">20/20</span></div><div class="spark-bar"><div class="spark-bar-fill good" style="width:100%"></div></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Volunteer Roster · SACCG</h3><span class="h-meta">background-check pass 98.4%</span></div>
+            <div>
+              <div class="row-item"><div class="ri-info"><strong>Recruitment source · MBS partnership</strong><small>118 volunteers from MBS event-day pool</small></div><div class="ri-stat good">CLEARED<small>100%</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Recruitment source · CAP university partners</strong><small>148 from GSU + Spelman + Morehouse</small></div><div class="ri-stat good">CLEARED<small>98%</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Recruitment source · SAC alumni network</strong><small>92 from regional SAC chapters</small></div><div class="ri-stat good">CLEARED<small>100%</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Recruitment source · Returning volunteers</strong><small>54 multi-year volunteers (SACCG '23–'25)</small></div><div class="ri-stat good">CLEARED<small>100%</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Background-check failures</strong><small>7 of 419 · re-routed to non-restricted zones</small></div><div class="ri-stat warn">RE-ROUTED<small>1.7%</small></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="hospitality" hidden>
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Hotel Block · SACCG</h3><span class="h-meta">1,840 nights · 12 properties</span><div class="spacer"></div><span class="h-action">Manage block →</span></div>
+            <div>
+              <div class="row-item"><div class="ri-info"><strong>Omni Capital City CNN Center</strong><small>HQ hotel · Whitfield suite + ops · 420 nights</small></div><div class="ri-stat good">100%<small>PICKED UP</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Hyatt Regency Capital City</strong><small>Teams + officials · 380 nights</small></div><div class="ri-stat good">100%<small>PICKED UP</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Loews Capital City</strong><small>Broadcast crews · 240 nights</small></div><div class="ri-stat good">96%<small>231 / 240</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Marriott Marquis</strong><small>Sponsors + VIP · 280 nights</small></div><div class="ri-stat warn">82%<small>230 / 280</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Westin Peachtree Plaza</strong><small>Media + general · 220 nights</small></div><div class="ri-stat good">94%<small>207 / 220</small></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>VIP Hospitality · Vendor Status</h3><span class="h-meta">RED workstream · ETA 11/26</span></div>
+            <div class="panel-pad" style="font-size:.84rem;color:rgba(255,255,255,.85);line-height:1.55;">
+              <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.25);border-left:4px solid var(--danger);padding:14px;border-radius:3px;margin-bottom:14px;">
+                <div style="font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--danger);font-weight:700;margin-bottom:6px;">CRITICRI · VENDOR INCIDENT</div>
+                <div style="font-size:.86rem;color:#fff;line-height:1.5;font-weight:500;margin-bottom:6px;">Primary VIP caterer (Magnolia Hospitality) cancelled 11/18 after data breach notification. Replacement vendor in final review.</div>
+                <div style="font-size:.74rem;color:var(--muted);">Owner: J. Park · Escalated to: D. Hartley, E. Whitfield</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px;font-size:.78rem;">
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);"><span style="color:var(--muted);">Vendor RFQs received</span><span class="mono" style="color:var(--gold-soft);font-weight:600;">4 / 5</span></div>
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);"><span style="color:var(--muted);">Insurance &amp; security review</span><span class="mono" style="color:var(--good);font-weight:600;">COMPLETE</span></div>
+                <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);"><span style="color:var(--muted);">Menu approval (Brand)</span><span class="mono" style="color:var(--warn);font-weight:600;">11/24 ETA</span></div>
+                <div style="display:flex;justify-content:space-between;padding:6px 0;"><span style="color:var(--muted);">Slip-day buffer to event</span><span class="mono" style="color:var(--good);font-weight:600;">10 days</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="ticketing" hidden>
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>SACCG Ticketing · 71,000 capacity</h3><span class="h-meta">distribution + sales status</span><div class="spacer"></div><span class="h-action">Box office →</span></div>
+            <div>
+              <div class="row-item"><div class="ri-info"><strong>Participating schools (2× 17,000)</strong><small>34,000 to school allotments · pre-sold</small></div><div class="ri-stat good">100%<small>34K / 34K</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>SAC office &amp; member-school allotments</strong><small>4,200 across non-participating schools</small></div><div class="ri-stat good">100%<small>4.2K</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Public sale (general)</strong><small>26,800 · single-game public on-sale</small></div><div class="ri-stat good">100%<small>26.8K</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Sponsor &amp; VIP suites</strong><small>3,800 across 64 suites + premium clubs</small></div><div class="ri-stat good">100%<small>3.8K</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Media &amp; staff comp</strong><small>1,800 across broadcast + ops</small></div><div class="ri-stat good">100%<small>1.8K</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Resale market activity (StubHub avg)</strong><small>Get-in price $384 · upper-bowl avg</small></div><div class="ri-stat info">$384<small>AVG GET-IN</small></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Mobile Ticketing Readiness</h3><span class="h-meta">Apple/Google Wallet · 71K issued</span></div>
+            <div class="panel-pad" style="display:flex;flex-direction:column;gap:14px;">
+              <div><div class="spark-bar-row"><span>Mobile delivery completion</span><span class="mono" style="color:var(--good);">98%</span></div><div class="spark-bar"><div class="spark-bar-fill good" style="width:98%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Wallet add-rate</span><span class="mono" style="color:var(--gold-soft);">82%</span></div><div class="spark-bar"><div class="spark-bar-fill" style="width:82%"></div></div></div>
+              <div><div class="spark-bar-row"><span>Transfer activity (past 7d)</span><span class="mono" style="color:var(--info);">14% of issued</span></div><div class="spark-bar"><div class="spark-bar-fill info" style="width:14%"></div></div></div>
+              <div style="padding-top:8px;border-top:1px solid var(--line);font-size:.74rem;color:var(--muted);"><strong style="color:#fff;display:block;margin-bottom:4px;">Gate-scan readiness</strong>MBS turnstile capacity tested 11/15. Test-run with 4,000 staff/volunteers scheduled 12/4 day-before event.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="security" hidden>
+        <div class="grid grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Joint Command · SACCG Capital City</h3><span class="h-meta">SACP + APD + GBI + FBI</span><div class="spacer"></div><span class="h-action">JOC roster →</span></div>
+            <div>
+              <div class="row-item"><div class="ri-info"><strong>SAC Police (SACP) — lead agency</strong><small>R. Castillo commanding · 64 deployed</small></div><div class="ri-stat good">CONFIRMED<small>FULL</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Capital City Police Dept (APD)</strong><small>Perimeter + traffic · 180 officers</small></div><div class="ri-stat good">CONFIRMED<small>FULL</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Hillstone State Bureau of Investigation</strong><small>Intelligence + counterterrorism liaison</small></div><div class="ri-stat good">CONFIRMED<small>8 EMB</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>FBI Capital City Field Office</strong><small>Special events coordination · liaison only</small></div><div class="ri-stat good">CONFIRMED<small>4 EMB</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>MBS Venue Security</strong><small>Internal + private contractors · 420 deployed</small></div><div class="ri-stat good">CONFIRMED<small>FULL</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>Grady EMS (medical lead)</strong><small>8 ambulances on standby · field hospital staffed</small></div><div class="ri-stat good">CONFIRMED<small>FULL</small></div></div>
+              <div class="row-item"><div class="ri-info"><strong>JOC walkthrough rehearsal</strong><small>Nov 29 · all agencies · 6hr table-top + venue walk</small></div><div class="ri-stat warn">SCHEDULED<small>11/29</small></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Threat &amp; Risk Posture</h3><span class="h-meta">DHS NTAS standard</span></div>
+            <div class="panel-pad" style="display:flex;flex-direction:column;gap:14px;font-size:.78rem;color:var(--muted);line-height:1.55;">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);"><span>DHS National Terrorism Advisory</span><span class="mono" style="color:var(--gold-soft);font-weight:700;">STANDARD</span></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);"><span>Venue threat assessment</span><span class="mono" style="color:var(--good);font-weight:700;">LOW</span></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);"><span>Cyber posture (ticketing + ops)</span><span class="mono" style="color:var(--good);font-weight:700;">HARDENED</span></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);"><span>Weather (10-day outlook)</span><span class="mono" style="color:var(--info);font-weight:700;">CLEAR</span></div>
+                <div style="display:flex;justify-content:space-between;padding:8px 0;"><span>Protest / activism intel</span><span class="mono" style="color:var(--good);font-weight:700;">NONE TRACKED</span></div>
+              </div>
+              <div style="padding-top:12px;border-top:1px solid var(--line);"><strong style="color:#fff;font-weight:500;">Crisis comms ready:</strong> Templates for evacuation, weather hold, security incident, and medical mass-casualty all pre-staged in Incident Desk.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /tabs-host -->
+
+    </div>
+  </main>
+</div>
+
+<script src="shared.js"></script>
+</body>
+</html>

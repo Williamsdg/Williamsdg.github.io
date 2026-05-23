@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22><circle cx=%2216%22 cy=%2216%22 r=%2215%22 fill=%22%23070d1e%22 stroke=%22%23c9a558%22 stroke-width=%221.5%22/><text x=%2216%22 y=%2222%22 font-family=%22serif%22 font-size=%2216%22 text-anchor=%22middle%22 fill=%22%23c9a558%22>S</text></svg>">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>School Portal — SAC Operating System</title>
+<meta name="description" content="Each SAC school's home base — requests, operations, credentials, travel, film submissions, and conference coordination." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* Quick-Submit drawer system */
+  .drawer-mask{position:fixed;inset:0;background:rgba(2,6,18,.7);backdrop-filter:blur(4px);z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+  .drawer-mask.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px, 92vw);background:#06091a;border-left:1px solid var(--line-strong);z-index:101;transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column;overflow:hidden;box-shadow:-30px 0 60px -20px rgba(0,0,0,.5)}
+  .drawer.open{transform:translateX(0)}
+  .drawer-head{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.25)}
+  .drawer-mark{width:38px;height:38px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:var(--gold-soft);background:rgba(201,165,88,.12);border:1px solid rgba(201,165,88,.25)}
+  .drawer-mark.med{color:var(--info);background:rgba(111,169,230,.15);border-color:rgba(111,169,230,.3)}
+  .drawer-mark.trv{color:var(--good);background:rgba(77,201,126,.12);border-color:rgba(77,201,126,.3)}
+  .drawer-mark.inc{color:var(--danger);background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.3)}
+  .drawer-mark.cmp{color:var(--gold-soft);background:rgba(201,165,88,.12);border-color:rgba(201,165,88,.3)}
+  .drawer-title{font-family:'Fraunces',serif;font-size:1.2rem;color:#fff;font-weight:500;line-height:1.1}
+  .drawer-title em{font-style:italic;color:var(--gold-soft);font-weight:300;display:block;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;font-family:'Inter',sans-serif}
+  .drawer-close{margin-left:auto;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1.1rem;font-weight:300;transition:.15s}
+  .drawer-close:hover{color:#fff;border-color:var(--line-strong);background:rgba(255,255,255,.08)}
+  .drawer-body{flex:1;overflow-y:auto;padding:22px 26px;display:flex;flex-direction:column;gap:18px}
+  .drawer-body::-webkit-scrollbar{width:4px}
+  .drawer-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .drawer-foot{padding:16px 26px;border-top:1px solid var(--line);background:rgba(0,0,0,.25);display:flex;align-items:center;gap:10px}
+  .drawer-foot .sla{font-size:.7rem;color:var(--muted);letter-spacing:.04em;flex:1}
+  .drawer-foot .sla strong{color:var(--gold-soft);font-weight:600}
+
+  /* Form bits */
+  .form-row{display:flex;flex-direction:column;gap:6px}
+  .form-row.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-row.split-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  .form-label{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .form-label .req{color:var(--gold-soft);margin-left:4px}
+  .form-input, .form-select, .form-textarea{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:3px;color:#fff;font-family:inherit;font-size:.86rem;padding:10px 12px;outline:none;transition:.15s;width:100%}
+  .form-input:focus, .form-select:focus, .form-textarea:focus{border-color:var(--gold);background:rgba(201,165,88,.05)}
+  .form-input::placeholder, .form-textarea::placeholder{color:var(--muted-soft)}
+  .form-select{cursor:pointer;appearance:none;background-image:linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);background-position:calc(100% - 16px) 50%, calc(100% - 11px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+  .form-textarea{resize:vertical;min-height:80px;font-family:inherit;line-height:1.5}
+  .form-hint{font-size:.66rem;color:var(--muted-soft);letter-spacing:.04em;line-height:1.5}
+  .form-hint strong{color:var(--gold-soft);font-weight:600}
+
+  /* Tag chips for multi-select */
+  .chip-group{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:.7rem;letter-spacing:.05em;padding:6px 11px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:99px;cursor:pointer;color:var(--muted);font-weight:600;transition:.15s;user-select:none}
+  .chip:hover{color:#fff;border-color:var(--line-strong)}
+  .chip.on{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  /* Upload zone */
+  .upload-zone{border:1.5px dashed var(--line-strong);border-radius:3px;padding:24px;text-align:center;color:var(--muted);font-size:.82rem;cursor:pointer;transition:.15s;background:rgba(255,255,255,.02)}
+  .upload-zone:hover{border-color:var(--gold);color:#fff;background:rgba(201,165,88,.04)}
+  .upload-zone strong{color:#fff;font-weight:600;display:block;margin-bottom:4px;font-size:.86rem}
+  .upload-zone small{display:block;font-size:.66rem;color:var(--muted-soft);letter-spacing:.04em;margin-top:6px}
+
+  /* Recent submissions chip-list inside drawer */
+  .recent-list{display:flex;flex-direction:column;gap:1px;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .recent-row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 14px;background:rgba(255,255,255,.02);font-size:.76rem;align-items:center}
+  .recent-row strong{color:#fff;font-weight:500;display:block;font-size:.8rem;margin-bottom:2px}
+  .recent-row small{color:var(--muted);font-size:.68rem}
+  .recent-pill{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 7px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .recent-pill.good{background:rgba(77,201,126,.15);color:var(--good)}
+  .recent-pill.warn{background:rgba(224,184,115,.15);color:var(--warn)}
+  .recent-pill.info{background:rgba(111,169,230,.18);color:var(--info)}
+
+  /* Section heads inside drawer */
+  .ds-head{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-soft);font-weight:700;margin-top:6px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+
+  /* Pickers */
+  .picker-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;cursor:pointer;align-items:center;transition:.15s}
+  .picker-row:hover{border-color:var(--gold-soft);background:rgba(201,165,88,.05)}
+  .picker-row.on{border-color:var(--gold);background:rgba(201,165,88,.08)}
+  .picker-row strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .picker-row small{color:var(--muted);font-size:.7rem}
+  .picker-check{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--line-strong);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--navy-deep)}
+  .picker-row.on .picker-check{background:var(--gold);border-color:var(--gold);color:var(--navy-deep);font-weight:700}
+
+  /* Severity selector for incident */
+  .sev-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .sev-opt{padding:12px 8px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;cursor:pointer;text-align:center;transition:.15s}
+  .sev-opt:hover{border-color:var(--line-strong)}
+  .sev-opt.on{background:rgba(201,165,88,.1);border-color:var(--gold)}
+  .sev-opt .lbl{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:#fff;font-weight:700;letter-spacing:.06em}
+  .sev-opt .desc{font-size:.6rem;color:var(--muted-soft);letter-spacing:.04em;margin-top:5px;line-height:1.3}
+  .sev-opt.s1.on{border-color:var(--danger);background:rgba(255,107,107,.1)}
+  .sev-opt.s1.on .lbl{color:var(--danger)}
+  .sev-opt.s2.on{border-color:var(--warn);background:rgba(224,184,115,.1)}
+  .sev-opt.s2.on .lbl{color:var(--warn)}
+  .sev-opt.s3.on .lbl{color:var(--info)}
+  .sev-opt.s4.on .lbl{color:var(--muted)}
+
+  /* Quick submit list shown in panel */
+  .qs-btn{justify-content:flex-start !important;padding:14px 16px !important;display:flex !important;align-items:center !important;gap:12px !important;width:100%;background:rgba(255,255,255,.03);border:1px solid var(--line);text-align:left}
+  .qs-btn:hover{border-color:var(--gold-soft);color:#fff !important;background:rgba(201,165,88,.05)}
+  .qs-btn .qs-icon{width:28px;height:28px;border-radius:3px;display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:var(--gold-soft);background:rgba(201,165,88,.12);border:1px solid rgba(201,165,88,.25);flex-shrink:0}
+  .qs-btn .qs-body{display:flex;flex-direction:column;gap:2px;flex:1}
+  .qs-btn .qs-title{font-size:.82rem;font-weight:600;color:#fff;letter-spacing:.02em;text-transform:none}
+  .qs-btn .qs-sub{font-size:.66rem;color:var(--muted);font-weight:500;letter-spacing:.04em;text-transform:none}
+  .qs-btn .qs-arrow{color:var(--muted-soft);font-size:.85rem}
+  .qs-btn.gold{background:linear-gradient(135deg, var(--gold), var(--gold-deep));border-color:var(--gold);color:var(--navy-deep) !important}
+  .qs-btn.gold .qs-icon{background:rgba(7,13,30,.2);border-color:rgba(7,13,30,.3);color:var(--navy-deep)}
+  .qs-btn.gold .qs-title{color:var(--navy-deep)}
+  .qs-btn.gold .qs-sub{color:rgba(7,13,30,.7)}
+  .qs-btn.gold .qs-arrow{color:rgba(7,13,30,.6)}
+
+  /* Toast */
+  .toast{position:fixed;bottom:24px;right:24px;background:rgba(7,13,30,.95);border:1px solid var(--good);border-left:4px solid var(--good);border-radius:3px;padding:14px 20px;color:#fff;font-size:.84rem;font-weight:500;z-index:200;transform:translateY(20px);opacity:0;transition:.25s;display:flex;align-items:center;gap:12px;max-width:380px;box-shadow:0 14px 30px -10px rgba(0,0,0,.5)}
+  .toast.show{transform:translateY(0);opacity:1}
+  .toast .ic{width:24px;height:24px;border-radius:50%;background:rgba(77,201,126,.15);color:var(--good);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+  .toast strong{display:block;font-weight:600;margin-bottom:2px}
+  .toast small{display:block;color:var(--muted);font-size:.68rem;letter-spacing:.04em;font-weight:500}
+
+  .school-switcher{display:flex;align-items:center;gap:12px;padding:16px 22px;background:linear-gradient(135deg, rgba(191,87,0,.18), rgba(7,13,30,.5));border:1px solid rgba(191,87,0,.3);border-radius:3px;margin-bottom:22px}
+  .school-helmet-lg{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1.25rem;font-weight:600;color:#fff;background:#1a3a5c;border:2px solid rgba(255,255,255,.2);flex-shrink:0}
+  .school-name-block h2{font-family:'Fraunces',serif;font-size:1.4rem;color:#fff;font-weight:500;line-height:1.05;margin-bottom:3px}
+  .school-name-block p{font-size:.76rem;color:var(--muted);letter-spacing:.04em}
+  .school-name-block p strong{color:#fff;font-weight:600}
+  .school-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .school-chip{display:flex;align-items:center;gap:7px;padding:7px 12px;background:rgba(255,255,255,.06);border:1px solid var(--line-strong);border-radius:99px;font-size:.7rem;color:#fff;font-weight:600;letter-spacing:.04em;cursor:pointer}
+  .school-chip:hover{border-color:var(--gold);color:var(--gold-soft)}
+  .school-chip.active{background:var(--gold);color:var(--navy-deep);border-color:var(--gold)}
+
+  /* === School switcher dropdown === */
+  .school-switcher{position:relative}
+  .school-picker{position:relative}
+  .school-picker-trigger{display:flex;align-items:center;gap:7px;padding:7px 12px;background:rgba(255,255,255,.06);border:1px solid var(--line-strong);border-radius:99px;font-size:.7rem;color:#fff;font-weight:600;letter-spacing:.04em;cursor:pointer}
+  .school-picker-trigger:hover{border-color:var(--gold-soft);color:var(--gold-soft)}
+  .school-picker-menu{position:absolute;top:calc(100% + 6px);right:0;width:280px;max-height:380px;overflow-y:auto;background:rgba(7,13,30,.98);border:1px solid var(--line-strong);border-radius:4px;box-shadow:0 20px 40px -16px rgba(0,0,0,.6);z-index:60;display:none;backdrop-filter:blur(8px);padding:6px}
+  .school-picker-menu.open{display:block}
+  .school-picker-menu::-webkit-scrollbar{width:4px} .school-picker-menu::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+  .school-pick-item{display:grid;grid-template-columns:32px 1fr auto;gap:10px;padding:8px 10px;align-items:center;cursor:pointer;border-radius:3px;transition:.12s}
+  .school-pick-item:hover{background:rgba(201,165,88,.08)}
+  .school-pick-item.active{background:rgba(201,165,88,.16)}
+  .school-pick-helm{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;color:#fff;font-weight:600;font-size:.66rem;flex-shrink:0}
+  .school-pick-name{font-size:.82rem;color:#fff;font-weight:500}
+  .school-pick-name small{display:block;color:var(--muted);font-size:.66rem;letter-spacing:.04em;margin-top:1px}
+  .school-pick-check{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-size:.74rem;font-weight:700}
+
+  /* === SAC Response Time panel (what's owed back) === */
+  .sec-resp-panel{margin-bottom:14px;padding:14px 18px;background:linear-gradient(90deg, rgba(58,90,122,.14), rgba(7,13,30,.5) 80%);border:1px solid rgba(58,90,122,.3);border-left:4px solid var(--info);border-radius:3px;display:flex;align-items:center;gap:14px;font-size:.84rem;color:#fff;flex-wrap:wrap}
+  .sec-resp-panel .srp-icon{width:32px;height:32px;border-radius:50%;background:rgba(58,90,122,.2);color:var(--info);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+  .sec-resp-panel strong{color:#fff;font-weight:600}
+  .sec-resp-panel em{font-style:normal;color:var(--muted);font-size:.78rem;display:block;margin-top:2px}
+  .srp-meta{display:flex;gap:14px;margin-left:auto;font-size:.7rem;color:var(--muted);letter-spacing:.04em;font-family:'JetBrains Mono',monospace}
+  .srp-meta strong{color:var(--good);font-weight:700}
+  .srp-meta strong.warn{color:var(--warn)}
+
+  .req-row{display:grid;grid-template-columns:80px 1fr 80px 80px;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem;cursor:pointer;transition:.15s}
+  .req-row:last-child{border-bottom:none}
+  .req-row:hover{background:rgba(201,165,88,.05)}
+  .req-type{font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:2px;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:center}
+  .rt-cred{background:rgba(111,169,230,.18);color:var(--info)}
+  .rt-film{background:rgba(224,184,115,.18);color:var(--warn)}
+  .rt-media{background:rgba(201,165,88,.15);color:var(--gold-soft)}
+  .rt-travel{background:rgba(77,201,126,.12);color:var(--good)}
+  .rt-ops{background:rgba(255,107,107,.12);color:var(--danger)}
+  .req-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .req-info small{color:var(--muted);font-size:.7rem}
+  .req-when{font-family:'JetBrains Mono',monospace;color:var(--gold-soft);font-weight:600;text-align:right;font-size:.72rem}
+  .req-when small{display:block;font-size:.58rem;color:var(--muted-soft);letter-spacing:.1em;margin-top:2px;font-weight:500}
+  .req-status{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;font-family:'JetBrains Mono',monospace;text-align:right;color:var(--muted)}
+  .req-status.open{color:var(--warn)}
+  .req-status.done{color:var(--good)}
+  .req-status.live{color:var(--live)}
+
+  .sport-card{padding:14px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:3px;display:flex;flex-direction:column;gap:6px}
+  .sport-card-head{display:flex;align-items:center;justify-content:space-between}
+  .sc-sport{font-family:'Fraunces',serif;font-size:.92rem;color:#fff;font-weight:500}
+  .sc-rec{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--gold-soft);font-weight:700}
+  .sc-line{font-size:.7rem;color:var(--muted);letter-spacing:.04em;display:flex;justify-content:space-between}
+  .sc-line strong{color:#fff;font-weight:500}
+
+  .upcoming-row{display:grid;grid-template-columns:60px 1fr auto;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .upcoming-row:last-child{border-bottom:none}
+  .up-date{display:flex;flex-direction:column;align-items:center;text-align:center;padding:4px 0;background:rgba(201,165,88,.08);border-radius:2px;border:1px solid rgba(201,165,88,.2)}
+  .up-day{font-family:'Fraunces',serif;font-size:1rem;color:var(--gold-soft);font-weight:500;line-height:1}
+  .up-mo{font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-top:3px}
+  .up-info strong{color:#fff;font-weight:500;display:block;font-size:.82rem;margin-bottom:2px}
+  .up-info small{color:var(--muted);font-size:.7rem}
+  .up-net{font-family:'Fraunces',serif;font-size:.68rem;font-weight:700;color:var(--gold-soft);padding:3px 6px;background:rgba(201,165,88,.1);border:1px solid rgba(201,165,88,.25);border-radius:2px;text-align:center;letter-spacing:.04em}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="side-brand" href="index.html">
+      <div class="side-mark">S</div>
+      <div class="side-name">SAC OS<em>Operating System</em></div>
+    </a>
+    <div class="side-section">
+      <h5>Operations</h5>
+      <ul class="side-nav">
+        <li><a href="ops-center.html"><span class="ic">◉</span>Live Ops Center<span class="badge live">2</span></a></li>
+        <li><a href="officials.html"><span class="ic">▦</span>Officials<span class="badge">14</span></a></li>
+        <li><a href="film-portal.html"><span class="ic">▶</span>Film Portal<span class="badge">9</span></a></li>
+        <li><a href="comms.html"><span class="ic">●</span>Comms Hub</a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Operations Suite</h5>
+      <ul class="side-nav">
+        <li><a href="scheduling.html"><span class="ic">▭</span>Scheduling</a></li>
+        <li><a href="championships.html"><span class="ic">▣</span>Championships</a></li>
+        <li><a href="media-hub.html"><span class="ic">▤</span>Media Hub</a></li>
+        <li><a href="incidents.html"><span class="ic">⚠</span>Incidents</a></li>
+        <li><a href="social.html"><span class="ic">◎</span>Social Listening<span class="badge">7</span></a></li>
+      </ul>
+    </div>
+    <div class="side-section">
+      <h5>Executive</h5>
+      <ul class="side-nav">
+        <li><a href="analytics.html"><span class="ic">▥</span>Analytics</a></li>
+        <li><a href="compliance.html"><span class="ic">§</span>Compliance</a></li>
+        <li><a href="school-portal.html" class="active"><span class="ic">▦</span>School Portal</a></li>
+      </ul>
+    </div>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="user-avatar">AH</div>
+        <div>
+          <div class="user-name">P. Quinn</div>
+          <div class="user-role">Dir of FB Ops · WB</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumb">Executive · <strong>School Portal</strong></div>
+      <div class="topbar-spacer"></div>
+      <div class="top-actions">
+        <button class="btn">+ New Request</button>
+        <button class="btn">Travel Desk</button>
+        <button class="btn btn-gold">Submit to Film Portal</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="school-switcher">
+        <div class="school-helmet-lg" id="schHelm">WB</div>
+        <div class="school-name-block">
+          <h2 id="schName">Westbrook University · <em>Athletics</em></h2>
+          <p id="schMeta"><strong>Director:</strong> M. Beaumont · <strong>SAC liaison:</strong> P. Quinn · <strong>21 sports</strong> · 540 student-athletes</p>
+        </div>
+        <div class="school-actions">
+          <div class="school-picker">
+            <span class="school-picker-trigger" onclick="toggleSchoolPicker()">
+              <span id="schPickName">Westbrook</span> ▾
+            </span>
+            <div class="school-picker-menu" id="schPickMenu">
+              <div class="school-pick-item active" onclick="pickSchool('wb')" data-key="wb"><span class="school-pick-helm" style="background:#1a3a5c;">WB</span><span class="school-pick-name">Westbrook University<small>Mariners · Portsmouth, RI · est. 1847</small></span><span class="school-pick-check">✓</span></div>
+              <div class="school-pick-item" onclick="pickSchool('ls')" data-key="ls"><span class="school-pick-helm" style="background:#2d5016;">LS</span><span class="school-pick-name">Liberty State University<small>Bobcats · Concord, NH · est. 1856</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('nt')" data-key="nt"><span class="school-pick-helm" style="background:#862633;">NT</span><span class="school-pick-name">Northland Tech<small>Falcons · Duluth, MN · est. 1881</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('cc')" data-key="cc"><span class="school-pick-helm" style="background:#1b365d;">CC</span><span class="school-pick-name">Caldwell College<small>Hawks · Asheville, NC · est. 1872</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('fv')" data-key="fv"><span class="school-pick-helm" style="background:#4a5568;">FV</span><span class="school-pick-name">Fairview University<small>Wolves · Boulder, CO · est. 1869</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('pr')" data-key="pr"><span class="school-pick-helm" style="background:#2c5530;">PR</span><span class="school-pick-name">Pinerock State<small>Bears · Bend, OR · est. 1888</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('tc')" data-key="tc"><span class="school-pick-helm" style="background:#003366;">TC</span><span class="school-pick-name">Tidewater Coastal<small>Stingrays · Charleston, SC · est. 1894</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('mv')" data-key="mv"><span class="school-pick-helm" style="background:#722f37;">MV</span><span class="school-pick-name">Monteverde University<small>Pumas · Santa Fe, NM · est. 1875</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('hc')" data-key="hc"><span class="school-pick-helm" style="background:#1a1a2e;">HC</span><span class="school-pick-name">Hillstone College<small>Ravens · Lexington, KY · est. 1850</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('gp')" data-key="gp"><span class="school-pick-helm" style="background:#0d5d56;">GP</span><span class="school-pick-name">Glenn Park University<small>Greyhounds · Burlington, VT · est. 1865</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('at')" data-key="at"><span class="school-pick-helm" style="background:#2c3e50;">AT</span><span class="school-pick-name">Ashford Tech<small>Engineers · Pittsburgh, PA · est. 1891</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('bh')" data-key="bh"><span class="school-pick-helm" style="background:#1c2541;">BH</span><span class="school-pick-name">Bayhaven College<small>Stormpetrels · Mobile, AL · est. 1858</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('rd')" data-key="rd"><span class="school-pick-helm" style="background:#6b2737;">RD</span><span class="school-pick-name">Redmoor University<small>Wildcats · Boise, ID · est. 1879</small></span><span class="school-pick-check"></span></div>
+              <div class="school-pick-item" onclick="pickSchool('ke')" data-key="ke"><span class="school-pick-helm" style="background:#2b2d42;">KE</span><span class="school-pick-name">Kestrel State<small>Hawks · Bozeman, MT · est. 1893</small></span><span class="school-pick-check"></span></div>
+            </div>
+          </div>
+          <span class="school-chip active">Athletics</span>
+          <span class="school-chip">Compliance</span>
+          <span class="school-chip">Media Rel.</span>
+        </div>
+      </div>
+
+      <div class="ph">
+        <div>
+          <h1 id="phHeader">Westbrook · conference <em>coordination.</em></h1>
+          <div class="sub">21 active sports · 9 open conference items · 4 SAC teams in NCAA postseason</div>
+        </div>
+        <div class="ph-filters">
+          <button class="pill active">Open Items</button>
+          <button class="pill">This Week</button>
+          <button class="pill">NCAA Postseason</button>
+          <button class="pill">All Sports</button>
+        </div>
+      </div>
+
+      <!-- WHAT THE SAC OWES BACK · response-time panel -->
+      <div class="sec-resp-panel">
+        <div class="srp-icon">⟲</div>
+        <div>
+          <strong>What's the SAC office owe Westbrook back?</strong>
+          <em>3 requests with SLA approaching · 1 overdue · avg conference response time to Westbrook this season: 3.2h (target ≤ 4h)</em>
+        </div>
+        <div class="srp-meta">
+          <span>Avg response · <strong>3.2h</strong></span>
+          <span>Overdue · <strong class="warn">1</strong></span>
+          <span>Within SLA · <strong>96%</strong></span>
+        </div>
+      </div>
+
+      <div class="stat-row five">
+        <div class="stat warn"><span class="stat-label">Open Requests</span><span class="stat-value">9</span><span class="stat-delta">3 NCAA travel · 4 cred · 2 ops</span></div>
+        <div class="stat info"><span class="stat-label">Active Events · 7d</span><span class="stat-value">11</span><span class="stat-delta">7 NCAA postseason · 4 spring</span></div>
+        <div class="stat good"><span class="stat-label">Compliance Score</span><span class="stat-value">100 <small>%</small></span><span class="stat-delta up">all '26 policies ack'd</span></div>
+        <div class="stat"><span class="stat-label">Film Submissions · 7d</span><span class="stat-value">3</span><span class="stat-delta">2 spring · 1 awaiting reply</span></div>
+        <div class="stat danger"><span class="stat-label">NCAA Status · BSB</span><span class="stat-value">@ Atlantic State</span><span class="stat-delta">Regional opens Fri 5/29</span></div>
+      </div>
+
+      <div class="tabs-host">
+      <div class="tabs">
+        <div class="tab active" data-tab="overview">My Workspace</div>
+        <div class="tab" data-tab="sports">All Sports</div>
+        <div class="tab" data-tab="requests">Requests</div>
+        <div class="tab" data-tab="credentials">Credentials</div>
+        <div class="tab" data-tab="travel">Travel &amp; Hotel</div>
+        <div class="tab" data-tab="comms">Conference Comms</div>
+      </div>
+
+      <div class="sport-bar">
+        <span class="sport-bar-label">Sport</span>
+        <span class="sport-pill active" data-sport="all"><span class="sp-ic">◎</span>All Sports</span>
+        <span class="sport-pill" data-sport="fb"><span class="sp-ic">●</span>Football</span>
+        <span class="sport-pill" data-sport="mbb"><span class="sp-ic">●</span>Men&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="wbb"><span class="sp-ic">●</span>Women&#x27;s Basketball</span>
+        <span class="sport-pill" data-sport="bsb"><span class="sp-ic">●</span>Baseball</span>
+        <span class="sport-pill" data-sport="sb"><span class="sp-ic">●</span>Softball</span>
+        <span class="sport-pill" data-sport="vb"><span class="sp-ic">●</span>Volleyball</span>
+        <span class="sport-pill" data-sport="other"><span class="sp-ic">○</span>Other Sports</span>
+      </div>
+
+      <div data-tab-panel="overview">
+
+      <div class="panel" style="margin-bottom:14px;">
+        <div class="panel-head"><h3>Westbrook · Conference Activity by Sport · this week</h3><span class="h-meta">filter via Sport bar above</span><div class="spacer"></div><span class="h-action">All sports →</span></div>
+        <div data-sport-scope>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>Baseball · NCAA Regional at Atlantic State (opens Fri 5/29)</strong><small>3-seed in Atlantic State Regional · charter request approved · 38 pax · 3 nights</small></div><div class="ri-stat warn">TRAVEL<small>FRI</small></div></div>
+          <div class="row-item" data-sport-row="bsb"><div class="ri-info"><strong>BSB · Summit Park SECT runner-up · AAR pending</strong><small>Lost to FV 8–2 in final · postseason eligibility locked</small></div><div class="ri-stat good">FILED<small>5/24</small></div></div>
+          <div class="row-item" data-sport-row="sb"><div class="ri-info"><strong>Softball · Season complete · advance to '27 planning</strong><small>27–24 final · missed NCAA field · postseason debrief Tue</small></div><div class="ri-stat info">CLOSED<small>'26</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>T&amp;F · NCAA Outdoor Championships (Coastal Federal City)</strong><small>3 WB athletes in field · sprints + jumps · Wed–Sat</small></div><div class="ri-stat good">LIVE<small>3 ATH</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Equestrian · '26 season complete · '27 calendar published</strong><small>NCEA SF advanced · prep meet Sep 15 · summer recruit window</small></div><div class="ri-stat info">CLOSED<small>'26</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Tennis · '26 season complete</strong><small>Men finished 4th in SAC · women 6th · summer recruiting active</small></div><div class="ri-stat info">CLOSED<small>'26</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>Golf · M&amp;W finished SAC season</strong><small>Men advanced to NCAA Regional · women missed NCAA cut</small></div><div class="ri-stat info">CLOSED<small>'26</small></div></div>
+          <div class="row-item" data-sport-row="other"><div class="ri-info"><strong>S&amp;D · '26 season complete · SAC Champ home Feb '27 ahead</strong><small>JSAC venue prep workstreams 4/16 · early planning underway</small></div><div class="ri-stat info">PLAN<small>FEB '27</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>Football · OFFSEASON · '26 season opens Aug 30</strong><small>Spring practice wrapped · recruiting calendar active · 99 days to Wk 1</small></div><div class="ri-stat info">OFFSEASON<small>+ 99D</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · The Lighthouse Rivalry '26 venue contract executed</strong><small>Westbrook host Nov 28 · Apex Game of the Week window confirmed</small></div><div class="ri-stat good">SIGNED<small>NOV 28</small></div></div>
+          <div class="row-item" data-sport-row="fb"><div class="ri-info"><strong>FB · NIL disclosure for '26 spring transfers</strong><small>3 transfers in · disclosures filed 5/15 · SAC ack'd 5/16</small></div><div class="ri-stat good">COMPLETE<small>3/3</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · OFFSEASON · '27 season opens Nov 2</strong><small>'26 season ended SAC Tourn semi · 2 transfers in · 1 out</small></div><div class="ri-stat info">OFFSEASON<small>+ 162D</small></div></div>
+          <div class="row-item" data-sport-row="mbb"><div class="ri-info"><strong>MBB · Coach Pearson contract extension filed with SAC</strong><small>2-year extension · SAC compliance ack'd 5/22</small></div><div class="ri-stat good">FILED<small>5/22</small></div></div>
+          <div class="row-item" data-sport-row="wbb"><div class="ri-info"><strong>WBB · OFFSEASON · '27 season opens Nov 5</strong><small>'26 ended SAC Tourn QF · 3 transfers in · 1 out</small></div><div class="ri-stat info">OFFSEASON<small>+ 165D</small></div></div>
+          <div class="row-item" data-sport-row="vb"><div class="ri-info"><strong>Volleyball · spring camps complete · Fall opens Aug 28</strong><small>'26 fall schedule released 5/15 · 15 conf matches</small></div><div class="ri-stat info">OFFSEASON<small>+ 97D</small></div></div>
+          <div data-sport-empty hidden class="sport-empty"><strong>No Westbrook activity for this sport this week</strong>Try selecting another sport — or All Sports to see the full slate.</div>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Open Requests · Westbrook → SAC</h3>
+            <span class="h-meta">14 items · auto-tracked</span>
+            <div class="spacer"></div>
+            <span class="h-action">New request →</span>
+          </div>
+          <div>
+            <div class="req-row">
+              <span class="req-type rt-travel">TRAVEL</span>
+              <div class="req-info"><strong>BSB · NCAA Atlantic State Regional charter</strong><small>Fri 5/29 depart · 38 pax · 3 nights · approved · in execution</small></div>
+              <div class="req-when">3d<small>SLA &lt; 24H</small></div>
+              <span class="req-status live">APPROVED</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-cred">CRED</span>
+              <div class="req-info"><strong>NCAA Regional credentials · 42 issued</strong><small>Players + staff + AD office · NCAA-coordinated</small></div>
+              <div class="req-when">1d<small>BY THU</small></div>
+              <span class="req-status open">PENDING</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-cred">CRED</span>
+              <div class="req-info"><strong>School photog · BSB Atlantic State (3 pax)</strong><small>Field + dugout access · Atlantic State athletics processing</small></div>
+              <div class="req-when">6h<small>SLA OVERDUE</small></div>
+              <span class="req-status open">OVERDUE</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-media">MEDIA</span>
+              <div class="req-info"><strong>Vista+ pre-game prod call · BSB regional</strong><small>Coach Thompson 30-min avail · Thu 11am CT</small></div>
+              <div class="req-when">1d<small>BY WED 5PM</small></div>
+              <span class="req-status open">CONFIRMED</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-ops">OPS</span>
+              <div class="req-info"><strong>'26 FB season Wk 1 prep · venue ops template</strong><small>Aug 30 opener · standard FB regular-season template request</small></div>
+              <div class="req-when">99d<small>OPEN</small></div>
+              <span class="req-status open">REVIEW</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-film">FILM</span>
+              <div class="req-info"><strong>BSB SECT final · call clarification request</strong><small>9th inning batter interference · ID BSB-26-0042</small></div>
+              <div class="req-when">2d<small>SLA 72H</small></div>
+              <span class="req-status live">IN REVIEW</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-cred">CRED</span>
+              <div class="req-info"><strong>T&amp;F · Coastal Federal City NCAA Outdoor (3 athletes)</strong><small>NCAA-managed credentials · liaison only</small></div>
+              <div class="req-when">2d<small>BY WED</small></div>
+              <span class="req-status done">ISSUED</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-ops">OPS</span>
+              <div class="req-info"><strong>SACCG '26 contingent (if WB advances)</strong><small>Capital City MBS locker room build · contingent reservation</small></div>
+              <div class="req-when">196d<small>CONTINGENT</small></div>
+              <span class="req-status open">HOLD</span>
+            </div>
+            <div class="req-row">
+              <span class="req-type rt-film">FILM</span>
+              <div class="req-info"><strong>BSB · check-swing memo · prior request closed</strong><small>SECT semi vs HC · memo received 5/22</small></div>
+              <div class="req-when">3d<small>CLOSED 2D</small></div>
+              <span class="req-status done">REPLIED</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Westbrook Sports · Live Status</h3>
+            <span class="h-meta">21 sports · in season + offseason</span>
+            <div class="spacer"></div>
+            <span class="h-action">Full athletics view →</span>
+          </div>
+          <div class="panel-pad" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Baseball</span><span class="sc-rec">41–18</span></div>
+              <div class="sc-line"><span>Status</span><strong>NCAA Regional · @ Atlantic State</strong></div>
+              <div class="sc-line"><span>Opens</span><strong>Fri 5/29 vs Pacific Tech</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Track &amp; Field</span><span class="sc-rec">LIVE NCAA</span></div>
+              <div class="sc-line"><span>NCAA Outdoor</span><strong>Coastal Federal City · Wed–Sat</strong></div>
+              <div class="sc-line"><span>WB athletes</span><strong>3 in field · sprints + jumps</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Football</span><span class="sc-rec">7–6 ('25)</span></div>
+              <div class="sc-line"><span>Status</span><strong>Spring practice complete</strong></div>
+              <div class="sc-line"><span>Wk 1</span><strong>Aug 30 · vs Coastal Federal</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Men's Basketball</span><span class="sc-rec">26–11 ('25-26)</span></div>
+              <div class="sc-line"><span>Status</span><strong>Offseason · transfers active</strong></div>
+              <div class="sc-line"><span>Opener</span><strong>Nov 2 · TBD</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Women's Basketball</span><span class="sc-rec">22–12 ('25-26)</span></div>
+              <div class="sc-line"><span>Status</span><strong>Offseason · staff stable</strong></div>
+              <div class="sc-line"><span>Opener</span><strong>Nov 5 · TBD</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Softball</span><span class="sc-rec">27–24</span></div>
+              <div class="sc-line"><span>Status</span><strong>Season complete · debrief</strong></div>
+              <div class="sc-line"><span>Next opener</span><strong>Feb 6, 2027</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">Swim &amp; Dive</span><span class="sc-rec">SAC 3rd</span></div>
+              <div class="sc-line"><span>Status</span><strong>Offseason · summer training</strong></div>
+              <div class="sc-line"><span>'27 SAC Champ</span><strong>Feb 17–21 · home (JSAC)</strong></div>
+            </div>
+            <div class="sport-card">
+              <div class="sport-card-head"><span class="sc-sport">+ 14 more sports</span><span class="sc-rec">VIEW</span></div>
+              <div class="sc-line"><span>Volleyball · Soccer · X-C · Tennis</span><strong>→</strong></div>
+              <div class="sc-line"><span>Golf · Gym · Equestrian</span><strong>→</strong></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-3">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Upcoming Westbrook Events</h3>
+            <span class="h-meta">Conference-coordinated · 14 days</span>
+            <div class="spacer"></div>
+            <span class="h-action">Calendar →</span>
+          </div>
+          <div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">23</div><div class="up-mo">MAY</div></div>
+              <div class="up-info"><strong>T&amp;F · NCAA Outdoor Day 4 (Coastal Federal City)</strong><small>Coastal Federal Field · Men's finals · 3 WB athletes</small></div>
+              <div class="up-net">Vista+</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">29</div><div class="up-mo">MAY</div></div>
+              <div class="up-info"><strong>BSB · NCAA Regional @ Atlantic State</strong><small>Klein Field · 9 PM ET vs Pacific Tech</small></div>
+              <div class="up-net">Vista+</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">30</div><div class="up-mo">MAY</div></div>
+              <div class="up-info"><strong>BSB · Regional Day 2 · winners bracket</strong><small>Atlantic State · TBD opponent · time TBD</small></div>
+              <div class="up-net">Vista 2</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">31</div><div class="up-mo">MAY</div></div>
+              <div class="up-info"><strong>BSB · Regional Day 3</strong><small>Atlantic State · 5 PM PT · advance contingent</small></div>
+              <div class="up-net">Vista+</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">01</div><div class="up-mo">JUN</div></div>
+              <div class="up-info"><strong>BSB · Regional Final (if advanced)</strong><small>Winner advances to Super Regional Jun 6–8</small></div>
+              <div class="up-net">ESPN</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">13</div><div class="up-mo">JUN</div></div>
+              <div class="up-info"><strong>NCAA Baseball Final Eight Opens (Heartland City) · contingent</strong><small>If WB advances Super Regional · ops planning live</small></div>
+              <div class="up-net">ESPN</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">15</div><div class="up-mo">JUL</div></div>
+              <div class="up-info"><strong>SAC Media Days (Capital City)</strong><small>Coach Freeze + 2 players · travel block confirmed</small></div>
+              <div class="up-net">SACN</div>
+            </div>
+            <div class="upcoming-row">
+              <div class="up-date"><div class="up-day">30</div><div class="up-mo">AUG</div></div>
+              <div class="up-info"><strong>FB · vs Coastal Federal · '26 opener</strong><small>Mariner Stadium · 6 PM CT · season starts</small></div>
+              <div class="up-net">SACN</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Conference Comms (Westbrook-tagged)</h3>
+            <span class="h-meta">Recent SAC office threads</span>
+            <div class="spacer"></div>
+            <span class="h-action">Open Comms Hub →</span>
+          </div>
+          <div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#bsb-ncaa-postseason · M. Vance</strong><small>"WB Atlantic State Regional charter approved — execution doc attached" · 22m ago</small></div>
+              <div class="ri-stat info">LIVE<small>UNREAD</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#bsb-school-liaisons · M. Reyes-Albright</strong><small>"Batter interference memo (BSB-26-0042) — review draft" · 2h ago</small></div>
+              <div class="ri-stat warn">ACK<small>DUE</small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>DM · S. Pham (NCAA Credentials)</strong><small>"42 Atlantic State Regional creds processing — pickup Thu 5/28" · 4h ago</small></div>
+              <div class="ri-stat info">READ<small></small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#td-ops · K. Brooks</strong><small>"Coastal Federal City NCAA media list confirmed for 3 WB athletes" · 6h</small></div>
+              <div class="ri-stat info">READ<small></small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#fb-ops-26 · R. Lin</strong><small>"Week 1 ops template request received · review by 5/30" · 1d</small></div>
+              <div class="ri-stat info">READ<small></small></div>
+            </div>
+            <div class="row-item">
+              <div class="ri-info"><strong>#compliance · J. Foster</strong><small>"Spring transfer NIL disclosures · all schools 100%" · 2d</small></div>
+              <div class="ri-stat good">ACK'D<small>5/22</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Quick Submit</h3>
+            <span class="h-meta">Most-used school workflows</span>
+            <div class="spacer"></div>
+            <span class="h-action">All workflows →</span>
+          </div>
+          <div class="panel-pad" style="display:flex;flex-direction:column;gap:8px;">
+            <a href="film-portal.html" class="btn qs-btn gold">
+              <span class="qs-icon">▶</span>
+              <span class="qs-body">
+                <span class="qs-title">Upload Film &amp; Submit Complaint</span>
+                <span class="qs-sub">Opens Film Portal → SLA 72h</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </a>
+            <button class="btn qs-btn" onclick="openDrawer('credentials')">
+              <span class="qs-icon">▤</span>
+              <span class="qs-body">
+                <span class="qs-title">Request Credentials</span>
+                <span class="qs-sub">Media, photo, sideline, suite — SLA 48h</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <button class="btn qs-btn" onclick="openDrawer('travel')">
+              <span class="qs-icon">⇄</span>
+              <span class="qs-body">
+                <span class="qs-title">Travel / Hotel Request</span>
+                <span class="qs-sub">Charter, commercial, hotel block — SLA 5 days</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <button class="btn qs-btn" onclick="openDrawer('media')">
+              <span class="qs-icon">○</span>
+              <span class="qs-body">
+                <span class="qs-title">Media Availability Request</span>
+                <span class="qs-sub">Pressers, sideline, talent — SLA 24h</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <a href="comms.html" class="btn qs-btn">
+              <span class="qs-icon">●</span>
+              <span class="qs-body">
+                <span class="qs-title">Open Conference Comms</span>
+                <span class="qs-sub">Direct to #school-liaisons channels</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </a>
+            <button class="btn qs-btn" onclick="openDrawer('compliance')">
+              <span class="qs-icon">§</span>
+              <span class="qs-body">
+                <span class="qs-title">Compliance Submission</span>
+                <span class="qs-sub">Self-report, inquiry, interpretive request</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <button class="btn qs-btn" onclick="openDrawer('incident')">
+              <span class="qs-icon" style="color:var(--danger);background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.3);">⚠</span>
+              <span class="qs-body">
+                <span class="qs-title">Report Incident to SAC</span>
+                <span class="qs-sub">Medical, security, weather, technical — immediate</span>
+              </span>
+              <span class="qs-arrow">→</span>
+            </button>
+            <div style="font-size:.66rem;color:var(--muted-soft);text-align:center;margin-top:6px;letter-spacing:.06em;">SLA-tracked · routed automatically to the right SAC team</div>
+          </div>
+        </div>
+
+      </div>
+      </div><!-- /overview -->
+
+      <div data-tab-panel="sports" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>All Westbrook Sports · '26</h3><span class="h-meta">21 active sports</span><div class="spacer"></div><span class="h-action">Athletics master →</span></div>
+          <div class="panel-pad" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;">
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Football</span><span class="sc-rec">7–3</span></div><div class="sc-line"><span>Live</span><strong>vs Liberty State · Q3</strong></div><div class="sc-line"><span>Next</span><strong>Bowl TBD</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Men's Basketball</span><span class="sc-rec">5–0</span></div><div class="sc-line"><span>Ranked</span><strong>#8 AP</strong></div><div class="sc-line"><span>Next</span><strong>vs S. Liberty State · 11/24</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Women's Basketball</span><span class="sc-rec">4–1</span></div><div class="sc-line"><span>Next</span><strong>vs Coastal Federal · 11/25</strong></div><div class="sc-line"><span>SAC opener</span><strong>Jan 4 · HC</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Volleyball</span><span class="sc-rec">22–7</span></div><div class="sc-line"><span>Live</span><strong>SAC Tournament</strong></div><div class="sc-line"><span>QF</span><strong>tonight 8 PM</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Soccer</span><span class="sc-rec">14–4–2</span></div><div class="sc-line"><span>NCAA</span><strong>Round of 16 · vs Atlantic State</strong></div><div class="sc-line"><span>Season</span><strong>complete</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Cross Country</span><span class="sc-rec">SAC 4th</span></div><div class="sc-line"><span>NCAA Champ</span><strong>Atlantic City · 11/22</strong></div><div class="sc-line"><span>Status</span><strong>4 athletes qualified</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Equestrian</span><span class="sc-rec">6–2</span></div><div class="sc-line"><span>Next</span><strong>at Midland College · 12/6</strong></div><div class="sc-line"><span>SAC Cup</span><strong>March 21–23</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Swim &amp; Dive</span><span class="sc-rec">3–0</span></div><div class="sc-line"><span>Next</span><strong>vs Hillstone · 12/5</strong></div><div class="sc-line"><span>SAC Champ</span><strong>Feb 17–21 · home</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Gymnastics</span><span class="sc-rec">pre-season</span></div><div class="sc-line"><span>Opens</span><strong>Jan 9 · vs Bama</strong></div><div class="sc-line"><span>SAC Champ</span><strong>Mar 21 · PMH</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Baseball</span><span class="sc-rec">pre-season</span></div><div class="sc-line"><span>Opens</span><strong>Feb 13</strong></div><div class="sc-line"><span>Summit Park</span><strong>May 19–24</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">Softball</span><span class="sc-rec">pre-season</span></div><div class="sc-line"><span>Opens</span><strong>Feb 5</strong></div><div class="sc-line"><span>SAC Tourn</span><strong>May 6–10 · HC</strong></div></div>
+            <div class="sport-card"><div class="sport-card-head"><span class="sc-sport">+ 10 more sports</span><span class="sc-rec">VIEW</span></div><div class="sc-line"><span>Tennis · Track · Golf</span><strong>→</strong></div><div class="sc-line"><span>Rowing · Beach VB · etc.</span><strong>→</strong></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="requests" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>All Open Requests · Westbrook → SAC</h3><span class="h-meta">14 active items</span><div class="spacer"></div><span class="h-action">+ New Request →</span></div>
+          <div>
+            <div class="req-row"><span class="req-type rt-film">FILM</span><div class="req-info"><strong>Holding interpretation · LIB-WB Q3 5:02</strong><small>Posted to Film Portal · ID FB-26-0214</small></div><div class="req-when">18m<small>SLA 72H</small></div><span class="req-status live">IN REVIEW</span></div>
+            <div class="req-row"><span class="req-type rt-cred">CRED</span><div class="req-info"><strong>The Lighthouse Rivalry photographer field access</strong><small>3 staff photogs · pending SAC review</small></div><div class="req-when">2h<small>BY 6PM</small></div><span class="req-status open">PENDING</span></div>
+            <div class="req-row"><span class="req-type rt-media">MEDIA</span><div class="req-info"><strong>SACN Cole Carver post-game avail</strong><small>Cubelic + 1 producer · 8:30 PM CT</small></div><div class="req-when">5h<small>POST-GAME</small></div><span class="req-status open">CONFIRMED</span></div>
+            <div class="req-row"><span class="req-type rt-travel">TRAVEL</span><div class="req-info"><strong>MBB at Redmoor · charter request</strong><small>Dec 4 · 40 pax · RDM return</small></div><div class="req-when">12d<small>SUBMITTED</small></div><span class="req-status open">REVIEW</span></div>
+            <div class="req-row"><span class="req-type rt-ops">OPS</span><div class="req-info"><strong>Locker room build · SACCG visiting</strong><small>Only if WB advances · contingency request</small></div><div class="req-when">2w<small>CONTINGENT</small></div><span class="req-status open">HOLD</span></div>
+            <div class="req-row"><span class="req-type rt-film">FILM</span><div class="req-info"><strong>DPI 4th down · last week vs Kestrel</strong><small>Memo received · clip archived</small></div><div class="req-when">3d<small>CLOSED 2D</small></div><span class="req-status done">REPLIED</span></div>
+            <div class="req-row"><span class="req-type rt-cred">CRED</span><div class="req-info"><strong>WBB at Monteverde · 6 credentials</strong><small>Players, staff, media · standard</small></div><div class="req-when">6d<small>BY 11/28</small></div><span class="req-status done">ISSUED</span></div>
+            <div class="req-row"><span class="req-type rt-media">MEDIA</span><div class="req-info"><strong>Vista Saturday Showcase site visit</strong><small>If selected · venue prep info request</small></div><div class="req-when">7d<small>CONTINGENT</small></div><span class="req-status open">PROCESSING</span></div>
+            <div class="req-row"><span class="req-type rt-travel">TRAVEL</span><div class="req-info"><strong>Baseball at FV · spring · hotel block</strong><small>March 27–29 weekend series</small></div><div class="req-when">90d<small>OPEN</small></div><span class="req-status open">SCHEDULING</span></div>
+            <div class="req-row"><span class="req-type rt-ops">OPS</span><div class="req-info"><strong>Softball stadium signage compliance</strong><small>NCAA host requirements review</small></div><div class="req-when">14d<small>OPEN</small></div><span class="req-status open">REVIEW</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="credentials" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Westbrook Credentials · '26 Season</h3><span class="h-meta">628 issued YTD</span><div class="spacer"></div><span class="h-action">+ Request via drawer →</span></div>
+          <div>
+            <div class="cred-row"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>The Lighthouse Rivalry · all-media block (Westbrook)</strong><small>184 issued · Apex + press + local + national</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type photo">PHOTO</span><div class="cred-info"><strong>The Lighthouse Rivalry · Westbrook photo team (3)</strong><small>Pending SAC review · standard renewal</small></div><span class="cred-stat warn">PENDING</span></div>
+            <div class="cred-row"><span class="cred-type vip">VIP</span><div class="cred-info"><strong>Westbrook AD office · 14 staff</strong><small>Field + sideline + press box access</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type official">OFF</span><div class="cred-info"><strong>Coach Freeze + staff (28)</strong><small>Sideline + locker room · season pass</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>WBB at Monteverde · 6 credentials</strong><small>Players + staff + media · standard</small></div><span class="cred-stat good">ISSUED</span></div>
+            <div class="cred-row"><span class="cred-type media">MEDIA</span><div class="cred-info"><strong>MBB at Redmoor · 22 credentials</strong><small>Players + staff + media · standard</small></div><span class="cred-stat warn">SUBMITTED</span></div>
+            <div class="cred-row"><span class="cred-type vip">VIP</span><div class="cred-info"><strong>SACCG visiting allotment (if advancing)</strong><small>72 credentials reserved · contingent</small></div><span class="cred-stat warn">CONTINGENT</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="travel" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>Westbrook Travel &amp; Hotel · '26</h3><span class="h-meta">42 trips YTD · $620K total</span><div class="spacer"></div><span class="h-action">+ Request via drawer →</span></div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>FB · away travel (4 trips)</strong><small>Charter · 110 pax each · hotels in 4 cities</small></div><div class="ri-stat good">COMPLETE<small>$240K</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>WBB at Monteverde · Nov 28</strong><small>Charter from WBP · 1-night block · 26 pax</small></div><div class="ri-stat good">CONFIRMED<small>$32K</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>MBB at Redmoor · Dec 4</strong><small>Charter WBP → RDM · 40 pax · 2 nights</small></div><div class="ri-stat warn">REQUESTED<small>$24K est</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>EQ at Midland College · Dec 6</strong><small>Commercial flights · 18 pax · 2 nights</small></div><div class="ri-stat good">CONFIRMED<small>$14K</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>S&amp;D at Hillstone · Dec 5</strong><small>Bus · day trip · 32 pax</small></div><div class="ri-stat good">CONFIRMED<small>$3.4K</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>BSB spring slate · 14 trips</strong><small>Planning phase · hotel blocks Q1</small></div><div class="ri-stat info">SCHEDULING<small>$180K</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>SACCG (if advancing) · Capital City</strong><small>Charter + 380 pax + 4-night block · contingent</small></div><div class="ri-stat warn">CONTINGENT<small>$140K</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div data-tab-panel="comms" hidden>
+        <div class="panel">
+          <div class="panel-head"><h3>All Conference Comms (Westbrook-tagged)</h3><span class="h-meta">live + recent threads</span><div class="spacer"></div><span class="h-action">Open Comms Hub →</span></div>
+          <div>
+            <div class="row-item"><div class="ri-info"><strong>#fb-lighthouse-rivalry-2026 · K. Larkin</strong><small>"Reyes-Albright is drafting the holding memo now…" · 1m ago</small></div><div class="ri-stat info">LIVE<small>UNREAD</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>#fb-school-liaisons · M. Reyes-Albright</strong><small>"Weekly officials memo 26-016 — pls ack" · 1h ago</small></div><div class="ri-stat warn">ACK<small>DUE</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>DM · A. Torres (Event Ops)</strong><small>"Sending updated The Lighthouse Rivalry ops sheet" · 3h ago</small></div><div class="ri-stat info">READ<small></small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>#mbb-ops · M. Vance</strong><small>"Dec 4 MBB officials assigned — Crew Petrov" · 5h</small></div><div class="ri-stat info">READ<small></small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>#fb-broadcast-partners · K. Brooks</strong><small>"SACN post-game window confirmed for WB" · 8h</small></div><div class="ri-stat info">READ<small></small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>#compliance · J. Foster</strong><small>"NIL disclosure refresher · v3.2 effective 11/1" · 2d</small></div><div class="ri-stat good">ACK'D<small>11/19</small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>#fb-championship · D. Hartley</strong><small>"SACCG visiting locker room contingency confirmed" · 1d</small></div><div class="ri-stat info">READ<small></small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>DM · P. Patel (Comms)</strong><small>"Post-game media availability schedule attached" · 4h</small></div><div class="ri-stat info">READ<small></small></div></div>
+            <div class="row-item"><div class="ri-info"><strong>#bsb-ops · M. Vance</strong><small>"Spring 2026 schedule released — review and ack" · 5d</small></div><div class="ri-stat good">ACK'D<small>11/17</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /tabs-host -->
+
+    </div>
+  </main>
+</div>
+
+<!-- DRAWER · CREDENTIALS -->
+<div class="drawer-mask" data-drawer-mask></div>
+<aside class="drawer" data-drawer="credentials">
+  <div class="drawer-head">
+    <div class="drawer-mark">▤</div>
+    <div>
+      <div class="drawer-title">Request Credentials</div>
+      <span class="drawer-title"><em>Westbrook · SLA 48 hours</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Event<span class="req">*</span></label>
+      <select class="form-select">
+        <option>The Lighthouse Rivalry · LIB @ WB · Nov 22</option>
+        <option>WBB at Monteverde · Nov 28</option>
+        <option>MBB at Redmoor · Dec 4</option>
+        <option>S&amp;D vs Hillstone · Dec 5</option>
+        <option>EQ at Midland College · Dec 6</option>
+        <option>+ Other event (search…)</option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Credential Type<span class="req">*</span></label>
+      <div class="chip-group">
+        <span class="chip on" onclick="toggleChip(this)">Photo · field</span>
+        <span class="chip" onclick="toggleChip(this)">Photo · sideline</span>
+        <span class="chip on" onclick="toggleChip(this)">Media · press box</span>
+        <span class="chip" onclick="toggleChip(this)">Media · workroom</span>
+        <span class="chip" onclick="toggleChip(this)">Suite / VIP</span>
+        <span class="chip" onclick="toggleChip(this)">Locker room</span>
+        <span class="chip" onclick="toggleChip(this)">Production</span>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Total credentials<span class="req">*</span></label>
+        <input type="number" class="form-input" value="3" />
+      </div>
+      <div>
+        <label class="form-label">Pickup window</label>
+        <select class="form-select">
+          <option>Game-day · 2 hours pre-kick</option>
+          <option>Day before · ops office</option>
+          <option>Will-call · gate access</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ds-head">Recipients</div>
+    <div class="form-row">
+      <label class="form-label">Names &amp; outlets / titles</label>
+      <textarea class="form-textarea" placeholder="One per line — e.g.&#10;Sarah Kim · Westbrook Athletics Photography&#10;Marcus Lee · Inside Westbrook (Rivals)&#10;Coach Hardy · Football Operations">Sarah Kim · Westbrook Athletics Photography
+Marcus Lee · Inside Westbrook (Rivals)
+Coach Hardy · Football Operations</textarea>
+    </div>
+
+    <div class="ds-head">Notes for SAC office</div>
+    <div class="form-row">
+      <textarea class="form-textarea" placeholder="Background-check status, special access, vehicle requests, etc."></textarea>
+    </div>
+
+    <div class="ds-head">Recent · last 30 days</div>
+    <div class="recent-list">
+      <div class="recent-row">
+        <div><strong>WBB at MV — 6 credentials</strong><small>Issued 11/19 · pickup confirmed</small></div>
+        <span class="recent-pill good">ISSUED</span>
+      </div>
+      <div class="recent-row">
+        <div><strong>The Lighthouse Rivalry photographer — 3 staff</strong><small>Sent 11/20 · awaiting SAC review</small></div>
+        <span class="recent-pill warn">PENDING</span>
+      </div>
+      <div class="recent-row">
+        <div><strong>SACCG contingent (vs TBD) — 14</strong><small>Submitted 11/15 · contingent on advancing</small></div>
+        <span class="recent-pill info">HOLD</span>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>S. Pham · SAC Credentialing</strong> · SLA <strong>48h</strong></div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-gold" onclick="submitDrawer('Credential request submitted to S. Pham', '3 credentials · The Lighthouse Rivalry · pickup 1:30 PM')">Submit Request</button>
+  </div>
+</aside>
+
+<!-- DRAWER · TRAVEL -->
+<aside class="drawer" data-drawer="travel">
+  <div class="drawer-head">
+    <div class="drawer-mark trv">⇄</div>
+    <div>
+      <div class="drawer-title">Travel / Hotel Request</div>
+      <span class="drawer-title"><em>Westbrook · SLA 5 days</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Trip type<span class="req">*</span></label>
+      <div class="chip-group">
+        <span class="chip on" onclick="toggleChip(this)">Charter</span>
+        <span class="chip" onclick="toggleChip(this)">Commercial</span>
+        <span class="chip on" onclick="toggleChip(this)">Hotel block only</span>
+        <span class="chip" onclick="toggleChip(this)">Ground / motorcoach</span>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Origin<span class="req">*</span></label>
+        <input class="form-input" value="Westbrook (WBP)" />
+      </div>
+      <div>
+        <label class="form-label">Destination<span class="req">*</span></label>
+        <input class="form-input" value="Redmoor City / PMH" />
+      </div>
+    </div>
+
+    <div class="form-row split-3">
+      <div>
+        <label class="form-label">Depart</label>
+        <input class="form-input" type="date" value="2026-12-03" />
+      </div>
+      <div>
+        <label class="form-label">Return</label>
+        <input class="form-input" type="date" value="2026-12-05" />
+      </div>
+      <div>
+        <label class="form-label">Pax</label>
+        <input class="form-input" type="number" value="40" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Sport / Event<span class="req">*</span></label>
+      <select class="form-select">
+        <option>MBB at Redmoor · Dec 4</option>
+        <option>WBB at Monteverde · Nov 28</option>
+        <option>Baseball at FV · spring weekend</option>
+        <option>+ Other</option>
+      </select>
+    </div>
+
+    <div class="ds-head">Hotel block</div>
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Property preference</label>
+        <input class="form-input" value="Hyatt Place Redmoor City (preferred)" />
+      </div>
+      <div>
+        <label class="form-label">Room count</label>
+        <input class="form-input" type="number" value="22" />
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Special requests</label>
+      <textarea class="form-textarea" placeholder="Team meal room, ADA access, security needs, late check-out, etc."></textarea>
+    </div>
+
+    <div class="ds-head">Approval</div>
+    <div class="form-row">
+      <div class="picker-row on">
+        <div><strong>Standard SAC charter program</strong><small>Pre-approved vendors · 5-day SLA</small></div>
+        <div class="picker-check">✓</div>
+      </div>
+      <div class="picker-row" style="margin-top:6px;">
+        <div><strong>Westbrook-direct booking (notify only)</strong><small>School books, SAC tracks for reporting</small></div>
+        <div class="picker-check"></div>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>D. Ortiz · SAC Travel Ops</strong> · est. cost <strong>$24K</strong></div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-gold" onclick="submitDrawer('Travel request submitted to D. Ortiz', 'MBB at Redmoor · charter · 40 pax · Dec 3–5')">Submit Request</button>
+  </div>
+</aside>
+
+<!-- DRAWER · MEDIA -->
+<aside class="drawer" data-drawer="media">
+  <div class="drawer-head">
+    <div class="drawer-mark cmp">○</div>
+    <div>
+      <div class="drawer-title">Media Availability Request</div>
+      <span class="drawer-title"><em>Westbrook · SLA 24 hours</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Availability type<span class="req">*</span></label>
+      <div class="chip-group">
+        <span class="chip on" onclick="toggleChip(this)">Post-game presser</span>
+        <span class="chip" onclick="toggleChip(this)">Pre-game presser</span>
+        <span class="chip on" onclick="toggleChip(this)">Sideline talent</span>
+        <span class="chip" onclick="toggleChip(this)">One-on-one</span>
+        <span class="chip" onclick="toggleChip(this)">Locker room</span>
+        <span class="chip" onclick="toggleChip(this)">Weekly availability</span>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Event<span class="req">*</span></label>
+        <select class="form-select">
+          <option>The Lighthouse Rivalry · LIB @ WB · Nov 22</option>
+          <option>MBB · vs South Liberty State · Nov 24</option>
+          <option>Bowl · TBD</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Window</label>
+        <select class="form-select">
+          <option>Post-game · 15 min after final whistle</option>
+          <option>10 min cool-down · then 20-min avail</option>
+          <option>Pre-game · 90 min to kick</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Talent &amp; subjects<span class="req">*</span></label>
+      <textarea class="form-textarea" placeholder="Head coach, coordinators, key players (jersey + position)">Head Coach Hank Forsyth
+QB #15 · Hank Brown
+DL #11 · Jalen McLeod
+OC · Derrick Nix (post-cool-down)</textarea>
+    </div>
+
+    <div class="ds-head">Requesting outlets</div>
+    <div class="form-row">
+      <textarea class="form-textarea" placeholder="One per line — SACN, Vista, Apex, Inside Westbrook, AL.com, etc.">SACN (Cole Carver · in-house)
+Vista (Mason Sutton + 1 producer)
+AL.com (Mark Heim · column)
+Westbrook Athletics social team</textarea>
+    </div>
+
+    <div class="ds-head">Setup notes</div>
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Room / location</label>
+        <input class="form-input" value="Westbrook Athletic Complex · Press Auditorium" />
+      </div>
+      <div>
+        <label class="form-label">Backdrop / branding</label>
+        <select class="form-select">
+          <option>Westbrook standard step-and-repeat</option>
+          <option>SAC neutral backdrop</option>
+          <option>No backdrop</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>P. Patel · SAC Comms</strong> · SLA <strong>24h</strong></div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-gold" onclick="submitDrawer('Media availability submitted to P. Patel', 'The Lighthouse Rivalry · post-game · Freeze + 3 players · 4 outlets')">Submit Request</button>
+  </div>
+</aside>
+
+<!-- DRAWER · COMPLIANCE -->
+<aside class="drawer" data-drawer="compliance">
+  <div class="drawer-head">
+    <div class="drawer-mark cmp">§</div>
+    <div>
+      <div class="drawer-title">Compliance Submission</div>
+      <span class="drawer-title"><em>Westbrook · routed by category</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Submission type<span class="req">*</span></label>
+      <div class="picker-row on">
+        <div><strong>Self-report (potential violation)</strong><small>Triggers SAC review + NCAA filing if L1/L2</small></div>
+        <div class="picker-check">✓</div>
+      </div>
+      <div class="picker-row" style="margin-top:6px;">
+        <div><strong>Interpretive request</strong><small>Bylaw clarification before action</small></div>
+        <div class="picker-check"></div>
+      </div>
+      <div class="picker-row" style="margin-top:6px;">
+        <div><strong>Documentation upload</strong><small>NIL disclosure, practice hours, roster</small></div>
+        <div class="picker-check"></div>
+      </div>
+      <div class="picker-row" style="margin-top:6px;">
+        <div><strong>Policy acknowledgment</strong><small>Active memos awaiting school sign-off</small></div>
+        <div class="picker-check"></div>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Sport<span class="req">*</span></label>
+        <select class="form-select">
+          <option>Football</option>
+          <option>Men's Basketball</option>
+          <option>Women's Basketball</option>
+          <option>Baseball</option>
+          <option>Softball</option>
+          <option>Other (specify)</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">NCAA bylaw (if known)</label>
+        <input class="form-input" placeholder="e.g. 13.1.3 · Recruiting comm." />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Description<span class="req">*</span></label>
+      <textarea class="form-textarea" placeholder="What occurred, when, who was involved, corrective action already taken." rows="4">During the Nov 18 recruiting window, an Westbrook assistant coach inadvertently exceeded the contact limit with PSA #04125 by one (1) phone call on 11/17 due to a scheduling tool sync error. Tool config corrected 11/18, coach completed refresher module same day. Self-reporting per Bylaw 13.1.3.</textarea>
+    </div>
+
+    <div class="ds-head">Attachments</div>
+    <div class="upload-zone">
+      <strong>Drop files or click to upload</strong>
+      Call log export · email thread · corrective-action memo
+      <small>PDF · CSV · TXT · max 25 MB total</small>
+    </div>
+
+    <div class="ds-head">Acknowledgment</div>
+    <div class="form-row">
+      <label class="form-label" style="display:flex;align-items:center;gap:9px;cursor:pointer;text-transform:none;letter-spacing:.02em;font-weight:500;color:var(--muted);">
+        <input type="checkbox" checked style="accent-color:var(--gold);width:14px;height:14px;" />
+        I confirm this submission is accurate and authorized by Westbrook Compliance (M. Beaumont)
+      </label>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>J. Foster · SAC Compliance</strong> · severity classified on intake</div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-gold" onclick="submitDrawer('Compliance self-report filed', 'Bylaw 13.1.3 · routed to J. Foster · case ID will be assigned within 1h')">File Submission</button>
+  </div>
+</aside>
+
+<!-- DRAWER · INCIDENT -->
+<aside class="drawer" data-drawer="incident">
+  <div class="drawer-head">
+    <div class="drawer-mark inc">⚠</div>
+    <div>
+      <div class="drawer-title">Report Incident to SAC</div>
+      <span class="drawer-title"><em>Westbrook · immediate routing to incident desk</em></span>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="form-row">
+      <label class="form-label">Severity<span class="req">*</span></label>
+      <div class="sev-row">
+        <div class="sev-opt s1" onclick="setSev(this)"><div class="lbl">SEV-1</div><div class="desc">Crisis · evacuation · death</div></div>
+        <div class="sev-opt s2 on" onclick="setSev(this)"><div class="lbl">SEV-2</div><div class="desc">Major · game stoppage · injury</div></div>
+        <div class="sev-opt s3" onclick="setSev(this)"><div class="lbl">SEV-3</div><div class="desc">Standard · medical · ops</div></div>
+        <div class="sev-opt s4" onclick="setSev(this)"><div class="lbl">SEV-4</div><div class="desc">Routine · informational</div></div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Category<span class="req">*</span></label>
+      <div class="chip-group">
+        <span class="chip on" onclick="toggleChip(this)">Medical</span>
+        <span class="chip" onclick="toggleChip(this)">Security</span>
+        <span class="chip" onclick="toggleChip(this)">Weather</span>
+        <span class="chip" onclick="toggleChip(this)">Technical</span>
+        <span class="chip" onclick="toggleChip(this)">Facility</span>
+        <span class="chip" onclick="toggleChip(this)">Player conduct</span>
+        <span class="chip" onclick="toggleChip(this)">Fan conduct</span>
+      </div>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Venue<span class="req">*</span></label>
+        <select class="form-select">
+          <option>Mariner Stadium</option>
+          <option>Neville Arena</option>
+          <option>Plainsman Park</option>
+          <option>Westbrook Soccer &amp; Track</option>
+          <option>JSAC (Aquatics)</option>
+          <option>Visiting venue (specify)</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Game / Event</label>
+        <select class="form-select">
+          <option>LIB @ WB · The Lighthouse Rivalry · live</option>
+          <option>Other (specify)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Description<span class="req">*</span></label>
+      <textarea class="form-textarea" rows="3" placeholder="Brief, factual. Who, what, where, when. Status of response."></textarea>
+    </div>
+
+    <div class="form-row split">
+      <div>
+        <label class="form-label">Owner on Westbrook side</label>
+        <input class="form-input" value="P. Quinn · Dir of FB Ops" />
+      </div>
+      <div>
+        <label class="form-label">Westbrook EMS / security notified?</label>
+        <select class="form-select">
+          <option>Yes — both notified</option>
+          <option>EMS only</option>
+          <option>Security only</option>
+          <option>No (explain in description)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ds-head">Photos / video (optional)</div>
+    <div class="upload-zone">
+      <strong>Attach evidence</strong>
+      Photos, video, scanner audio, etc.
+      <small>JPG · PNG · MP4 · WAV · max 100 MB</small>
+    </div>
+  </div>
+  <div class="drawer-foot">
+    <div class="sla">Routes to <strong>R. Castillo · SAC Incident Desk</strong> · joint comms opened automatically</div>
+    <button class="btn" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-danger" onclick="submitDrawer('Incident reported to R. Castillo · SEV-2', 'Medical · Mariner Stadium · auto-routed to incident desk + Westbrook EMS')">File Incident</button>
+  </div>
+</aside>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="ic">✓</div>
+  <div>
+    <strong id="toast-title">Submitted</strong>
+    <small id="toast-body">Routed to the right SAC team</small>
+  </div>
+</div>
+
+<script>
+  function openDrawer(name){
+    document.querySelector('[data-drawer-mask]').classList.add('open');
+    document.querySelectorAll('[data-drawer]').forEach(d => d.classList.remove('open'));
+    var d = document.querySelector('[data-drawer="' + name + '"]');
+    if(d) d.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer(){
+    document.querySelector('[data-drawer-mask]').classList.remove('open');
+    document.querySelectorAll('[data-drawer]').forEach(d => d.classList.remove('open'));
+    document.body.style.overflow = '';
+  }
+  document.querySelector('[data-drawer-mask]').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeDrawer(); });
+
+  function toggleChip(el){ el.classList.toggle('on'); }
+  function setSev(el){
+    el.parentElement.querySelectorAll('.sev-opt').forEach(s => s.classList.remove('on'));
+    el.classList.add('on');
+  }
+
+  function submitDrawer(title, body){
+    closeDrawer();
+    var t = document.getElementById('toast');
+    document.getElementById('toast-title').textContent = title;
+    document.getElementById('toast-body').textContent = body;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 4200);
+  }
+
+  // === School switcher ===
+  const schoolData = {
+    wb: { name:'Westbrook University', short:'Westbrook', mark:'WB', color:'#1a3a5c', director:'M. Beaumont', liaison:'P. Quinn', sas:'540' },
+    ls: { name:'Liberty State University', short:'Liberty State', mark:'LS', color:'#2d5016', director:'G. Burnham', liaison:'D. Patton', sas:'568' },
+    nt: { name:'Northland Tech', short:'Northland Tech', mark:'NT', color:'#862633', director:'L. Vega', liaison:'N. Janssen', sas:'478' },
+    cc: { name:'Caldwell College', short:'Caldwell', mark:'CC', color:'#1b365d', director:'J. Beckett', liaison:'C. Sterling', sas:'462' },
+    fv: { name:'Fairview University', short:'Fairview', mark:'FV', color:'#4a5568', director:'S. Wynn', liaison:'V. Talbot', sas:'510' },
+    pr: { name:'Pinerock State', short:'Pinerock', mark:'PR', color:'#2c5530', director:'Z. Sloan', liaison:'P. Whitman', sas:'432' },
+    tc: { name:'Tidewater Coastal', short:'Tidewater', mark:'TC', color:'#003366', director:'S. Strickland', liaison:'L. Granger', sas:'542' },
+    mv: { name:'Monteverde University', short:'Monteverde', mark:'MV', color:'#722f37', director:'D. Whitlock', liaison:'R. Kemp', sas:'520' },
+    hc: { name:'Hillstone College', short:'Hillstone', mark:'HC', color:'#1a1a2e', director:'M. Barrows', liaison:'D. Hewitt', sas:'488' },
+    gp: { name:'Glenn Park University', short:'Glenn Park', mark:'GP', color:'#0d5d56', director:'J. Castell', liaison:'D. Marston', sas:'528' },
+    at: { name:'Ashford Tech', short:'Ashford Tech', mark:'AT', color:'#2c3e50', director:'C. Delacroix', liaison:'B. Donovan', sas:'596' },
+    bh: { name:'Bayhaven College', short:'Bayhaven', mark:'BH', color:'#1c2541', director:'A. Torrence', liaison:'C. Ramsey', sas:'498' },
+    rd: { name:'Redmoor University', short:'Redmoor', mark:'RD', color:'#6b2737', director:'K. Castellano', liaison:'A. Bishop', sas:'446' },
+    ke: { name:'Kestrel State', short:'Kestrel State', mark:'KE', color:'#2b2d42', director:'T. Adler', liaison:'J. Granger', sas:'562' }
+  };
+
+  function toggleSchoolPicker(){
+    document.getElementById('schPickMenu').classList.toggle('open');
+  }
+  function pickSchool(key){
+    const s = schoolData[key];
+    if(!s) return;
+    document.getElementById('schHelm').textContent = s.mark;
+    document.getElementById('schHelm').style.background = s.color;
+    document.getElementById('schName').innerHTML = `${s.name} · <em>Athletics</em>`;
+    document.getElementById('schMeta').innerHTML = `<strong>Director:</strong> ${s.director} · <strong>SAC liaison:</strong> ${s.liaison} · <strong>21 sports</strong> · ${s.sas} student-athletes`;
+    const short = s.short;
+    document.getElementById('schPickName').textContent = short;
+    document.getElementById('phHeader').innerHTML = `${short} · conference <em>coordination.</em>`;
+    // School switcher swatch on switcher card
+    document.querySelector('.school-switcher').style.background = `linear-gradient(135deg, ${hexToRgba(s.color, .18)}, rgba(7,13,30,.5))`;
+    document.querySelector('.school-switcher').style.borderColor = hexToRgba(s.color, .3);
+    // Mark active in menu
+    document.querySelectorAll('.school-pick-item').forEach(it => {
+      const isActive = it.getAttribute('data-key') === key;
+      it.classList.toggle('active', isActive);
+      it.querySelector('.school-pick-check').textContent = isActive ? '✓' : '';
+    });
+    document.getElementById('schPickMenu').classList.remove('open');
+    // Update sidebar user chip if present
+    const ua = document.querySelector('.user-avatar'); if(ua) ua.textContent = s.mark;
+    const un = document.querySelector('.user-name'); if(un) un.textContent = `${s.liaison}`;
+    const ur = document.querySelector('.user-role'); if(ur) ur.textContent = `Dir of FB Ops · ${short.toUpperCase().slice(0,3)}`;
+  }
+  function hexToRgba(hex, a){
+    const h = hex.replace('#','');
+    const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+  document.addEventListener('click', function(e){
+    const picker = document.querySelector('.school-picker');
+    if(picker && !picker.contains(e.target)) document.getElementById('schPickMenu').classList.remove('open');
+  });
+</script>
+<script src="shared.js"></script>
+
+</body>
+</html>
