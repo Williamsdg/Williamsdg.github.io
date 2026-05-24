@@ -2,6 +2,39 @@
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+  // ---- Share button ----
+  const shareBtn = $("#share-btn");
+  const shareToast = $("#share-toast");
+  let toastTimer = null;
+  function flashToast(msg) {
+    if (!shareToast) return;
+    shareToast.textContent = msg;
+    shareToast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => shareToast.classList.remove("show"), 2200);
+  }
+  if (shareBtn) {
+    shareBtn.addEventListener("click", async () => {
+      const shareData = {
+        title: "RopeDrop — Disney park-day launchpad",
+        text: "RopeDrop: fast Lightning Lane & Virtual Queue launchpad plus a crowd calendar for your Disney park day.",
+        url: "https://williamsdigital.io/preview/ropedrop/"
+      };
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareData.url);
+          flashToast("Link copied to clipboard");
+        } else {
+          window.prompt("Copy this link:", shareData.url);
+        }
+      } catch (err) {
+        if (err && err.name !== "AbortError") flashToast("Couldn't share — try copying the URL instead");
+      }
+    });
+  }
+
   const overlay = $("#magic-overlay");
   const overlayTitle = $("#overlay-title");
   const overlaySub = $("#overlay-sub");
