@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Bridge — Know Jamaica Operator Console</title>
+<meta name="description" content="Daily operations console for Know Jamaica Tours — bookings, fleet, guides, cruise schedule, messages, and revenue." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a2419;
+    --ink-soft:#143626;
+    --sea-deep:#063243;
+    --sea:#0e7d8e;
+    --aqua:#3cc9d9;
+    --aqua-pale:#cdeef1;
+    --jungle:#1f6b3f;
+    --jungle-bright:#2f9a55;
+    --leaf-pale:#d6efd9;
+    --sun:#ffc23c;
+    --sun-deep:#e89a1c;
+    --mango:#f17a2a;
+    --hibiscus:#d63a3a;
+    --hibiscus-soft:rgba(214,58,58,.12);
+    --sand:#fbf3df;
+    --paper:#fffaec;
+    --bg:#f4f8f4;
+    --panel:#ffffff;
+    --line:rgba(10,36,25,.10);
+    --line-soft:rgba(10,36,25,.05);
+    --muted:#6b7c72;
+    --muted-deep:#56685e;
+    --ok:#22a55c;
+    --warn:#e89a1c;
+    --bad:#d63a3a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow:hidden}
+  h1,h2,h3,h4,.serif{font-family:'Fraunces',serif;font-weight:500;letter-spacing:-0.01em;color:var(--ink)}
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+  button{font-family:inherit;font-size:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+  /* App shell */
+  .app{display:grid;grid-template-columns:240px 1fr;height:100vh}
+
+  /* Sidebar */
+  aside{background:linear-gradient(180deg,#063243 0%,#0a2c1e 100%);color:#fff;display:flex;flex-direction:column;padding:22px 18px;gap:8px;overflow-y:auto}
+  .logo{display:flex;align-items:center;gap:10px;padding:6px 8px 22px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:14px}
+  .logo-mark{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#fff6c2 0%,var(--sun) 28%,var(--mango) 60%,var(--hibiscus) 100%);position:relative;flex-shrink:0;box-shadow:0 2px 10px rgba(255,194,60,.4)}
+  .logo-mark::after{content:"";position:absolute;left:-6px;right:-6px;top:50%;height:12px;border-radius:50%;background:linear-gradient(90deg,transparent,var(--jungle-bright) 30%,var(--jungle) 50%,var(--jungle-bright) 70%,transparent);transform:translateY(-50%) rotate(-22deg);opacity:.85}
+  .logo-text{font-family:'Fraunces',serif;font-weight:600;font-size:1.15rem;line-height:1}
+  .logo-text em{font-style:italic;font-weight:400;display:block;font-size:.7rem;color:rgba(255,255,255,.7);margin-top:4px;letter-spacing:.16em;text-transform:uppercase}
+  .nav-section{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);font-weight:600;padding:14px 10px 8px}
+  .nav-link{display:flex;align-items:center;gap:11px;padding:10px 10px;border-radius:10px;color:rgba(255,255,255,.78);font-size:.86rem;font-weight:500;transition:.2s;cursor:pointer}
+  .nav-link:hover{background:rgba(255,255,255,.05);color:#fff}
+  .nav-link.active{background:linear-gradient(90deg,rgba(255,194,60,.18),rgba(255,194,60,0));color:#fff;box-shadow:inset 2px 0 0 var(--sun)}
+  .nav-link .ico{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;opacity:.85;flex-shrink:0}
+  .nav-link .count{margin-left:auto;font-size:.7rem;background:rgba(255,255,255,.1);padding:2px 8px;border-radius:999px;font-weight:600}
+  .nav-link.active .count{background:var(--sun);color:var(--ink)}
+  .nav-link .count.hot{background:var(--hibiscus);color:#fff}
+  .sidebar-foot{margin-top:auto;padding:14px 10px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+  .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--sun),var(--mango));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--ink);font-size:.82rem;flex-shrink:0}
+  .who{font-size:.82rem;line-height:1.3}
+  .who .name{font-weight:600;color:#fff}
+  .who .role{color:rgba(255,255,255,.55);font-size:.72rem}
+
+  /* Main */
+  main{overflow-y:auto;padding:0}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 32px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;gap:16px;flex-wrap:wrap}
+  .topbar-left{display:flex;flex-direction:column;gap:2px}
+  .crumbs{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .topbar h1{font-size:1.4rem;font-weight:600}
+  .topbar h1 em{font-style:italic;font-weight:400;color:var(--sea)}
+  .topbar-right{display:flex;align-items:center;gap:12px}
+  .search{background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:9px 16px 9px 38px;font-size:.84rem;width:280px;font-family:inherit;color:var(--ink);position:relative}
+  .search-wrap{position:relative}
+  .search-wrap::before{content:"";position:absolute;left:14px;top:50%;width:14px;height:14px;border:2px solid var(--muted);border-radius:50%;transform:translateY(-55%)}
+  .search-wrap::after{content:"";position:absolute;left:23px;top:50%;width:8px;height:2px;background:var(--muted);transform:translateY(2px) rotate(45deg);transform-origin:left}
+  .icon-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;background:#fff;position:relative}
+  .icon-btn:hover{background:var(--bg)}
+  .icon-btn .pulse{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--hibiscus);box-shadow:0 0 0 3px rgba(214,58,58,.18)}
+  .top-cta{padding:10px 18px;background:var(--mango);color:#fff;border-radius:999px;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+  .top-cta:hover{background:var(--hibiscus)}
+
+  /* Page padding */
+  .page{padding:28px 32px 60px;max-width:1600px;margin:0 auto}
+
+  /* Today bar */
+  .today-bar{display:grid;grid-template-columns:1.6fr repeat(4,1fr);gap:14px;margin-bottom:24px}
+  @media (max-width:1180px){.today-bar{grid-template-columns:1fr 1fr;}}
+  .today-weather{background:linear-gradient(135deg,#0e7d8e 0%,#3cc9d9 100%);color:#fff;border-radius:18px;padding:22px 24px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:130px}
+  .today-weather::before{content:"";position:absolute;top:-30px;right:-30px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,194,60,.45) 0%,transparent 70%)}
+  .today-weather::after{content:"";position:absolute;bottom:-50px;left:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%)}
+  .today-weather > *{position:relative;z-index:1}
+  .today-weather .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .today-weather .date{font-family:'Fraunces',serif;font-size:1.2rem;font-style:italic;font-weight:400}
+  .today-weather .temp{font-family:'Fraunces',serif;font-size:3rem;font-weight:500;line-height:1}
+  .today-weather .cond{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;opacity:.92;margin-top:6px}
+  .today-weather .surf{display:flex;gap:18px;font-size:.78rem;color:rgba(255,255,255,.85)}
+  .today-weather .surf b{color:#fff;font-weight:600}
+
+  .stat{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:130px;position:relative;overflow:hidden}
+  .stat .lbl{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .stat .num{font-family:'Fraunces',serif;font-size:2.1rem;font-weight:500;color:var(--ink);line-height:1}
+  .stat .num em{font-style:italic;color:var(--sea);font-weight:400}
+  .stat .delta{font-size:.78rem;display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+  .stat .delta.up{color:var(--ok)}
+  .stat .delta.up::before{content:"▲";font-size:.65rem}
+  .stat .delta.dn{color:var(--bad)}
+  .stat .delta.dn::before{content:"▼";font-size:.65rem}
+  .stat .spark{position:absolute;right:-10px;bottom:0;height:36px;width:90px;opacity:.18}
+
+  /* Main grid */
+  .grid{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;margin-bottom:18px}
+  @media (max-width:1180px){.grid{grid-template-columns:1fr}}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+  .panel-head{padding:20px 22px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line-soft);gap:12px;flex-wrap:wrap}
+  .panel-title{font-family:'Fraunces',serif;font-size:1.18rem;font-weight:500;display:flex;align-items:center;gap:10px}
+  .panel-title em{font-style:italic;color:var(--sea);font-weight:400}
+  .panel-title .badge{font-family:'Inter',sans-serif;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;background:var(--leaf-pale);color:var(--jungle);padding:4px 10px;border-radius:999px}
+  .panel-actions{display:flex;gap:6px}
+  .pill{padding:6px 12px;border-radius:999px;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--muted);border:1px solid var(--line);background:transparent}
+  .pill:hover{background:var(--bg)}
+  .pill.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* Timeline / Bookings */
+  .timeline{padding:8px 0 4px}
+  .timeline-row{display:grid;grid-template-columns:80px 1fr;gap:18px;padding:14px 22px;border-bottom:1px solid var(--line-soft);align-items:start}
+  .timeline-row:last-child{border-bottom:none}
+  .timeline-time{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:500;color:var(--ink);line-height:1.1}
+  .timeline-time .ampm{font-family:'Inter',sans-serif;font-size:.7rem;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);font-weight:600;display:block;margin-top:4px}
+  .timeline-card{padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg,var(--bg) 0%,#fff 80%);position:relative}
+  .timeline-card.live{border-color:var(--ok);background:linear-gradient(90deg,rgba(34,165,92,.06),#fff)}
+  .timeline-card.live::before{content:"LIVE NOW";position:absolute;top:-9px;left:14px;background:var(--ok);color:#fff;font-size:.62rem;letter-spacing:.18em;font-weight:700;padding:3px 8px;border-radius:6px}
+  .timeline-card.cruise{border-color:rgba(60,201,217,.4);background:linear-gradient(90deg,rgba(60,201,217,.07),#fff)}
+  .tl-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+  .tl-tour{font-family:'Fraunces',serif;font-size:1.02rem;font-weight:500;color:var(--ink)}
+  .tl-tour em{font-style:italic;font-weight:400;color:var(--muted-deep);font-size:.86rem;display:block;margin-top:2px;font-family:'Inter',sans-serif;letter-spacing:.04em}
+  .tl-revenue{font-family:'Fraunces',serif;font-size:1.08rem;font-weight:600;color:var(--ink)}
+  .tl-meta{display:flex;gap:14px;align-items:center;font-size:.78rem;color:var(--muted);flex-wrap:wrap}
+  .tl-meta .chip{display:inline-flex;align-items:center;gap:6px;background:var(--bg);padding:4px 10px;border-radius:999px;font-weight:500;color:var(--ink-soft);font-size:.74rem}
+  .tl-meta .chip.guide{background:var(--leaf-pale);color:var(--jungle)}
+  .tl-meta .chip.van{background:var(--aqua-pale);color:var(--sea)}
+  .tl-meta .chip.pax{background:rgba(255,194,60,.18);color:var(--sun-deep)}
+  .tl-meta .chip.cruise{background:rgba(60,201,217,.18);color:var(--sea)}
+  .tl-pickup{font-size:.76rem;color:var(--muted);margin-top:8px;display:flex;align-items:center;gap:6px}
+  .tl-pickup::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--sun);box-shadow:0 0 0 3px rgba(255,194,60,.3)}
+
+  /* Right column items */
+  .stack{display:flex;flex-direction:column;gap:18px}
+
+  /* Fleet panel */
+  .fleet-list{padding:6px 0}
+  .fleet-row{padding:14px 22px;border-bottom:1px solid var(--line-soft);display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+  .fleet-row:last-child{border-bottom:none}
+  .fleet-tag{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--aqua) 0%,var(--sea) 100%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:600;font-size:.9rem;line-height:1}
+  .fleet-tag span{font-family:'Inter',sans-serif;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;opacity:.85}
+  .fleet-info .v-name{font-weight:600;color:var(--ink);font-size:.92rem}
+  .fleet-info .v-meta{font-size:.74rem;color:var(--muted);margin-top:2px}
+  .fleet-status{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px;white-space:nowrap}
+  .fleet-status.on-tour{background:var(--leaf-pale);color:var(--jungle)}
+  .fleet-status.idle{background:var(--bg);color:var(--muted-deep);border:1px solid var(--line)}
+  .fleet-status.service{background:rgba(255,194,60,.2);color:var(--sun-deep)}
+  .fleet-status.transfer{background:var(--aqua-pale);color:var(--sea)}
+
+  /* Cruise schedule */
+  .cruise-list{padding:6px 0}
+  .cruise-row{padding:13px 22px;border-bottom:1px solid var(--line-soft);display:grid;grid-template-columns:46px 1fr auto;gap:14px;align-items:center}
+  .cruise-row:last-child{border-bottom:none}
+  .cruise-day{font-family:'Fraunces',serif;text-align:center;line-height:1}
+  .cruise-day .d{font-size:1.2rem;font-weight:600;color:var(--ink)}
+  .cruise-day .m{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--muted);font-family:'Inter',sans-serif;margin-top:3px}
+  .cruise-info .ship{font-weight:600;color:var(--ink);font-size:.9rem}
+  .cruise-info .port{font-size:.74rem;color:var(--muted);margin-top:2px;display:flex;gap:10px}
+  .cruise-info .port b{color:var(--ink-soft);font-weight:500}
+  .cruise-stat{text-align:right;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--ink)}
+  .cruise-stat .n{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:500;display:block;color:var(--sea);letter-spacing:0;text-transform:none;line-height:1;margin-bottom:3px}
+
+  /* Two-up: messages + revenue */
+  .two-up{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media (max-width:1180px){.two-up{grid-template-columns:1fr}}
+
+  /* Messages */
+  .msg-row{padding:14px 22px;border-bottom:1px solid var(--line-soft);display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:.15s}
+  .msg-row:hover{background:var(--bg)}
+  .msg-row:last-child{border-bottom:none}
+  .msg-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--mango),var(--hibiscus));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;flex-shrink:0}
+  .msg-avatar.green{background:linear-gradient(135deg,var(--jungle-bright),var(--jungle))}
+  .msg-avatar.sea{background:linear-gradient(135deg,var(--aqua),var(--sea))}
+  .msg-body{flex:1;min-width:0}
+  .msg-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:3px}
+  .msg-from{font-weight:600;font-size:.88rem;color:var(--ink)}
+  .msg-time{font-size:.7rem;color:var(--muted);white-space:nowrap}
+  .msg-preview{font-size:.82rem;color:var(--muted-deep);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .msg-channel{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;padding:2px 8px;border-radius:5px;margin-top:6px;display:inline-block}
+  .msg-channel.wa{background:rgba(34,165,92,.14);color:var(--ok)}
+  .msg-channel.fb{background:rgba(60,108,217,.12);color:#3c6cd9}
+  .msg-channel.ig{background:rgba(214,58,58,.12);color:var(--hibiscus)}
+  .msg-channel.tripadvisor{background:rgba(34,165,92,.14);color:var(--ok)}
+  .msg-channel.web{background:var(--leaf-pale);color:var(--jungle)}
+  .msg-unread{width:8px;height:8px;border-radius:50%;background:var(--hibiscus);flex-shrink:0;margin-top:14px}
+
+  /* Revenue chart */
+  .rev-head{padding:20px 22px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .rev-total{font-family:'Fraunces',serif;font-size:2.3rem;font-weight:500;line-height:1}
+  .rev-total em{font-style:italic;color:var(--sea);font-weight:400}
+  .rev-period{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:4px}
+  .rev-delta{font-size:.82rem;color:var(--ok);display:inline-flex;align-items:center;gap:6px;font-weight:600}
+  .rev-delta::before{content:"▲";font-size:.7rem}
+  .rev-chart{padding:18px 22px 22px;height:200px;position:relative}
+  .rev-chart svg{width:100%;height:100%;overflow:visible}
+  .rev-breakdown{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line-soft)}
+  .rev-cell{padding:16px 22px;border-right:1px solid var(--line-soft)}
+  .rev-cell:last-child{border-right:none}
+  .rev-cell .lbl{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+  .rev-cell .v{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:500;color:var(--ink)}
+  .rev-cell .v em{font-style:italic;color:var(--sea);font-weight:400}
+
+  /* Map / Live ops */
+  .ops-panel{position:relative;overflow:hidden}
+  .ops-map{height:300px;background:
+    linear-gradient(180deg,rgba(60,201,217,.15) 0%,rgba(60,201,217,.05) 100%),
+    radial-gradient(ellipse at 30% 40%, rgba(127,196,128,.45) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(127,196,128,.35) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 80%, rgba(127,196,128,.25) 0%, transparent 40%),
+    var(--aqua-pale);
+    position:relative;overflow:hidden}
+  .pin{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--hibiscus);box-shadow:0 0 0 4px rgba(214,58,58,.25),0 4px 10px rgba(0,0,0,.15);cursor:pointer;transition:.2s}
+  .pin:hover{transform:scale(1.2)}
+  .pin.jungle{background:var(--jungle-bright);box-shadow:0 0 0 4px rgba(47,154,85,.25),0 4px 10px rgba(0,0,0,.15)}
+  .pin.sun{background:var(--sun);box-shadow:0 0 0 4px rgba(255,194,60,.3),0 4px 10px rgba(0,0,0,.15)}
+  .pin.sea{background:var(--sea);box-shadow:0 0 0 4px rgba(14,125,142,.25),0 4px 10px rgba(0,0,0,.15)}
+  .pin.pulse::before{content:"";position:absolute;inset:-6px;border-radius:50%;background:inherit;opacity:.4;animation:pin-pulse 1.8s ease-out infinite}
+  @keyframes pin-pulse{0%{transform:scale(1);opacity:.4}100%{transform:scale(2.6);opacity:0}}
+  .pin-label{position:absolute;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink);background:#fff;padding:3px 8px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.08);white-space:nowrap;transform:translate(-50%,calc(-100% - 14px));pointer-events:none}
+  .ops-legend{padding:14px 22px;display:flex;gap:18px;border-top:1px solid var(--line-soft);flex-wrap:wrap}
+  .legend-item{display:flex;align-items:center;gap:8px;font-size:.74rem;color:var(--muted-deep);font-weight:500}
+  .legend-dot{width:9px;height:9px;border-radius:50%}
+
+  /* Mobile */
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}
+    aside{display:none}
+    .topbar{padding:14px 18px}
+    .page{padding:18px 18px 50px}
+    .search{width:160px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside>
+    <a class="logo" href="index.html">
+      <span class="logo-mark"></span>
+      <span class="logo-text">Know Jamaica<em>The Bridge</em></span>
+    </a>
+
+    <div class="nav-section">Today</div>
+    <a class="nav-link active"><span class="ico">◐</span> Operations <span class="count">12</span></a>
+    <a class="nav-link"><span class="ico">◇</span> Bookings <span class="count">38</span></a>
+    <a class="nav-link"><span class="ico">◊</span> Messages <span class="count hot">7</span></a>
+    <a class="nav-link"><span class="ico">★</span> Reviews <span class="count">3</span></a>
+
+    <div class="nav-section">Manage</div>
+    <a class="nav-link"><span class="ico">◈</span> Tours</a>
+    <a class="nav-link"><span class="ico">◯</span> Fleet</a>
+    <a class="nav-link"><span class="ico">◉</span> Guides & Drivers</a>
+    <a class="nav-link"><span class="ico">⛴</span> Cruise Schedule</a>
+    <a class="nav-link"><span class="ico">◇</span> Travel Advisors</a>
+
+    <div class="nav-section">Insights</div>
+    <a class="nav-link"><span class="ico">▲</span> Revenue</a>
+    <a class="nav-link"><span class="ico">◢</span> Marketing</a>
+    <a class="nav-link"><span class="ico">⚙</span> Settings</a>
+
+    <div class="sidebar-foot">
+      <div class="avatar">KJ</div>
+      <div class="who">
+        <div class="name">Jay Williams</div>
+        <div class="role">Owner / Lead Guide</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <main>
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="crumbs">Operations · Sunday, May 24</div>
+        <h1>Good morning, Jay — <em>busy day ahead</em>.</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="search-wrap">
+          <input class="search" placeholder="Search bookings, guests, tours…" />
+        </div>
+        <button class="icon-btn" aria-label="Notifications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="pulse"></span>
+        </button>
+        <button class="top-cta">+ New Booking</button>
+      </div>
+    </div>
+
+    <div class="page">
+
+      <!-- ===================== TODAY BAR ===================== -->
+      <div class="today-bar">
+        <div class="today-weather">
+          <div class="top">
+            <div>
+              <div class="date">Ocho Rios</div>
+              <div class="temp">84°</div>
+              <div class="cond">Sunny · Light breeze</div>
+            </div>
+            <div style="font-family:'Fraunces',serif;font-size:2.4rem;font-style:italic;color:rgba(255,255,255,.9)">☀</div>
+          </div>
+          <div class="surf">
+            <div>Surf <b>2 ft</b></div>
+            <div>Wind <b>8 mph E</b></div>
+            <div>UV <b>11 extreme</b></div>
+            <div>Sunset <b>6:42 PM</b></div>
+          </div>
+        </div>
+
+        <div class="stat">
+          <div>
+            <div class="lbl">Today's Bookings</div>
+            <div class="num">12 <em>tours</em></div>
+          </div>
+          <div class="delta up">+3 vs avg Sunday</div>
+        </div>
+
+        <div class="stat">
+          <div>
+            <div class="lbl">Guests Today</div>
+            <div class="num">87 <em>pax</em></div>
+          </div>
+          <div class="delta up">+12 vs avg Sunday</div>
+        </div>
+
+        <div class="stat">
+          <div>
+            <div class="lbl">Today's Revenue</div>
+            <div class="num">$7,840</div>
+          </div>
+          <div class="delta up">+18% vs avg Sunday</div>
+        </div>
+
+        <div class="stat">
+          <div>
+            <div class="lbl">Cruise Ships in Port</div>
+            <div class="num">3 <em>ships</em></div>
+          </div>
+          <div class="delta">Falmouth 2 · Ochi 1</div>
+        </div>
+      </div>
+
+      <!-- ===================== MAIN GRID ===================== -->
+      <div class="grid">
+
+        <!-- LEFT: Today's tour timeline -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Today's <em>tour timeline</em> <span class="badge">12 confirmed</span></div>
+            <div class="panel-actions">
+              <button class="pill on">Today</button>
+              <button class="pill">Tomorrow</button>
+              <button class="pill">Week</button>
+            </div>
+          </div>
+
+          <div class="timeline">
+
+            <div class="timeline-row">
+              <div class="timeline-time">7:30<span class="ampm">AM</span></div>
+              <div class="timeline-card cruise">
+                <div class="tl-top">
+                  <div class="tl-tour">Falmouth "Beach Please" <em>5.5 hr · Cruise port pickup</em></div>
+                  <div class="tl-revenue">$1,200</div>
+                </div>
+                <div class="tl-meta">
+                  <span class="chip pax">24 pax</span>
+                  <span class="chip guide">Marlon Brown</span>
+                  <span class="chip van">Van #3 · Sprinter</span>
+                  <span class="chip cruise">⛴ Allure of the Seas</span>
+                </div>
+                <div class="tl-pickup">Historic Falmouth Cruise Terminal · Gate B</div>
+              </div>
+            </div>
+
+            <div class="timeline-row">
+              <div class="timeline-time">8:00<span class="ampm">AM</span></div>
+              <div class="timeline-card live">
+                <div class="tl-top">
+                  <div class="tl-tour">Blue Hole & Dunn's River Falls <em>5.5 hr · Hotel pickup</em></div>
+                  <div class="tl-revenue">$760</div>
+                </div>
+                <div class="tl-meta">
+                  <span class="chip pax">8 pax</span>
+                  <span class="chip guide">Jay Williams</span>
+                  <span class="chip van">Van #1 · Hiace</span>
+                  <span class="chip">Currently at Blue Hole</span>
+                </div>
+                <div class="tl-pickup">Sandals Ochi Resort · Main lobby</div>
+              </div>
+            </div>
+
+            <div class="timeline-row">
+              <div class="timeline-time">9:15<span class="ampm">AM</span></div>
+              <div class="timeline-card">
+                <div class="tl-top">
+                  <div class="tl-tour">Dunn's River Falls & Tubing <em>4 hr · Cruise port pickup</em></div>
+                  <div class="tl-revenue">$1,020</div>
+                </div>
+                <div class="tl-meta">
+                  <span class="chip pax">12 pax</span>
+                  <span class="chip guide">Davian Clarke</span>
+                  <span class="chip van">Van #4 · Coaster</span>
+                  <span class="chip cruise">⛴ Norwegian Joy</span>
+                </div>
+                <div class="tl-pickup">Ocho Rios Cruise Terminal · Pier 1</div>
+              </div>
+            </div>
+
+            <div class="timeline-row">
+              <div class="timeline-time">10:00<span class="ampm">AM</span></div>
+              <div class="timeline-card">
+                <div class="tl-top">
+                  <div class="tl-tour">Montego Bay Private Day Tour <em>6 hr · Villa pickup</em></div>
+                  <div class="tl-revenue">$200</div>
+                </div>
+                <div class="tl-meta">
+                  <span class="chip pax">4 pax · Private</span>
+                  <span class="chip guide">Karim Henry</span>
+                  <span class="chip van">SUV #2 · Highlander</span>
+                </div>
+                <div class="tl-pickup">Round Hill Villa #14 · Hopewell</div>
+              </div>
+            </div>
+
+            <div class="timeline-row">
+              <div class="timeline-time">11:30<span class="ampm">AM</span></div>
+              <div class="timeline-card">
+                <div class="tl-top">
+                  <div class="tl-tour">Ocho Rios Private Tour <em>4 hr · Honeymoon couple</em></div>
+                  <div class="tl-revenue">$200</div>
+                </div>
+                <div class="tl-meta">
+                  <span class="chip pax">2 pax · VIP</span>
+                  <span class="chip guide">Shanique Reid</span>
+                  <span class="chip van">Sedan #1 · ES350</span>
+                  <span class="chip" style="background:rgba(214,58,58,.12);color:var(--hibiscus)">♥ Honeymoon</span>
+                </div>
+                <div class="tl-pickup">Couples Sans Souci · Concierge</div>
+              </div>
+            </div>
+
+            <div class="timeline-row">
+              <div class="timeline-time">2:00<span class="ampm">PM</span></div>
+              <div class="timeline-card">
+                <div class="tl-top">
+                  <div class="tl-tour">MBJ → Negril Private Transfer <em>1.5 hr</em></div>
+                  <div class="tl-revenue">$75</div>
+                </div>
+                <div class="tl-meta">
+                  <span class="chip pax">3 pax</span>
+                  <span class="chip guide">Andrew Powell</span>
+                  <span class="chip van">SUV #3 · Highlander</span>
+                  <span class="chip">Flight DL1582</span>
+                </div>
+                <div class="tl-pickup">Sangster Int'l Airport · Arrivals Hall B</div>
+              </div>
+            </div>
+
+            <div class="timeline-row">
+              <div class="timeline-time">6:30<span class="ampm">PM</span></div>
+              <div class="timeline-card">
+                <div class="tl-top">
+                  <div class="tl-tour">Luminous Lagoon Excursion <em>1 hr · Sunset boat</em></div>
+                  <div class="tl-revenue">$650</div>
+                </div>
+                <div class="tl-meta">
+                  <span class="chip pax">10 pax</span>
+                  <span class="chip guide">Marlon Brown</span>
+                  <span class="chip van">Van #3 · Sprinter</span>
+                  <span class="chip" style="background:rgba(60,201,217,.18);color:var(--sea)">✦ After dark</span>
+                </div>
+                <div class="tl-pickup">Glistening Waters Marina · Falmouth</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- RIGHT: stack -->
+        <div class="stack">
+
+          <!-- Fleet -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Fleet <em>status</em></div>
+              <div class="panel-actions">
+                <button class="pill on">7 of 9</button>
+              </div>
+            </div>
+            <div class="fleet-list">
+              <div class="fleet-row">
+                <div class="fleet-tag">V1<span>Hiace</span></div>
+                <div class="fleet-info">
+                  <div class="v-name">Van #1 · Toyota Hiace</div>
+                  <div class="v-meta">Blue Hole tour · returns 1:30 PM · 14 seats</div>
+                </div>
+                <span class="fleet-status on-tour">On Tour</span>
+              </div>
+              <div class="fleet-row">
+                <div class="fleet-tag">V3<span>Sprint</span></div>
+                <div class="fleet-info">
+                  <div class="v-name">Van #3 · Mercedes Sprinter</div>
+                  <div class="v-meta">Falmouth → Luminous tonight · 19 seats</div>
+                </div>
+                <span class="fleet-status on-tour">Double-Booked</span>
+              </div>
+              <div class="fleet-row">
+                <div class="fleet-tag">V4<span>Coaster</span></div>
+                <div class="fleet-info">
+                  <div class="v-name">Van #4 · Toyota Coaster</div>
+                  <div class="v-meta">Cruise pickup at Ocho Rios · 22 seats</div>
+                </div>
+                <span class="fleet-status on-tour">On Tour</span>
+              </div>
+              <div class="fleet-row">
+                <div class="fleet-tag" style="background:linear-gradient(135deg,var(--mango),var(--hibiscus))">S1<span>Lexus</span></div>
+                <div class="fleet-info">
+                  <div class="v-name">Sedan #1 · Lexus ES350</div>
+                  <div class="v-meta">Honeymoon couple · VIP package · 4 seats</div>
+                </div>
+                <span class="fleet-status transfer">VIP</span>
+              </div>
+              <div class="fleet-row">
+                <div class="fleet-tag" style="background:linear-gradient(135deg,var(--jungle-bright),var(--jungle))">S2<span>Highl</span></div>
+                <div class="fleet-info">
+                  <div class="v-name">SUV #2 · Toyota Highlander</div>
+                  <div class="v-meta">Private MoBay day tour · 6 seats</div>
+                </div>
+                <span class="fleet-status on-tour">On Tour</span>
+              </div>
+              <div class="fleet-row">
+                <div class="fleet-tag" style="background:linear-gradient(135deg,#aab2af,#6b7c72)">V2<span>Hiace</span></div>
+                <div class="fleet-info">
+                  <div class="v-name">Van #2 · Toyota Hiace</div>
+                  <div class="v-meta">A/C service · back online tomorrow AM</div>
+                </div>
+                <span class="fleet-status service">In Service</span>
+              </div>
+              <div class="fleet-row">
+                <div class="fleet-tag" style="background:linear-gradient(135deg,#f0e3b8,var(--sun))">S3<span>Highl</span></div>
+                <div class="fleet-info">
+                  <div class="v-name">SUV #3 · Toyota Highlander</div>
+                  <div class="v-meta">Ready · MBJ transfer at 2 PM</div>
+                </div>
+                <span class="fleet-status idle">Idle</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cruise schedule -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Cruise <em>schedule</em></div>
+              <div class="panel-actions">
+                <button class="pill on">7 days</button>
+              </div>
+            </div>
+            <div class="cruise-list">
+              <div class="cruise-row">
+                <div class="cruise-day"><div class="d">24</div><div class="m">SUN</div></div>
+                <div class="cruise-info">
+                  <div class="ship">⛴ Allure of the Seas</div>
+                  <div class="port"><b>Falmouth</b> · 7AM–4PM · 5,400 pax</div>
+                </div>
+                <div class="cruise-stat"><span class="n">24</span>booked</div>
+              </div>
+              <div class="cruise-row">
+                <div class="cruise-day"><div class="d">24</div><div class="m">SUN</div></div>
+                <div class="cruise-info">
+                  <div class="ship">⛴ Norwegian Joy</div>
+                  <div class="port"><b>Ocho Rios</b> · 8AM–5PM · 3,800 pax</div>
+                </div>
+                <div class="cruise-stat"><span class="n">12</span>booked</div>
+              </div>
+              <div class="cruise-row">
+                <div class="cruise-day"><div class="d">24</div><div class="m">SUN</div></div>
+                <div class="cruise-info">
+                  <div class="ship">⛴ Carnival Celebration</div>
+                  <div class="port"><b>Falmouth</b> · 8AM–5PM · 6,400 pax</div>
+                </div>
+                <div class="cruise-stat"><span class="n">18</span>booked</div>
+              </div>
+              <div class="cruise-row">
+                <div class="cruise-day"><div class="d">26</div><div class="m">TUE</div></div>
+                <div class="cruise-info">
+                  <div class="ship">⛴ Disney Wish</div>
+                  <div class="port"><b>Falmouth</b> · 8AM–5PM · 4,000 pax</div>
+                </div>
+                <div class="cruise-stat"><span class="n">9</span>booked</div>
+              </div>
+              <div class="cruise-row">
+                <div class="cruise-day"><div class="d">28</div><div class="m">THU</div></div>
+                <div class="cruise-info">
+                  <div class="ship">⛴ Symphony of the Seas</div>
+                  <div class="port"><b>Falmouth</b> · 7AM–4PM · 6,800 pax</div>
+                </div>
+                <div class="cruise-stat"><span class="n">2</span>holding</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===================== TWO UP: MESSAGES + REVENUE ===================== -->
+      <div class="two-up">
+
+        <!-- Messages -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Guest <em>messages</em> <span class="badge" style="background:rgba(214,58,58,.12);color:var(--hibiscus)">7 unread</span></div>
+            <div class="panel-actions">
+              <button class="pill on">All</button>
+              <button class="pill">Unread</button>
+              <button class="pill">Bookings</button>
+            </div>
+          </div>
+          <div>
+            <div class="msg-row">
+              <div class="msg-avatar">SP</div>
+              <div class="msg-body">
+                <div class="msg-top">
+                  <span class="msg-from">Sarah & Pete Mitchell</span>
+                  <span class="msg-time">8 min</span>
+                </div>
+                <div class="msg-preview">"Hi! Our cruise pulls into Falmouth Tuesday — could we add the Luminous Lagoon to the Beach Please tour, or is that a separate evening trip?"</div>
+                <span class="msg-channel wa">WhatsApp</span>
+              </div>
+              <div class="msg-unread"></div>
+            </div>
+            <div class="msg-row">
+              <div class="msg-avatar green">DR</div>
+              <div class="msg-body">
+                <div class="msg-top">
+                  <span class="msg-from">Diane R. (TripAdvisor)</span>
+                  <span class="msg-time">22 min</span>
+                </div>
+                <div class="msg-preview">"Just left a 5★ review — Marlon was incredible with the kids. Bringing the in-laws back in October, do you do a 14-pax Negril cliff jump combo?"</div>
+                <span class="msg-channel tripadvisor">TripAdvisor</span>
+              </div>
+              <div class="msg-unread"></div>
+            </div>
+            <div class="msg-row">
+              <div class="msg-avatar sea">CL</div>
+              <div class="msg-body">
+                <div class="msg-top">
+                  <span class="msg-from">Carla Lopez</span>
+                  <span class="msg-time">41 min</span>
+                </div>
+                <div class="msg-preview">"Quick question — my dad uses a wheelchair, is Dunn's River Falls accessible at the base? We'd love to come but don't want to push if it's not safe."</div>
+                <span class="msg-channel ig">Instagram DM</span>
+              </div>
+              <div class="msg-unread"></div>
+            </div>
+            <div class="msg-row">
+              <div class="msg-avatar">JK</div>
+              <div class="msg-body">
+                <div class="msg-top">
+                  <span class="msg-from">James Kowalski</span>
+                  <span class="msg-time">1 hr</span>
+                </div>
+                <div class="msg-preview">"Flight delayed, now landing MBJ 11:45 PM instead of 9. Can the airport transfer still pick us up that late? Group of 5 + luggage."</div>
+                <span class="msg-channel wa">WhatsApp</span>
+              </div>
+              <div class="msg-unread"></div>
+            </div>
+            <div class="msg-row">
+              <div class="msg-avatar green">TT</div>
+              <div class="msg-body">
+                <div class="msg-top">
+                  <span class="msg-from">Tasha Thompson · Travel Advisor</span>
+                  <span class="msg-time">2 hr</span>
+                </div>
+                <div class="msg-preview">"Sending 6 clients your way for June 14 — honeymoon + family of 4. Can you quote a full-day private with the Bond Beach stop?"</div>
+                <span class="msg-channel web">Advisor Portal</span>
+              </div>
+            </div>
+            <div class="msg-row">
+              <div class="msg-avatar">MR</div>
+              <div class="msg-body">
+                <div class="msg-top">
+                  <span class="msg-from">Maria & family (FB)</span>
+                  <span class="msg-time">3 hr</span>
+                </div>
+                <div class="msg-preview">"Loved the Blue Hole day last summer — booking again for July. Group's grown to 11, do we get the group discount?"</div>
+                <span class="msg-channel fb">Facebook</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Revenue -->
+        <div class="panel">
+          <div class="rev-head">
+            <div>
+              <div class="rev-period">Revenue · Last 14 days</div>
+              <div class="rev-total">$84,<em>320</em></div>
+              <div class="rev-delta" style="margin-top:6px">+22% vs prior fortnight</div>
+            </div>
+            <div class="panel-actions">
+              <button class="pill">14d</button>
+              <button class="pill on">30d</button>
+              <button class="pill">90d</button>
+            </div>
+          </div>
+          <div class="rev-chart">
+            <svg viewBox="0 0 600 200" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#3cc9d9" stop-opacity=".5"/>
+                  <stop offset="100%" stop-color="#3cc9d9" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="revLine" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#0e7d8e"/>
+                  <stop offset="100%" stop-color="#f17a2a"/>
+                </linearGradient>
+              </defs>
+              <!-- grid -->
+              <line x1="0" y1="50" x2="600" y2="50" stroke="rgba(10,36,25,.06)"/>
+              <line x1="0" y1="100" x2="600" y2="100" stroke="rgba(10,36,25,.06)"/>
+              <line x1="0" y1="150" x2="600" y2="150" stroke="rgba(10,36,25,.06)"/>
+              <!-- area -->
+              <path d="M0,160 L40,140 L80,148 L120,120 L160,128 L200,98 L240,108 L280,82 L320,90 L360,60 L400,72 L440,50 L480,62 L520,38 L560,46 L600,28 L600,200 L0,200 Z" fill="url(#revGrad)"/>
+              <!-- line -->
+              <path d="M0,160 L40,140 L80,148 L120,120 L160,128 L200,98 L240,108 L280,82 L320,90 L360,60 L400,72 L440,50 L480,62 L520,38 L560,46 L600,28" fill="none" stroke="url(#revLine)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- dots -->
+              <circle cx="600" cy="28" r="5" fill="#f17a2a"/>
+              <circle cx="600" cy="28" r="11" fill="#f17a2a" opacity=".22"/>
+            </svg>
+          </div>
+          <div class="rev-breakdown">
+            <div class="rev-cell">
+              <div class="lbl">Avg / Tour</div>
+              <div class="v"><em>$284</em></div>
+            </div>
+            <div class="rev-cell">
+              <div class="lbl">Top Source</div>
+              <div class="v">Cruise <em>54%</em></div>
+            </div>
+            <div class="rev-cell">
+              <div class="lbl">Direct vs OTA</div>
+              <div class="v">68 / <em>32</em></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================== LIVE OPS MAP ===================== -->
+      <div class="panel ops-panel" style="margin-top:18px">
+        <div class="panel-head">
+          <div class="panel-title">Live <em>island map</em> <span class="badge">7 vehicles tracked</span></div>
+          <div class="panel-actions">
+            <button class="pill on">Vehicles</button>
+            <button class="pill">Tours</button>
+            <button class="pill">Cruise</button>
+          </div>
+        </div>
+        <div class="ops-map">
+          <!-- Negril -->
+          <span class="pin sun pulse" style="left:8%;top:54%"></span>
+          <span class="pin-label" style="left:8%;top:54%">Negril · S3 (transfer)</span>
+          <!-- MoBay -->
+          <span class="pin jungle pulse" style="left:22%;top:38%"></span>
+          <span class="pin-label" style="left:22%;top:38%">MoBay · S2 (private)</span>
+          <!-- Falmouth -->
+          <span class="pin sea pulse" style="left:35%;top:30%"></span>
+          <span class="pin-label" style="left:35%;top:30%">Falmouth · V3 (cruise)</span>
+          <!-- Ocho Rios -->
+          <span class="pin pulse" style="left:54%;top:34%"></span>
+          <span class="pin-label" style="left:54%;top:34%">Ochi · V1 + V4 + S1</span>
+          <!-- Port Maria -->
+          <span class="pin sun" style="left:64%;top:42%"></span>
+          <span class="pin-label" style="left:64%;top:42%">Port Maria</span>
+          <!-- Kingston -->
+          <span class="pin jungle" style="left:74%;top:64%"></span>
+          <span class="pin-label" style="left:74%;top:64%">Kingston</span>
+        </div>
+        <div class="ops-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:var(--hibiscus)"></span>Hotel pickup</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--sea)"></span>Cruise port</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--jungle-bright)"></span>Private / villa</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--sun)"></span>Airport transfer</div>
+          <div class="legend-item" style="margin-left:auto;color:var(--ink)"><b>Last refresh</b> · just now</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // Pill toggle (visual)
+  document.querySelectorAll('.panel-actions').forEach(group => {
+    group.querySelectorAll('.pill').forEach(p => {
+      p.addEventListener('click', () => {
+        group.querySelectorAll('.pill').forEach(x => x.classList.remove('on'));
+        p.classList.add('on');
+      });
+    });
+  });
+  // Sidebar nav toggle
+  document.querySelectorAll('aside .nav-link').forEach(l => {
+    l.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelectorAll('aside .nav-link').forEach(x => x.classList.remove('active'));
+      l.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
