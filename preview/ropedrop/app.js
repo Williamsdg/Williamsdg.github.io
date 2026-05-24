@@ -8,7 +8,7 @@
   const overlayIcon = $("#overlay-icon");
   const overlaySteps = $$(".overlay-step");
 
-  function launchMagic(targetUrl, action, resortName) {
+  function launchMagic(targetUrl, action, resortName, park) {
     const isLL = action === "ll";
     overlayIcon.textContent = isLL ? "⚡" : "🌐";
     overlayTitle.textContent = isLL
@@ -34,14 +34,20 @@
     }, 2200);
 
     setTimeout(() => {
-      window.location.href = targetUrl;
-    }, 2600);
+      overlay.classList.remove("show");
+      overlay.setAttribute("aria-hidden", "true");
+      if (window.RopeDropDemo) {
+        window.RopeDropDemo.open(park, action);
+      } else {
+        window.location.href = targetUrl;
+      }
+    }, 2200);
   }
 
   $$(".magic-btn").forEach((a) => {
     a.addEventListener("click", (e) => {
       e.preventDefault();
-      launchMagic(a.href, a.dataset.action, a.dataset.resortName || "");
+      launchMagic(a.href, a.dataset.action, a.dataset.resortName || "", a.dataset.park);
     });
   });
 
