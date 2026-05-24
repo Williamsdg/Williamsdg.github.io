@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Client Studio · Jonathan Goff Productions</title>
+<meta name="description" content="The internal operations console & client-facing gallery viewer for Jonathan Goff Productions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0c0c0d;
+    --ink-soft:#191a1c;
+    --paper:#f6f3ec;
+    --paper-warm:#ede7d8;
+    --bone:#e5dfd0;
+    --amber:#b88a3e;
+    --amber-soft:#d3ab6e;
+    --line-soft:#d1c9b6;
+    --muted:#6a6660;
+    --green:#3d8a5a;
+    --red:#b54d3d;
+    --blue:#4a6985;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);font-weight:300;-webkit-font-smoothing:antialiased}
+  .serif,h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:400;letter-spacing:-.005em}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  img{max-width:100%;display:block}
+  .it{font-style:italic;color:var(--amber)}
+
+  /* LOGIN */
+  .login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:var(--ink);z-index:1000;padding:30px}
+  .login::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 40%,rgba(184,138,62,.18),transparent 60%);pointer-events:none}
+  .login::after{content:'';position:absolute;inset:0;opacity:.12;pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
+  .login-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(14px);padding:50px 44px;width:100%;max-width:440px;color:#fff;position:relative;z-index:2}
+  .login-brand{display:flex;align-items:center;gap:14px;margin-bottom:36px}
+  .login-brand .mark{width:42px;height:42px;border:1px solid var(--amber-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--amber-soft);font-size:.95rem;letter-spacing:.04em}
+  .login-brand .bn{font-family:'Cormorant Garamond',serif;font-size:1.3rem}
+  .login-brand .bn em{color:var(--amber-soft);font-style:italic;font-weight:300}
+  .login h1{font-size:2rem;line-height:1.05;margin-bottom:10px;font-weight:300}
+  .login h1 em{font-style:italic;color:var(--amber-soft);font-weight:300}
+  .login .sub{color:rgba(255,255,255,.65);font-size:.92rem;margin-bottom:26px;line-height:1.6}
+  .demo-pill{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(211,171,110,.1);border:1px solid rgba(211,171,110,.3);color:var(--amber-soft);font-size:.78rem;margin-bottom:24px;border-radius:4px}
+  .demo-pill svg{flex-shrink:0}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:8px;font-weight:500}
+  .field input{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:#fff;padding:11px 0;font-family:inherit;font-size:1rem;font-weight:300;transition:.3s}
+  .field input:focus{outline:none;border-color:var(--amber-soft)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;font-size:.74rem;letter-spacing:.22em;text-transform:uppercase;font-weight:500;border-radius:2px;transition:.25s}
+  .btn-amber{background:var(--amber);color:#fff}
+  .btn-amber:hover{background:var(--amber-soft)}
+  .btn-full{width:100%;margin-top:10px}
+  .login-foot{margin-top:24px;text-align:center;font-size:.82rem;color:rgba(255,255,255,.5)}
+  .login-foot a{color:var(--amber-soft)}
+  .role-toggle{display:flex;gap:8px;margin-bottom:20px}
+  .role-toggle button{flex:1;padding:9px;font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.7);border-radius:2px;transition:.2s}
+  .role-toggle button.on{background:rgba(211,171,110,.18);border-color:var(--amber-soft);color:var(--amber-soft)}
+
+  /* DASH */
+  .dash{display:none;min-height:100vh}
+  .dash.on{display:grid;grid-template-columns:260px 1fr}
+  aside{background:var(--ink);color:#fff;padding:30px 22px;position:sticky;top:0;height:100vh;overflow-y:auto;border-right:1px solid #222}
+  aside .brand{display:flex;align-items:center;gap:12px;padding-bottom:24px;margin-bottom:24px;border-bottom:1px solid #2a2a2a}
+  aside .brand .mark{width:34px;height:34px;border:1px solid var(--amber-soft);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--amber-soft);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.85rem}
+  aside .brand .bn{font-family:'Cormorant Garamond',serif;font-size:1.05rem}
+  aside .brand .bn em{color:var(--amber-soft);font-style:italic;font-weight:300}
+  aside .label{font-size:.62rem;letter-spacing:.26em;text-transform:uppercase;color:#666;margin:18px 8px 8px;font-weight:500}
+  .navlink{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:4px;cursor:pointer;color:#ccc;font-size:.92rem;transition:.2s;position:relative}
+  .navlink:hover{background:#1a1a1a;color:#fff}
+  .navlink.active{background:rgba(211,171,110,.14);color:var(--amber-soft)}
+  .navlink svg{width:17px;height:17px;flex-shrink:0}
+  .navlink .ct{margin-left:auto;font-size:.72rem;background:#2a2a2a;color:#bbb;padding:2px 8px;border-radius:999px;font-weight:500}
+  .navlink.active .ct{background:var(--amber);color:#fff}
+  .me{margin-top:20px;padding:14px;background:#151515;border-radius:4px;display:flex;align-items:center;gap:10px;font-size:.82rem}
+  .me .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#b88a3e,#5d3a14);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:.85rem}
+  .me .nm{color:#fff;font-weight:500}
+  .me .rl{font-size:.7rem;color:#888;letter-spacing:.18em;text-transform:uppercase}
+  .signout{margin-top:14px;width:100%;padding:9px;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:#888;border:1px solid #2a2a2a;border-radius:3px;transition:.2s}
+  .signout:hover{color:#fff;border-color:#444}
+
+  main{padding:34px 40px 60px;overflow-x:hidden}
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;margin-bottom:30px;flex-wrap:wrap}
+  .top h1{font-size:2.2rem;font-weight:300;line-height:1.1}
+  .top h1 em{font-style:italic;color:var(--amber)}
+  .top .crumb{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:8px}
+  .top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn-line{padding:11px 18px;border:1px solid var(--ink);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;font-weight:500;border-radius:2px}
+  .btn-line:hover{background:var(--ink);color:#fff}
+  .btn-ink{background:var(--ink);color:#fff;padding:11px 18px;font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;font-weight:500;border-radius:2px}
+  .btn-ink:hover{background:var(--amber)}
+
+  .page{display:none}
+  .page.on{display:block}
+
+  /* Tiles */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:30px}
+  .tile{background:#fff;border:1px solid var(--line-soft);padding:22px;border-radius:3px;position:relative}
+  .tile .k{font-size:.66rem;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:10px}
+  .tile .v{font-family:'Cormorant Garamond',serif;font-size:2.3rem;font-weight:300;line-height:1;color:var(--ink)}
+  .tile .v em{font-style:italic;color:var(--amber)}
+  .tile .delta{margin-top:8px;font-size:.78rem;color:var(--green);font-weight:500}
+  .tile .delta.down{color:var(--red)}
+
+  /* Overview cards */
+  .grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin-bottom:18px}
+  .card{background:#fff;border:1px solid var(--line-soft);border-radius:3px;padding:24px}
+  .card h3{font-size:1.25rem;margin-bottom:4px}
+  .card h3 em{font-style:italic;color:var(--amber)}
+  .card .sub{font-size:.78rem;color:var(--muted);margin-bottom:18px}
+  .row-line{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px dotted var(--line-soft)}
+  .row-line:last-child{border-bottom:none}
+  .row-line .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#b88a3e,#5d3a14);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:.84rem;flex-shrink:0}
+  .row-line .nm{font-weight:500;font-size:.94rem}
+  .row-line .ty{font-size:.74rem;color:var(--muted)}
+  .row-line .when{margin-left:auto;text-align:right;font-size:.78rem;color:var(--muted)}
+  .row-line .when b{display:block;color:var(--ink);font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:400;font-size:1rem}
+
+  .activity .item{padding:12px 0;border-bottom:1px dotted var(--line-soft);font-size:.88rem;color:var(--ink);display:flex;gap:12px;align-items:flex-start}
+  .activity .item:last-child{border-bottom:none}
+  .activity .dot{width:7px;height:7px;background:var(--amber);border-radius:50%;margin-top:7px;flex-shrink:0}
+  .activity .item span.t{margin-left:auto;color:var(--muted);font-size:.76rem;white-space:nowrap}
+  .activity .item b{font-weight:500}
+
+  /* Kanban */
+  .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
+  .col{background:#fff;border:1px solid var(--line-soft);border-radius:3px;min-height:300px}
+  .col-h{padding:16px 18px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;justify-content:space-between}
+  .col-h h4{font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:500}
+  .col-h .ct{font-size:.7rem;background:var(--paper-warm);padding:2px 9px;border-radius:999px;color:var(--ink);font-weight:500}
+  .col-body{padding:12px;display:flex;flex-direction:column;gap:10px;min-height:220px}
+  .lead{background:var(--paper);border:1px solid var(--line-soft);border-radius:3px;padding:14px;cursor:grab;transition:.2s;border-left:3px solid var(--amber)}
+  .lead:hover{background:var(--paper-warm);transform:translateX(2px)}
+  .lead.drag{opacity:.5}
+  .lead .ld-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+  .lead .nm{font-weight:600;font-size:.92rem}
+  .lead .ty{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .lead .det{font-size:.8rem;color:var(--muted);line-height:1.5;margin-bottom:8px}
+  .lead .mt{display:flex;justify-content:space-between;align-items:center;font-size:.74rem}
+  .lead .mt .price{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--amber);font-size:1rem;font-weight:500}
+  .lead .mt .date{color:var(--muted)}
+  .col.over{background:var(--paper-warm);outline:2px dashed var(--amber)}
+
+  /* Schedule */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;background:#fff;border:1px solid var(--line-soft);padding:14px 20px;border-radius:3px}
+  .cal-nav{display:flex;align-items:center;gap:14px}
+  .cal-nav button{width:30px;height:30px;border:1px solid var(--line-soft);border-radius:50%;font-size:1rem;line-height:1;color:var(--muted)}
+  .cal-nav button:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .cal-nav h3{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:400}
+  .cal-nav h3 em{color:var(--amber);font-style:italic}
+  .cal-filter{display:flex;gap:6px}
+  .cal-filter button{padding:7px 13px;border:1px solid var(--line-soft);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);border-radius:2px}
+  .cal-filter button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .cal{background:#fff;border:1px solid var(--line-soft);border-radius:3px;overflow:hidden}
+  .cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:var(--paper-warm);border-bottom:1px solid var(--line-soft)}
+  .cal-dow div{padding:11px;text-align:center;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500;border-right:1px solid var(--line-soft)}
+  .cal-dow div:last-child{border-right:none}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(110px,auto)}
+  .cell{padding:8px;border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);position:relative;font-size:.82rem;background:#fff;transition:.2s}
+  .cell:nth-child(7n){border-right:none}
+  .cell.dim{background:#fafafa;color:#bbb}
+  .cell.today .d{background:var(--amber);color:#fff;font-weight:600}
+  .cell:hover{background:var(--paper)}
+  .cell .d{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-weight:500;font-size:.78rem}
+  .ev{margin-top:5px;padding:4px 8px;font-size:.7rem;background:var(--paper-warm);color:var(--ink);border-radius:2px;border-left:3px solid var(--amber);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  .ev.wedding{background:#f3e9d7;border-color:var(--amber)}
+  .ev.family{background:#dde7e0;border-color:var(--green)}
+  .ev.church{background:#e2dff0;border-color:#7a6db0}
+  .ev.corp{background:#dde2ec;border-color:var(--blue)}
+  .ev.event{background:#f0dbd6;border-color:var(--red)}
+  .ev:hover{filter:brightness(.96)}
+
+  /* Galleries */
+  .gallery-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:14px}
+  .gallery-filter{display:flex;gap:6px;flex-wrap:wrap}
+  .gallery-filter button{padding:7px 13px;border:1px solid var(--line-soft);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);border-radius:2px;background:#fff}
+  .gallery-filter button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .gal{background:#fff;border:1px solid var(--line-soft);border-radius:3px;overflow:hidden;cursor:pointer;transition:.25s}
+  .gal:hover{transform:translateY(-3px);box-shadow:0 18px 40px -25px rgba(0,0,0,.4)}
+  .gal-cover{height:200px;position:relative;overflow:hidden}
+  .gal-cover::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.7))}
+  .gal-cover .gleam{position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 30% 30%,rgba(255,220,170,.18),transparent 60%);mix-blend-mode:screen}
+  .gal-cover .grain{position:absolute;inset:0;opacity:.12;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
+  .gal-cover .lbl{position:absolute;left:14px;bottom:12px;color:#fff;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;z-index:2;font-weight:500}
+  .gal-body{padding:18px 20px}
+  .gal-body h4{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-weight:500;margin-bottom:4px}
+  .gal-body h4 em{font-style:italic;color:var(--amber)}
+  .gal-body .meta{font-size:.78rem;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
+  .gal-body .meta .pill{padding:2px 9px;border-radius:999px;background:var(--paper-warm);font-size:.7rem;color:var(--ink);font-weight:500;letter-spacing:.04em}
+  .gal-body .meta .pill.ready{background:#dde7e0;color:#2a5a3e}
+  .gal-body .meta .pill.draft{background:#f0e3d7;color:#8a5a14}
+
+  /* Lightbox / gallery viewer */
+  .lb{position:fixed;inset:0;background:rgba(0,0,0,.94);z-index:2000;display:none;flex-direction:column}
+  .lb.on{display:flex}
+  .lb-top{padding:18px 28px;display:flex;align-items:center;justify-content:space-between;color:#fff;border-bottom:1px solid rgba(255,255,255,.1)}
+  .lb-top .ttl{font-family:'Cormorant Garamond',serif;font-size:1.4rem}
+  .lb-top .ttl em{font-style:italic;color:var(--amber-soft)}
+  .lb-top .meta{font-size:.74rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+  .lb-top .close{font-size:1.5rem;color:#fff;width:36px;height:36px;border:1px solid rgba(255,255,255,.25);border-radius:50%;line-height:1}
+  .lb-top .close:hover{background:#fff;color:#000}
+  .lb-main{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:24px;position:relative}
+  .lb-img{width:100%;max-width:1100px;max-height:100%;aspect-ratio:3/2;position:relative;overflow:hidden;background:#111;border:1px solid rgba(255,255,255,.08)}
+  .lb-img .gleam{position:absolute;inset:0;background:radial-gradient(ellipse 50% 40% at 35% 30%,rgba(255,220,170,.22),transparent 60%);mix-blend-mode:screen}
+  .lb-img .grain{position:absolute;inset:0;opacity:.14;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E")}
+  .lb-img .cap{position:absolute;left:24px;bottom:24px;color:#fff}
+  .lb-img .cap .k{font-size:.66rem;letter-spacing:.26em;text-transform:uppercase;color:var(--amber-soft);font-weight:500;margin-bottom:6px}
+  .lb-img .cap .t{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-style:italic}
+  .lb-arrow{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.2);font-size:1.4rem;line-height:1}
+  .lb-arrow:hover{background:#fff;color:#000}
+  .lb-arrow.prev{left:28px}
+  .lb-arrow.next{right:28px}
+  .lb-strip{display:flex;gap:8px;padding:14px 28px;overflow-x:auto;border-top:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.6)}
+  .thumb{width:90px;height:62px;flex-shrink:0;cursor:pointer;border:2px solid transparent;position:relative;overflow:hidden;background:#222}
+  .thumb.on{border-color:var(--amber-soft)}
+  .thumb .gleam{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 30%,rgba(255,220,170,.2),transparent 60%);mix-blend-mode:screen}
+  .lb-actions{display:flex;gap:10px;align-items:center;padding:14px 28px;background:rgba(0,0,0,.7);border-top:1px solid rgba(255,255,255,.08)}
+  .lb-actions .count{color:rgba(255,255,255,.7);font-size:.78rem;margin-right:auto;letter-spacing:.16em;text-transform:uppercase}
+  .lb-actions .b{padding:9px 16px;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:2px}
+  .lb-actions .b:hover{background:#fff;color:#000}
+  .lb-actions .b.fav.on{background:var(--amber);border-color:var(--amber);color:#fff}
+
+  /* Settings */
+  .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .set-card{background:#fff;border:1px solid var(--line-soft);border-radius:3px;padding:26px}
+  .set-card h3{font-size:1.25rem;margin-bottom:14px}
+  .set-card h3 em{font-style:italic;color:var(--amber)}
+  .set-field{margin-bottom:14px}
+  .set-field label{display:block;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:500}
+  .set-field input,.set-field textarea,.set-field select{width:100%;padding:10px 12px;border:1px solid var(--line-soft);background:var(--paper);font-family:inherit;font-size:.92rem;border-radius:2px}
+  .set-field input:focus,.set-field textarea:focus{outline:none;border-color:var(--amber)}
+  .saved-flash{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 22px;border-radius:2px;font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;opacity:0;transform:translateY(10px);transition:.3s;z-index:500}
+  .saved-flash.on{opacity:1;transform:translateY(0)}
+
+  /* Responsive */
+  @media(max-width:1000px){
+    .dash.on{grid-template-columns:1fr}
+    aside{position:relative;height:auto;display:flex;flex-wrap:wrap;gap:8px;padding:14px}
+    aside .brand{width:100%;padding-bottom:14px;margin-bottom:6px}
+    aside .label{display:none}
+    aside .navlink{flex:1 1 30%;font-size:.82rem;padding:8px 10px}
+    aside .me,.signout{display:none}
+    main{padding:22px}
+    .tiles{grid-template-columns:1fr 1fr}
+    .grid-2,.kanban,.gallery-grid,.settings-grid{grid-template-columns:1fr!important}
+    .cal-grid{font-size:.7rem}
+    .cell{min-height:80px;padding:5px}
+    .ev{font-size:.62rem;padding:2px 5px}
+    .lb-arrow.prev{left:6px} .lb-arrow.next{right:6px}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="mark">JG</div>
+      <div class="bn">Jonathan Goff <em>Studio</em></div>
+    </div>
+    <h1>Client <em>Studio</em></h1>
+    <p class="sub">Inquiries, schedule, and gallery delivery — all in one place.</p>
+    <div class="demo-pill">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span><b>Preview demo</b> — just click Enter. No password needed.</span>
+    </div>
+    <div class="role-toggle">
+      <button id="roleStudio" class="on">Studio (Jonathan)</button>
+      <button id="roleClient">Client view</button>
+    </div>
+    <form id="loginForm">
+      <div class="field"><label>Email</label><input type="email" placeholder="hello@jonathangoff.com" value="hello@jonathangoff.com"></div>
+      <div class="field"><label>Password</label><input type="password" placeholder="••••••••" value="••••••••"></div>
+      <button type="submit" class="btn btn-amber btn-full">Enter Studio →</button>
+    </form>
+    <div class="login-foot">← <a href="index.html">Back to site</a></div>
+  </div>
+</div>
+
+<!-- DASH -->
+<div class="dash" id="dash">
+
+  <aside>
+    <a href="index.html" class="brand">
+      <div class="mark">JG</div>
+      <div class="bn">Jonathan Goff <em>Studio</em></div>
+    </a>
+    <div class="label">Studio</div>
+    <div class="navlink active" data-p="overview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+      <span>Overview</span>
+    </div>
+    <div class="navlink" data-p="inquiries">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <span>Inquiries</span><span class="ct" id="leadCount">6</span>
+    </div>
+    <div class="navlink" data-p="schedule">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Schedule</span><span class="ct">12</span>
+    </div>
+    <div class="navlink" data-p="galleries">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span>Galleries</span><span class="ct">9</span>
+    </div>
+    <div class="navlink" data-p="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </div>
+
+    <div class="me">
+      <div class="av" id="meAv">JG</div>
+      <div>
+        <div class="nm" id="meNm">Jonathan Goff</div>
+        <div class="rl" id="meRl">Owner</div>
+      </div>
+    </div>
+    <button class="signout" onclick="signOut()">Sign out</button>
+  </aside>
+
+  <main>
+    <!-- OVERVIEW -->
+    <div class="page on" id="p-overview">
+      <div class="top">
+        <div>
+          <div class="crumb">Studio · Overview</div>
+          <h1>Good morning, <em id="greetName">Jonathan</em>.</h1>
+        </div>
+        <div class="top-actions">
+          <button class="btn-line">Export weekly summary</button>
+          <button class="btn-ink" onclick="goto('inquiries')">+ New inquiry</button>
+        </div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile"><div class="k">Open inquiries</div><div class="v"><em>6</em></div><div class="delta">+2 this week</div></div>
+        <div class="tile"><div class="k">Booked through Sep</div><div class="v">12</div><div class="delta">$48,200 contracted</div></div>
+        <div class="tile"><div class="k">Galleries pending</div><div class="v">3</div><div class="delta down">2 due this week</div></div>
+        <div class="tile"><div class="k">Avg reply time</div><div class="v">7<small style="font-size:1rem;color:var(--muted);font-style:italic"> hrs</small></div><div class="delta">Below 1 business day ✓</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Upcoming <em>shoots</em></h3>
+          <p class="sub">Next 14 days · click a row to open the day brief</p>
+          <div class="row-line">
+            <div class="av">AP</div>
+            <div>
+              <div class="nm">Anna & Will Patterson — Wedding</div>
+              <div class="ty">Mountain Brook Club · 9 hr · 2nd shooter (Mara)</div>
+            </div>
+            <div class="when">Sat<b>May 30</b></div>
+          </div>
+          <div class="row-line">
+            <div class="av">FB</div>
+            <div>
+              <div class="nm">First Bham — Easter Recap Film</div>
+              <div class="ty">Edit delivery · 2 versions (3min · 60sec)</div>
+            </div>
+            <div class="when">Mon<b>Jun 1</b></div>
+          </div>
+          <div class="row-line">
+            <div class="av">RP</div>
+            <div>
+              <div class="nm">Regions — Internship Class Headshots</div>
+              <div class="ty">Studio · 14 sittings · 4 hrs blocked</div>
+            </div>
+            <div class="when">Wed<b>Jun 3</b></div>
+          </div>
+          <div class="row-line">
+            <div class="av">TH</div>
+            <div>
+              <div class="nm">The Holloways — Family Portrait</div>
+              <div class="ty">Oak Mountain · golden hour · 5 people</div>
+            </div>
+            <div class="when">Fri<b>Jun 5</b></div>
+          </div>
+          <div class="row-line">
+            <div class="av">CH</div>
+            <div>
+              <div class="nm">Children's Harbor — Gala</div>
+              <div class="ty">B&A Warehouse · candle hour + speeches</div>
+            </div>
+            <div class="when">Sat<b>Jun 6</b></div>
+          </div>
+        </div>
+        <div class="card activity">
+          <h3>Recent <em>activity</em></h3>
+          <p class="sub">Auto-logged across inquiries, galleries, and contracts</p>
+          <div class="item"><div class="dot"></div><div><b>Ellie Drew</b> downloaded 4 favorites from her gallery</div><span class="t">12m</span></div>
+          <div class="item"><div class="dot"></div><div>Contract signed by <b>Patterson</b> ($3,400 balance due May 23)</div><span class="t">2h</span></div>
+          <div class="item"><div class="dot"></div><div>New inquiry from <b>Hannah Lee</b> — Sept wedding at Aldridge Gardens</div><span class="t">4h</span></div>
+          <div class="item"><div class="dot"></div><div>Sneak peeks delivered to <b>The Holloways</b> (6 images)</div><span class="t">Yesterday</span></div>
+          <div class="item"><div class="dot"></div><div><b>Regions HR</b> approved final shot list for internship headshots</div><span class="t">Yesterday</span></div>
+          <div class="item"><div class="dot"></div><div>Gallery archive expired for <b>Walker wedding (2023)</b> — re-upload?</div><span class="t">2d</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INQUIRIES -->
+    <div class="page" id="p-inquiries">
+      <div class="top">
+        <div>
+          <div class="crumb">Studio · Inquiries</div>
+          <h1>Inquiry <em>pipeline</em></h1>
+        </div>
+        <div class="top-actions">
+          <button class="btn-line">Filter ▾</button>
+          <button class="btn-ink">+ Add manually</button>
+        </div>
+      </div>
+      <p style="color:var(--muted);font-size:.92rem;margin-bottom:18px">Drag a card across columns to move it through the pipeline. Cards from <em style="color:var(--amber);font-style:italic">website inquiries</em> land in <b>New</b> automatically.</p>
+      <div class="kanban" id="kanban">
+        <div class="col" data-stage="new">
+          <div class="col-h"><h4>New</h4><span class="ct">2</span></div>
+          <div class="col-body">
+            <div class="lead" draggable="true">
+              <div class="ld-top"><div class="nm">Hannah Lee</div><div class="ty">Wedding</div></div>
+              <div class="det">Sept 12 · Aldridge Gardens · ~120 guests · "leaning toward the Day collection + film"</div>
+              <div class="mt"><span class="price">~$4,800</span><span class="date">4 hrs ago</span></div>
+            </div>
+            <div class="lead" draggable="true">
+              <div class="ld-top"><div class="nm">Marcus Reed</div><div class="ty">Corporate</div></div>
+              <div class="det">Recruiting reel for a 6-person engineering team. Half-day in Birmingham office.</div>
+              <div class="mt"><span class="price">~$1,800</span><span class="date">Yesterday</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col" data-stage="discovery">
+          <div class="col-h"><h4>Discovery call</h4><span class="ct">2</span></div>
+          <div class="col-body">
+            <div class="lead" draggable="true">
+              <div class="ld-top"><div class="nm">Olivia & Drew Singh</div><div class="ty">Wedding</div></div>
+              <div class="det">Oct 4 · Hotel Indigo · 80 guests · call scheduled Thu 2pm</div>
+              <div class="mt"><span class="price">~$3,800</span><span class="date">Call Thu</span></div>
+            </div>
+            <div class="lead" draggable="true">
+              <div class="ld-top"><div class="nm">Grace Community</div><div class="ty">Church</div></div>
+              <div class="det">Looking for monthly retainer · 1 Sunday + 1 special service each month</div>
+              <div class="mt"><span class="price">~$2,400/mo</span><span class="date">Call Fri</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col" data-stage="proposal">
+          <div class="col-h"><h4>Proposal sent</h4><span class="ct">1</span></div>
+          <div class="col-body">
+            <div class="lead" draggable="true">
+              <div class="ld-top"><div class="nm">The Holloway Family</div><div class="ty">Annual portrait</div></div>
+              <div class="det">Yearly milestone package · 4 sittings + holiday card crops</div>
+              <div class="mt"><span class="price">$1,650</span><span class="date">Sent 2d</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col" data-stage="booked">
+          <div class="col-h"><h4>Booked</h4><span class="ct">1</span></div>
+          <div class="col-body">
+            <div class="lead" draggable="true">
+              <div class="ld-top"><div class="nm">Anna & Will Patterson</div><div class="ty">Wedding</div></div>
+              <div class="det">May 30 · Mountain Brook Club · contract signed, deposit cleared</div>
+              <div class="mt"><span class="price">$3,400</span><span class="date">9 days out</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="page" id="p-schedule">
+      <div class="top">
+        <div>
+          <div class="crumb">Studio · Schedule</div>
+          <h1>Shoot <em>calendar</em></h1>
+        </div>
+        <div class="top-actions">
+          <button class="btn-line">Sync to iCal</button>
+          <button class="btn-ink">+ Block a day</button>
+        </div>
+      </div>
+
+      <div class="cal-head">
+        <div class="cal-nav">
+          <button onclick="navMonth(-1)">‹</button>
+          <h3 id="calMonth">May <em>2026</em></h3>
+          <button onclick="navMonth(1)">›</button>
+        </div>
+        <div class="cal-filter">
+          <button class="on" data-f="all">All</button>
+          <button data-f="wedding">Weddings</button>
+          <button data-f="family">Family</button>
+          <button data-f="church">Church</button>
+          <button data-f="corp">Corporate</button>
+          <button data-f="event">Events</button>
+        </div>
+      </div>
+
+      <div class="cal">
+        <div class="cal-dow">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+
+    <!-- GALLERIES -->
+    <div class="page" id="p-galleries">
+      <div class="top">
+        <div>
+          <div class="crumb">Studio · Galleries</div>
+          <h1>Client <em>galleries</em></h1>
+        </div>
+        <div class="top-actions">
+          <button class="btn-line">Archive policy</button>
+          <button class="btn-ink">+ New gallery</button>
+        </div>
+      </div>
+      <div class="gallery-head">
+        <div class="gallery-filter">
+          <button class="on" data-gf="all">All (9)</button>
+          <button data-gf="ready">Delivered</button>
+          <button data-gf="draft">Draft / Review</button>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);font-style:italic;font-family:'Cormorant Garamond',serif">Click any gallery to open the viewer.</div>
+      </div>
+      <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="p-settings">
+      <div class="top">
+        <div>
+          <div class="crumb">Studio · Settings</div>
+          <h1>Studio <em>settings</em></h1>
+        </div>
+        <div class="top-actions">
+          <button class="btn-ink" onclick="flashSaved()">Save changes</button>
+        </div>
+      </div>
+      <div class="settings-grid">
+        <div class="set-card">
+          <h3>Studio <em>profile</em></h3>
+          <div class="set-field"><label>Studio name</label><input value="Jonathan Goff Productions"></div>
+          <div class="set-field"><label>Client-facing email</label><input value="hello@jonathangoff.com"></div>
+          <div class="set-field"><label>Phone</label><input value="205-555-0142"></div>
+          <div class="set-field"><label>Studio city</label><input value="Birmingham, AL"></div>
+          <div class="set-field"><label>Time zone</label><select><option>America/Chicago (Central)</option><option>America/New_York</option></select></div>
+        </div>
+        <div class="set-card">
+          <h3>Inquiry <em>auto-reply</em></h3>
+          <div class="set-field"><label>Subject line</label><input value="Thanks — I've got your note"></div>
+          <div class="set-field"><label>Body</label><textarea rows="7">Hey {{first_name}},
+
+Got your note about the {{event_type}} in {{month}}. Give me one business day and I'll come back with a couple of times for a call.
+
+— Jonathan</textarea></div>
+          <div class="set-field"><label>Send from</label><input value="hello@jonathangoff.com"></div>
+        </div>
+        <div class="set-card">
+          <h3>Delivery <em>defaults</em></h3>
+          <div class="set-field"><label>Default gallery archive</label><select><option>1 year (sittings)</option><option selected>3 years (weddings & retainers)</option><option>Forever</option></select></div>
+          <div class="set-field"><label>Sneak peek count</label><input value="6" type="number"></div>
+          <div class="set-field"><label>Watermark draft galleries</label><select><option selected>Yes — until contract balance is paid</option><option>Never</option></select></div>
+        </div>
+        <div class="set-card">
+          <h3>Pricing <em>collections</em></h3>
+          <div class="set-field"><label>The Sitting — starting at</label><input value="$425"></div>
+          <div class="set-field"><label>The Day — starting at</label><input value="$3,400"></div>
+          <div class="set-field"><label>The Season — billing</label><select><option selected>Custom quote</option><option>Monthly retainer</option></select></div>
+          <div class="set-field"><label>Highlight film add-on</label><input value="$1,400"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- LIGHTBOX / GALLERY VIEWER -->
+<div class="lb" id="lb">
+  <div class="lb-top">
+    <div>
+      <div class="ttl" id="lbTitle">Anna & Will — <em>first light at the chapel</em></div>
+      <div class="meta" id="lbMeta">Wedding · May 30, 2026 · 528 images</div>
+    </div>
+    <button class="close" onclick="closeLB()">×</button>
+  </div>
+  <div class="lb-main">
+    <button class="lb-arrow prev" onclick="step(-1)">‹</button>
+    <div class="lb-img" id="lbImg">
+      <div class="gleam"></div>
+      <div class="grain"></div>
+      <div class="cap">
+        <div class="k" id="lbCapK">Frame 01</div>
+        <div class="t" id="lbCapT">First light</div>
+      </div>
+    </div>
+    <button class="lb-arrow next" onclick="step(1)">›</button>
+  </div>
+  <div class="lb-strip" id="lbStrip"></div>
+  <div class="lb-actions">
+    <div class="count" id="lbCount">1 / 8</div>
+    <button class="b fav" id="lbFav" onclick="toggleFav()">♡ Favorite</button>
+    <button class="b">⬇ Download</button>
+    <button class="b">Share link</button>
+  </div>
+</div>
+
+<div class="saved-flash" id="saved">Settings saved ✓</div>
+
+<script>
+  // ===== LOGIN / ROLES =====
+  const login=document.getElementById('login');
+  const dash=document.getElementById('dash');
+  let role='studio';
+  document.getElementById('roleStudio').onclick=()=>{role='studio';setRole(true)};
+  document.getElementById('roleClient').onclick=()=>{role='client';setRole(false)};
+  function setRole(s){
+    document.getElementById('roleStudio').classList.toggle('on',s);
+    document.getElementById('roleClient').classList.toggle('on',!s);
+  }
+  document.getElementById('loginForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    login.style.display='none';
+    dash.classList.add('on');
+    if(role==='client'){
+      document.getElementById('meAv').textContent='AW';
+      document.getElementById('meNm').textContent='Anna & Will';
+      document.getElementById('meRl').textContent='Client';
+      document.getElementById('greetName').textContent='Anna';
+      // Send clients straight to their gallery
+      setTimeout(()=>{goto('galleries');openGal(0)},300);
+    }
+  });
+  function signOut(){dash.classList.remove('on');login.style.display='flex'}
+
+  // ===== NAV =====
+  document.querySelectorAll('.navlink').forEach(n=>{
+    n.onclick=()=>goto(n.dataset.p);
+  });
+  function goto(p){
+    document.querySelectorAll('.navlink').forEach(n=>n.classList.toggle('active',n.dataset.p===p));
+    document.querySelectorAll('.page').forEach(pg=>pg.classList.toggle('on',pg.id==='p-'+p));
+  }
+  // hash routing
+  if(location.hash){
+    const h=location.hash.replace('#','');
+    if(['overview','inquiries','schedule','galleries','settings'].includes(h)){
+      // auto-login + jump
+      document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+      setTimeout(()=>goto(h),20);
+    }
+  }
+
+  // ===== KANBAN DRAG =====
+  let dragEl=null;
+  document.querySelectorAll('.lead').forEach(card=>{
+    card.addEventListener('dragstart',e=>{dragEl=card;card.classList.add('drag')});
+    card.addEventListener('dragend',()=>{if(dragEl)dragEl.classList.remove('drag');dragEl=null});
+  });
+  document.querySelectorAll('.col').forEach(col=>{
+    const body=col.querySelector('.col-body');
+    body.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('over')});
+    body.addEventListener('dragleave',()=>col.classList.remove('over'));
+    body.addEventListener('drop',e=>{
+      e.preventDefault();col.classList.remove('over');
+      if(!dragEl) return;
+      body.appendChild(dragEl);
+      // recompute counts
+      document.querySelectorAll('.col').forEach(c=>{
+        c.querySelector('.col-h .ct').textContent=c.querySelectorAll('.lead').length;
+      });
+      document.getElementById('leadCount').textContent=document.querySelectorAll('.lead').length;
+    });
+  });
+
+  // ===== CALENDAR =====
+  let calYear=2026, calMonth=4; // May (0-indexed)
+  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  // events keyed by 'YYYY-M-D'
+  const events={
+    '2026-4-9':[{t:'Caldwell Family',k:'family'}],
+    '2026-4-15':[{t:'First Bham · Easter prep',k:'church'}],
+    '2026-4-17':[{t:'Editorial · Musician',k:'corp'}],
+    '2026-4-22':[{t:'Walker engagement',k:'wedding'}],
+    '2026-4-30':[{t:'Anna & Will — Wedding',k:'wedding'}],
+    '2026-5-1':[{t:'First Bham · Recap delivery',k:'church'}],
+    '2026-5-3':[{t:'Regions internship hdshts',k:'corp'}],
+    '2026-5-5':[{t:'Holloway family portrait',k:'family'}],
+    '2026-5-6':[{t:"Children's Harbor Gala",k:'event'}],
+    '2026-5-13':[{t:'Olivia & Drew — Wedding',k:'wedding'}],
+    '2026-5-20':[{t:'Reed recruiting reel',k:'corp'}],
+    '2026-5-22':[{t:'Patterson album review',k:'wedding'}],
+    '2026-5-27':[{t:'Hannah Lee · discovery',k:'wedding'}],
+    '2026-3-12':[{t:'Smith engagement',k:'wedding'}],
+    '2026-3-20':[{t:'Church multicam',k:'church'}],
+    '2026-3-28':[{t:'Brand film · Aurora',k:'corp'}],
+  };
+  let calFilter='all';
+  document.querySelectorAll('.cal-filter button').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('.cal-filter button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      calFilter=b.dataset.f;
+      renderCal();
+    };
+  });
+  function navMonth(dir){
+    calMonth+=dir;
+    if(calMonth<0){calMonth=11;calYear--}
+    if(calMonth>11){calMonth=0;calYear++}
+    renderCal();
+  }
+  function renderCal(){
+    document.getElementById('calMonth').innerHTML=`${monthNames[calMonth]} <em>${calYear}</em>`;
+    const g=document.getElementById('calGrid');
+    g.innerHTML='';
+    const first=new Date(calYear,calMonth,1).getDay();
+    const dim=new Date(calYear,calMonth+1,0).getDate();
+    const prevDim=new Date(calYear,calMonth,0).getDate();
+    const today=new Date(2026,4,24); // pinned demo "today"
+    // leading dim days
+    for(let i=first-1;i>=0;i--){
+      const d=prevDim-i;
+      g.innerHTML+=`<div class="cell dim"><span class="d">${d}</span></div>`;
+    }
+    for(let d=1;d<=dim;d++){
+      const key=`${calYear}-${calMonth}-${d}`;
+      const evs=(events[key]||[]).filter(e=>calFilter==='all'||e.k===calFilter);
+      const istoday=(calYear===today.getFullYear() && calMonth===today.getMonth() && d===today.getDate());
+      let html=`<div class="cell ${istoday?'today':''}"><span class="d">${d}</span>`;
+      evs.forEach(e=>{html+=`<div class="ev ${e.k}" title="${e.t}">${e.t}</div>`;});
+      html+='</div>';
+      g.innerHTML+=html;
+    }
+    // trailing dim
+    const total=first+dim;
+    const trail=(7-(total%7))%7;
+    for(let d=1;d<=trail;d++){
+      g.innerHTML+=`<div class="cell dim"><span class="d">${d}</span></div>`;
+    }
+  }
+  renderCal();
+
+  // ===== GALLERIES =====
+  const galleries=[
+    {id:0,title:'Anna & Will Patterson',type:'Wedding · May 30',status:'draft',label:'Wedding · Mountain Brook',count:528,grad:'linear-gradient(135deg,#3a2a1a,#0d0807)'},
+    {id:1,title:'The Holloway Family',type:'Family · May 5',status:'ready',label:'Family · Oak Mountain',count:62,grad:'linear-gradient(160deg,#4a3520,#100905)'},
+    {id:2,title:'Ellie & Drew',type:'Wedding · April 22',status:'ready',label:'Wedding film highlight',count:412,grad:'linear-gradient(135deg,#52391f,#180c05)'},
+    {id:3,title:'First Bham Easter',type:'Church · April 12',status:'ready',label:'Church · multicam',count:248,grad:'linear-gradient(135deg,#2c3540,#0a0c10)'},
+    {id:4,title:'Regions Internship',type:'Corporate · April 8',status:'ready',label:'Corporate · headshots',count:84,grad:'linear-gradient(180deg,#1e2530,#06080b)'},
+    {id:5,title:"Children's Harbor Gala",type:'Event · April 4',status:'ready',label:'Event · candle hour',count:316,grad:'linear-gradient(135deg,#3d2b1b,#0c0805)'},
+    {id:6,title:'Walker Engagement',type:'Engagement · March 30',status:'ready',label:'Engagement · golden hour',count:96,grad:'linear-gradient(135deg,#4d3722,#0f0807)'},
+    {id:7,title:'Aurora Brand Film',type:'Corporate · March 18',status:'ready',label:'Brand · Aurora Coffee',count:54,grad:'linear-gradient(160deg,#2a3540,#08090c)'},
+    {id:8,title:'The Caldwell Five',type:'Family · March 9',status:'ready',label:'Family · in-home',count:48,grad:'linear-gradient(135deg,#5d4128,#0d0606)'},
+  ];
+  function renderGalleries(filter='all'){
+    const g=document.getElementById('galleryGrid');
+    g.innerHTML='';
+    galleries.filter(x=>filter==='all'||x.status===filter).forEach((x,i)=>{
+      g.innerHTML+=`<div class="gal" onclick="openGal(${x.id})">
+        <div class="gal-cover" style="background:${x.grad}">
+          <div class="gleam"></div>
+          <div class="grain"></div>
+          <div class="lbl">${x.label}</div>
+        </div>
+        <div class="gal-body">
+          <h4>${x.title.replace(/—/g,'<em>—</em>')}</h4>
+          <div class="meta">
+            <span>${x.type}</span>
+            <span class="pill ${x.status}">${x.status==='ready'?'Delivered':'Draft'}</span>
+            <span style="color:var(--muted)">· ${x.count} frames</span>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+  renderGalleries();
+  document.querySelectorAll('.gallery-filter button').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('.gallery-filter button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      renderGalleries(b.dataset.gf);
+    };
+  });
+
+  // ===== LIGHTBOX =====
+  const lb=document.getElementById('lb');
+  const lbImg=document.getElementById('lbImg');
+  const lbStrip=document.getElementById('lbStrip');
+  let curGal=null, curIdx=0, favs={};
+  // generated frames per gallery
+  function frames(g){
+    const palettes={
+      0:['#3a2a1a','#5d3a14','#2a3540','#4d3722','#1c1310','#3d2b1b','#52391f','#0d0807'],
+      1:['#4a3520','#3a2a1a','#5d3a14','#2a1a10','#3d2b1b','#1f1812','#4d3722','#0f0807'],
+      2:['#52391f','#3a2a1a','#3d2b1b','#180c05','#5d3a14','#4d3722','#2a1a10','#0d0807'],
+      3:['#2c3540','#1e2530','#2a3540','#131820','#3a4350','#06080b','#15191f','#0a0c10'],
+      4:['#1e2530','#2a3540','#131820','#3a4350','#06080b','#2c3540','#15191f','#0a0c10'],
+      5:['#3d2b1b','#52391f','#5d3a14','#180c05','#4d3722','#2a1a10','#3a2a1a','#0c0805'],
+      6:['#4d3722','#3a2a1a','#5d3a14','#2a1a10','#3d2b1b','#1f1812','#52391f','#0f0807'],
+      7:['#2a3540','#1e2530','#3a4350','#131820','#2c3540','#06080b','#15191f','#08090c'],
+      8:['#5d4128','#4d3722','#3a2a1a','#2a1a10','#5d3a14','#3d2b1b','#1f1812','#0d0606']
+    };
+    const titles={
+      0:['First light at the chapel','The aisle, before','Rings on linen','Vow exchange','First kiss','Father–daughter dance','Cake in candlelight','Sparkler exit'],
+      1:['Five of them, one trail','The youngest, first','Grandma\'s hands','Boots & dirt','Held','Backlit, all five','Quiet between frames','The walk back'],
+      2:['Getting ready, in mirrors','Drew\'s look','Ellie laughs','First look','The vow page','Wedding party in shade','Live band, hour one','The exit'],
+      3:['Choir hour','Children\'s message','Baptism','Sermon wide','Lighting the cross','Communion','The congregation','Sunset on the steps'],
+      4:['Class portrait','Single, ambient','Studio, single bulb','Profile, half-light','Group of three','Hands on table','The CEO','Outside the building'],
+      5:['Welcome hour','Toast','Auction paddle','Candle moment','Speeches','The kitchen run','Dance floor opens','Lobby, late'],
+      6:['Golden field','The look','Walking away','Held close','Sun flare','Quiet laugh','The dress, the light','Last frame'],
+      7:['The roastery','Pour-over hands','Owner, talking','Cups in a row','Steam on glass','The crew','Storefront at dusk','Open sign on'],
+      8:['On the porch','Mama and middle','Five up the stairs','In the kitchen','Backlit doorway','Living room','Sibling pile','Outside, golden'],
+    };
+    const arr=[];
+    for(let i=0;i<8;i++){
+      arr.push({color:palettes[g][i],k:`Frame ${String(i+1).padStart(2,'0')}`,t:titles[g][i]});
+    }
+    return arr;
+  }
+  function openGal(id){
+    curGal=galleries.find(g=>g.id===id);
+    curIdx=0; favs[id]=favs[id]||{};
+    document.getElementById('lbTitle').innerHTML=curGal.title+' — <em>'+curGal.type+'</em>';
+    document.getElementById('lbMeta').textContent=`${curGal.label} · ${curGal.count} frames in full gallery`;
+    // strip
+    const fs=frames(id);
+    lbStrip.innerHTML='';
+    fs.forEach((f,i)=>{
+      lbStrip.innerHTML+=`<div class="thumb ${i===0?'on':''}" style="background:linear-gradient(135deg,${f.color},#000)" onclick="jump(${i})"><div class="gleam"></div></div>`;
+    });
+    show();
+    lb.classList.add('on');
+  }
+  function closeLB(){lb.classList.remove('on')}
+  function step(d){
+    const fs=frames(curGal.id);
+    curIdx=(curIdx+d+fs.length)%fs.length;
+    show();
+  }
+  function jump(i){curIdx=i;show()}
+  function show(){
+    const fs=frames(curGal.id);
+    const f=fs[curIdx];
+    lbImg.style.background=`linear-gradient(135deg,${f.color},#0a0807)`;
+    document.getElementById('lbCapK').textContent=f.k;
+    document.getElementById('lbCapT').textContent=f.t;
+    document.getElementById('lbCount').textContent=`${curIdx+1} / ${fs.length} shown · ${curGal.count} in full gallery`;
+    document.querySelectorAll('.thumb').forEach((t,i)=>t.classList.toggle('on',i===curIdx));
+    const isFav=!!(favs[curGal.id]&&favs[curGal.id][curIdx]);
+    const fb=document.getElementById('lbFav');
+    fb.classList.toggle('on',isFav);
+    fb.innerHTML=isFav?'♥ Favorited':'♡ Favorite';
+  }
+  function toggleFav(){
+    favs[curGal.id][curIdx]=!favs[curGal.id][curIdx];
+    show();
+  }
+  document.addEventListener('keydown',e=>{
+    if(!lb.classList.contains('on')) return;
+    if(e.key==='Escape') closeLB();
+    if(e.key==='ArrowRight') step(1);
+    if(e.key==='ArrowLeft') step(-1);
+  });
+
+  // saved flash
+  function flashSaved(){
+    const s=document.getElementById('saved');
+    s.classList.add('on');
+    setTimeout(()=>s.classList.remove('on'),1800);
+  }
+</script>
+</body>
+</html>
