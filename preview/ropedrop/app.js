@@ -69,8 +69,8 @@
     setTimeout(() => {
       overlay.classList.remove("show");
       overlay.setAttribute("aria-hidden", "true");
-      if (window.RopeDropDemo) {
-        window.RopeDropDemo.open(park, action);
+      if (window.RopeDropLive) {
+        window.RopeDropLive.open(park, action);
       } else {
         window.location.href = targetUrl;
       }
