@@ -111,7 +111,9 @@
     }
     html += '<div class="rd-section-title">Lightning Lane</div>';
     html += '<a id="rd-ll-btn" href="' + llUrl + '">⚡ Open Lightning Lane booking</a>';
+    html += connectBlock();
     body.innerHTML = html;
+    wireConnectButton(body);
   }
 
   function renderError(body, msg, hint) {
@@ -119,7 +121,86 @@
       '<div id="rd-error"><strong>Could not load queues.</strong><br>' + esc(msg) +
       (hint ? '<br><br>' + esc(hint) : "") + '</div>' +
       '<div class="rd-section-title">Lightning Lane</div>' +
-      '<a id="rd-ll-btn" href="' + llUrl + '">⚡ Open Lightning Lane booking</a>';
+      '<a id="rd-ll-btn" href="' + llUrl + '">⚡ Open Lightning Lane booking</a>' +
+      connectBlock();
+    wireConnectButton(body);
+  }
+
+  /* ---------------- Connect to RopeDrop dashboard ---------------- */
+  function connectBlock() {
+    return (
+      '<div class="rd-section-title" style="margin-top:18px">RopeDrop Dashboard</div>' +
+      '<div class="rd-connect-block">' +
+        '<div class="rd-connect-copy">' +
+          'See your Lightning Lane passes and Virtual Queue boarding group on any device. RopeDrop never sees your password.' +
+        '</div>' +
+        '<button type="button" id="rd-connect-btn" class="rd-connect-btn">' +
+          '<span class="rd-connect-label">🔗 Connect this Disney session to my dashboard</span>' +
+        '</button>' +
+        '<div id="rd-connect-status" class="rd-connect-status"></div>' +
+      '</div>'
+    );
+  }
+
+  var ROPEDROP_API = "https://ropedrop.williamsdigital.io";
+  var ROPEDROP_API_FALLBACK = "https://ropedrop-app.vercel.app";
+  var ROPEDROP_DASHBOARD = "https://ropedrop.williamsdigital.io/";
+
+  function wireConnectButton(body) {
+    var btn = body.querySelector("#rd-connect-btn");
+    var status = body.querySelector("#rd-connect-status");
+    if (!btn) return;
+
+    btn.addEventListener("click", async function () {
+      btn.disabled = true;
+      btn.classList.add("loading");
+      status.textContent = "Reading your Disney session…";
+      status.className = "rd-connect-status";
+
+      try {
+        var data = await chrome.runtime.sendMessage({
+          type: "ropedrop:gather-disney-cookies",
+          resort: isWDW ? "wdw" : "dlr"
+        });
+        if (!data || !data.ok) throw new Error((data && data.error) || "Couldn't read Disney cookies.");
+
+        status.textContent = "Sending to RopeDrop…";
+
+        var apiBase = ROPEDROP_API;
+        var ok = await sendToApi(apiBase, data);
+        if (!ok) ok = await sendToApi(ROPEDROP_API_FALLBACK, data);
+        if (!ok) throw new Error("RopeDrop API did not accept the session.");
+
+        status.innerHTML =
+          '✓ Connected! <a href="' + ROPEDROP_DASHBOARD + '" target="_blank" style="color:#3a52cc;font-weight:700">' +
+          'Open your dashboard →</a>';
+        status.classList.add("ok");
+      } catch (err) {
+        status.textContent = (err && err.message) || "Couldn't connect to RopeDrop.";
+        status.classList.add("err");
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove("loading");
+      }
+    });
+  }
+
+  async function sendToApi(base, data) {
+    try {
+      var res = await fetch(base + "/api/connect", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cookie: data.cookie,
+          swid: data.swid,
+          resort: data.resort
+        })
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 
   function loadQueues(body) {
