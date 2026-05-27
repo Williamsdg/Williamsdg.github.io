@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Soar — Dashboard Upgrade Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0b0d;--surface:#141418;--surface-2:#1d1d22;
+  --ink:#f7f3ec;--ink-dim:#b5b1aa;
+  --pink:#ff3d8a;--pink-soft:#ffb1cc;--coral:#ff6a3d;--lime:#d6ff5a;--ok:#7be39c;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.font-display{font-family:'Archivo Black',sans-serif;letter-spacing:-0.01em;line-height:1}
+.mono{font-family:'JetBrains Mono',monospace}
+
+.preview-banner{background:var(--pink);color:#000;text-align:center;padding:8px;font-size:12px;font-weight:600;letter-spacing:.05em}
+.preview-banner a{text-decoration:underline}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:40;border-bottom:1px solid rgba(255,255,255,.05);background:rgba(11,11,13,.92);backdrop-filter:blur(12px)}
+.nav-inner{max-width:1240px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Archivo Black';font-size:18px}
+.logo span{color:var(--pink)}
+.nav-cta{display:flex;align-items:center;gap:12px}
+.nav-cta .tag{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--ink-dim)}
+.btn-pink{background:var(--pink);color:#000;border-radius:999px;padding:10px 22px;font-weight:600;font-size:13px;transition:background .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-pink:hover{background:var(--pink-soft)}
+.btn-ghost{border:1px solid rgba(255,255,255,.15);border-radius:999px;padding:10px 22px;font-weight:600;font-size:13px;color:var(--ink);transition:border-color .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost:hover{border-color:var(--pink)}
+.btn-lg{padding:14px 28px;font-size:14px}
+@media(max-width:680px){.nav-cta .tag{display:none}}
+
+/* HERO */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.05)}
+.hero-blob{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none}
+.hero-blob-1{top:-120px;right:-120px;width:520px;height:520px;background:var(--pink);opacity:.18}
+.hero-blob-2{bottom:-160px;left:-120px;width:480px;height:480px;background:var(--coral);opacity:.14}
+.hero-grid{background-image:linear-gradient(to right,rgba(247,243,236,.04) 1px,transparent 1px),linear-gradient(to bottom,rgba(247,243,236,.04) 1px,transparent 1px);background-size:48px 48px;position:absolute;inset:0;opacity:.6}
+.hero-inner{position:relative;max-width:1240px;margin:0 auto;padding:80px 24px 60px;text-align:center}
+@media(max-width:760px){.hero-inner{padding:60px 24px 50px}}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:11px;text-transform:uppercase;letter-spacing:.22em;color:var(--pink);margin-bottom:18px}
+.eyebrow::before,.eyebrow::after{content:'';width:24px;height:1px;background:var(--pink)}
+.hero h1{font-family:'Archivo Black';font-size:clamp(40px,7vw,80px);line-height:.95;letter-spacing:-.01em}
+.hero h1 .pink{color:var(--pink)}
+.hero .lede{margin:24px auto 0;max-width:680px;font-size:18px;color:var(--ink-dim);line-height:1.55}
+.hero .lede strong{color:var(--ink)}
+.hero-actions{margin-top:36px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+
+/* SAVINGS BANNER */
+.savings{position:relative;z-index:1;margin:32px auto 0;max-width:680px;padding:18px 24px;border-radius:18px;background:linear-gradient(135deg,rgba(123,227,156,.14),rgba(255,61,138,.08));border:1px solid rgba(123,227,156,.4);display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;text-align:left}
+.savings-emoji{font-family:'Archivo Black';font-size:32px;color:var(--ok);line-height:1}
+.savings-text{font-size:15px}
+.savings-text strong{font-family:'Archivo Black';font-size:18px;color:var(--ok);display:block;letter-spacing:-.01em}
+.savings-text .sub{color:var(--ink-dim);font-size:13px;margin-top:2px}
+
+/* SECTION shells */
+section{padding:90px 24px}
+@media(max-width:760px){section{padding:60px 20px}}
+.wrap{max-width:1240px;margin:0 auto}
+.sec-head{text-align:center;max-width:760px;margin:0 auto 56px}
+.sec-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.22em;color:var(--pink)}
+.sec-head h2{font-family:'Archivo Black';font-size:clamp(32px,4.5vw,52px);margin-top:14px;line-height:1.05}
+.sec-head h2 .pink{color:var(--pink)}
+.sec-head p{margin-top:18px;color:var(--ink-dim);font-size:17px;line-height:1.6}
+
+/* FEATURE GRID */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:980px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.feat-grid{grid-template-columns:1fr}}
+.feat{padding:24px;border:1px solid rgba(255,255,255,.08);background:var(--surface);border-radius:18px;transition:border-color .15s,transform .15s}
+.feat:hover{border-color:rgba(255,61,138,.4);transform:translateY(-2px)}
+.feat-ic{width:42px;height:42px;border-radius:12px;background:rgba(255,61,138,.12);color:var(--pink);display:grid;place-items:center;font-family:'Archivo Black';font-size:18px;margin-bottom:14px}
+.feat h3{font-family:'Archivo Black';font-size:17px;margin-bottom:6px}
+.feat p{color:var(--ink-dim);font-size:14px;line-height:1.55}
+.feat ul{margin-top:12px;list-style:none;display:flex;flex-direction:column;gap:6px}
+.feat ul li{font-size:13px;color:var(--ink-dim);position:relative;padding-left:18px}
+.feat ul li::before{content:'◆';position:absolute;left:0;color:var(--pink);font-size:9px;top:5px}
+
+/* PRICE COMPARISON */
+.compare{padding:90px 24px;background:linear-gradient(180deg,transparent,rgba(255,61,138,.04),transparent)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:980px;margin:0 auto;align-items:stretch}
+@media(max-width:760px){.compare-grid{grid-template-columns:1fr}}
+.card-old{padding:36px;border:1px solid rgba(255,255,255,.1);background:var(--surface);border-radius:22px;position:relative}
+.card-old::after{content:'';position:absolute;inset:48px 36px auto auto;width:84px;height:84px;border-radius:50%;background:rgba(255,106,61,.08);border:1px solid rgba(255,106,61,.2);pointer-events:none}
+.card-new{padding:36px;border:1.5px solid var(--pink);background:linear-gradient(180deg,rgba(255,61,138,.08),rgba(255,61,138,.02));border-radius:22px;position:relative;box-shadow:0 30px 80px -30px rgba(255,61,138,.35)}
+.card-new::before{content:'NEW';position:absolute;top:-12px;right:24px;background:var(--pink);color:#000;font-family:'Archivo Black';font-size:11px;letter-spacing:.18em;padding:5px 12px;border-radius:999px}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px}
+.card-head h3{font-family:'Archivo Black';font-size:20px;line-height:1.1}
+.card-head .who{font-size:12px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.16em;margin-top:4px}
+.price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.price{font-family:'Archivo Black';font-size:54px;line-height:1}
+.card-old .price{color:var(--ink-dim);text-decoration:line-through;text-decoration-color:var(--coral);text-decoration-thickness:3px}
+.card-new .price{color:var(--pink)}
+.price-suffix{font-size:14px;color:var(--ink-dim)}
+.card-sub{color:var(--ink-dim);font-size:13px;margin-bottom:18px}
+.compare-list{list-style:none;display:flex;flex-direction:column;gap:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:18px}
+.compare-list li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.compare-list li .ic{flex-shrink:0;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:700;margin-top:1px}
+.compare-list li .ic.yes{background:rgba(123,227,156,.18);color:var(--ok)}
+.compare-list li .ic.no{background:rgba(255,106,61,.18);color:var(--coral)}
+.compare-list li .ic.partial{background:rgba(255,255,255,.08);color:var(--ink-dim)}
+.compare-list li.no{color:var(--ink-dim)}
+
+/* COST BREAKDOWN TABLE */
+.breakdown{margin-top:48px;max-width:760px;margin-left:auto;margin-right:auto;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:var(--surface);overflow:hidden}
+.breakdown-head{padding:18px 24px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center}
+.breakdown-head h3{font-family:'Archivo Black';font-size:16px}
+.breakdown-head .tag{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--pink);font-weight:600}
+.bd-row{display:grid;grid-template-columns:1fr 1fr 140px;gap:16px;padding:14px 24px;border-bottom:1px solid rgba(255,255,255,.04);align-items:center}
+@media(max-width:600px){.bd-row{grid-template-columns:1fr 1fr;font-size:13px}.bd-row .bd-cost{grid-column:span 2;text-align:right}}
+.bd-row:last-child{border-bottom:none;background:rgba(255,61,138,.06)}
+.bd-svc{font-weight:600}
+.bd-note{font-size:12px;color:var(--ink-dim)}
+.bd-cost{font-family:'JetBrains Mono';text-align:right;font-weight:600}
+.bd-row:last-child .bd-svc{font-family:'Archivo Black';font-size:18px}
+.bd-row:last-child .bd-cost{color:var(--pink);font-size:18px}
+
+/* SETUP FEE */
+.setup{margin-top:48px;max-width:760px;margin-left:auto;margin-right:auto;padding:32px;border:1.5px solid rgba(214,255,90,.4);background:linear-gradient(135deg,rgba(214,255,90,.06),rgba(255,61,138,.04));border-radius:22px;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+.setup-text h3{font-family:'Archivo Black';font-size:22px}
+.setup-text p{color:var(--ink-dim);font-size:14px;margin-top:6px;max-width:420px}
+.setup-price{text-align:right}
+.setup-price .num{font-family:'Archivo Black';font-size:48px;color:var(--lime);line-height:1}
+.setup-price .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--ink-dim);margin-top:4px}
+
+/* TIMELINE */
+.timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;max-width:1080px;margin:0 auto}
+@media(max-width:880px){.timeline{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.timeline{grid-template-columns:1fr}}
+.step{padding:24px;border:1px solid rgba(255,255,255,.08);background:var(--surface);border-radius:18px;position:relative}
+.step-num{font-family:'Archivo Black';font-size:36px;color:var(--pink);opacity:.5;line-height:1}
+.step h3{font-family:'Archivo Black';font-size:16px;margin:8px 0 6px}
+.step p{color:var(--ink-dim);font-size:13px;line-height:1.55}
+.step-time{margin-top:14px;font-size:11px;text-transform:uppercase;letter-spacing:.16em;color:var(--pink);font-weight:600}
+
+/* SCREENSHOT CTA */
+.shot{position:relative;max-width:1080px;margin:48px auto 0;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:var(--surface)}
+.shot-frame{padding:14px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.05);display:flex;gap:6px}
+.shot-frame .dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.1)}
+.shot-frame .dot.r{background:#ff5f57}
+.shot-frame .dot.y{background:#febc2e}
+.shot-frame .dot.g{background:#28c840}
+.shot-body{padding:24px;background:#0e0e10;display:grid;gap:14px;min-height:280px}
+.shot-row{display:flex;gap:12px;flex-wrap:wrap}
+.shot-tile{padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.05);border-radius:12px;flex:1;min-width:160px}
+.shot-tile .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-dim)}
+.shot-tile .val{font-family:'Archivo Black';font-size:24px;margin-top:6px;color:var(--pink)}
+.shot-overlay{position:absolute;inset:auto 0 0 0;padding:24px;background:linear-gradient(0deg,#0b0b0d,transparent);text-align:center}
+.shot-cta{display:inline-flex;align-items:center;gap:8px}
+
+/* FAQ */
+.faq{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.faq details{padding:18px 22px;border:1px solid rgba(255,255,255,.08);background:var(--surface);border-radius:14px;cursor:pointer}
+.faq details[open]{border-color:rgba(255,61,138,.3)}
+.faq summary{list-style:none;font-weight:600;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';color:var(--pink);font-family:'Archivo Black';font-size:22px;line-height:1;transition:transform .15s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{margin-top:12px;color:var(--ink-dim);font-size:14px;line-height:1.65}
+
+/* CTA FOOTER */
+.cta-final{padding:90px 24px;text-align:center;background:linear-gradient(180deg,transparent,rgba(255,61,138,.06))}
+.cta-final h2{font-family:'Archivo Black';font-size:clamp(32px,5vw,56px);max-width:760px;margin:0 auto;line-height:1.05}
+.cta-final h2 .pink{color:var(--pink)}
+.cta-final p{margin-top:18px;color:var(--ink-dim);font-size:17px}
+.cta-final .price-line{margin-top:24px;display:inline-flex;align-items:baseline;gap:10px;padding:14px 28px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:var(--surface)}
+.cta-final .price-line .lg{font-family:'Archivo Black';font-size:22px;color:var(--pink)}
+.cta-final .price-line .sm{font-size:13px;color:var(--ink-dim)}
+.cta-final .actions{margin-top:32px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+
+.footer{padding:30px 24px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:var(--ink-dim);font-size:12px}
+.footer a{color:var(--pink)}
+</style>
+</head>
+<body>
+
+<div class="preview-banner">PREVIEW · Soar Bungee Fitness Dashboard Proposal — prepared by <a href="https://williamsdigital.io" target="_blank">Williams Digital</a></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo">Soar<span>.</span> Upgrade</div>
+    <div class="nav-cta">
+      <span class="tag">Mariah · Owner Proposal</span>
+      <a href="dashboard.html" class="btn-ghost">See dashboard demo</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" style="padding:0">
+  <div class="hero-grid"></div>
+  <div class="hero-blob hero-blob-1"></div>
+  <div class="hero-blob hero-blob-2"></div>
+  <div class="hero-inner">
+    <span class="eyebrow">Studio Operations Platform</span>
+    <h1>Run your entire studio<br>from <span class="pink">one place.</span></h1>
+    <p class="lede">A custom-built owner dashboard that handles <strong>scheduling, payments, teachers, members, parties, and automated messaging</strong> — all branded for Soar, all in one login. No more juggling 5 different apps.</p>
+    <div class="hero-actions">
+      <a href="dashboard.html" class="btn-pink btn-lg">Open live demo →</a>
+      <a href="#pricing" class="btn-ghost btn-lg">See pricing</a>
+    </div>
+
+    <!-- SAVINGS CALLOUT -->
+    <div class="savings">
+      <div class="savings-emoji">↓</div>
+      <div class="savings-text">
+        <strong>You'd save $2,580 per year</strong>
+        <div class="sub">Current spend ≈ $400/mo → new all-in price <strong style="color:var(--pink)">$185/mo</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT'S INCLUDED -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-eyebrow">Everything you asked for</span>
+      <h2>One dashboard. <span class="pink">Seven sections.</span></h2>
+      <p>Built specifically for a bungee studio with 6 instructors, recurring classes, memberships, parties, and a real owner-facing workflow. Click any feature below to see it live.</p>
+    </div>
+
+    <div class="feat-grid">
+      <a href="dashboard.html" class="feat">
+        <div class="feat-ic">◐</div>
+        <h3>Today</h3>
+        <p>Your morning command center. See what needs your attention before you walk into the studio.</p>
+        <ul>
+          <li>Needs-attention box (unpaid, expired waivers, party leads)</li>
+          <li>6 classes today with capacity + waitlist counts</li>
+          <li>Check-in tally, revenue total, signup count</li>
+          <li>Messages awaiting reply</li>
+        </ul>
+      </a>
+
+      <a href="dashboard.html" class="feat">
+        <div class="feat-ic">▤</div>
+        <h3>Schedule</h3>
+        <p>Build and manage your full weekly class schedule with a few clicks.</p>
+        <ul>
+          <li>Create class · assign 1 of 6 instructors</li>
+          <li>Capacity limits + auto-waitlist</li>
+          <li>Cancel or reschedule with one click</li>
+          <li>Auto-send class reminders 24hr + 2hr before</li>
+        </ul>
+      </a>
+
+      <a href="dashboard.html" class="feat">
+        <div class="feat-ic">★</div>
+        <h3>Teachers</h3>
+        <p>Profiles for all 6 instructors with stats that help you run a fair, growing team.</p>
+        <ul>
+          <li>Classes taught this week + month</li>
+          <li>Hours worked + auto pay estimate</li>
+          <li>Certifications, availability heatmap</li>
+          <li>Notes, sub-list, contact info</li>
+        </ul>
+      </a>
+
+      <a href="dashboard.html" class="feat">
+        <div class="feat-ic">◇</div>
+        <h3>Members</h3>
+        <p>A real client database — every member, every history, every waiver.</p>
+        <ul>
+          <li>Profile · waiver status · payment status</li>
+          <li>Full class history per member</li>
+          <li>Package/membership type at a glance</li>
+          <li>Text or email any member in one click</li>
+        </ul>
+      </a>
+
+      <a href="dashboard.html" class="feat">
+        <div class="feat-ic">✉</div>
+        <h3>Messaging Hub</h3>
+        <p>Branded email + SMS that go out from <strong>your</strong> studio — not a generic platform.</p>
+        <ul>
+          <li>Compose to all members or specific class rosters</li>
+          <li>11 pre-built templates (reminders, receipts, birthdays…)</li>
+          <li>8 automations: payment failed, missed class, trial follow-up</li>
+          <li>2-way SMS inbox — reply right in the dashboard</li>
+        </ul>
+      </a>
+
+      <a href="dashboard.html" class="feat">
+        <div class="feat-ic">$</div>
+        <h3>Payments</h3>
+        <p>Stripe data, surfaced for an owner — not a developer.</p>
+        <ul>
+          <li>Today / week / month revenue at a glance</li>
+          <li>Failed payments with one-click retry + text</li>
+          <li>Outstanding balances with chase buttons</li>
+          <li>Refunds, party deposits, membership purchases</li>
+        </ul>
+      </a>
+
+      <a href="dashboard.html" class="feat">
+        <div class="feat-ic">✿</div>
+        <h3>Parties</h3>
+        <p>Turn every party inquiry into a confirmed booking with deposit collected.</p>
+        <ul>
+          <li>Inquiry pipeline · date · guest count</li>
+          <li>Deposit paid/unpaid · remaining balance</li>
+          <li>Assigned teacher · party notes</li>
+          <li>Auto-send confirmation email + text</li>
+        </ul>
+      </a>
+
+      <a href="dashboard.html" class="feat">
+        <div class="feat-ic">⚡</div>
+        <h3>Quick Actions</h3>
+        <p>A persistent toolbar at the top — no digging through menus.</p>
+        <ul>
+          <li>Add class · Add member · Create party</li>
+          <li>Send text · Send email</li>
+          <li>Charge payment</li>
+          <li>Everything one tap away on mobile</li>
+        </ul>
+      </a>
+
+      <a href="dashboard.html" class="feat">
+        <div class="feat-ic">↻</div>
+        <h3>Automations</h3>
+        <p>Set it once, runs forever. The platform works while you're teaching.</p>
+        <ul>
+          <li>"When client books → confirm + remind"</li>
+          <li>"When payment fails → email + SMS to fix"</li>
+          <li>"When client misses 2 classes → win-back offer"</li>
+          <li>"When party inquiry sits → reminder to reply"</li>
+        </ul>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO PEEK -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="shot">
+      <div class="shot-frame"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="shot-body">
+        <div class="shot-row">
+          <div class="shot-tile"><div class="lbl">Today's classes</div><div class="val">6</div></div>
+          <div class="shot-tile"><div class="lbl">Check-ins</div><div class="val">14</div></div>
+          <div class="shot-tile"><div class="lbl">Revenue today</div><div class="val">$1,420</div></div>
+          <div class="shot-tile"><div class="lbl">Needs attention</div><div class="val" style="color:var(--coral)">11</div></div>
+        </div>
+        <div class="shot-row">
+          <div class="shot-tile"><div class="lbl">Class · 6:00am</div><div class="val" style="font-size:16px">Bungee 101 · Sarah · 12/12</div></div>
+          <div class="shot-tile"><div class="lbl">Class · 9:00am</div><div class="val" style="font-size:16px">Bungee HIIT · Marcus · 11/12</div></div>
+          <div class="shot-tile"><div class="lbl">Class · 12:00pm</div><div class="val" style="font-size:16px">Glow · Tasha · 8/12</div></div>
+        </div>
+      </div>
+      <div class="shot-overlay">
+        <a href="dashboard.html" class="btn-pink btn-lg shot-cta">▶  Open the live dashboard demo</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING / COMPARISON -->
+<section class="compare" id="pricing">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-eyebrow">The deal</span>
+      <h2>What you pay <span class="pink">now</span> vs. with us</h2>
+      <p>You're currently spending about $400/mo on tools that don't fully talk to each other. Our all-in price is less than half — with a custom-built dashboard, not a rented one.</p>
+    </div>
+
+    <div class="compare-grid">
+      <!-- CURRENT -->
+      <div class="card-old">
+        <div class="card-head">
+          <div>
+            <h3>What Soar pays today</h3>
+            <div class="who">Current stack (estimated)</div>
+          </div>
+        </div>
+        <div class="price-row"><div class="price">$400</div><div class="price-suffix">/ month</div></div>
+        <div class="card-sub">Stitched-together SaaS — none of it branded as Soar</div>
+        <ul class="compare-list">
+          <li><span class="ic yes">✓</span>Booking platform (Mindbody / Acuity / similar)</li>
+          <li><span class="ic yes">✓</span>Email tool (Mailchimp / Constant Contact)</li>
+          <li><span class="ic yes">✓</span>Texting tool (or none — done manually)</li>
+          <li><span class="ic yes">✓</span>Hosting / website</li>
+          <li><span class="ic no">✗</span>Custom-branded experience</li>
+          <li class="no"><span class="ic no">✗</span>One unified dashboard</li>
+          <li class="no"><span class="ic no">✗</span>2-way SMS inbox in your studio system</li>
+          <li class="no"><span class="ic no">✗</span>Automations tied to bookings + payments</li>
+          <li class="no"><span class="ic no">✗</span>Owner you can text when something breaks</li>
+        </ul>
+      </div>
+
+      <!-- NEW -->
+      <div class="card-new">
+        <div class="card-head">
+          <div>
+            <h3>Williams Digital · all-in</h3>
+            <div class="who">Custom Soar studio platform</div>
+          </div>
+        </div>
+        <div class="price-row"><div class="price">$185</div><div class="price-suffix">/ month</div></div>
+        <div class="card-sub">Includes my fee + SendGrid + Twilio + hosting + Supabase</div>
+        <ul class="compare-list">
+          <li><span class="ic yes">✓</span>Custom-built booking inside your dashboard</li>
+          <li><span class="ic yes">✓</span>Branded email (50,000/mo via SendGrid)</li>
+          <li><span class="ic yes">✓</span>Branded SMS (~2,000/mo via Twilio)</li>
+          <li><span class="ic yes">✓</span>Hosting + your soar.fit domain</li>
+          <li><span class="ic yes">✓</span>Fully on-brand Soar look & feel</li>
+          <li><span class="ic yes">✓</span><strong>One dashboard for everything</strong></li>
+          <li><span class="ic yes">✓</span>2-way SMS conversations w/ clients</li>
+          <li><span class="ic yes">✓</span>8 automations included from day one</li>
+          <li><span class="ic yes">✓</span>Direct line to me — same-day support</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- COST BREAKDOWN -->
+    <div class="breakdown">
+      <div class="breakdown-head">
+        <h3>What's inside that $185/mo</h3>
+        <div class="tag">All-in · no surprises</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-svc">SendGrid · Email <span class="bd-note">(50,000 emails/mo)</span></div>
+        <div class="bd-note">Branded class reminders, receipts, monthly specials</div>
+        <div class="bd-cost">$20</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-svc">Twilio · SMS <span class="bd-note">(~2,000 texts/mo)</span></div>
+        <div class="bd-note">Branded reminders, 2-way replies, waitlist alerts</div>
+        <div class="bd-cost">$17</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-svc">Supabase · Database <span class="bd-note">(clients, classes, payments)</span></div>
+        <div class="bd-note">Where all your data lives — yours to own</div>
+        <div class="bd-cost">$25</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-svc">Hosting · Domain · SSL</div>
+        <div class="bd-note">Vercel hosting + soar.fit + secure cert</div>
+        <div class="bd-cost">$3</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-svc">Williams Digital fee</div>
+        <div class="bd-note">Maintenance, updates, monitoring, support, new features</div>
+        <div class="bd-cost">$120</div>
+      </div>
+      <div class="bd-row">
+        <div class="bd-svc">Soar's monthly total</div>
+        <div class="bd-note">Stripe processing fees (2.9% + 30¢) billed directly to Soar</div>
+        <div class="bd-cost">$185 / mo</div>
+      </div>
+    </div>
+
+    <!-- SETUP FEE -->
+    <div class="setup">
+      <div class="setup-text">
+        <h3>One-time setup: $1,000</h3>
+        <p>Build the full dashboard, migrate your existing client list, configure Stripe, set up SendGrid/Twilio for the Soar domain, and train you on the system. Paid 50% to start ($500) + 50% on launch ($500).</p>
+      </div>
+      <div class="setup-price">
+        <div class="num">$1,000</div>
+        <div class="lbl">One-time · split into 2 payments</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-eyebrow">How it rolls out</span>
+      <h2>From <span class="pink">today</span> to launched in 4 weeks.</h2>
+      <p>I build it. You review it. We migrate cleanly from your current tools so you never miss a class signup.</p>
+    </div>
+
+    <div class="timeline">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Kickoff</h3>
+        <p>Pay $500 deposit. I export your client list and class schedule from your current tools. You hand me your brand assets.</p>
+        <div class="step-time">Week 1</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Build</h3>
+        <p>I build the dashboard, wire up Stripe, set up SendGrid + Twilio under the Soar brand, load your real client + class data into the system.</p>
+        <div class="step-time">Weeks 2–3</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Review</h3>
+        <p>You and the team log in, click around, request changes. We tweak templates, automations, and copy until it feels right.</p>
+        <div class="step-time">Week 3</div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3>Launch</h3>
+        <p>Cut over from old tools. Final $500 due. Monthly billing begins. I'm on call for the first month while you settle in.</p>
+        <div class="step-time">Week 4</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section style="padding-top:40px">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="sec-eyebrow">Quick questions</span>
+      <h2>Things you're <span class="pink">probably</span> wondering.</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>What happens to my current Mindbody / Acuity / Mailchimp accounts?</summary>
+        <p>You'd cancel them after we launch. I'll help you export everything cleanly — client list, class schedule, member balances, email subscribers — so nothing is lost. Most studios save $200–280/mo by consolidating.</p>
+      </details>
+      <details>
+        <summary>What if I send way more than 2,000 texts in a month?</summary>
+        <p>Texts above 2,000 are billed at cost — about 1¢ per message. So 3,000 texts in a busy month would add ~$10. I'll alert you before it ever gets out of hand.</p>
+      </details>
+      <details>
+        <summary>Can I edit class schedules, prices, and members myself?</summary>
+        <p>Yes. The dashboard is built for you to run day-to-day operations without needing a developer. Add classes, change prices, message clients, manage parties — all from one place.</p>
+      </details>
+      <details>
+        <summary>What about my website (soar-bungee-fitness.com)?</summary>
+        <p>Your website stays exactly as it is and is included in the $185/mo. The dashboard is a separate URL (admin.soar.fit) that only you and your team can access.</p>
+      </details>
+      <details>
+        <summary>What if I want to add a new feature later?</summary>
+        <p>Small changes (new automations, template tweaks, schedule updates) are included. Larger features (e.g., a member-facing mobile app) we'd quote separately. You'll always know the cost up front.</p>
+      </details>
+      <details>
+        <summary>Can I cancel?</summary>
+        <p>Anytime with 30 days' notice. I'll help you export your data to wherever you go next. No long-term contract, no early termination fee.</p>
+      </details>
+      <details>
+        <summary>Why is this cheaper than what I'm paying now?</summary>
+        <p>Because I built it custom instead of paying a SaaS company markup on every feature. The SaaS tools (Mindbody, etc.) charge you for software they sell to thousands of studios with sales teams, ads, and shareholders. We just pay raw hosting + messaging costs and add a fair fee for my time.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="cta-final">
+  <h2>Ready to <span class="pink">stop juggling</span><br>and start running Soar from one place?</h2>
+  <p>Same features. Half the price. Built for you.</p>
+  <div class="price-line">
+    <div class="sm">Total monthly</div>
+    <div class="lg">$185/mo</div>
+    <div class="sm">+ $1,000 one-time setup</div>
+  </div>
+  <div class="actions">
+    <a href="dashboard.html" class="btn-pink btn-lg">Open the live demo →</a>
+    <a href="mailto:Dylan@williamsdigital.io?subject=Soar%20dashboard%20upgrade" class="btn-ghost btn-lg">Email Dylan to start</a>
+  </div>
+</section>
+
+<div class="footer">
+  © 2026 · Built by <a href="https://williamsdigital.io" target="_blank">Williams Digital</a> for Soar Bungee Fitness · <a href="dashboard.html">View dashboard demo</a> · <a href="../soar-contract/">Service agreement</a>
+</div>
+
+</body>
+</html>
