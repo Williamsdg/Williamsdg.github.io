@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Elliott Land Management | Operations Platform</title>
+<meta name="theme-color" content="#1f3322" />
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231f3322'/><text x='32' y='44' font-family='sans-serif' font-size='30' font-weight='800' fill='%23c79a3b' text-anchor='middle'>E</text></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --forest:#2f4a32;--forest-deep:#1f3322;--moss:#6b8a4f;--gold:#c79a3b;--gold-soft:#a8801f;
+  --green:#48b265;--green-l:rgba(72,178,101,0.15);
+  --amber:#e0a93b;--amber-l:rgba(224,169,59,0.15);
+  --red:#d9694e;--red-l:rgba(217,105,78,0.15);
+  --blue:#5b8fb0;--blue-l:rgba(91,143,176,0.15);
+  --r:14px;--disp:'Oswald',sans-serif;
+  --bg:#0e1410;
+  --canvas:radial-gradient(1100px 700px at 88% -10%, rgba(199,154,59,0.10), transparent 60%),radial-gradient(900px 700px at -10% 110%, rgba(107,138,79,0.12), transparent 70%),#0e1410;
+  --surface:rgba(255,255,255,0.04);--surface-strong:rgba(255,255,255,0.065);--surface-soft:rgba(255,255,255,0.022);
+  --text:#eef2ea;--text-soft:#c4cdbd;--text-mute:#7e8a78;
+  --border:rgba(255,255,255,0.09);--border-soft:rgba(255,255,255,0.05);
+  --row-hover:rgba(255,255,255,0.035);
+  --shadow:0 0 0 1px rgba(255,255,255,0.04),0 24px 64px -28px rgba(0,0,0,0.7);
+}
+[data-theme="light"]{
+  --bg:#f4f3ec;
+  --canvas:radial-gradient(1100px 700px at 90% -20%, rgba(199,154,59,0.12), transparent 60%),#f4f3ec;
+  --surface:#ffffff;--surface-strong:#ffffff;--surface-soft:#fafaf4;
+  --text:#16201a;--text-soft:#3b4639;--text-mute:#6a7464;
+  --border:rgba(22,32,26,0.1);--border-soft:rgba(22,32,26,0.05);
+  --row-hover:rgba(22,32,26,0.025);
+  --shadow:0 1px 3px rgba(22,32,26,0.06),0 8px 24px -12px rgba(22,32,26,0.12);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--canvas) fixed;color:var(--text);line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-0.005em}
+.layout{display:flex;min-height:100vh}
+::selection{background:rgba(199,154,59,0.25);color:var(--text)}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+
+/* SIDEBAR */
+.sidebar{width:260px;background:linear-gradient(180deg,var(--forest-deep),#16271a);border-right:1px solid var(--border-soft);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50;transition:transform .3s}
+.sidebar-header{padding:24px 22px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:11px}
+.logo-mark{width:40px;height:40px;border-radius:10px;background:var(--gold);display:grid;place-items:center;color:var(--forest-deep);flex-shrink:0}
+.logo-mark svg{width:24px;height:24px}
+.logo-text .nm{font-family:var(--disp);font-weight:700;font-size:1.1rem;letter-spacing:1px;color:#fff;line-height:1}
+.logo-text .sb{font-size:.6rem;color:var(--gold);text-transform:uppercase;letter-spacing:2.5px;margin-top:4px;font-weight:600}
+.sidebar-nav{flex:1;padding:12px 12px 18px;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.sidebar-nav::-webkit-scrollbar{width:6px}.sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
+.nav-label{font-size:.6rem;font-weight:700;color:#7e8c75;text-transform:uppercase;letter-spacing:2px;padding:14px 14px 5px}
+.nav-label:first-child{padding-top:4px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:9px;color:#a9b4a0;font-size:.85rem;font-weight:500;transition:all .18s;border:none;background:none;width:100%;text-align:left;position:relative}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;opacity:.85}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:#fff}
+.nav-item.active{background:linear-gradient(90deg,rgba(199,154,59,0.18),rgba(199,154,59,0.02));color:#fff}
+.nav-item.active::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:3px;background:var(--gold)}
+.nav-item .badge{margin-left:auto;background:var(--gold);color:var(--forest-deep);font-size:.62rem;font-weight:800;padding:1px 7px;border-radius:20px}
+
+/* MAIN */
+.main{flex:1;margin-left:260px;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--border-soft);padding:14px 30px;display:flex;align-items:center;gap:18px}
+.hamburger{display:none;background:none;border:none;color:var(--text);font-size:1.4rem}
+.page-title{font-family:var(--disp);font-size:1.35rem;font-weight:600;letter-spacing:.3px}
+.page-sub{font-size:.78rem;color:var(--text-mute);margin-top:1px}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 13px;color:var(--text-mute);font-size:.84rem;min-width:230px}
+.search input{background:none;border:none;outline:none;color:var(--text);flex:1;font-family:inherit;font-size:.84rem}
+.icon-btn{width:38px;height:38px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;color:var(--text-soft);transition:.18s}
+.icon-btn:hover{background:var(--surface-strong);color:var(--text)}
+.icon-btn svg{width:18px;height:18px}
+.avatar{width:38px;height:38px;border-radius:10px;background:var(--gold);color:var(--forest-deep);display:grid;place-items:center;font-weight:800;font-size:.85rem}
+.content{padding:26px 30px 60px;flex:1}
+
+/* COMPONENTS */
+.view{display:none;animation:fade .35s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px}
+.metrics{grid-template-columns:repeat(4,1fr)}
+.metric{padding:18px 18px 16px;position:relative;overflow:hidden}
+.metric .mlabel{font-size:.72rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1px;font-weight:600;display:flex;align-items:center;gap:7px}
+.metric .mlabel svg{width:15px;height:15px;color:var(--gold)}
+.metric .mval{font-family:var(--disp);font-size:1.85rem;font-weight:700;margin-top:9px;line-height:1}
+.metric .mtrend{font-size:.74rem;margin-top:8px;font-weight:600;display:flex;align-items:center;gap:5px}
+.up{color:var(--green)}.down{color:var(--red)}.flat{color:var(--text-mute)}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:26px 0 14px}
+.section-head h2{font-family:var(--disp);font-size:1.15rem;font-weight:600;letter-spacing:.3px}
+.section-head .link{font-size:.8rem;color:var(--gold);font-weight:600}
+.two-col{grid-template-columns:1.5fr 1fr}
+.three-col{grid-template-columns:repeat(3,1fr)}
+.card-pad{padding:20px}
+.card-title{font-weight:700;font-size:.95rem;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.card-title .t{display:flex;align-items:center;gap:9px}
+.card-title svg{width:18px;height:18px;color:var(--gold)}
+
+/* lists */
+.row{display:flex;align-items:center;gap:13px;padding:11px 0;border-bottom:1px solid var(--border-soft)}
+.row:last-child{border-bottom:none}
+.row .ico{width:38px;height:38px;border-radius:9px;background:var(--surface-strong);display:grid;place-items:center;flex-shrink:0;color:var(--moss)}
+.row .ico svg{width:18px;height:18px}
+.row .meta{flex:1;min-width:0}
+.row .meta .nm{font-weight:600;font-size:.88rem}
+.row .meta .ds{font-size:.76rem;color:var(--text-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .val{font-weight:700;font-size:.85rem;text-align:right;white-space:nowrap}
+
+/* pills */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:30px;text-transform:uppercase;letter-spacing:.4px}
+.pill.green{background:var(--green-l);color:var(--green)}
+.pill.amber{background:var(--amber-l);color:var(--amber)}
+.pill.red{background:var(--red-l);color:var(--red)}
+.pill.blue{background:var(--blue-l);color:var(--blue)}
+.pill.gold{background:rgba(199,154,59,0.16);color:var(--gold)}
+.pill.gray{background:var(--surface-strong);color:var(--text-mute)}
+
+/* table */
+.tbl{width:100%;border-collapse:collapse;font-size:.85rem}
+.tbl th{text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-mute);font-weight:700;padding:10px 14px;border-bottom:1px solid var(--border)}
+.tbl td{padding:13px 14px;border-bottom:1px solid var(--border-soft)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr{transition:.12s}
+.tbl tbody tr:hover{background:var(--row-hover)}
+.tbl .cust{display:flex;align-items:center;gap:11px}
+.tbl .ava{width:34px;height:34px;border-radius:8px;background:var(--forest);color:var(--gold);display:grid;place-items:center;font-weight:800;font-size:.78rem;flex-shrink:0}
+
+/* progress */
+.bar{height:7px;border-radius:6px;background:var(--surface-strong);overflow:hidden;min-width:90px}
+.bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--moss),var(--gold))}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:.84rem;padding:9px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:.18s}
+.btn:hover{background:var(--surface-strong)}
+.btn svg{width:16px;height:16px}
+.btn.gold{background:var(--gold);color:var(--forest-deep);border-color:transparent;font-weight:700}
+.btn.gold:hover{filter:brightness(1.06)}
+.btn.forest{background:var(--forest);color:#fff;border-color:transparent}
+
+/* bars chart */
+.chart{display:flex;align-items:flex-end;gap:10px;height:170px;padding-top:10px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end}
+.chart .col .bk{width:100%;max-width:34px;border-radius:7px 7px 0 0;background:linear-gradient(180deg,var(--gold),var(--moss));transition:.5s;position:relative}
+.chart .col .bk:hover{filter:brightness(1.12)}
+.chart .col .lb{font-size:.68rem;color:var(--text-mute);font-weight:600}
+
+/* donut */
+.donut-wrap{display:flex;align-items:center;gap:22px}
+.donut{width:128px;height:128px;border-radius:50%;flex-shrink:0;position:relative;display:grid;place-items:center}
+.donut::after{content:"";position:absolute;inset:18px;border-radius:50%;background:var(--surface)}
+.donut .ctr{position:relative;z-index:1;text-align:center}
+.donut .ctr .n{font-family:var(--disp);font-size:1.5rem;font-weight:700;line-height:1}
+.donut .ctr .l{font-size:.62rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1px}
+.legend{display:flex;flex-direction:column;gap:9px;font-size:.82rem}
+.legend .lg{display:flex;align-items:center;gap:9px}
+.legend .dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+
+/* pipeline kanban */
+.kanban{display:grid;grid-template-columns:repeat(8,minmax(150px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px}
+.kcol{background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:12px;padding:11px;min-height:130px}
+.kcol h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;color:var(--text-mute);font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between}
+.kcard{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:10px;margin-bottom:8px;cursor:grab;transition:.15s}
+.kcard:hover{border-color:var(--gold);transform:translateY(-2px)}
+.kcard .nm{font-weight:600;font-size:.8rem}
+.kcard .sv{font-size:.72rem;color:var(--text-mute);margin-top:3px}
+.kcard .vl{font-weight:700;font-size:.82rem;color:var(--gold);margin-top:6px}
+
+/* map */
+#estMap,#opsMap{height:480px;width:100%;border-radius:12px;z-index:1}
+.leaflet-container{background:#1a2620;font-family:inherit}
+.addr-search{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px 8px 8px 14px;margin-bottom:12px}
+.addr-search .addr-ic{color:var(--gold);display:grid;place-items:center;flex-shrink:0}
+.addr-search input{flex:1;min-width:0;background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:.92rem}
+.addr-search input::placeholder{color:var(--text-mute)}
+.addr-search .btn{flex-shrink:0;white-space:nowrap}
+.addr-result{font-size:.84rem;color:var(--text-soft);margin-bottom:14px;min-height:1.1em;display:flex;align-items:center;gap:8px}
+.addr-result .pin{color:var(--gold);flex-shrink:0}
+.addr-result.err{color:var(--red)}
+.map-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.measure-out{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.mout{background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:10px;padding:14px}
+.mout .l{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-mute);font-weight:600}
+.mout .v{font-family:var(--disp);font-size:1.4rem;font-weight:700;margin-top:5px;color:var(--gold)}
+
+/* photos */
+.photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.photo{aspect-ratio:4/3;border-radius:11px;overflow:hidden;position:relative;cursor:pointer}
+.photo img{width:100%;height:100%;object-fit:cover;transition:.4s}
+.photo:hover img{transform:scale(1.07)}
+.photo .tag{position:absolute;top:8px;left:8px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:3px 9px;border-radius:20px;background:rgba(15,20,16,0.8);color:#fff;backdrop-filter:blur(4px)}
+.photo .stamp{position:absolute;bottom:8px;left:8px;right:8px;font-size:.68rem;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+
+/* compare slider */
+.compare{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:16/9;user-select:none}
+.compare img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.compare .after{clip-path:inset(0 0 0 50%)}
+.compare .handle{position:absolute;top:0;bottom:0;left:50%;width:3px;background:var(--gold);transform:translateX(-50%)}
+.compare .handle::after{content:"⇄";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:var(--gold);color:var(--forest-deep);display:grid;place-items:center;font-weight:800}
+.compare .clab{position:absolute;bottom:12px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:4px 11px;border-radius:20px;background:rgba(15,20,16,0.78);color:#fff}
+
+/* portal phone */
+.phone{width:330px;margin:0 auto;background:var(--forest-deep);border-radius:34px;padding:13px;box-shadow:var(--shadow)}
+.phone-screen{background:var(--bg);border-radius:24px;overflow:hidden;min-height:560px}
+
+/* roles */
+.role-grid{grid-template-columns:repeat(3,1fr)}
+.role{padding:20px}
+.role h3{font-family:var(--disp);font-size:1.1rem;font-weight:600;display:flex;align-items:center;gap:9px;margin-bottom:5px}
+.role h3 svg{width:20px;height:20px;color:var(--gold)}
+.role .perms{margin-top:12px;display:flex;flex-direction:column;gap:7px;font-size:.83rem}
+.role .perms div{display:flex;align-items:center;gap:8px;color:var(--text-soft)}
+.role .perms svg{width:15px;height:15px;color:var(--green)}
+
+.empty-hint{font-size:.78rem;color:var(--text-mute);padding:12px 0}
+.banner{background:linear-gradient(100deg,rgba(199,154,59,0.14),rgba(107,138,79,0.06));border:1px solid rgba(199,154,59,0.25);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:13px;margin-bottom:18px;font-size:.85rem}
+.banner svg{width:22px;height:22px;color:var(--gold);flex-shrink:0}
+.demo-tag{font-size:.62rem;background:var(--surface-strong);color:var(--text-mute);padding:2px 8px;border-radius:20px;font-weight:700;letter-spacing:.5px}
+
+@media (max-width:1080px){.metrics{grid-template-columns:repeat(2,1fr)}.two-col,.three-col,.role-grid{grid-template-columns:1fr}.photo-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:760px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:none}
+  .main{margin-left:0}.hamburger{display:block}.search{display:none}
+  .content{padding:18px 16px 50px}
+}
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45}
+.scrim.show{display:block}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="M12 12c0-4 2-7 5-9-1 4-1 7-5 9z"/><path d="M12 14c0-4-2-7-5-9 1 4 1 7 5 9z"/></svg></span>
+      <span class="logo-text"><span class="nm">ELLIOTT</span><span class="sb">Ops Platform</span></span>
+    </div>
+    <nav class="sidebar-nav" id="nav"></nav>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger" id="hamburger">&#9776;</button>
+      <div>
+        <div class="page-title" id="pageTitle">Executive Dashboard</div>
+        <div class="page-sub" id="pageSub">Real-time overview of the entire operation</div>
+      </div>
+      <div class="topbar-actions">
+        <div class="search"><svg viewBox="0 0 24 24" width="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input placeholder="Search customers, jobs, equipment…" /></div>
+        <button class="icon-btn" id="themeBtn" title="Toggle theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+        <button class="icon-btn" title="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+        <div class="avatar">CE</div>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ELLIOTT LAND MANAGEMENT — OPERATIONS PLATFORM (demo prototype)
+   Williams Digital. All data below is sample/mock data.
+============================================================ */
+
+const fmt = n => '$' + n.toLocaleString();
+const ic = {
+  dash:'<path d="M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z"/>',
+  crm:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  lead:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  map:'<path d="m9 18-6-3V3l6 3 6-3 6 3v12l-6 3-6-3z"/><path d="M9 6v12M15 6v12"/>',
+  est:'<path d="M9 2h6a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M8 7h8M8 11h8M8 15h5"/>',
+  proj:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+  photo:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/>',
+  drone:'<circle cx="12" cy="12" r="3"/><path d="M12 9V5M12 19v-4M9 12H5M19 12h-4"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>',
+  crew:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/>',
+  equip:'<path d="M3 17h18M5 17V9l4-3 4 3v8M13 17v-4h6v4"/><circle cx="7" cy="17" r="1.5"/><circle cx="16" cy="17" r="1.5"/>',
+  wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2-2z"/>',
+  fuel:'<path d="M3 22h12V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2zM15 9h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V8l-3-3M6 7h6"/>',
+  mat:'<path d="M21 8 12 3 3 8l9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/>',
+  cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  route:'<circle cx="6" cy="19" r="3"/><circle cx="18" cy="5" r="3"/><path d="M9 19h6a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8h0"/>',
+  portal:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  bill:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>',
+  doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/>',
+  sms:'<path d="M21 11.5a8.38 8.38 0 0 1-9 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 9 8.5z"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/>',
+  star:'<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+  report:'<path d="M3 3v18h18"/><path d="M7 16l4-4 3 3 5-6"/>',
+  roles:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  mobile:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>',
+  ai:'<path d="M12 2a3 3 0 0 0-3 3 3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3 3 3 0 0 0 6 0 3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3 3 3 0 0 0-3-3z"/><path d="M12 8v8M8 12h8"/>',
+  weather:'<path d="M17.5 19a4.5 4.5 0 1 0 0-9 6 6 0 0 0-11.6 1.5A4 4 0 0 0 6 19z"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  trend:'<path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/>'
+};
+const svg = (p, w=18) => `<svg viewBox="0 0 24 24" width="${w}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+
+/* ---------- NAV STRUCTURE ---------- */
+const NAV = [
+  {label:'Overview', items:[
+    {id:'dashboard', name:'Executive Dashboard', icon:'dash'},
+  ]},
+  {label:'Sales & Customers', items:[
+    {id:'crm', name:'CRM', icon:'crm'},
+    {id:'leads', name:'Lead Pipeline', icon:'lead', badge:'7'},
+    {id:'estimating', name:'Estimating Center', icon:'map'},
+    {id:'estimates', name:'Estimates & Proposals', icon:'est'},
+  ]},
+  {label:'Field Operations', items:[
+    {id:'projects', name:'Projects', icon:'proj'},
+    {id:'photos', name:'Photos & Drone', icon:'drone'},
+    {id:'scheduling', name:'Scheduling', icon:'cal'},
+    {id:'opsmap', name:'Live Ops Map', icon:'route'},
+  ]},
+  {label:'Resources', items:[
+    {id:'crew', name:'Crew', icon:'crew'},
+    {id:'equipment', name:'Equipment', icon:'equip'},
+    {id:'maintenance', name:'Maintenance', icon:'wrench', badge:'2'},
+    {id:'fuel', name:'Fuel & Materials', icon:'fuel'},
+  ]},
+  {label:'Office', items:[
+    {id:'billing', name:'Billing & Contracts', icon:'bill'},
+    {id:'comms', name:'Comms Center', icon:'sms'},
+    {id:'reports', name:'Reporting', icon:'report'},
+    {id:'portal', name:'Customer Portal', icon:'portal'},
+    {id:'roles', name:'Roles & Mobile', icon:'roles'},
+  ]},
+];
+
+const TITLES = {
+  dashboard:['Executive Dashboard','Real-time overview of the entire operation'],
+  crm:['Customer Relationship Management','Profiles, history, and communication timelines'],
+  leads:['Lead Pipeline','Track every lead from first contact to won'],
+  estimating:['Digital Estimating Center','Satellite mapping, measurement & AI quoting'],
+  estimates:['Estimates & Proposals','Build, send, and track signed proposals'],
+  projects:['Project Management','Schedule, budget, and progress for every job'],
+  photos:['Photos & Drone Operations','Before/after, progress & aerial documentation'],
+  scheduling:['Scheduling Center','Crews, equipment, and site visits'],
+  opsmap:['Live Operations Map','See the entire operation in real time'],
+  crew:['Crew Management','Profiles, certifications & time tracking'],
+  equipment:['Equipment Management','Fleet inventory, hours & assignments'],
+  maintenance:['Maintenance Management','Automated service alerts'],
+  fuel:['Fuel & Material Tracking','Consumption, costs & inventory'],
+  billing:['Billing & Contracts','Invoices, payments & signed agreements'],
+  comms:['Communication Center','SMS, email & reputation automation'],
+  reports:['Reporting Center','Financial, operational & marketing reports'],
+  portal:['Customer Portal','What your customers see when they log in'],
+  roles:['Roles, Permissions & Mobile','Access control and the field crew app'],
+};
+
+/* ---------- MOCK DATA ---------- */
+const CUSTOMERS = [
+  {n:'Harmon Family Farm', a:'Springville, AL', svc:'Forestry Mulching', val:8400, st:'Active', ph:'205-555-0142'},
+  {n:'Cahaba Development LLC', a:'Trussville, AL', svc:'Land Clearing', val:21500, st:'Active', ph:'205-555-0198'},
+  {n:'R. Whitfield', a:'Odenville, AL', svc:'Gravel Driveway', val:6200, st:'Lead', ph:'205-555-0177'},
+  {n:'Oak Ridge HOA', a:'Hoover, AL', svc:'Bush Hogging', val:3400, st:'Active', ph:'205-555-0110'},
+  {n:'T. Maddox', a:'Pell City, AL', svc:'Pool Excavation', val:14800, st:'Estimate', ph:'205-555-0163'},
+  {n:'Greystone Builders', a:'Birmingham, AL', svc:'Site Prep', val:33200, st:'Active', ph:'205-555-0125'},
+  {n:'L. Pruett', a:'Moody, AL', svc:'Drainage System', val:4900, st:'Won', ph:'205-555-0151'},
+  {n:'Aaron P.', a:'Huntsville, AL', svc:'Land Clearing', val:7800, st:'Completed', ph:'256-555-0188'},
+];
+const PIPELINE = {
+  'New Lead':[{n:'R. Whitfield', s:'Gravel Driveway', v:6200},{n:'D. Sanders', s:'Forestry Mulching', v:9100}],
+  'Contacted':[{n:'B. Coker', s:'Bush Hogging', v:2800}],
+  'Site Visit':[{n:'T. Maddox', s:'Pool Excavation', v:14800}],
+  'Estimate Created':[{n:'Holloway Farms', s:'Land Clearing', v:18400}],
+  'Estimate Sent':[{n:'M. Estes', s:'Drainage', v:5300},{n:'J. Vines', s:'Site Prep', v:12200}],
+  'Negotiation':[{n:'Cahaba Dev LLC', s:'Land Clearing', v:21500}],
+  'Won':[{n:'Greystone Builders', s:'Site Prep', v:33200}],
+  'Lost':[{n:'P. Nguyen', s:'Mulching', v:4100}],
+};
+const EQUIPMENT = [
+  {n:'CAT 299D3 Skid Steer', t:'Skid Steer', hrs:1240, st:'In Use', job:'Cahaba Dev LLC', maint:'Current'},
+  {n:'Fecon FTX150 Mulcher', t:'Forestry Mulcher', hrs:880, st:'In Use', job:'Harmon Farm', maint:'Due Soon'},
+  {n:'Komatsu PC210 Excavator', t:'Excavator', hrs:2110, st:'Available', job:'—', maint:'Current'},
+  {n:'John Deere 5075E Tractor', t:'Tractor', hrs:1560, st:'In Use', job:'Oak Ridge HOA', maint:'Current'},
+  {n:'Mack Granite Dump Truck', t:'Dump Truck', hrs:980, st:'Available', job:'—', maint:'Overdue'},
+  {n:'Bobcat T770', t:'Skid Steer', hrs:620, st:'Maintenance', job:'Shop', maint:'In Service'},
+  {n:'PJ 40ft Equipment Trailer', t:'Trailer', hrs:0, st:'Available', job:'—', maint:'Current'},
+];
+const CREW = [
+  {n:'Chase Elliott', r:'Owner / Operator', cert:'Pesticide Applicator, CDL-A', st:'On Site'},
+  {n:'Marcus Reed', r:'Crew Leader', cert:'OSHA-30, CDL-A', st:'On Site'},
+  {n:'Tyler Hobbs', r:'Equipment Operator', cert:'OSHA-10', st:'On Site'},
+  {n:'Will Carter', r:'Equipment Operator', cert:'CDL-B', st:'Clocked Out'},
+  {n:'Diego Santos', r:'Laborer', cert:'OSHA-10', st:'On Site'},
+  {n:'Jordan Pace', r:'Drone Pilot', cert:'FAA Part 107', st:'Off Today'},
+];
+const PROJECTS = [
+  {c:'Cahaba Development LLC', a:'Trussville, AL', svc:'Land Clearing — 14 ac', crew:'Marcus R.', eq:'CAT 299D3', budget:21500, prog:65, st:'In Progress'},
+  {c:'Harmon Family Farm', a:'Springville, AL', svc:'Forestry Mulching — 6 ac', crew:'Tyler H.', eq:'Fecon FTX150', budget:8400, prog:40, st:'In Progress'},
+  {c:'Oak Ridge HOA', a:'Hoover, AL', svc:'Bush Hogging', crew:'Diego S.', eq:'JD 5075E', budget:3400, prog:90, st:'In Progress'},
+  {c:'Greystone Builders', a:'Birmingham, AL', svc:'Site Prep — 2.5 ac', crew:'Marcus R.', eq:'Komatsu PC210', budget:33200, prog:0, st:'Scheduled'},
+  {c:'L. Pruett', a:'Moody, AL', svc:'Drainage System', crew:'Will C.', eq:'Bobcat T770', budget:4900, prog:100, st:'Completed'},
+  {c:'T. Maddox', a:'Pell City, AL', svc:'Pool Excavation', crew:'—', eq:'—', budget:14800, prog:0, st:'Awaiting Materials'},
+];
+const stPill = s => ({
+  'In Progress':'blue','Scheduled':'gold','Completed':'green','Awaiting Materials':'amber','Delayed':'red',
+  'Active':'green','Lead':'gold','Estimate':'amber','Won':'green','Completed ':'green',
+  'In Use':'blue','Available':'green','Maintenance':'amber','On Site':'green','Clocked Out':'gray','Off Today':'gray',
+  'Current':'green','Due Soon':'amber','Overdue':'red','In Service':'amber'
+}[s]||'gray');
+
+/* ---------- VIEW BUILDERS ---------- */
+const V = {};
+
+V.dashboard = () => {
+  const metrics = [
+    ['Monthly Revenue','$84,200','fuel','up','+12% vs last month'],
+    ['Annual Revenue','$946,500','trend','up','+8% YoY'],
+    ['Active Projects','6','proj','flat','3 on schedule'],
+    ['Pending Estimates','4','est','up','$37,800 in play'],
+    ['Open Invoices','$22,400','bill','down','2 overdue'],
+    ['Crew Availability','4 / 6','crew','flat','2 off today'],
+    ['Equipment Utilization','78%','equip','up','+5%'],
+    ['New Leads','7','lead','up','this week'],
+  ];
+  return `
+  <div class="banner">${svg(ic.ai,22)}<div><strong>Demo environment.</strong> Every number, customer, and job below is sample data to show how the platform works for Elliott Land Management.</div></div>
+  <div class="grid metrics">
+    ${metrics.map(m=>`<div class="card metric">
+      <div class="mlabel">${svg(ic[m[2]],15)} ${m[0]}</div>
+      <div class="mval">${m[1]}</div>
+      <div class="mtrend ${m[3]}">${m[3]==='up'?'▲':m[3]==='down'?'▼':'●'} ${m[4]}</div>
+    </div>`).join('')}
+  </div>
+
+  <div class="grid two-col" style="margin-top:18px">
+    <div class="card card-pad">
+      <div class="card-title"><span class="t">${svg(ic.trend)} Revenue Trends</span><span class="demo-tag">Last 6 months</span></div>
+      <div class="chart">
+        ${[['Dec',58],['Jan',49],['Feb',62],['Mar',71],['Apr',76],['May',84]].map(([m,v])=>`
+          <div class="col"><div class="bk" style="height:${v}%" title="$${v}k"></div><div class="lb">${m}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-title"><span class="t">${svg(ic.cal)} Today's Schedule</span></div>
+      ${[['7:00a','Cahaba Dev — clearing','Marcus R.'],['8:30a','Harmon Farm — mulching','Tyler H.'],['10:00a','Site visit: T. Maddox','Chase E.'],['1:00p','Oak Ridge HOA — bush hog','Diego S.']].map(r=>`
+        <div class="row"><div class="ico">${svg(ic.clock)}</div><div class="meta"><div class="nm">${r[1]}</div><div class="ds">${r[2]}</div></div><div class="val">${r[0]}</div></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="grid three-col" style="margin-top:18px">
+    <div class="card card-pad">
+      <div class="card-title"><span class="t">${svg(ic.weather)} Weather Alerts</span></div>
+      <div class="row"><div class="ico" style="color:var(--amber)">${svg(ic.weather)}</div><div class="meta"><div class="nm">Rain likely Thu</div><div class="ds">70% — reschedule dirt work</div></div></div>
+      <div class="row"><div class="ico" style="color:var(--green)">${svg(ic.check)}</div><div class="meta"><div class="nm">Clear Mon–Wed</div><div class="ds">Ideal for mulching</div></div></div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-title"><span class="t">${svg(ic.wrench)} Equipment Alerts</span></div>
+      <div class="row"><div class="ico" style="color:var(--red)">${svg(ic.wrench)}</div><div class="meta"><div class="nm">Mack Dump Truck</div><div class="ds">Annual inspection overdue</div></div></div>
+      <div class="row"><div class="ico" style="color:var(--amber)">${svg(ic.fuel)}</div><div class="meta"><div class="nm">Fecon FTX150</div><div class="ds">Hydraulic service due soon</div></div></div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-title"><span class="t">${svg(ic.star)} Customer Satisfaction</span></div>
+      <div class="donut-wrap">
+        <div class="donut" style="background:conic-gradient(var(--gold) 0 96%, var(--surface-strong) 96% 100%)"><div class="ctr"><div class="n">4.8</div><div class="l">of 5</div></div></div>
+        <div class="legend"><div class="lg"><span class="dot" style="background:var(--gold)"></span> 96% satisfaction</div><div class="lg"><span class="dot" style="background:var(--moss)"></span> 38 reviews</div><div class="lg"><span class="dot" style="background:var(--text-mute)"></span> 92% completion rate</div></div>
+      </div>
+    </div>
+  </div>`;
+};
+
+V.crm = () => `
+  <div class="section-head"><h2>Customer Profiles</h2><button class="btn gold">${svg(ic.crm,16)} New Customer</button></div>
+  <div class="card">
+    <table class="tbl"><thead><tr><th>Customer</th><th>Location</th><th>Last Service</th><th>Lifetime Value</th><th>Status</th><th>Phone</th></tr></thead>
+    <tbody>${CUSTOMERS.map(c=>`<tr>
+      <td><div class="cust"><div class="ava">${c.n.split(' ').map(w=>w[0]).slice(0,2).join('')}</div><strong>${c.n}</strong></div></td>
+      <td>${c.a}</td><td>${c.svc}</td><td><strong>${fmt(c.val)}</strong></td>
+      <td><span class="pill ${stPill(c.st)}">${c.st}</span></td><td>${c.ph}</td>
+    </tr>`).join('')}</tbody></table>
+  </div>
+  <div class="grid two-col" style="margin-top:18px">
+    <div class="card card-pad">
+      <div class="card-title"><span class="t">${svg(ic.clock)} Customer Timeline — Greystone Builders</span></div>
+      ${[['Phone call','Discussed 2.5ac site prep scope','2d ago'],['Site visit','Walked property with Chase','4d ago'],['Estimate sent','Proposal #1042 — $33,200','5d ago'],['Email','Sent insurance docs','1w ago'],['Payment','Deposit received — $11,000','6d ago']].map(t=>`
+        <div class="row"><div class="ico">${svg(ic.arrow)}</div><div class="meta"><div class="nm">${t[0]}</div><div class="ds">${t[1]}</div></div><div class="val" style="color:var(--text-mute);font-weight:500">${t[2]}</div></div>`).join('')}
+    </div>
+    <div class="card card-pad">
+      <div class="card-title"><span class="t">${svg(ic.doc)} Profile Records</span></div>
+      ${[['Contracts','3 documents'],['Invoices','5 — 1 open'],['Estimates','2 sent'],['Photos','24 site photos'],['Internal Notes','Prefers text over calls']].map(r=>`
+        <div class="row"><div class="ico">${svg(ic.doc)}</div><div class="meta"><div class="nm">${r[0]}</div><div class="ds">${r[1]}</div></div><div class="val">${svg(ic.arrow,16)}</div></div>`).join('')}
+    </div>
+  </div>`;
+
+V.leads = () => `
+  <div class="grid metrics" style="grid-template-columns:repeat(4,1fr)">
+    ${[['Lead Conversion','41%','up'],['Cost Per Lead','$38','down'],['Avg Project Value','$11,840','up'],['Leads This Month','19','up']].map(m=>`
+      <div class="card metric"><div class="mlabel">${m[0]}</div><div class="mval">${m[1]}</div><div class="mtrend ${m[2]}">${m[2]==='up'?'▲':'▼'} healthy</div></div>`).join('')}
+  </div>
+  <div class="section-head"><h2>Lead Pipeline</h2><span class="empty-hint">Drag cards between stages — sources: Website, Google Ads, Facebook, Referrals, Phone, Walk-In</span></div>
+  <div class="kanban">
+    ${Object.entries(PIPELINE).map(([stage,cards])=>`
+      <div class="kcol"><h4>${stage}<span>${cards.length}</span></h4>
+        ${cards.map(c=>`<div class="kcard" draggable="true"><div class="nm">${c.n}</div><div class="sv">${c.s}</div><div class="vl">${fmt(c.v)}</div></div>`).join('')}
+      </div>`).join('')}
+  </div>
+  <div class="grid two-col" style="margin-top:20px">
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.report)} Lead Source ROI</span></div>
+      ${[['Referrals',64,'$0'],['Website Forms',48,'$210'],['Google Ads',39,'$1,840'],['Facebook',22,'$640'],['Walk-In',12,'$0']].map(([s,p,c])=>`
+        <div class="row"><div class="meta"><div class="nm">${s}</div><div class="bar" style="margin-top:6px"><i style="width:${p}%"></i></div></div><div class="val">${p}%<br><span style="font-weight:500;color:var(--text-mute);font-size:.72rem">${c} spend</span></div></div>`).join('')}
+    </div>
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.lead)} Source Mix</span></div>
+      <div class="donut-wrap"><div class="donut" style="background:conic-gradient(var(--gold) 0 34%, var(--moss) 34% 60%, var(--blue) 60% 80%, var(--amber) 80% 92%, var(--text-mute) 92% 100%)"><div class="ctr"><div class="n">19</div><div class="l">leads</div></div></div>
+        <div class="legend"><div class="lg"><span class="dot" style="background:var(--gold)"></span> Referrals 34%</div><div class="lg"><span class="dot" style="background:var(--moss)"></span> Website 26%</div><div class="lg"><span class="dot" style="background:var(--blue)"></span> Google Ads 20%</div><div class="lg"><span class="dot" style="background:var(--amber)"></span> Facebook 12%</div><div class="lg"><span class="dot" style="background:var(--text-mute)"></span> Walk-In 8%</div></div>
+      </div>
+    </div>
+  </div>`;
+
+V.estimating = () => `
+  <div class="banner">${svg(ic.map,22)}<div><strong>Interactive demo.</strong> Type a property address to jump the satellite map there, then use the draw tools (top-left) to trace the work area — acreage, equipment hours, and an AI cost range calculate automatically below.</div></div>
+  <div class="card card-pad">
+    <div class="card-title"><span class="t">${svg(ic.map)} Property Search & Satellite Mapping</span><span class="demo-tag">Google Maps / Mapbox / County GIS</span></div>
+    <form class="addr-search" id="addrForm" onsubmit="return geocode(event)">
+      <span class="addr-ic">${svg(ic.map,18)}</span>
+      <input id="addrInput" type="text" placeholder="Enter a property address, city or ZIP…" autocomplete="off" />
+      <button type="submit" class="btn gold" id="addrBtn">Go to Property</button>
+    </form>
+    <div class="addr-result" id="addrResult"></div>
+    <div class="map-tools">
+      <button class="btn" onclick="setSvc('Forestry Mulching')">Forestry Mulching</button>
+      <button class="btn" onclick="setSvc('Land Clearing')">Land Clearing</button>
+      <button class="btn" onclick="setSvc('Gravel Driveway')">Gravel Driveway</button>
+      <button class="btn" onclick="setSvc('Pool Excavation')">Pool Excavation</button>
+      <span class="pill gold" style="align-self:center">Service: <b id="svcLabel" style="margin-left:4px">Forestry Mulching</b></span>
+    </div>
+    <div class="map-tools" style="margin-bottom:10px">
+      <button class="btn gold" onclick="startDrawArea()">${svg(ic.map,16)} Draw Area</button>
+      <button class="btn forest" onclick="finishDrawArea()">${svg(ic.check,16)} Finish Area</button>
+      <button class="btn" onclick="clearDrawArea()">Clear</button>
+    </div>
+    <div id="drawHint" style="display:none;align-items:center;gap:8px;background:rgba(199,154,59,0.14);border:1px solid rgba(199,154,59,0.3);border-radius:10px;padding:9px 13px;margin-bottom:12px;font-size:.82rem;color:var(--text-soft)">
+      ${svg(ic.ai,16)}<span>Click around the work area to drop points. To <b>finish</b>: click the <b>first point again</b>, <b>double-click</b>, or press the <b>Finish Area</b> button.</span>
+    </div>
+    <div id="estMap"></div>
+    <div class="measure-out">
+      <div class="mout"><div class="l">Measured Area</div><div class="v" id="mArea">— ac</div></div>
+      <div class="mout"><div class="l">Est. Equipment Hours</div><div class="v" id="mHours">—</div></div>
+      <div class="mout"><div class="l">AI Cost Range</div><div class="v" id="mCost">Draw an area</div></div>
+    </div>
+  </div>
+
+  <div class="grid two-col" style="margin-top:18px">
+    <div class="card card-pad">
+      <div class="card-title"><span class="t">${svg(ic.doc)} GIS Property Data</span><span class="demo-tag">auto-pulled</span></div>
+      ${[['Parcel #','12-34-56-7-008-021.000'],['Acreage','14.2 ac'],['Owner','Cahaba Development LLC'],['Zoning','A-1 Agricultural'],['Flood Zone','Zone X (minimal)'],['Easements','Utility — north edge']].map(r=>`
+        <div class="row"><div class="meta"><div class="ds" style="text-transform:uppercase;font-size:.68rem;letter-spacing:1px">${r[0]}</div><div class="nm">${r[1]}</div></div></div>`).join('')}
+    </div>
+    <div class="card card-pad">
+      <div class="card-title"><span class="t">${svg(ic.ai)} AI Preliminary Quote</span></div>
+      <p class="empty-hint" style="padding-top:0">Customer enters address, service type & photos — the system returns an instant range. Staff reviews and finalizes.</p>
+      <div class="mout" style="margin-bottom:12px"><div class="l">Service</div><div class="nm" style="font-weight:700;margin-top:3px">Forestry Mulching · 14.2 ac · moderate density</div></div>
+      <div style="display:flex;gap:12px">
+        <div class="mout" style="flex:1"><div class="l">Estimated Cost</div><div class="v">$4,500 – $6,200</div></div>
+        <div class="mout" style="flex:1"><div class="l">Equipment Needs</div><div class="nm" style="font-weight:700;margin-top:6px">Mulcher + skid steer</div></div>
+      </div>
+      <button class="btn gold" style="margin-top:14px;width:100%;justify-content:center">${svg(ic.check,16)} Convert to Estimate</button>
+    </div>
+  </div>`;
+
+V.estimates = () => `
+  <div class="section-head"><h2>Estimate Builder</h2><button class="btn gold">${svg(ic.est,16)} New Estimate</button></div>
+  <div class="grid three-col">
+    ${['Forestry Mulching','Land Clearing','Dirt Work','Drainage','Hardscaping','Pools','Farm Management','Road Construction'].map(t=>`
+      <div class="card card-pad" style="display:flex;align-items:center;gap:12px;cursor:pointer"><div class="ico" style="background:var(--surface-strong)">${svg(ic.est)}</div><div><div class="nm" style="font-weight:600">${t}</div><div class="ds" style="font-size:.74rem;color:var(--text-mute)">Template</div></div></div>`).join('')}
+  </div>
+  <div class="section-head"><h2>Recent Proposals</h2></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Proposal</th><th>Customer</th><th>Total</th><th>Components</th><th>Status</th></tr></thead><tbody>
+    ${[['#1042','Greystone Builders',33200,'Labor · Equip · Fuel · Hauling','Signed','green'],['#1041','Cahaba Dev LLC',21500,'Labor · Equipment · Fuel','Sent','blue'],['#1040','T. Maddox',14800,'Excavation · Fill · Site Prep','Negotiation','amber'],['#1039','Holloway Farms',18400,'Clearing · Hauling · Taxes','Draft','gray']].map(r=>`
+      <tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td><strong>${fmt(r[2])}</strong></td><td style="font-size:.78rem;color:var(--text-mute)">${r[3]}</td><td><span class="pill ${r[5]}">${r[4]}</span></td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="banner" style="margin-top:18px">${svg(ic.doc,22)}<div>Each proposal generates a <strong>professional PDF</strong> with a <strong>digital signature request</strong> and live approval tracking.</div></div>`;
+
+V.projects = () => `
+  <div class="section-head"><h2>Active & Scheduled Projects</h2><button class="btn gold">${svg(ic.proj,16)} New Project</button></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Customer</th><th>Service</th><th>Crew</th><th>Equipment</th><th>Budget</th><th>Progress</th><th>Status</th></tr></thead><tbody>
+    ${PROJECTS.map(p=>`<tr>
+      <td><div class="cust"><div class="ava">${p.c.split(' ').map(w=>w[0]).slice(0,2).join('')}</div><div><strong>${p.c}</strong><div class="ds" style="font-size:.74rem;color:var(--text-mute)">${p.a}</div></div></div></td>
+      <td>${p.svc}</td><td>${p.crew}</td><td>${p.eq}</td><td><strong>${fmt(p.budget)}</strong></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="bar"><i style="width:${p.prog}%"></i></div><span style="font-size:.76rem;font-weight:600">${p.prog}%</span></div></td>
+      <td><span class="pill ${stPill(p.st)}">${p.st}</span></td></tr>`).join('')}
+  </tbody></table></div>`;
+
+V.photos = () => {
+  const imgs = [
+    ['1466692476868-aef1dfb1e735','Before','Cahaba Dev · 5/12'],
+    ['1591857177580-dc82b9ac4e1e','Progress','Cahaba Dev · 5/24'],
+    ['1574263867128-a3d5c1b1deae','After','Harmon Farm · 5/26'],
+    ['1416339306562-f3d12fefd36f','Drone','Greystone · 5/28'],
+    ['1558904541-efa843a96f01','Progress','Oak Ridge · 5/27'],
+    ['1523741543316-beb7fc7023d8','After','L. Pruett · 5/20'],
+    ['1500382017468-9049fed747ef','Drone','Harmon Farm · 5/22'],
+    ['1605000797499-95a51c5269ae','Progress','Cahaba Dev · 5/25'],
+  ];
+  return `
+  <div class="card card-pad">
+    <div class="card-title"><span class="t">${svg(ic.drone)} Before & After Comparison</span><span class="demo-tag">Cahaba Dev LLC — 14 ac</span></div>
+    <div class="compare" id="compare">
+      <img class="before" src="https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=1200&q=70" alt="before">
+      <img class="after" src="https://images.unsplash.com/photo-1523741543316-beb7fc7023d8?auto=format&fit=crop&w=1200&q=70" alt="after">
+      <div class="handle" id="cmpHandle"></div>
+      <span class="clab" style="left:12px">Before</span><span class="clab" style="right:12px">After</span>
+    </div>
+    <p class="empty-hint">Drag the divider. Excellent for marketing and sales presentations.</p>
+  </div>
+  <div class="section-head"><h2>Project Photo Library</h2><span class="empty-hint">Timestamped · before / progress / after / drone · customer + internal access</span></div>
+  <div class="photo-grid">
+    ${imgs.map(i=>`<div class="photo"><span class="tag">${i[1]}</span><img src="https://images.unsplash.com/photo-${i[0]}?auto=format&fit=crop&w=600&q=70" loading="lazy"><span class="stamp">${i[2]}</span></div>`).join('')}
+  </div>
+  <div class="grid three-col" style="margin-top:18px">
+    ${[['Site Surveys','Orthomosaic mapping',ic.map],['Elevation Maps','Terrain & grade data',ic.drone],['Aerial Progress','Weekly flyovers',ic.photo]].map(c=>`
+      <div class="card card-pad" style="display:flex;align-items:center;gap:13px"><div class="ico" style="background:var(--surface-strong)">${svg(c[2])}</div><div><div class="nm" style="font-weight:600">${c[0]}</div><div class="ds" style="font-size:.78rem;color:var(--text-mute)">${c[1]}</div></div></div>`).join('')}
+  </div>`;
+};
+
+V.scheduling = () => {
+  const days=['Mon 26','Tue 27','Wed 28','Thu 29','Fri 30'];
+  const jobs={
+    'Mon 26':[['Cahaba Dev','Marcus R.','blue'],['Oak Ridge HOA','Diego S.','green']],
+    'Tue 27':[['Cahaba Dev','Marcus R.','blue'],['Harmon Farm','Tyler H.','gold']],
+    'Wed 28':[['Greystone','Marcus R.','blue'],['Site visit','Chase E.','amber']],
+    'Thu 29':[['RAIN — light only','—','red']],
+    'Fri 30':[['Harmon Farm','Tyler H.','gold'],['Maddox est.','Chase E.','amber']],
+  };
+  return `
+  <div class="section-head"><h2>Weekly Schedule</h2><div style="display:flex;gap:8px"><button class="btn">Day</button><button class="btn gold">Week</button><button class="btn">Month</button></div></div>
+  <div class="card card-pad">
+    <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:12px">
+      ${days.map(d=>`<div><div style="font-weight:700;font-size:.82rem;margin-bottom:10px;text-align:center;color:var(--text-soft)">${d}</div>
+        ${jobs[d].map(j=>`<div class="kcard" draggable="true" style="border-left:3px solid var(--${j[2]})"><div class="nm">${j[0]}</div><div class="sv">${j[1]}</div></div>`).join('')}
+      </div>`).join('')}
+    </div>
+    <p class="empty-hint">Drag-and-drop scheduling for site visits, estimates, projects, equipment & employees.</p>
+  </div>`;
+};
+
+V.opsmap = () => `
+  <div class="banner">${svg(ic.route,22)}<div><strong>Live Operations Map.</strong> Active jobs, scheduled work, equipment & crew locations — plus route optimization for multi-stop days.</div></div>
+  <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.route)} Real-Time Map</span>
+    <span style="display:flex;gap:14px;font-size:.74rem">
+      <span><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--blue)"></span> Active</span>
+      <span><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--gold)"></span> Scheduled</span>
+      <span><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--green)"></span> Equipment</span>
+    </span></div>
+    <div id="opsMap"></div>
+  </div>
+  <div class="grid three-col" style="margin-top:18px">
+    ${[['Best Route','3 stops · 41 mi',ic.route],['Travel Time','1h 12m today',ic.clock],['Fuel Savings','$28 vs unoptimized',ic.fuel]].map(c=>`
+      <div class="card card-pad" style="display:flex;align-items:center;gap:13px"><div class="ico" style="background:var(--surface-strong)">${svg(c[2])}</div><div><div class="ds" style="font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-mute)">${c[0]}</div><div class="nm" style="font-weight:700;font-size:1rem">${c[1]}</div></div></div>`).join('')}
+  </div>`;
+
+V.crew = () => `
+  <div class="section-head"><h2>Employee Profiles</h2><button class="btn gold">${svg(ic.crew,16)} Add Employee</button></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Name</th><th>Position</th><th>Certifications</th><th>Today</th></tr></thead><tbody>
+    ${CREW.map(c=>`<tr><td><div class="cust"><div class="ava">${c.n.split(' ').map(w=>w[0]).join('')}</div><strong>${c.n}</strong></div></td><td>${c.r}</td><td style="font-size:.8rem;color:var(--text-soft)">${c.cert}</td><td><span class="pill ${stPill(c.st)}">${c.st}</span></td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="grid two-col" style="margin-top:18px">
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.clock)} Time Tracking — Today</span></div>
+      ${[['Marcus Reed','7:02a','—','blue'],['Tyler Hobbs','7:15a','—','blue'],['Diego Santos','7:08a','—','blue'],['Will Carter','—','clocked out','gray']].map(r=>`
+        <div class="row"><div class="ico">${svg(ic.clock)}</div><div class="meta"><div class="nm">${r[0]}</div><div class="ds">In ${r[1]} · Out ${r[2]}</div></div><span class="pill ${r[3]}">${r[3]==='blue'?'On clock':'Done'}</span></div>`).join('')}
+    </div>
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.crew)} Crew Productivity</span></div>
+      ${[['Marcus R.',92],['Tyler H.',88],['Diego S.',81],['Will C.',76]].map(([n,p])=>`<div class="row"><div class="meta"><div class="nm">${n}</div><div class="bar" style="margin-top:6px"><i style="width:${p}%"></i></div></div><div class="val">${p}%</div></div>`).join('')}
+    </div>
+  </div>`;
+
+V.equipment = () => `
+  <div class="grid metrics" style="grid-template-columns:repeat(4,1fr)">
+    ${[['Fleet Units','7'],['In Use','3'],['Utilization','78%'],['Maint. Flags','2']].map(m=>`<div class="card metric"><div class="mlabel">${m[0]}</div><div class="mval">${m[1]}</div></div>`).join('')}
+  </div>
+  <div class="section-head"><h2>Equipment Inventory</h2><button class="btn gold">${svg(ic.equip,16)} Add Equipment</button></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Equipment</th><th>Type</th><th>Hours</th><th>Current Job</th><th>Status</th><th>Maintenance</th></tr></thead><tbody>
+    ${EQUIPMENT.map(e=>`<tr><td><div class="cust"><div class="ava">${svg(ic.equip,16)}</div><strong>${e.n}</strong></div></td><td>${e.t}</td><td>${e.hrs.toLocaleString()} hrs</td><td>${e.job}</td><td><span class="pill ${stPill(e.st)}">${e.st}</span></td><td><span class="pill ${stPill(e.maint)}">${e.maint}</span></td></tr>`).join('')}
+  </tbody></table></div>`;
+
+V.maintenance = () => `
+  <div class="banner">${svg(ic.wrench,22)}<div>Automated alerts for oil changes, hydraulic service, tire replacement, annual inspections & safety checks.</div></div>
+  <div class="grid three-col">
+    ${[['Overdue','1','red',['Mack Dump Truck — Annual inspection']],['Due Soon','1','amber',['Fecon FTX150 — Hydraulic service']],['Current','5','green',['CAT 299D3','Komatsu PC210','JD 5075E','Bobcat T770','Equipment Trailer']]].map(c=>`
+      <div class="card card-pad"><div class="card-title"><span class="t"><span class="pill ${c[2]}">${c[0]}</span></span><span class="mval" style="font-size:1.5rem">${c[1]}</span></div>
+        ${c[3].map(x=>`<div class="row"><div class="ico" style="color:var(--${c[2]})">${svg(ic.wrench)}</div><div class="meta"><div class="nm" style="font-size:.84rem">${x}</div></div></div>`).join('')}
+      </div>`).join('')}
+  </div>`;
+
+V.fuel = () => `
+  <div class="grid metrics" style="grid-template-columns:repeat(4,1fr)">
+    ${[['Monthly Fuel','$6,840','down'],['Fuel / Acre','$41','flat'],['Fuel / Project','$1,140','up'],['Gallons MTD','1,820','flat']].map(m=>`<div class="card metric"><div class="mlabel">${m[0]}</div><div class="mval">${m[1]}</div><div class="mtrend ${m[2]}">${m[2]==='up'?'▲':m[2]==='down'?'▼':'●'} tracked per job</div></div>`).join('')}
+  </div>
+  <div class="grid two-col" style="margin-top:18px">
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.fuel)} Fuel Cost by Month</span></div>
+      <div class="chart">${[['Jan',62],['Feb',70],['Mar',81],['Apr',74],['May',68]].map(([m,v])=>`<div class="col"><div class="bk" style="height:${v}%"></div><div class="lb">${m}</div></div>`).join('')}</div>
+    </div>
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.mat)} Material Inventory</span><span class="demo-tag">reorder alerts</span></div>
+      <table class="tbl"><tbody>
+      ${[['Gravel (#57)','42 tons','green'],['Mulch','18 yd³','green'],['Sand','6 tons','amber'],['Fill Dirt','High','green'],['Drainage Pipe','120 ft','amber'],['Stone','9 tons','red']].map(r=>`<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td style="text-align:right"><span class="pill ${r[2]}">${r[2]==='red'?'Reorder':r[2]==='amber'?'Low':'In stock'}</span></td></tr>`).join('')}
+      </tbody></table>
+    </div>
+  </div>
+  <div class="card card-pad" style="margin-top:18px"><div class="card-title"><span class="t">${svg(ic.mat)} Suppliers</span></div>
+    ${[['Vulcan Materials','Gravel & Stone','Net 30'],['Birmingham Mulch Co.','Mulch & Compost','Net 15'],['ADS Drainage','Pipe & Fittings','COD']].map(s=>`<div class="row"><div class="ico">${svg(ic.mat)}</div><div class="meta"><div class="nm">${s[0]}</div><div class="ds">${s[1]}</div></div><span class="pill gray">${s[2]}</span></div>`).join('')}
+  </div>`;
+
+V.billing = () => `
+  <div class="grid metrics" style="grid-template-columns:repeat(4,1fr)">
+    ${[['Paid (MTD)','$61,800','up'],['Open Invoices','$22,400','flat'],['Overdue','$8,200','down'],['Avg Days to Pay','11','down']].map(m=>`<div class="card metric"><div class="mlabel">${m[0]}</div><div class="mval">${m[1]}</div></div>`).join('')}
+  </div>
+  <div class="section-head"><h2>Invoices</h2><button class="btn gold">${svg(ic.bill,16)} New Invoice</button></div>
+  <div class="card"><table class="tbl"><thead><tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead><tbody>
+    ${[['INV-2051','Greystone Builders',22200,'Stripe','Sent','blue'],['INV-2050','Cahaba Dev LLC',10750,'ACH','Paid','green'],['INV-2049','Oak Ridge HOA',3400,'Card','Paid','green'],['INV-2048','L. Pruett',4900,'Card','Paid','green'],['INV-2047','Harmon Farm',8200,'ACH','Overdue','red']].map(r=>`<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td><strong>${fmt(r[2])}</strong></td><td>${r[3]}</td><td><span class="pill ${r[5]}">${r[4]}</span></td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="grid three-col" style="margin-top:18px">
+    ${[['Stripe','Card payments online',ic.bill],['ACH','Bank transfers',ic.bill],['Contracts','Signed agreements & change orders',ic.doc]].map(c=>`<div class="card card-pad" style="display:flex;align-items:center;gap:12px"><div class="ico" style="background:var(--surface-strong)">${svg(c[2])}</div><div><div class="nm" style="font-weight:600">${c[0]}</div><div class="ds" style="font-size:.76rem;color:var(--text-mute)">${c[1]}</div></div></div>`).join('')}
+  </div>`;
+
+V.comms = () => `
+  <div class="grid two-col">
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.sms)} SMS Center</span><span class="demo-tag">Twilio</span></div>
+      ${[['Appointment reminder','Sent to 3 customers','green'],['Crew arrival notice','Auto-sent on check-in','green'],['Estimate follow-up','Scheduled +2 days','amber'],['Invoice reminder','Queued','gray'],['Review request','On completion','blue']].map(r=>`<div class="row"><div class="ico">${svg(ic.sms)}</div><div class="meta"><div class="nm">${r[0]}</div><div class="ds">${r[1]}</div></div><span class="pill ${r[2]}">auto</span></div>`).join('')}
+    </div>
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.mail)} Email Automation</span><span class="demo-tag">SendGrid</span></div>
+      ${[['Estimate delivery','PDF + signature link'],['Project updates','Progress + photos'],['Payment reminders','3 / 7 / 14 day'],['Customer follow-ups','Post-project']].map(r=>`<div class="row"><div class="ico">${svg(ic.mail)}</div><div class="meta"><div class="nm">${r[0]}</div><div class="ds">${r[1]}</div></div></div>`).join('')}
+    </div>
+  </div>
+  <div class="card card-pad" style="margin-top:18px"><div class="card-title"><span class="t">${svg(ic.star)} Reputation Management</span></div>
+    <div class="grid three-col">
+      ${[['Review Requests','46 sent'],['Completion Rate','58%'],['Avg Rating','4.8 ★']].map(m=>`<div class="mout"><div class="l">${m[0]}</div><div class="v">${m[1]}</div></div>`).join('')}
+    </div>
+    <p class="empty-hint">After each completed project, customers are routed straight to Google or Facebook reviews.</p>
+  </div>`;
+
+V.reports = () => `
+  <div class="grid three-col">
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.report)} Financial</span></div>
+      ${[['Revenue','$946,500'],['Expenses','$612,000'],['Profitability','35.3%'],['Job Costing','per-project']].map(r=>`<div class="row"><div class="meta"><div class="nm">${r[0]}</div></div><div class="val">${r[1]}</div></div>`).join('')}
+    </div>
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.equip)} Operational</span></div>
+      ${[['Equip. Utilization','78%'],['Crew Productivity','84%'],['Avg Completion','6.2 days'],['On-Time Rate','91%']].map(r=>`<div class="row"><div class="meta"><div class="nm">${r[0]}</div></div><div class="val">${r[1]}</div></div>`).join('')}
+    </div>
+    <div class="card card-pad"><div class="card-title"><span class="t">${svg(ic.lead)} Marketing</span></div>
+      ${[['Lead Sources','6 tracked'],['Conversion Rate','41%'],['Cost Per Lead','$38'],['Marketing ROI','5.2×']].map(r=>`<div class="row"><div class="meta"><div class="nm">${r[0]}</div></div><div class="val">${r[1]}</div></div>`).join('')}
+    </div>
+  </div>
+  <div class="card card-pad" style="margin-top:18px"><div class="card-title"><span class="t">${svg(ic.report)} Revenue vs Expenses</span><span class="demo-tag">6 months</span></div>
+    <div class="chart">${[['Dec',58,40],['Jan',49,36],['Feb',62,42],['Mar',71,48],['Apr',76,50],['May',84,54]].map(([m,r,e])=>`<div class="col" style="position:relative"><div class="bk" style="height:${r}%"></div><div class="bk" style="height:${e}%;position:absolute;bottom:18px;width:55%;background:var(--text-mute);opacity:.5;border-radius:5px 5px 0 0"></div><div class="lb">${m}</div></div>`).join('')}</div>
+    <div class="legend" style="flex-direction:row;gap:18px;margin-top:12px"><div class="lg"><span class="dot" style="background:var(--gold)"></span> Revenue</div><div class="lg"><span class="dot" style="background:var(--text-mute)"></span> Expenses</div></div>
+  </div>`;
+
+V.portal = () => `
+  <div class="banner">${svg(ic.portal,22)}<div>This is the <strong>customer-facing portal</strong> — every customer gets a login to follow their project in real time.</div></div>
+  <div class="phone">
+    <div class="phone-screen">
+      <div style="background:var(--forest-deep);padding:18px;color:#fff"><div style="font-family:var(--disp);font-weight:700;letter-spacing:1px">ELLIOTT</div><div style="font-size:.72rem;color:var(--gold);text-transform:uppercase;letter-spacing:2px">Customer Portal</div></div>
+      <div style="padding:16px">
+        <div class="mout" style="margin-bottom:12px"><div class="l">Your Project</div><div class="nm" style="font-weight:700;margin-top:4px">Land Clearing — 14 ac</div><div class="bar" style="margin-top:10px"><i style="width:65%"></i></div><div style="font-size:.74rem;color:var(--text-mute);margin-top:6px">65% complete · on schedule</div></div>
+        ${[['Photos','24 new this week',ic.photo],['Documents','Contract + insurance',ic.doc],['Invoices','1 open · $22,200',ic.bill],['Payment History','$10,750 paid',ic.bill],['Upcoming','Final grade — Fri',ic.cal]].map(r=>`<div class="row"><div class="ico">${svg(r[2])}</div><div class="meta"><div class="nm">${r[0]}</div><div class="ds">${r[1]}</div></div><div class="val">${svg(ic.arrow,15)}</div></div>`).join('')}
+        <button class="btn gold" style="width:100%;justify-content:center;margin-top:12px">Pay Invoice</button>
+      </div>
+    </div>
+  </div>`;
+
+V.roles = () => `
+  <div class="section-head"><h2>User Roles & Permissions</h2></div>
+  <div class="grid role-grid">
+    ${[
+      ['Owner','Full access to everything',['Dashboard & reports','Financials & billing','All customers & projects','Settings & users']],
+      ['Office Manager','Operations access',['CRM & scheduling','Estimates & invoices','Crew & equipment','Reports (no settings)']],
+      ['Sales Team','CRM · Estimates · Scheduling',['Leads & pipeline','Build estimates','Book site visits','Customer profiles']],
+      ['Crew Leaders','Projects · Photos · Time',['Assigned projects','Upload photos','Crew time tracking','Equipment reports']],
+      ['Employees','Assigned tasks only',['View job assignments','Clock in / out','Complete checklists','Report issues']],
+      ['Drone Pilot','Imagery & mapping',['Upload surveys','Orthomosaic maps','Progress flyovers','Before/after sets']],
+    ].map(r=>`<div class="card role"><h3>${svg(ic.roles)} ${r[0]}</h3><div class="ds" style="font-size:.8rem;color:var(--text-mute)">${r[1]}</div><div class="perms">${r[2].map(p=>`<div>${svg(ic.check,15)} ${p}</div>`).join('')}</div></div>`).join('')}
+  </div>
+  <div class="section-head"><h2>Mobile App — Field Crews</h2></div>
+  <div class="grid three-col">
+    ${[['Clock In / Out',ic.clock],['Upload Photos',ic.photo],['View Assignments',ic.proj],['Report Equipment Issues',ic.wrench],['Complete Checklists',ic.check],['Job Details & Maps',ic.map]].map(c=>`<div class="card card-pad" style="display:flex;align-items:center;gap:12px"><div class="ico" style="background:var(--surface-strong)">${svg(c[1])}</div><div class="nm" style="font-weight:600">${c[0]}</div></div>`).join('')}
+  </div>
+  <div class="banner" style="margin-top:18px">${svg(ic.ai,22)}<div><strong>On the roadmap:</strong> AI Scheduling Assistant (best crew + equipment + date), AI Estimating Assistant (instant cost from size & terrain), and AI Property Analysis (tree coverage, brush density & access routes from satellite imagery).</div></div>`;
+
+/* ---------- ROUTER ---------- */
+let estMapInst, opsMapInst;
+function render(id){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.id===id));
+  document.getElementById('pageTitle').textContent = TITLES[id][0];
+  document.getElementById('pageSub').textContent = TITLES[id][1];
+  const c = document.getElementById('content');
+  c.innerHTML = `<div class="view active">${(V[id]||(()=>'<p>Coming soon</p>'))()}</div>`;
+  window.scrollTo(0,0);
+  if(id==='estimating') setTimeout(initEstMap,60);
+  if(id==='opsmap') setTimeout(initOpsMap,60);
+  if(id==='photos') setTimeout(initCompare,60);
+  closeSidebar();
+}
+
+/* build nav */
+const nav = document.getElementById('nav');
+NAV.forEach(g=>{
+  nav.insertAdjacentHTML('beforeend',`<div class="nav-label">${g.label}</div>`);
+  g.items.forEach(it=>{
+    const b=document.createElement('button');
+    b.className='nav-item'; b.dataset.id=it.id;
+    b.innerHTML = svg(ic[it.icon],17)+`<span>${it.name}</span>`+(it.badge?`<span class="badge">${it.badge}</span>`:'');
+    b.onclick=()=>render(it.id);
+    nav.appendChild(b);
+  });
+});
+
+/* ---------- ESTIMATING MAP ---------- */
+let curSvc='Forestry Mulching', estMarker=null, estDrawHandler=null, estDrawn=null;
+const RATES={'Forestry Mulching':{hr:1.4,low:320,high:440},'Land Clearing':{hr:2.1,low:900,high:1500},'Gravel Driveway':{hr:0.8,low:6,high:9},'Pool Excavation':{hr:6,low:50,high:80}};
+function setSvc(s){curSvc=s;const l=document.getElementById('svcLabel');if(l)l.textContent=s;}
+
+/* Geocode an address (OpenStreetMap Nominatim) and fly the satellite map there */
+async function geocode(e){
+  if(e) e.preventDefault();
+  const input=document.getElementById('addrInput');
+  const out=document.getElementById('addrResult');
+  const btn=document.getElementById('addrBtn');
+  const q=input.value.trim();
+  if(!q){input.focus();return false;}
+  if(!estMapInst){out.className='addr-result err';out.textContent='Map still loading — try again in a second.';return false;}
+  out.className='addr-result';
+  out.innerHTML='Searching…';
+  btn.disabled=true;
+  try{
+    const url='https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q='+encodeURIComponent(q);
+    const res=await fetch(url,{headers:{'Accept':'application/json'}});
+    const data=await res.json();
+    if(!data.length){
+      out.className='addr-result err';
+      out.textContent='No match found for "'+q+'". Try a fuller address or nearby town.';
+      return false;
+    }
+    const lat=+data[0].lat, lon=+data[0].lon;
+    estMapInst.setView([lat,lon],17,{animate:true});
+    if(estMarker) estMapInst.removeLayer(estMarker);
+    estMarker=L.marker([lat,lon]).addTo(estMapInst).bindPopup('<b>'+(data[0].display_name||q)+'</b>').openPopup();
+    out.className='addr-result';
+    out.innerHTML='<span class="pin">'+svg(ic.map,16)+'</span> Property located — draw the work area on the satellite view above.';
+  }catch(err){
+    out.className='addr-result err';
+    out.textContent='Lookup failed — check your connection and try again.';
+  }finally{
+    btn.disabled=false;
+  }
+  return false;
+}
+function initEstMap(){
+  const el=document.getElementById('estMap'); if(!el||el._init)return; el._init=true;
+  const m=L.map(el,{scrollWheelZoom:false}).setView([33.61,-86.50],14);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Imagery © Esri',maxZoom:19}).addTo(m);
+  const drawn=new L.FeatureGroup().addTo(m);
+  estDrawn=drawn;
+
+  // Keep a handle on the active polygon drawer so the "Finish Area" button can complete it.
+  const polyHandler=new L.Draw.Polygon(m,{shapeOptions:{color:'#c79a3b',weight:3,fillOpacity:.25},allowIntersection:false,showArea:false});
+  estDrawHandler=polyHandler;
+
+  m.addControl(new L.Control.Draw({edit:{featureGroup:drawn},draw:{polygon:{shapeOptions:{color:'#c79a3b',weight:3,fillOpacity:.25},allowIntersection:false},polyline:{shapeOptions:{color:'#c79a3b',weight:4}},rectangle:{shapeOptions:{color:'#c79a3b'}},circle:false,marker:false,circlemarker:false}}));
+
+  // Show the finish hint whenever a draw starts; hide it once a shape is created/cancelled.
+  m.on(L.Draw.Event.DRAWSTART,()=>toggleFinishHint(true));
+  m.on(L.Draw.Event.DRAWSTOP,()=>toggleFinishHint(false));
+  m.on(L.Draw.Event.CREATED,e=>{drawn.clearLayers();drawn.addLayer(e.layer);calc(e.layer);toggleFinishHint(false);});
+  m.on(L.Draw.Event.EDITED,e=>e.layers.eachLayer(calc));
+
+  function metersBetween(a,b){
+    const R=6371000, dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180;
+    const s=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+    return 2*R*Math.asin(Math.sqrt(s));
+  }
+  function calc(layer){
+    const r=RATES[curSvc];
+    const elA=document.getElementById('mArea'), elH=document.getElementById('mHours'), elC=document.getElementById('mCost');
+    if(!elA) return;
+    // Polyline = linear measure (driveway / trench / fence length)
+    if(layer instanceof L.Polyline && !(layer instanceof L.Polygon)){
+      const ll=layer.getLatLngs(); let m2=0;
+      for(let i=1;i<ll.length;i++) m2+=metersBetween(ll[i-1],ll[i]);
+      const feet=m2*3.28084;
+      elA.textContent=Math.round(feet).toLocaleString()+' ft';
+      elH.textContent=Math.max(0.5,feet/660*r.hr).toFixed(1)+' hrs';
+      elC.textContent='$'+Math.round(feet/660*r.low).toLocaleString()+' – $'+Math.round(feet/660*r.high).toLocaleString();
+      return;
+    }
+    // Polygon / rectangle = acreage
+    const ll=layer.getLatLngs()[0]; let area=0;
+    for(let i=0,j=ll.length-1;i<ll.length;j=i++){const xi=ll[i].lng*111320*Math.cos(ll[i].lat*Math.PI/180),yi=ll[i].lat*110540,xj=ll[j].lng*111320*Math.cos(ll[j].lat*Math.PI/180),yj=ll[j].lat*110540;area+=(xj+xi)*(yj-yi);}
+    const acres=Math.abs(area/2)/4046.86;
+    const hrs=Math.max(0.5,acres*r.hr);
+    elA.textContent=acres.toFixed(2)+' ac';
+    elH.textContent=hrs.toFixed(1)+' hrs';
+    elC.textContent='$'+Math.round(acres*r.low).toLocaleString()+' – $'+Math.round(acres*r.high).toLocaleString();
+  }
+  estMapInst=m;
+}
+
+/* Start the polygon drawer from our own button */
+function startDrawArea(){
+  if(estDrawHandler) estDrawHandler.enable();
+}
+/* Complete whatever is currently being drawn (same as double-click / clicking first point) */
+function finishDrawArea(){
+  const map=estMapInst;
+  if(map && map._toolbars){
+    // Leaflet.draw stores the active handler on the draw toolbar
+    for(const k in map._toolbars){
+      const tb=map._toolbars[k];
+      if(tb && tb._activeMode && tb._activeMode.handler && tb._activeMode.handler._finishShape){
+        tb._activeMode.handler._finishShape();
+        return;
+      }
+    }
+  }
+  if(estDrawHandler && estDrawHandler._finishShape && estDrawHandler._enabled){
+    estDrawHandler._finishShape();
+  }
+}
+function toggleFinishHint(show){
+  const h=document.getElementById('drawHint');
+  if(h) h.style.display=show?'flex':'none';
+}
+/* Remove the drawn shape and reset the readout */
+function clearDrawArea(){
+  if(estDrawn) estDrawn.clearLayers();
+  const a=document.getElementById('mArea'), h=document.getElementById('mHours'), c=document.getElementById('mCost');
+  if(a){a.textContent='— ac';h.textContent='—';c.textContent='Draw an area';}
+}
+
+/* ---------- OPS MAP ---------- */
+function initOpsMap(){
+  const el=document.getElementById('opsMap'); if(!el||el._init)return; el._init=true;
+  const m=L.map(el,{scrollWheelZoom:false}).setView([33.55,-86.65],10);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© CARTO',maxZoom:19}).addTo(m);
+  const pts=[['Cahaba Dev — Active',33.62,-86.59,'#5b8fb0'],['Harmon Farm — Active',33.77,-86.47,'#5b8fb0'],['Oak Ridge HOA — Active',33.40,-86.81,'#5b8fb0'],['Greystone — Scheduled',33.42,-86.66,'#c79a3b'],['Maddox — Site visit',33.58,-86.29,'#c79a3b'],['Shop / Equipment',33.55,-86.75,'#48b265']];
+  pts.forEach(p=>L.circleMarker([p[1],p[2]],{radius:9,color:'#fff',weight:2,fillColor:p[3],fillOpacity:.9}).addTo(m).bindPopup('<b>'+p[0]+'</b>'));
+  opsMapInst=m;
+}
+
+/* ---------- COMPARE SLIDER ---------- */
+function initCompare(){
+  const wrap=document.getElementById('compare'); if(!wrap||wrap._init)return; wrap._init=true;
+  const after=wrap.querySelector('.after'),handle=document.getElementById('cmpHandle');
+  let drag=false;
+  const move=x=>{const r=wrap.getBoundingClientRect();let p=(x-r.left)/r.width*100;p=Math.max(2,Math.min(98,p));after.style.clipPath=`inset(0 0 0 ${p}%)`;handle.style.left=p+'%';};
+  const dn=()=>drag=true,up=()=>drag=false;
+  wrap.addEventListener('mousedown',e=>{dn();move(e.clientX);});
+  window.addEventListener('mousemove',e=>drag&&move(e.clientX));
+  window.addEventListener('mouseup',up);
+  wrap.addEventListener('touchstart',e=>{dn();move(e.touches[0].clientX);});
+  wrap.addEventListener('touchmove',e=>{if(drag){move(e.touches[0].clientX);}},{passive:true});
+  wrap.addEventListener('touchend',up);
+}
+
+/* ---------- THEME + MOBILE ---------- */
+document.getElementById('themeBtn').onclick=()=>{
+  const h=document.documentElement;h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';
+  [estMapInst,opsMapInst].forEach(m=>m&&setTimeout(()=>m.invalidateSize(),50));
+};
+const sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim');
+function closeSidebar(){sb.classList.remove('open');scrim.classList.remove('show');}
+document.getElementById('hamburger').onclick=()=>{sb.classList.toggle('open');scrim.classList.toggle('show');};
+scrim.onclick=closeSidebar;
+
+render('dashboard');
+</script>
+</body>
+</html>
