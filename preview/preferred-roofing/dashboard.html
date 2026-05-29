@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Preferred Roofing | Operations Dashboard</title>
+<meta name="theme-color" content="#1e3a5f">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231e3a5f'/><path d='M12 34 L32 16 L52 34' stroke='%23e0a526' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#1e3a5f;--navy-deep:#142639;--navy-soft:#2d4f78;
+  --gold:#e0a526;--gold-deep:#c2891a;--gold-glow:rgba(224,165,38,0.16);
+  --bg:#0e1a28;
+  --canvas:radial-gradient(1100px 700px at 88% -8%,rgba(45,79,120,0.4),transparent 60%),radial-gradient(800px 600px at -6% 100%,rgba(224,165,38,0.07),transparent 65%),#0e1a28;
+  --surface:rgba(255,255,255,0.038);--surface-soft:rgba(255,255,255,0.022);--surface-strong:rgba(255,255,255,0.06);
+  --text:#eef3f9;--text-soft:#bcc8d6;--text-mute:#7c8aa0;
+  --border:rgba(255,255,255,0.09);--border-soft:rgba(255,255,255,0.05);--border-strong:rgba(255,255,255,0.16);
+  --row-hover:rgba(255,255,255,0.035);
+  --green:#34d399;--green-l:rgba(52,211,153,0.14);
+  --orange:#fbbf24;--orange-l:rgba(251,191,36,0.14);
+  --blue:#60a5fa;--blue-l:rgba(96,165,250,0.14);
+  --red:#f87171;--red-l:rgba(248,113,113,0.14);
+  --shadow:0 0 0 1px rgba(255,255,255,0.04),0 24px 60px -28px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.04);
+  --serif:'Fraunces',Georgia,serif;--sans:'Inter',system-ui,sans-serif;
+}
+[data-theme="light"]{
+  --bg:#f4f2ec;--canvas:radial-gradient(1100px 700px at 90% -15%,rgba(224,165,38,0.10),transparent 60%),#f4f2ec;
+  --surface:#fff;--surface-soft:#fafaf5;--surface-strong:#fff;
+  --text:#15293f;--text-soft:#3f4a5a;--text-mute:#6b7585;
+  --border:rgba(20,38,57,0.10);--border-soft:rgba(20,38,57,0.05);--border-strong:rgba(20,38,57,0.18);
+  --row-hover:rgba(20,38,57,0.025);
+  --shadow:0 1px 3px rgba(20,38,57,0.06),0 10px 30px -14px rgba(20,38,57,0.16);
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--canvas) fixed;color:var(--text);line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased;letter-spacing:-0.005em}
+.layout{display:flex;min-height:100vh}
+::selection{background:var(--gold-glow)}
+
+/* SIDEBAR */
+.sidebar{width:262px;background:linear-gradient(180deg,#142639,#0f1d2c);border-right:1px solid var(--border-soft);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:50;transition:transform .3s}
+.sidebar-header{padding:26px 22px 20px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.sb-logo{display:flex;align-items:center;gap:11px;color:#fff;text-decoration:none}
+.sb-mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--navy-soft),var(--navy));display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.12)}
+.sb-mark svg{width:23px;height:23px}
+.sb-logo .sb-name{font-family:var(--serif);font-weight:600;font-size:1.12rem;line-height:1.1}
+.sb-logo .sb-sub{font-size:.6rem;color:var(--gold);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-top:2px}
+.sidebar-nav{flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.nav-label{font-size:.6rem;font-weight:700;color:#5e6e84;text-transform:uppercase;letter-spacing:2px;padding:14px 14px 6px}
+.nav-label:first-child{padding-top:4px}
+.nav-item{display:flex;align-items:center;gap:13px;padding:10px 14px;border-radius:9px;color:#9aa8bd;text-decoration:none;font-size:.86rem;font-weight:500;cursor:pointer;border:none;background:none;width:100%;text-align:left;position:relative;transition:all .18s}
+.nav-item:hover{background:rgba(255,255,255,0.04);color:#fff}
+.nav-item.active{background:rgba(255,255,255,0.06);color:#fff}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:18px;background:var(--gold);border-radius:0 2px 2px 0}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;opacity:.75}
+.nav-item.active svg{opacity:1}
+.nav-item .badge-count{margin-left:auto;background:var(--gold);color:#2a1f04;font-size:.66rem;font-weight:800;padding:1px 7px;border-radius:50px}
+.sidebar-foot{padding:16px 20px;border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sidebar-foot a{font-size:.74rem;color:#7c8aa0;text-decoration:none}.sidebar-foot a:hover{color:var(--gold)}
+.theme-toggle{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#cfd5e0;border-radius:6px;padding:5px 9px;cursor:pointer;font-size:.68rem;font-weight:700;font-family:inherit}
+
+/* MAIN */
+.main{margin-left:262px;flex:1;min-width:0}
+.topbar{background:rgba(14,26,40,0.7);backdrop-filter:blur(18px);border-bottom:1px solid var(--border-soft);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;gap:12px;flex-wrap:wrap}
+[data-theme="light"] .topbar{background:rgba(244,242,236,0.85)}
+.topbar h1{font-family:var(--serif);font-weight:500;font-size:1.4rem;color:var(--text)}
+.topbar-sub{font-size:.78rem;color:var(--text-mute);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tb-search{background:var(--surface);border:1px solid var(--border);color:var(--text-soft);border-radius:9px;padding:9px 14px;font-size:.8rem;font-family:inherit;width:200px}
+.tb-search::placeholder{color:var(--text-mute)}
+.tb-btn{background:var(--surface);border:1px solid var(--border);color:var(--text-soft);border-radius:8px;padding:9px 14px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px;transition:all .2s}
+.tb-btn:hover{border-color:var(--gold);color:var(--gold)}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--gold-deep));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;border:1px solid rgba(255,255,255,0.14)}
+.content{padding:30px 32px 70px;max-width:1480px}
+
+/* PAGES */
+.page{display:none}.page.active{display:block;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
+.stat-card{background:var(--surface);border-radius:15px;padding:22px 24px;box-shadow:var(--shadow);border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .25s}
+.stat-card::after{content:'';position:absolute;top:0;left:22px;right:22px;height:1px;background:linear-gradient(90deg,transparent,var(--gold) 50%,transparent);opacity:.5}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-top{display:flex;align-items:center;justify-content:space-between}
+.stat-label{font-size:.68rem;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px}
+.stat-ico{width:34px;height:34px;border-radius:9px;background:var(--gold-glow);display:flex;align-items:center;justify-content:center}
+.stat-ico svg{width:17px;height:17px;color:var(--gold)}
+.stat-value{font-family:var(--serif);font-weight:500;font-size:2.3rem;line-height:1.05;color:var(--text);margin-top:10px}
+.stat-sub{font-size:.76rem;margin-top:5px;color:var(--text-mute)}
+.stat-sub .up{color:var(--green);font-weight:700}.stat-sub .down{color:var(--red);font-weight:700}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--border);margin-bottom:22px}
+.card-header{padding:20px 24px 16px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-header h2{font-family:var(--serif);font-weight:500;font-size:1.18rem;color:var(--text)}
+.card-header .ch-sub{font-size:.78rem;color:var(--text-mute);margin-top:2px}
+.card-body{padding:24px}
+.grid-2{display:grid;grid-template-columns:1.5fr 1fr;gap:22px}
+.grid-2b{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+
+/* PIPELINE */
+.pipeline{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
+.pipe-col{flex:0 0 232px;background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:13px;padding:14px}
+.pipe-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.pipe-head .ph-name{font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft)}
+.pipe-head .ph-count{background:var(--surface-strong);color:var(--text-mute);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:50px}
+.pipe-col.hot .ph-name{color:var(--gold)}
+.lead-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+.lead-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.lead-card .lc-name{font-weight:700;font-size:.88rem;color:var(--text)}
+.lead-card .lc-addr{font-size:.76rem;color:var(--text-mute);margin-top:3px}
+.lead-card .lc-foot{display:flex;align-items:center;justify-content:space-between;margin-top:11px}
+.lead-card .lc-val{font-family:var(--serif);font-size:.95rem;color:var(--gold);font-weight:600}
+.lead-card .lc-src{font-size:.66rem;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:.5px}
+.tag{display:inline-block;font-size:.64rem;font-weight:700;padding:2px 8px;border-radius:50px;letter-spacing:.3px}
+.tag.ins{background:var(--blue-l);color:var(--blue)}.tag.retail{background:var(--green-l);color:var(--green)}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:11px 16px;font-size:.64rem;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:1.5px;border-bottom:1px solid var(--border-soft);background:var(--surface-soft)}
+td{padding:13px 16px;font-size:.86rem;border-bottom:1px solid var(--border-soft);color:var(--text);font-weight:500;vertical-align:middle}
+tr:hover td{background:var(--row-hover)}
+.t-strong{font-weight:700}
+.badge{display:inline-block;padding:3px 11px;border-radius:50px;font-size:.7rem;font-weight:700;white-space:nowrap;border:1px solid transparent}
+.b-new{background:var(--blue-l);color:var(--blue);border-color:rgba(96,165,250,0.3)}
+.b-sched{background:var(--gold-glow);color:var(--gold);border-color:rgba(224,165,38,0.35)}
+.b-done{background:var(--green-l);color:var(--green);border-color:rgba(52,211,153,0.3)}
+.b-prod{background:rgba(167,139,250,0.14);color:#c4b5fd;border-color:rgba(167,139,250,0.3)}
+.b-pend{background:var(--orange-l);color:var(--orange);border-color:rgba(251,191,36,0.3)}
+.b-approved{background:var(--green-l);color:var(--green);border-color:rgba(52,211,153,0.3)}
+.b-review{background:var(--orange-l);color:var(--orange);border-color:rgba(251,191,36,0.3)}
+.b-denied{background:var(--red-l);color:var(--red);border-color:rgba(248,113,113,0.3)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 17px;border-radius:8px;font-weight:600;font-size:.82rem;cursor:pointer;border:1px solid transparent;font-family:inherit;transition:all .2s;text-decoration:none}
+.btn svg{width:15px;height:15px}
+.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#2a1f04;font-weight:700;box-shadow:0 6px 18px -8px rgba(224,165,38,0.6)}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-navy{background:var(--navy-soft);color:#fff}.btn-navy:hover{background:var(--navy)}
+.btn-outline{background:var(--surface-soft);color:var(--text-soft);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:6px 12px;font-size:.74rem}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+
+/* PROGRESS BARS */
+.prog-track{height:7px;background:var(--border-soft);border-radius:50px;overflow:hidden;margin-top:7px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--navy-soft),var(--gold));border-radius:50px}
+.bar-row{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border-soft)}
+.bar-row:last-child{border:none}
+.bar-label{width:150px;font-size:.84rem;font-weight:500;color:var(--text-soft)}
+.bar-track{flex:1;height:7px;background:var(--border-soft);border-radius:50px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--navy-soft),var(--gold));border-radius:50px}
+.bar-val{width:72px;text-align:right;font-family:var(--serif);font-size:.95rem;color:var(--gold);font-weight:600}
+
+/* CLAIM PIPELINE */
+.claim-flow{display:flex;gap:10px;overflow-x:auto;padding:4px 0 10px}
+.claim-stage{flex:0 0 200px;background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:12px;padding:13px}
+.claim-stage h4{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-soft);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.claim-stage h4 b{color:var(--gold);font-family:var(--serif)}
+.claim-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px;margin-bottom:9px}
+.claim-item .ci-name{font-weight:700;font-size:.82rem}
+.claim-item .ci-meta{font-size:.72rem;color:var(--text-mute);margin-top:3px}
+.claim-item .ci-amt{font-family:var(--serif);font-size:.9rem;color:var(--gold);font-weight:600;margin-top:6px}
+
+/* AERIAL */
+.annotation-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.ann-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface-soft);color:var(--text-soft);cursor:pointer;font-size:.78rem;font-family:inherit;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.ann-btn:hover{border-color:var(--gold)}
+.ann-btn.active{background:var(--gold);color:#2a1f04;border-color:var(--gold)}
+#aerialMap{height:480px;border-radius:13px;overflow:hidden;border:1px solid var(--border);background:#1a2a3d}
+.measure-out{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+.measure-stat{background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:11px;padding:16px;text-align:center}
+.measure-stat .ms-val{font-family:var(--serif);font-size:1.6rem;color:var(--gold);font-weight:600;line-height:1}
+.measure-stat .ms-lbl{font-size:.7rem;color:var(--text-mute);text-transform:uppercase;letter-spacing:1px;margin-top:6px;font-weight:600}
+.leaflet-control-attribution{background:rgba(14,26,40,0.7)!important;color:var(--text-mute)!important;font-size:.66rem!important}
+.leaflet-control-attribution a{color:var(--gold)!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:rgba(20,38,57,0.96)!important;color:var(--text)!important}
+[data-theme="light"] .leaflet-popup-content-wrapper{background:#fff!important;color:var(--navy)!important}
+.leaflet-draw-toolbar a{filter:none}
+
+/* COMMS */
+.comms-list{display:flex;flex-direction:column;gap:11px}
+.comm-row{display:flex;gap:14px;padding:14px 16px;background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:11px;border-left:3px solid var(--gold)}
+.comm-ico{width:36px;height:36px;border-radius:9px;background:var(--gold-glow);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem}
+.comm-body{flex:1;min-width:0}
+.comm-body .cb-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.comm-body .cb-to{font-weight:700;font-size:.85rem}
+.comm-body .cb-time{font-size:.72rem;color:var(--text-mute)}
+.comm-body .cb-msg{font-size:.82rem;color:var(--text-soft);margin-top:5px;line-height:1.5}
+.comm-body .cb-channel{display:inline-flex;align-items:center;gap:5px;font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-mute);margin-top:7px}
+
+/* DOC CENTER */
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.doc-card{background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:all .2s}
+.doc-card:hover{border-color:var(--gold);transform:translateY(-3px)}
+.doc-ico{font-size:2rem;margin-bottom:10px}
+.doc-card .dc-name{font-size:.82rem;font-weight:600;color:var(--text);word-break:break-word}
+.doc-card .dc-meta{font-size:.7rem;color:var(--text-mute);margin-top:4px}
+
+/* CREW */
+.crew-job{background:var(--surface-soft);border:1px solid var(--border-soft);border-radius:13px;padding:18px 20px;margin-bottom:14px;border-left:4px solid var(--gold)}
+.crew-job .cj-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.crew-job .cj-addr{font-family:var(--serif);font-size:1.1rem;font-weight:500;color:var(--text)}
+.crew-job .cj-home{font-size:.8rem;color:var(--text-mute);margin-top:2px}
+.crew-job .cj-time{background:var(--gold-glow);color:var(--gold);padding:5px 12px;border-radius:50px;font-size:.74rem;font-weight:700;white-space:nowrap}
+.crew-job .cj-mat{margin-top:14px;font-size:.82rem;color:var(--text-soft)}
+.crew-job .cj-mat b{color:var(--text);display:block;margin-bottom:4px;font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-mute)}
+.crew-job .cj-actions{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(14,26,40,0.72);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex;animation:fade .25s}
+.modal{background:var(--surface);border:1px solid var(--border-strong);border-radius:18px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 80px -16px rgba(0,0,0,0.6)}
+[data-theme="light"] .modal{background:#fff}
+.modal-header{padding:22px 26px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between}
+.modal-header h2{font-family:var(--serif);font-weight:500;font-size:1.25rem}
+.modal-close{background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--text-mute);line-height:1}
+.modal-body{padding:24px}
+.modal-footer{padding:18px 26px;border-top:1px solid var(--border-soft);display:flex;justify-content:flex-end;gap:10px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-mute);margin-bottom:7px}
+.field input,.field select,.field textarea{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:.9rem;font-family:inherit;color:var(--text);background:var(--surface-soft)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-glow)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;right:28px;z-index:200;background:var(--surface);color:var(--text);padding:14px 20px;border-radius:11px;font-size:.85rem;font-weight:600;border:1px solid var(--border-strong);box-shadow:0 16px 40px -10px rgba(0,0,0,0.5);transform:translateY(120px);opacity:0;transition:all .35s;display:flex;align-items:center;gap:10px}
+[data-theme="light"] .toast{background:#fff}
+.toast.show{transform:translateY(0);opacity:1}
+.toast .t-ico{width:24px;height:24px;border-radius:50%;background:var(--green-l);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:800}
+
+/* AI BOX */
+.ai-box{background:linear-gradient(135deg,rgba(224,165,38,0.1),rgba(45,79,120,0.1));border:1px solid var(--gold-glow);border-radius:13px;padding:18px;margin-top:16px}
+.ai-box .ai-head{display:flex;align-items:center;gap:9px;font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:10px}
+.ai-box p{font-size:.86rem;color:var(--text-soft);line-height:1.6}
+
+.empty{text-align:center;padding:34px;color:var(--text-mute);font-style:italic;font-size:.88rem}
+.mobile-bar{display:none}
+.menu-btn{display:none;background:none;border:none;cursor:pointer;color:var(--text)}
+.menu-btn svg{width:26px;height:26px}
+
+@media(max-width:1024px){.stats-row{grid-template-columns:1fr 1fr}.grid-2,.grid-2b{grid-template-columns:1fr}.measure-out{grid-template-columns:1fr 1fr}}
+@media(max-width:860px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}.menu-btn{display:block}
+  .tb-search{display:none}
+}
+@media(max-width:540px){.stats-row{grid-template-columns:1fr}.content{padding:20px 16px 60px}}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:45}
+.sb-overlay.open{display:block}
+</style>
+</head>
+<body data-theme="dark">
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <a href="index.html" class="sb-logo">
+      <span class="sb-mark"><svg viewBox="0 0 64 64" fill="none"><path d="M10 36 L32 16 L54 36" stroke="#e0a526" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 34 V50 H48 V34" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/></svg></span>
+      <span><span class="sb-name">Preferred Roofing</span><span class="sb-sub">Operations</span></span>
+    </a>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Overview</div>
+    <button class="nav-item active" onclick="nav('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</button>
+    <button class="nav-item" onclick="nav('leads',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>Leads <span class="badge-count">7</span></button>
+    <button class="nav-item" onclick="nav('inspections',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>Inspections</button>
+    <div class="nav-label">Operations</div>
+    <button class="nav-item" onclick="nav('claims',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Insurance Claims</button>
+    <button class="nav-item" onclick="nav('projects',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Projects</button>
+    <button class="nav-item" onclick="nav('aerial',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>Aerial Measure</button>
+    <button class="nav-item" onclick="nav('crew',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Crew View</button>
+    <div class="nav-label">Business</div>
+    <button class="nav-item" onclick="nav('revenue',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue</button>
+    <button class="nav-item" onclick="nav('comms',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Communications</button>
+    <button class="nav-item" onclick="nav('docs',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Document Center</button>
+  </nav>
+  <div class="sidebar-foot">
+    <a href="index.html">← Public Site</a>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀ Light</button>
+  </div>
+</aside>
+<div class="sb-overlay" id="sbOverlay" onclick="toggleSidebar()"></div>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="menu-btn" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div><h1 id="pageTitle">Dashboard</h1><div class="topbar-sub" id="pageSub">Tuesday, May 29 · Auburn, AL · Clear, 78°F</div></div>
+    </div>
+    <div class="topbar-right">
+      <input class="tb-search" placeholder="Search leads, jobs, addresses…">
+      <button class="tb-btn" onclick="openModal('newLead')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Lead</button>
+      <div class="avatar">PR</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Leads This Month</span><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg></span></div><div class="stat-value">38</div><div class="stat-sub"><span class="up">↑ 21%</span> vs. last month</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Closing Rate</span><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span></div><div class="stat-value">42%</div><div class="stat-sub"><span class="up">↑ 6 pts</span> with on-site inspections</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Revenue Closed</span><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span></div><div class="stat-value">$214k</div><div class="stat-sub">May to date · <span class="up">$96k pending</span></div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Avg Roof Value</span><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span></div><div class="stat-value">$15.8k</div><div class="stat-sub">Insurance jobs run higher</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div><h2>Sales Pipeline</h2><div class="ch-sub">Every website lead flows straight into this board</div></div><button class="btn btn-outline btn-sm" onclick="nav('leads',document.querySelectorAll('.nav-item')[1])">Open Leads →</button></div>
+      <div class="card-body">
+        <div class="pipeline" id="dashPipeline"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h2>Today's Schedule</h2><span class="badge b-sched">4 jobs</span></div>
+        <div class="card-body" style="padding-top:14px">
+          <div class="crew-job" style="margin-bottom:12px;padding:14px 18px">
+            <div class="cj-top"><div><div class="cj-addr" style="font-size:1rem">Inspection · 142 Magnolia Ave</div><div class="cj-home">Sarah Mitchell · Auburn</div></div><span class="cj-time">8:30 AM</span></div>
+          </div>
+          <div class="crew-job" style="margin-bottom:12px;padding:14px 18px;border-left-color:var(--blue)">
+            <div class="cj-top"><div><div class="cj-addr" style="font-size:1rem">Adjuster Meeting · 88 Cloverdale</div><div class="cj-home">David Reyes · Montgomery · State Farm</div></div><span class="cj-time" style="background:var(--blue-l);color:var(--blue)">11:00 AM</span></div>
+          </div>
+          <div class="crew-job" style="margin-bottom:12px;padding:14px 18px;border-left-color:var(--green)">
+            <div class="cj-top"><div><div class="cj-addr" style="font-size:1rem">Production · 21 Pepperell Pkwy</div><div class="cj-home">Crew A · Opelika · Tear-off + install</div></div><span class="cj-time" style="background:var(--green-l);color:var(--green)">7:00 AM</span></div>
+          </div>
+          <div class="crew-job" style="padding:14px 18px;border-left-color:var(--gold)">
+            <div class="cj-top"><div><div class="cj-addr" style="font-size:1rem">Estimate Review · 504 Lakeshore</div><div class="cj-home">Mark Whitfield · Lake Martin</div></div><span class="cj-time">3:00 PM</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>This Month</h2></div>
+        <div class="card-body">
+          <div class="bar-row"><span class="bar-label">Inspections done</span><div class="bar-track"><div class="bar-fill" style="width:82%"></div></div><span class="bar-val">31</span></div>
+          <div class="bar-row"><span class="bar-label">Estimates sent</span><div class="bar-track"><div class="bar-fill" style="width:64%"></div></div><span class="bar-val">24</span></div>
+          <div class="bar-row"><span class="bar-label">Jobs sold</span><div class="bar-track"><div class="bar-fill" style="width:42%"></div></div><span class="bar-val">16</span></div>
+          <div class="bar-row"><span class="bar-label">In production</span><div class="bar-track"><div class="bar-fill" style="width:24%"></div></div><span class="bar-val">9</span></div>
+          <div class="bar-row"><span class="bar-label">Completed</span><div class="bar-track"><div class="bar-fill" style="width:55%"></div></div><span class="bar-val">21</span></div>
+          <div class="ai-box">
+            <div class="ai-head">✨ AI Insight</div>
+            <p><b>3 estimates</b> sent over 5 days ago haven't been opened. The May 18 hailstorm leads are closing 2× faster — prioritize follow-up there while urgency is high.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADS -->
+  <div class="page" id="page-leads">
+    <div class="card">
+      <div class="card-header"><div><h2>Lead Pipeline</h2><div class="ch-sub">Drag-and-drop stages · auto-captured from the website &amp; phone</div></div><button class="btn btn-primary btn-sm" onclick="openModal('newLead')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Lead</button></div>
+      <div class="card-body"><div class="pipeline" id="fullPipeline"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>All Leads</h2><span class="ch-sub">38 this month</span></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Name</th><th>Address</th><th>Source</th><th>Type</th><th>Est. Value</th><th>Stage</th><th></th></tr></thead>
+        <tbody id="leadsTable"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- INSPECTIONS -->
+  <div class="page" id="page-inspections">
+    <div class="card">
+      <div class="card-header"><div><h2>Inspections</h2><div class="ch-sub">Photos &amp; damage notes upload straight from the field on a phone</div></div><button class="btn btn-primary btn-sm" onclick="showToast('New inspection created')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Inspection</button></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Address</th><th>Homeowner</th><th>Inspector</th><th>Date</th><th>Photos</th><th>Findings</th><th>Status</th></tr></thead>
+        <tbody id="inspTable"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- CLAIMS -->
+  <div class="page" id="page-claims">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Active Claims</span><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span></div><div class="stat-value">14</div><div class="stat-sub">$201k total scope</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Approval Rate</span><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></span></div><div class="stat-value">94%</div><div class="stat-sub">When we meet the adjuster</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Avg Approval</span><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/></svg></span></div><div class="stat-value">$16.2k</div><div class="stat-sub">After supplements</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Avg Days to Close</span><span class="stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span></div><div class="stat-value">23</div><div class="stat-sub">Filing to roof complete</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><h2>Claims Pipeline</h2><div class="ch-sub">Track every claim from filing through approval</div></div></div>
+      <div class="card-body"><div class="claim-flow" id="claimFlow"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Claim Details</h2></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Homeowner</th><th>Insurance Co.</th><th>Claim #</th><th>Adjuster</th><th>Scope</th><th>Status</th></tr></thead>
+        <tbody id="claimsTable"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="page" id="page-projects">
+    <div class="card">
+      <div class="card-header"><div><h2>Active Projects</h2><div class="ch-sub">Material, dumpster, crew &amp; production tracked per roof</div></div></div>
+      <div class="card-body" id="projectsList"></div>
+    </div>
+  </div>
+
+  <!-- AERIAL -->
+  <div class="page" id="page-aerial">
+    <div class="card">
+      <div class="card-header"><div><h2>Aerial Roof Measurement</h2><div class="ch-sub">Draw the roof outline on satellite imagery to estimate squares, material &amp; a preliminary quote — no climbing required</div></div><span class="badge b-sched">EagleView · Roofr · Nearmap ready</span></div>
+      <div class="card-body">
+        <div class="annotation-tools">
+          <button class="ann-btn active" id="drawBtn" onclick="startDraw()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>Draw Roof Outline</button>
+          <button class="ann-btn" onclick="clearDraw()">Clear</button>
+          <button class="ann-btn" onclick="autoQuote()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Generate Preliminary Quote</button>
+        </div>
+        <div id="aerialMap"></div>
+        <div class="measure-out">
+          <div class="measure-stat"><div class="ms-val" id="mArea">—</div><div class="ms-lbl">Roof Area (sq ft)</div></div>
+          <div class="measure-stat"><div class="ms-val" id="mSquares">—</div><div class="ms-lbl">Squares</div></div>
+          <div class="measure-stat"><div class="ms-val" id="mBundles">—</div><div class="ms-lbl">Bundles (+10% waste)</div></div>
+          <div class="measure-stat"><div class="ms-val" id="mQuote">—</div><div class="ms-lbl">Preliminary Quote</div></div>
+        </div>
+        <div class="ai-box" id="aerialNote" style="display:none">
+          <div class="ai-head">✨ Preliminary Estimate</div>
+          <p id="aerialNoteText"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREW -->
+  <div class="page" id="page-crew">
+    <div class="card">
+      <div class="card-header"><div><h2>Crew View — Today</h2><div class="ch-sub">What crew leaders see on their phone in the field</div></div><span class="badge b-prod">Crew A · 3 jobs</span></div>
+      <div class="card-body">
+        <div class="crew-job">
+          <div class="cj-top"><div><div class="cj-addr">21 Pepperell Pkwy</div><div class="cj-home">David Reyes · Opelika · (334) 555-0142</div></div><span class="cj-time">7:00 AM — Full Day</span></div>
+          <div class="cj-mat"><b>Material List</b>32 sq · Owens Corning Duration · Charcoal · 1 dumpster (20yd) · Ice &amp; water shield · Ridge vent 48ft</div>
+          <div class="cj-mat" style="margin-top:10px"><b>Notes</b>Gate code 1842 · Dog in backyard · Park on street, not driveway</div>
+          <div class="cj-actions"><button class="btn btn-primary btn-sm" onclick="showToast('Camera opened — upload completion photos')">📷 Upload Photos</button><button class="btn btn-outline btn-sm" onclick="showToast('Marked complete · homeowner notified')">✓ Mark Complete</button><button class="btn btn-navy btn-sm">🗺 Directions</button></div>
+        </div>
+        <div class="crew-job" style="border-left-color:var(--blue)">
+          <div class="cj-top"><div><div class="cj-addr">88 Cloverdale Rd</div><div class="cj-home">Karen Sims · Montgomery · (334) 555-0188</div></div><span class="cj-time" style="background:var(--blue-l);color:var(--blue)">1:00 PM — Repair</span></div>
+          <div class="cj-mat"><b>Material List</b>Flashing kit · 1 bundle Driftwood shingles · Sealant · Replace 2 vent boots</div>
+          <div class="cj-actions"><button class="btn btn-primary btn-sm" onclick="showToast('Camera opened — upload completion photos')">📷 Upload Photos</button><button class="btn btn-outline btn-sm" onclick="showToast('Marked complete · homeowner notified')">✓ Mark Complete</button></div>
+        </div>
+        <div class="crew-job" style="border-left-color:var(--green)">
+          <div class="cj-top"><div><div class="cj-addr">504 Lakeshore Dr</div><div class="cj-home">Mark Whitfield · Lake Martin · (256) 555-0204</div></div><span class="cj-time" style="background:var(--green-l);color:var(--green)">Final Inspection</span></div>
+          <div class="cj-mat"><b>Notes</b>Walk roof with homeowner · Confirm cleanup &amp; magnet sweep · Collect final payment</div>
+          <div class="cj-actions"><button class="btn btn-primary btn-sm" onclick="showToast('Punch list submitted')">✓ Final Sign-off</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVENUE -->
+  <div class="page" id="page-revenue">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Revenue Closed (May)</span></div><div class="stat-value">$214k</div><div class="stat-sub"><span class="up">↑ 18%</span> YoY</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Pending Pipeline</span></div><div class="stat-value">$96k</div><div class="stat-sub">14 estimates outstanding</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Insurance vs Retail</span></div><div class="stat-value">63 / 37</div><div class="stat-sub">% of closed revenue</div></div>
+      <div class="stat-card"><div class="stat-top"><span class="stat-label">Cost per Lead</span></div><div class="stat-value">$48</div><div class="stat-sub">Down from $61 last quarter</div></div>
+    </div>
+    <div class="grid-2b">
+      <div class="card">
+        <div class="card-header"><h2>Revenue by Month</h2></div>
+        <div class="card-body" id="revBars"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>Lead Source Performance</h2></div>
+        <div class="card-body">
+          <div class="bar-row"><span class="bar-label">Website</span><div class="bar-track"><div class="bar-fill" style="width:46%"></div></div><span class="bar-val">$98k</span></div>
+          <div class="bar-row"><span class="bar-label">Google / SEO</span><div class="bar-track"><div class="bar-fill" style="width:30%"></div></div><span class="bar-val">$64k</span></div>
+          <div class="bar-row"><span class="bar-label">Referral</span><div class="bar-track"><div class="bar-fill" style="width:36%"></div></div><span class="bar-val">$77k</span></div>
+          <div class="bar-row"><span class="bar-label">Storm canvass</span><div class="bar-track"><div class="bar-fill" style="width:20%"></div></div><span class="bar-val">$43k</span></div>
+          <div class="bar-row"><span class="bar-label">Facebook</span><div class="bar-track"><div class="bar-fill" style="width:14%"></div></div><span class="bar-val">$29k</span></div>
+          <div class="ai-box"><div class="ai-head">✨ AI Insight</div><p>Website leads close at the lowest cost and highest average value this quarter. The new estimate wizard lifted website-sourced revenue <b>34%</b> month over month.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMS -->
+  <div class="page" id="page-comms">
+    <div class="card">
+      <div class="card-header"><div><h2>Automated Communications</h2><div class="ch-sub">Text &amp; email sent automatically at each pipeline stage — via Twilio + email</div></div><button class="btn btn-outline btn-sm" onclick="showToast('Message templates opened')">Edit Templates</button></div>
+      <div class="card-body"><div class="comms-list" id="commsList"></div></div>
+    </div>
+  </div>
+
+  <!-- DOCS -->
+  <div class="page" id="page-docs">
+    <div class="card">
+      <div class="card-header"><div><h2>Document Center</h2><div class="ch-sub">Everything tied to each customer — contracts, insurance docs, photos, invoices, warranties</div></div><button class="btn btn-primary btn-sm" onclick="showToast('Upload dialog opened')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload</button></div>
+      <div class="card-body">
+        <div style="font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-mute);margin-bottom:14px">Sarah Mitchell · 142 Magnolia Ave</div>
+        <div class="doc-grid">
+          <div class="doc-card" onclick="showToast('Opening contract…')"><div class="doc-ico">📄</div><div class="dc-name">Signed Contract</div><div class="dc-meta">PDF · 240 KB</div></div>
+          <div class="doc-card" onclick="showToast('Opening claim docs…')"><div class="doc-ico">🛡️</div><div class="dc-name">Insurance Scope</div><div class="dc-meta">PDF · 1.2 MB</div></div>
+          <div class="doc-card" onclick="showToast('Opening photos…')"><div class="doc-ico">📷</div><div class="dc-name">Inspection Photos</div><div class="dc-meta">24 images</div></div>
+          <div class="doc-card" onclick="showToast('Opening estimate…')"><div class="doc-ico">🧾</div><div class="dc-name">Estimate</div><div class="dc-meta">PDF · 180 KB</div></div>
+          <div class="doc-card" onclick="showToast('Opening invoice…')"><div class="doc-ico">💵</div><div class="dc-name">Final Invoice</div><div class="dc-meta">PDF · 165 KB</div></div>
+          <div class="doc-card" onclick="showToast('Opening warranty…')"><div class="doc-ico">✅</div><div class="dc-name">Warranty Cert</div><div class="dc-meta">PDF · 95 KB</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+</main>
+</div>
+
+<!-- NEW LEAD MODAL -->
+<div class="modal-overlay" id="modal-newLead">
+  <div class="modal">
+    <div class="modal-header"><h2>New Lead</h2><button class="modal-close" onclick="closeModal('newLead')">&times;</button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <div class="field"><label>Name</label><input placeholder="Full name"></div>
+        <div class="field"><label>Phone</label><input placeholder="(334) 555-0123"></div>
+      </div>
+      <div class="field"><label>Property Address</label><input placeholder="123 Magnolia Ave, Auburn"></div>
+      <div class="field-row">
+        <div class="field"><label>Lead Source</label><select><option>Website</option><option>Google / SEO</option><option>Referral</option><option>Storm canvass</option><option>Facebook</option><option>Phone call</option></select></div>
+        <div class="field"><label>Job Type</label><select><option>Insurance</option><option>Retail</option></select></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea placeholder="What did they call about?"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('newLead')">Cancel</button><button class="btn btn-primary" onclick="closeModal('newLead');showToast('Lead added & SMS confirmation sent')">Save Lead</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="t-ico">✓</span><span id="toastMsg">Done</span></div>
+
+<script>
+// ---- Nav ----
+const titles={dashboard:['Dashboard','Tuesday, May 29 · Auburn, AL · Clear, 78°F'],leads:['Leads','38 new this month · 7 unassigned'],inspections:['Inspections','Field photos & damage notes'],claims:['Insurance Claims','14 active · $201k in scope'],projects:['Projects','9 roofs in production'],aerial:['Aerial Measurement','Satellite roof takeoff'],crew:['Crew View','Crew A · 3 jobs today'],revenue:['Revenue','May to date'],comms:['Communications','Automated text & email'],docs:['Document Center','Per-customer files']};
+function nav(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.getElementById('pageTitle').textContent=titles[id][0];
+  document.getElementById('pageSub').textContent=titles[id][1];
+  if(id==='aerial'&&!aerialReady)setTimeout(initAerial,60);
+  if(window.innerWidth<=860)toggleSidebar(true);
+  window.scrollTo(0,0);
+}
+function toggleSidebar(forceClose){
+  const sb=document.getElementById('sidebar'),ov=document.getElementById('sbOverlay');
+  if(forceClose){sb.classList.remove('open');ov.classList.remove('open');return}
+  sb.classList.toggle('open');ov.classList.toggle('open');
+}
+function toggleTheme(){
+  const b=document.body,btn=document.getElementById('themeBtn');
+  if(b.dataset.theme==='dark'){b.dataset.theme='light';btn.textContent='🌙 Dark'}
+  else{b.dataset.theme='dark';btn.textContent='☀ Light'}
+}
+function openModal(id){document.getElementById('modal-'+id).classList.add('open')}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open')}
+function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),2600)}
+
+// ---- Pipeline data ----
+const stages=[
+  {key:'new',name:'New Lead',hot:false},
+  {key:'sched',name:'Inspection Set',hot:false},
+  {key:'done',name:'Inspected',hot:false},
+  {key:'est',name:'Estimate Sent',hot:true},
+  {key:'ins',name:'Insurance Review',hot:false},
+  {key:'sold',name:'Approved / Sold',hot:false},
+  {key:'prod',name:'In Production',hot:false}
+];
+const leads=[
+  {name:'Sarah Mitchell',addr:'142 Magnolia Ave, Auburn',src:'Website',type:'ins',val:'$16.5k',stage:'prod'},
+  {name:'David Reyes',addr:'88 Cloverdale Rd, Montgomery',src:'Storm canvass',type:'ins',val:'$14.2k',stage:'ins'},
+  {name:'Linda Tran',addr:'305 Dean Rd, Auburn',src:'Referral',type:'retail',val:'$18.9k',stage:'sold'},
+  {name:'Mark Whitfield',addr:'504 Lakeshore Dr, Lake Martin',src:'Google',type:'retail',val:'$31.0k',stage:'est'},
+  {name:'Tony Barnes',addr:'19 Summerville, Phenix City',src:'Website',type:'ins',val:'$12.8k',stage:'done'},
+  {name:'Karen Sims',addr:'77 Pinehurst, Opelika',src:'Facebook',type:'retail',val:'$8.4k',stage:'sched'},
+  {name:'James Cole',addr:'412 Shug Jordan, Auburn',src:'Website',type:'ins',val:'$15.1k',stage:'new'},
+  {name:'Patty Hughes',addr:'9 Lee Rd 240, Opelika',src:'Website',type:'ins',val:'$13.6k',stage:'new'},
+  {name:'Rev. Allen Bost',addr:'First Grace Church, Auburn',src:'Referral',type:'retail',val:'$44.0k',stage:'est'},
+  {name:'Greg Wallace',addr:'600 Marvyn Pkwy, Phenix City',src:'Google',type:'retail',val:'$11.2k',stage:'sched'}
+];
+function pipeHTML(){
+  return stages.map(s=>{
+    const items=leads.filter(l=>l.stage===s.key);
+    return `<div class="pipe-col ${s.hot?'hot':''}">
+      <div class="pipe-head"><span class="ph-name">${s.name}</span><span class="ph-count">${items.length}</span></div>
+      ${items.map(l=>`<div class="lead-card" onclick="showToast('Opening ${l.name}…')">
+        <div class="lc-name">${l.name}</div>
+        <div class="lc-addr">${l.addr}</div>
+        <div class="lc-foot"><span class="lc-val">${l.val}</span><span class="tag ${l.type}">${l.type==='ins'?'Insurance':'Retail'}</span></div>
+        <div class="lc-src">${l.src}</div>
+      </div>`).join('')||'<div class="empty" style="padding:14px;font-size:.78rem">—</div>'}
+    </div>`;
+  }).join('');
+}
+document.getElementById('dashPipeline').innerHTML=pipeHTML();
+document.getElementById('fullPipeline').innerHTML=pipeHTML();
+
+const stageBadge={new:'b-new',sched:'b-sched',done:'b-done',est:'b-pend',ins:'b-review',sold:'b-approved',prod:'b-prod'};
+const stageName={new:'New Lead',sched:'Inspection Set',done:'Inspected',est:'Estimate Sent',ins:'Insurance Review',sold:'Approved',prod:'In Production'};
+document.getElementById('leadsTable').innerHTML=leads.map(l=>`
+  <tr><td class="t-strong">${l.name}</td><td>${l.addr}</td><td>${l.src}</td>
+  <td><span class="tag ${l.type}">${l.type==='ins'?'Insurance':'Retail'}</span></td>
+  <td style="color:var(--gold);font-weight:700">${l.val}</td>
+  <td><span class="badge ${stageBadge[l.stage]}">${stageName[l.stage]}</span></td>
+  <td><button class="btn btn-outline btn-sm" onclick="showToast('Opening ${l.name}…')">View</button></td></tr>`).join('');
+
+// ---- Inspections ----
+const inspections=[
+  {addr:'142 Magnolia Ave, Auburn',home:'Sarah Mitchell',insp:'Cody R.',date:'May 18',photos:24,find:'Widespread hail bruising, 14+ hits per square',status:'b-done',st:'Complete'},
+  {addr:'88 Cloverdale Rd, Montgomery',home:'David Reyes',insp:'Cody R.',date:'May 21',photos:18,find:'Wind-lifted ridge, missing shingles N slope',status:'b-done',st:'Complete'},
+  {addr:'412 Shug Jordan, Auburn',home:'James Cole',insp:'—',date:'May 30',photos:0,find:'Scheduled — storm date 5/18',status:'b-sched',st:'Scheduled'},
+  {addr:'19 Summerville, Phenix City',home:'Tony Barnes',insp:'Will M.',date:'May 27',photos:12,find:'Granule loss, soft spots over garage',status:'b-done',st:'Complete'},
+  {addr:'600 Marvyn Pkwy, Phenix City',home:'Greg Wallace',insp:'—',date:'May 31',photos:0,find:'Scheduled — retail estimate',status:'b-sched',st:'Scheduled'}
+];
+document.getElementById('inspTable').innerHTML=inspections.map(i=>`
+  <tr><td class="t-strong">${i.addr}</td><td>${i.home}</td><td>${i.insp}</td><td>${i.date}</td>
+  <td>${i.photos?`📷 ${i.photos}`:'—'}</td><td style="color:var(--text-soft);font-size:.82rem">${i.find}</td>
+  <td><span class="badge ${i.status}">${i.st}</span></td></tr>`).join('');
+
+// ---- Claims ----
+const claimStages=[
+  {name:'Filed',items:[{n:'Greg Wallace',m:'Allstate · 5/27',a:'$11.8k'}]},
+  {name:'Inspection',items:[{n:'James Cole',m:'Progressive · 5/30',a:'$15.1k'}]},
+  {name:'Adjuster Mtg',items:[{n:'David Reyes',m:'State Farm · 5/29',a:'$14.2k'}]},
+  {name:'Supplement',items:[{n:'Tony Barnes',m:'USAA · pending',a:'$12.8k'}]},
+  {name:'Approved',items:[{n:'Sarah Mitchell',m:'Farmers · 5/24',a:'$16.5k'},{n:'Linda Tran',m:'Travelers · 5/20',a:'$18.9k'}]}
+];
+document.getElementById('claimFlow').innerHTML=claimStages.map(s=>`
+  <div class="claim-stage">
+    <h4>${s.name}<b>${s.items.length}</b></h4>
+    ${s.items.map(i=>`<div class="claim-item"><div class="ci-name">${i.n}</div><div class="ci-meta">${i.m}</div><div class="ci-amt">${i.a}</div></div>`).join('')}
+  </div>`).join('');
+const claims=[
+  {h:'Sarah Mitchell',co:'Farmers',num:'FRM-884201',adj:'R. Patterson',scope:'$16,500',st:'b-approved',stn:'Approved'},
+  {h:'David Reyes',co:'State Farm',num:'SF-2204-771',adj:'M. Dawkins',scope:'$14,200',st:'b-review',stn:'Adjuster Mtg'},
+  {h:'Linda Tran',co:'Travelers',num:'TRV-55190',adj:'K. Boone',scope:'$18,900',st:'b-approved',stn:'Approved'},
+  {h:'Tony Barnes',co:'USAA',num:'USAA-99043',adj:'J. Reilly',scope:'$12,800',st:'b-pend',stn:'Supplement'},
+  {h:'Greg Wallace',co:'Allstate',num:'ALL-30277',adj:'Pending',scope:'$11,800',st:'b-new',stn:'Filed'}
+];
+document.getElementById('claimsTable').innerHTML=claims.map(c=>`
+  <tr><td class="t-strong">${c.h}</td><td>${c.co}</td><td>${c.num}</td><td>${c.adj}</td>
+  <td style="color:var(--gold);font-weight:700">${c.scope}</td><td><span class="badge ${c.st}">${c.stn}</span></td></tr>`).join('');
+
+// ---- Projects ----
+const projects=[
+  {addr:'21 Pepperell Pkwy, Opelika',home:'David Reyes',crew:'Crew A',mat:'Ordered ✓',dump:'Delivered ✓',prod:'In progress',date:'May 29',pct:55},
+  {addr:'142 Magnolia Ave, Auburn',home:'Sarah Mitchell',crew:'Crew B',mat:'Ordered ✓',dump:'Scheduled 6/2',prod:'Scheduled',date:'Jun 2',pct:30},
+  {addr:'305 Dean Rd, Auburn',home:'Linda Tran',crew:'Crew A',mat:'Ordered ✓',dump:'Delivered ✓',prod:'Final inspection',date:'May 28',pct:90},
+  {addr:'First Grace Church, Auburn',home:'Rev. Allen Bost',crew:'Crew C',mat:'Pending PO',dump:'—',prod:'Awaiting deposit',date:'TBD',pct:10}
+];
+document.getElementById('projectsList').innerHTML=projects.map(p=>`
+  <div class="crew-job" style="border-left-color:${p.pct>=90?'var(--green)':p.pct>=50?'var(--gold)':'var(--navy-soft)'}">
+    <div class="cj-top"><div><div class="cj-addr">${p.addr}</div><div class="cj-home">${p.home} · ${p.crew}</div></div><span class="cj-time">${p.prod} · ${p.date}</span></div>
+    <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;font-size:.8rem;color:var(--text-soft)">
+      <span><b style="color:var(--text-mute);font-size:.68rem;text-transform:uppercase;letter-spacing:1px">Material</b><br>${p.mat}</span>
+      <span><b style="color:var(--text-mute);font-size:.68rem;text-transform:uppercase;letter-spacing:1px">Dumpster</b><br>${p.dump}</span>
+      <span><b style="color:var(--text-mute);font-size:.68rem;text-transform:uppercase;letter-spacing:1px">Crew</b><br>${p.crew}</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" style="width:${p.pct}%"></div></div>
+  </div>`).join('');
+
+// ---- Revenue bars ----
+const months=[['Jan',132],['Feb',118],['Mar',176],['Apr',198],['May',214]];
+const maxRev=220;
+document.getElementById('revBars').innerHTML=months.map(([m,v])=>`
+  <div class="bar-row"><span class="bar-label">${m} 2026</span><div class="bar-track"><div class="bar-fill" style="width:${v/maxRev*100}%"></div></div><span class="bar-val">$${v}k</span></div>`).join('');
+
+// ---- Comms ----
+const comms=[
+  {ico:'📅',to:'Sarah Mitchell',time:'2 min ago',msg:'Your Preferred Roofing inspection is confirmed for Tue 5/30 at 8:30 AM. Reply C to confirm or R to reschedule.',ch:'📱 SMS · Auto'},
+  {ico:'🧾',to:'Mark Whitfield',time:'1 hr ago',msg:'Your roofing proposal is ready to view. Tap to review your estimate and financing options: prefer.app/est/4471',ch:'📱 SMS · Auto'},
+  {ico:'🛡️',to:'David Reyes',time:'3 hrs ago',msg:'Good news — we\'re meeting your State Farm adjuster on-site tomorrow at 11 AM. We\'ll walk the full scope of damage together.',ch:'✉️ Email · Auto'},
+  {ico:'🔨',to:'Linda Tran',time:'Yesterday',msg:'We\'re scheduled to begin your roof replacement on June 2. A dumpster will arrive the day before. Questions? Just reply.',ch:'📱 SMS · Auto'},
+  {ico:'✅',to:'Greg Wallace',time:'2 days ago',msg:'Thank you for choosing Preferred Roofing! Your warranty certificate and final invoice are in your customer portal.',ch:'✉️ Email · Auto'}
+];
+document.getElementById('commsList').innerHTML=comms.map(c=>`
+  <div class="comm-row"><div class="comm-ico">${c.ico}</div><div class="comm-body">
+    <div class="cb-top"><span class="cb-to">${c.to}</span><span class="cb-time">${c.time}</span></div>
+    <div class="cb-msg">${c.msg}</div><div class="cb-channel">${c.ch}</div>
+  </div></div>`).join('');
+
+// ---- Aerial measurement ----
+let aMap,drawnItems,drawer,aerialReady=false;
+function initAerial(){
+  if(aerialReady)return;aerialReady=true;
+  aMap=L.map('aerialMap').setView([32.6099,-85.4808],19);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Imagery © Esri',maxZoom:21}).addTo(aMap);
+  drawnItems=new L.FeatureGroup().addTo(aMap);
+  aMap.on(L.Draw.Event.CREATED,e=>{drawnItems.addLayer(e.layer);computeArea()});
+  aMap.on('draw:deleted',computeArea);
+  startDraw();
+}
+function startDraw(){
+  document.getElementById('drawBtn').classList.add('active');
+  if(drawer)drawer.disable();
+  drawer=new L.Draw.Polygon(aMap,{shapeOptions:{color:'#e0a526',fillColor:'#e0a526',fillOpacity:0.25,weight:3}});
+  drawer.enable();
+}
+function clearDraw(){if(drawnItems)drawnItems.clearLayers();computeArea();document.getElementById('aerialNote').style.display='none'}
+function polyArea(latlngs){
+  // spherical excess approximation in sq meters
+  let area=0;const R=6378137;const n=latlngs.length;
+  for(let i=0;i<n;i++){
+    const p1=latlngs[i],p2=latlngs[(i+1)%n];
+    area+=(p2.lng-p1.lng)*Math.PI/180*(2+Math.sin(p1.lat*Math.PI/180)+Math.sin(p2.lat*Math.PI/180));
+  }
+  return Math.abs(area*R*R/2);
+}
+let lastSqFt=0;
+function computeArea(){
+  let total=0;
+  drawnItems.eachLayer(l=>{if(l.getLatLngs)total+=polyArea(l.getLatLngs()[0])});
+  const sqft=Math.round(total*10.7639*1.18); // pitch multiplier for typical roof
+  lastSqFt=sqft;
+  if(sqft<=0){['mArea','mSquares','mBundles','mQuote'].forEach(id=>document.getElementById(id).textContent='—');return}
+  const squares=(sqft/100);const bundles=Math.ceil(squares*3*1.1);
+  document.getElementById('mArea').textContent=sqft.toLocaleString();
+  document.getElementById('mSquares').textContent=squares.toFixed(1);
+  document.getElementById('mBundles').textContent=bundles;
+}
+function autoQuote(){
+  if(lastSqFt<=0){showToast('Draw the roof outline first');return}
+  const squares=lastSqFt/100;
+  const low=Math.round(squares*420),high=Math.round(squares*560);
+  document.getElementById('mQuote').textContent='$'+Math.round((low+high)/2/1000)+'k';
+  document.getElementById('aerialNote').style.display='block';
+  document.getElementById('aerialNoteText').innerHTML=`Based on <b>${squares.toFixed(1)} squares</b> at architectural-shingle pricing, the preliminary quote range is <b>$${low.toLocaleString()}–$${high.toLocaleString()}</b> (materials + labor + tear-off). Send to EagleView for a verified report before final estimate.`;
+  showToast('Preliminary quote generated');
+}
+
+// close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
+</script>
+</body>
+</html>

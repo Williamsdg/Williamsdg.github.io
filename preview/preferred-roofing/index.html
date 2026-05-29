@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preferred Roofing | Auburn's Trusted Roofing Team — Free Inspections in 24 Hours</title>
+<meta name="description" content="Preferred Roofing — Christian-owned, locally operated roofing in Auburn, Opelika, Montgomery & Phenix City. Free 24-hour inspections, insurance claim help, and financing. Licensed & insured AL-58678.">
+<meta name="theme-color" content="#1e3a5f">
+<meta property="og:title" content="Preferred Roofing — The Roofing Company Your Neighbors Keep Recommending">
+<meta property="og:description" content="Free inspections in 24 hours. Insurance claim assistance. Financing available. 4.8★ from 60+ Auburn neighbors.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%231e3a5f'/><path d='M12 34 L32 16 L52 34' stroke='%23e0a526' stroke-width='5' fill='none' stroke-linecap='round' stroke-linejoin='round'/><text x='32' y='52' font-family='Georgia,serif' font-size='20' font-weight='700' fill='white' text-anchor='middle'>PR</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --navy:#1e3a5f;--navy-deep:#15293f;--navy-soft:#2d4f78;
+  --gold:#e0a526;--gold-deep:#c2891a;--gold-soft:#f5d98a;
+  --cream:#faf8f3;--cream-2:#f3eee3;--white:#ffffff;
+  --ink:#1a2433;--ink-soft:#3f4a5a;--mute:#6b7585;
+  --line:#e6e1d6;--line-soft:#efebe1;
+  --green:#2f9e6e;--green-l:#e6f4ed;--red:#d6452f;--red-l:#fbeae6;
+  --shadow:0 1px 3px rgba(26,36,51,0.04),0 14px 40px -18px rgba(26,36,51,0.18);
+  --shadow-lg:0 30px 80px -30px rgba(21,41,63,0.45);
+  --serif:'Fraunces',Georgia,serif;--sans:'Inter',system-ui,sans-serif;
+  --r:16px;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--cream);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;letter-spacing:-0.006em;overflow-x:hidden}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 26px}
+.serif{font-family:var(--serif)}
+section{position:relative}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.72rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold-deep)}
+.eyebrow::before{content:'';width:26px;height:2px;background:var(--gold);border-radius:2px}
+h2.title{font-family:var(--serif);font-weight:500;font-size:clamp(1.9rem,4vw,2.9rem);line-height:1.08;letter-spacing:-0.02em;color:var(--navy);margin:14px 0 0}
+.lead{font-size:1.06rem;color:var(--ink-soft);max-width:620px;margin-top:14px;line-height:1.7}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:14px 26px;border-radius:11px;font-weight:700;font-size:.92rem;letter-spacing:0.01em;cursor:pointer;border:1.5px solid transparent;transition:transform .2s,box-shadow .2s,background .2s,color .2s;font-family:inherit}
+.btn svg{width:17px;height:17px}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#3a2c05;box-shadow:0 10px 28px -10px rgba(224,165,38,0.7)}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 16px 36px -10px rgba(224,165,38,0.85)}
+.btn-navy{background:var(--navy);color:#fff;box-shadow:0 10px 26px -12px rgba(30,58,95,0.7)}
+.btn-navy:hover{transform:translateY(-2px);background:var(--navy-deep)}
+.btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,0.4)}
+.btn-ghost:hover{background:rgba(255,255,255,0.12);border-color:#fff}
+.btn-outline{background:#fff;color:var(--navy);border-color:var(--line)}
+.btn-outline:hover{border-color:var(--navy);transform:translateY(-2px)}
+.btn-lg{padding:16px 32px;font-size:1rem}
+.btn-sm{padding:10px 18px;font-size:.82rem;border-radius:9px}
+
+/* HEADER */
+header{position:fixed;top:0;left:0;right:0;z-index:100;transition:all .3s}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:16px 26px;max-width:1280px;margin:0 auto;transition:padding .3s}
+header.scrolled{background:rgba(250,248,243,0.92);backdrop-filter:blur(16px);box-shadow:0 1px 0 var(--line),0 8px 30px -20px rgba(26,36,51,0.4)}
+header.scrolled .nav{padding-top:11px;padding-bottom:11px}
+.logo{display:flex;align-items:center;gap:12px;font-family:var(--serif);font-weight:600;font-size:1.3rem;color:#fff;letter-spacing:-0.01em;transition:color .3s}
+header.scrolled .logo{color:var(--navy)}
+.logo-mark{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--navy),var(--navy-soft));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 6px 16px -8px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.12)}
+.logo-mark svg{width:24px;height:24px}
+.logo small{display:block;font-family:var(--sans);font-size:.6rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin-top:1px}
+.nav-links{display:flex;align-items:center;gap:30px}
+.nav-links a.navlink{font-size:.9rem;font-weight:600;color:rgba(255,255,255,0.9);transition:color .2s}
+header.scrolled .nav-links a.navlink{color:var(--ink-soft)}
+.nav-links a.navlink:hover{color:var(--gold)}
+header.scrolled .nav-links a.navlink:hover{color:var(--navy)}
+.nav-phone{display:flex;align-items:center;gap:9px;font-weight:800;font-size:1rem;color:#fff}
+header.scrolled .nav-phone{color:var(--navy)}
+.nav-phone svg{width:18px;height:18px;color:var(--gold)}
+.menu-btn{display:none;background:none;border:none;cursor:pointer;color:#fff}
+header.scrolled .menu-btn{color:var(--navy)}
+.menu-btn svg{width:28px;height:28px}
+
+/* HERO */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;color:#fff;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0;background:linear-gradient(120deg,#15293f 0%,#1e3a5f 48%,#2d4f78 100%)}
+.hero-bg::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(900px 500px at 78% 12%,rgba(224,165,38,0.22),transparent 60%),
+  radial-gradient(700px 600px at 8% 95%,rgba(45,79,120,0.5),transparent 65%)}
+/* drone-footage style roof imagery via layered CSS — abstract rooftops */
+.hero-roofs{position:absolute;inset:0;z-index:0;opacity:0.16;background-image:
+  repeating-linear-gradient(135deg,rgba(255,255,255,0.06) 0 2px,transparent 2px 22px),
+  repeating-linear-gradient(45deg,rgba(255,255,255,0.04) 0 2px,transparent 2px 30px)}
+.hero-vid-badge{position:absolute;top:50%;right:6%;transform:translateY(-50%);z-index:1;width:min(440px,40vw);aspect-ratio:4/3;border-radius:22px;overflow:hidden;border:1px solid rgba(255,255,255,0.18);box-shadow:0 40px 90px -30px rgba(0,0,0,0.7);background:linear-gradient(160deg,#24456b,#16293f)}
+.hero-vid-badge .vb-inner{position:absolute;inset:0;background:
+  linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,0.55)),
+  repeating-linear-gradient(105deg,#2d4f78 0 30px,#27466c 30px 62px)}
+.hero-vid-badge .roofline{position:absolute;left:0;right:0;bottom:0;height:62%;clip-path:polygon(0 38%,22% 12%,44% 34%,66% 8%,100% 30%,100% 100%,0 100%);background:linear-gradient(160deg,#46689a,#28466b)}
+.hero-vid-badge .roofline2{position:absolute;left:0;right:0;bottom:0;height:46%;clip-path:polygon(0 60%,30% 30%,55% 52%,80% 24%,100% 46%,100% 100%,0 100%);background:linear-gradient(160deg,#5a7da8,#355882)}
+.hero-vid-badge .play{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.92);display:flex;align-items:center;justify-content:center;box-shadow:0 12px 30px -8px rgba(0,0,0,0.5)}
+.hero-vid-badge .play::before{content:'';border-left:18px solid var(--navy);border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:5px}
+.hero-vid-badge .vb-tag{position:absolute;left:18px;bottom:16px;font-size:.78rem;font-weight:700;letter-spacing:0.04em;display:flex;align-items:center;gap:8px}
+.hero-vid-badge .vb-tag::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-content{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:0 26px;width:100%}
+.hero-inner{max-width:620px;padding-top:60px}
+.hero-pill{display:inline-flex;align-items:center;gap:9px;padding:8px 16px;border-radius:50px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);font-size:.78rem;font-weight:600;letter-spacing:0.02em;backdrop-filter:blur(8px);margin-bottom:24px}
+.hero-pill .stars{color:var(--gold);letter-spacing:1px}
+.hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(2.4rem,5.4vw,4rem);line-height:1.04;letter-spacing:-0.025em}
+.hero h1 .accent{color:var(--gold-soft);font-style:italic}
+.hero-sub{font-size:1.12rem;color:rgba(255,255,255,0.86);margin-top:22px;line-height:1.65;max-width:540px}
+.hero-features{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:26px}
+.hero-feature{display:flex;align-items:center;gap:9px;font-size:.92rem;font-weight:600;color:rgba(255,255,255,0.94)}
+.hero-feature svg{width:19px;height:19px;color:var(--gold);flex-shrink:0}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
+.scroll-hint{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);z-index:2;color:rgba(255,255,255,0.6);font-size:.72rem;letter-spacing:2px;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:8px;animation:bob 2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+
+/* TRUST BAR */
+.trustbar{background:var(--navy-deep);color:#fff;padding:26px 0}
+.trustbar .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px}
+.trust-item{display:flex;align-items:center;gap:12px}
+.trust-item .ti-num{font-family:var(--serif);font-size:1.7rem;font-weight:600;color:var(--gold)}
+.trust-item .ti-lbl{font-size:.84rem;color:rgba(255,255,255,0.75);line-height:1.3;max-width:140px}
+.trust-sep{width:1px;height:38px;background:rgba(255,255,255,0.14)}
+
+/* GENERIC SECTION */
+.sec{padding:96px 0}
+.sec-head{text-align:center;max-width:680px;margin:0 auto 56px}
+.sec-head .lead{margin-left:auto;margin-right:auto}
+
+/* SERVICES */
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.svc-card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:34px 30px;transition:transform .25s,box-shadow .25s,border-color .25s;position:relative;overflow:hidden}
+.svc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--navy),var(--gold));transform:scaleX(0);transform-origin:left;transition:transform .3s}
+.svc-card:hover{transform:translateY(-6px);box-shadow:var(--shadow-lg);border-color:transparent}
+.svc-card:hover::before{transform:scaleX(1)}
+.svc-icon{width:58px;height:58px;border-radius:14px;background:linear-gradient(135deg,var(--navy),var(--navy-soft));display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+.svc-icon svg{width:28px;height:28px;color:var(--gold)}
+.svc-card h3{font-family:var(--serif);font-size:1.4rem;font-weight:500;color:var(--navy);margin-bottom:10px}
+.svc-card p{color:var(--ink-soft);font-size:.95rem;line-height:1.65}
+.svc-card ul{list-style:none;margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.svc-card li{display:flex;align-items:center;gap:9px;font-size:.88rem;color:var(--ink-soft)}
+.svc-card li svg{width:16px;height:16px;color:var(--green);flex-shrink:0}
+
+/* GALLERY + MAP */
+.gallery-wrap{display:grid;grid-template-columns:1.15fr 0.85fr;gap:30px;align-items:start}
+#projectMap{height:520px;border-radius:var(--r);border:1px solid var(--line);box-shadow:var(--shadow);background:#dfe7ee}
+.gal-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.gal-chip{padding:8px 16px;border-radius:50px;border:1.5px solid var(--line);background:#fff;font-size:.82rem;font-weight:600;color:var(--ink-soft);cursor:pointer;transition:all .2s}
+.gal-chip.active,.gal-chip:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.proj-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:0}
+.ba-slider{position:relative;aspect-ratio:16/10;overflow:hidden;cursor:ew-resize;user-select:none}
+.ba-after,.ba-before{position:absolute;inset:0;background-size:cover;background-position:center}
+.ba-before{clip-path:inset(0 50% 0 0)}
+.ba-handle{position:absolute;top:0;bottom:0;left:50%;width:3px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,0.1);z-index:3}
+.ba-handle::after{content:'⟷';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.ba-tag{position:absolute;top:12px;padding:5px 12px;border-radius:50px;font-size:.7rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#fff;z-index:2;backdrop-filter:blur(4px)}
+.ba-tag.before{left:12px;background:rgba(26,36,51,0.7)}
+.ba-tag.after{right:12px;background:rgba(47,158,110,0.85)}
+.proj-meta{padding:18px 20px}
+.proj-meta h4{font-family:var(--serif);font-size:1.15rem;font-weight:500;color:var(--navy)}
+.proj-meta .pm-loc{font-size:.82rem;color:var(--mute);margin-top:2px}
+.proj-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.proj-tags span{font-size:.72rem;font-weight:600;padding:4px 10px;border-radius:6px;background:var(--cream-2);color:var(--ink-soft)}
+.proj-tags span.val{background:var(--green-l);color:var(--green)}
+
+/* STORM TRACKER */
+.storm{background:linear-gradient(135deg,var(--navy-deep),var(--navy));color:#fff}
+.storm-grid{display:grid;grid-template-columns:0.95fr 1.05fr;gap:40px;align-items:center}
+#stormMap{height:440px;border-radius:var(--r);border:1px solid rgba(255,255,255,0.15);box-shadow:var(--shadow-lg)}
+.storm h2.title{color:#fff}
+.storm-list{margin-top:24px;display:flex;flex-direction:column;gap:12px}
+.storm-row{display:flex;align-items:center;gap:16px;padding:14px 18px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px}
+.storm-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem}
+.storm-icon.hail{background:rgba(120,180,255,0.18);color:#a8cdff}
+.storm-icon.wind{background:rgba(224,165,38,0.18);color:var(--gold-soft)}
+.storm-row .sr-body{flex:1}
+.storm-row .sr-title{font-weight:700;font-size:.95rem}
+.storm-row .sr-sub{font-size:.8rem;color:rgba(255,255,255,0.6)}
+.storm-row .sr-date{font-size:.78rem;color:var(--gold-soft);font-weight:600;white-space:nowrap}
+
+/* INSURANCE STEPS */
+.ins-steps{display:grid;grid-template-columns:repeat(5,1fr);gap:0;margin-top:50px;position:relative}
+.ins-step{text-align:center;padding:0 14px;position:relative}
+.ins-step:not(:last-child)::after{content:'';position:absolute;top:28px;left:60%;right:-40%;height:2px;background:repeating-linear-gradient(90deg,var(--gold) 0 6px,transparent 6px 12px)}
+.ins-num{width:58px;height:58px;border-radius:50%;background:#fff;border:2px solid var(--gold);color:var(--navy);font-family:var(--serif);font-size:1.5rem;font-weight:600;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;position:relative;z-index:1;box-shadow:0 8px 20px -8px rgba(224,165,38,0.5)}
+.ins-step h4{font-size:1rem;font-weight:700;color:var(--navy);margin-bottom:6px}
+.ins-step p{font-size:.84rem;color:var(--ink-soft);line-height:1.5}
+.ins-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:56px}
+.ins-stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;box-shadow:var(--shadow)}
+.ins-stat .is-num{font-family:var(--serif);font-size:2.6rem;font-weight:600;color:var(--gold-deep);line-height:1}
+.ins-stat .is-lbl{font-size:.86rem;color:var(--ink-soft);margin-top:8px;font-weight:500}
+
+/* FINANCING CALC */
+.fin{background:var(--cream-2)}
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center}
+.calc-card{background:#fff;border-radius:20px;padding:40px;box-shadow:var(--shadow-lg);border:1px solid var(--line)}
+.calc-row{margin-bottom:28px}
+.calc-row label{display:flex;justify-content:space-between;font-size:.86rem;font-weight:600;color:var(--ink-soft);margin-bottom:12px}
+.calc-row label b{font-family:var(--serif);font-size:1.3rem;color:var(--navy);font-weight:600}
+input[type=range]{-webkit-appearance:none;width:100%;height:8px;border-radius:50px;background:var(--cream-2);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--gold);cursor:pointer;border:3px solid #fff;box-shadow:0 4px 12px -3px rgba(224,165,38,0.7)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--gold);cursor:pointer;border:3px solid #fff}
+.calc-result{background:linear-gradient(135deg,var(--navy),var(--navy-soft));border-radius:16px;padding:28px;color:#fff;text-align:center;margin-top:6px}
+.calc-result .cr-lbl{font-size:.78rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold-soft);font-weight:700}
+.calc-result .cr-amt{font-family:var(--serif);font-size:3rem;font-weight:600;line-height:1;margin:8px 0}
+.calc-result .cr-amt small{font-size:1.1rem;color:rgba(255,255,255,0.7)}
+.calc-result .cr-terms{font-size:.8rem;color:rgba(255,255,255,0.65);margin-top:6px}
+
+/* WIZARD */
+.wiz-card{max-width:680px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);border:1px solid var(--line);overflow:hidden}
+.wiz-progress{display:flex;background:var(--cream-2);padding:0}
+.wiz-progress .wp-step{flex:1;text-align:center;padding:16px 6px;font-size:.74rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--mute);border-bottom:3px solid transparent;transition:all .3s}
+.wiz-progress .wp-step.active{color:var(--navy);border-bottom-color:var(--gold);background:#fff}
+.wiz-progress .wp-step.done{color:var(--green)}
+.wiz-body{padding:42px 40px}
+.wiz-pane{display:none;animation:fade .4s}
+.wiz-pane.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.wiz-pane h3{font-family:var(--serif);font-size:1.6rem;font-weight:500;color:var(--navy);margin-bottom:8px}
+.wiz-pane p.wz-sub{color:var(--ink-soft);margin-bottom:24px;font-size:.95rem}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:.78rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+.field input,.field select,.field textarea{width:100%;padding:14px 16px;border:1.5px solid var(--line);border-radius:11px;font-size:1rem;font-family:inherit;color:var(--ink);background:var(--cream);transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(224,165,38,0.18);background:#fff}
+.opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opt{border:1.5px solid var(--line);border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;text-align:center;font-weight:600;color:var(--ink-soft);background:var(--cream)}
+.opt:hover{border-color:var(--gold)}
+.opt.sel{border-color:var(--navy);background:var(--navy);color:#fff}
+.opt .opt-ico{font-size:1.6rem;display:block;margin-bottom:8px}
+.upload-zone{border:2px dashed var(--line);border-radius:14px;padding:40px 20px;text-align:center;color:var(--mute);cursor:pointer;transition:all .2s}
+.upload-zone:hover{border-color:var(--gold);background:var(--cream)}
+.upload-zone svg{width:40px;height:40px;color:var(--gold);margin:0 auto 12px}
+.upload-thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.upload-thumbs .ut{width:70px;height:70px;border-radius:10px;background:linear-gradient(135deg,var(--navy-soft),var(--navy));display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:1.4rem;border:1px solid var(--line)}
+.wiz-footer{display:flex;justify-content:space-between;padding:22px 40px;border-top:1px solid var(--line);background:var(--cream)}
+.wiz-done{text-align:center;padding:30px 0}
+.wiz-done .wd-ico{width:80px;height:80px;border-radius:50%;background:var(--green-l);display:flex;align-items:center;justify-content:center;margin:0 auto 22px}
+.wiz-done .wd-ico svg{width:42px;height:42px;color:var(--green)}
+
+/* SERVICE AREAS */
+.areas{background:var(--navy);color:#fff}
+.areas h2.title{color:#fff}
+.area-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:46px}
+.area-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:24px;transition:all .25s;cursor:pointer}
+.area-card:hover{background:rgba(255,255,255,0.1);transform:translateY(-4px);border-color:var(--gold)}
+.area-card h4{font-family:var(--serif);font-size:1.3rem;font-weight:500;display:flex;align-items:center;gap:10px}
+.area-card h4 svg{width:20px;height:20px;color:var(--gold)}
+.area-card p{font-size:.84rem;color:rgba(255,255,255,0.65);margin-top:8px;line-height:1.5}
+.area-card .ac-meta{font-size:.76rem;color:var(--gold-soft);font-weight:600;margin-top:12px}
+
+/* LEARNING CENTER */
+.lc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.lc-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);transition:transform .25s,box-shadow .25s;cursor:pointer}
+.lc-card:hover{transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+.lc-img{aspect-ratio:16/9;background:linear-gradient(135deg,var(--navy-soft),var(--navy));position:relative;display:flex;align-items:flex-end;padding:18px}
+.lc-img .lc-cat{font-size:.7rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-soft);background:rgba(0,0,0,0.3);padding:5px 12px;border-radius:50px}
+.lc-img .lc-emoji{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:3rem;opacity:0.85}
+.lc-body{padding:22px}
+.lc-body h4{font-family:var(--serif);font-size:1.18rem;font-weight:500;color:var(--navy);line-height:1.3}
+.lc-body p{font-size:.88rem;color:var(--ink-soft);margin-top:8px;line-height:1.6}
+.lc-body .lc-read{font-size:.82rem;font-weight:700;color:var(--gold-deep);margin-top:14px;display:inline-flex;align-items:center;gap:6px}
+
+/* REVIEWS */
+.rev{background:var(--cream-2)}
+.rev-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px;margin-bottom:14px}
+.rev-score{display:flex;align-items:center;gap:18px}
+.rev-score .rs-big{font-family:var(--serif);font-size:3.4rem;font-weight:600;color:var(--navy);line-height:1}
+.rev-score .rs-stars{color:var(--gold);font-size:1.3rem;letter-spacing:2px}
+.rev-score .rs-sub{font-size:.86rem;color:var(--ink-soft);margin-top:4px}
+.rev-filters{display:flex;gap:8px;flex-wrap:wrap}
+.rev-grid{columns:3;column-gap:22px;margin-top:30px}
+.rev-card{break-inside:avoid;background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:22px;box-shadow:var(--shadow)}
+.rev-card .rc-stars{color:var(--gold);letter-spacing:2px;margin-bottom:12px}
+.rev-card .rc-text{font-size:.92rem;color:var(--ink-soft);line-height:1.65}
+.rev-card .rc-author{display:flex;align-items:center;gap:12px;margin-top:16px}
+.rev-card .rc-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--navy-soft));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.86rem}
+.rev-card .rc-name{font-weight:700;font-size:.9rem;color:var(--navy)}
+.rev-card .rc-loc{font-size:.76rem;color:var(--mute)}
+.rev-card .rc-svc{display:inline-block;margin-top:12px;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:6px;background:var(--cream-2);color:var(--ink-soft)}
+
+/* CAREERS */
+.career-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.career-roles{display:flex;flex-direction:column;gap:12px}
+.career-role{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);transition:all .2s}
+.career-role:hover{border-color:var(--gold);transform:translateX(4px)}
+.career-role h4{font-family:var(--serif);font-size:1.2rem;font-weight:500;color:var(--navy)}
+.career-role p{font-size:.83rem;color:var(--mute);margin-top:2px}
+
+/* CTA BANNER */
+.cta-band{background:linear-gradient(135deg,var(--gold),var(--gold-deep));padding:70px 0;text-align:center}
+.cta-band h2{font-family:var(--serif);font-size:clamp(1.8rem,4vw,2.8rem);font-weight:500;color:#3a2c05;letter-spacing:-0.02em}
+.cta-band p{color:#5c4710;font-size:1.05rem;margin-top:12px;font-weight:500}
+.cta-band .btn{margin-top:28px}
+
+/* FOOTER */
+footer{background:var(--navy-deep);color:rgba(255,255,255,0.7);padding:64px 0 28px}
+.foot-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px;padding-bottom:42px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.foot-brand .logo{color:#fff;margin-bottom:16px}
+.foot-brand p{font-size:.9rem;line-height:1.7;max-width:320px}
+.foot-lic{margin-top:18px;font-size:.78rem;color:rgba(255,255,255,0.5);line-height:1.6}
+.foot-col h5{font-size:.78rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;margin-bottom:18px}
+.foot-col a{display:block;font-size:.9rem;margin-bottom:11px;transition:color .2s}
+.foot-col a:hover{color:var(--gold)}
+.foot-bottom{display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px;padding-top:24px;font-size:.82rem}
+.foot-bottom .fb-faith{color:var(--gold-soft)}
+.foot-bottom a{color:rgba(255,255,255,0.7)}
+.wd-credit{color:rgba(255,255,255,0.5)}
+.wd-credit a{color:var(--gold-soft);font-weight:600}
+
+/* MOBILE */
+.mobile-menu{display:none;position:fixed;inset:0;z-index:200;background:var(--navy-deep);flex-direction:column;padding:80px 30px 30px}
+.mobile-menu.open{display:flex}
+.mobile-menu a{color:#fff;font-size:1.4rem;font-family:var(--serif);padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.1)}
+.mobile-menu .mm-close{position:absolute;top:24px;right:24px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer}
+
+@media(max-width:980px){
+  .nav-links{display:none}.menu-btn{display:block}
+  .gallery-wrap,.storm-grid,.fin-grid,.career-grid{grid-template-columns:1fr}
+  .svc-grid,.lc-grid{grid-template-columns:1fr 1fr}
+  .area-grid{grid-template-columns:1fr 1fr}
+  .ins-steps{grid-template-columns:1fr 1fr;gap:30px 14px}
+  .ins-step:not(:last-child)::after{display:none}
+  .rev-grid{columns:2}
+  .hero-vid-badge{display:none}
+  #projectMap{order:-1;height:340px}
+}
+@media(max-width:640px){
+  .sec{padding:64px 0}.wrap{padding:0 18px}
+  .svc-grid,.lc-grid,.area-grid,.ins-stats{grid-template-columns:1fr}
+  .rev-grid{columns:1}
+  .ins-steps{grid-template-columns:1fr}
+  .trust-sep{display:none}.trustbar .wrap{justify-content:center;text-align:center}
+  .wiz-body,.calc-card{padding:26px 22px}
+  .hero-inner{padding-top:40px}
+}
+</style>
+</head>
+<body>
+
+<header id="header">
+  <nav class="nav">
+    <a href="#top" class="logo">
+      <span class="logo-mark"><svg viewBox="0 0 64 64" fill="none"><path d="M10 36 L32 16 L54 36" stroke="#e0a526" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 34 V50 H48 V34" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/></svg></span>
+      <span>Preferred Roofing<small>Auburn, Alabama</small></span>
+    </a>
+    <div class="nav-links">
+      <a class="navlink" href="#services">Services</a>
+      <a class="navlink" href="#gallery">Projects</a>
+      <a class="navlink" href="#insurance">Insurance</a>
+      <a class="navlink" href="#areas">Service Areas</a>
+      <a class="navlink" href="#learn">Resources</a>
+      <a class="nav-phone" href="tel:3347487663"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>334-748-ROOF</a>
+    </div>
+    <button class="menu-btn" onclick="document.getElementById('mobileMenu').classList.add('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  </nav>
+</header>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mm-close" onclick="this.parentElement.classList.remove('open')">&times;</button>
+  <a href="#services" onclick="closeMM()">Services</a>
+  <a href="#gallery" onclick="closeMM()">Recent Projects</a>
+  <a href="#insurance" onclick="closeMM()">Insurance Claims</a>
+  <a href="#financing" onclick="closeMM()">Financing</a>
+  <a href="#areas" onclick="closeMM()">Service Areas</a>
+  <a href="#learn" onclick="closeMM()">Resources</a>
+  <a href="#reviews" onclick="closeMM()">Reviews</a>
+  <a href="tel:3347487663" style="color:var(--gold-soft)">Call 334-748-ROOF</a>
+  <a href="#estimate" class="btn btn-gold" style="margin-top:20px;justify-content:center" onclick="closeMM()">Schedule Free Inspection</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="hero-bg"><div class="hero-roofs"></div></div>
+  <div class="hero-vid-badge">
+    <div class="vb-inner"></div>
+    <div class="roofline"></div><div class="roofline2"></div>
+    <div class="play"></div>
+    <div class="vb-tag">Drone footage — Auburn restoration</div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-inner">
+      <span class="hero-pill"><span class="stars">★★★★★</span> 4.8 from 60+ Auburn neighbors</span>
+      <h1>Auburn's Trusted Roofing Team — <span class="accent">Free Inspections in 24 Hours</span></h1>
+      <p class="hero-sub">The roofing company your neighbors keep recommending. Christian-owned, locally operated, and built on honest work that holds up to Alabama weather.</p>
+      <div class="hero-features">
+        <span class="hero-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Licensed &amp; Insured</span>
+        <span class="hero-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Insurance Claim Help</span>
+        <span class="hero-feature"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Financing Available</span>
+      </div>
+      <div class="hero-cta">
+        <a href="#estimate" class="btn btn-gold btn-lg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Schedule Inspection</a>
+        <a href="#gallery" class="btn btn-ghost btn-lg">View Recent Projects</a>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-hint">Scroll<span style="font-size:1.2rem">↓</span></div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trustbar">
+  <div class="wrap">
+    <div class="trust-item"><span class="ti-num">12+</span><span class="ti-lbl">Years roofing Alabama homes</span></div>
+    <div class="trust-sep"></div>
+    <div class="trust-item"><span class="ti-num">24hr</span><span class="ti-lbl">Free inspection turnaround</span></div>
+    <div class="trust-sep"></div>
+    <div class="trust-item"><span class="ti-num">4.8★</span><span class="ti-lbl">From 60+ Google reviews</span></div>
+    <div class="trust-sep"></div>
+    <div class="trust-item"><span class="ti-num">100%</span><span class="ti-lbl">Locally owned — never storm chasers</span></div>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section class="sec" id="services">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">What We Do</span>
+      <h2 class="title">Roofing done right the first time</h2>
+      <p class="lead">Residential and commercial roofing across the Auburn–Opelika area, from quick repairs to full replacements and storm restoration.</p>
+    </div>
+    <div class="svc-grid">
+      <div class="svc-card">
+        <div class="svc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 L12 4 L21 12"/><path d="M5 11 V20 H19 V11"/></svg></div>
+        <h3>Roof Replacement</h3>
+        <p>Full tear-off and replacement with architectural shingles, metal, and premium underlayment built for Alabama heat and storms.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Architectural &amp; designer shingles</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Standing-seam metal options</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Manufacturer warranties</li>
+        </ul>
+      </div>
+      <div class="svc-card">
+        <div class="svc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+        <h3>Roof Repair</h3>
+        <p>Fast, honest repairs for leaks, missing shingles, and flashing failures — with photo documentation so you see exactly what we found.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Leak detection &amp; repair</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Storm &amp; hail damage</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Flashing &amp; vent repair</li>
+        </ul>
+      </div>
+      <div class="svc-card">
+        <div class="svc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9 L12 3 L21 9 V20 H3 Z"/><path d="M3 9 H21"/><path d="M9 20 V14 H15 V20"/></svg></div>
+        <h3>Commercial Roofing</h3>
+        <p>TPO, modified bitumen, and flat-roof systems for churches, offices, and businesses across the River Region.</p>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Flat &amp; low-slope systems</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Maintenance programs</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Re-roofs &amp; coatings</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section class="sec" id="gallery" style="background:var(--cream-2)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Recent Work</span>
+      <h2 class="title">Before &amp; after, all across the area</h2>
+      <p class="lead">Drag the slider to see the transformation. Every project is mapped — real roofs on real Alabama homes.</p>
+    </div>
+    <div class="gallery-wrap">
+      <div id="projectMap"></div>
+      <div>
+        <div class="gal-filters">
+          <button class="gal-chip active" data-filter="all">All Projects</button>
+          <button class="gal-chip" data-filter="insurance">Insurance</button>
+          <button class="gal-chip" data-filter="retail">Retail</button>
+          <button class="gal-chip" data-filter="metal">Metal</button>
+        </div>
+        <div id="projGrid"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STORM TRACKER -->
+<section class="sec storm" id="storm">
+  <div class="wrap">
+    <div class="storm-grid">
+      <div>
+        <span class="eyebrow" style="color:var(--gold-soft)">Storm Activity</span>
+        <h2 class="title">Did the last storm hit your roof?</h2>
+        <p class="lead" style="color:rgba(255,255,255,0.8)">Alabama weather doesn't take a season off. We track recent hail and wind reports across our service area — if a storm rolled through your neighborhood, your roof deserves a free look.</p>
+        <div class="storm-list" id="stormList"></div>
+        <a href="#estimate" class="btn btn-gold btn-lg" style="margin-top:26px">Think your roof was affected? Get a free inspection</a>
+      </div>
+      <div><div id="stormMap"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- INSURANCE -->
+<section class="sec" id="insurance">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Insurance Claims</span>
+      <h2 class="title">We make insurance claims simple</h2>
+      <p class="lead">Storm damage is stressful enough. We walk you through every step and meet your adjuster on the roof — so nothing gets missed.</p>
+    </div>
+    <div class="ins-steps">
+      <div class="ins-step"><div class="ins-num">1</div><h4>Free Inspection</h4><p>We document all storm damage with photos within 24 hours.</p></div>
+      <div class="ins-step"><div class="ins-num">2</div><h4>Documentation</h4><p>Detailed damage report prepared for your insurance company.</p></div>
+      <div class="ins-step"><div class="ins-num">3</div><h4>Adjuster Meeting</h4><p>We meet your adjuster on-site to advocate for full scope.</p></div>
+      <div class="ins-step"><div class="ins-num">4</div><h4>Approval</h4><p>Claim approved — we handle the supplements if they're needed.</p></div>
+      <div class="ins-step"><div class="ins-num">5</div><h4>New Roof</h4><p>Professional installation, cleanup, and final inspection.</p></div>
+    </div>
+    <div class="ins-stats">
+      <div class="ins-stat"><div class="is-num">94%</div><div class="is-lbl">Claim approval rate when we inspect</div></div>
+      <div class="ins-stat"><div class="is-num">$0</div><div class="is-lbl">Out of pocket beyond your deductible</div></div>
+      <div class="ins-stat"><div class="is-num">24hr</div><div class="is-lbl">From call to documented inspection</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FINANCING -->
+<section class="sec fin" id="financing">
+  <div class="wrap">
+    <div class="fin-grid">
+      <div>
+        <span class="eyebrow">Financing</span>
+        <h2 class="title">A new roof, on a budget that works</h2>
+        <p class="lead">Not every roof can wait for a windfall — and it shouldn't have to. Estimate a comfortable monthly payment in seconds, then prequalify with no impact to your credit score.</p>
+        <ul style="list-style:none;margin-top:24px;display:flex;flex-direction:column;gap:14px">
+          <li style="display:flex;gap:12px;align-items:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" style="width:22px;height:22px;flex-shrink:0;margin-top:2px"><polyline points="20 6 9 17 4 12"/></svg><span><b>Plans from 12 to 120 months</b> with competitive rates for qualified homeowners.</span></li>
+          <li style="display:flex;gap:12px;align-items:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" style="width:22px;height:22px;flex-shrink:0;margin-top:2px"><polyline points="20 6 9 17 4 12"/></svg><span><b>Soft credit check</b> to prequalify — no impact to your score.</span></li>
+          <li style="display:flex;gap:12px;align-items:flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" style="width:22px;height:22px;flex-shrink:0;margin-top:2px"><polyline points="20 6 9 17 4 12"/></svg><span><b>Zero prepayment penalties</b> — pay it off early anytime.</span></li>
+        </ul>
+      </div>
+      <div class="calc-card">
+        <div class="calc-row">
+          <label>Estimated Roof Cost <b id="costVal">$12,000</b></label>
+          <input type="range" id="costSlider" min="5000" max="40000" step="500" value="12000">
+        </div>
+        <div class="calc-row">
+          <label>Term <b id="termVal">60 months</b></label>
+          <input type="range" id="termSlider" min="12" max="120" step="12" value="60">
+        </div>
+        <div class="calc-result">
+          <div class="cr-lbl">Estimated Monthly Payment</div>
+          <div class="cr-amt">$<span id="payVal">232</span><small>/mo</small></div>
+          <div class="cr-terms">Based on 9.99% APR for qualified buyers. Final terms vary.</div>
+        </div>
+        <a href="#estimate" class="btn btn-navy btn-lg" style="width:100%;margin-top:20px">Prequalify Now</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ESTIMATE WIZARD -->
+<section class="sec" id="estimate" style="background:var(--cream-2)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Get Started</span>
+      <h2 class="title">Schedule your free inspection</h2>
+      <p class="lead">Five quick steps. We'll be on your roof within 24 hours — no obligation, no pressure.</p>
+    </div>
+    <div class="wiz-card">
+      <div class="wiz-progress" id="wizProgress">
+        <div class="wp-step active">Address</div>
+        <div class="wp-step">Roof Type</div>
+        <div class="wp-step">Insurance</div>
+        <div class="wp-step">Photos</div>
+        <div class="wp-step">Schedule</div>
+      </div>
+      <div class="wiz-body" id="wizBody">
+        <!-- Step 1 -->
+        <div class="wiz-pane active" data-step="0">
+          <h3>Where's the property?</h3>
+          <p class="wz-sub">We serve Auburn, Opelika, Montgomery, Phenix City, and surrounding communities.</p>
+          <div class="field"><label>Full Name</label><input type="text" placeholder="Jane Smith"></div>
+          <div class="field"><label>Property Address</label><input type="text" placeholder="123 Magnolia Ave, Auburn, AL 36830"></div>
+          <div class="field"><label>Phone Number</label><input type="tel" placeholder="(334) 555-0123"></div>
+        </div>
+        <!-- Step 2 -->
+        <div class="wiz-pane" data-step="1">
+          <h3>What kind of roof do you have?</h3>
+          <p class="wz-sub">A rough idea is fine — we'll confirm everything during the inspection.</p>
+          <div class="opt-grid">
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">🏠</span>Asphalt Shingle</div>
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">⬜</span>Metal</div>
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">🧱</span>Tile</div>
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">❓</span>Not Sure</div>
+          </div>
+          <div class="field" style="margin-top:20px"><label>Roughly how old is the roof?</label>
+            <select><option>Less than 5 years</option><option>5–10 years</option><option>10–15 years</option><option>15+ years</option><option>I don't know</option></select>
+          </div>
+        </div>
+        <!-- Step 3 -->
+        <div class="wiz-pane" data-step="2">
+          <h3>Is this an insurance claim?</h3>
+          <p class="wz-sub">If a recent storm caused damage, we'll handle the paperwork with you.</p>
+          <div class="opt-grid">
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">🛡️</span>Yes — storm/insurance</div>
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">💳</span>No — paying retail</div>
+          </div>
+          <div class="field" style="margin-top:20px"><label>Anything we should know? (optional)</label><textarea placeholder="e.g. There's a leak in the upstairs bedroom after last week's hail."></textarea></div>
+        </div>
+        <!-- Step 4 -->
+        <div class="wiz-pane" data-step="3">
+          <h3>Add photos of the damage</h3>
+          <p class="wz-sub">Optional, but it helps us prepare. Snap a few shots of the roof, ceiling, or any leaks.</p>
+          <div class="upload-zone" onclick="addThumb()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <strong style="display:block;color:var(--navy)">Tap to upload photos</strong>
+            <span style="font-size:.84rem">or drag &amp; drop — JPG, PNG, HEIC</span>
+          </div>
+          <div class="upload-thumbs" id="thumbs"></div>
+        </div>
+        <!-- Step 5 -->
+        <div class="wiz-pane" data-step="4">
+          <h3>Pick a time that works</h3>
+          <p class="wz-sub">We'll confirm by text. Most inspections are scheduled within 24 hours.</p>
+          <div class="opt-grid">
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">🌅</span>Morning (8–12)</div>
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">☀️</span>Afternoon (12–4)</div>
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">🌇</span>Evening (4–6)</div>
+            <div class="opt" onclick="pickOpt(this)"><span class="opt-ico">📅</span>This Weekend</div>
+          </div>
+          <div class="field" style="margin-top:20px"><label>Email for your inspection report</label><input type="email" placeholder="jane@email.com"></div>
+        </div>
+        <!-- Done -->
+        <div class="wiz-pane" data-step="5">
+          <div class="wiz-done">
+            <div class="wd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <h3>You're all set!</h3>
+            <p class="wz-sub" style="max-width:440px;margin:0 auto 20px">A Preferred Roofing team member will text you shortly to confirm your free inspection. Thanks for trusting your neighbors.</p>
+            <a href="#top" class="btn btn-navy">Back to Top</a>
+          </div>
+        </div>
+      </div>
+      <div class="wiz-footer" id="wizFooter">
+        <button class="btn btn-outline" id="wizBack" onclick="wizMove(-1)" style="visibility:hidden">Back</button>
+        <button class="btn btn-gold" id="wizNext" onclick="wizMove(1)">Continue →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICE AREAS -->
+<section class="sec areas" id="areas">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow" style="color:var(--gold-soft)">Where We Work</span>
+      <h2 class="title">Proudly serving East Alabama</h2>
+      <p class="lead" style="color:rgba(255,255,255,0.8)">Local crews who know Alabama weather — not out-of-state storm chasers who disappear after the check clears.</p>
+    </div>
+    <div class="area-grid">
+      <div class="area-card"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Auburn</h4><p>Our home base. Fast response across the Loveliest Village and Tiger Town.</p><div class="ac-meta">142 projects completed</div></div>
+      <div class="area-card"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Opelika</h4><p>Trusted by neighbors throughout Opelika and Lee County.</p><div class="ac-meta">98 projects completed</div></div>
+      <div class="area-card"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Montgomery</h4><p>Residential and commercial roofing across the River Region.</p><div class="ac-meta">76 projects completed</div></div>
+      <div class="area-card"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Phenix City</h4><p>Serving the Chattahoochee Valley and surrounding communities.</p><div class="ac-meta">54 projects completed</div></div>
+      <div class="area-card"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Columbus, GA</h4><p>Just across the river — same trusted crews, same standards.</p><div class="ac-meta">38 projects completed</div></div>
+      <div class="area-card"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Lake Martin</h4><p>Lake homes need roofs that handle sun, storms, and humidity.</p><div class="ac-meta">29 projects completed</div></div>
+      <div class="area-card"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Dadeville</h4><p>Tallapoosa County homes get the same neighborly service.</p><div class="ac-meta">17 projects completed</div></div>
+      <div class="area-card" style="background:rgba(224,165,38,0.14);border-color:var(--gold)"><h4 style="color:var(--gold-soft)">Don't see your town?</h4><p style="color:rgba(255,255,255,0.85)">We cover most of East Alabama and the Valley. Call us and ask.</p><a href="tel:3347487663" class="ac-meta" style="text-decoration:underline">334-748-ROOF →</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- LEARNING CENTER -->
+<section class="sec" id="learn">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Homeowner Resource Center</span>
+      <h2 class="title">Know your roof, before you need us</h2>
+      <p class="lead">Straight answers on insurance, storm damage, and getting the most life out of your roof.</p>
+    </div>
+    <div class="lc-grid">
+      <div class="lc-card"><div class="lc-img"><span class="lc-emoji">🛡️</span><span class="lc-cat">Insurance</span></div><div class="lc-body"><h4>How to file a roof insurance claim in Alabama</h4><p>A step-by-step walkthrough — from documenting damage to meeting your adjuster.</p><span class="lc-read">Read guide →</span></div></div>
+      <div class="lc-card"><div class="lc-img"><span class="lc-emoji">🧊</span><span class="lc-cat">Storm Damage</span></div><div class="lc-body"><h4>5 signs of hail damage you can spot from the ground</h4><p>Not all storm damage is obvious. Here's what to look for after a hailstorm.</p><span class="lc-read">Read guide →</span></div></div>
+      <div class="lc-card"><div class="lc-img"><span class="lc-emoji">💨</span><span class="lc-cat">Storm Damage</span></div><div class="lc-body"><h4>Wind damage vs. wear: what insurance actually covers</h4><p>Understanding the difference can save your claim — and your roof.</p><span class="lc-read">Read guide →</span></div></div>
+      <div class="lc-card"><div class="lc-img"><span class="lc-emoji">⏳</span><span class="lc-cat">Maintenance</span></div><div class="lc-body"><h4>How long should an Alabama roof really last?</h4><p>Heat, humidity, and storms all factor in. Here's a realistic lifespan guide.</p><span class="lc-read">Read guide →</span></div></div>
+      <div class="lc-card"><div class="lc-img"><span class="lc-emoji">⬜</span><span class="lc-cat">Materials</span></div><div class="lc-body"><h4>Metal vs. shingle roofing in the South</h4><p>Cost, lifespan, and energy savings compared for our climate.</p><span class="lc-read">Read guide →</span></div></div>
+      <div class="lc-card"><div class="lc-img"><span class="lc-emoji">💰</span><span class="lc-cat">Financing</span></div><div class="lc-body"><h4>Financing a new roof: what to know first</h4><p>Terms, rates, and how to keep your monthly payment comfortable.</p><span class="lc-read">Read guide →</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section class="sec rev" id="reviews">
+  <div class="wrap">
+    <div class="rev-head">
+      <div class="rev-score">
+        <span class="rs-big">4.8</span>
+        <div><div class="rs-stars">★★★★★</div><div class="rs-sub">Based on 60+ Google &amp; Facebook reviews</div></div>
+      </div>
+      <div class="rev-filters">
+        <button class="gal-chip active" data-rev="all">All</button>
+        <button class="gal-chip" data-rev="Replacement">Replacement</button>
+        <button class="gal-chip" data-rev="Repair">Repair</button>
+        <button class="gal-chip" data-rev="Insurance">Insurance</button>
+      </div>
+    </div>
+    <div class="rev-grid" id="revGrid"></div>
+  </div>
+</section>
+
+<!-- CAREERS -->
+<section class="sec" id="careers" style="background:var(--cream-2)">
+  <div class="wrap">
+    <div class="career-grid">
+      <div>
+        <span class="eyebrow">Join the Team</span>
+        <h2 class="title">Build a career, not just a roof</h2>
+        <p class="lead">We're a Christian-owned, family-run company that treats our crews like family. If you take pride in honest work, we'd love to meet you.</p>
+        <a href="#estimate" class="btn btn-navy btn-lg" style="margin-top:24px">Apply Online</a>
+      </div>
+      <div class="career-roles">
+        <div class="career-role"><div><h4>Roofing Crew Member</h4><p>Full-time · Auburn / Opelika</p></div><a href="#" class="btn btn-outline btn-sm">Apply →</a></div>
+        <div class="career-role"><div><h4>Sales Representative</h4><p>Full-time · Commission + base</p></div><a href="#" class="btn btn-outline btn-sm">Apply →</a></div>
+        <div class="career-role"><div><h4>Project Manager</h4><p>Full-time · East Alabama</p></div><a href="#" class="btn btn-outline btn-sm">Apply →</a></div>
+        <div class="career-role"><div><h4>Insurance Claims Specialist</h4><p>Full-time · Office + field</p></div><a href="#" class="btn btn-outline btn-sm">Apply →</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<div class="cta-band">
+  <div class="wrap">
+    <h2>Ready for a roof you can trust?</h2>
+    <p>Free inspection in 24 hours. No pressure — just honest answers from your neighbors.</p>
+    <a href="#estimate" class="btn btn-navy btn-lg">Schedule My Free Inspection</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a href="#top" class="logo">
+          <span class="logo-mark"><svg viewBox="0 0 64 64" fill="none"><path d="M10 36 L32 16 L54 36" stroke="#e0a526" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 34 V50 H48 V34" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/></svg></span>
+          <span>Preferred Roofing<small>Auburn, Alabama</small></span>
+        </a>
+        <p>The roofing company your neighbors keep recommending. Christian-owned, locally operated, and committed to honest, quality craftsmanship across East Alabama.</p>
+        <div class="foot-lic">
+          Alabama License: AL-58678 · Contractor ID: 30278<br>
+          Fully Licensed &amp; Insured · Auburn, AL 36830
+        </div>
+      </div>
+      <div class="foot-col">
+        <h5>Services</h5>
+        <a href="#services">Roof Replacement</a>
+        <a href="#services">Roof Repair</a>
+        <a href="#services">Commercial Roofing</a>
+        <a href="#storm">Storm Restoration</a>
+        <a href="#insurance">Insurance Claims</a>
+      </div>
+      <div class="foot-col">
+        <h5>Company</h5>
+        <a href="#gallery">Recent Projects</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#learn">Resource Center</a>
+        <a href="#careers">Careers</a>
+        <a href="portal.html">Customer Portal</a>
+      </div>
+      <div class="foot-col">
+        <h5>Get In Touch</h5>
+        <a href="tel:3347487663">📞 334-748-ROOF</a>
+        <a href="#areas">📍 Auburn · Opelika · Montgomery</a>
+        <a href="#estimate">📅 Free Inspection</a>
+        <a href="dashboard.html">🔒 Team Login</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span class="fb-faith">✝ Christian-owned &amp; family-operated</span>
+      <span>&copy; 2026 Preferred Roofing. All rights reserved.</span>
+      <span class="wd-credit">Site by <a href="https://williamsdigital.io">Williams Digital</a></span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Header scroll
+const header=document.getElementById('header');
+window.addEventListener('scroll',()=>{header.classList.toggle('scrolled',window.scrollY>40)});
+function closeMM(){document.getElementById('mobileMenu').classList.remove('open')}
+
+// ---- Projects data ----
+const projects=[
+  {name:'Magnolia Ave Replacement',loc:'Auburn, AL',lat:32.6099,lng:-85.4808,type:['insurance'],shingle:'Weathered Wood',kind:'Insurance',val:'$14–18k',color:'#7a6a52',before:'#5a5048',after:'#6b5d48'},
+  {name:'Pepperell Pkwy Re-roof',loc:'Opelika, AL',lat:32.6454,lng:-85.3783,type:['retail'],shingle:'Charcoal',kind:'Retail',val:'$10–13k',color:'#3a3a3a',before:'#4a4338',after:'#383838'},
+  {name:'Standing Seam Metal',loc:'Lake Martin, AL',lat:32.7990,lng:-85.9230,type:['metal','retail'],shingle:'Galvalume',kind:'Metal',val:'$28–34k',color:'#8a9099',before:'#6b6258',after:'#8a9099'},
+  {name:'Cloverdale Storm Repair',loc:'Montgomery, AL',lat:32.3668,lng:-86.3000,type:['insurance'],shingle:'Driftwood',kind:'Insurance',val:'$12–15k',color:'#6e6354',before:'#564d40',after:'#6e6354'},
+  {name:'Summerville Commercial',loc:'Phenix City, AL',lat:32.4710,lng:-85.0007,type:['retail'],shingle:'TPO White',kind:'Commercial',val:'$40k+',color:'#d8d8d2',before:'#7a7468',after:'#d8d8d2'},
+  {name:'Tiger Town Designer Shingle',loc:'Auburn, AL',lat:32.6290,lng:-85.4419,type:['retail'],shingle:'Pewter Gray',kind:'Retail',val:'$16–20k',color:'#5e5e5e',before:'#48433a',after:'#5e5e5e'}
+];
+
+function renderProjects(filter='all'){
+  const grid=document.getElementById('projGrid');
+  const list=projects.filter(p=>filter==='all'||p.type.includes(filter)).slice(0,2);
+  grid.innerHTML=list.map((p,i)=>`
+    <div class="proj-card" style="margin-bottom:${i<list.length-1?'22px':'0'}">
+      <div class="ba-slider" data-idx="${i}">
+        <div class="ba-after" style="background:linear-gradient(160deg,${p.after},${shade(p.after,-18)})"></div>
+        <div class="ba-before" style="background:linear-gradient(160deg,${p.before},${shade(p.before,-22)})"></div>
+        <span class="ba-tag before">Before</span>
+        <span class="ba-tag after">After</span>
+        <div class="ba-handle"></div>
+      </div>
+      <div class="proj-meta">
+        <h4>${p.name}</h4>
+        <div class="pm-loc">📍 ${p.loc}</div>
+        <div class="proj-tags">
+          <span>${p.kind}</span><span>${p.shingle}</span><span class="val">${p.val}</span>
+        </div>
+      </div>
+    </div>`).join('');
+  bindSliders();
+}
+function shade(hex,p){let n=parseInt(hex.slice(1),16),r=Math.max(0,Math.min(255,(n>>16)+p)),g=Math.max(0,Math.min(255,(n>>8&255)+p)),b=Math.max(0,Math.min(255,(n&255)+p));return'#'+(r<<16|g<<8|b).toString(16).padStart(6,'0')}
+function bindSliders(){
+  document.querySelectorAll('.ba-slider').forEach(s=>{
+    const before=s.querySelector('.ba-before'),handle=s.querySelector('.ba-handle');
+    let drag=false;
+    const move=(x)=>{const r=s.getBoundingClientRect();let pct=Math.max(0,Math.min(100,(x-r.left)/r.width*100));before.style.clipPath=`inset(0 ${100-pct}% 0 0)`;handle.style.left=pct+'%'};
+    s.addEventListener('mousedown',e=>{drag=true;move(e.clientX)});
+    window.addEventListener('mousemove',e=>{if(drag)move(e.clientX)});
+    window.addEventListener('mouseup',()=>drag=false);
+    s.addEventListener('touchstart',e=>{drag=true;move(e.touches[0].clientX)},{passive:true});
+    s.addEventListener('touchmove',e=>{if(drag)move(e.touches[0].clientX)},{passive:true});
+    s.addEventListener('touchend',()=>drag=false);
+  });
+}
+document.querySelectorAll('.gal-chip[data-filter]').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.gal-chip[data-filter]').forEach(x=>x.classList.remove('active'));
+  c.classList.add('active');renderProjects(c.dataset.filter);refreshMap(c.dataset.filter);
+}));
+
+// ---- Maps ----
+let pMap,pLayer;
+function initProjectMap(){
+  pMap=L.map('projectMap',{scrollWheelZoom:false}).setView([32.58,-85.55],9);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap, CARTO',maxZoom:19}).addTo(pMap);
+  pLayer=L.layerGroup().addTo(pMap);refreshMap('all');
+}
+function refreshMap(filter){
+  if(!pLayer)return;pLayer.clearLayers();
+  projects.filter(p=>filter==='all'||p.type.includes(filter)).forEach(p=>{
+    const m=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:`<div style="background:#1e3a5f;color:#e0a526;width:30px;height:30px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,0.4)"><span style="transform:rotate(45deg);font-size:13px">▲</span></div>`,iconSize:[30,30],iconAnchor:[15,30]})});
+    m.bindPopup(`<b>${p.name}</b><br>${p.loc}<br><span style="color:#2f9e6e;font-weight:700">${p.kind} · ${p.val}</span>`);
+    pLayer.addLayer(m);
+  });
+}
+
+// ---- Storm tracker ----
+const storms=[
+  {type:'hail',title:'1.5" Hail Reported',sub:'Auburn / Tiger Town corridor',date:'May 18',lat:32.609,lng:-85.481},
+  {type:'wind',title:'62 mph Wind Gusts',sub:'Opelika & Lee County',date:'May 18',lat:32.645,lng:-85.378},
+  {type:'hail',title:'1.0" Hail Reported',sub:'East Montgomery',date:'May 4',lat:32.367,lng:-86.20},
+  {type:'wind',title:'Severe Thunderstorm',sub:'Phenix City / Valley',date:'Apr 27',lat:32.471,lng:-85.00}
+];
+function initStormMap(){
+  const sm=L.map('stormMap',{scrollWheelZoom:false,zoomControl:false}).setView([32.55,-85.5],8);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; CARTO',maxZoom:19}).addTo(sm);
+  storms.forEach(s=>{
+    const col=s.type==='hail'?'#7eb6ff':'#e0a526';
+    L.circle([s.lat,s.lng],{radius:9000,color:col,fillColor:col,fillOpacity:0.18,weight:1.5}).addTo(sm)
+      .bindPopup(`<b>${s.title}</b><br>${s.sub}<br>${s.date}`);
+  });
+  document.getElementById('stormList').innerHTML=storms.map(s=>`
+    <div class="storm-row">
+      <div class="storm-icon ${s.type}">${s.type==='hail'?'🧊':'💨'}</div>
+      <div class="sr-body"><div class="sr-title">${s.title}</div><div class="sr-sub">${s.sub}</div></div>
+      <div class="sr-date">${s.date}</div>
+    </div>`).join('');
+}
+
+// ---- Financing calc ----
+const cost=document.getElementById('costSlider'),term=document.getElementById('termSlider');
+function calc(){
+  const P=+cost.value,n=+term.value,r=0.0999/12;
+  const pay=Math.round(P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1));
+  document.getElementById('costVal').textContent='$'+P.toLocaleString();
+  document.getElementById('termVal').textContent=n+' months';
+  document.getElementById('payVal').textContent=pay.toLocaleString();
+}
+cost.addEventListener('input',calc);term.addEventListener('input',calc);calc();
+
+// ---- Wizard ----
+let wizStep=0;const wizMax=5;
+function wizMove(d){
+  const panes=document.querySelectorAll('.wiz-pane'),steps=document.querySelectorAll('.wp-step');
+  wizStep=Math.max(0,Math.min(wizMax,wizStep+d));
+  panes.forEach(p=>p.classList.toggle('active',+p.dataset.step===wizStep));
+  steps.forEach((s,i)=>{s.classList.toggle('active',i===wizStep);s.classList.toggle('done',i<wizStep)});
+  document.getElementById('wizBack').style.visibility=wizStep===0?'hidden':'visible';
+  const next=document.getElementById('wizNext');
+  if(wizStep===wizMax-1){next.textContent='Submit Request ✓';next.className='btn btn-gold'}
+  else if(wizStep===wizMax){document.getElementById('wizFooter').style.display='none'}
+  else{next.textContent='Continue →';next.className='btn btn-gold';document.getElementById('wizFooter').style.display='flex'}
+}
+function pickOpt(el){[...el.parentElement.children].forEach(c=>c.classList.remove('sel'));el.classList.add('sel')}
+function addThumb(){const t=document.getElementById('thumbs');if(t.children.length>=4)return;const d=document.createElement('div');d.className='ut';d.textContent='📷';t.appendChild(d)}
+
+// ---- Reviews ----
+const reviews=[
+  {stars:5,text:'After the May hailstorm I called Preferred and they had someone on my roof the next morning. They walked my insurance adjuster through everything and my claim was approved without a fight. Could not recommend them more.',name:'Sarah M.',loc:'Auburn, AL',svc:'Insurance'},
+  {stars:5,text:'Honest from the first phone call. Other companies tried to sell me a full replacement — Preferred fixed the actual problem for a fraction of the cost. That kind of integrity earns my business for life.',name:'David R.',loc:'Opelika, AL',svc:'Repair'},
+  {stars:5,text:'Beautiful new architectural shingle roof and the crew cleaned up so well you would never know they were here. Local, Christian-owned, and they treated my home like their own.',name:'Linda T.',loc:'Montgomery, AL',svc:'Replacement'},
+  {stars:5,text:'They put a standing seam metal roof on our lake house and it looks incredible. Showed up when they said, finished on schedule, no surprises on the bill.',name:'Mark & Jen W.',loc:'Lake Martin, AL',svc:'Replacement'},
+  {stars:4,text:'Great communication throughout the whole insurance process. The text updates on scheduling were really helpful. Roof looks great.',name:'Tony B.',loc:'Phenix City, AL',svc:'Insurance'},
+  {stars:5,text:'Had a stubborn leak two other companies could not find. Preferred tracked it down to a flashing issue and fixed it same day. These guys actually know roofs.',name:'Karen S.',loc:'Auburn, AL',svc:'Repair'}
+];
+function renderReviews(f='all'){
+  const g=document.getElementById('revGrid');
+  g.innerHTML=reviews.filter(r=>f==='all'||r.svc===f).map(r=>`
+    <div class="rev-card">
+      <div class="rc-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+      <div class="rc-text">"${r.text}"</div>
+      <div class="rc-author">
+        <div class="rc-avatar">${r.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div>
+        <div><div class="rc-name">${r.name}</div><div class="rc-loc">${r.loc}</div></div>
+      </div>
+      <span class="rc-svc">${r.svc}</span>
+    </div>`).join('');
+}
+document.querySelectorAll('.gal-chip[data-rev]').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.gal-chip[data-rev]').forEach(x=>x.classList.remove('active'));
+  c.classList.add('active');renderReviews(c.dataset.rev);
+}));
+
+// init
+renderProjects();renderReviews();initProjectMap();initStormMap();
+</script>
+</body>
+</html>
