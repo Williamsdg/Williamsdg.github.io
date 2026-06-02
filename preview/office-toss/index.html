@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#0d1220" />
+<title>Office Toss</title>
+<style>
+  :root {
+    --ink:#0d1220; --paper:#f5efe2; --accent:#ffd35a; --rim:#9aa3b2;
+    --good:#4ade80; --bad:#f87171; --wood:#caa872;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  html, body {
+    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    background: #0d1220; color: var(--paper);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Segoe UI, system-ui, sans-serif;
+    overscroll-behavior: none; touch-action: none;
+  }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+
+  .ui {
+    position: fixed; inset: 0; pointer-events: none; z-index: 10;
+    padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0)
+             env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+  }
+  .ui > * { pointer-events: auto; }
+
+  /* HUD top bar */
+  .hud-top {
+    position: absolute; top: 14px; left: 14px; right: 14px;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  }
+  .badge {
+    background: rgba(13,18,32,0.72); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 10px 14px; min-width: 64px;
+    text-align: center; line-height: 1;
+  }
+  .badge .lbl { font-size: 10px; letter-spacing: 0.14em; color: #98a2b3; text-transform: uppercase; }
+  .badge .val { font-size: 22px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .badge.score .val { color: var(--accent); }
+
+  .wind {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    background: rgba(13,18,32,0.72); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px; padding: 8px 14px;
+    display: flex; align-items: center; gap: 8px; font-size: 13px;
+  }
+  .wind .arrow {
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: transform 0.3s ease;
+  }
+  .wind svg { width: 18px; height: 18px; fill: var(--accent); }
+
+  .combo {
+    position: absolute; left: 50%; top: 80px; transform: translateX(-50%);
+    font-weight: 800; font-size: 32px; color: var(--accent);
+    text-shadow: 0 0 18px rgba(255,211,90,0.4);
+    opacity: 0; transition: opacity 0.25s; pointer-events: none;
+  }
+  .combo.show { opacity: 1; }
+
+  .toast {
+    position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%);
+    background: rgba(13,18,32,0.92); border: 1px solid rgba(255,255,255,0.1);
+    color: var(--paper); padding: 10px 18px; border-radius: 999px;
+    font-size: 14px; font-weight: 600; opacity: 0;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, -8px); }
+
+  /* Bottom dock — swipe hint */
+  .hint {
+    position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+    background: rgba(13,18,32,0.72); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px; padding: 10px 18px; font-size: 13px; color: #cbd5e1;
+  }
+  .hint.hidden { opacity: 0; pointer-events: none; }
+
+  /* Pause button */
+  .icon-btn {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(13,18,32,0.72); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--paper); font-size: 20px; cursor: pointer;
+  }
+
+  /* Modal overlay */
+  .modal {
+    position: absolute; inset: 0; background: rgba(13,18,32,0.78);
+    backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  }
+  .modal.show { opacity: 1; pointer-events: auto; }
+  .panel {
+    background: linear-gradient(180deg, #1a2238 0%, #0d1220 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 22px; padding: 28px 24px;
+    max-width: 380px; width: 100%; text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+  }
+  .panel h1 {
+    margin: 0 0 6px; font-size: 32px; letter-spacing: -0.02em;
+    background: linear-gradient(180deg, var(--accent) 0%, #ff9d3a 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .panel .sub { color: #94a3b8; font-size: 13px; margin-bottom: 22px; }
+
+  .stat-row { display: flex; justify-content: space-between; padding: 10px 4px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .stat-row:first-of-type { border-top: 0; }
+  .stat-row .k { color: #94a3b8; font-size: 13px; }
+  .stat-row .v { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .modes { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 18px 0; }
+  .mode-btn {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 14px 16px; color: var(--paper); cursor: pointer;
+    text-align: left; transition: transform 0.1s, background 0.2s;
+  }
+  .mode-btn:active { transform: scale(0.98); }
+  .mode-btn .t { font-weight: 700; font-size: 15px; }
+  .mode-btn .d { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .mode-btn.active { background: rgba(255,211,90,0.12); border-color: rgba(255,211,90,0.4); }
+
+  .levels { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0 18px; }
+  .lvl-btn {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 12px 8px; color: var(--paper); cursor: pointer;
+    font-size: 12px; font-weight: 600; text-align: center;
+  }
+  .lvl-btn.active { background: rgba(255,211,90,0.12); border-color: rgba(255,211,90,0.4); }
+
+  .skin-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 6px 0 18px; }
+  .skin {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 14px 6px 10px; cursor: pointer;
+    text-align: center; position: relative;
+  }
+  .skin .swatch { width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 8px; box-shadow: inset 0 -8px 16px rgba(0,0,0,0.25); }
+  .skin .name { font-size: 11px; font-weight: 600; }
+  .skin .price { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+  .skin.equipped { background: rgba(255,211,90,0.12); border-color: rgba(255,211,90,0.4); }
+  .skin.locked .swatch { filter: grayscale(0.7); opacity: 0.55; }
+
+  .btn {
+    background: linear-gradient(180deg, var(--accent) 0%, #ff9d3a 100%);
+    color: #1a1308; border: 0; border-radius: 999px;
+    padding: 14px 28px; font-size: 16px; font-weight: 800;
+    cursor: pointer; width: 100%;
+    box-shadow: 0 6px 20px rgba(255,157,58,0.35);
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn.ghost {
+    background: transparent; color: var(--paper);
+    border: 1px solid rgba(255,255,255,0.18); box-shadow: none;
+    margin-top: 10px;
+  }
+  .btn.ghost:active { background: rgba(255,255,255,0.04); }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; justify-content: center; }
+  .tab {
+    flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 8px; font-size: 12px; font-weight: 600;
+    color: #cbd5e1; cursor: pointer; text-align: center;
+  }
+  .tab.active { background: rgba(255,211,90,0.12); border-color: rgba(255,211,90,0.4); color: var(--paper); }
+
+  .powerbar {
+    position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
+    width: 200px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 999px;
+    overflow: hidden; opacity: 0; transition: opacity 0.2s; pointer-events: none;
+  }
+  .powerbar.show { opacity: 1; }
+  .powerbar .fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--good) 0%, var(--accent) 60%, var(--bad) 100%);
+  }
+
+  .results-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .results-actions .btn { padding: 12px 14px; font-size: 14px; }
+
+  .floating-score {
+    position: absolute; pointer-events: none; font-weight: 800; font-size: 28px;
+    color: var(--accent); text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    transition: transform 1s cubic-bezier(0.2, 0.7, 0.3, 1), opacity 1s ease;
+  }
+
+  /* Subtle vignette to make HUD pop */
+  .vignette {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.35) 100%);
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<div class="ui">
+  <div class="vignette"></div>
+
+  <!-- HUD -->
+  <div id="hud" class="hud-top" style="display:none">
+    <div class="badge score"><div class="lbl">Score</div><div class="val" id="hudScore">0</div></div>
+    <div class="badge"><div class="lbl" id="hudShotsLbl">Shots</div><div class="val" id="hudShots">10</div></div>
+  </div>
+  <div id="hudWind" class="wind" style="display:none">
+    <span class="arrow" id="windArrow">
+      <svg viewBox="0 0 24 24"><path d="M2 12h16l-4-4m4 4l-4 4"/></svg>
+    </span>
+    <span id="windText">Calm</span>
+  </div>
+  <button id="pauseBtn" class="icon-btn" style="display:none">⏸</button>
+  <div id="combo" class="combo">x2 COMBO!</div>
+  <div id="toast" class="toast"></div>
+  <div id="powerbar" class="powerbar"><div class="fill" id="powerfill"></div></div>
+  <div id="hint" class="hint hidden">Swipe up to toss</div>
+
+  <!-- Main Menu -->
+  <div id="menuModal" class="modal show">
+    <div class="panel">
+      <h1>OFFICE TOSS</h1>
+      <div class="sub">Flick. Score. Combo. Repeat.</div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="play">Play</div>
+        <div class="tab" data-tab="store">Store</div>
+        <div class="tab" data-tab="stats">Stats</div>
+      </div>
+
+      <!-- Play tab -->
+      <div id="tab-play">
+        <div class="modes" id="modesList"></div>
+        <div class="sub" style="text-align:left;margin:8px 4px 4px;font-weight:600;color:#cbd5e1;">Office</div>
+        <div class="levels" id="levelsList"></div>
+        <button class="btn" id="playBtn">Play</button>
+        <button class="btn ghost" id="dailyBtn">Claim Daily Reward</button>
+      </div>
+
+      <!-- Store tab -->
+      <div id="tab-store" style="display:none">
+        <div class="sub" style="margin-bottom:10px">Cosmetic only. No pay-to-win.</div>
+        <div class="skin-grid" id="skinGrid"></div>
+        <div class="stat-row"><span class="k">Coins</span><span class="v" id="storeCoins">0</span></div>
+        <button class="btn ghost" id="addCoinsBtn">+500 coins (rewarded ad sim)</button>
+      </div>
+
+      <!-- Stats tab -->
+      <div id="tab-stats" style="display:none">
+        <div id="statsBody"></div>
+        <button class="btn ghost" id="resetBtn">Reset Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsModal" class="modal">
+    <div class="panel">
+      <h1 id="resultTitle">Match Over</h1>
+      <div class="sub" id="resultSub"></div>
+      <div class="stat-row"><span class="k">Score</span><span class="v" id="resScore">0</span></div>
+      <div class="stat-row"><span class="k">Accuracy</span><span class="v" id="resAcc">0%</span></div>
+      <div class="stat-row"><span class="k">Best Combo</span><span class="v" id="resCombo">x1</span></div>
+      <div class="stat-row"><span class="k">Coins Earned</span><span class="v" id="resCoins">+0</span></div>
+      <div class="results-actions">
+        <button class="btn ghost" id="resMenu">Menu</button>
+        <button class="btn" id="resAgain">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause -->
+  <div id="pauseModal" class="modal">
+    <div class="panel">
+      <h1>Paused</h1>
+      <div class="sub">Take a breath.</div>
+      <button class="btn" id="resumeBtn">Resume</button>
+      <button class="btn ghost" id="quitBtn">Back to Menu</button>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* =========================================================================
+   OFFICE TOSS — Three.js
+   Flick mechanics, real physics arc, swish + bank shot detection,
+   combos, wind, 4 office environments, cosmetic ball skins, daily reward.
+   ========================================================================= */
+
+// ---------- Save / persistence ----------
+const SAVE_KEY = 'office_toss_save_v1';
+const defaultSave = () => ({
+  coins: 0,
+  totalShotsMade: 0,
+  totalShotsTaken: 0,
+  bestCombo: 0,
+  highScores: {},
+  unlockedSkins: ['paper_default'],
+  equippedSkin: 'paper_default',
+  lastDailyClaimDate: '',
+  dailyStreak: 0,
+  sfxOn: true,
+});
+function loadSave() {
+  try { return Object.assign(defaultSave(), JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); }
+  catch(e) { return defaultSave(); }
+}
+function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+let save = loadSave();
+
+// ---------- Catalogs ----------
+const SKINS = [
+  { id: 'paper_default', name: 'Paper Wad',    cost: 0,    color: 0xf2ebd9, rarity: 'Common', emissive: 0x000000 },
+  { id: 'newspaper',     name: 'Newspaper',    cost: 300,  color: 0xd9d3bf, rarity: 'Common', emissive: 0x000000 },
+  { id: 'sticky_note',   name: 'Sticky Note',  cost: 400,  color: 0xfff176, rarity: 'Common', emissive: 0x000000 },
+  { id: 'basketball',    name: 'Basketball',   cost: 1500, color: 0xd87434, rarity: 'Rare',   emissive: 0x000000 },
+  { id: 'gold_paper',    name: 'Gold Paper',   cost: 2500, color: 0xffd35a, rarity: 'Epic',   emissive: 0x6a4a00 },
+  { id: 'fire_ball',     name: 'Fire Ball',    cost: 5000, color: 0xff6a1a, rarity: 'Legendary', emissive: 0xff3a00 },
+];
+
+const MODES = [
+  { id: 'classic',   name: 'Classic',   desc: '10 shots. Highest score wins.',         shots: 10, lives: null,  wind: 1.0, moving: false },
+  { id: 'endless',   name: 'Endless',   desc: 'Keep scoring. 3 misses and you\'re out.', shots: null, lives: 3,  wind: 1.0, moving: false },
+  { id: 'challenge', name: 'Challenge', desc: 'Moving targets + heavy wind.',          shots: 8,  lives: null,  wind: 1.8, moving: true  },
+];
+
+const LEVELS = [
+  { id: 'cubicle',    name: 'Cubicle Farm',     palette: { floor: 0x8c7b5d, wall: 0xc8b888, accent: 0x5a7d8c }, distance: 6.5,  windRange: 2.5 },
+  { id: 'executive',  name: 'Executive Office', palette: { floor: 0x4a3328, wall: 0x8a7355, accent: 0xb89060 }, distance: 9.0,  windRange: 1.5 },
+  { id: 'conference', name: 'Conference Room',  palette: { floor: 0x3a4a5c, wall: 0xa8b8c8, accent: 0x6e8294 }, distance: 7.5,  windRange: 3.5 },
+  { id: 'breakroom',  name: 'Break Room',       palette: { floor: 0xc8a878, wall: 0xf0e4ce, accent: 0xd84545 }, distance: 5.5,  windRange: 2.0 },
+];
+
+// ---------- Three.js setup ----------
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x101524, 14, 32);
+const renderer = new THREE.WebGLRenderer({ antialias: window.devicePixelRatio < 2, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.getElementById('app').appendChild(renderer.domElement);
+
+const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 100);
+camera.position.set(0, 1.7, -3.4);
+camera.lookAt(0, 1.0, 4);
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Lighting
+const hemi = new THREE.HemisphereLight(0xffffff, 0x33384a, 0.55);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2d0, 1.0);
+sun.position.set(4, 8, 2);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -10; sun.shadow.camera.right = 10;
+sun.shadow.camera.top = 10; sun.shadow.camera.bottom = -10;
+sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 30;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+// ---------- Level building ----------
+let levelRoot = new THREE.Group();
+scene.add(levelRoot);
+let currentLevel = LEVELS[0];
+let trashCan = null;
+let mouthY = 1.05;
+let canBaseAtZ = 6;
+
+function clearLevel() {
+  while (levelRoot.children.length) {
+    const c = levelRoot.children.pop();
+    c.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (Array.isArray(o.material)) o.material.forEach(m=>m.dispose()); else o.material.dispose(); }});
+  }
+}
+
+function buildLevel(level) {
+  clearLevel();
+  currentLevel = level;
+  scene.background = new THREE.Color(0x0d1220);
+
+  const p = level.palette;
+  const floorMat = new THREE.MeshStandardMaterial({ color: p.floor, roughness: 0.85 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  levelRoot.add(floor);
+
+  const wallMat = new THREE.MeshStandardMaterial({ color: p.wall, roughness: 0.9 });
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(20, 6, 0.3), wallMat);
+  backWall.position.set(0, 3, level.distance + 1.8);
+  backWall.castShadow = true; backWall.receiveShadow = true;
+  backWall.userData.wall = true;
+  levelRoot.add(backWall);
+
+  // Side walls
+  const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 6, 20), wallMat);
+  sideL.position.set(-7, 3, 0); sideL.receiveShadow = true; sideL.userData.wall = true;
+  const sideR = sideL.clone(); sideR.position.x = 7;
+  levelRoot.add(sideL); levelRoot.add(sideR);
+
+  // Level-specific dressing
+  if (level.id === 'cubicle') buildCubicles(level);
+  else if (level.id === 'executive') buildExecutive(level);
+  else if (level.id === 'conference') buildConference(level);
+  else if (level.id === 'breakroom') buildBreakRoom(level);
+
+  // Trash can
+  canBaseAtZ = level.distance;
+  trashCan = buildTrashCan(p.accent);
+  trashCan.position.set(0, 0, canBaseAtZ);
+  levelRoot.add(trashCan);
+}
+
+function buildTrashCan(accentColor) {
+  const group = new THREE.Group();
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x8a8a90, roughness: 0.4, metalness: 0.7 });
+  const rimMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c8, roughness: 0.3, metalness: 0.8 });
+  const innerMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1f, roughness: 1 });
+
+  // Outer wall
+  const radius = 0.48, height = 1.0;
+  const outer = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 0.85, height, 24, 1, true), metalMat);
+  outer.position.y = height / 2;
+  outer.castShadow = true; outer.receiveShadow = true;
+  outer.userData.canBody = true;
+  group.add(outer);
+
+  // Inner liner (catches the ball cleanly)
+  const inner = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.92, radius * 0.78, height * 0.95, 20, 1, true), innerMat);
+  inner.position.y = height / 2;
+  inner.material.side = THREE.DoubleSide;
+  group.add(inner);
+
+  // Bottom
+  const bottom = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.85, radius * 0.85, 0.04, 24), innerMat);
+  bottom.position.y = 0.02;
+  bottom.userData.canBottom = true;
+  group.add(bottom);
+
+  // Rim — torus for soft visual + invisible thin cylinder collider just below
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.04, 8, 24), rimMat);
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = height;
+  rim.castShadow = true;
+  rim.userData.rim = true;
+  group.add(rim);
+
+  // Mouth gate position
+  mouthY = height;
+  group.userData = { radius, height, mouthY: height };
+  return group;
+}
+
+function buildCubicles(level) {
+  const partMat = new THREE.MeshStandardMaterial({ color: 0x4a5c6e, roughness: 0.9 });
+  const deskMat = new THREE.MeshStandardMaterial({ color: 0x5a4528, roughness: 0.7 });
+  const monitorMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1f, roughness: 0.5 });
+  const monitorScreenMat = new THREE.MeshStandardMaterial({ color: 0x60a5fa, emissive: 0x1e3a8a, emissiveIntensity: 0.4, roughness: 0.3 });
+  for (let i = -1; i <= 1; i += 2) {
+    const x = i * 3.2;
+    // Partition
+    const part = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.6, 3), partMat);
+    part.position.set(x, 0.8, 4); part.castShadow = true; part.receiveShadow = true; part.userData.wall = true;
+    levelRoot.add(part);
+    // Desk
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.05, 0.8), deskMat);
+    desk.position.set(x * 0.7, 0.85, 3.8); desk.castShadow = true; desk.receiveShadow = true; desk.userData.wall = true;
+    levelRoot.add(desk);
+    // Monitor
+    const monBase = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.05), monitorMat);
+    monBase.position.set(x * 0.7, 1.05, 4.0); levelRoot.add(monBase);
+    const mon = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.05), monitorMat);
+    mon.position.set(x * 0.7, 1.35, 4.0); mon.castShadow = true; mon.userData.wall = true;
+    levelRoot.add(mon);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.37), monitorScreenMat);
+    screen.position.set(x * 0.7, 1.35, 3.975); levelRoot.add(screen);
+    // Coffee mug
+    const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.13, 12), new THREE.MeshStandardMaterial({ color: 0xb22222, roughness: 0.7 }));
+    mug.position.set(x * 0.7 + 0.35, 0.94, 3.7); mug.castShadow = true; mug.userData.wall = true;
+    levelRoot.add(mug);
+  }
+}
+
+function buildExecutive(level) {
+  const deskMat = new THREE.MeshStandardMaterial({ color: 0x3a2814, roughness: 0.5, metalness: 0.1 });
+  // Big executive desk
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.08, 1.5), deskMat);
+  desk.position.set(0, 0.88, level.distance - 0.5);
+  desk.castShadow = true; desk.receiveShadow = true; desk.userData.wall = true;
+  levelRoot.add(desk);
+  // Desk legs
+  for (let dx of [-1.6, 1.6]) for (let dz of [-0.6, 0.6]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.85, 0.1), deskMat);
+    leg.position.set(dx, 0.43, level.distance - 0.5 + dz);
+    leg.castShadow = true; levelRoot.add(leg);
+  }
+  // Plant
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.3, 12), new THREE.MeshStandardMaterial({ color: 0x6a4528, roughness: 0.8 }));
+  pot.position.set(-2.5, 0.15, level.distance - 0.5); pot.castShadow = true; levelRoot.add(pot);
+  const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.7, flatShading: true }));
+  leaves.position.set(-2.5, 0.55, level.distance - 0.5); leaves.castShadow = true; leaves.userData.wall = true;
+  levelRoot.add(leaves);
+  // Gold trim picture frames
+  for (let i = -1; i <= 1; i += 2) {
+    const frame = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.65), new THREE.MeshStandardMaterial({ color: 0xb89060, roughness: 0.4, metalness: 0.5 }));
+    frame.position.set(i * 4.5, 2.4, level.distance + 1.65);
+    frame.rotation.y = Math.PI;
+    levelRoot.add(frame);
+  }
+}
+
+function buildConference(level) {
+  const tableMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.3, metalness: 0.3 });
+  const table = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.06, 3.5), tableMat);
+  table.position.set(0, 0.78, level.distance - 1.8);
+  table.castShadow = true; table.receiveShadow = true; table.userData.wall = true;
+  levelRoot.add(table);
+  // Chairs (low cubes, won't block trajectory)
+  const chairMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1f, roughness: 0.5 });
+  for (let i = 0; i < 4; i++) {
+    const side = i < 2 ? -1 : 1;
+    const z = (i % 2 === 0 ? -0.7 : 0.7) + level.distance - 1.8;
+    const chair = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.5), chairMat);
+    chair.position.set(side * 1.7, 0.3, z); chair.castShadow = true; chair.userData.wall = true;
+    levelRoot.add(chair);
+  }
+  // Glass wall (semi-transparent)
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0xa0c0ff, transparent: true, opacity: 0.18, roughness: 0.1, metalness: 0.4 });
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, 6), glassMat);
+  glass.position.set(-4, 1.5, 2); glass.userData.wall = true;
+  levelRoot.add(glass);
+}
+
+function buildBreakRoom(level) {
+  const vendMat = new THREE.MeshStandardMaterial({ color: 0xd84545, roughness: 0.5 });
+  const vend = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 0.7), vendMat);
+  vend.position.set(-2.5, 1.2, level.distance + 1.0);
+  vend.castShadow = true; vend.receiveShadow = true; vend.userData.wall = true;
+  levelRoot.add(vend);
+  const vendGlass = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 1.5), new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.2, metalness: 0.6 }));
+  vendGlass.position.set(-2.5, 1.5, level.distance + 0.65); vendGlass.rotation.y = Math.PI;
+  levelRoot.add(vendGlass);
+  // Coffee station counter
+  const counter = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.95, 0.7), new THREE.MeshStandardMaterial({ color: 0x8a7355, roughness: 0.7 }));
+  counter.position.set(2.5, 0.475, level.distance + 1.0);
+  counter.castShadow = true; counter.receiveShadow = true; counter.userData.wall = true;
+  levelRoot.add(counter);
+  // Coffee pot
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.25, 12), new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.3 }));
+  pot.position.set(2.2, 1.1, level.distance + 1.0); pot.castShadow = true; pot.userData.wall = true;
+  levelRoot.add(pot);
+}
+
+// ---------- Ball ----------
+const ballGroup = new THREE.Group();
+scene.add(ballGroup);
+let ballMesh = null;
+function makeBallMesh(skin) {
+  if (ballMesh) {
+    ballGroup.remove(ballMesh);
+    ballMesh.geometry.dispose();
+    ballMesh.material.dispose();
+  }
+  // Crumpled-paper look via icosahedron + slight noise on vertices
+  const geo = new THREE.IcosahedronGeometry(0.085, 1);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const v = new THREE.Vector3().fromBufferAttribute(pos, i);
+    v.multiplyScalar(1 + (Math.random() - 0.5) * 0.18);
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  geo.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({
+    color: skin.color,
+    emissive: skin.emissive,
+    emissiveIntensity: skin.emissive ? 0.6 : 0,
+    roughness: skin.id === 'gold_paper' ? 0.25 : 0.85,
+    metalness: skin.id === 'gold_paper' ? 0.7 : 0.05,
+    flatShading: true,
+  });
+  ballMesh = new THREE.Mesh(geo, mat);
+  ballMesh.castShadow = true;
+  ballGroup.add(ballMesh);
+}
+
+// Ball physics state
+const ball = {
+  pos: new THREE.Vector3(0, 1.45, -2.8),
+  vel: new THREE.Vector3(),
+  spin: new THREE.Vector3(),
+  radius: 0.085,
+  inFlight: false,
+  bankShot: false,
+  scored: false,
+  swish: true,
+  contactCount: 0,
+  spawnTime: 0,
+};
+
+function resetBall() {
+  ball.pos.set(0, 1.45, -2.8);
+  ball.vel.set(0, 0, 0);
+  ball.spin.set(0, 0, 0);
+  ball.inFlight = false;
+  ball.bankShot = false;
+  ball.scored = false;
+  ball.swish = true;
+  ball.contactCount = 0;
+  ballGroup.position.copy(ball.pos);
+  ballGroup.rotation.set(0, 0, 0);
+  // Trajectory preview hidden
+  trajLine.visible = false;
+}
+
+// ---------- Trajectory predictor ----------
+const trajGeo = new THREE.BufferGeometry();
+const trajPositions = new Float32Array(60 * 3);
+trajGeo.setAttribute('position', new THREE.BufferAttribute(trajPositions, 3));
+const trajMat = new THREE.LineDashedMaterial({ color: 0xffd35a, dashSize: 0.12, gapSize: 0.08, transparent: true, opacity: 0.7 });
+const trajLine = new THREE.Line(trajGeo, trajMat);
+trajLine.visible = false;
+scene.add(trajLine);
+
+function predictTrajectory(initVel) {
+  const dt = 0.025;
+  let p = ball.pos.clone();
+  let v = initVel.clone();
+  const wind = new THREE.Vector3(state.wind, 0, 0);
+  const grav = new THREE.Vector3(0, -14, 0);
+  let count = 0;
+  for (let i = 0; i < 40; i++) {
+    trajPositions[count*3] = p.x; trajPositions[count*3+1] = p.y; trajPositions[count*3+2] = p.z;
+    count++;
+    v.addScaledVector(grav, dt);
+    v.addScaledVector(wind, dt * 0.3);
+    v.multiplyScalar(1 - 0.04 * dt);
+    p.addScaledVector(v, dt);
+    if (p.y < 0.05) break;
+    if (p.z > canBaseAtZ + 0.6) break;
+  }
+  trajGeo.setDrawRange(0, count);
+  trajGeo.attributes.position.needsUpdate = true;
+  trajLine.computeLineDistances();
+  trajLine.visible = true;
+}
+
+// ---------- Match state ----------
+const state = {
+  mode: MODES[0],
+  level: LEVELS[0],
+  score: 0,
+  shotsRemaining: 10,
+  livesRemaining: 3,
+  shotsTaken: 0,
+  shotsMade: 0,
+  combo: 0,
+  bestCombo: 0,
+  active: false,
+  paused: false,
+  wind: 0,
+  movingTargetT: 0,
+  swishesThisMatch: 0,
+};
+
+function comboMultiplier(combo) {
+  if (combo >= 8) return 5;
+  if (combo >= 6) return 4;
+  if (combo >= 4) return 3;
+  if (combo >= 2) return 2;
+  return 1;
+}
+
+function newShot() {
+  ball.scored = false;
+  ball.inFlight = false;
+  resetBall();
+  // Wind
+  state.wind = (Math.random() * 2 - 1) * state.level.windRange * state.mode.wind;
+  updateWindHud();
+  updateHud();
+  if (!shownHint) { document.getElementById('hint').classList.remove('hidden'); }
+}
+
+function startMatch(mode, level) {
+  state.mode = mode;
+  state.level = level;
+  state.score = 0;
+  state.shotsRemaining = mode.shots ?? 999;
+  state.livesRemaining = mode.lives ?? 999;
+  state.shotsTaken = 0;
+  state.shotsMade = 0;
+  state.combo = 0;
+  state.bestCombo = 0;
+  state.swishesThisMatch = 0;
+  state.active = true;
+  state.paused = false;
+  buildLevel(level);
+  newShot();
+  document.getElementById('hud').style.display = 'flex';
+  document.getElementById('hudWind').style.display = 'flex';
+  document.getElementById('pauseBtn').style.display = 'flex';
+  document.getElementById('menuModal').classList.remove('show');
+  document.getElementById('resultsModal').classList.remove('show');
+  document.getElementById('hudShotsLbl').textContent = mode.lives ? 'Lives' : 'Shots';
+}
+
+function endMatch() {
+  state.active = false;
+  // Persist
+  const key = state.mode.id;
+  const prev = save.highScores[key] || 0;
+  const isNew = state.score > prev;
+  if (isNew) save.highScores[key] = state.score;
+  if (state.bestCombo > save.bestCombo) save.bestCombo = state.bestCombo;
+  save.totalShotsMade += state.shotsMade;
+  save.totalShotsTaken += state.shotsTaken;
+  const coinsEarned = state.score + (state.shotsMade > 0 ? 50 : 0);
+  save.coins += coinsEarned;
+  persist();
+  // Show results
+  document.getElementById('resultTitle').textContent = isNew ? 'New High Score!' : 'Match Over';
+  document.getElementById('resultSub').textContent = `${state.mode.name} • ${state.level.name}`;
+  document.getElementById('resScore').textContent = state.score.toLocaleString();
+  const acc = state.shotsTaken ? Math.round(100 * state.shotsMade / state.shotsTaken) : 0;
+  document.getElementById('resAcc').textContent = acc + '%';
+  document.getElementById('resCombo').textContent = 'x' + comboMultiplier(state.bestCombo) + ' (' + state.bestCombo + ')';
+  document.getElementById('resCoins').textContent = '+' + coinsEarned;
+  document.getElementById('resultsModal').classList.add('show');
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('hudWind').style.display = 'none';
+  document.getElementById('pauseBtn').style.display = 'none';
+  trajLine.visible = false;
+}
+
+function updateHud() {
+  document.getElementById('hudScore').textContent = state.score.toLocaleString();
+  document.getElementById('hudShots').textContent =
+    state.mode.lives ? state.livesRemaining : state.shotsRemaining;
+}
+
+function updateWindHud() {
+  const w = state.wind;
+  const arrow = document.getElementById('windArrow');
+  const text = document.getElementById('windText');
+  if (Math.abs(w) < 0.2) {
+    text.textContent = 'Calm';
+    arrow.style.transform = 'rotate(0deg)';
+  } else {
+    text.textContent = (w > 0 ? '→' : '←') + ' ' + Math.abs(w).toFixed(1);
+    arrow.style.transform = w > 0 ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
+}
+
+function showCombo(text) {
+  const el = document.getElementById('combo');
+  el.textContent = text;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 800);
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+function spawnFloatingScore(value, worldPos, isSwish) {
+  const v = worldPos.clone().project(camera);
+  const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (1 - (v.y * 0.5 + 0.5)) * window.innerHeight;
+  const el = document.createElement('div');
+  el.className = 'floating-score';
+  el.textContent = (isSwish ? 'SWISH ' : '') + '+' + value;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => {
+    el.style.transform = 'translate(-50%, -120px)';
+    el.style.opacity = '0';
+  });
+  setTimeout(() => el.remove(), 1100);
+}
+
+// ---------- Input ----------
+let dragging = false;
+let dragStart = null, dragStartTime = 0, lastMove = null, lastMoveTime = 0;
+let smoothedVel = { x: 0, y: 0 };
+let shownHint = false;
+
+const cv = renderer.domElement;
+cv.addEventListener('pointerdown', e => {
+  if (!state.active || state.paused || ball.inFlight) return;
+  dragging = true;
+  dragStart = { x: e.clientX, y: e.clientY };
+  lastMove = { x: e.clientX, y: e.clientY };
+  dragStartTime = lastMoveTime = performance.now();
+  smoothedVel = { x: 0, y: 0 };
+  cv.setPointerCapture(e.pointerId);
+  document.getElementById('powerbar').classList.add('show');
+});
+
+cv.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const now = performance.now();
+  const dt = Math.max(1, now - lastMoveTime) / 1000;
+  smoothedVel.x = smoothedVel.x * 0.5 + ((e.clientX - lastMove.x) / dt) * 0.5;
+  smoothedVel.y = smoothedVel.y * 0.5 + ((e.clientY - lastMove.y) / dt) * 0.5;
+  lastMove = { x: e.clientX, y: e.clientY };
+  lastMoveTime = now;
+
+  const dx = e.clientX - dragStart.x;
+  const dy = e.clientY - dragStart.y;
+  const delta = Math.hypot(dx, dy);
+  const power = Math.min(1, delta / 280);
+  document.getElementById('powerfill').style.width = (power * 100) + '%';
+
+  // Preview velocity (same math as launch)
+  const v = velocityFromDrag(dx, dy, power);
+  predictTrajectory(v);
+});
+
+cv.addEventListener('pointerup', e => {
+  if (!dragging) return;
+  dragging = false;
+  cv.releasePointerCapture(e.pointerId);
+  document.getElementById('powerbar').classList.remove('show');
+  trajLine.visible = false;
+  document.getElementById('powerfill').style.width = '0%';
+  const dx = e.clientX - dragStart.x;
+  const dy = e.clientY - dragStart.y;
+  const delta = Math.hypot(dx, dy);
+  if (delta < 40) return; // tap, not flick
+  const power = Math.min(1, delta / 280);
+  const v = velocityFromDrag(dx, dy, power);
+  launch(v, dx);
+});
+
+cv.addEventListener('pointercancel', () => {
+  dragging = false;
+  document.getElementById('powerbar').classList.remove('show');
+  trajLine.visible = false;
+});
+
+function velocityFromDrag(dx, dy, power) {
+  // Screen: up swipe = negative dy. Convert to forward+up world velocity.
+  const upward = Math.max(0, -dy) / 280;          // 0..1
+  const side = dx / 280;                           // negative = left
+  const forwardSpeed = 6 + 10 * power * (0.4 + upward * 0.6);
+  const upSpeed = 3.5 + 6 * power * (0.3 + upward * 0.7);
+  const sideSpeed = side * 4;
+  return new THREE.Vector3(sideSpeed, upSpeed, forwardSpeed);
+}
+
+function launch(v, horizontalDrag) {
+  ball.vel.copy(v);
+  ball.spin.set(0, horizontalDrag * 0.01, 0); // visual sidespin
+  ball.inFlight = true;
+  ball.spawnTime = performance.now();
+  ball.bankShot = false;
+  ball.scored = false;
+  ball.swish = true;
+  ball.contactCount = 0;
+  if (!shownHint) { shownHint = true; document.getElementById('hint').classList.add('hidden'); }
+}
+
+// ---------- Physics integration ----------
+const GRAVITY = new THREE.Vector3(0, -14, 0);
+const DRAG = 0.04;
+
+function stepPhysics(dt) {
+  if (!ball.inFlight) return;
+
+  // Forces: gravity + wind (wind is horizontal in X)
+  const accel = GRAVITY.clone();
+  accel.x += state.wind * 0.6;
+  ball.vel.addScaledVector(accel, dt);
+  ball.vel.multiplyScalar(1 - DRAG * dt);
+
+  const next = ball.pos.clone().addScaledVector(ball.vel, dt);
+
+  // Mouth detection — descending through the rim plane inside radius
+  if (!ball.scored && trashCan) {
+    const top = trashCan.userData.mouthY + 0.0;
+    const r = trashCan.userData.radius;
+    const cx = trashCan.position.x, cz = trashCan.position.z;
+    const wasAbove = ball.pos.y >= top;
+    const nowBelow = next.y < top;
+    if (wasAbove && nowBelow && ball.vel.y < 0) {
+      const dx = next.x - cx, dz = next.z - cz;
+      if (dx*dx + dz*dz < (r * 0.92) ** 2) {
+        scoreShot(next.clone());
+        // Drop ball quickly to the bottom for visual
+        ball.pos.copy(next);
+        ball.vel.set(0, -1.5, 0);
+        ball.scored = true;
+      }
+    }
+  }
+
+  // Floor
+  if (next.y - ball.radius < 0) {
+    next.y = ball.radius;
+    if (Math.abs(ball.vel.y) > 0.4) {
+      ball.vel.y = -ball.vel.y * 0.32;
+      ball.vel.x *= 0.7; ball.vel.z *= 0.7;
+      ball.contactCount++;
+    } else {
+      ball.vel.set(0, 0, 0);
+    }
+  }
+
+  // Bounce against walls (back wall, side walls, props marked .wall)
+  // Use simple sphere-vs-AABB style by sampling object bounds
+  for (const obj of levelRoot.children) {
+    if (!obj.userData?.wall) continue;
+    if (!obj.geometry?.boundingBox) obj.geometry.computeBoundingBox();
+    const bb = obj.geometry.boundingBox;
+    const ow = bb.getSize(new THREE.Vector3());
+    const oc = obj.position;
+    const min = new THREE.Vector3(oc.x - ow.x/2, oc.y - ow.y/2, oc.z - ow.z/2);
+    const max = new THREE.Vector3(oc.x + ow.x/2, oc.y + ow.y/2, oc.z + ow.z/2);
+    const closest = new THREE.Vector3(
+      Math.max(min.x, Math.min(next.x, max.x)),
+      Math.max(min.y, Math.min(next.y, max.y)),
+      Math.max(min.z, Math.min(next.z, max.z)));
+    const diff = next.clone().sub(closest);
+    const distSq = diff.lengthSq();
+    if (distSq < ball.radius * ball.radius) {
+      const d = Math.sqrt(distSq) || 0.0001;
+      const normal = diff.divideScalar(d);
+      next.copy(closest).addScaledVector(normal, ball.radius);
+      const into = ball.vel.dot(normal);
+      if (into < 0) {
+        ball.vel.addScaledVector(normal, -into * 1.4);
+        ball.vel.multiplyScalar(0.55);
+      }
+      if (!ball.scored) { ball.bankShot = true; ball.swish = false; }
+      ball.contactCount++;
+    }
+  }
+
+  // Rim collision — soft bounce off the can lip if approaching from above near the edge
+  if (!ball.scored && trashCan) {
+    const top = trashCan.userData.mouthY;
+    const r = trashCan.userData.radius;
+    const cx = trashCan.position.x, cz = trashCan.position.z;
+    const dx = next.x - cx, dz = next.z - cz;
+    const horizDist = Math.sqrt(dx*dx + dz*dz);
+    if (Math.abs(next.y - top) < 0.08 && Math.abs(horizDist - r) < ball.radius + 0.03) {
+      // Bounce outward
+      const dir = new THREE.Vector3(dx, 0.4, dz).normalize();
+      ball.vel.reflect(dir).multiplyScalar(0.55);
+      ball.swish = false;
+      ball.contactCount++;
+    }
+    // Can body sides
+    if (next.y < top && horizDist > r * 0.85 && horizDist < r + ball.radius && !ball.scored) {
+      const n = new THREE.Vector3(dx, 0, dz).normalize();
+      next.x = cx + n.x * (r + ball.radius + 0.001);
+      next.z = cz + n.z * (r + ball.radius + 0.001);
+      const into = ball.vel.dot(n);
+      if (into < 0) ball.vel.addScaledVector(n, -into * 1.4);
+      ball.vel.multiplyScalar(0.6);
+      ball.swish = false;
+      ball.contactCount++;
+    }
+  }
+
+  ball.pos.copy(next);
+  ballGroup.position.copy(ball.pos);
+  ballGroup.rotation.x += ball.vel.z * dt * 4;
+  ballGroup.rotation.z -= ball.vel.x * dt * 4;
+  ballGroup.rotation.y += ball.spin.y;
+
+  // Settled or out-of-bounds = resolve shot
+  const elapsed = (performance.now() - ball.spawnTime) / 1000;
+  const settled = ball.vel.lengthSq() < 0.08 && ball.pos.y <= ball.radius + 0.02;
+  if (!ball.scored && (settled || elapsed > 6 || ball.pos.y < -2)) {
+    resolveMiss();
+  } else if (ball.scored && (settled || elapsed > 4)) {
+    nextShotOrEnd();
+  }
+}
+
+function scoreShot(worldPos) {
+  state.shotsMade++;
+  state.shotsTaken++;
+  state.combo++;
+  if (state.combo > state.bestCombo) state.bestCombo = state.combo;
+  if (ball.swish) state.swishesThisMatch++;
+
+  const longShot = state.level.distance >= 6.5;
+  const base = 100;
+  const swish = ball.swish ? 100 : 0;
+  const bank = ball.bankShot ? 75 : 0;
+  const longD = longShot ? 50 : 0;
+  const mult = comboMultiplier(state.combo);
+  const total = (base + swish + bank + longD) * mult;
+  state.score += total;
+  if (state.mode.shots) state.shotsRemaining--;
+
+  updateHud();
+  spawnFloatingScore(total, worldPos, ball.swish);
+  if (state.combo >= 2) showCombo('x' + mult + ' COMBO!');
+  beep(880, 0.06, 'sine', 0.05);
+  if (ball.swish) beep(1320, 0.08, 'triangle', 0.08);
+}
+
+function resolveMiss() {
+  if (ball.scored) return;
+  state.shotsTaken++;
+  state.combo = 0;
+  if (state.mode.shots) state.shotsRemaining--;
+  if (state.mode.lives) state.livesRemaining--;
+  updateHud();
+  beep(120, 0.15, 'sawtooth', 0.04);
+  nextShotOrEnd();
+}
+
+let endingShot = false;
+function nextShotOrEnd() {
+  if (endingShot) return;
+  endingShot = true;
+  setTimeout(() => {
+    endingShot = false;
+    if (!state.active) return;
+    const out = (state.mode.shots && state.shotsRemaining <= 0) ||
+                (state.mode.lives && state.livesRemaining <= 0);
+    if (out) endMatch();
+    else newShot();
+  }, 700);
+}
+
+// ---------- Audio (simple WebAudio beeps; no asset deps) ----------
+let audioCtx = null;
+function beep(freq, dur, type = 'sine', vol = 0.05) {
+  if (!save.sfxOn) return;
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return; }
+  }
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.value = vol;
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start();
+  o.stop(audioCtx.currentTime + dur);
+}
+
+// ---------- Camera follow ----------
+const aimPos = new THREE.Vector3(0, 1.7, -3.4);
+const aimLook = new THREE.Vector3(0, 1.0, 4);
+function updateCamera(dt) {
+  if (ball.inFlight && !ball.scored) {
+    const target = new THREE.Vector3(ball.pos.x * 0.4, ball.pos.y + 0.8, ball.pos.z - 2.2);
+    camera.position.lerp(target, Math.min(1, dt * 4));
+    const look = ball.pos.clone();
+    const dir = look.clone().sub(camera.position).normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,-1), dir);
+    camera.quaternion.slerp(q, Math.min(1, dt * 5));
+  } else {
+    camera.position.lerp(aimPos, Math.min(1, dt * 3));
+    const dir = aimLook.clone().sub(camera.position).normalize();
+    const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,-1), dir);
+    camera.quaternion.slerp(q, Math.min(1, dt * 4));
+  }
+}
+
+// Moving target (Challenge mode)
+function updateMovingTarget(dt) {
+  if (!state.mode?.moving || !trashCan) return;
+  state.movingTargetT += dt;
+  trashCan.position.x = Math.sin(state.movingTargetT * 1.4) * 2.5;
+}
+
+// ---------- Loop ----------
+let last = performance.now();
+function frame(t) {
+  const dt = Math.min(0.05, (t - last) / 1000);
+  last = t;
+  if (!state.paused) {
+    stepPhysics(dt);
+    updateMovingTarget(dt);
+  }
+  updateCamera(dt);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---------- Menu wiring ----------
+let selectedMode = MODES[0], selectedLevel = LEVELS[0];
+
+function renderModes() {
+  const list = document.getElementById('modesList');
+  list.innerHTML = '';
+  for (const m of MODES) {
+    const div = document.createElement('div');
+    div.className = 'mode-btn' + (m.id === selectedMode.id ? ' active' : '');
+    div.innerHTML = `<div class="t">${m.name}</div><div class="d">${m.desc}</div>`;
+    div.onclick = () => { selectedMode = m; renderModes(); };
+    list.appendChild(div);
+  }
+}
+function renderLevels() {
+  const list = document.getElementById('levelsList');
+  list.innerHTML = '';
+  for (const l of LEVELS) {
+    const div = document.createElement('div');
+    div.className = 'lvl-btn' + (l.id === selectedLevel.id ? ' active' : '');
+    div.textContent = l.name;
+    div.onclick = () => { selectedLevel = l; renderLevels(); };
+    list.appendChild(div);
+  }
+}
+function renderSkins() {
+  const grid = document.getElementById('skinGrid');
+  grid.innerHTML = '';
+  for (const s of SKINS) {
+    const unlocked = save.unlockedSkins.includes(s.id);
+    const equipped = save.equippedSkin === s.id;
+    const div = document.createElement('div');
+    div.className = 'skin' + (equipped ? ' equipped' : '') + (unlocked ? '' : ' locked');
+    const grad = '#' + s.color.toString(16).padStart(6,'0');
+    div.innerHTML = `
+      <div class="swatch" style="background:${grad}"></div>
+      <div class="name">${s.name}</div>
+      <div class="price">${equipped ? 'Equipped' : (unlocked ? 'Tap to equip' : s.cost + ' coins')}</div>`;
+    div.onclick = () => {
+      if (equipped) return;
+      if (unlocked) { save.equippedSkin = s.id; persist(); makeBallMesh(s); renderSkins(); toast('Equipped ' + s.name); }
+      else if (save.coins >= s.cost) {
+        save.coins -= s.cost; save.unlockedSkins.push(s.id); save.equippedSkin = s.id;
+        persist(); makeBallMesh(s); renderSkins(); updateStoreCoins();
+        toast('Unlocked ' + s.name + '!');
+      } else { toast('Not enough coins'); }
+    };
+    grid.appendChild(div);
+  }
+}
+function renderStats() {
+  const body = document.getElementById('statsBody');
+  const rows = [];
+  for (const m of MODES) {
+    rows.push(`<div class="stat-row"><span class="k">${m.name} High</span><span class="v">${(save.highScores[m.id]||0).toLocaleString()}</span></div>`);
+  }
+  rows.push(`<div class="stat-row"><span class="k">Best Combo Ever</span><span class="v">${save.bestCombo}</span></div>`);
+  rows.push(`<div class="stat-row"><span class="k">Total Makes</span><span class="v">${save.totalShotsMade.toLocaleString()}</span></div>`);
+  rows.push(`<div class="stat-row"><span class="k">Total Attempts</span><span class="v">${save.totalShotsTaken.toLocaleString()}</span></div>`);
+  rows.push(`<div class="stat-row"><span class="k">Coins</span><span class="v">${save.coins.toLocaleString()}</span></div>`);
+  body.innerHTML = rows.join('');
+}
+function updateStoreCoins() {
+  document.getElementById('storeCoins').textContent = save.coins.toLocaleString();
+}
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const id = t.dataset.tab;
+    ['play','store','stats'].forEach(x => document.getElementById('tab-'+x).style.display = x===id ? 'block' : 'none');
+    if (id === 'store') { renderSkins(); updateStoreCoins(); }
+    if (id === 'stats') renderStats();
+  };
+});
+
+document.getElementById('playBtn').onclick = () => startMatch(selectedMode, selectedLevel);
+document.getElementById('dailyBtn').onclick = () => {
+  const today = new Date().toISOString().slice(0,10);
+  if (save.lastDailyClaimDate === today) { toast('Come back tomorrow.'); return; }
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  save.dailyStreak = (save.lastDailyClaimDate === yesterday) ? (save.dailyStreak + 1) : 1;
+  save.lastDailyClaimDate = today;
+  const reward = 25 + Math.min(100, (save.dailyStreak - 1) * 10);
+  save.coins += reward; persist();
+  toast(`+${reward} coins (day ${save.dailyStreak})`);
+  updateStoreCoins();
+};
+document.getElementById('addCoinsBtn').onclick = () => {
+  save.coins += 500; persist();
+  toast('+500 coins'); updateStoreCoins();
+};
+document.getElementById('resetBtn').onclick = () => {
+  if (confirm('Wipe all progress?')) { save = defaultSave(); persist(); renderStats(); renderSkins(); makeBallMesh(SKINS[0]); }
+};
+document.getElementById('resAgain').onclick = () => startMatch(state.mode, state.level);
+document.getElementById('resMenu').onclick = () => {
+  document.getElementById('resultsModal').classList.remove('show');
+  document.getElementById('menuModal').classList.add('show');
+};
+document.getElementById('pauseBtn').onclick = () => {
+  state.paused = true;
+  document.getElementById('pauseModal').classList.add('show');
+};
+document.getElementById('resumeBtn').onclick = () => {
+  state.paused = false;
+  document.getElementById('pauseModal').classList.remove('show');
+};
+document.getElementById('quitBtn').onclick = () => {
+  state.paused = false; state.active = false;
+  document.getElementById('pauseModal').classList.remove('show');
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('hudWind').style.display = 'none';
+  document.getElementById('pauseBtn').style.display = 'none';
+  document.getElementById('menuModal').classList.add('show');
+  trajLine.visible = false;
+};
+
+// Init
+renderModes();
+renderLevels();
+makeBallMesh(SKINS.find(s => s.id === save.equippedSkin) || SKINS[0]);
+buildLevel(selectedLevel);
+resetBall();
+
+</script>
+</body>
+</html>
