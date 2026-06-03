@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Helm — Gulf Coast Adventure Co. Operator Console</title>
+<meta name="description" content="Operator dashboard for Gulf Coast Adventure Co.: bookings, tour management, customer CRM, payments, staff scheduling, marketing, and reports." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#061f2e;
+    --bg-2:#0a3344;
+    --panel:#0e3d52;
+    --panel-2:#13485e;
+    --line:rgba(255,255,255,.08);
+    --line-2:rgba(255,255,255,.14);
+    --ink:#eaf3f6;
+    --ink-soft:#bdd1d8;
+    --muted:#7a96a3;
+    --aqua:#7ed1d6;
+    --aqua-bright:#2b8aa6;
+    --sea:#0a3d5c;
+    --coral:#ee8159;
+    --coral-deep:#c75a3a;
+    --gold:#f0c674;
+    --green:#5dd39e;
+    --red:#ef6f6c;
+    --amber:#f0a874;
+    --purple:#a774f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,.serif{font-family:'Playfair Display',serif;font-weight:500}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:'JetBrains Mono',monospace}
+  input,select,textarea,button{font-family:inherit;color:inherit}
+
+  /* SHELL */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  aside.side{background:#04161f;border-right:1px solid var(--line);padding:24px 18px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand-line{display:flex;align-items:center;gap:10px;margin-bottom:22px;padding:0 6px}
+  .bm{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--aqua),var(--aqua-bright) 55%,var(--coral) 130%);position:relative;flex-shrink:0;box-shadow:inset 0 -4px 8px rgba(0,0,0,.3)}
+  .bm::after{content:"";position:absolute;left:4px;right:4px;top:55%;height:1px;background:rgba(255,255,255,.4);box-shadow:0 3px 0 rgba(255,255,255,.25),0 -3px 0 rgba(255,255,255,.22)}
+  .brand-line .bn{font-family:'Playfair Display',serif;font-size:1.02rem;line-height:1;font-weight:500}
+  .brand-line .br{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+
+  .nav-section{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:14px 12px 6px}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;font-size:.84rem;color:var(--ink-soft);font-weight:500;cursor:pointer;transition:.15s;border:1px solid transparent;user-select:none}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+  .nav-item.active{background:rgba(126,209,214,.14);color:var(--aqua);border-color:rgba(126,209,214,.22)}
+  .nav-item .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:.95rem;opacity:.85}
+  .nav-item .badge{margin-left:auto;font-size:.62rem;background:var(--coral);color:#fff;padding:2px 6px;border-radius:999px;font-weight:700;letter-spacing:.04em}
+
+  .public-link{margin-top:8px;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;border:1px dashed var(--line-2)}
+  .public-link:hover{color:var(--aqua);border-color:rgba(126,209,214,.32)}
+
+  .side-foot{margin-top:auto;border-top:1px solid var(--line);padding:18px 8px 4px;display:flex;align-items:center;gap:10px}
+  .side-foot .av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;font-size:.78rem}
+  .side-foot .nm{font-size:.82rem;font-weight:500}
+  .side-foot .rl{font-size:.66rem;color:var(--muted);letter-spacing:.04em}
+
+  /* MAIN */
+  main{display:flex;flex-direction:column;min-width:0}
+  header.topbar{padding:18px 32px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;background:rgba(6,31,46,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:10}
+  .topbar .heading h1{font-size:1.35rem;font-weight:500}
+  .topbar .heading .sub{font-size:.78rem;color:var(--muted);margin-top:2px}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .search{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:.84rem;color:var(--ink-soft);width:260px;display:flex;align-items:center;gap:10px}
+  .search input{background:none;border:none;outline:none;color:var(--ink);width:100%;font-size:.84rem}
+  .search input::placeholder{color:var(--muted)}
+  .kbd{font-family:'JetBrains Mono',monospace;font-size:.66rem;padding:1px 5px;border:1px solid var(--line-2);border-radius:4px;color:var(--muted)}
+  .weather-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:rgba(126,209,214,.10);border:1px solid rgba(126,209,214,.25);border-radius:999px;font-size:.76rem;color:var(--aqua);font-weight:600;font-family:'JetBrains Mono',monospace}
+  .weather-chip .em{font-size:.95rem}
+  .date-chip{padding:7px 13px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;font-size:.74rem;color:var(--ink-soft);font-weight:500}
+  .pub-back{padding:7px 13px;border:1px solid var(--line);border-radius:999px;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;background:transparent}
+  .pub-back:hover{color:var(--aqua);border-color:rgba(126,209,214,.32)}
+  .icon-btn{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);position:relative}
+  .icon-btn:hover{background:rgba(255,255,255,.09)}
+  .icon-btn .pip{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--coral);border:2px solid var(--bg)}
+  .av-topbar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;font-size:.78rem;cursor:pointer;border:1px solid var(--line-2)}
+  .new-btn{padding:10px 16px;border-radius:10px;background:var(--coral);color:#fff;font-size:.76rem;letter-spacing:.06em;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;gap:8px}
+  .new-btn:hover{background:var(--coral-deep)}
+
+  /* CONTENT */
+  .content{padding:28px 32px;display:flex;flex-direction:column;gap:24px}
+  .panel{display:none;flex-direction:column;gap:24px}
+  .panel.active{display:flex}
+
+  .row{display:grid;gap:20px}
+  .row.r-4{grid-template-columns:repeat(4,1fr)}
+  .row.r-3{grid-template-columns:repeat(3,1fr)}
+  .row.r-2{grid-template-columns:1.4fr 1fr}
+  .row.r-2b{grid-template-columns:1fr 1fr}
+  .row.r-2-flip{grid-template-columns:1fr 1.4fr}
+
+  .card{background:linear-gradient(180deg,var(--panel) 0%, var(--bg-2) 100%);border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+  .card h3{font-size:1.05rem;font-weight:500;color:var(--ink);font-family:'Playfair Display',serif}
+  .card .head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+  .card .head .lbl{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:4px}
+  .card .head .val{font-size:1.85rem;font-family:'Playfair Display',serif;font-weight:500;line-height:1;color:var(--ink)}
+  .card .head .delta{font-size:.72rem;color:var(--green);font-weight:600;margin-top:6px;display:flex;align-items:center;gap:5px}
+  .card .head .delta.down{color:var(--red)}
+  .card .head .delta.flat{color:var(--gold)}
+  .card .head .ic{width:38px;height:38px;border-radius:10px;background:rgba(126,209,214,.12);color:var(--aqua);display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:1px solid rgba(126,209,214,.18)}
+  .ic.coral{background:rgba(238,129,89,.14);color:var(--coral);border-color:rgba(238,129,89,.22)}
+  .ic.gold{background:rgba(240,198,116,.14);color:var(--gold);border-color:rgba(240,198,116,.22)}
+  .ic.green{background:rgba(93,211,158,.14);color:var(--green);border-color:rgba(93,211,158,.22)}
+  .ic.purple{background:rgba(167,116,240,.14);color:var(--purple);border-color:rgba(167,116,240,.22)}
+
+  /* mini bars */
+  .mini-bars{display:flex;align-items:flex-end;gap:4px;height:42px;margin-top:6px}
+  .mini-bars span{flex:1;background:linear-gradient(180deg,var(--aqua) 0%, rgba(126,209,214,.2) 100%);border-radius:3px;min-height:6px;opacity:.92}
+  .mini-bars.coral span{background:linear-gradient(180deg,var(--coral) 0%, rgba(238,129,89,.2) 100%)}
+  .mini-bars.gold span{background:linear-gradient(180deg,var(--gold) 0%, rgba(240,198,116,.2) 100%)}
+  .mini-bars.green span{background:linear-gradient(180deg,var(--green) 0%, rgba(93,211,158,.2) 100%)}
+
+  /* PANEL HEADERS */
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:4px;flex-wrap:wrap}
+  .panel-head h3{font-size:1.1rem}
+  .panel-head .desc{font-size:.78rem;color:var(--muted);margin-top:2px}
+  .panel-actions{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{padding:6px 12px;border-radius:999px;font-size:.7rem;letter-spacing:.04em;font-weight:600;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--ink-soft);cursor:pointer}
+  .chip.active{background:rgba(126,209,214,.14);border-color:rgba(126,209,214,.32);color:var(--aqua)}
+  .chip:hover{background:rgba(255,255,255,.08)}
+
+  /* WEATHER ALERT */
+  .alert{display:flex;align-items:center;gap:14px;padding:16px 18px;background:linear-gradient(90deg, rgba(240,198,116,.14), rgba(238,129,89,.10));border:1px solid rgba(240,198,116,.32);border-radius:14px}
+  .alert .ic{width:42px;height:42px;border-radius:12px;background:rgba(240,198,116,.18);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;border:1px solid rgba(240,198,116,.32)}
+  .alert .body{flex:1}
+  .alert .body .t{font-size:.94rem;font-weight:600;color:var(--ink)}
+  .alert .body .s{font-size:.78rem;color:var(--ink-soft);margin-top:2px}
+  .alert .body .s strong{color:var(--gold);font-family:'JetBrains Mono',monospace;font-weight:600}
+  .alert .actions{display:flex;gap:8px}
+  .alert .actions button{background:rgba(255,255,255,.06);border:1px solid var(--line-2);color:var(--ink);font-size:.72rem;padding:7px 13px;border-radius:8px;letter-spacing:.04em;font-weight:600;cursor:pointer}
+  .alert .actions button:hover{background:rgba(255,255,255,.12)}
+  .alert .actions button.primary{background:var(--coral);border-color:var(--coral);color:#fff}
+  .alert .actions button.primary:hover{background:var(--coral-deep);border-color:var(--coral-deep)}
+
+  /* TABLES */
+  .tbl{display:flex;flex-direction:column}
+  .trow{display:grid;align-items:center;padding:14px 8px;border-bottom:1px solid var(--line);font-size:.84rem;cursor:pointer;transition:.15s}
+  .trow:hover{background:rgba(255,255,255,.03)}
+  .trow:last-child{border-bottom:none}
+  .trow.header{padding:8px;border-bottom:1px solid var(--line);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;cursor:default}
+  .trow.header:hover{background:transparent}
+
+  /* MANIFEST */
+  .manifest-row{grid-template-columns:80px 1.2fr 1fr 1fr .8fr 100px}
+  .tm{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--aqua);font-weight:600}
+  .tour-name{font-weight:600;color:var(--ink)}
+  .tour-sub{font-size:.7rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;font-weight:600;margin-top:2px}
+  .guest-cell{display:flex;align-items:center;gap:10px}
+  .ava{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--aqua),var(--sea));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.7rem;flex-shrink:0}
+  .ava.c2{background:linear-gradient(135deg,var(--coral),var(--coral-deep))}
+  .ava.c3{background:linear-gradient(135deg,var(--gold),#c69836)}
+  .ava.c4{background:linear-gradient(135deg,var(--purple),#5e3a99)}
+  .ava.c5{background:linear-gradient(135deg,var(--green),#319562)}
+  .guests-n{font-weight:600;color:var(--ink)}
+  .guests-meta{font-size:.7rem;color:var(--muted);margin-top:1px}
+
+  .status{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:.66rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border:1px solid}
+  .status .d{width:5px;height:5px;border-radius:50%;background:currentColor}
+  .status.confirmed{color:var(--green);background:rgba(93,211,158,.12);border-color:rgba(93,211,158,.28)}
+  .status.pending{color:var(--gold);background:rgba(240,198,116,.12);border-color:rgba(240,198,116,.28)}
+  .status.paid{color:var(--aqua);background:rgba(126,209,214,.12);border-color:rgba(126,209,214,.28)}
+  .status.refund{color:var(--red);background:rgba(239,111,108,.12);border-color:rgba(239,111,108,.28)}
+  .status.aboard{color:var(--purple);background:rgba(167,116,240,.12);border-color:rgba(167,116,240,.28)}
+  .status.complete{color:var(--muted);background:rgba(122,150,163,.10);border-color:rgba(122,150,163,.22)}
+
+  .row-chev{color:var(--muted);font-size:1rem;text-align:right}
+
+  /* BOOKINGS TABLE */
+  .booking-row{grid-template-columns:110px 1.2fr 1fr .8fr .8fr 100px .8fr 36px}
+  .bk-date{font-family:'JetBrains Mono',monospace;color:var(--ink-soft);font-size:.78rem}
+  .bk-date strong{display:block;color:var(--ink);font-size:.86rem;font-family:'Playfair Display',serif;font-weight:500;margin-bottom:1px}
+  .bk-amt{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--ink);text-align:right}
+  .filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .filter-field{display:flex;align-items:center;gap:7px;padding:7px 12px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;font-size:.78rem;color:var(--ink-soft)}
+  .filter-field .lk{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .row-actions{display:flex;gap:5px}
+  .row-actions button{font-size:.66rem;padding:4px 8px;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--ink-soft);font-weight:600;cursor:pointer;letter-spacing:.04em;text-transform:uppercase}
+  .row-actions button:hover{background:rgba(255,255,255,.10)}
+  .row-actions .danger{color:var(--red);border-color:rgba(239,111,108,.32)}
+  .row-actions .danger:hover{background:rgba(239,111,108,.10)}
+  .row-actions .ok{color:var(--green);border-color:rgba(93,211,158,.32)}
+  .row-actions .ok:hover{background:rgba(93,211,158,.10)}
+
+  /* TOUR MANAGEMENT */
+  .tour-mgmt{display:flex;flex-direction:column;gap:10px}
+  .tour-card{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;grid-template-columns:64px 1.6fr 1fr 1fr auto;gap:18px;align-items:center}
+  .tour-img-mini{width:64px;height:54px;border-radius:10px;background-size:cover;background-position:center;background-color:var(--sea);border:1px solid var(--line)}
+  .tour-card .nm{font-weight:600;color:var(--ink);font-size:.94rem}
+  .tour-card .desc{font-size:.74rem;color:var(--muted);margin-top:2px;line-height:1.5}
+  .tour-spec{display:flex;flex-direction:column;gap:2px}
+  .tour-spec .lk{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .tour-spec .vl{font-family:'JetBrains Mono',monospace;font-size:.88rem;color:var(--ink);font-weight:600}
+  .addon-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .addon-chips span{font-size:.62rem;padding:3px 8px;background:rgba(126,209,214,.10);border:1px solid rgba(126,209,214,.18);color:var(--aqua);border-radius:999px;font-weight:600;letter-spacing:.04em}
+  .toggle{width:38px;height:22px;background:rgba(255,255,255,.08);border-radius:999px;position:relative;cursor:pointer;border:1px solid var(--line-2)}
+  .toggle::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:var(--muted);top:2px;left:2px;transition:.18s}
+  .toggle.on{background:rgba(93,211,158,.18);border-color:rgba(93,211,158,.32)}
+  .toggle.on::after{background:var(--green);left:18px}
+
+  /* MINI CALENDAR */
+  .mini-cal{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .mini-cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:.86rem;font-weight:600}
+  .mini-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:.74rem}
+  .mini-cal-dow{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:4px 0}
+  .mini-cal-day{padding:7px 0;color:var(--ink-soft);border-radius:6px;cursor:pointer}
+  .mini-cal-day:hover{background:rgba(255,255,255,.05)}
+  .mini-cal-day.blocked{background:rgba(239,111,108,.15);color:var(--red);font-weight:600;text-decoration:line-through}
+  .mini-cal-day.full{background:rgba(240,198,116,.16);color:var(--gold);font-weight:600}
+  .mini-cal-day.open{background:rgba(93,211,158,.10);color:var(--green)}
+  .mini-cal-legend{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap;font-size:.7rem;color:var(--muted)}
+  .mini-cal-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:middle}
+
+  /* CRM */
+  .crm-grid{display:grid;grid-template-columns:300px 1fr;gap:16px;min-height:520px}
+  .crm-list{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .crm-search{padding:14px;border-bottom:1px solid var(--line);font-size:.8rem}
+  .crm-search input{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;padding:8px 12px;outline:none;width:100%;color:var(--ink);font-size:.82rem}
+  .crm-item{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s}
+  .crm-item:hover{background:rgba(255,255,255,.04)}
+  .crm-item.sel{background:rgba(126,209,214,.10);border-left:3px solid var(--aqua)}
+  .crm-item .nm{font-size:.86rem;font-weight:600;color:var(--ink)}
+  .crm-item .lb{font-size:.7rem;color:var(--muted);margin-top:2px}
+  .crm-detail{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+  .crm-profile{display:flex;align-items:center;gap:16px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .crm-profile .av-lg{width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:1.5rem;font-family:'Playfair Display',serif}
+  .crm-profile h3{font-size:1.3rem;font-weight:500}
+  .crm-profile .meta{font-size:.78rem;color:var(--muted);margin-top:3px}
+  .crm-profile .tags{display:flex;gap:6px;margin-top:8px}
+  .crm-profile .tags span{font-size:.62rem;padding:3px 8px;border-radius:999px;background:rgba(126,209,214,.14);color:var(--aqua);border:1px solid rgba(126,209,214,.22);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .crm-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .crm-stat{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .crm-stat .lk{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:6px}
+  .crm-stat .vl{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:500;color:var(--ink);line-height:1}
+  .crm-stat .sub{font-size:.7rem;color:var(--muted);margin-top:4px}
+  .crm-section h4{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px}
+  .past-row{display:grid;grid-template-columns:90px 1fr auto auto;gap:14px;padding:9px 0;border-bottom:1px solid var(--line);font-size:.82rem;align-items:center}
+  .past-row:last-child{border-bottom:none}
+  .past-date{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:.74rem}
+  .waivers{display:flex;flex-direction:column;gap:8px}
+  .waiver-row{display:flex;align-items:center;gap:10px;font-size:.82rem;padding:6px 0}
+  .waiver-row .ck{width:18px;height:18px;border-radius:5px;background:rgba(93,211,158,.18);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;border:1px solid rgba(93,211,158,.32);font-size:.7rem}
+  .waiver-row .ck.miss{background:rgba(255,255,255,.03);color:var(--muted);border-color:var(--line)}
+  .waiver-row .date{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--muted)}
+  .notes-area{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:.84rem;color:var(--ink-soft);min-height:80px;width:100%;outline:none;resize:vertical;font-family:'Inter',sans-serif;line-height:1.55}
+  .notes-area:focus{border-color:var(--aqua)}
+
+  /* PAYMENTS */
+  .pay-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .pay-card{padding:20px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px}
+  .pay-card .lk{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px}
+  .pay-card .vl{font-family:'Playfair Display',serif;font-size:2rem;font-weight:500;color:var(--ink);line-height:1}
+  .pay-card .delta{font-size:.74rem;font-weight:600;margin-top:6px;color:var(--green)}
+  .pay-card.alt .delta{color:var(--coral)}
+  .pay-card .bar{height:6px;background:rgba(255,255,255,.05);border-radius:99px;margin-top:14px;overflow:hidden;position:relative}
+  .pay-card .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--aqua),var(--aqua-bright))}
+  .pay-card.alt .bar i{background:linear-gradient(90deg,var(--coral),var(--coral-deep))}
+  .pay-card.gold .bar i{background:linear-gradient(90deg,var(--gold),#c69836)}
+
+  /* PAYMENT TABLE */
+  .pay-row{grid-template-columns:100px 1fr 120px 90px 110px 100px 36px}
+  .pay-id{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:.74rem}
+  .method-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;font-size:.66rem;font-weight:700;letter-spacing:.04em;border:1px solid var(--line-2);background:rgba(255,255,255,.05);color:var(--ink-soft);font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+  .download-row{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:rgba(126,209,214,.05);border:1px dashed rgba(126,209,214,.32);border-radius:12px}
+  .download-row .lk{font-size:.86rem;color:var(--ink);font-weight:600}
+  .download-row .sub{font-size:.72rem;color:var(--muted);margin-top:2px}
+  .download-row button{background:var(--aqua);border:none;color:var(--bg);font-size:.74rem;font-weight:700;letter-spacing:.06em;padding:9px 16px;border-radius:8px;cursor:pointer;text-transform:uppercase}
+
+  /* STAFF SCHEDULE */
+  .sched-grid{overflow-x:auto}
+  .sched-table{min-width:780px}
+  .sched-row{display:grid;grid-template-columns:160px repeat(7,1fr);gap:8px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center;font-size:.78rem}
+  .sched-row:last-child{border-bottom:none}
+  .sched-row.header{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;padding-bottom:10px}
+  .sched-cell .nm{font-weight:600;color:var(--ink);font-size:.86rem}
+  .sched-cell .rl{font-size:.7rem;color:var(--muted);margin-top:2px;letter-spacing:.04em}
+  .shift{padding:6px 8px;border-radius:7px;font-size:.66rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--aqua),var(--aqua-bright));display:flex;flex-direction:column;gap:1px;border:1px solid rgba(255,255,255,.12);min-height:42px;justify-content:center}
+  .shift.coral{background:linear-gradient(135deg,var(--coral),var(--coral-deep))}
+  .shift.gold{background:linear-gradient(135deg,var(--gold),#c69836);color:#0a3344}
+  .shift.green{background:linear-gradient(135deg,var(--green),#319562)}
+  .shift.purple{background:linear-gradient(135deg,var(--purple),#5e3a99)}
+  .shift.off{background:rgba(255,255,255,.03);border:1px dashed var(--line-2);color:var(--muted);font-style:italic}
+  .shift .t{font-family:'JetBrains Mono',monospace;font-size:.62rem;opacity:.85}
+  .shift .nm{font-size:.7rem;line-height:1.1}
+
+  /* CHECKLIST */
+  .checklist{display:flex;flex-direction:column;gap:7px}
+  .check-item{display:flex;align-items:center;gap:11px;padding:9px 12px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:9px;font-size:.82rem;color:var(--ink-soft);cursor:pointer}
+  .check-item.done{color:var(--muted);text-decoration:line-through}
+  .check-item .b{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-2);display:flex;align-items:center;justify-content:center;color:transparent;font-size:.7rem;font-weight:700}
+  .check-item.done .b{background:var(--green);border-color:var(--green);color:#fff}
+  .check-item .grow{flex:1}
+  .check-item .meta{font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+  /* MARKETING */
+  .promo-card{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .promo-row{display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+  .promo-row:last-child{border-bottom:none}
+  .promo-code{font-family:'JetBrains Mono',monospace;background:rgba(126,209,214,.10);color:var(--aqua);padding:5px 10px;border-radius:7px;font-weight:700;font-size:.82rem;letter-spacing:.04em;border:1px solid rgba(126,209,214,.18)}
+  .promo-off{font-weight:600;font-size:.84rem;color:var(--ink)}
+  .promo-uses{font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  .promo-exp{font-size:.7rem;color:var(--gold);font-family:'JetBrains Mono',monospace}
+
+  .new-promo{display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line-2)}
+  .new-promo input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:8px;padding:9px 12px;outline:none;color:var(--ink);font-size:.84rem;font-family:'JetBrains Mono',monospace}
+  .new-promo button{background:var(--coral);color:#fff;border:none;padding:0 16px;font-weight:600;border-radius:8px;font-size:.74rem;letter-spacing:.06em;cursor:pointer}
+
+  .toggle-card{padding:18px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .toggle-card .nm{font-weight:600;color:var(--ink);font-size:.94rem}
+  .toggle-card .desc{font-size:.78rem;color:var(--muted);margin-top:4px;line-height:1.55}
+  .ai-feed{display:flex;flex-direction:column;gap:10px}
+  .ai-post{padding:14px 16px;background:rgba(126,209,214,.04);border:1px solid rgba(126,209,214,.16);border-radius:10px;display:flex;gap:12px;align-items:flex-start}
+  .ai-icon{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--purple),var(--aqua-bright));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.74rem;flex-shrink:0}
+  .ai-post .pl{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--purple);font-weight:700;margin-bottom:4px}
+  .ai-post .tx{font-size:.84rem;color:var(--ink-soft);line-height:1.5}
+  .ai-post .ac{margin-top:8px;display:flex;gap:6px}
+  .ai-post .ac button{font-size:.62rem;padding:4px 9px;border-radius:6px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--ink-soft);font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer}
+  .ai-post .ac button.use{background:var(--aqua);border-color:var(--aqua);color:var(--bg)}
+
+  /* REPORTS */
+  .chart-card{padding:22px;background:linear-gradient(180deg,var(--panel) 0%, var(--bg-2) 100%);border:1px solid var(--line);border-radius:16px}
+  .bar-chart{display:flex;align-items:flex-end;gap:10px;height:200px;margin-top:14px;padding-bottom:24px;position:relative;border-bottom:1px solid var(--line)}
+  .bar-chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+  .bar-chart .b{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--aqua),var(--aqua-bright));position:relative;transition:.3s;min-height:10px}
+  .bar-chart .b.coral{background:linear-gradient(180deg,var(--coral),var(--coral-deep))}
+  .bar-chart .b.gold{background:linear-gradient(180deg,var(--gold),#c69836)}
+  .bar-chart .b.green{background:linear-gradient(180deg,var(--green),#319562)}
+  .bar-chart .b.purple{background:linear-gradient(180deg,var(--purple),#5e3a99)}
+  .bar-chart .lb{position:absolute;bottom:-22px;font-size:.66rem;color:var(--muted);font-weight:600;letter-spacing:.04em;white-space:nowrap;text-align:center;line-height:1.2}
+  .bar-chart .vl{position:absolute;top:-22px;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--ink);font-weight:600}
+
+  .rev-chart{position:relative;height:220px;margin-top:14px}
+  .rev-chart svg{width:100%;height:100%}
+  .legend{display:flex;gap:18px;font-size:.74rem;color:var(--ink-soft);margin-top:8px;flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .legend i{width:10px;height:10px;border-radius:3px}
+
+  .source-list{display:flex;flex-direction:column;gap:11px}
+  .source-row{display:grid;grid-template-columns:1fr 110px auto;gap:12px;align-items:center}
+  .source-row .nm{font-size:.86rem;color:var(--ink);font-weight:500}
+  .source-row .pct{font-family:'JetBrains Mono',monospace;font-size:.84rem;color:var(--ink);font-weight:600;text-align:right;min-width:48px}
+  .source-bar{width:110px;height:7px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;position:relative}
+  .source-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,var(--aqua),var(--aqua-bright))}
+  .source-bar.coral i{background:linear-gradient(90deg,var(--coral),var(--coral-deep))}
+  .source-bar.gold i{background:linear-gradient(90deg,var(--gold),#c69836)}
+  .source-bar.purple i{background:linear-gradient(90deg,var(--purple),#5e3a99)}
+
+  /* SPEC RIBBON */
+  .spec-ribbon{position:fixed;bottom:16px;left:16px;background:rgba(6,31,46,.96);color:#fff;padding:9px 16px;border-radius:999px;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;font-weight:600;z-index:200;display:flex;align-items:center;gap:8px;border:1px solid rgba(126,209,214,.22)}
+  .spec-ribbon .dot{width:7px;height:7px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 4px rgba(238,129,89,.22)}
+  .spec-ribbon a{color:var(--aqua);margin-left:6px}
+
+  @media (max-width:1180px){
+    .row.r-4{grid-template-columns:repeat(2,1fr)}
+    .row.r-3{grid-template-columns:1fr}
+    .row.r-2, .row.r-2b, .row.r-2-flip{grid-template-columns:1fr}
+    .crm-grid{grid-template-columns:1fr}
+    .pay-grid{grid-template-columns:1fr}
+    .booking-row, .manifest-row, .pay-row{grid-template-columns:1fr 1fr;gap:8px}
+    .trow.header > div:nth-child(n+3){display:none}
+    .trow > div:nth-child(n+5){display:none}
+  }
+  @media (max-width:820px){
+    aside.side{display:none}
+    .app{grid-template-columns:1fr}
+    .search,.weather-chip,.date-chip{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <div class="brand-line">
+      <span class="bm"></span>
+      <div>
+        <div class="bn">The Helm</div>
+        <div class="br">Operator Console</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Operations</div>
+    <div class="nav-item active" data-tab="dashboard"><span class="ic">⊞</span> Dashboard</div>
+    <div class="nav-item" data-tab="bookings"><span class="ic">⌗</span> Bookings <span class="badge">23</span></div>
+    <div class="nav-item" data-tab="tours"><span class="ic">⛵</span> Tour Management</div>
+    <div class="nav-item" data-tab="crm"><span class="ic">◉</span> Customer CRM</div>
+
+    <div class="nav-section">Money &amp; People</div>
+    <div class="nav-item" data-tab="payments"><span class="ic">$</span> Payments</div>
+    <div class="nav-item" data-tab="staff"><span class="ic">⚓</span> Staff Schedule</div>
+
+    <div class="nav-section">Growth</div>
+    <div class="nav-item" data-tab="marketing"><span class="ic">✦</span> Marketing</div>
+    <div class="nav-item" data-tab="reports"><span class="ic">📊</span> Reports</div>
+
+    <a class="public-link" href="index.html">← Public Site</a>
+
+    <div class="side-foot">
+      <div class="av">CM</div>
+      <div>
+        <div class="nm">Capt. Mike</div>
+        <div class="rl">Owner / Master Capt.</div>
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div class="heading">
+        <h1>Good afternoon, Capt. Mike</h1>
+        <div class="sub">Wednesday, June 3, 2026 · 5 boats out · 2 sunset cruises tonight</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search">
+          <span style="opacity:.6">⌕</span>
+          <input placeholder="Search guests, bookings, tours…" />
+          <span class="kbd">⌘K</span>
+        </div>
+        <a href="index.html" class="pub-back">← Public Site</a>
+        <div class="weather-chip"><span class="em">☀</span> 78° · 9kt SE</div>
+        <div class="date-chip">Wed · Jun 3</div>
+        <div class="icon-btn">🔔<span class="pip"></span></div>
+        <button class="new-btn">＋ New Booking</button>
+        <div class="av-topbar">CM</div>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ============ DASHBOARD ============ -->
+      <div class="panel active" data-panel="dashboard">
+
+        <!-- KPI ROW -->
+        <div class="row r-4">
+          <div class="card">
+            <div class="head">
+              <div>
+                <div class="lbl">Today's Bookings</div>
+                <div class="val">14</div>
+                <div class="delta">↑ 22% vs avg Wed</div>
+              </div>
+              <div class="ic">⌗</div>
+            </div>
+            <div class="mini-bars">
+              <span style="height:35%"></span><span style="height:55%"></span><span style="height:42%"></span>
+              <span style="height:68%"></span><span style="height:62%"></span><span style="height:78%"></span>
+              <span style="height:88%"></span><span style="height:92%"></span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="head">
+              <div>
+                <div class="lbl">Upcoming Tours (7d)</div>
+                <div class="val">47</div>
+                <div class="delta">12 private · 35 group</div>
+              </div>
+              <div class="ic coral">⛵</div>
+            </div>
+            <div class="mini-bars coral">
+              <span style="height:48%"></span><span style="height:62%"></span><span style="height:55%"></span>
+              <span style="height:72%"></span><span style="height:84%"></span><span style="height:78%"></span>
+              <span style="height:88%"></span><span style="height:94%"></span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="head">
+              <div>
+                <div class="lbl">Revenue This Week</div>
+                <div class="val">$18,420</div>
+                <div class="delta">↑ 14% vs last week</div>
+              </div>
+              <div class="ic green">$</div>
+            </div>
+            <div class="mini-bars green">
+              <span style="height:42%"></span><span style="height:55%"></span><span style="height:65%"></span>
+              <span style="height:72%"></span><span style="height:84%"></span><span style="height:78%"></span>
+              <span style="height:92%"></span><span style="height:88%"></span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="head">
+              <div>
+                <div class="lbl">Available Capacity</div>
+                <div class="val">68%</div>
+                <div class="delta flat">→ Sat fully booked</div>
+              </div>
+              <div class="ic gold">◐</div>
+            </div>
+            <div class="mini-bars gold">
+              <span style="height:78%"></span><span style="height:62%"></span><span style="height:55%"></span>
+              <span style="height:72%"></span><span style="height:48%"></span><span style="height:35%"></span>
+              <span style="height:28%"></span><span style="height:15%"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- WEATHER ALERT -->
+        <div class="alert">
+          <div class="ic">⚠</div>
+          <div class="body">
+            <div class="t">NOAA Small Craft Advisory — Choctawhatchee Bay</div>
+            <div class="s">Issued <strong>4:12 PM CT</strong> · winds 18kt SE, gusts to 24kt · effective 9 PM Wed through 6 AM Thu. Sunset cruises departing 6:30 PM cleared, last call 7:00 PM.</div>
+          </div>
+          <div class="actions">
+            <button>Dismiss</button>
+            <button>Notify Captains</button>
+            <button class="primary">Reschedule 4 Trips</button>
+          </div>
+        </div>
+
+        <!-- MANIFEST + REV CHART -->
+        <div class="row r-2">
+          <div class="card">
+            <div class="panel-head">
+              <div>
+                <h3>Today's Manifest · Wed Jun 3</h3>
+                <div class="desc">Live trip status — click row to see roster</div>
+              </div>
+              <div class="panel-actions">
+                <button class="chip active">Today</button>
+                <button class="chip">Tomorrow</button>
+                <button class="chip">All Trips</button>
+              </div>
+            </div>
+
+            <div class="tbl">
+              <div class="trow header manifest-row">
+                <div>Time</div><div>Tour</div><div>Guests</div><div>Captain</div><div>Status</div><div style="text-align:right">Revenue</div>
+              </div>
+              <div class="trow manifest-row">
+                <div class="tm">9:00 AM</div>
+                <div><div class="tour-name">Dolphin Cruise</div><div class="tour-sub">The Emerald Lady · 90 min</div></div>
+                <div class="guest-cell"><div class="ava">JH</div><div><div class="guests-n">Hartwell + 5</div><div class="guests-meta">Family · Direct booking</div></div></div>
+                <div>Capt. Trey</div>
+                <div><span class="status complete"><span class="d"></span>Complete</span></div>
+                <div class="bk-amt">$234</div>
+              </div>
+              <div class="trow manifest-row">
+                <div class="tm">11:00 AM</div>
+                <div><div class="tour-name">Dolphin Cruise</div><div class="tour-sub">The Emerald Lady · 90 min</div></div>
+                <div class="guest-cell"><div class="ava c2">RM</div><div><div class="guests-n">Moreno + 11</div><div class="guests-meta">Group · Viator</div></div></div>
+                <div>Capt. Trey</div>
+                <div><span class="status complete"><span class="d"></span>Complete</span></div>
+                <div class="bk-amt">$468</div>
+              </div>
+              <div class="trow manifest-row">
+                <div class="tm">1:00 PM</div>
+                <div><div class="tour-name">Private Charter · 4 hr</div><div class="tour-sub">The Pelican · Custom route</div></div>
+                <div class="guest-cell"><div class="ava c3">SK</div><div><div class="guests-n">Kim wedding · 14</div><div class="guests-meta">Private · Concierge</div></div></div>
+                <div>Capt. Aaron</div>
+                <div><span class="status aboard"><span class="d"></span>Aboard</span></div>
+                <div class="bk-amt">$1,250</div>
+              </div>
+              <div class="trow manifest-row">
+                <div class="tm">2:00 PM</div>
+                <div><div class="tour-name">Kayak Rental · Half-Day</div><div class="tour-sub">Crab Island · 6 SUP / 4 yak</div></div>
+                <div class="guest-cell"><div class="ava c5">DG</div><div><div class="guests-n">Greene party · 10</div><div class="guests-meta">Group · Direct</div></div></div>
+                <div>Megan (shore)</div>
+                <div><span class="status aboard"><span class="d"></span>On Water</span></div>
+                <div class="bk-amt">$420</div>
+              </div>
+              <div class="trow manifest-row">
+                <div class="tm">3:30 PM</div>
+                <div><div class="tour-name">Dolphin Cruise</div><div class="tour-sub">The Emerald Lady · 90 min</div></div>
+                <div class="guest-cell"><div class="ava">TP</div><div><div class="guests-n">Patel + 3</div><div class="guests-meta">Family · Google</div></div></div>
+                <div>Capt. Trey</div>
+                <div><span class="status confirmed"><span class="d"></span>Boarding 3:15</span></div>
+                <div class="bk-amt">$156</div>
+              </div>
+              <div class="trow manifest-row">
+                <div class="tm">6:30 PM</div>
+                <div><div class="tour-name">Sunset Cruise · Champagne</div><div class="tour-sub">The Pelican · 2 hr</div></div>
+                <div class="guest-cell"><div class="ava c2">LH</div><div><div class="guests-n">Hartwell anniv · 8</div><div class="guests-meta">Private · Email</div></div></div>
+                <div>Capt. Aaron</div>
+                <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+                <div class="bk-amt">$680</div>
+              </div>
+              <div class="trow manifest-row">
+                <div class="tm">6:30 PM</div>
+                <div><div class="tour-name">Sunset Cruise · Champagne</div><div class="tour-sub">The Sea Breeze · 2 hr</div></div>
+                <div class="guest-cell"><div class="ava c4">BW</div><div><div class="guests-n">Wexler proposal · 2</div><div class="guests-meta">Private · IG DM</div></div></div>
+                <div>Capt. Carmen</div>
+                <div><span class="status pending"><span class="d"></span>Awaiting Sig</span></div>
+                <div class="bk-amt">$320</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="panel-head">
+              <div>
+                <h3>Revenue · Last 30 Days</h3>
+                <div class="desc">All bookings · USD</div>
+              </div>
+              <div class="panel-actions">
+                <button class="chip">7d</button>
+                <button class="chip active">30d</button>
+                <button class="chip">90d</button>
+              </div>
+            </div>
+            <div class="rev-chart">
+              <svg viewBox="0 0 600 220" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="rg1" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#7ed1d6" stop-opacity=".4"/>
+                    <stop offset="100%" stop-color="#7ed1d6" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="rg2" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#ee8159" stop-opacity=".42"/>
+                    <stop offset="100%" stop-color="#ee8159" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+                  <line x1="0" y1="50" x2="600" y2="50"/>
+                  <line x1="0" y1="100" x2="600" y2="100"/>
+                  <line x1="0" y1="150" x2="600" y2="150"/>
+                  <line x1="0" y1="200" x2="600" y2="200"/>
+                </g>
+                <path d="M0,160 C30,150 60,140 95,135 C130,128 165,98 200,90 C240,80 275,108 315,95 C360,80 395,55 435,68 C475,80 510,52 545,42 C575,32 600,28 600,28 L600,220 L0,220 Z" fill="url(#rg2)"/>
+                <path d="M0,160 C30,150 60,140 95,135 C130,128 165,98 200,90 C240,80 275,108 315,95 C360,80 395,55 435,68 C475,80 510,52 545,42 C575,32 600,28 600,28" fill="none" stroke="#ee8159" stroke-width="2.4"/>
+                <path d="M0,185 C30,175 60,180 95,165 C130,154 165,162 200,150 C240,138 275,148 315,134 C360,120 395,128 435,118 C475,108 510,112 545,96 C575,82 600,84 600,72 L600,220 L0,220 Z" fill="url(#rg1)"/>
+                <path d="M0,185 C30,175 60,180 95,165 C130,154 165,162 200,150 C240,138 275,148 315,134 C360,120 395,128 435,118 C475,108 510,112 545,96 C575,82 600,84 600,72" fill="none" stroke="#7ed1d6" stroke-width="2.2"/>
+                <circle cx="545" cy="42" r="5" fill="#ee8159" stroke="#fff" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="legend">
+              <span><i style="background:#ee8159"></i> Private Charters · <span style="color:var(--ink);font-weight:600">$48.2k</span></span>
+              <span><i style="background:#7ed1d6"></i> Group Tours · <span style="color:var(--ink);font-weight:600">$31.8k</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ BOOKINGS ============ -->
+      <div class="panel" data-panel="bookings">
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>All Bookings</h3>
+              <div class="desc">23 upcoming · 142 in last 30 days</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">All</button>
+              <button class="chip">Pending</button>
+              <button class="chip">Confirmed</button>
+              <button class="chip">Refunds</button>
+            </div>
+          </div>
+          <div class="filters">
+            <div class="filter-field"><span class="lk">Date Range</span> · Jun 3 – Jun 17, 2026</div>
+            <div class="filter-field"><span class="lk">Status</span> · All</div>
+            <div class="filter-field"><span class="lk">Tour Type</span> · All</div>
+            <div class="filter-field"><span class="lk">Captain</span> · Any</div>
+            <div style="margin-left:auto;display:flex;gap:8px"><button class="chip">Export CSV</button><button class="chip">Print</button></div>
+          </div>
+
+          <div class="tbl">
+            <div class="trow header booking-row">
+              <div>Date</div><div>Guest</div><div>Tour</div><div>Guests</div><div>Status</div><div style="text-align:right">Total</div><div>Payment</div><div></div>
+            </div>
+
+            <div class="trow booking-row">
+              <div class="bk-date"><strong>Jun 3</strong>6:30 PM</div>
+              <div class="guest-cell"><div class="ava c2">LH</div><div><div class="guests-n">Lauren Hartwell</div><div class="guests-meta">Anniversary · Sandestin</div></div></div>
+              <div><div class="tour-name">Sunset Cruise · Private</div><div class="tour-sub">Email · 2 hr</div></div>
+              <div>8</div>
+              <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+              <div class="bk-amt">$680</div>
+              <div><span class="status paid"><span class="d"></span>Deposit</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow booking-row" style="background:rgba(126,209,214,.04)">
+              <div class="bk-date"><strong>Jun 3</strong>6:30 PM</div>
+              <div class="guest-cell"><div class="ava c4">BW</div><div><div class="guests-n">Brian Wexler</div><div class="guests-meta">Proposal! · Henderson Park</div></div></div>
+              <div><div class="tour-name">Sunset Cruise · Private</div><div class="tour-sub">IG DM · 2 hr</div></div>
+              <div>2</div>
+              <div><span class="status pending"><span class="d"></span>Awaiting Sig</span></div>
+              <div class="bk-amt">$320</div>
+              <div><span class="status pending"><span class="d"></span>Pending</span></div>
+              <div class="row-chev" style="color:var(--coral)">★</div>
+            </div>
+            <div class="trow booking-row" style="grid-column:1/-1;padding:10px 18px;background:rgba(126,209,214,.03);border-left:3px solid var(--aqua);display:flex;font-size:.78rem;color:var(--ink-soft);align-items:center;gap:14px">
+              <strong style="color:var(--coral);letter-spacing:.16em;text-transform:uppercase;font-size:.66rem">Special Request</strong>
+              Bringing engagement ring in box. Champagne sparklers if possible, hide from his fiancée at sandbar. Photo package booked — captain please get the moment.
+            </div>
+
+            <div class="trow booking-row">
+              <div class="bk-date"><strong>Jun 4</strong>9:00 AM</div>
+              <div class="guest-cell"><div class="ava">JK</div><div><div class="guests-n">Jen Kowalski</div><div class="guests-meta">Family · Hilton SRB</div></div></div>
+              <div><div class="tour-name">Dolphin Cruise</div><div class="tour-sub">Google · 90 min</div></div>
+              <div>5</div>
+              <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+              <div class="bk-amt">$195</div>
+              <div><span class="status paid"><span class="d"></span>Paid</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow booking-row">
+              <div class="bk-date"><strong>Jun 4</strong>1:00 PM</div>
+              <div class="guest-cell"><div class="ava c5">DG</div><div><div class="guests-n">David Greene</div><div class="guests-meta">Corporate · CGI offsite</div></div></div>
+              <div><div class="tour-name">Private Charter · 4 hr</div><div class="tour-sub">Direct · The Pelican</div></div>
+              <div>14</div>
+              <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+              <div class="bk-amt">$1,799</div>
+              <div><span class="status paid"><span class="d"></span>Paid</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow booking-row">
+              <div class="bk-date"><strong>Jun 5</strong>11:00 AM</div>
+              <div class="guest-cell"><div class="ava c3">SK</div><div><div class="guests-n">Sara Kim</div><div class="guests-meta">Wedding party · Henderson</div></div></div>
+              <div><div class="tour-name">Bachelorette Charter · 4 hr</div><div class="tour-sub">Concierge · Sandbar party</div></div>
+              <div>12</div>
+              <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+              <div class="bk-amt">$1,499</div>
+              <div><span class="status paid"><span class="d"></span>Paid</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow booking-row">
+              <div class="bk-date"><strong>Jun 6</strong>8:00 AM</div>
+              <div class="guest-cell"><div class="ava">MR</div><div><div class="guests-n">Marcus Rivera</div><div class="guests-meta">Local Guide · Repeat</div></div></div>
+              <div><div class="tour-name">Family Adventure Package</div><div class="tour-sub">Direct · Full day</div></div>
+              <div>4</div>
+              <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+              <div class="bk-amt">$189</div>
+              <div><span class="status paid"><span class="d"></span>Paid</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow booking-row">
+              <div class="bk-date"><strong>Jun 6</strong>3:00 PM</div>
+              <div class="guest-cell"><div class="ava c2">EM</div><div><div class="guests-n">Erin Moore</div><div class="guests-meta">Church group · Auburn FBC</div></div></div>
+              <div><div class="tour-name">Group · Dolphin Cruise</div><div class="tour-sub">Email · 90 min</div></div>
+              <div>22</div>
+              <div><span class="status pending"><span class="d"></span>Deposit Due</span></div>
+              <div class="bk-amt">$858</div>
+              <div><span class="status pending"><span class="d"></span>Net 7</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow booking-row">
+              <div class="bk-date"><strong>Jun 7</strong>10:00 AM</div>
+              <div class="guest-cell"><div class="ava c4">TP</div><div><div class="guests-n">Tim &amp; Priya Patel</div><div class="guests-meta">Honeymoon · Watercolor</div></div></div>
+              <div><div class="tour-name">Private Charter · 4 hr</div><div class="tour-sub">TripAdvisor · The Sea Breeze</div></div>
+              <div>2</div>
+              <div><span class="status refund"><span class="d"></span>Refund Req</span></div>
+              <div class="bk-amt">$799</div>
+              <div><span class="status refund"><span class="d"></span>Weather</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow booking-row">
+              <div class="bk-date"><strong>Jun 8</strong>6:30 PM</div>
+              <div class="guest-cell"><div class="ava c5">JD</div><div><div class="guests-n">Jordan &amp; Drew</div><div class="guests-meta">Local Guide · Repeat 3x</div></div></div>
+              <div><div class="tour-name">Sunset Cruise · Group</div><div class="tour-sub">Direct · 2 hr</div></div>
+              <div>4</div>
+              <div><span class="status confirmed"><span class="d"></span>Confirmed</span></div>
+              <div class="bk-amt">$196</div>
+              <div><span class="status paid"><span class="d"></span>Paid</span></div>
+              <div class="row-chev">›</div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 0;border-top:1px solid var(--line);margin-top:4px">
+            <div style="font-size:.78rem;color:var(--muted)">Showing 9 of 23 upcoming bookings</div>
+            <div class="row-actions">
+              <button class="ok">Confirm Selected</button>
+              <button>Reschedule</button>
+              <button class="danger">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TOUR MANAGEMENT ============ -->
+      <div class="panel" data-panel="tours">
+        <div class="row r-2">
+          <div class="card">
+            <div class="panel-head">
+              <div>
+                <h3>Tour Packages</h3>
+                <div class="desc">Edit pricing, capacity, and availability inline</div>
+              </div>
+              <div class="panel-actions">
+                <button class="chip active">Active</button>
+                <button class="chip">Drafts</button>
+                <button class="chip">Archived</button>
+                <button class="new-btn" style="padding:7px 12px;font-size:.72rem">＋ New Tour</button>
+              </div>
+            </div>
+
+            <div class="tour-mgmt">
+              <div class="tour-card">
+                <div class="tour-img-mini" style="background-image:url('https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=600&q=80&auto=format&fit=crop')"></div>
+                <div>
+                  <div class="nm">Dolphin Cruise</div>
+                  <div class="desc">90-min harbor + East Pass · 4 departures/day · most-booked</div>
+                  <div class="addon-chips"><span>Cooler +$25</span><span>Photos +$49</span><span>Snorkel +$15</span></div>
+                </div>
+                <div class="tour-spec"><div class="lk">From</div><div class="vl">$39</div></div>
+                <div class="tour-spec"><div class="lk">Cap</div><div class="vl">28</div></div>
+                <div class="toggle on"></div>
+              </div>
+
+              <div class="tour-card">
+                <div class="tour-img-mini" style="background-image:url('https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=600&q=80&auto=format&fit=crop')"></div>
+                <div>
+                  <div class="nm">Sunset Cruise · Champagne</div>
+                  <div class="desc">2 hr · Choctawhatchee Bay · 6:30 PM daily · 21+ champagne service</div>
+                  <div class="addon-chips"><span>Photos +$49</span><span>Charcuterie +$65</span><span>Dinner Add-on</span></div>
+                </div>
+                <div class="tour-spec"><div class="lk">From</div><div class="vl">$49</div></div>
+                <div class="tour-spec"><div class="lk">Cap</div><div class="vl">16</div></div>
+                <div class="toggle on"></div>
+              </div>
+
+              <div class="tour-card">
+                <div class="tour-img-mini" style="background-image:url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600&q=80&auto=format&fit=crop')"></div>
+                <div>
+                  <div class="nm">Kayak &amp; Paddleboard Rental</div>
+                  <div class="desc">Self-guided · Crab Island launch · Half-day window</div>
+                  <div class="addon-chips"><span>Clear-bottom +$15</span><span>Dry bag</span><span>Delivery +$30</span></div>
+                </div>
+                <div class="tour-spec"><div class="lk">From</div><div class="vl">$35</div></div>
+                <div class="tour-spec"><div class="lk">Cap</div><div class="vl">18</div></div>
+                <div class="toggle on"></div>
+              </div>
+
+              <div class="tour-card">
+                <div class="tour-img-mini" style="background-image:url('https://images.unsplash.com/photo-1540541338287-41700207dee6?w=600&q=80&auto=format&fit=crop')"></div>
+                <div>
+                  <div class="nm">Private Group Charter</div>
+                  <div class="desc">4 hr · Custom route · Up to 16 guests · BYO drinks</div>
+                  <div class="addon-chips"><span>Cooler +$25</span><span>Catering</span><span>Mate +$120</span></div>
+                </div>
+                <div class="tour-spec"><div class="lk">From</div><div class="vl">$599</div></div>
+                <div class="tour-spec"><div class="lk">Cap</div><div class="vl">16</div></div>
+                <div class="toggle on"></div>
+              </div>
+
+              <div class="tour-card">
+                <div class="tour-img-mini" style="background-image:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&q=80&auto=format&fit=crop')"></div>
+                <div>
+                  <div class="nm">Family Adventure Package</div>
+                  <div class="desc">Full-day combo · Dolphin + paddleboard + sunset · family of 4</div>
+                  <div class="addon-chips"><span>Save 18%</span><span>Snacks incl.</span><span>Parking val.</span></div>
+                </div>
+                <div class="tour-spec"><div class="lk">From</div><div class="vl">$189</div></div>
+                <div class="tour-spec"><div class="lk">Cap</div><div class="vl">8</div></div>
+                <div class="toggle on"></div>
+              </div>
+
+              <div class="tour-card">
+                <div class="tour-img-mini" style="background-image:url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80&auto=format&fit=crop')"></div>
+                <div>
+                  <div class="nm">Harborside Dinner Add-on</div>
+                  <div class="desc">Reservation hold at partner restaurants · Brotula's, Dewey, Boshamps</div>
+                  <div class="addon-chips"><span>$0 fee</span><span>Hold from departure</span></div>
+                </div>
+                <div class="tour-spec"><div class="lk">From</div><div class="vl">$0</div></div>
+                <div class="tour-spec"><div class="lk">Cap</div><div class="vl">∞</div></div>
+                <div class="toggle on"></div>
+              </div>
+
+              <div class="tour-card" style="opacity:.55">
+                <div class="tour-img-mini" style="background-image:url('https://images.unsplash.com/photo-1540541338287-41700207dee6?w=600&q=80&auto=format&fit=crop')"></div>
+                <div>
+                  <div class="nm">Snorkel Reef Run (DRAFT)</div>
+                  <div class="desc">Norriego Point + jetty · 3-hour · not yet published</div>
+                  <div class="addon-chips"><span>Gear incl.</span><span>Photos +$49</span></div>
+                </div>
+                <div class="tour-spec"><div class="lk">From</div><div class="vl">$65</div></div>
+                <div class="tour-spec"><div class="lk">Cap</div><div class="vl">12</div></div>
+                <div class="toggle"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="panel-head">
+              <div>
+                <h3>Availability Calendar</h3>
+                <div class="desc">June 2026 · click date to block / unblock</div>
+              </div>
+              <div class="panel-actions">
+                <button class="chip active">Jun</button>
+                <button class="chip">Jul</button>
+                <button class="chip">Aug</button>
+              </div>
+            </div>
+            <div class="mini-cal">
+              <div class="mini-cal-head"><div>June 2026</div><div style="font-size:.7rem;color:var(--muted);font-weight:500">5 blocked · 12 full</div></div>
+              <div class="mini-cal-grid">
+                <div class="mini-cal-dow">S</div><div class="mini-cal-dow">M</div><div class="mini-cal-dow">T</div><div class="mini-cal-dow">W</div><div class="mini-cal-dow">T</div><div class="mini-cal-dow">F</div><div class="mini-cal-dow">S</div>
+                <div class="mini-cal-day" style="color:var(--muted)">31</div>
+                <div class="mini-cal-day open">1</div><div class="mini-cal-day open">2</div><div class="mini-cal-day open" style="border:1px solid var(--aqua);font-weight:700">3</div>
+                <div class="mini-cal-day open">4</div><div class="mini-cal-day full">5</div><div class="mini-cal-day full">6</div>
+                <div class="mini-cal-day open">7</div><div class="mini-cal-day open">8</div><div class="mini-cal-day open">9</div><div class="mini-cal-day open">10</div>
+                <div class="mini-cal-day open">11</div><div class="mini-cal-day full">12</div><div class="mini-cal-day full">13</div>
+                <div class="mini-cal-day full">14</div><div class="mini-cal-day open">15</div><div class="mini-cal-day blocked">16</div><div class="mini-cal-day blocked">17</div>
+                <div class="mini-cal-day open">18</div><div class="mini-cal-day full">19</div><div class="mini-cal-day full">20</div>
+                <div class="mini-cal-day open">21</div><div class="mini-cal-day open">22</div><div class="mini-cal-day open">23</div><div class="mini-cal-day open">24</div>
+                <div class="mini-cal-day open">25</div><div class="mini-cal-day full">26</div><div class="mini-cal-day full">27</div>
+                <div class="mini-cal-day open">28</div><div class="mini-cal-day open">29</div><div class="mini-cal-day open">30</div><div class="mini-cal-day blocked">1</div><div class="mini-cal-day blocked">2</div><div class="mini-cal-day blocked">3</div><div class="mini-cal-day blocked">4</div>
+              </div>
+              <div class="mini-cal-legend">
+                <span><i style="background:rgba(93,211,158,.4)"></i>Open</span>
+                <span><i style="background:rgba(240,198,116,.4)"></i>Full</span>
+                <span><i style="background:rgba(239,111,108,.4)"></i>Blocked</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ CRM ============ -->
+      <div class="panel" data-panel="crm">
+        <div class="crm-grid">
+          <div class="crm-list">
+            <div class="crm-search"><input placeholder="Search 4,820 customers…" /></div>
+            <div class="crm-item sel">
+              <div class="ava c2">LH</div>
+              <div><div class="nm">Lauren Hartwell</div><div class="lb">Last booked Jun 3 · $680</div></div>
+            </div>
+            <div class="crm-item">
+              <div class="ava">MR</div>
+              <div><div class="nm">Marcus Rivera</div><div class="lb">Repeat 4x · Local Guide</div></div>
+            </div>
+            <div class="crm-item">
+              <div class="ava c3">SK</div>
+              <div><div class="nm">Sara Kim</div><div class="lb">Wedding party · 12 guests</div></div>
+            </div>
+            <div class="crm-item">
+              <div class="ava c5">DG</div>
+              <div><div class="nm">David Greene</div><div class="lb">Corporate · CGI · $4.6k LTV</div></div>
+            </div>
+            <div class="crm-item">
+              <div class="ava c4">BW</div>
+              <div><div class="nm">Brian Wexler</div><div class="lb">Proposal Jun 3 (!)</div></div>
+            </div>
+            <div class="crm-item">
+              <div class="ava">JK</div>
+              <div><div class="nm">Jen Kowalski</div><div class="lb">Family · Jun 4 · 5 guests</div></div>
+            </div>
+            <div class="crm-item">
+              <div class="ava c2">EM</div>
+              <div><div class="nm">Erin Moore</div><div class="lb">Auburn FBC group · 22 guests</div></div>
+            </div>
+            <div class="crm-item">
+              <div class="ava c3">TP</div>
+              <div><div class="nm">Tim &amp; Priya Patel</div><div class="lb">Honeymoon · refund req</div></div>
+            </div>
+            <div class="crm-item">
+              <div class="ava">JD</div>
+              <div><div class="nm">Jordan &amp; Drew</div><div class="lb">Repeat 3x · sunset regulars</div></div>
+            </div>
+          </div>
+
+          <div class="crm-detail">
+            <div class="crm-profile">
+              <div class="av-lg">LH</div>
+              <div style="flex:1">
+                <h3>Lauren Hartwell</h3>
+                <div class="meta">lauren.hartwell@me.com · (404) 555-0184 · Atlanta, GA</div>
+                <div class="tags"><span>VIP</span><span>Repeat 3x</span><span>Captain's Club</span></div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="chip">Message</button>
+                <button class="chip active">New Booking</button>
+              </div>
+            </div>
+
+            <div class="crm-grid-3">
+              <div class="crm-stat"><div class="lk">Bookings</div><div class="vl">3</div><div class="sub">first Sep 2024</div></div>
+              <div class="crm-stat"><div class="lk">Lifetime Value</div><div class="vl">$1,840</div><div class="sub">↑ $680 this trip</div></div>
+              <div class="crm-stat"><div class="lk">Avg Rating Left</div><div class="vl">5.0 ★</div><div class="sub">2 Google · 1 TripAdvisor</div></div>
+            </div>
+
+            <div class="crm-section">
+              <h4>Past Bookings</h4>
+              <div class="past-row"><div class="past-date">Jun 3 2026</div><div>Sunset Cruise · Anniversary · Private</div><div>8 guests</div><div class="bk-amt" style="text-align:right">$680</div></div>
+              <div class="past-row"><div class="past-date">Jul 14 2025</div><div>Family Adventure Package · Full day</div><div>4 guests</div><div class="bk-amt" style="text-align:right">$189</div></div>
+              <div class="past-row"><div class="past-date">Sep 22 2024</div><div>Dolphin Cruise · First visit</div><div>5 guests</div><div class="bk-amt" style="text-align:right">$195</div></div>
+            </div>
+
+            <div class="crm-section">
+              <h4>Waivers &amp; Compliance</h4>
+              <div class="waivers">
+                <div class="waiver-row"><div class="ck">✓</div> Liability waiver signed <div class="date">Jun 2 2026</div></div>
+                <div class="waiver-row"><div class="ck">✓</div> Minor waiver (1 child) <div class="date">Jun 2 2026</div></div>
+                <div class="waiver-row"><div class="ck">✓</div> Photo release on file <div class="date">Sep 22 2024</div></div>
+                <div class="waiver-row"><div class="ck miss">○</div> Captain's Club agreement <div class="date">pending</div></div>
+              </div>
+            </div>
+
+            <div class="crm-section">
+              <h4>Captain Notes</h4>
+              <textarea class="notes-area" placeholder="Add a note…">Allergic to shellfish — flagged for any catering add-on. Husband Trevor proposed on the 2024 dolphin cruise (Capt. Trey). She loves Capt. Carmen specifically — request her for the sunset on Jun 3. Bringing a 2-yr-old this trip; need infant vest from inventory.</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PAYMENTS ============ -->
+      <div class="panel" data-panel="payments">
+
+        <div class="pay-grid">
+          <div class="pay-card">
+            <div class="lk">Deposits Collected · This Week</div>
+            <div class="vl">$9,420</div>
+            <div class="delta">↑ 23% vs last week</div>
+            <div class="bar"><i style="width:72%"></i></div>
+          </div>
+          <div class="pay-card gold">
+            <div class="lk">Remaining Balances Due</div>
+            <div class="vl">$24,180</div>
+            <div class="delta" style="color:var(--gold)">→ Auto-charge morning of trip</div>
+            <div class="bar"><i style="width:58%"></i></div>
+          </div>
+          <div class="pay-card alt">
+            <div class="lk">Refunds (Last 30d)</div>
+            <div class="vl">$1,240</div>
+            <div class="delta">3 weather, 1 medical · 1.2% of revenue</div>
+            <div class="bar"><i style="width:12%"></i></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>Transactions</h3>
+              <div class="desc">All Stripe activity · last 7 days</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">All</button>
+              <button class="chip">Deposits</button>
+              <button class="chip">Final Charges</button>
+              <button class="chip">Refunds</button>
+            </div>
+          </div>
+
+          <div class="tbl">
+            <div class="trow header pay-row">
+              <div>Txn ID</div><div>Customer</div><div>Description</div><div>Method</div><div>Date</div><div style="text-align:right">Amount</div><div>Status</div><div></div>
+            </div>
+
+            <div class="trow pay-row">
+              <div class="pay-id">tx_4Kp8Q2</div>
+              <div class="guest-cell"><div class="ava c2">LH</div><div><div class="guests-n">Lauren Hartwell</div><div class="guests-meta">3rd booking</div></div></div>
+              <div>Sunset Cruise deposit · Jun 3</div>
+              <div><span class="method-pill">Visa · 4242</span></div>
+              <div class="bk-date">Jun 1 · 8:42 AM</div>
+              <div class="bk-amt">+$170.00</div>
+              <div><span class="status paid"><span class="d"></span>Succeeded</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow pay-row">
+              <div class="pay-id">tx_4Kp7Wx</div>
+              <div class="guest-cell"><div class="ava c5">DG</div><div><div class="guests-n">David Greene</div><div class="guests-meta">CGI offsite</div></div></div>
+              <div>Private Charter · Jun 4 (full)</div>
+              <div><span class="method-pill">Amex · 1011</span></div>
+              <div class="bk-date">May 31 · 4:18 PM</div>
+              <div class="bk-amt">+$1,799.00</div>
+              <div><span class="status paid"><span class="d"></span>Succeeded</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow pay-row">
+              <div class="pay-id">tx_4Kp6Zr</div>
+              <div class="guest-cell"><div class="ava c3">SK</div><div><div class="guests-n">Sara Kim</div><div class="guests-meta">Bachelorette</div></div></div>
+              <div>Bachelorette Charter deposit · Jun 5</div>
+              <div><span class="method-pill">MC · 5544</span></div>
+              <div class="bk-date">May 30 · 11:02 AM</div>
+              <div class="bk-amt">+$374.75</div>
+              <div><span class="status paid"><span class="d"></span>Succeeded</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow pay-row">
+              <div class="pay-id">tx_4Kp4Mv</div>
+              <div class="guest-cell"><div class="ava c4">TP</div><div><div class="guests-n">Tim &amp; Priya Patel</div><div class="guests-meta">Weather refund</div></div></div>
+              <div>Refund · Private Charter Jun 7</div>
+              <div><span class="method-pill">Visa · 0298</span></div>
+              <div class="bk-date">Jun 2 · 9:55 AM</div>
+              <div class="bk-amt" style="color:var(--coral)">−$799.00</div>
+              <div><span class="status refund"><span class="d"></span>Refunded</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow pay-row">
+              <div class="pay-id">tx_4Kp2Lc</div>
+              <div class="guest-cell"><div class="ava">MR</div><div><div class="guests-n">Marcus Rivera</div><div class="guests-meta">Repeat 4x</div></div></div>
+              <div>Family Adventure · full charge</div>
+              <div><span class="method-pill">Apple Pay</span></div>
+              <div class="bk-date">May 29 · 6:30 PM</div>
+              <div class="bk-amt">+$189.00</div>
+              <div><span class="status paid"><span class="d"></span>Succeeded</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow pay-row">
+              <div class="pay-id">tx_4Kp1Js</div>
+              <div class="guest-cell"><div class="ava">JK</div><div><div class="guests-n">Jen Kowalski</div><div class="guests-meta">Family · Hilton SRB</div></div></div>
+              <div>Dolphin Cruise · full charge</div>
+              <div><span class="method-pill">Visa · 8821</span></div>
+              <div class="bk-date">May 28 · 2:14 PM</div>
+              <div class="bk-amt">+$195.00</div>
+              <div><span class="status paid"><span class="d"></span>Succeeded</span></div>
+              <div class="row-chev">›</div>
+            </div>
+            <div class="trow pay-row">
+              <div class="pay-id">tx_4Kp0Hd</div>
+              <div class="guest-cell"><div class="ava c2">EM</div><div><div class="guests-n">Erin Moore</div><div class="guests-meta">Auburn FBC</div></div></div>
+              <div>Group · Dolphin Cruise · Net 7 invoice</div>
+              <div><span class="method-pill">ACH</span></div>
+              <div class="bk-date">May 27 · 10:01 AM</div>
+              <div class="bk-amt" style="color:var(--gold)">$858.00 pending</div>
+              <div><span class="status pending"><span class="d"></span>Pending</span></div>
+              <div class="row-chev">›</div>
+            </div>
+          </div>
+
+          <div class="download-row" style="margin-top:18px">
+            <div>
+              <div class="lk">Monthly reconciliation report · May 2026</div>
+              <div class="sub">Stripe export · 142 transactions · $48,420.00 net · ready for your bookkeeper</div>
+            </div>
+            <button>⬇ Download CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ STAFF SCHEDULE ============ -->
+      <div class="panel" data-panel="staff">
+        <div class="row r-2">
+          <div class="card">
+            <div class="panel-head">
+              <div>
+                <h3>Captain &amp; Guide Schedule · Jun 1 – Jun 7</h3>
+                <div class="desc">Tap a shift to swap, copy week, or text the captain</div>
+              </div>
+              <div class="panel-actions">
+                <button class="chip">Last Week</button>
+                <button class="chip active">This Week</button>
+                <button class="chip">Next Week</button>
+                <button class="new-btn" style="padding:7px 12px;font-size:.72rem">＋ Add Shift</button>
+              </div>
+            </div>
+
+            <div class="sched-grid">
+              <div class="sched-table">
+                <div class="sched-row header">
+                  <div>Captain / Guide</div>
+                  <div>Mon 1</div><div>Tue 2</div><div>Wed 3</div><div>Thu 4</div><div>Fri 5</div><div>Sat 6</div><div>Sun 7</div>
+                </div>
+                <div class="sched-row">
+                  <div class="sched-cell"><div class="nm">Capt. Trey Boudreau</div><div class="rl">Master 100t · dolphin lead</div></div>
+                  <div class="shift"><div class="nm">Dolphin x4</div><div class="t">8a–5p</div></div>
+                  <div class="shift"><div class="nm">Dolphin x4</div><div class="t">8a–5p</div></div>
+                  <div class="shift"><div class="nm">Dolphin x4</div><div class="t">8a–5p</div></div>
+                  <div class="shift coral"><div class="nm">Sunset</div><div class="t">5p–9p</div></div>
+                  <div class="shift off">Off</div>
+                  <div class="shift"><div class="nm">Dolphin x4</div><div class="t">8a–5p</div></div>
+                  <div class="shift"><div class="nm">Dolphin x4</div><div class="t">8a–5p</div></div>
+                </div>
+                <div class="sched-row">
+                  <div class="sched-cell"><div class="nm">Capt. Aaron Mills</div><div class="rl">Master 50t · charters</div></div>
+                  <div class="shift coral"><div class="nm">Charter</div><div class="t">10a–2p</div></div>
+                  <div class="shift coral"><div class="nm">Charter</div><div class="t">11a–3p</div></div>
+                  <div class="shift coral"><div class="nm">Wedding +<br/>Sunset</div><div class="t">1p–9p</div></div>
+                  <div class="shift coral"><div class="nm">CGI offsite</div><div class="t">1p–5p</div></div>
+                  <div class="shift coral"><div class="nm">Bach. party</div><div class="t">11a–3p</div></div>
+                  <div class="shift off">Off</div>
+                  <div class="shift off">Off</div>
+                </div>
+                <div class="sched-row">
+                  <div class="sched-cell"><div class="nm">Capt. Carmen Lopez</div><div class="rl">OUPV · sunset specialist</div></div>
+                  <div class="shift off">Off</div>
+                  <div class="shift coral"><div class="nm">Sunset</div><div class="t">5p–9p</div></div>
+                  <div class="shift coral"><div class="nm">Sunset x2<br/>Proposal!</div><div class="t">5p–9p</div></div>
+                  <div class="shift coral"><div class="nm">Sunset</div><div class="t">5p–9p</div></div>
+                  <div class="shift coral"><div class="nm">Sunset</div><div class="t">5p–9p</div></div>
+                  <div class="shift coral"><div class="nm">Sunset</div><div class="t">5p–9p</div></div>
+                  <div class="shift coral"><div class="nm">Sunset</div><div class="t">5p–9p</div></div>
+                </div>
+                <div class="sched-row">
+                  <div class="sched-cell"><div class="nm">Megan Wallace</div><div class="rl">Shore lead · kayak</div></div>
+                  <div class="shift green"><div class="nm">Crab Isl.</div><div class="t">9a–3p</div></div>
+                  <div class="shift green"><div class="nm">Crab Isl.</div><div class="t">9a–3p</div></div>
+                  <div class="shift green"><div class="nm">Crab Isl.</div><div class="t">9a–3p</div></div>
+                  <div class="shift gold"><div class="nm">Train new</div><div class="t">7a–3p</div></div>
+                  <div class="shift green"><div class="nm">Crab Isl.</div><div class="t">9a–3p</div></div>
+                  <div class="shift green"><div class="nm">Crab Isl.</div><div class="t">9a–5p</div></div>
+                  <div class="shift off">Off</div>
+                </div>
+                <div class="sched-row">
+                  <div class="sched-cell"><div class="nm">Jonas Reed</div><div class="rl">Mate · floater</div></div>
+                  <div class="shift purple"><div class="nm">Mate · all</div><div class="t">7a–6p</div></div>
+                  <div class="shift purple"><div class="nm">Mate · all</div><div class="t">7a–6p</div></div>
+                  <div class="shift purple"><div class="nm">Mate · all</div><div class="t">7a–9p</div></div>
+                  <div class="shift purple"><div class="nm">Mate · CGI</div><div class="t">1p–5p</div></div>
+                  <div class="shift off">Off</div>
+                  <div class="shift purple"><div class="nm">Mate · all</div><div class="t">7a–9p</div></div>
+                  <div class="shift purple"><div class="nm">Mate · all</div><div class="t">7a–6p</div></div>
+                </div>
+                <div class="sched-row">
+                  <div class="sched-cell"><div class="nm">Riley Tate</div><div class="rl">Photo / social</div></div>
+                  <div class="shift gold"><div class="nm">Photo run</div><div class="t">8a–noon</div></div>
+                  <div class="shift off">Off</div>
+                  <div class="shift gold"><div class="nm">Proposal!<br/>Photo</div><div class="t">6p–9p</div></div>
+                  <div class="shift gold"><div class="nm">CGI photo</div><div class="t">1p–5p</div></div>
+                  <div class="shift gold"><div class="nm">Photo run</div><div class="t">8a–noon</div></div>
+                  <div class="shift gold"><div class="nm">Photo run</div><div class="t">8a–noon</div></div>
+                  <div class="shift off">Off</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="panel-head">
+              <div>
+                <h3>Pre-Tour Checklist</h3>
+                <div class="desc">Wed Jun 3 · 6:30 PM sunset cruises</div>
+              </div>
+              <div class="panel-actions">
+                <button class="chip active">Pelican</button>
+                <button class="chip">Sea Breeze</button>
+              </div>
+            </div>
+
+            <div class="checklist">
+              <div class="check-item done"><div class="b">✓</div><div class="grow">Fuel — verified ¾ tank · 110 gal</div><div class="meta">3:14p</div></div>
+              <div class="check-item done"><div class="b">✓</div><div class="grow">Champagne loaded — 6 bottles + non-alc</div><div class="meta">3:42p</div></div>
+              <div class="check-item done"><div class="b">✓</div><div class="grow">Charcuterie cooler · stocked + iced</div><div class="meta">4:01p</div></div>
+              <div class="check-item done"><div class="b">✓</div><div class="grow">Life vests · adult ×16, child ×4, infant ×1</div><div class="meta">4:08p</div></div>
+              <div class="check-item"><div class="b">✓</div><div class="grow">Marine radio · NOAA channel 9 confirmed</div><div class="meta">pending</div></div>
+              <div class="check-item"><div class="b">✓</div><div class="grow">Sandbar anchor — Crab Island bayside spot held</div><div class="meta">pending</div></div>
+              <div class="check-item"><div class="b">✓</div><div class="grow">Photo SD card formatted · Sony A7iv ready</div><div class="meta">pending</div></div>
+              <div class="check-item"><div class="b">✓</div><div class="grow">Engagement-ring box stowed (Wexler!)</div><div class="meta">pending</div></div>
+              <div class="check-item"><div class="b">✓</div><div class="grow">Sparkler stash · captain helm drawer</div><div class="meta">pending</div></div>
+              <div class="check-item"><div class="b">✓</div><div class="grow">Final captain brief · 5:45 PM</div><div class="meta">5:45p</div></div>
+            </div>
+
+            <div class="panel-head" style="margin-top:16px">
+              <div><h3 style="font-size:.94rem">Equipment Assignment</h3></div>
+            </div>
+            <div class="checklist">
+              <div class="check-item"><div class="b">✓</div><div class="grow">Drone (DJI Mavic 3) → Riley Tate</div><div class="meta">signed out</div></div>
+              <div class="check-item"><div class="b">✓</div><div class="grow">GoPro Hero 12 → Capt. Carmen</div><div class="meta">signed out</div></div>
+              <div class="check-item done"><div class="b">✓</div><div class="grow">Snorkel kits ×8 → Pelican forward locker</div><div class="meta">2:30p</div></div>
+              <div class="check-item done"><div class="b">✓</div><div class="grow">Bluetooth speaker JBL → helm</div><div class="meta">2:30p</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ MARKETING ============ -->
+      <div class="panel" data-panel="marketing">
+        <div class="row r-2b">
+          <div class="card">
+            <div class="panel-head">
+              <div>
+                <h3>Promo Code Generator</h3>
+                <div class="desc">5 active codes · 142 total redemptions this season</div>
+              </div>
+              <div class="panel-actions">
+                <button class="chip active">Active</button>
+                <button class="chip">Expired</button>
+                <button class="chip">Drafts</button>
+              </div>
+            </div>
+            <div class="promo-card" style="padding:0;background:transparent;border:none">
+              <div class="promo-row">
+                <div><span class="promo-code">LOCALSGULF</span> <span style="font-size:.74rem;color:var(--muted);margin-left:8px">Locals-only sunset cruise</span></div>
+                <div class="promo-off">15% off</div>
+                <div class="promo-uses">62 / ∞ used</div>
+                <div class="promo-exp">Exp · Nov 30</div>
+              </div>
+              <div class="promo-row">
+                <div><span class="promo-code">FAMILY20</span> <span style="font-size:.74rem;color:var(--muted);margin-left:8px">Family adventure package</span></div>
+                <div class="promo-off">$20 off</div>
+                <div class="promo-uses">38 / 200 used</div>
+                <div class="promo-exp">Exp · Aug 31</div>
+              </div>
+              <div class="promo-row">
+                <div><span class="promo-code">SOUTHWALTON</span> <span style="font-size:.74rem;color:var(--muted);margin-left:8px">30A guests · partner code</span></div>
+                <div class="promo-off">10% off</div>
+                <div class="promo-uses">22 / 500 used</div>
+                <div class="promo-exp">Exp · Dec 31</div>
+              </div>
+              <div class="promo-row">
+                <div><span class="promo-code">AUBURNFB</span> <span style="font-size:.74rem;color:var(--muted);margin-left:8px">Auburn FBC church group</span></div>
+                <div class="promo-off">25% off</div>
+                <div class="promo-uses">1 / 1 used</div>
+                <div class="promo-exp">Exp · Jun 10</div>
+              </div>
+              <div class="promo-row">
+                <div><span class="promo-code">EARLYBIRD25</span> <span style="font-size:.74rem;color:var(--muted);margin-left:8px">8 AM dolphin cruise</span></div>
+                <div class="promo-off">12% off</div>
+                <div class="promo-uses">19 / ∞ used</div>
+                <div class="promo-exp">Exp · Oct 31</div>
+              </div>
+              <div class="new-promo">
+                <input placeholder="NEWCODE2026" />
+                <input placeholder="% off" style="flex:0 0 90px;text-align:center" />
+                <input placeholder="Uses" style="flex:0 0 80px;text-align:center" />
+                <button>＋ Generate</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:20px">
+            <div class="toggle-card">
+              <div style="flex:1">
+                <div class="nm">Email Blast List</div>
+                <div class="desc">8,412 subscribers · 47% open rate · last sent May 28 "Memorial Day Sunset Slots Open"</div>
+              </div>
+              <button class="new-btn" style="font-size:.72rem;padding:9px 14px">Compose</button>
+            </div>
+            <div class="toggle-card">
+              <div style="flex:1">
+                <div class="nm">Review Request Automation</div>
+                <div class="desc">Auto-text guests 2 hours after disembark — Google review link. Currently <strong style="color:var(--green)">ON</strong> · 64% open · 38% conversion to 5-star.</div>
+              </div>
+              <div class="toggle on"></div>
+            </div>
+            <div class="toggle-card">
+              <div style="flex:1">
+                <div class="nm">Birthday Texts</div>
+                <div class="desc">Free dolphin cruise for kids on their birthday week. <strong style="color:var(--green)">ON</strong> · 41 redemptions this season.</div>
+              </div>
+              <div class="toggle on"></div>
+            </div>
+            <div class="toggle-card">
+              <div style="flex:1">
+                <div class="nm">Weather Rebooking Auto-Discount</div>
+                <div class="desc">When a weather cancellation hits, auto-apply 15% off on the rebook. <strong style="color:var(--muted)">OFF</strong> · turn on for hurricane season prep?</div>
+              </div>
+              <div class="toggle"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="panel-head">
+            <div>
+              <h3>AI Social Media Content Ideas</h3>
+              <div class="desc">Drafted from your last 7 days of bookings, weather, and review sentiment</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip active">Instagram</button>
+              <button class="chip">TikTok</button>
+              <button class="chip">Facebook</button>
+              <button class="chip">Refresh</button>
+            </div>
+          </div>
+          <div class="ai-feed">
+            <div class="ai-post">
+              <div class="ai-icon">AI</div>
+              <div style="flex:1">
+                <div class="pl">Reel · 12s · Caption</div>
+                <div class="tx">"POV: It's your anniversary, you booked the sunset cruise, and the pod showed up at golden hour. (Tag your other half — that one's for you, Lauren &amp; Trevor.)" #DestinFL #SunsetCruise #EmeraldCoast</div>
+                <div class="ac"><button class="use">Use draft</button><button>Schedule</button><button>Edit</button></div>
+              </div>
+            </div>
+            <div class="ai-post">
+              <div class="ai-icon">AI</div>
+              <div style="flex:1">
+                <div class="pl">Story · 6s · Caption</div>
+                <div class="tx">"Three Crab Island launches today, and the water did this. Self-guided kayak + SUP rentals open every morning at 9 from the kiosk." → Swipe up to reserve. #CrabIsland #Destin</div>
+                <div class="ac"><button class="use">Use draft</button><button>Schedule</button><button>Edit</button></div>
+              </div>
+            </div>
+            <div class="ai-post">
+              <div class="ai-icon">AI</div>
+              <div style="flex:1">
+                <div class="pl">Carousel · 6 slides · Caption</div>
+                <div class="tx">"What's actually in the cooler when you book the cooler add-on? A breakdown." Slide 1: cover · 2: ice ratio · 3: water 12pk · 4: La Croix · 5: BYO booze space · 6: the captain who hauls it. </div>
+                <div class="ac"><button class="use">Use draft</button><button>Schedule</button><button>Edit</button></div>
+              </div>
+            </div>
+            <div class="ai-post">
+              <div class="ai-icon">AI</div>
+              <div style="flex:1">
+                <div class="pl">Reel · 30s · Caption</div>
+                <div class="tx">"Captain Carmen's been with us since 2018. Today she gets to drop the anchor for her favorite kind of trip — a proposal at sunset. Here's the moment. (With permission, of course 💍)" #DestinHarbor #FamilyOwned</div>
+                <div class="ac"><button class="use">Use draft</button><button>Schedule</button><button>Edit</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ REPORTS ============ -->
+      <div class="panel" data-panel="reports">
+        <div class="row r-2b">
+          <div class="chart-card">
+            <div class="panel-head">
+              <div>
+                <h3>Best-Selling Tours · MTD</h3>
+                <div class="desc">Revenue by tour package · USD</div>
+              </div>
+              <div class="panel-actions">
+                <button class="chip active">Revenue</button>
+                <button class="chip">Bookings</button>
+              </div>
+            </div>
+            <div class="bar-chart">
+              <div class="col"><div class="b" style="height:90%"><span class="vl">$28.4k</span></div><span class="lb">Dolphin</span></div>
+              <div class="col"><div class="b coral" style="height:78%"><span class="vl">$24.6k</span></div><span class="lb">Sunset</span></div>
+              <div class="col"><div class="b purple" style="height:62%"><span class="vl">$19.5k</span></div><span class="lb">Private<br/>Charter</span></div>
+              <div class="col"><div class="b green" style="height:42%"><span class="vl">$13.2k</span></div><span class="lb">Family<br/>Package</span></div>
+              <div class="col"><div class="b gold" style="height:38%"><span class="vl">$11.9k</span></div><span class="lb">Kayak<br/>Rental</span></div>
+              <div class="col"><div class="b" style="height:22%"><span class="vl">$6.8k</span></div><span class="lb">Bach.<br/>Party</span></div>
+              <div class="col"><div class="b coral" style="height:14%"><span class="vl">$4.4k</span></div><span class="lb">Corporate</span></div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="panel-head">
+              <div>
+                <h3>Booking Source · Last 30 Days</h3>
+                <div class="desc">Where new guests came from</div>
+              </div>
+            </div>
+            <div style="margin-top:18px" class="source-list">
+              <div class="source-row"><div><div class="nm">Direct (gulfcoastadventureco.com)</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px">87 bookings</div></div><div class="source-bar"><i style="width:62%"></i></div><div class="pct">42%</div></div>
+              <div class="source-row"><div><div class="nm">Google (organic + Maps)</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px">54 bookings</div></div><div class="source-bar coral"><i style="width:39%"></i></div><div class="pct">26%</div></div>
+              <div class="source-row"><div><div class="nm">Instagram &amp; TikTok</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px">31 bookings</div></div><div class="source-bar gold"><i style="width:22%"></i></div><div class="pct">15%</div></div>
+              <div class="source-row"><div><div class="nm">Referral (locals + repeat)</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px">22 bookings</div></div><div class="source-bar purple"><i style="width:16%"></i></div><div class="pct">11%</div></div>
+              <div class="source-row"><div><div class="nm">Viator / TripAdvisor</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px">13 bookings</div></div><div class="source-bar"><i style="width:9%"></i></div><div class="pct">6%</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="panel-head">
+            <div>
+              <h3>Monthly Revenue · 2026 Season</h3>
+              <div class="desc">Cumulative MTD vs prior year</div>
+            </div>
+            <div class="panel-actions">
+              <button class="chip">YoY %</button>
+              <button class="chip active">$ USD</button>
+            </div>
+          </div>
+          <div class="rev-chart">
+            <svg viewBox="0 0 600 220" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="m1" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#7ed1d6" stop-opacity=".4"/><stop offset="100%" stop-color="#7ed1d6" stop-opacity="0"/></linearGradient>
+                <linearGradient id="m2" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#ee8159" stop-opacity=".42"/><stop offset="100%" stop-color="#ee8159" stop-opacity="0"/></linearGradient>
+              </defs>
+              <g stroke="rgba(255,255,255,.06)" stroke-width="1">
+                <line x1="0" y1="40" x2="600" y2="40"/>
+                <line x1="0" y1="90" x2="600" y2="90"/>
+                <line x1="0" y1="140" x2="600" y2="140"/>
+                <line x1="0" y1="190" x2="600" y2="190"/>
+              </g>
+              <path d="M0,190 C30,170 60,150 100,130 C140,110 180,100 220,80 C260,65 300,52 340,45 C380,42 420,32 460,28 C500,30 540,42 600,55 L600,220 L0,220 Z" fill="url(#m2)"/>
+              <path d="M0,190 C30,170 60,150 100,130 C140,110 180,100 220,80 C260,65 300,52 340,45 C380,42 420,32 460,28 C500,30 540,42 600,55" fill="none" stroke="#ee8159" stroke-width="2.4"/>
+              <path d="M0,200 C30,188 60,178 100,160 C140,150 180,140 220,120 C260,108 300,96 340,90 C380,86 420,78 460,72 C500,68 540,75 600,82 L600,220 L0,220 Z" fill="url(#m1)"/>
+              <path d="M0,200 C30,188 60,178 100,160 C140,150 180,140 220,120 C260,108 300,96 340,90 C380,86 420,78 460,72 C500,68 540,75 600,82" fill="none" stroke="#7ed1d6" stroke-width="2.2"/>
+              <g fill="var(--muted)" font-family="JetBrains Mono" font-size="9">
+                <text x="0" y="215">Mar</text>
+                <text x="100" y="215">Apr</text>
+                <text x="200" y="215">May</text>
+                <text x="300" y="215">Jun</text>
+                <text x="400" y="215">Jul</text>
+                <text x="500" y="215">Aug</text>
+                <text x="580" y="215">Sep</text>
+              </g>
+              <circle cx="460" cy="28" r="5" fill="#ee8159" stroke="#fff" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="legend">
+            <span><i style="background:#ee8159"></i> 2026 Season · <span style="color:var(--ink);font-weight:600">$184k YTD</span></span>
+            <span><i style="background:#7ed1d6"></i> 2025 Season · <span style="color:var(--ink);font-weight:600">$148k YTD</span></span>
+            <span style="color:var(--green);font-weight:600">↑ 24% YoY</span>
+          </div>
+        </div>
+
+        <div class="row r-2b">
+          <div class="chart-card">
+            <div class="panel-head">
+              <div>
+                <h3>Repeat Customer %</h3>
+                <div class="desc">Guests with 2+ bookings on file</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:30px;margin-top:14px">
+              <div style="position:relative;width:140px;height:140px;flex-shrink:0">
+                <svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg)">
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10"/>
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="#7ed1d6" stroke-width="10" stroke-dasharray="93 264" stroke-linecap="round"/>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:600;line-height:1">35%</div><div style="font-size:.66rem;color:var(--muted);letter-spacing:.16em;text-transform:uppercase">repeat</div></div>
+              </div>
+              <div>
+                <div style="font-size:.92rem;color:var(--ink-soft);margin-bottom:14px;line-height:1.5">Industry benchmark for tour operators is 12–18%. Family-run outfitters in the panhandle run closer to 28%. We're at <strong style="color:var(--aqua)">35%</strong> — driven by Captain's Club emails + birthday texts.</div>
+                <div style="display:flex;gap:18px;font-size:.78rem">
+                  <div><span style="color:var(--muted)">2x bookings</span><div style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--ink)">812</div></div>
+                  <div><span style="color:var(--muted)">3+ bookings</span><div style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--ink)">347</div></div>
+                  <div><span style="color:var(--muted)">VIP (5+)</span><div style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--coral)">82</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="panel-head">
+              <div>
+                <h3>Cancellation Rate</h3>
+                <div class="desc">% of bookings canceled · last 90 days</div>
+              </div>
+            </div>
+            <div class="bar-chart" style="height:170px;margin-top:24px">
+              <div class="col"><div class="b green" style="height:18%"><span class="vl">2.1%</span></div><span class="lb">Guest · 48h+</span></div>
+              <div class="col"><div class="b gold" style="height:32%"><span class="vl">3.8%</span></div><span class="lb">Guest · &lt;48h</span></div>
+              <div class="col"><div class="b coral" style="height:48%"><span class="vl">5.6%</span></div><span class="lb">Weather</span></div>
+              <div class="col"><div class="b" style="height:12%"><span class="vl">1.4%</span></div><span class="lb">Captain</span></div>
+              <div class="col"><div class="b purple" style="height:8%"><span class="vl">0.9%</span></div><span class="lb">Medical</span></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding-top:14px;margin-top:18px;border-top:1px solid var(--line);font-size:.82rem">
+              <div><span style="color:var(--muted)">Total cancel rate</span> <strong style="color:var(--ink);margin-left:6px">13.8%</strong></div>
+              <div><span style="color:var(--muted)">Industry avg</span> <strong style="color:var(--gold);margin-left:6px">18.4%</strong></div>
+              <div style="color:var(--green);font-weight:600">↓ 4.6 pts better</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="spec-ribbon">
+  <span class="dot"></span> Spec Concept
+  <a href="index.html">← Back to Site</a>
+</div>
+
+<script>
+  // tab switching
+  document.querySelectorAll('.nav-item[data-tab]').forEach(item => {
+    item.addEventListener('click', () => {
+      const target = item.dataset.tab;
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      const panel = document.querySelector(`.panel[data-panel="${target}"]`);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  // toggle clicks
+  document.querySelectorAll('.toggle').forEach(t => {
+    t.addEventListener('click', e => {
+      e.stopPropagation();
+      t.classList.toggle('on');
+    });
+  });
+
+  // checklist toggle
+  document.querySelectorAll('.check-item').forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('done'));
+  });
+
+  // chip groups — local active
+  document.querySelectorAll('.panel-actions').forEach(group => {
+    group.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        group.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+  });
+
+  // crm list selection
+  document.querySelectorAll('.crm-item').forEach(it => {
+    it.addEventListener('click', () => {
+      document.querySelectorAll('.crm-item').forEach(c => c.classList.remove('sel'));
+      it.classList.add('sel');
+    });
+  });
+</script>
+
+</body>
+</html>
