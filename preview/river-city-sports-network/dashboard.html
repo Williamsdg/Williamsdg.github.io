@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Press Box — RCSN Operator Console</title>
+<meta name="description" content="River City Sports Network's internal operator dashboard — CMS, breaking news, podcast manager, recruiting tracker, sponsor CRM, membership billing, and analytics." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e15;
+    --bg-2:#10151e;
+    --panel:#161c27;
+    --panel-2:#1d2532;
+    --panel-3:#262f3e;
+    --line:rgba(255,255,255,.06);
+    --line-2:rgba(255,255,255,.10);
+    --ink:#eef2f8;
+    --ink-2:#c4cbd8;
+    --muted:#7d8595;
+    --dim:#5c6573;
+    --red:#e63647;
+    --red-2:#c8202c;
+    --gold:#e3b266;
+    --gold-2:#c8973a;
+    --green:#3bb273;
+    --green-2:#2b6b3e;
+    --blue:#3a8dde;
+    --purple:#9b6bd6;
+    --orange:#e88450;
+    --pink:#e864a8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden}
+  h1,h2,h3,h4,.display{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.005em;text-transform:uppercase;color:#fff}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:'JetBrains Mono',monospace;font-weight:500}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#262f3e;border-radius:5px}
+  ::-webkit-scrollbar-thumb:hover{background:#3a4453}
+
+  /* APP SHELL */
+  .app{display:grid;grid-template-columns:240px 1fr;height:100vh}
+
+  /* SIDEBAR */
+  aside{background:var(--bg-2);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+  .side-brand{padding:18px 18px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px}
+  .side-mark{width:38px;height:38px;border-radius:6px;background:linear-gradient(135deg,var(--red),var(--red-2) 70%,#5a0e16);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:.95rem;color:#fff;letter-spacing:.04em;position:relative;flex-shrink:0;box-shadow:inset 0 -3px 6px rgba(0,0,0,.3),0 2px 6px rgba(230,54,71,.25)}
+  .side-mark::after{content:"";position:absolute;left:5px;right:5px;bottom:5px;height:2px;background:var(--gold);border-radius:1px}
+  .side-brand-text{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+  .side-brand-name{font-family:'Oswald',sans-serif;font-weight:700;font-size:.92rem;color:#fff;letter-spacing:.02em;text-transform:uppercase}
+  .side-brand-sub{font-size:.62rem;color:var(--gold);letter-spacing:.18em;font-weight:600;text-transform:uppercase}
+
+  .side-search{padding:10px 14px;border-bottom:1px solid var(--line)}
+  .side-search-box{display:flex;align-items:center;background:var(--panel);border:1px solid var(--line-2);padding:7px 10px;border-radius:5px;gap:7px;font-size:.78rem;color:var(--muted)}
+  .side-search-box svg{width:13px;height:13px;stroke:var(--muted);fill:none;stroke-width:2;flex-shrink:0}
+  .side-search-box input{background:none;border:none;outline:none;color:#fff;font-family:inherit;font-size:.78rem;width:100%}
+  .side-search-box kbd{font-family:'JetBrains Mono',monospace;font-size:.62rem;background:var(--panel-2);padding:2px 5px;border-radius:3px;color:var(--muted);border:1px solid var(--line)}
+
+  .side-nav{flex:1;overflow-y:auto;padding:8px 0}
+  .side-group{margin-top:14px}
+  .side-group:first-child{margin-top:6px}
+  .side-group-label{font-size:.6rem;letter-spacing:.22em;color:var(--dim);text-transform:uppercase;font-weight:700;padding:6px 18px 8px}
+  .side-link{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 18px;font-size:.82rem;color:var(--ink-2);font-weight:500;cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+  .side-link-inner{display:flex;align-items:center;gap:10px;min-width:0}
+  .side-link svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+  .side-link:hover{background:var(--panel);color:#fff}
+  .side-link.active{background:var(--panel);color:#fff;border-left-color:var(--red)}
+  .side-badge{background:var(--red);color:#fff;font-size:.6rem;padding:1.5px 6px;border-radius:8px;font-weight:700;font-family:'JetBrains Mono',monospace}
+  .side-badge.warn{background:var(--gold)}
+  .side-badge.dim{background:var(--panel-3);color:var(--muted)}
+
+  .side-foot{padding:12px 14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px}
+  .side-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--red));display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:.74rem;color:#fff}
+  .side-foot-info{flex:1;min-width:0}
+  .side-foot-name{font-size:.78rem;font-weight:600;color:#fff;line-height:1.1}
+  .side-foot-role{font-size:.66rem;color:var(--muted);letter-spacing:.04em}
+  .side-foot-btn{width:26px;height:26px;border-radius:5px;background:var(--panel);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted)}
+  .side-foot-btn:hover{color:#fff;background:var(--panel-2)}
+  .side-foot-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+
+  /* MAIN */
+  main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+  .topbar{background:var(--bg-2);border-bottom:1px solid var(--line);padding:13px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-shrink:0}
+  .crumbs{display:flex;align-items:center;gap:10px;font-size:.82rem;color:var(--muted);font-weight:500}
+  .crumbs strong{color:#fff;font-weight:600}
+  .crumbs .sep{color:var(--dim)}
+  .top-actions{display:flex;align-items:center;gap:10px}
+  .top-btn{padding:8px 14px;border-radius:5px;font-size:.75rem;font-weight:600;background:var(--panel);border:1px solid var(--line-2);color:var(--ink-2);cursor:pointer;display:inline-flex;align-items:center;gap:7px;letter-spacing:.04em;transition:all .15s}
+  .top-btn:hover{background:var(--panel-2);color:#fff}
+  .top-btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+  .top-btn.primary:hover{background:var(--red-2)}
+  .top-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+  .top-bell{position:relative;width:36px;height:36px;border-radius:5px;background:var(--panel);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;color:var(--ink-2);cursor:pointer}
+  .top-bell svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+  .top-bell::after{content:"";position:absolute;top:7px;right:8px;width:7px;height:7px;background:var(--red);border-radius:50%;border:2px solid var(--bg-2)}
+
+  /* TABS */
+  .tab-row{background:var(--bg-2);border-bottom:1px solid var(--line);padding:0 16px;display:flex;align-items:center;gap:0;overflow-x:auto;flex-shrink:0;white-space:nowrap}
+  .tab-row::-webkit-scrollbar{height:4px}
+  .tab{padding:11px 14px;font-size:.74rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:7px;letter-spacing:.04em;transition:color .15s, border-color .15s;flex-shrink:0}
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:#fff;border-bottom-color:var(--red)}
+  .tab svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+  .tab .count{font-family:'JetBrains Mono',monospace;font-size:.62rem;background:var(--panel-2);color:var(--muted);padding:1.5px 6px;border-radius:8px;font-weight:600}
+  .tab.active .count{background:rgba(230,54,71,.2);color:var(--red)}
+
+  /* CONTENT */
+  .content{flex:1;overflow-y:auto;padding:24px 28px 40px}
+
+  /* CARDS */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .card-head{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line)}
+  .card-head h3{font-size:.84rem;color:#fff;font-weight:600;letter-spacing:.06em}
+  .card-head .sub{font-size:.7rem;color:var(--muted);font-weight:500;margin-top:2px;text-transform:none;letter-spacing:0;font-family:'Inter',sans-serif}
+  .card-head-actions{display:flex;align-items:center;gap:6px}
+  .pill-btn{font-size:.66rem;padding:5px 10px;border-radius:4px;background:var(--panel-2);color:var(--ink-2);border:1px solid var(--line-2);cursor:pointer;font-weight:600;letter-spacing:.04em;transition:all .15s}
+  .pill-btn:hover{background:var(--panel-3);color:#fff}
+  .pill-btn.active{background:var(--red);color:#fff;border-color:var(--red)}
+  .pill-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle;margin-right:3px}
+  .card-body{padding:18px 20px}
+  .card-body.flush{padding:0}
+
+  /* KPI GRID */
+  .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:22px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:14px 16px;position:relative;overflow:hidden;transition:border-color .2s}
+  .kpi:hover{border-color:var(--line-2)}
+  .kpi::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--red);opacity:.7}
+  .kpi.gold::after{background:var(--gold)}
+  .kpi.green::after{background:var(--green)}
+  .kpi.blue::after{background:var(--blue)}
+  .kpi.purple::after{background:var(--purple)}
+  .kpi.orange::after{background:var(--orange)}
+  .kpi-label{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px;margin-bottom:10px}
+  .kpi-label svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2}
+  .kpi-value{font-family:'Oswald',sans-serif;font-size:1.65rem;font-weight:700;color:#fff;line-height:1;letter-spacing:.005em}
+  .kpi-delta{display:inline-flex;align-items:center;gap:3px;font-size:.7rem;font-weight:600;margin-top:7px;letter-spacing:.02em}
+  .kpi-delta.up{color:var(--green)}
+  .kpi-delta.down{color:var(--red)}
+  .kpi-delta svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5}
+  .kpi-spark{position:absolute;right:10px;bottom:10px;opacity:.7}
+
+  /* SECTION ROW */
+  .row{display:grid;gap:18px;margin-bottom:22px}
+  .row.r-1-1{grid-template-columns:1fr 1fr}
+  .row.r-2-1{grid-template-columns:2fr 1fr}
+  .row.r-1-2{grid-template-columns:1fr 2fr}
+  .row.r-3{grid-template-columns:repeat(3,1fr)}
+  .row.r-4{grid-template-columns:repeat(4,1fr)}
+
+  /* CHARTS */
+  .chart-wrap{padding:18px 20px 6px}
+  svg.chart{width:100%;height:auto;display:block}
+  .chart-legend{display:flex;align-items:center;gap:18px;padding:0 20px 16px;font-size:.7rem;color:var(--ink-2);font-weight:500;flex-wrap:wrap}
+  .chart-legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+
+  /* TABLE */
+  table{width:100%;border-collapse:collapse;font-size:.82rem}
+  table th{text-align:left;padding:11px 20px;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line);background:var(--bg-2);position:sticky;top:0}
+  table td{padding:12px 20px;border-bottom:1px solid var(--line);color:var(--ink-2);font-weight:500;vertical-align:middle}
+  table tr:hover td{background:var(--panel-2)}
+  table tr:last-child td{border-bottom:none}
+  td strong, .row-title{color:#fff;font-weight:600;font-size:.85rem}
+  .row-sub{color:var(--muted);font-size:.7rem;margin-top:2px;font-weight:400}
+  .author-pill{display:inline-flex;align-items:center;gap:6px}
+  .author-pill .av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:.6rem;font-weight:700;color:#fff}
+  .author-pill.b .av{background:linear-gradient(135deg,var(--blue),var(--purple))}
+  .author-pill.c .av{background:linear-gradient(135deg,var(--green),var(--blue))}
+  .author-pill.d .av{background:linear-gradient(135deg,var(--orange),var(--red))}
+  .author-pill.e .av{background:linear-gradient(135deg,var(--pink),var(--purple))}
+
+  /* STATUS BADGES */
+  .badge{font-size:.62rem;padding:3px 8px;border-radius:3px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;display:inline-flex;align-items:center;gap:4px;font-family:'Inter',sans-serif}
+  .badge.live{background:rgba(230,54,71,.16);color:#ff6f7d;border:1px solid rgba(230,54,71,.3)}
+  .badge.live::before{content:"";width:5px;height:5px;background:#ff6f7d;border-radius:50%;animation:pulse 1.2s ease-in-out infinite}
+  .badge.scheduled{background:rgba(58,141,222,.16);color:#7fb3ed;border:1px solid rgba(58,141,222,.3)}
+  .badge.draft{background:var(--panel-2);color:var(--muted);border:1px solid var(--line-2)}
+  .badge.published{background:rgba(59,178,115,.14);color:#5fc98a;border:1px solid rgba(59,178,115,.3)}
+  .badge.review{background:rgba(227,178,102,.14);color:#e3b266;border:1px solid rgba(227,178,102,.3)}
+  .badge.embargoed{background:rgba(155,107,214,.16);color:#bd92e6;border:1px solid rgba(155,107,214,.3)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* BREAKING NEWS COMPOSER */
+  .breaker{background:linear-gradient(115deg,#260a10 0%,#3a0a18 60%,#1a0710 100%);border:1px solid rgba(230,54,71,.3);border-radius:8px;padding:22px 24px;display:grid;grid-template-columns:1fr 320px;gap:24px;position:relative;overflow:hidden}
+  .breaker::before{content:"";position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle, rgba(230,54,71,.25),transparent 65%);pointer-events:none}
+  .breaker-left{position:relative;z-index:2}
+  .breaker-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.66rem;letter-spacing:.22em;color:#ff8a96;text-transform:uppercase;font-weight:700;margin-bottom:12px}
+  .breaker-eyebrow::before{content:"";width:6px;height:6px;background:#ff6f7d;border-radius:50%;animation:pulse 1s infinite}
+  .breaker h2{font-size:1.4rem;color:#fff;line-height:1.1;margin-bottom:10px}
+  .breaker p{font-size:.86rem;color:#fadbe0;line-height:1.55;margin-bottom:14px;max-width:540px}
+  .breaker-channels{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+  .chan{font-size:.66rem;padding:5px 9px;border-radius:4px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;font-weight:600;display:inline-flex;align-items:center;gap:5px;cursor:pointer;letter-spacing:.04em;transition:all .2s}
+  .chan svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2}
+  .chan.on{background:#fff;color:#3a0a18;border-color:#fff}
+  .breaker-actions{display:flex;gap:8px}
+  .breaker-btn{padding:9px 18px;border-radius:5px;font-size:.72rem;font-weight:700;background:#fff;color:#3a0a18;cursor:pointer;letter-spacing:.12em;text-transform:uppercase;border:none;font-family:inherit}
+  .breaker-btn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
+  .breaker-stats{position:relative;z-index:2;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:16px}
+  .breaker-stats h4{font-size:.66rem;color:#fff;letter-spacing:.18em;margin-bottom:12px;font-weight:700}
+  .b-stat{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:.78rem}
+  .b-stat:last-child{border-bottom:none}
+  .b-stat .lbl{color:#fadbe0;font-size:.74rem}
+  .b-stat .val{color:#fff;font-family:'JetBrains Mono',monospace;font-weight:600}
+
+  /* PUBLISH QUEUE */
+  .pub-row{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line);transition:background .15s}
+  .pub-row:last-child{border-bottom:none}
+  .pub-row:hover{background:var(--panel-2)}
+  .pub-thumb{width:54px;height:36px;border-radius:4px;background-size:cover;background-position:center;flex-shrink:0}
+  .pub-info{flex:1;min-width:0}
+  .pub-title{color:#fff;font-weight:600;font-size:.86rem;line-height:1.2;margin-bottom:3px}
+  .pub-meta{font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pub-meta .sep{color:var(--dim)}
+  .pub-actions{display:flex;gap:6px;flex-shrink:0}
+  .ico-btn{width:28px;height:28px;border-radius:5px;background:var(--panel-2);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;color:var(--ink-2);cursor:pointer}
+  .ico-btn:hover{background:var(--panel-3);color:#fff}
+  .ico-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+
+  /* PROGRESS BARS */
+  .pb{height:5px;background:var(--panel-2);border-radius:3px;overflow:hidden;width:100%}
+  .pb-fill{height:100%;background:var(--red);border-radius:3px;transition:width .4s}
+  .pb-fill.green{background:var(--green)}
+  .pb-fill.gold{background:var(--gold)}
+  .pb-fill.blue{background:var(--blue)}
+
+  /* SPONSOR CRM */
+  .sponsor-row td{padding:14px 20px}
+  .invoice-status{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:600}
+  .invoice-status .dot{width:7px;height:7px;border-radius:50%}
+  .invoice-status.paid .dot{background:var(--green)}
+  .invoice-status.due .dot{background:var(--gold)}
+  .invoice-status.late .dot{background:var(--red)}
+
+  /* RECRUITING TRACKER */
+  .recruit-table .star{color:var(--gold);letter-spacing:.04em}
+  .recruit-table .commit{background:rgba(59,178,115,.16);color:#5fc98a;font-size:.64rem;padding:3px 7px;border-radius:3px;font-weight:700;letter-spacing:.08em}
+  .recruit-table .undecided{background:var(--panel-2);color:var(--muted);font-size:.64rem;padding:3px 7px;border-radius:3px;font-weight:600;letter-spacing:.08em}
+  .school-pill{display:inline-flex;align-items:center;gap:6px}
+  .school-dot{width:8px;height:8px;border-radius:50%;background:var(--red)}
+
+  /* PODCAST */
+  .pod-row{display:grid;grid-template-columns:60px 1fr 100px 100px 80px 90px;gap:16px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line)}
+  .pod-row:last-child{border-bottom:none}
+  .pod-row:hover{background:var(--panel-2)}
+  .pod-art{width:48px;height:48px;border-radius:6px;background:linear-gradient(135deg,var(--red),var(--red-2));display:flex;align-items:center;justify-content:center}
+  .pod-art.gold{background:linear-gradient(135deg,var(--gold),var(--gold-2))}
+  .pod-art.navy{background:linear-gradient(135deg,#1a3a5f,#0e2a47)}
+  .pod-art svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2}
+  .pod-title{color:#fff;font-weight:600;font-size:.85rem;line-height:1.2}
+  .pod-show{color:var(--muted);font-size:.7rem;margin-top:2px}
+  .pod-num{color:#fff;font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:600}
+
+  /* SOCIAL */
+  .social-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:18px 20px}
+  .social-card{background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:14px}
+  .social-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .social-icon{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center}
+  .social-icon svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2}
+  .social-icon.x{background:#0e0e0e}
+  .social-icon.ig{background:linear-gradient(135deg,#e1306c,#fcaf45)}
+  .social-icon.yt{background:#cc0000}
+  .social-icon.tt{background:#000}
+  .social-card .followers{font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:#fff;letter-spacing:.005em;line-height:1}
+  .social-card .delta{font-size:.66rem;color:var(--green);font-weight:600;margin-top:4px}
+  .social-card .lbl{font-size:.6rem;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;font-weight:600}
+
+  /* NEWSLETTER METRICS */
+  .nl-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+  .nl-stat{padding:16px 20px;border-right:1px solid var(--line);text-align:left}
+  .nl-stat:last-child{border-right:none}
+  .nl-lbl{font-size:.6rem;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;font-weight:600;margin-bottom:6px}
+  .nl-val{font-family:'Oswald',sans-serif;font-size:1.45rem;font-weight:700;color:#fff;line-height:1}
+  .nl-sub{font-size:.66rem;color:var(--green);font-weight:600;margin-top:4px}
+
+  /* MOBILE APP MGMT */
+  .device-grid{display:grid;grid-template-columns:240px 1fr;gap:24px;padding:22px;align-items:flex-start}
+  .phone-frame{background:#0a0e15;border:8px solid #1a1f2a;border-radius:28px;padding:14px 12px;position:relative;box-shadow:0 12px 36px rgba(0,0,0,.45)}
+  .phone-notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:80px;height:18px;background:#1a1f2a;border-radius:0 0 12px 12px}
+  .phone-screen{background:var(--bg);border-radius:18px;padding:24px 12px 14px;color:#fff;font-size:.7rem}
+  .phone-header{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--ink-2);margin-bottom:10px}
+  .phone-push{background:var(--panel);border:1px solid var(--line-2);border-radius:10px;padding:9px;margin-bottom:8px}
+  .phone-push-top{display:flex;justify-content:space-between;font-size:.55rem;color:var(--muted);margin-bottom:5px;letter-spacing:.04em}
+  .phone-push-title{font-weight:700;color:#fff;font-size:.7rem;margin-bottom:3px}
+  .phone-push-body{font-size:.62rem;color:var(--ink-2);line-height:1.35}
+  .push-controls h4{font-size:.82rem;color:#fff;margin-bottom:10px}
+  .push-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:.78rem}
+  .push-row:last-child{border-bottom:none}
+  .push-row .lbl{color:var(--ink-2)}
+  .push-row .val{color:#fff;font-family:'JetBrains Mono',monospace;font-weight:600}
+  .switch{width:32px;height:18px;background:var(--panel-3);border-radius:10px;position:relative;cursor:pointer;transition:background .2s}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:left .2s}
+  .switch.on{background:var(--green)}
+  .switch.on::after{left:16px}
+
+  /* TEAM DB GRID */
+  .team-roster{display:grid;grid-template-columns:repeat(2,1fr);gap:0}
+  .roster-cell{padding:14px 20px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);display:flex;align-items:center;gap:11px}
+  .roster-cell:nth-child(2n){border-right:none}
+  .roster-cell:hover{background:var(--panel-2)}
+  .roster-num{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:700;color:var(--red);min-width:30px;text-align:center}
+  .roster-info{flex:1;min-width:0}
+  .roster-name{color:#fff;font-weight:600;font-size:.84rem;line-height:1.2}
+  .roster-pos{font-size:.7rem;color:var(--muted);margin-top:2px}
+  .roster-stat{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--gold);font-weight:600}
+
+  /* VIDEO LIBRARY */
+  .vid-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:18px 20px}
+  .vid-card{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .2s, border-color .2s}
+  .vid-card:hover{transform:translateY(-2px);border-color:var(--line-2)}
+  .vid-card .thumb{aspect-ratio:16/9;background-size:cover;background-position:center;position:relative}
+  .vid-card .dur{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.78);color:#fff;font-size:.62rem;padding:2px 5px;border-radius:3px;font-weight:600;font-family:'JetBrains Mono',monospace}
+  .vid-card .play-mini{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;background:rgba(230,54,71,.92);display:flex;align-items:center;justify-content:center}
+  .vid-card .play-mini::after{content:"";width:0;height:0;border-left:9px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px}
+  .vid-body{padding:11px 12px 13px}
+  .vid-title{color:#fff;font-weight:600;font-size:.78rem;line-height:1.25;margin-bottom:5px}
+  .vid-meta{font-size:.66rem;color:var(--muted);display:flex;justify-content:space-between}
+
+  /* MEMBERSHIP */
+  .mem-tier-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:18px 20px}
+  .mem-tier-card{background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:16px;text-align:left}
+  .mem-tier-card .tier-lbl{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
+  .mem-tier-card .tier-num{font-family:'Oswald',sans-serif;font-size:1.65rem;font-weight:700;color:#fff;line-height:1;margin-bottom:4px}
+  .mem-tier-card .tier-sub{font-size:.7rem;color:var(--green);font-weight:600;margin-bottom:14px}
+  .mem-tier-card .mrr-line{display:flex;justify-content:space-between;font-size:.74rem;color:var(--ink-2);padding-top:12px;border-top:1px solid var(--line)}
+  .mem-tier-card .mrr-line strong{color:#fff;font-family:'JetBrains Mono',monospace}
+
+  /* ALERT TOAST */
+  .alert{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(227,178,102,.10);border:1px solid rgba(227,178,102,.3);border-radius:6px;font-size:.78rem;color:#f0d99a;margin-bottom:18px}
+  .alert svg{width:14px;height:14px;stroke:#e3b266;fill:none;stroke-width:2;flex-shrink:0}
+  .alert.green{background:rgba(59,178,115,.10);border-color:rgba(59,178,115,.3);color:#9be5b9}
+  .alert.green svg{stroke:var(--green)}
+
+  @media (max-width:1280px){
+    .kpi-grid{grid-template-columns:repeat(3,1fr)}
+    .row.r-1-1, .row.r-2-1, .row.r-1-2, .row.r-3, .row.r-4{grid-template-columns:1fr}
+    .vid-grid{grid-template-columns:repeat(2,1fr)}
+    .social-grid{grid-template-columns:repeat(2,1fr)}
+    .mem-tier-row{grid-template-columns:1fr}
+    .pod-row{grid-template-columns:50px 1fr 80px 70px}
+    .pod-row > :nth-child(5), .pod-row > :nth-child(6){display:none}
+    .breaker{grid-template-columns:1fr}
+    .device-grid{grid-template-columns:1fr}
+    .nl-stats{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}
+    aside{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="side-brand">
+      <div class="side-mark">RCSN</div>
+      <div class="side-brand-text">
+        <div class="side-brand-name">The Press Box</div>
+        <div class="side-brand-sub">RCSN Operator</div>
+      </div>
+    </div>
+
+    <div class="side-search">
+      <div class="side-search-box">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input placeholder="Search…" />
+        <kbd>⌘K</kbd>
+      </div>
+    </div>
+
+    <div class="side-nav">
+      <div class="side-group">
+        <div class="side-group-label">Newsroom</div>
+        <div class="side-link active">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            Executive Dashboard
+          </div>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+            Articles
+          </div>
+          <span class="side-badge">12</span>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            Drafts &amp; Scheduling
+          </div>
+          <span class="side-badge dim">7</span>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><path d="M12 2l2 5 5 .5-3.5 3.5 1 5L12 13l-4.5 3 1-5L5 7.5 10 7z"/></svg>
+            Breaking News Center
+          </div>
+          <span class="side-badge">LIVE</span>
+        </div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-group-label">Media</div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="18" height="12" rx="2"/><path d="M22 9v6l-4-3z"/></svg>
+            Video Library
+          </div>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><path d="M9 19V6l12-2v13"/><circle cx="6" cy="19" r="3"/><circle cx="18" cy="17" r="3"/></svg>
+            Podcast Manager
+          </div>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg>
+            Social Media Center
+          </div>
+        </div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-group-label">Sports Database</div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><path d="M3 21v-2a4 4 0 014-4h10a4 4 0 014 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Team Database
+          </div>
+          <span class="side-badge dim">62</span>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><path d="M12 2l2.5 6 6.5.5-5 4.5 1.5 6.5L12 16.5 6.5 19.5 8 13l-5-4.5 6.5-.5z"/></svg>
+            Recruiting Tracker
+          </div>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 12l3 3 5-6"/></svg>
+            Scores &amp; Schedules
+          </div>
+        </div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-group-label">Business</div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
+            Sponsorship CRM
+          </div>
+          <span class="side-badge warn">3</span>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><path d="M3 7h18v10H3z"/><circle cx="12" cy="12" r="3"/></svg>
+            Membership System
+          </div>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9l9 6 9-6"/></svg>
+            Newsletter
+          </div>
+        </div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="17" r="1"/></svg>
+            Mobile App
+          </div>
+        </div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-group-label">Settings</div>
+        <div class="side-link">
+          <div class="side-link-inner">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.5-2l2-1.5-2-3.4-2.3 1a7 7 0 00-3.5-2L12 2h-4l-.7 2.1a7 7 0 00-3.5 2l-2.3-1L-.5 8.5 1.5 10A7 7 0 001 12c0 .7.1 1.4.3 2l-2 1.5 2 3.4 2.3-1a7 7 0 003.5 2L7.5 22h4l.7-2.1a7 7 0 003.5-2l2.3 1 2-3.4-2-1.5c.2-.6.3-1.3.3-2z"/></svg>
+            Settings
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-foot">
+      <div class="side-avatar">DW</div>
+      <div class="side-foot-info">
+        <div class="side-foot-name">Dylan Williams</div>
+        <div class="side-foot-role">Editor-in-Chief</div>
+      </div>
+      <div class="side-foot-btn">
+        <svg viewBox="0 0 24 24"><path d="M15 3h5v5M14 10l6-7M9 21H4v-5M10 14l-6 7"/></svg>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="crumbs">
+        <span>The Press Box</span>
+        <span class="sep">/</span>
+        <strong>Executive Dashboard</strong>
+        <span class="sep">·</span>
+        <span class="mono" style="font-size:.74rem;color:var(--muted)">Fri, Nov 28 · 5:42 PM CT</span>
+      </div>
+      <div class="top-actions">
+        <button class="top-btn">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          New Article
+        </button>
+        <button class="top-btn primary">
+          <svg viewBox="0 0 24 24"><path d="M12 2l2 5 5 .5-3.5 3.5 1 5L12 13l-4.5 3 1-5L5 7.5 10 7z"/></svg>
+          Send Breaking
+        </button>
+        <div class="top-bell">
+          <svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 004 0"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-row">
+      <div class="tab active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg> Overview</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg> Articles <span class="count">412</span></div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 2l2 5 5 .5-3.5 3.5 1 5L12 13l-4.5 3 1-5L5 7.5 10 7z"/></svg> Breaking <span class="count">LIVE</span></div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M9 19V6l12-2v13"/><circle cx="6" cy="19" r="3"/><circle cx="18" cy="17" r="3"/></svg> Podcasts</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="18" height="12" rx="2"/><path d="M22 9v6l-4-3z"/></svg> Video</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 21v-2a4 4 0 014-4h10a4 4 0 014 4v2"/><circle cx="12" cy="7" r="4"/></svg> Teams</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 2l2.5 6 6.5.5-5 4.5 1.5 6.5L12 16.5 6.5 19.5 8 13l-5-4.5 6.5-.5z"/></svg> Recruiting</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h12"/></svg> Sponsors <span class="count">3</span></div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 7h18v10H3z"/><circle cx="12" cy="12" r="3"/></svg> Members</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg> Social</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9l9 6 9-6"/></svg> Newsletter</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/></svg> Mobile</div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ALERTS -->
+      <div class="alert">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <span><strong style="color:#fff">Cahaba Heights Auto title sponsorship</strong> expires Dec 31. Renewal proposal sent — awaiting signature. <a href="#" style="color:#fff;text-decoration:underline">Open contract →</a></span>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">
+            <svg viewBox="0 0 24 24"><path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8-10-8-10-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Page Views (7d)
+          </div>
+          <div class="kpi-value">847K</div>
+          <div class="kpi-delta up"><svg viewBox="0 0 24 24"><path d="M7 17l5-5 5 5M7 11l5-5 5 5"/></svg> +28.4% wow</div>
+          <svg class="kpi-spark" width="64" height="22" viewBox="0 0 64 22"><polyline points="0,16 8,14 16,15 24,11 32,12 40,7 48,8 56,4 64,2" stroke="#e63647" stroke-width="1.6" fill="none"/></svg>
+        </div>
+        <div class="kpi gold">
+          <div class="kpi-label">
+            <svg viewBox="0 0 24 24"><path d="M3 7h18v10H3z"/><circle cx="12" cy="12" r="3"/></svg>
+            RCSN+ Subscribers
+          </div>
+          <div class="kpi-value">3,284</div>
+          <div class="kpi-delta up"><svg viewBox="0 0 24 24"><path d="M7 17l5-5 5 5M7 11l5-5 5 5"/></svg> +147 this week</div>
+          <svg class="kpi-spark" width="64" height="22" viewBox="0 0 64 22"><polyline points="0,18 8,17 16,16 24,15 32,13 40,11 48,9 56,7 64,4" stroke="#e3b266" stroke-width="1.6" fill="none"/></svg>
+        </div>
+        <div class="kpi green">
+          <div class="kpi-label">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8"/></svg>
+            Articles This Week
+          </div>
+          <div class="kpi-value">38</div>
+          <div class="kpi-delta up"><svg viewBox="0 0 24 24"><path d="M7 17l5-5 5 5M7 11l5-5 5 5"/></svg> +6 vs. prior</div>
+          <svg class="kpi-spark" width="64" height="22" viewBox="0 0 64 22"><polyline points="0,14 8,12 16,16 24,10 32,11 40,8 48,12 56,6 64,7" stroke="#3bb273" stroke-width="1.6" fill="none"/></svg>
+        </div>
+        <div class="kpi blue">
+          <div class="kpi-label">
+            <svg viewBox="0 0 24 24"><path d="M3 6h18l-2 12H5z"/><path d="M9 6V4h6v2"/></svg>
+            Ad Revenue (Q4)
+          </div>
+          <div class="kpi-value">$58.2K</div>
+          <div class="kpi-delta up"><svg viewBox="0 0 24 24"><path d="M7 17l5-5 5 5M7 11l5-5 5 5"/></svg> +41% YoY</div>
+          <svg class="kpi-spark" width="64" height="22" viewBox="0 0 64 22"><polyline points="0,18 8,14 16,15 24,10 32,12 40,8 48,6 56,5 64,3" stroke="#3a8dde" stroke-width="1.6" fill="none"/></svg>
+        </div>
+        <div class="kpi purple">
+          <div class="kpi-label">
+            <svg viewBox="0 0 24 24"><path d="M9 19V6l12-2v13"/><circle cx="6" cy="19" r="3"/></svg>
+            Podcast Downloads
+          </div>
+          <div class="kpi-value">42.1K</div>
+          <div class="kpi-delta up"><svg viewBox="0 0 24 24"><path d="M7 17l5-5 5 5M7 11l5-5 5 5"/></svg> +18% mom</div>
+          <svg class="kpi-spark" width="64" height="22" viewBox="0 0 64 22"><polyline points="0,16 8,14 16,11 24,13 32,9 40,10 48,7 56,6 64,4" stroke="#9b6bd6" stroke-width="1.6" fill="none"/></svg>
+        </div>
+        <div class="kpi orange">
+          <div class="kpi-label">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg>
+            Social Reach (7d)
+          </div>
+          <div class="kpi-value">1.2M</div>
+          <div class="kpi-delta up"><svg viewBox="0 0 24 24"><path d="M7 17l5-5 5 5M7 11l5-5 5 5"/></svg> +62% wow</div>
+          <svg class="kpi-spark" width="64" height="22" viewBox="0 0 64 22"><polyline points="0,17 8,15 16,12 24,14 32,9 40,11 48,6 56,5 64,2" stroke="#e88450" stroke-width="1.6" fill="none"/></svg>
+        </div>
+      </div>
+
+      <!-- BREAKING COMPOSER -->
+      <div class="breaker" style="margin-bottom:22px">
+        <div class="breaker-left">
+          <div class="breaker-eyebrow">Breaking News Center · Composer Open</div>
+          <h2>"Hoover Advances to 7A State Championship, Edges Thompson 28-24"</h2>
+          <p>Push will fire to 3,284 mobile subscribers, 8,412 newsletter recipients, and auto-post to four social channels. Homepage takeover bumps Aaliyah Carter feature to the secondary slot.</p>
+          <div class="breaker-channels">
+            <div class="chan on"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9"/></svg> Push (3.2K)</div>
+            <div class="chan on"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9l9 6 9-6"/></svg> Email (8.4K)</div>
+            <div class="chan on"><svg viewBox="0 0 24 24"><path d="M22 5.8a8.5 8.5 0 01-2.4.7A4.1 4.1 0 0021.4 4a8.2 8.2 0 01-2.6 1A4.1 4.1 0 0011.5 9a11.6 11.6 0 01-8.5-4.4S-.5 13.5 8 17.5A11.6 11.6 0 011 19.5c9 5 20 0 20-11.5"/></svg> X / Twitter</div>
+            <div class="chan on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg> Instagram</div>
+            <div class="chan"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/></svg> YouTube Community</div>
+            <div class="chan"><svg viewBox="0 0 24 24"><path d="M16 4v8a5 5 0 11-5-5"/></svg> TikTok Story</div>
+          </div>
+          <div class="breaker-actions">
+            <button class="breaker-btn">Fire All Channels</button>
+            <button class="breaker-btn ghost">Schedule for 6:30 PM</button>
+            <button class="breaker-btn ghost">Edit Copy</button>
+          </div>
+        </div>
+        <div class="breaker-stats">
+          <h4>Expected Reach</h4>
+          <div class="b-stat"><span class="lbl">Push opt-in subscribers</span><span class="val">3,284</span></div>
+          <div class="b-stat"><span class="lbl">Newsletter (active)</span><span class="val">8,412</span></div>
+          <div class="b-stat"><span class="lbl">Social followers (combined)</span><span class="val">142K</span></div>
+          <div class="b-stat"><span class="lbl">Avg open / click rate</span><span class="val">48% / 12%</span></div>
+          <div class="b-stat"><span class="lbl">Estimated total impressions</span><span class="val">~340K</span></div>
+        </div>
+      </div>
+
+      <!-- ROW: TRAFFIC CHART + PUBLISH QUEUE -->
+      <div class="row r-2-1">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h3>Traffic & Engagement</h3>
+              <div class="sub">Page views vs. avg session time · Last 14 days</div>
+            </div>
+            <div class="card-head-actions">
+              <button class="pill-btn">7d</button>
+              <button class="pill-btn active">14d</button>
+              <button class="pill-btn">30d</button>
+              <button class="pill-btn">90d</button>
+              <button class="pill-btn"><svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></svg></button>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <svg class="chart" viewBox="0 0 800 240" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="g-views" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#e63647" stop-opacity=".4"/>
+                  <stop offset="100%" stop-color="#e63647" stop-opacity="0"/>
+                </linearGradient>
+                <linearGradient id="g-sess" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#e3b266" stop-opacity=".3"/>
+                  <stop offset="100%" stop-color="#e3b266" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- grid -->
+              <g stroke="#262f3e" stroke-width="1">
+                <line x1="0" y1="40" x2="800" y2="40"/>
+                <line x1="0" y1="100" x2="800" y2="100"/>
+                <line x1="0" y1="160" x2="800" y2="160"/>
+                <line x1="0" y1="220" x2="800" y2="220"/>
+              </g>
+              <!-- area views -->
+              <path d="M0,180 L60,165 L120,170 L180,140 L240,150 L300,120 L360,130 L420,90 L480,110 L540,80 L600,60 L660,40 L720,55 L780,30 L800,40 L800,240 L0,240 Z" fill="url(#g-views)" />
+              <polyline points="0,180 60,165 120,170 180,140 240,150 300,120 360,130 420,90 480,110 540,80 600,60 660,40 720,55 780,30 800,40" stroke="#e63647" stroke-width="2" fill="none"/>
+              <!-- area session -->
+              <path d="M0,205 L60,200 L120,195 L180,190 L240,185 L300,180 L360,170 L420,175 L480,160 L540,165 L600,150 L660,140 L720,145 L780,135 L800,130 L800,240 L0,240 Z" fill="url(#g-sess)" />
+              <polyline points="0,205 60,200 120,195 180,190 240,185 300,180 360,170 420,175 480,160 540,165 600,150 660,140 720,145 780,135 800,130" stroke="#e3b266" stroke-width="2" fill="none"/>
+              <!-- friday spike marker -->
+              <circle cx="660" cy="40" r="5" fill="#fff" stroke="#e63647" stroke-width="2"/>
+              <text x="610" y="28" fill="#fff" font-family="Inter" font-size="10" font-weight="600">FRIDAY NIGHT</text>
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <span><span class="dot" style="background:#e63647"></span>Page Views</span>
+            <span><span class="dot" style="background:#e3b266"></span>Avg Session Time</span>
+            <span style="margin-left:auto;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.7rem">Updated 2 min ago</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Publish Queue</h3>
+              <div class="sub">7 drafts · 4 scheduled</div>
+            </div>
+            <button class="pill-btn active">All</button>
+          </div>
+          <div class="card-body flush">
+            <div class="pub-row">
+              <div class="pub-thumb" style="background-image:url('https://images.unsplash.com/photo-1551958219-acbc608c6377?w=200&q=80&auto=format&fit=crop')"></div>
+              <div class="pub-info">
+                <div class="pub-title">Hoover Survives Thompson — Full Recap</div>
+                <div class="pub-meta"><span class="badge live">Live now</span><span class="sep">·</span><span>Ray Jenkins</span><span class="sep">·</span><span>14.2K views</span></div>
+              </div>
+            </div>
+            <div class="pub-row">
+              <div class="pub-thumb" style="background-image:url('https://images.unsplash.com/photo-1546519638-68e109498ffc?w=200&q=80&auto=format&fit=crop')"></div>
+              <div class="pub-info">
+                <div class="pub-title">5 Hoops Teams to Watch This Winter</div>
+                <div class="pub-meta"><span class="badge scheduled">Sched 6 AM</span><span class="sep">·</span><span>Tasha Reed</span><span class="sep">·</span><span>7 min read</span></div>
+              </div>
+              <div class="pub-actions"><div class="ico-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div>
+            </div>
+            <div class="pub-row">
+              <div class="pub-thumb" style="background-image:url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&q=80&auto=format&fit=crop')"></div>
+              <div class="pub-info">
+                <div class="pub-title">A Game Week Inside Hewitt-Trussville</div>
+                <div class="pub-meta"><span class="badge review">In Review</span><span class="sep">·</span><span>Mike Quentin</span><span class="sep">·</span><span>Long-read</span></div>
+              </div>
+              <div class="pub-actions"><div class="ico-btn"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-11"/></svg></div></div>
+            </div>
+            <div class="pub-row">
+              <div class="pub-thumb" style="background-image:url('https://images.unsplash.com/photo-1565992441121-4367c2967103?w=200&q=80&auto=format&fit=crop')"></div>
+              <div class="pub-info">
+                <div class="pub-title">Vestavia Hires New Offensive Coordinator</div>
+                <div class="pub-meta"><span class="badge draft">Draft</span><span class="sep">·</span><span>Ray Jenkins</span><span class="sep">·</span><span>Sourced</span></div>
+              </div>
+              <div class="pub-actions"><div class="ico-btn"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/></svg></div></div>
+            </div>
+            <div class="pub-row">
+              <div class="pub-thumb" style="background-image:url('https://images.unsplash.com/photo-1606925797300-0b35e9d1794e?w=200&q=80&auto=format&fit=crop')"></div>
+              <div class="pub-info">
+                <div class="pub-title">How a Trussville Booster Raised $80K</div>
+                <div class="pub-meta"><span class="badge embargoed">Embargo · 12/05 6 AM</span><span class="sep">·</span><span>Erin Howard</span></div>
+              </div>
+              <div class="pub-actions"><div class="ico-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div></div>
+            </div>
+            <div class="pub-row">
+              <div class="pub-thumb" style="background-image:url('https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=200&q=80&auto=format&fit=crop')"></div>
+              <div class="pub-info">
+                <div class="pub-title">Briarwood Girls Soccer · Bracket Breakdown</div>
+                <div class="pub-meta"><span class="badge scheduled">Sched Mon 7 AM</span><span class="sep">·</span><span>Erin Howard</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW: TOP ARTICLES + RECRUITING -->
+      <div class="row r-2-1">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Top Performing Articles · This Week</h3>
+              <div class="sub">By page views</div>
+            </div>
+            <div class="card-head-actions">
+              <button class="pill-btn">Views</button>
+              <button class="pill-btn active">Engagement</button>
+              <button class="pill-btn">Revenue</button>
+            </div>
+          </div>
+          <div style="overflow:auto">
+            <table>
+              <thead>
+                <tr><th>Article</th><th>Author</th><th>Category</th><th>Views</th><th>Avg Time</th><th>Ad Rev</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="row-title">Hoover Advances to State Championship, Edges Thompson 28-24</div>
+                    <div class="row-sub">Pub Fri 11:14 PM · 7A Playoffs</div>
+                  </td>
+                  <td><span class="author-pill"><span class="av">RJ</span> Ray Jenkins</span></td>
+                  <td><span class="badge published">Football</span></td>
+                  <td><strong>142,847</strong></td>
+                  <td>4:32</td>
+                  <td>$1,847</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">CJ Greer Flips Commitment to Auburn</div>
+                    <div class="row-sub">Pub Thu 4:18 PM · Recruiting</div>
+                  </td>
+                  <td><span class="author-pill b"><span class="av">MQ</span> Mike Quentin</span></td>
+                  <td><span class="badge review" style="background:rgba(214,164,76,.14);color:#e3b266">Recruiting</span></td>
+                  <td><strong>89,221</strong></td>
+                  <td>3:18</td>
+                  <td>$972</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Aaliyah Carter Drops 38 — Single-Game Record</div>
+                    <div class="row-sub">Pub Wed 10:42 PM · Girls Hoops</div>
+                  </td>
+                  <td><span class="author-pill c"><span class="av">TR</span> Tasha Reed</span></td>
+                  <td><span class="badge published" style="background:rgba(155,107,214,.14);color:#bd92e6;border-color:rgba(155,107,214,.3)">Basketball</span></td>
+                  <td><strong>54,108</strong></td>
+                  <td>3:48</td>
+                  <td>$612</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Vestavia Hires New Athletic Director</div>
+                    <div class="row-sub">Pub Tue 9:00 AM · Community</div>
+                  </td>
+                  <td><span class="author-pill d"><span class="av">EH</span> Erin Howard</span></td>
+                  <td><span class="badge published" style="background:rgba(59,178,115,.14);color:#5fc98a;border-color:rgba(59,178,115,.3)">Community</span></td>
+                  <td><strong>38,492</strong></td>
+                  <td>2:54</td>
+                  <td>$418</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Mountain Brook Defense Sets 6A Shutout Record</div>
+                    <div class="row-sub">Pub Sat 11:48 PM · Football</div>
+                  </td>
+                  <td><span class="author-pill"><span class="av">RJ</span> Ray Jenkins</span></td>
+                  <td><span class="badge published">Football</span></td>
+                  <td><strong>31,750</strong></td>
+                  <td>4:08</td>
+                  <td>$382</td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">UAB Lands 3 Birmingham-Area Stars on Early Signing Day</div>
+                    <div class="row-sub">Pub Wed 1:24 PM · Small College</div>
+                  </td>
+                  <td><span class="author-pill b"><span class="av">MQ</span> Mike Quentin</span></td>
+                  <td><span class="badge review" style="background:rgba(214,164,76,.14);color:#e3b266">Recruiting</span></td>
+                  <td><strong>28,901</strong></td>
+                  <td>3:02</td>
+                  <td>$295</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Recruiting Tracker · Highest Activity</h3>
+              <div class="sub">New offers + commitment movement (7d)</div>
+            </div>
+            <button class="pill-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add</button>
+          </div>
+          <div style="overflow:auto">
+            <table class="recruit-table">
+              <thead>
+                <tr><th>Athlete</th><th>★</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="row-title">CJ Greer</div>
+                    <div class="row-sub">Hewitt · QB · '27</div>
+                  </td>
+                  <td><span class="star">★★★★★</span></td>
+                  <td><span class="commit">Auburn ✓</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">DeShawn King</div>
+                    <div class="row-sub">Spain Park · DE · '26</div>
+                  </td>
+                  <td><span class="star">★★★★★</span></td>
+                  <td><span class="undecided">42 offers</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Jaylen Pierce</div>
+                    <div class="row-sub">Thompson · WR · '27</div>
+                  </td>
+                  <td><span class="star">★★★★☆</span></td>
+                  <td><span class="undecided">24 offers</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Marcus Bell</div>
+                    <div class="row-sub">Hoover · QB · '26</div>
+                  </td>
+                  <td><span class="star">★★★★☆</span></td>
+                  <td><span class="commit">UAB ✓</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Tariq Phillips</div>
+                    <div class="row-sub">Pinson Valley · CB · '26</div>
+                  </td>
+                  <td><span class="star">★★★★☆</span></td>
+                  <td><span class="commit">UAB ✓</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Aaliyah Carter</div>
+                    <div class="row-sub">Hoover · G · '26 · WBB</div>
+                  </td>
+                  <td><span class="star">★★★★★</span></td>
+                  <td><span class="undecided">16 offers</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW: PODCAST + VIDEO -->
+      <div class="row r-1-1">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Podcast Manager</h3>
+              <div class="sub">3 shows · 4 unreleased episodes</div>
+            </div>
+            <button class="pill-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Upload Episode</button>
+          </div>
+          <div class="card-body flush">
+            <div class="pod-row" style="grid-template-columns:60px 1fr 100px 100px 80px 90px">
+              <div class="pod-art"><svg viewBox="0 0 24 24"><path d="M12 2l2 4 4 .6-3 3 .8 4.2L12 11.9 8.2 13.8 9 9.6 6 6.6 10 6z"/></svg></div>
+              <div>
+                <div class="pod-title">EP 127 · Hoover Survives, Hewitt Cruises</div>
+                <div class="pod-show">Friday Night Football Show · Weekly · 54 min</div>
+              </div>
+              <div class="pod-num">18,402</div>
+              <div class="pod-num" style="color:var(--green)">+24%</div>
+              <span class="badge live">Live</span>
+              <div class="ico-btn"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </div>
+            <div class="pod-row">
+              <div class="pod-art gold"><svg viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z"/><path d="M16 8a5 5 0 010 8"/></svg></div>
+              <div>
+                <div class="pod-title">EP 81 · CJ Greer Flip + Signing Day Predictions</div>
+                <div class="pod-show">The Recruiting Report · Tuesdays · 42 min</div>
+              </div>
+              <div class="pod-num">9,184</div>
+              <div class="pod-num" style="color:var(--green)">+18%</div>
+              <span class="badge live">Live</span>
+              <div class="ico-btn"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </div>
+            <div class="pod-row">
+              <div class="pod-art navy"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg></div>
+              <div>
+                <div class="pod-title">Daily Wrap · Nov 28 · Bucs Headed to Bryant-Denny</div>
+                <div class="pod-show">The Local Sports Podcast · Daily · 16 min</div>
+              </div>
+              <div class="pod-num">4,287</div>
+              <div class="pod-num" style="color:var(--green)">+9%</div>
+              <span class="badge scheduled">8 PM</span>
+              <div class="ico-btn"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </div>
+            <div class="pod-row">
+              <div class="pod-art"><svg viewBox="0 0 24 24"><path d="M12 2l2 4 4 .6-3 3 .8 4.2L12 11.9 8.2 13.8 9 9.6 6 6.6 10 6z"/></svg></div>
+              <div>
+                <div class="pod-title">EP 128 · Championship Preview · TBA</div>
+                <div class="pod-show">Friday Night Football Show · Sched Wed 9 AM</div>
+              </div>
+              <div class="pod-num" style="color:var(--muted)">—</div>
+              <div class="pod-num" style="color:var(--muted)">—</div>
+              <span class="badge draft">Draft</span>
+              <div class="ico-btn"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Video Library</h3>
+              <div class="sub">Game film, interviews, top plays</div>
+            </div>
+            <div class="card-head-actions">
+              <button class="pill-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Upload</button>
+              <button class="pill-btn">Embed YouTube</button>
+            </div>
+          </div>
+          <div class="vid-grid">
+            <div class="vid-card">
+              <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=600&q=80&auto=format&fit=crop')">
+                <div class="play-mini"></div>
+                <span class="dur">8:42</span>
+              </div>
+              <div class="vid-body">
+                <div class="vid-title">Hoover vs. Thompson · Full Highlights</div>
+                <div class="vid-meta"><span>28.1K views</span><span>14h ago</span></div>
+              </div>
+            </div>
+            <div class="vid-card">
+              <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1517649763962-0c623066013b?w=600&q=80&auto=format&fit=crop')">
+                <div class="play-mini"></div>
+                <span class="dur">4:18</span>
+              </div>
+              <div class="vid-body">
+                <div class="vid-title">Marcus Bell Postgame · "This One Was For 2023"</div>
+                <div class="vid-meta"><span>11.4K views</span><span>12h ago</span></div>
+              </div>
+            </div>
+            <div class="vid-card">
+              <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&q=80&auto=format&fit=crop')">
+                <div class="play-mini"></div>
+                <span class="dur">2:08</span>
+              </div>
+              <div class="vid-body">
+                <div class="vid-title">Week 14 Top 10 Plays</div>
+                <div class="vid-meta"><span>6.9K views</span><span>1d ago</span></div>
+              </div>
+            </div>
+            <div class="vid-card">
+              <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&q=80&auto=format&fit=crop')">
+                <div class="play-mini"></div>
+                <span class="dur">3:54</span>
+              </div>
+              <div class="vid-body">
+                <div class="vid-title">Aaliyah Carter Drops 38 · Highlights</div>
+                <div class="vid-meta"><span>9.2K views</span><span>2d ago</span></div>
+              </div>
+            </div>
+            <div class="vid-card">
+              <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1577412647305-991150c7d163?w=600&q=80&auto=format&fit=crop')">
+                <div class="play-mini"></div>
+                <span class="dur">11:32</span>
+              </div>
+              <div class="vid-body">
+                <div class="vid-title">CJ Greer Commitment Presser</div>
+                <div class="vid-meta"><span>15.7K views</span><span>3d ago</span></div>
+              </div>
+            </div>
+            <div class="vid-card">
+              <div class="thumb" style="background-image:url('https://images.unsplash.com/photo-1593341646782-e0b495cff86d?w=600&q=80&auto=format&fit=crop')">
+                <div class="play-mini"></div>
+                <span class="dur">5:21</span>
+              </div>
+              <div class="vid-body">
+                <div class="vid-title">UAB Signing Day Show · 30 min recap</div>
+                <div class="vid-meta"><span>4.1K views</span><span>4d ago</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW: SPONSORSHIP CRM (full width) -->
+      <div class="row" style="grid-template-columns:1fr">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Sponsorship CRM</h3>
+              <div class="sub">Active campaigns · Invoices · Renewal pipeline</div>
+            </div>
+            <div class="card-head-actions">
+              <button class="pill-btn active">Active (14)</button>
+              <button class="pill-btn">Pending (5)</button>
+              <button class="pill-btn">Renewals (3)</button>
+              <button class="pill-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> New Sponsor</button>
+            </div>
+          </div>
+          <div style="overflow:auto">
+            <table>
+              <thead>
+                <tr><th>Sponsor</th><th>Tier</th><th>Campaign</th><th>Impressions</th><th>CTR</th><th>Invoice</th><th>Status</th><th>Renewal</th></tr>
+              </thead>
+              <tbody class="sponsor-row">
+                <tr>
+                  <td>
+                    <div class="row-title">Cahaba Heights Auto Group</div>
+                    <div class="row-sub">Title Sponsor · Aaron Mitchell</div>
+                  </td>
+                  <td><span class="badge" style="background:rgba(214,164,76,.18);color:#e3b266">Title · $30K/yr</span></td>
+                  <td>Sitewide takeover + podcast pre-roll</td>
+                  <td><strong>4.2M</strong></td>
+                  <td>2.4%</td>
+                  <td>INV-2026-091 · $7,500</td>
+                  <td><span class="invoice-status paid"><span class="dot"></span>Paid Q4</span></td>
+                  <td><span class="badge review">Pending</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Birmingham Eye Center</div>
+                    <div class="row-sub">Gold Partner · Dr. Lara Singh</div>
+                  </td>
+                  <td><span class="badge" style="background:rgba(214,164,76,.18);color:#e3b266">Gold · $12K/yr</span></td>
+                  <td>Football coverage + halftime spots</td>
+                  <td><strong>1.8M</strong></td>
+                  <td>1.9%</td>
+                  <td>INV-2026-088 · $3,000</td>
+                  <td><span class="invoice-status paid"><span class="dot"></span>Paid Q4</span></td>
+                  <td><span class="badge published">Locked '27</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Vulcan Materials Co.</div>
+                    <div class="row-sub">Gold Partner · Joe Cantrell</div>
+                  </td>
+                  <td><span class="badge" style="background:rgba(214,164,76,.18);color:#e3b266">Gold · $12K/yr</span></td>
+                  <td>Player of the Week presenting</td>
+                  <td><strong>1.6M</strong></td>
+                  <td>1.7%</td>
+                  <td>INV-2026-089 · $3,000</td>
+                  <td><span class="invoice-status due"><span class="dot"></span>Due Dec 5</span></td>
+                  <td><span class="badge published">Locked '27</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Vestavia Orthodontics</div>
+                    <div class="row-sub">Gold Partner · Dr. Tom Henley</div>
+                  </td>
+                  <td><span class="badge" style="background:rgba(214,164,76,.18);color:#e3b266">Gold · $12K/yr</span></td>
+                  <td>Smile of the Game + reels</td>
+                  <td><strong>1.4M</strong></td>
+                  <td>2.1%</td>
+                  <td>INV-2026-085 · $3,000</td>
+                  <td><span class="invoice-status late"><span class="dot"></span>32 days late</span></td>
+                  <td><span class="badge review">Pending</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Magic City Mortgage</div>
+                    <div class="row-sub">Gold Partner · Renee Calloway</div>
+                  </td>
+                  <td><span class="badge" style="background:rgba(214,164,76,.18);color:#e3b266">Gold · $12K/yr</span></td>
+                  <td>Recruiting tracker presenting</td>
+                  <td><strong>820K</strong></td>
+                  <td>2.8%</td>
+                  <td>INV-2026-090 · $3,000</td>
+                  <td><span class="invoice-status paid"><span class="dot"></span>Paid Q4</span></td>
+                  <td><span class="badge published">Locked '27</span></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="row-title">Saw's BBQ</div>
+                    <div class="row-sub">Silver Partner · Mike Wilson</div>
+                  </td>
+                  <td><span class="badge" style="background:var(--panel-2);color:var(--muted)">Silver · $4.8K/yr</span></td>
+                  <td>Friday night podcast sponsor</td>
+                  <td><strong>410K</strong></td>
+                  <td>3.4%</td>
+                  <td>INV-2026-086 · $1,200</td>
+                  <td><span class="invoice-status paid"><span class="dot"></span>Paid Q4</span></td>
+                  <td><span class="badge published">Locked '27</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW: TEAM DB + RECRUITING DETAIL -->
+      <div class="row r-1-1">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Team Database · Hoover Bucs</h3>
+              <div class="sub">Roster · Schedule · Records · 62 schools tracked</div>
+            </div>
+            <div class="card-head-actions">
+              <button class="pill-btn">Roster</button>
+              <button class="pill-btn active">Top Stats</button>
+              <button class="pill-btn">Schedule</button>
+              <button class="pill-btn">Photos</button>
+            </div>
+          </div>
+          <div class="card-body flush">
+            <div class="team-roster">
+              <div class="roster-cell">
+                <div class="roster-num">#7</div>
+                <div class="roster-info">
+                  <div class="roster-name">Marcus Bell</div>
+                  <div class="roster-pos">QB · Sr · 6'2" · 200</div>
+                </div>
+                <div class="roster-stat">3,802 yds · 42 TD</div>
+              </div>
+              <div class="roster-cell">
+                <div class="roster-num">#3</div>
+                <div class="roster-info">
+                  <div class="roster-name">Demarcus Bell-Hill</div>
+                  <div class="roster-pos">RB · Jr · 5'11" · 195</div>
+                </div>
+                <div class="roster-stat">1,442 yds · 18 TD</div>
+              </div>
+              <div class="roster-cell">
+                <div class="roster-num">#11</div>
+                <div class="roster-info">
+                  <div class="roster-name">Trey Daniels</div>
+                  <div class="roster-pos">WR · Sr · 6'3" · 195</div>
+                </div>
+                <div class="roster-stat">68 rec · 1,212 yds</div>
+              </div>
+              <div class="roster-cell">
+                <div class="roster-num">#42</div>
+                <div class="roster-info">
+                  <div class="roster-name">Jaylen Coats</div>
+                  <div class="roster-pos">LB · Sr · 6'1" · 225</div>
+                </div>
+                <div class="roster-stat">128 tkl · 14 TFL</div>
+              </div>
+              <div class="roster-cell">
+                <div class="roster-num">#21</div>
+                <div class="roster-info">
+                  <div class="roster-name">Cam Robinson</div>
+                  <div class="roster-pos">S · Jr · 6'0" · 185</div>
+                </div>
+                <div class="roster-stat">6 INT · 84 tkl</div>
+              </div>
+              <div class="roster-cell">
+                <div class="roster-num">#55</div>
+                <div class="roster-info">
+                  <div class="roster-name">Marcus Aldridge</div>
+                  <div class="roster-pos">DT · Sr · 6'2" · 285</div>
+                </div>
+                <div class="roster-stat">12 sacks · 22 TFL</div>
+              </div>
+              <div class="roster-cell">
+                <div class="roster-num">#88</div>
+                <div class="roster-info">
+                  <div class="roster-name">Kyle Henderson</div>
+                  <div class="roster-pos">TE · Sr · 6'4" · 215</div>
+                </div>
+                <div class="roster-stat">42 rec · 9 TD</div>
+              </div>
+              <div class="roster-cell">
+                <div class="roster-num">#9</div>
+                <div class="roster-info">
+                  <div class="roster-name">Dre Ellis</div>
+                  <div class="roster-pos">CB · Jr · 5'11" · 175</div>
+                </div>
+                <div class="roster-stat">5 INT · 14 PBU</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Membership System</h3>
+              <div class="sub">MRR · Churn · Tier breakdown</div>
+            </div>
+            <button class="pill-btn">Manage Tiers</button>
+          </div>
+          <div class="mem-tier-row">
+            <div class="mem-tier-card">
+              <div class="tier-lbl">Free · The Fan</div>
+              <div class="tier-num">17,842</div>
+              <div class="tier-sub">+412 this week</div>
+              <div class="pb"><div class="pb-fill" style="width:96%;background:var(--muted)"></div></div>
+              <div class="mrr-line"><span>Newsletter active</span><strong>8,412</strong></div>
+            </div>
+            <div class="mem-tier-card">
+              <div class="tier-lbl">Premium · RCSN+</div>
+              <div class="tier-num">2,948</div>
+              <div class="tier-sub">+118 this week · 2.1% churn</div>
+              <div class="pb"><div class="pb-fill" style="width:72%"></div></div>
+              <div class="mrr-line"><span>MRR</span><strong>$23,584</strong></div>
+            </div>
+            <div class="mem-tier-card">
+              <div class="tier-lbl">VIP · The Insider</div>
+              <div class="tier-num">336</div>
+              <div class="tier-sub">+29 this week · 0.8% churn</div>
+              <div class="pb"><div class="pb-fill gold" style="width:48%"></div></div>
+              <div class="mrr-line"><span>MRR</span><strong>$7,392</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW: SOCIAL + NEWSLETTER -->
+      <div class="row r-1-1">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Social Media Center</h3>
+              <div class="sub">Scheduled posts · Performance · 4 channels</div>
+            </div>
+            <button class="pill-btn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Schedule Post</button>
+          </div>
+          <div class="social-grid">
+            <div class="social-card">
+              <div class="top">
+                <div class="social-icon x"><svg viewBox="0 0 24 24"><path d="M22 5.8a8.5 8.5 0 01-2.4.7A4.1 4.1 0 0021.4 4a8.2 8.2 0 01-2.6 1A4.1 4.1 0 0011.5 9a11.6 11.6 0 01-8.5-4.4S-.5 13.5 8 17.5A11.6 11.6 0 011 19.5c9 5 20 0 20-11.5"/></svg></div>
+                <span class="lbl">X / Twitter</span>
+              </div>
+              <div class="followers">48.2K</div>
+              <div class="delta">+1,284 this week</div>
+            </div>
+            <div class="social-card">
+              <div class="top">
+                <div class="social-icon ig"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></div>
+                <span class="lbl">Instagram</span>
+              </div>
+              <div class="followers">62.4K</div>
+              <div class="delta">+2,108 this week</div>
+            </div>
+            <div class="social-card">
+              <div class="top">
+                <div class="social-icon yt"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/></svg></div>
+                <span class="lbl">YouTube</span>
+              </div>
+              <div class="followers">18.9K</div>
+              <div class="delta">+604 this week</div>
+            </div>
+            <div class="social-card">
+              <div class="top">
+                <div class="social-icon tt"><svg viewBox="0 0 24 24"><path d="M16 4v8a5 5 0 11-5-5"/><path d="M16 4c0 3 2 5 5 5"/></svg></div>
+                <span class="lbl">TikTok</span>
+              </div>
+              <div class="followers">12.7K</div>
+              <div class="delta">+1,742 this week</div>
+            </div>
+          </div>
+          <div style="padding:0 20px 20px">
+            <div style="font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px">Auto-Posted Today</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;font-size:.78rem;padding:9px 12px;background:var(--panel-2);border-radius:5px;color:var(--ink-2)">
+                <span>"Hoover advances — full recap" · 4 channels</span>
+                <span class="mono" style="color:var(--green);font-weight:600">142K reach</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:.78rem;padding:9px 12px;background:var(--panel-2);border-radius:5px;color:var(--ink-2)">
+                <span>"CJ Greer flips to Auburn" · 4 channels</span>
+                <span class="mono" style="color:var(--green);font-weight:600">89K reach</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:.78rem;padding:9px 12px;background:var(--panel-2);border-radius:5px;color:var(--ink-2)">
+                <span>"Week 14 Top 10 Plays" · YouTube + IG</span>
+                <span class="mono" style="color:var(--green);font-weight:600">38K reach</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Newsletter Dashboard</h3>
+              <div class="sub">SendGrid · Friday Wrap · Daily Brief · Recruiting Pulse</div>
+            </div>
+            <button class="pill-btn">Open Composer</button>
+          </div>
+          <div class="nl-stats">
+            <div class="nl-stat">
+              <div class="nl-lbl">Subscribers</div>
+              <div class="nl-val">8,412</div>
+              <div class="nl-sub">+218 this week</div>
+            </div>
+            <div class="nl-stat">
+              <div class="nl-lbl">Open Rate</div>
+              <div class="nl-val">48.2%</div>
+              <div class="nl-sub">+2.4 pts</div>
+            </div>
+            <div class="nl-stat">
+              <div class="nl-lbl">Click Rate</div>
+              <div class="nl-val">12.7%</div>
+              <div class="nl-sub">+1.1 pts</div>
+            </div>
+            <div class="nl-stat">
+              <div class="nl-lbl">Unsub Rate</div>
+              <div class="nl-val">0.18%</div>
+              <div class="nl-sub" style="color:var(--green)">Healthy</div>
+            </div>
+          </div>
+          <div style="padding:18px 20px 6px;border-top:1px solid var(--line)">
+            <div style="font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:12px">Recent Sends</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:.82rem;color:#fff;font-weight:600">
+                  <span>Friday Wrap · Nov 22</span>
+                  <span class="mono" style="color:var(--muted);font-size:.74rem">52.1% open · 14.8% click</span>
+                </div>
+                <div class="pb" style="margin-top:6px"><div class="pb-fill green" style="width:52%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:.82rem;color:#fff;font-weight:600">
+                  <span>Recruiting Pulse · Nov 25</span>
+                  <span class="mono" style="color:var(--muted);font-size:.74rem">44.9% open · 11.2% click</span>
+                </div>
+                <div class="pb" style="margin-top:6px"><div class="pb-fill green" style="width:45%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:.82rem;color:#fff;font-weight:600">
+                  <span>Daily Brief · Nov 27</span>
+                  <span class="mono" style="color:var(--muted);font-size:.74rem">39.4% open · 9.8% click</span>
+                </div>
+                <div class="pb" style="margin-top:6px"><div class="pb-fill green" style="width:39%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:.82rem;color:#fff;font-weight:600">
+                  <span>Breaking · Hoover advances</span>
+                  <span class="mono" style="color:var(--muted);font-size:.74rem">68.7% open · 22.1% click</span>
+                </div>
+                <div class="pb" style="margin-top:6px"><div class="pb-fill gold" style="width:69%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW: MOBILE APP MANAGEMENT (full width) -->
+      <div class="row" style="grid-template-columns:1fr">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Mobile App Management</h3>
+              <div class="sub">Push notifications · Featured stories · 14.2K active installs (iOS + Android)</div>
+            </div>
+            <div class="card-head-actions">
+              <button class="pill-btn">iOS (8.4K)</button>
+              <button class="pill-btn">Android (5.8K)</button>
+              <button class="pill-btn active">All</button>
+            </div>
+          </div>
+          <div class="device-grid">
+            <div class="phone-frame">
+              <div class="phone-notch"></div>
+              <div class="phone-screen">
+                <div class="phone-header">
+                  <span>9:41</span>
+                  <span>RCSN</span>
+                </div>
+                <div class="phone-push">
+                  <div class="phone-push-top">
+                    <span>RCSN · BREAKING</span>
+                    <span>now</span>
+                  </div>
+                  <div class="phone-push-title">Hoover advances to State Championship</div>
+                  <div class="phone-push-body">Bucs edge Thompson 28-24 in classic — Bell engineers 12-play winning drive.</div>
+                </div>
+                <div class="phone-push">
+                  <div class="phone-push-top">
+                    <span>RCSN · GAME ALERT</span>
+                    <span>2m</span>
+                  </div>
+                  <div class="phone-push-title">VES vs MTB · Q4, 2:14 left, tied 21-21</div>
+                  <div class="phone-push-body">Vestavia driving from own 38. Tap to watch live.</div>
+                </div>
+                <div class="phone-push">
+                  <div class="phone-push-top">
+                    <span>RCSN · RECRUITING</span>
+                    <span>2h</span>
+                  </div>
+                  <div class="phone-push-title">CJ Greer flips commit to Auburn</div>
+                  <div class="phone-push-body">5-star Hewitt QB chooses Tigers over Bama, UGA.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="push-controls">
+              <h4>Notification Settings</h4>
+              <div class="push-row"><span class="lbl">Breaking news alerts</span><div class="switch on"></div></div>
+              <div class="push-row"><span class="lbl">Live game score updates</span><div class="switch on"></div></div>
+              <div class="push-row"><span class="lbl">Recruiting commits / flips</span><div class="switch on"></div></div>
+              <div class="push-row"><span class="lbl">Featured stories (1/day max)</span><div class="switch on"></div></div>
+              <div class="push-row"><span class="lbl">New podcast episodes</span><div class="switch on"></div></div>
+              <div class="push-row"><span class="lbl">Local event reminders</span><div class="switch"></div></div>
+              <div class="push-row"><span class="lbl">Sponsor / promo push</span><div class="switch"></div></div>
+
+              <h4 style="margin-top:22px">Featured Story · Homepage Hero</h4>
+              <div style="padding:10px;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;display:flex;gap:10px;align-items:center">
+                <div style="width:50px;height:50px;border-radius:5px;background-image:url('https://images.unsplash.com/photo-1551958219-acbc608c6377?w=200&q=80&auto=format&fit=crop');background-size:cover;background-position:center;flex-shrink:0"></div>
+                <div style="flex:1;min-width:0">
+                  <div style="color:#fff;font-weight:600;font-size:.82rem;line-height:1.2">Hoover Advances to State Championship</div>
+                  <div style="color:var(--muted);font-size:.7rem;margin-top:3px">Currently featured · 14.2K homepage views</div>
+                </div>
+                <button class="pill-btn">Swap</button>
+              </div>
+
+              <div class="alert green" style="margin-top:16px;margin-bottom:0">
+                <svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-11"/></svg>
+                <span>App push delivery: <strong style="color:#fff">98.4% success rate</strong> over the last 24h · 3,284 active push tokens.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script>
+  // tab activate
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+  // sidebar activate
+  document.querySelectorAll('.side-link').forEach(s=>{
+    s.addEventListener('click',()=>{
+      document.querySelectorAll('.side-link').forEach(x=>x.classList.remove('active'));
+      s.classList.add('active');
+    });
+  });
+  // pill activation per card
+  document.querySelectorAll('.card-head-actions').forEach(group=>{
+    const pills = group.querySelectorAll('.pill-btn');
+    pills.forEach(p=>p.addEventListener('click',()=>{
+      pills.forEach(x=>x.classList.remove('active'));
+      p.classList.add('active');
+    }));
+  });
+  // channel toggles
+  document.querySelectorAll('.chan').forEach(c=>{
+    c.addEventListener('click',()=>c.classList.toggle('on'));
+  });
+  // switches
+  document.querySelectorAll('.switch').forEach(s=>{
+    s.addEventListener('click',()=>s.classList.toggle('on'));
+  });
+</script>
+
+</body>
+</html>
