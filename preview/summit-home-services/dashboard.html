@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Summit OS — Summit Home Services Operations Console</title>
+<meta name="description" content="Operations console for Summit Home Services: leads, quotes, projects, scheduling, crews, equipment, mapping, customer portal, marketing, and accounting." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c1014;
+    --bg-2:#141a20;
+    --panel:#1a2127;
+    --panel-2:#202830;
+    --line:rgba(255,255,255,.07);
+    --line-2:rgba(255,255,255,.13);
+    --ink:#e9edf1;
+    --ink-soft:#bfc8d0;
+    --muted:#7a848f;
+    --orange:#f26a1f;
+    --orange-deep:#cc5212;
+    --orange-pale:#fde2d2;
+    --yellow:#f4b740;
+    --green:#3cd07c;
+    --red:#ef5252;
+    --blue:#5aa9f4;
+    --purple:#a774f0;
+    --teal:#3acbb1;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px;-webkit-font-smoothing:antialiased;line-height:1.5}
+  h1,h2,h3,.display{font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.01em;text-transform:uppercase}
+  a{color:inherit;text-decoration:none}
+  .mono{font-family:'JetBrains Mono',monospace}
+  input,select,textarea,button{font-family:inherit;color:inherit}
+  button{cursor:pointer;border:none;background:none}
+
+  /* SHELL */
+  .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+  aside.side{background:#070a0d;border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:5px;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand-line{display:flex;align-items:center;gap:11px;margin-bottom:22px;padding:0 4px}
+  .bm{width:34px;height:34px;background:var(--orange);position:relative;flex-shrink:0;transform:rotate(45deg);border-radius:4px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25)}
+  .bm::before{content:"";position:absolute;inset:5px;border:2px solid #fff;border-radius:2px}
+  .bm::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:12px;background:#fff;transform:translate(-50%,-50%) rotate(-45deg)}
+  .brand-line .bn{font-family:'Oswald',sans-serif;font-size:1rem;line-height:1;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .brand-line .br{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace}
+
+  .nav-section{font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:14px 10px 6px;font-family:'JetBrains Mono',monospace}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:5px;font-size:.84rem;color:var(--ink-soft);font-weight:500;cursor:pointer;transition:.15s;border:1px solid transparent;user-select:none}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:var(--ink)}
+  .nav-item.active{background:rgba(242,106,31,.13);color:var(--orange);border-color:rgba(242,106,31,.28)}
+  .nav-item .ic{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:.95rem;opacity:.9}
+  .nav-item .badge{margin-left:auto;font-size:.6rem;background:var(--orange);color:#fff;padding:2px 6px;border-radius:99px;font-weight:700;letter-spacing:.04em;font-family:'JetBrains Mono',monospace}
+  .nav-item .badge.red{background:var(--red)}
+  .nav-item .badge.g{background:var(--green)}
+
+  .public-link{margin-top:8px;display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:5px;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;border:1px dashed var(--line-2);font-family:'JetBrains Mono',monospace}
+  .public-link:hover{color:var(--orange);border-color:rgba(242,106,31,.35)}
+
+  .side-foot{margin-top:auto;border-top:1px solid var(--line);padding:14px 6px 2px;display:flex;align-items:center;gap:10px}
+  .side-foot .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--yellow));display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:.78rem;font-family:'Oswald',sans-serif}
+  .side-foot .nm{font-size:.82rem;font-weight:600}
+  .side-foot .rl{font-size:.62rem;color:var(--muted);letter-spacing:.06em;font-family:'JetBrains Mono',monospace;text-transform:uppercase;margin-top:2px}
+
+  /* MAIN */
+  main{display:flex;flex-direction:column;min-width:0}
+  header.topbar{padding:16px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:18px;background:rgba(12,16,20,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:10}
+  .topbar .heading h1{font-size:1.3rem;font-weight:600}
+  .topbar .heading .sub{font-size:.72rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+  .topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .search{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:6px;padding:8px 13px;font-size:.82rem;color:var(--ink-soft);width:280px;display:flex;align-items:center;gap:10px}
+  .search input{background:none;border:none;outline:none;color:var(--ink);width:100%;font-size:.82rem}
+  .search input::placeholder{color:var(--muted)}
+  .kbd{font-family:'JetBrains Mono',monospace;font-size:.64rem;padding:1px 5px;border:1px solid var(--line-2);border-radius:3px;color:var(--muted)}
+  .weather-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:rgba(58,203,177,.10);border:1px solid rgba(58,203,177,.28);border-radius:5px;font-size:.72rem;color:var(--teal);font-weight:600;font-family:'JetBrains Mono',monospace}
+  .date-chip{padding:7px 13px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:5px;font-size:.72rem;color:var(--ink-soft);font-weight:500;font-family:'JetBrains Mono',monospace}
+  .pub-back{padding:7px 13px;border:1px solid var(--line);border-radius:5px;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;background:transparent;font-family:'JetBrains Mono',monospace}
+  .pub-back:hover{color:var(--orange);border-color:rgba(242,106,31,.32)}
+  .icon-btn{width:36px;height:36px;border-radius:5px;background:rgba(255,255,255,.04);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);position:relative;font-size:1rem}
+  .icon-btn:hover{background:rgba(255,255,255,.08);color:var(--orange)}
+  .icon-btn .dot-n{position:absolute;top:-3px;right:-3px;width:8px;height:8px;background:var(--orange);border-radius:50%;border:2px solid var(--bg)}
+
+  /* CONTENT */
+  .content{padding:24px 28px 64px;overflow-y:auto}
+  .view{display:none}
+  .view.active{display:block}
+
+  /* KPI ROW */
+  .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:22px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:16px 18px;position:relative;overflow:hidden}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--orange)}
+  .kpi.blue::before{background:var(--blue)}
+  .kpi.green::before{background:var(--green)}
+  .kpi.yellow::before{background:var(--yellow)}
+  .kpi.purple::before{background:var(--purple)}
+  .kpi.red::before{background:var(--red)}
+  .kpi .kl{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;font-family:'JetBrains Mono',monospace}
+  .kpi .kv{font-family:'Oswald',sans-serif;font-size:1.9rem;font-weight:700;color:var(--ink);margin-top:6px;line-height:1.1}
+  .kpi .kv small{font-size:.85rem;color:var(--muted);font-weight:500;letter-spacing:.02em;margin-left:3px}
+  .kpi .kd{font-size:.7rem;color:var(--green);margin-top:5px;font-weight:600;font-family:'JetBrains Mono',monospace;letter-spacing:.02em}
+  .kpi .kd.down{color:var(--red)}
+  .kpi .kd.flat{color:var(--muted)}
+
+  /* GRID */
+  .grid{display:grid;gap:16px}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+  .grid-1-2{grid-template-columns:1fr 1.6fr}
+  .grid-2-1{grid-template-columns:1.6fr 1fr}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:20px}
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:14px}
+  .card-head h3{font-size:.92rem;letter-spacing:.06em}
+  .card-head .ch-sub{font-size:.7rem;color:var(--muted);letter-spacing:.04em;margin-top:2px;font-family:'JetBrains Mono',monospace}
+  .card-head .ch-right{display:flex;align-items:center;gap:8px}
+  .chip{padding:4px 10px;border:1px solid var(--line-2);border-radius:3px;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;font-family:'JetBrains Mono',monospace}
+  .chip.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .chip.g{background:rgba(60,208,124,.14);color:var(--green);border-color:rgba(60,208,124,.32)}
+  .chip.r{background:rgba(239,82,82,.14);color:var(--red);border-color:rgba(239,82,82,.32)}
+  .chip.y{background:rgba(244,183,64,.14);color:var(--yellow);border-color:rgba(244,183,64,.32)}
+  .chip.b{background:rgba(90,169,244,.14);color:var(--blue);border-color:rgba(90,169,244,.32)}
+  .chip.p{background:rgba(167,116,240,.14);color:var(--purple);border-color:rgba(167,116,240,.32)}
+
+  /* TABLES */
+  table{width:100%;border-collapse:collapse;font-size:.84rem}
+  th{text-align:left;padding:10px 12px;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line-2);font-family:'JetBrains Mono',monospace}
+  td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink-soft);vertical-align:middle}
+  tr:hover td{background:rgba(255,255,255,.02);color:var(--ink)}
+  td strong{color:var(--ink);font-weight:600}
+
+  /* CHART (CSS-only bars) */
+  .chart{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;align-items:end;height:180px;margin-top:8px}
+  .bar{background:var(--panel-2);border-radius:3px 3px 0 0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;transition:.2s}
+  .bar:hover{background:var(--orange-deep)}
+  .bar .bv{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,var(--orange) 0%,var(--orange-deep) 100%);border-radius:3px 3px 0 0;transition:.3s}
+  .bar .bl{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:.6rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+  .bar.alt .bv{background:linear-gradient(180deg,var(--blue) 0%,#3a89c4 100%)}
+  .chart-legend{display:flex;gap:18px;margin-top:30px;font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+  .chart-legend span{display:flex;align-items:center;gap:6px}
+  .chart-legend span::before{content:"";width:10px;height:10px;border-radius:2px;background:var(--orange)}
+  .chart-legend span.blue::before{background:var(--blue)}
+
+  /* LIST */
+  .list{display:flex;flex-direction:column}
+  .list-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .list-row:last-child{border-bottom:none}
+  .list-row .lav{width:36px;height:36px;border-radius:5px;background:rgba(242,106,31,.15);color:var(--orange);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Oswald',sans-serif;font-size:.84rem;flex-shrink:0;border:1px solid rgba(242,106,31,.25)}
+  .list-row .lav.b{background:rgba(90,169,244,.12);color:var(--blue);border-color:rgba(90,169,244,.25)}
+  .list-row .lav.g{background:rgba(60,208,124,.12);color:var(--green);border-color:rgba(60,208,124,.25)}
+  .list-row .lav.p{background:rgba(167,116,240,.12);color:var(--purple);border-color:rgba(167,116,240,.25)}
+  .list-row .lav.s{background:rgba(255,255,255,.05);color:var(--ink-soft);border-color:var(--line-2)}
+  .list-row .lt{flex:1;min-width:0}
+  .list-row .lt-1{font-size:.88rem;font-weight:600;color:var(--ink)}
+  .list-row .lt-2{font-size:.72rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace;letter-spacing:.02em}
+  .list-row .lr{font-size:.78rem;color:var(--ink-soft);text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600}
+
+  /* KANBAN */
+  .kanban{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:6px}
+  .kcol{background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:14px;min-height:480px}
+  .kcol-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed var(--line-2)}
+  .kcol-head .kct{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--ink);font-family:'JetBrains Mono',monospace}
+  .kcol-head .kcn{font-size:.7rem;color:var(--muted);padding:2px 7px;background:rgba(255,255,255,.05);border-radius:3px;font-family:'JetBrains Mono',monospace;font-weight:700}
+  .kcol-head.new .kct{color:var(--blue)}
+  .kcol-head.contacted .kct{color:var(--purple)}
+  .kcol-head.est-sched .kct{color:var(--yellow)}
+  .kcol-head.est-sent .kct{color:var(--orange)}
+  .kcol-head.won .kct{color:var(--green)}
+  .kcol-head.lost .kct{color:var(--red)}
+
+  .kcard{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:5px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:.15s}
+  .kcard:hover{transform:translateY(-1px);border-color:var(--line-2);background:var(--panel-2)}
+  .kcard.contacted{border-left-color:var(--purple)}
+  .kcard.est-sched{border-left-color:var(--yellow)}
+  .kcard.est-sent{border-left-color:var(--orange)}
+  .kcard.won{border-left-color:var(--green)}
+  .kcard.lost{border-left-color:var(--red);opacity:.65}
+  .kcard .ktop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+  .kcard .knm{font-size:.84rem;font-weight:600;color:var(--ink);line-height:1.25}
+  .kcard .ksvc{font-size:.62rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-top:3px}
+  .kcard .kval{font-family:'Oswald',sans-serif;font-size:1rem;font-weight:700;color:var(--orange);letter-spacing:.02em}
+  .kcard .kbot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+  .kcard .kbot .kdate{font-size:.66rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+  .kcard .kbot .kpm{width:22px;height:22px;border-radius:50%;background:var(--steel);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;font-family:'Oswald',sans-serif;background:linear-gradient(135deg,var(--orange),var(--yellow))}
+
+  /* QUOTE BUILDER */
+  .qb-wrap{display:grid;grid-template-columns:1fr 1.4fr;gap:18px}
+  .qb-side{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:20px}
+  .qb-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+  .qb-tab{padding:7px 13px;background:var(--bg-2);border:1px solid var(--line);border-radius:4px;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--ink-soft);cursor:pointer;font-family:'JetBrains Mono',monospace}
+  .qb-tab.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .qb-section{margin-bottom:18px}
+  .qb-label{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px;font-family:'JetBrains Mono',monospace}
+  .qb-input{width:100%;background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:10px 12px;font-size:.86rem;color:var(--ink);outline:none}
+  .qb-input:focus{border-color:var(--orange)}
+  .qb-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .qb-toggle{display:flex;gap:8px;background:var(--bg-2);padding:4px;border-radius:5px;border:1px solid var(--line)}
+  .qb-toggle .qtb{flex:1;text-align:center;padding:7px;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--muted);border-radius:3px;cursor:pointer;font-family:'JetBrains Mono',monospace}
+  .qb-toggle .qtb.on{background:var(--orange);color:#fff}
+
+  .qb-preview{background:#fdfaf5;border:1px solid var(--line);border-radius:7px;padding:30px;color:#1c2024;position:relative;font-family:'Inter',sans-serif;min-height:520px}
+  .qb-preview h2{color:#1c2024;font-size:1.4rem;letter-spacing:.02em}
+  .qbp-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1c2024;padding-bottom:16px;margin-bottom:18px}
+  .qbp-bn{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.2rem;text-transform:uppercase;letter-spacing:.04em}
+  .qbp-bs{font-size:.7rem;color:#5a646e;letter-spacing:.06em;margin-top:3px;font-family:'JetBrains Mono',monospace;text-transform:uppercase}
+  .qbp-q{font-size:.7rem;text-transform:uppercase;color:#5a646e;letter-spacing:.16em;font-family:'JetBrains Mono',monospace}
+  .qbp-qn{font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;margin-top:4px}
+  .qbp-info{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;font-size:.78rem;color:#3a4148}
+  .qbp-info strong{display:block;color:#1c2024;margin-bottom:3px;letter-spacing:.04em;text-transform:uppercase;font-size:.66rem;font-family:'JetBrains Mono',monospace}
+  .qbp-line{display:grid;grid-template-columns:1.6fr .6fr .6fr .6fr;gap:8px;padding:10px 0;border-bottom:1px dashed rgba(0,0,0,.15);font-size:.8rem;color:#3a4148}
+  .qbp-line strong{color:#1c2024;font-weight:600}
+  .qbp-line.head{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#5a646e;border-bottom:2px solid #1c2024;padding-bottom:8px}
+  .qbp-line .rt{text-align:right;font-family:'JetBrains Mono',monospace}
+  .qbp-totals{margin-top:14px;display:grid;gap:6px;font-size:.82rem;color:#3a4148}
+  .qbp-totals .row{display:flex;justify-content:space-between}
+  .qbp-totals .grand{margin-top:8px;padding-top:10px;border-top:2px solid #1c2024;font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;color:#cc5212;text-transform:uppercase;letter-spacing:.02em}
+  .qbp-foot{margin-top:24px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .qbp-foot .pf{font-size:.7rem;color:#5a646e;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+  .qbp-foot .pact{display:flex;gap:8px}
+  .qbp-actbtn{padding:8px 14px;border:1px solid #1c2024;border-radius:3px;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;cursor:pointer;background:#fff;color:#1c2024;font-family:'JetBrains Mono',monospace}
+  .qbp-actbtn.fill{background:#f26a1f;color:#fff;border-color:#f26a1f}
+
+  /* PROJECT PM */
+  .pm-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+  .pm-stat{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .pm-stat .psi{width:36px;height:36px;border-radius:5px;background:rgba(242,106,31,.13);color:var(--orange);display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:1px solid rgba(242,106,31,.25)}
+  .pm-stat .pl{font-size:.62rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;font-weight:600;font-family:'JetBrains Mono',monospace}
+  .pm-stat .pv{font-family:'Oswald',sans-serif;font-size:1.3rem;font-weight:700;margin-top:2px}
+
+  .proj-table .pn{font-weight:600;color:var(--ink)}
+  .proj-table .pcrew{display:flex;align-items:center;gap:5px}
+  .proj-table .pcrew .cav{width:22px;height:22px;border-radius:50%;border:2px solid var(--panel);background:linear-gradient(135deg,var(--orange),var(--yellow));color:#fff;display:flex;align-items:center;justify-content:center;font-size:.55rem;font-weight:700;font-family:'Oswald',sans-serif}
+  .proj-table .pcrew .cav.b{background:linear-gradient(135deg,var(--blue),var(--purple))}
+  .proj-table .pcrew .cav.g{background:linear-gradient(135deg,var(--green),var(--teal))}
+  .proj-table .pcrew .cav.r{background:linear-gradient(135deg,var(--red),var(--orange))}
+  .proj-table .pcrew .cav.more{background:rgba(255,255,255,.08);color:var(--ink-soft)}
+  .proj-progress{position:relative;width:100%;height:6px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden;margin-top:5px}
+  .proj-progress div{height:100%;background:linear-gradient(90deg,var(--orange),var(--yellow));border-radius:99px}
+  .proj-progress.g div{background:linear-gradient(90deg,var(--green),var(--teal))}
+  .proj-progress.b div{background:linear-gradient(90deg,var(--blue),var(--purple))}
+  .proj-progress.r div{background:linear-gradient(90deg,var(--red),var(--orange))}
+  .pp-label{font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.02em;display:block;margin-bottom:2px}
+
+  /* SCHEDULE / CALENDAR */
+  .cal-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:12px}
+  .cal-toolbar .ctv{display:flex;gap:4px;background:var(--bg-2);border:1px solid var(--line);padding:3px;border-radius:5px}
+  .cal-toolbar .ctv span{padding:6px 14px;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;border-radius:3px;cursor:pointer;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  .cal-toolbar .ctv span.on{background:var(--orange);color:#fff}
+  .cal-toolbar .cn{font-family:'Oswald',sans-serif;font-size:1.2rem;font-weight:600;letter-spacing:.02em}
+  .cal-toolbar .cn small{font-size:.7rem;color:var(--muted);margin-left:8px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase}
+
+  .cal-grid{display:grid;grid-template-columns:80px repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .cal-cell{background:var(--panel);padding:8px 10px;min-height:64px;position:relative;font-size:.7rem}
+  .cal-cell.head{background:var(--bg-2);font-family:'JetBrains Mono',monospace;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;text-align:center;padding:10px;min-height:auto}
+  .cal-cell.head strong{display:block;color:var(--ink);font-size:1rem;letter-spacing:.02em;margin-top:3px}
+  .cal-cell.head.today strong{color:var(--orange)}
+  .cal-cell.time{background:var(--bg-2);color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:right;padding:8px 10px;font-size:.66rem;letter-spacing:.06em}
+  .cal-event{position:absolute;left:6px;right:6px;background:rgba(242,106,31,.18);border-left:3px solid var(--orange);padding:5px 8px;border-radius:3px;font-size:.72rem;color:var(--ink);overflow:hidden;cursor:pointer}
+  .cal-event:hover{background:rgba(242,106,31,.28)}
+  .cal-event .ce-t{font-weight:600;font-size:.74rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cal-event .ce-s{font-size:.62rem;color:var(--ink-soft);margin-top:2px;font-family:'JetBrains Mono',monospace;letter-spacing:.02em}
+  .cal-event.blue{background:rgba(90,169,244,.18);border-left-color:var(--blue)}
+  .cal-event.green{background:rgba(60,208,124,.16);border-left-color:var(--green)}
+  .cal-event.purple{background:rgba(167,116,240,.18);border-left-color:var(--purple)}
+  .cal-event.yellow{background:rgba(244,183,64,.18);border-left-color:var(--yellow)}
+
+  /* CREW */
+  .crew-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .crew{background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:18px}
+  .crew-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .crew-av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--yellow));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Oswald',sans-serif;font-size:1rem;flex-shrink:0}
+  .crew-av.b{background:linear-gradient(135deg,var(--blue),var(--purple))}
+  .crew-av.g{background:linear-gradient(135deg,var(--green),var(--teal))}
+  .crew-av.r{background:linear-gradient(135deg,var(--red),var(--orange))}
+  .crew-av.p{background:linear-gradient(135deg,var(--purple),var(--blue))}
+  .crew-av.s{background:linear-gradient(135deg,#5a646e,#3a4148)}
+  .crew-nm{font-size:1rem;font-weight:600;color:var(--ink)}
+  .crew-rl{font-size:.66rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-top:2px}
+  .crew-cert{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0}
+  .crew-cert span{padding:3px 8px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:3px;font-size:.6rem;color:var(--ink-soft);font-family:'JetBrains Mono',monospace;letter-spacing:.06em;font-weight:600;text-transform:uppercase}
+  .crew-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:12px;border-top:1px dashed var(--line)}
+  .crew-meta .cmi{font-size:.72rem;color:var(--muted)}
+  .crew-meta .cmi strong{display:block;color:var(--ink);font-family:'Oswald',sans-serif;font-size:.95rem;font-weight:700;margin-top:2px}
+  .crew-status{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;background:rgba(60,208,124,.13);border:1px solid rgba(60,208,124,.3);border-radius:3px;font-size:.62rem;color:var(--green);font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-left:auto}
+  .crew-status .csd{width:6px;height:6px;border-radius:50%;background:var(--green)}
+  .crew-status.off{background:rgba(255,255,255,.04);color:var(--muted);border-color:var(--line)}
+  .crew-status.off .csd{background:var(--muted)}
+  .crew-status.brk{background:rgba(244,183,64,.13);color:var(--yellow);border-color:rgba(244,183,64,.3)}
+  .crew-status.brk .csd{background:var(--yellow)}
+
+  /* EQUIPMENT */
+  .eq-table .eq-icn{width:30px;height:30px;background:var(--bg-2);border:1px solid var(--line);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:1rem;margin-right:8px;vertical-align:middle}
+
+  /* MAP */
+  .map-wrap{position:relative;background:#0b1116;border:1px solid var(--line);border-radius:7px;overflow:hidden;aspect-ratio:16/8}
+  .map-wrap svg{width:100%;height:100%;display:block}
+  .map-overlay{position:absolute;top:14px;left:14px;display:flex;gap:8px;flex-wrap:wrap}
+  .map-fil{padding:6px 12px;background:rgba(12,16,20,.85);border:1px solid var(--line-2);border-radius:3px;font-size:.66rem;color:var(--ink-soft);letter-spacing:.12em;text-transform:uppercase;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;backdrop-filter:blur(6px)}
+  .map-fil.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .map-legend-d{position:absolute;bottom:14px;left:14px;background:rgba(12,16,20,.92);border:1px solid var(--line-2);padding:12px 14px;border-radius:5px;backdrop-filter:blur(6px)}
+  .map-legend-d h4{font-size:.7rem;color:var(--ink);margin-bottom:8px;letter-spacing:.08em;font-family:'JetBrains Mono',monospace}
+  .map-legend-d .lgi{display:flex;align-items:center;gap:7px;font-size:.7rem;color:var(--ink-soft);margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:.02em}
+  .map-legend-d .lgi .dt{width:9px;height:9px;border-radius:50%}
+
+  /* PORTAL MGMT */
+  .pm-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:18px}
+  .msg-list{display:flex;flex-direction:column}
+  .msg-row{display:flex;gap:10px;padding:12px;border-radius:5px;cursor:pointer;border:1px solid transparent;margin-bottom:4px}
+  .msg-row:hover{background:var(--bg-2)}
+  .msg-row.on{background:var(--bg-2);border-color:var(--line-2)}
+  .msg-av{width:34px;height:34px;border-radius:50%;background:var(--steel);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Oswald',sans-serif;font-size:.78rem;flex-shrink:0;background:linear-gradient(135deg,var(--orange),var(--yellow))}
+  .msg-av.b{background:linear-gradient(135deg,var(--blue),var(--purple))}
+  .msg-av.g{background:linear-gradient(135deg,var(--green),var(--teal))}
+  .msg-av.p{background:linear-gradient(135deg,var(--purple),var(--blue))}
+  .msg-body{flex:1;min-width:0}
+  .msg-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+  .msg-nm{font-size:.84rem;font-weight:600;color:var(--ink)}
+  .msg-tm{font-size:.62rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+  .msg-prev{font-size:.74rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .msg-prev strong{color:var(--ink-soft);font-weight:500}
+  .msg-unread{width:7px;height:7px;border-radius:50%;background:var(--orange);margin-left:6px;flex-shrink:0}
+
+  .msg-thread{background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:18px;min-height:480px;display:flex;flex-direction:column}
+  .mt-head{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:14px}
+  .mt-info{flex:1}
+  .mt-nm{font-size:1rem;font-weight:600;color:var(--ink)}
+  .mt-sub{font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:.04em;margin-top:2px}
+  .mt-msg{display:flex;gap:10px;margin-bottom:14px}
+  .mt-bub{background:var(--panel);padding:10px 14px;border-radius:8px 8px 8px 2px;max-width:75%;font-size:.84rem;color:var(--ink-soft);line-height:1.5}
+  .mt-bub .mt-tm{display:block;margin-top:4px;font-size:.62rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+  .mt-msg.us{justify-content:flex-end}
+  .mt-msg.us .mt-bub{background:rgba(242,106,31,.18);border-radius:8px 8px 2px 8px;color:var(--ink)}
+  .mt-input{display:flex;gap:8px;padding-top:14px;border-top:1px solid var(--line);margin-top:auto}
+  .mt-input input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:10px 14px;font-size:.84rem;outline:none}
+  .mt-input input:focus{border-color:var(--orange)}
+  .mt-input button{padding:0 18px;background:var(--orange);color:#fff;border-radius:5px;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;font-family:'JetBrains Mono',monospace}
+
+  /* MARKETING */
+  .src-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .src{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px}
+  .src-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .src-head .si{width:32px;height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Oswald',sans-serif;color:#fff;font-size:.84rem}
+  .src-head .si.g{background:linear-gradient(135deg,#4285f4,#34a853)}
+  .src-head .si.f{background:linear-gradient(135deg,#1877f2,#4267b2)}
+  .src-head .si.w{background:var(--orange)}
+  .src-head .si.r{background:var(--green)}
+  .src-head .nm{font-weight:600;color:var(--ink);font-size:.92rem}
+  .src-head .nv{font-family:'Oswald',sans-serif;font-size:1.8rem;font-weight:700;color:var(--ink);line-height:1}
+  .src-met{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .src-met .smi .sml{font-size:.6rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;font-weight:600}
+  .src-met .smi .smv{font-size:.86rem;font-weight:600;color:var(--ink);margin-top:2px;font-family:'Oswald',sans-serif;letter-spacing:.02em}
+
+  /* ACCOUNTING */
+  .ac-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+  .ac-card{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--orange);border-radius:6px;padding:18px}
+  .ac-card.green{border-top-color:var(--green)}
+  .ac-card.blue{border-top-color:var(--blue)}
+  .ac-card.red{border-top-color:var(--red)}
+  .ac-card .acl{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;font-family:'JetBrains Mono',monospace}
+  .ac-card .acv{font-family:'Oswald',sans-serif;font-size:1.7rem;font-weight:700;margin-top:6px;line-height:1}
+  .ac-card .acs{font-size:.7rem;color:var(--muted);margin-top:5px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+
+  /* RESPONSIVE */
+  @media (max-width:1280px){
+    .kpi-row{grid-template-columns:repeat(3,1fr)}
+    .kanban{grid-template-columns:repeat(3,1fr)}
+    .crew-grid{grid-template-columns:repeat(2,1fr)}
+    .grid-2,.grid-3,.grid-1-2,.grid-2-1{grid-template-columns:1fr}
+    .qb-wrap,.pm-grid{grid-template-columns:1fr}
+  }
+  @media (max-width:780px){
+    .app{grid-template-columns:1fr}
+    aside.side{position:relative;height:auto}
+    .kpi-row,.pm-summary,.src-grid,.ac-summary{grid-template-columns:repeat(2,1fr)}
+    .kanban{grid-template-columns:1fr}
+    .crew-grid{grid-template-columns:1fr}
+    .search{display:none}
+    .cal-grid{grid-template-columns:50px repeat(5,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand-line">
+      <div class="bm"></div>
+      <div>
+        <div class="bn">Summit OS</div>
+        <div class="br">Operations Console</div>
+      </div>
+    </div>
+
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" data-view="exec"><span class="ic">⌂</span> Executive Dashboard</div>
+
+    <div class="nav-section">Sales</div>
+    <div class="nav-item" data-view="crm"><span class="ic">⊙</span> Lead CRM <span class="badge">7</span></div>
+    <div class="nav-item" data-view="quotes"><span class="ic">≡</span> Quote Builder</div>
+
+    <div class="nav-section">Operations</div>
+    <div class="nav-item" data-view="projects"><span class="ic">▦</span> Projects <span class="badge g">12</span></div>
+    <div class="nav-item" data-view="schedule"><span class="ic">⌧</span> Scheduling</div>
+    <div class="nav-item" data-view="crew"><span class="ic">⚒</span> Crew Management</div>
+    <div class="nav-item" data-view="equipment"><span class="ic">⛟</span> Equipment</div>
+    <div class="nav-item" data-view="map"><span class="ic">⌖</span> Live Map</div>
+
+    <div class="nav-section">Customer</div>
+    <div class="nav-item" data-view="portal"><span class="ic">✉</span> Portal Inbox <span class="badge red">3</span></div>
+
+    <div class="nav-section">Growth</div>
+    <div class="nav-item" data-view="marketing"><span class="ic">⌥</span> Marketing</div>
+    <div class="nav-item" data-view="accounting"><span class="ic">$</span> Accounting</div>
+
+    <a href="index.html" class="public-link">← Back to Public Site</a>
+
+    <div class="side-foot">
+      <div class="av">DW</div>
+      <div>
+        <div class="nm">Dylan Williams</div>
+        <div class="rl">Owner · Admin</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <header class="topbar">
+      <div class="heading">
+        <h1 id="page-title">Executive Dashboard</h1>
+        <div class="sub" id="page-sub">// Wednesday, June 3, 2026 · Q2 in progress</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search">⌕<input placeholder="Search leads, projects, customers…"><span class="kbd">⌘K</span></div>
+        <div class="weather-chip"><span>☀</span>78°F · CLEAR</div>
+        <div class="date-chip">WK 23 · DAY 4/6</div>
+        <button class="icon-btn">🔔<span class="dot-n"></span></button>
+        <a href="index.html" class="pub-back">View Site →</a>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ============== EXECUTIVE DASHBOARD ============== -->
+      <section class="view active" id="view-exec">
+        <div class="kpi-row">
+          <div class="kpi"><div class="kl">Open Leads</div><div class="kv">47<small>this wk</small></div><div class="kd">▲ +12 vs last wk</div></div>
+          <div class="kpi blue"><div class="kl">Estimates Sent</div><div class="kv">23<small>pending</small></div><div class="kd">▲ +4 today</div></div>
+          <div class="kpi green"><div class="kl">Jobs Scheduled</div><div class="kv">18<small>this wk</small></div><div class="kd">▲ 92% utilization</div></div>
+          <div class="kpi yellow"><div class="kl">Revenue MTD</div><div class="kv">$284K</div><div class="kd">▲ +18% vs May</div></div>
+          <div class="kpi purple"><div class="kl">Outstanding A/R</div><div class="kv">$67.4K</div><div class="kd down">▼ 14 invoices</div></div>
+          <div class="kpi red"><div class="kl">Crew Utilization</div><div class="kv">87<small>%</small></div><div class="kd flat">— On target</div></div>
+        </div>
+
+        <div class="grid grid-2-1" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h3>Revenue · Last 12 Weeks</h3>
+                <div class="ch-sub">// closed-won by trade · weekly</div>
+              </div>
+              <div class="ch-right">
+                <span class="chip on">Revenue</span>
+                <span class="chip">Leads</span>
+                <span class="chip">Margin</span>
+              </div>
+            </div>
+            <div class="chart">
+              <div class="bar"><div class="bv" style="height:42%"></div><div class="bl">WK12</div></div>
+              <div class="bar"><div class="bv" style="height:55%"></div><div class="bl">WK13</div></div>
+              <div class="bar"><div class="bv" style="height:48%"></div><div class="bl">WK14</div></div>
+              <div class="bar"><div class="bv" style="height:62%"></div><div class="bl">WK15</div></div>
+              <div class="bar"><div class="bv" style="height:58%"></div><div class="bl">WK16</div></div>
+              <div class="bar"><div class="bv" style="height:71%"></div><div class="bl">WK17</div></div>
+              <div class="bar"><div class="bv" style="height:65%"></div><div class="bl">WK18</div></div>
+              <div class="bar"><div class="bv" style="height:74%"></div><div class="bl">WK19</div></div>
+              <div class="bar"><div class="bv" style="height:80%"></div><div class="bl">WK20</div></div>
+              <div class="bar"><div class="bv" style="height:88%"></div><div class="bl">WK21</div></div>
+              <div class="bar"><div class="bv" style="height:82%"></div><div class="bl">WK22</div></div>
+              <div class="bar"><div class="bv" style="height:95%"></div><div class="bl">WK23</div></div>
+            </div>
+            <div class="chart-legend"><span>Closed Revenue</span><span class="blue">— Trend ($1,200/wk grade)</span></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div><h3>Pipeline Today</h3><div class="ch-sub">// 47 leads in play</div></div>
+            </div>
+            <div class="list">
+              <div class="list-row"><div class="lav b">NL</div><div class="lt"><div class="lt-1">New Leads</div><div class="lt-2">↑ 8 new since Mon</div></div><div class="lr">14</div></div>
+              <div class="list-row"><div class="lav p">CT</div><div class="lt"><div class="lt-1">Contacted</div><div class="lt-2">awaiting reply</div></div><div class="lr">12</div></div>
+              <div class="list-row"><div class="lav">ES</div><div class="lt"><div class="lt-1">Estimate Scheduled</div><div class="lt-2">site visits booked</div></div><div class="lr">9</div></div>
+              <div class="list-row"><div class="lav">QS</div><div class="lt"><div class="lt-1">Quote Sent</div><div class="lt-2">avg 3.2d → decision</div></div><div class="lr">8</div></div>
+              <div class="list-row"><div class="lav g">WN</div><div class="lt"><div class="lt-1">Won (week)</div><div class="lt-2">$184k contract value</div></div><div class="lr">5</div></div>
+              <div class="list-row"><div class="lav s">LS</div><div class="lt"><div class="lt-1">Lost (week)</div><div class="lt-2">close rate 71%</div></div><div class="lr">2</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="card">
+            <div class="card-head"><div><h3>Today's Jobs</h3><div class="ch-sub">// 6 active sites</div></div><span class="chip on">Live</span></div>
+            <div class="list">
+              <div class="list-row"><div class="lav">RF</div><div class="lt"><div class="lt-1">Pruitt Residence — Roof</div><div class="lt-2">Mountain Brook · Crew Alpha · Day 2/2</div></div><div class="lr" style="color:var(--green)">86%</div></div>
+              <div class="list-row"><div class="lav g">LD</div><div class="lt"><div class="lt-1">Adler Backyard Reset</div><div class="lt-2">Vestavia · Crew Bravo · Day 4/5</div></div><div class="lr" style="color:var(--green)">72%</div></div>
+              <div class="list-row"><div class="lav b">HV</div><div class="lt"><div class="lt-1">Magnolia Office Tower HVAC</div><div class="lt-2">Birmingham · Crew Hotel · Day 1/4</div></div><div class="lr" style="color:var(--yellow)">28%</div></div>
+              <div class="list-row"><div class="lav p">CN</div><div class="lt"><div class="lt-1">Helena Deck + Pergola</div><div class="lt-2">Helena · Crew Delta · Day 6/9</div></div><div class="lr" style="color:var(--yellow)">62%</div></div>
+              <div class="list-row"><div class="lav">FN</div><div class="lt"><div class="lt-1">Witcomb 320LF Fence</div><div class="lt-2">Hoover · Crew Echo · Day 2/3</div></div><div class="lr" style="color:var(--green)">68%</div></div>
+              <div class="list-row"><div class="lav b">TR</div><div class="lt"><div class="lt-1">Storm Cleanup — 3 Oaks</div><div class="lt-2">Trussville · Crew Charlie · Today</div></div><div class="lr" style="color:var(--orange)">42%</div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div><h3>Recent Activity</h3><div class="ch-sub">// last 2 hours</div></div></div>
+            <div class="list">
+              <div class="list-row"><div class="lav g">$</div><div class="lt"><div class="lt-1">Pruitt — Final invoice paid</div><div class="lt-2">$18,400 · Stripe · 14:32</div></div></div>
+              <div class="list-row"><div class="lav">📷</div><div class="lt"><div class="lt-1">Crew Bravo — 18 photos uploaded</div><div class="lt-2">Adler Backyard · 14:18</div></div></div>
+              <div class="list-row"><div class="lav b">📨</div><div class="lt"><div class="lt-1">New lead — McGehee Estate</div><div class="lt-2">Roofing · Birmingham · Google Ads · 13:55</div></div></div>
+              <div class="list-row"><div class="lav p">📝</div><div class="lt"><div class="lt-1">Quote sent — Thornton residence</div><div class="lt-2">Fence + Hardscape · $24,200 · 13:41</div></div></div>
+              <div class="list-row"><div class="lav">⚒</div><div class="lt"><div class="lt-1">Crew Hotel checked in on site</div><div class="lt-2">Magnolia Tower · GPS verified · 13:28</div></div></div>
+              <div class="list-row"><div class="lav g">★</div><div class="lt"><div class="lt-1">5-star Google review — Janelle L.</div><div class="lt-2">"…better than the next closest bid" · 12:54</div></div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div><h3>Quick Actions</h3><div class="ch-sub">// most-used today</div></div></div>
+            <div class="list" style="margin-top:-2px">
+              <div class="list-row" style="cursor:pointer"><div class="lav">➕</div><div class="lt"><div class="lt-1">New Lead</div><div class="lt-2">Manual entry</div></div><div class="lr" style="color:var(--muted)">N</div></div>
+              <div class="list-row" style="cursor:pointer"><div class="lav b">≡</div><div class="lt"><div class="lt-1">Start Quote</div><div class="lt-2">Quote Builder</div></div><div class="lr" style="color:var(--muted)">Q</div></div>
+              <div class="list-row" style="cursor:pointer"><div class="lav g">⌧</div><div class="lt"><div class="lt-1">Schedule Visit</div><div class="lt-2">Calendar</div></div><div class="lr" style="color:var(--muted)">S</div></div>
+              <div class="list-row" style="cursor:pointer"><div class="lav p">📄</div><div class="lt"><div class="lt-1">Send Invoice</div><div class="lt-2">Stripe</div></div><div class="lr" style="color:var(--muted)">I</div></div>
+              <div class="list-row" style="cursor:pointer"><div class="lav">⚒</div><div class="lt"><div class="lt-1">Assign Crew</div><div class="lt-2">Drag from kanban</div></div></div>
+              <div class="list-row" style="cursor:pointer"><div class="lav s">⚙</div><div class="lt"><div class="lt-1">Run End-of-Day Report</div><div class="lt-2">Email to crew leads</div></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== LEAD CRM ============== -->
+      <section class="view" id="view-crm">
+        <div class="kpi-row" style="grid-template-columns:repeat(5,1fr)">
+          <div class="kpi"><div class="kl">Total Pipeline</div><div class="kv">$486K</div><div class="kd">▲ +24% MTD</div></div>
+          <div class="kpi blue"><div class="kl">New This Week</div><div class="kv">14</div><div class="kd">▲ +6 vs last</div></div>
+          <div class="kpi green"><div class="kl">Close Rate</div><div class="kv">71<small>%</small></div><div class="kd">90-day rolling</div></div>
+          <div class="kpi yellow"><div class="kl">Avg. Time to Close</div><div class="kv">8.4d</div><div class="kd">▲ improving</div></div>
+          <div class="kpi purple"><div class="kl">Avg. Deal Size</div><div class="kv">$11.2K</div><div class="kd">▲ +$1.4k YTD</div></div>
+        </div>
+
+        <div class="kanban">
+          <div>
+            <div class="kcol-head new"><span class="kct">New Lead</span><span class="kcn">14</span></div>
+            <div class="kcard">
+              <div class="ktop"><div><div class="knm">McGehee Estate</div><div class="ksvc">ROOFING · BIRMINGHAM</div></div></div>
+              <div class="kval">~$14k</div>
+              <div class="kbot"><div class="kdate">// today 13:55</div><div class="kpm">RM</div></div>
+            </div>
+            <div class="kcard">
+              <div class="ktop"><div><div class="knm">Carrera Townhomes</div><div class="ksvc">HVAC · HOOVER</div></div></div>
+              <div class="kval">~$28k</div>
+              <div class="kbot"><div class="kdate">// today 11:12</div><div class="kpm">JT</div></div>
+            </div>
+            <div class="kcard">
+              <div class="ktop"><div><div class="knm">Kowalski Residence</div><div class="ksvc">FENCE · VESTAVIA</div></div></div>
+              <div class="kval">~$7.5k</div>
+              <div class="kbot"><div class="kdate">// today 09:48</div><div class="kpm">RM</div></div>
+            </div>
+            <div class="kcard">
+              <div class="ktop"><div><div class="knm">Bishop Hardware</div><div class="ksvc">ELECTRICAL · TRUSSVILLE</div></div></div>
+              <div class="kval">~$22k</div>
+              <div class="kbot"><div class="kdate">// yesterday</div><div class="kpm">JT</div></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="kcol-head contacted"><span class="kct">Contacted</span><span class="kcn">12</span></div>
+            <div class="kcard contacted">
+              <div class="ktop"><div><div class="knm">Thornton Residence</div><div class="ksvc">FENCE + HARDSCAPE</div></div></div>
+              <div class="kval">$24.2k</div>
+              <div class="kbot"><div class="kdate">// site visit Fri 9a</div><div class="kpm">DW</div></div>
+            </div>
+            <div class="kcard contacted">
+              <div class="ktop"><div><div class="knm">Lakeview Apartments</div><div class="ksvc">LANDSCAPING · QUARTERLY</div></div></div>
+              <div class="kval">$48k/yr</div>
+              <div class="kbot"><div class="kdate">// awaiting plans</div><div class="kpm">RM</div></div>
+            </div>
+            <div class="kcard contacted">
+              <div class="ktop"><div><div class="knm">Patel Family — Forest Park</div><div class="ksvc">CONSTRUCTION · ADDITION</div></div></div>
+              <div class="kval">~$185k</div>
+              <div class="kbot"><div class="kdate">// arch drawings sent</div><div class="kpm">DW</div></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="kcol-head est-sched"><span class="kct">Est. Scheduled</span><span class="kcn">9</span></div>
+            <div class="kcard est-sched">
+              <div class="ktop"><div><div class="knm">Russo Garage Build</div><div class="ksvc">CONSTRUCTION · DETACHED</div></div></div>
+              <div class="kval">~$72k</div>
+              <div class="kbot"><div class="kdate">// THU 6/4 · 10:30a</div><div class="kpm">DW</div></div>
+            </div>
+            <div class="kcard est-sched">
+              <div class="ktop"><div><div class="knm">Fairmount Office Park</div><div class="ksvc">ROOFING · 3 BUILDINGS</div></div></div>
+              <div class="kval">~$148k</div>
+              <div class="kbot"><div class="kdate">// FRI 6/5 · 8:00a</div><div class="kpm">RM</div></div>
+            </div>
+            <div class="kcard est-sched">
+              <div class="ktop"><div><div class="knm">Davenport Residence</div><div class="ksvc">PLUMBING · REPIPE</div></div></div>
+              <div class="kval">~$18k</div>
+              <div class="kbot"><div class="kdate">// SAT 6/6 · 11:00a</div><div class="kpm">JT</div></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="kcol-head est-sent"><span class="kct">Quote Sent</span><span class="kcn">8</span></div>
+            <div class="kcard est-sent">
+              <div class="ktop"><div><div class="knm">Bellinger Estate</div><div class="ksvc">ROOFING + GUTTERS</div></div></div>
+              <div class="kval">$28.6k</div>
+              <div class="kbot"><div class="kdate">// sent 2d ago · 1 view</div><div class="kpm">RM</div></div>
+            </div>
+            <div class="kcard est-sent">
+              <div class="ktop"><div><div class="knm">Crestwood Country Club</div><div class="ksvc">LANDSCAPING + IRR.</div></div></div>
+              <div class="kval">$94k</div>
+              <div class="kbot"><div class="kdate">// sent 5d ago · viewed 4x</div><div class="kpm">DW</div></div>
+            </div>
+            <div class="kcard est-sent">
+              <div class="ktop"><div><div class="knm">Cahaba Heights Spec Home</div><div class="ksvc">ELECTRICAL ROUGH-IN</div></div></div>
+              <div class="kval">$17.8k</div>
+              <div class="kbot"><div class="kdate">// sent 1d · awaiting</div><div class="kpm">JT</div></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="kcol-head won"><span class="kct">Won</span><span class="kcn">5</span></div>
+            <div class="kcard won">
+              <div class="ktop"><div><div class="knm">Pruitt Residence</div><div class="ksvc">ROOFING · TIMBERLINE HDZ</div></div></div>
+              <div class="kval">$18.4k</div>
+              <div class="kbot"><div class="kdate">// closed today ✓</div><div class="kpm">RM</div></div>
+            </div>
+            <div class="kcard won">
+              <div class="ktop"><div><div class="knm">Adler Family</div><div class="ksvc">LANDSCAPING · FULL RESET</div></div></div>
+              <div class="kval">$11.6k</div>
+              <div class="kbot"><div class="kdate">// closed yesterday ✓</div><div class="kpm">DW</div></div>
+            </div>
+            <div class="kcard won">
+              <div class="ktop"><div><div class="knm">Magnolia Office Tower</div><div class="ksvc">HVAC · DUAL 5-TON</div></div></div>
+              <div class="kval">$32.4k</div>
+              <div class="kbot"><div class="kdate">// closed 2d ago ✓</div><div class="kpm">JT</div></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="kcol-head lost"><span class="kct">Lost</span><span class="kcn">2</span></div>
+            <div class="kcard lost">
+              <div class="ktop"><div><div class="knm">Berkeley Residence</div><div class="ksvc">ROOFING</div></div></div>
+              <div class="kval">$22k</div>
+              <div class="kbot"><div class="kdate">// went w/ insurance preferred</div><div class="kpm">RM</div></div>
+            </div>
+            <div class="kcard lost">
+              <div class="ktop"><div><div class="knm">Henderson Garage</div><div class="ksvc">CONSTRUCTION</div></div></div>
+              <div class="kval">$38k</div>
+              <div class="kbot"><div class="kdate">// budget · "next yr"</div><div class="kpm">DW</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== QUOTE BUILDER ============== -->
+      <section class="view" id="view-quotes">
+        <div class="qb-wrap">
+          <div class="qb-side">
+            <div class="qb-tabs">
+              <span class="qb-tab on">Roofing</span>
+              <span class="qb-tab">Landscape</span>
+              <span class="qb-tab">Fence</span>
+              <span class="qb-tab">HVAC</span>
+              <span class="qb-tab">Plumb</span>
+              <span class="qb-tab">Elec</span>
+            </div>
+
+            <div class="qb-section">
+              <div class="qb-label">Customer</div>
+              <input class="qb-input" value="Pruitt Family · Mountain Brook">
+            </div>
+            <div class="qb-section">
+              <div class="qb-label">Property Address</div>
+              <input class="qb-input" value="2148 Vintage Way, Mountain Brook AL 35223">
+            </div>
+
+            <div class="qb-section">
+              <div class="qb-label">Roofing Spec</div>
+              <div class="qb-toggle" style="margin-bottom:8px"><div class="qtb on">Tear-off</div><div class="qtb">Overlay</div></div>
+              <select class="qb-input">
+                <option>GAF Timberline HDZ — Charcoal</option>
+                <option>GAF Timberline UHDZ — Pewter Gray</option>
+                <option>CertainTeed Landmark — Weathered Wood</option>
+              </select>
+            </div>
+
+            <div class="qb-row2">
+              <div class="qb-section">
+                <div class="qb-label">Squares</div>
+                <input class="qb-input" value="32">
+              </div>
+              <div class="qb-section">
+                <div class="qb-label">Pitch</div>
+                <input class="qb-input" value="6/12">
+              </div>
+            </div>
+
+            <div class="qb-section">
+              <div class="qb-label">Add-Ons</div>
+              <div style="display:flex;flex-direction:column;gap:6px;font-size:.84rem;color:var(--ink-soft)">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" checked> Ridge vent (full)</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" checked> Ice & water shield (all valleys)</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox"> Replace pipe boots (4 ea)</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" checked> Decking allowance (10 sheets)</label>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox"> 6" gutters + downspouts</label>
+              </div>
+            </div>
+
+            <div class="qb-section">
+              <div class="qb-label">Margin Target</div>
+              <div class="qb-toggle"><div class="qtb">28%</div><div class="qtb on">34%</div><div class="qtb">40%</div></div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:18px">
+              <button class="qbp-actbtn" style="background:var(--bg-2);color:var(--ink-soft);border-color:var(--line-2)">Save Draft</button>
+              <button class="qbp-actbtn" style="background:var(--orange);color:#fff;border-color:var(--orange);flex:1">Send to Customer →</button>
+            </div>
+          </div>
+
+          <div class="qb-preview">
+            <div class="qbp-head">
+              <div>
+                <div class="qbp-bn">SUMMIT HOME SERVICES</div>
+                <div class="qbp-bs">1840 Oxmoor Rd · Birmingham AL · AL-58241</div>
+              </div>
+              <div style="text-align:right">
+                <div class="qbp-q">Quote</div>
+                <div class="qbp-qn">#Q-2026-0847</div>
+                <div class="qbp-bs">Issued 06/03/26 · Valid 30d</div>
+              </div>
+            </div>
+
+            <div class="qbp-info">
+              <div><strong>Bill To</strong>Pruitt Family<br>2148 Vintage Way<br>Mountain Brook AL 35223</div>
+              <div><strong>Project</strong>Full roof tear-off & replacement<br>GAF Timberline HDZ · Charcoal<br>32 squares · 6/12 pitch</div>
+            </div>
+
+            <div class="qbp-line head"><div>Description</div><div class="rt">Qty</div><div class="rt">Rate</div><div class="rt">Total</div></div>
+            <div class="qbp-line"><div><strong>GAF Timberline HDZ Shingles</strong><br><span style="font-size:.7rem;color:#5a646e">Charcoal · Includes accessories</span></div><div class="rt">32 sq</div><div class="rt">$285.00</div><div class="rt"><strong>$9,120</strong></div></div>
+            <div class="qbp-line"><div><strong>Tear-Off — Existing Layer</strong><br><span style="font-size:.7rem;color:#5a646e">Haul-away & disposal incl.</span></div><div class="rt">32 sq</div><div class="rt">$72.00</div><div class="rt"><strong>$2,304</strong></div></div>
+            <div class="qbp-line"><div><strong>Synthetic Underlayment</strong><br><span style="font-size:.7rem;color:#5a646e">GAF Tiger Paw, full coverage</span></div><div class="rt">32 sq</div><div class="rt">$48.00</div><div class="rt"><strong>$1,536</strong></div></div>
+            <div class="qbp-line"><div><strong>Ridge Vent — Full Run</strong></div><div class="rt">82 lf</div><div class="rt">$14.00</div><div class="rt"><strong>$1,148</strong></div></div>
+            <div class="qbp-line"><div><strong>Ice & Water — Valleys + Eaves</strong></div><div class="rt">9 sq</div><div class="rt">$98.00</div><div class="rt"><strong>$882</strong></div></div>
+            <div class="qbp-line"><div><strong>Decking Allowance</strong><br><span style="font-size:.7rem;color:#5a646e">10 sheets ½" CDX · billed if used</span></div><div class="rt">10 ea</div><div class="rt">$62.00</div><div class="rt"><strong>$620</strong></div></div>
+            <div class="qbp-line"><div><strong>Labor — Install Crew (3)</strong></div><div class="rt">2 days</div><div class="rt">$1,395</div><div class="rt"><strong>$2,790</strong></div></div>
+
+            <div class="qbp-totals">
+              <div class="row"><span>Subtotal</span><span>$18,400.00</span></div>
+              <div class="row" style="color:#5a646e"><span>Materials margin (34%)</span><span>incl.</span></div>
+              <div class="row" style="color:#5a646e"><span>Sales tax</span><span>Exempt (cap improvement)</span></div>
+              <div class="row grand"><span>Total</span><span>$18,400.00</span></div>
+            </div>
+
+            <div class="qbp-foot">
+              <div class="pf">15-yr GAF System Plus + 10-yr Summit workmanship warranty<br>$0 down financing available · 0% APR / 18mo or 6.99% / 84mo · GreenSky</div>
+              <div class="pact">
+                <button class="qbp-actbtn">PDF</button>
+                <button class="qbp-actbtn">Preview Email</button>
+                <button class="qbp-actbtn fill">Send Quote →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== PROJECTS ============== -->
+      <section class="view" id="view-projects">
+        <div class="pm-summary">
+          <div class="pm-stat"><div class="psi">▦</div><div><div class="pl">Active Projects</div><div class="pv">12</div></div></div>
+          <div class="pm-stat"><div class="psi" style="color:var(--green);background:rgba(60,208,124,.13);border-color:rgba(60,208,124,.25)">✓</div><div><div class="pl">On Schedule</div><div class="pv">9</div></div></div>
+          <div class="pm-stat"><div class="psi" style="color:var(--yellow);background:rgba(244,183,64,.13);border-color:rgba(244,183,64,.25)">⚠</div><div><div class="pl">At Risk</div><div class="pv">2</div></div></div>
+          <div class="pm-stat"><div class="psi" style="color:var(--blue);background:rgba(90,169,244,.13);border-color:rgba(90,169,244,.25)">$</div><div><div class="pl">Active Contract Value</div><div class="pv">$486K</div></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Active Projects</h3><div class="ch-sub">// drag to reorder · click for kanban detail</div></div>
+            <div class="ch-right">
+              <span class="chip on">All</span>
+              <span class="chip">Roofing</span>
+              <span class="chip">Landscape</span>
+              <span class="chip">HVAC</span>
+              <span class="chip">Construction</span>
+            </div>
+          </div>
+          <table class="proj-table">
+            <thead><tr><th>Project</th><th>Customer</th><th>Service</th><th>Crew</th><th>Progress</th><th>Contract</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="pn">Pruitt — Full Roof Replace</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace">Day 2/2 · Mountain Brook</div></td>
+                <td>Sarah & Mike Pruitt</td>
+                <td><span class="chip">ROOFING</span></td>
+                <td><div class="pcrew"><div class="cav">RM</div><div class="cav b">JT</div><div class="cav g">DM</div></div></td>
+                <td><span class="pp-label mono">86% · 2/2 days</span><div class="proj-progress g"><div style="width:86%"></div></div></td>
+                <td><strong>$18,400</strong></td>
+                <td><span class="chip g">ON SCHEDULE</span></td>
+              </tr>
+              <tr>
+                <td><div class="pn">Adler Backyard Reset</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace">Day 4/5 · Vestavia</div></td>
+                <td>Adler Family</td>
+                <td><span class="chip">LANDSCAPING</span></td>
+                <td><div class="pcrew"><div class="cav g">CB</div><div class="cav">LR</div><div class="cav r">PV</div><div class="cav more">+1</div></div></td>
+                <td><span class="pp-label mono">72% · 4/5 days</span><div class="proj-progress g"><div style="width:72%"></div></div></td>
+                <td><strong>$11,600</strong></td>
+                <td><span class="chip g">ON SCHEDULE</span></td>
+              </tr>
+              <tr>
+                <td><div class="pn">Magnolia Office HVAC</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace">Day 1/4 · Birmingham</div></td>
+                <td>Magnolia Holdings LLC</td>
+                <td><span class="chip">HVAC</span></td>
+                <td><div class="pcrew"><div class="cav b">HG</div><div class="cav">SK</div><div class="cav p">NT</div></div></td>
+                <td><span class="pp-label mono">28% · 1/4 days</span><div class="proj-progress"><div style="width:28%"></div></div></td>
+                <td><strong>$32,400</strong></td>
+                <td><span class="chip y">START DAY</span></td>
+              </tr>
+              <tr>
+                <td><div class="pn">Helena Deck + Pergola</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace">Day 6/9 · Helena</div></td>
+                <td>Mark & Lisa Russo</td>
+                <td><span class="chip">CONSTRUCTION</span></td>
+                <td><div class="pcrew"><div class="cav p">DC</div><div class="cav g">EH</div><div class="cav">TF</div></div></td>
+                <td><span class="pp-label mono">62% · 6/9 days</span><div class="proj-progress b"><div style="width:62%"></div></div></td>
+                <td><strong>$24,800</strong></td>
+                <td><span class="chip g">ON SCHEDULE</span></td>
+              </tr>
+              <tr>
+                <td><div class="pn">Witcomb 320LF Cedar Fence</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace">Day 2/3 · Hoover</div></td>
+                <td>Witcomb Family</td>
+                <td><span class="chip">FENCING</span></td>
+                <td><div class="pcrew"><div class="cav">EC</div><div class="cav b">RD</div><div class="cav g">JM</div></div></td>
+                <td><span class="pp-label mono">68% · 2/3 days</span><div class="proj-progress g"><div style="width:68%"></div></div></td>
+                <td><strong>$8,950</strong></td>
+                <td><span class="chip g">ON SCHEDULE</span></td>
+              </tr>
+              <tr>
+                <td><div class="pn">Hayworth Pool Patio</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace">Day 3/12 · Birmingham</div></td>
+                <td>Caleb Hayworth</td>
+                <td><span class="chip">CONSTRUCTION</span></td>
+                <td><div class="pcrew"><div class="cav p">DC</div><div class="cav r">BW</div></div></td>
+                <td><span class="pp-label mono">22% · 3/12 days</span><div class="proj-progress"><div style="width:22%"></div></div></td>
+                <td><strong>$42,800</strong></td>
+                <td><span class="chip y">PERMIT REVIEW</span></td>
+              </tr>
+              <tr>
+                <td><div class="pn">Cahaba Heights Repipe</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace">Day 4/4 · Cahaba</div></td>
+                <td>Tom & Yolanda Davenport</td>
+                <td><span class="chip">PLUMBING</span></td>
+                <td><div class="pcrew"><div class="cav">PG</div><div class="cav b">SN</div></div></td>
+                <td><span class="pp-label mono">96% · 4/4 days</span><div class="proj-progress g"><div style="width:96%"></div></div></td>
+                <td><strong>$14,200</strong></td>
+                <td><span class="chip b">FINAL WALK</span></td>
+              </tr>
+              <tr>
+                <td><div class="pn">Bellevue Lighting Retrofit</div><div style="font-size:.7rem;color:var(--muted);margin-top:2px;font-family:'JetBrains Mono',monospace">Day 3/6 · Hoover</div></td>
+                <td>Bellevue HOA</td>
+                <td><span class="chip">ELECTRICAL</span></td>
+                <td><div class="pcrew"><div class="cav r">AK</div><div class="cav p">VS</div><div class="cav">JR</div></div></td>
+                <td><span class="pp-label mono">48% · 3/6 days</span><div class="proj-progress"><div style="width:48%"></div></div></td>
+                <td><strong>$28,400</strong></td>
+                <td><span class="chip r">WAITING PARTS</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============== SCHEDULE ============== -->
+      <section class="view" id="view-schedule">
+        <div class="cal-toolbar">
+          <div class="cn">June 1 — 5, 2026 <small>WEEK 23 · CREW SCHEDULE</small></div>
+          <div style="display:flex;gap:10px">
+            <div class="ctv"><span>Day</span><span class="on">Week</span><span>Month</span><span>Gantt</span></div>
+            <span class="chip on">All Crews</span>
+            <span class="chip">Roofing</span>
+            <span class="chip">Landscape</span>
+            <span class="chip">Service Calls</span>
+          </div>
+        </div>
+
+        <div class="cal-grid">
+          <div class="cal-cell head" style="min-height:auto">&nbsp;</div>
+          <div class="cal-cell head">Mon <strong>06/01</strong></div>
+          <div class="cal-cell head">Tue <strong>06/02</strong></div>
+          <div class="cal-cell head today">Wed <strong>06/03</strong></div>
+          <div class="cal-cell head">Thu <strong>06/04</strong></div>
+          <div class="cal-cell head">Fri <strong>06/05</strong></div>
+
+          <div class="cal-cell time">7:00a</div>
+          <div class="cal-cell"><div class="cal-event"><div class="ce-t">Pruitt Roof — Day 1</div><div class="ce-s">CREW ALPHA · 7a–4p</div></div></div>
+          <div class="cal-cell"><div class="cal-event"><div class="ce-t">Pruitt Roof — Day 2 ✓</div><div class="ce-s">CREW ALPHA · 7a–3p</div></div></div>
+          <div class="cal-cell"><div class="cal-event blue"><div class="ce-t">Magnolia HVAC — Day 1</div><div class="ce-s">CREW HOTEL · 7a–4p</div></div></div>
+          <div class="cal-cell"><div class="cal-event blue"><div class="ce-t">Magnolia HVAC — Day 2</div><div class="ce-s">CREW HOTEL · 7a–4p</div></div></div>
+          <div class="cal-cell"><div class="cal-event blue"><div class="ce-t">Magnolia HVAC — Day 3</div><div class="ce-s">CREW HOTEL · 7a–4p</div></div></div>
+
+          <div class="cal-cell time">8:00a</div>
+          <div class="cal-cell"><div class="cal-event green"><div class="ce-t">Adler Sod Prep</div><div class="ce-s">CREW BRAVO · 8a–5p</div></div></div>
+          <div class="cal-cell"><div class="cal-event green"><div class="ce-t">Adler Sod Day 2</div><div class="ce-s">CREW BRAVO</div></div></div>
+          <div class="cal-cell"><div class="cal-event green"><div class="ce-t">Adler Sod Day 3</div><div class="ce-s">CREW BRAVO</div></div></div>
+          <div class="cal-cell"><div class="cal-event green"><div class="ce-t">Adler — Lighting Final</div><div class="ce-s">CREW BRAVO · 8a–4p</div></div></div>
+          <div class="cal-cell"><div class="cal-event yellow"><div class="ce-t">Crestwood Site Visit</div><div class="ce-s">DYLAN · 8a–9:30a</div></div></div>
+
+          <div class="cal-cell time">9:00a</div>
+          <div class="cal-cell"><div class="cal-event purple"><div class="ce-t">Helena Deck — Day 4</div><div class="ce-s">CREW DELTA</div></div></div>
+          <div class="cal-cell"><div class="cal-event purple"><div class="ce-t">Helena Deck — Day 5</div><div class="ce-s">CREW DELTA</div></div></div>
+          <div class="cal-cell"><div class="cal-event purple"><div class="ce-t">Helena Deck — Day 6</div><div class="ce-s">CREW DELTA</div></div></div>
+          <div class="cal-cell"><div class="cal-event yellow"><div class="ce-t">Russo Garage Estimate</div><div class="ce-s">DYLAN · 10:30a</div></div></div>
+          <div class="cal-cell"><div class="cal-event purple"><div class="ce-t">Helena Deck — Day 8</div><div class="ce-s">CREW DELTA</div></div></div>
+
+          <div class="cal-cell time">10:00a</div>
+          <div class="cal-cell"><div class="cal-event"><div class="ce-t">Witcomb Fence — Layout</div><div class="ce-s">CREW ECHO</div></div></div>
+          <div class="cal-cell"><div class="cal-event"><div class="ce-t">Witcomb Fence — Day 2</div><div class="ce-s">CREW ECHO</div></div></div>
+          <div class="cal-cell"><div class="cal-event"><div class="ce-t">Witcomb Fence — Day 3 ✓</div><div class="ce-s">CREW ECHO</div></div></div>
+          <div class="cal-cell"><div class="cal-event blue"><div class="ce-t">Bellevue Lighting Day 3</div><div class="ce-s">CREW INDIA</div></div></div>
+          <div class="cal-cell"><div class="cal-event yellow"><div class="ce-t">Fairmount Office Bid Walk</div><div class="ce-s">RYAN · 8a–11a</div></div></div>
+
+          <div class="cal-cell time">11:00a</div>
+          <div class="cal-cell"><div class="cal-event green"><div class="ce-t">Cahaba Repipe — Day 1</div><div class="ce-s">CREW FOXTROT</div></div></div>
+          <div class="cal-cell"><div class="cal-event green"><div class="ce-t">Cahaba Repipe — Day 2</div><div class="ce-s">CREW FOXTROT</div></div></div>
+          <div class="cal-cell"><div class="cal-event green"><div class="ce-t">Cahaba Repipe — Day 3</div><div class="ce-s">CREW FOXTROT</div></div></div>
+          <div class="cal-cell"><div class="cal-event green"><div class="ce-t">Cahaba Repipe — Final ✓</div><div class="ce-s">CREW FOXTROT</div></div></div>
+          <div class="cal-cell"><div class="cal-event yellow"><div class="ce-t">Davenport Estimate</div><div class="ce-s">JT · 11a–12:30p</div></div></div>
+
+          <div class="cal-cell time">1:00p</div>
+          <div class="cal-cell"></div>
+          <div class="cal-cell"><div class="cal-event"><div class="ce-t">Service Call: Berkeley Rd</div><div class="ce-s">SERVICE TRUCK 4</div></div></div>
+          <div class="cal-cell"><div class="cal-event purple"><div class="ce-t">Trussville Storm Cleanup</div><div class="ce-s">CREW CHARLIE</div></div></div>
+          <div class="cal-cell"><div class="cal-event"><div class="ce-t">Service Call: Bishop HW</div><div class="ce-s">SERVICE TRUCK 2</div></div></div>
+          <div class="cal-cell"></div>
+
+          <div class="cal-cell time">3:00p</div>
+          <div class="cal-cell"><div class="cal-event yellow"><div class="ce-t">Thornton Site Visit</div><div class="ce-s">DYLAN · 3p–4:30p</div></div></div>
+          <div class="cal-cell"></div>
+          <div class="cal-cell"><div class="cal-event yellow"><div class="ce-t">McGehee Initial Call</div><div class="ce-s">RYAN · 3p–3:45p</div></div></div>
+          <div class="cal-cell"><div class="cal-event"><div class="ce-t">Kowalski Walk</div><div class="ce-s">RYAN · 3p–4p</div></div></div>
+          <div class="cal-cell"><div class="cal-event yellow"><div class="ce-t">Crew Lead Stand-down</div><div class="ce-s">ALL HANDS · 3:30p</div></div></div>
+        </div>
+      </section>
+
+      <!-- ============== CREW ============== -->
+      <section class="view" id="view-crew">
+        <div class="kpi-row" style="grid-template-columns:repeat(5,1fr)">
+          <div class="kpi"><div class="kl">Total Employees</div><div class="kv">38</div><div class="kd">▲ +2 hires (May)</div></div>
+          <div class="kpi blue"><div class="kl">Field Crews</div><div class="kv">9<small>active</small></div><div class="kd">all dispatched</div></div>
+          <div class="kpi green"><div class="kl">On-Site Now</div><div class="kv">28</div><div class="kd">GPS verified</div></div>
+          <div class="kpi yellow"><div class="kl">Hrs This Week</div><div class="kv">1,184</div><div class="kd">▲ +6% vs avg</div></div>
+          <div class="kpi purple"><div class="kl">Labor Cost MTD</div><div class="kv">$94K</div><div class="kd flat">on budget</div></div>
+        </div>
+
+        <div class="card-head">
+          <div><h3>Field Crews</h3><div class="ch-sub">// 9 active crews · realtime status</div></div>
+          <div class="ch-right"><span class="chip on">Active</span><span class="chip">All</span><span class="chip">Off-Duty</span></div>
+        </div>
+
+        <div class="crew-grid">
+          <div class="crew">
+            <div class="crew-head">
+              <div class="crew-av">RM</div>
+              <div><div class="crew-nm">Ryan Martinez</div><div class="crew-rl">CREW ALPHA · ROOFING LEAD</div></div>
+              <div class="crew-status"><span class="csd"></span>ON SITE</div>
+            </div>
+            <div class="crew-cert">
+              <span>GAF MASTER</span><span>OSHA-30</span><span>FALL CERT</span><span>CDL-A</span>
+            </div>
+            <div class="crew-meta">
+              <div class="cmi">Current Site<strong>Pruitt Residence</strong></div>
+              <div class="cmi">Hrs This Wk<strong>34.5h</strong></div>
+              <div class="cmi">Today Jobs<strong>1 active</strong></div>
+              <div class="cmi">Tenure<strong>6.2 yr</strong></div>
+            </div>
+          </div>
+
+          <div class="crew">
+            <div class="crew-head">
+              <div class="crew-av g">CB</div>
+              <div><div class="crew-nm">Carla Bishop</div><div class="crew-rl">CREW BRAVO · LANDSCAPE LEAD</div></div>
+              <div class="crew-status"><span class="csd"></span>ON SITE</div>
+            </div>
+            <div class="crew-cert">
+              <span>RAIN BIRD</span><span>HARDSCAPE</span><span>LICENSED IRR.</span>
+            </div>
+            <div class="crew-meta">
+              <div class="cmi">Current Site<strong>Adler Residence</strong></div>
+              <div class="cmi">Hrs This Wk<strong>38.0h</strong></div>
+              <div class="cmi">Today Jobs<strong>1 active</strong></div>
+              <div class="cmi">Tenure<strong>4.8 yr</strong></div>
+            </div>
+          </div>
+
+          <div class="crew">
+            <div class="crew-head">
+              <div class="crew-av b">HG</div>
+              <div><div class="crew-nm">Hector Gomez</div><div class="crew-rl">CREW HOTEL · HVAC LEAD</div></div>
+              <div class="crew-status"><span class="csd"></span>ON SITE</div>
+            </div>
+            <div class="crew-cert">
+              <span>NATE</span><span>EPA 608</span><span>TRANE CERT</span><span>CARRIER</span>
+            </div>
+            <div class="crew-meta">
+              <div class="cmi">Current Site<strong>Magnolia Tower</strong></div>
+              <div class="cmi">Hrs This Wk<strong>30.5h</strong></div>
+              <div class="cmi">Today Jobs<strong>1 active</strong></div>
+              <div class="cmi">Tenure<strong>3.4 yr</strong></div>
+            </div>
+          </div>
+
+          <div class="crew">
+            <div class="crew-head">
+              <div class="crew-av p">DC</div>
+              <div><div class="crew-nm">Devin Carter</div><div class="crew-rl">CREW DELTA · CONSTRUCTION</div></div>
+              <div class="crew-status"><span class="csd"></span>ON SITE</div>
+            </div>
+            <div class="crew-cert">
+              <span>GC LICENSED</span><span>OSHA-30</span><span>LEAD-SAFE</span>
+            </div>
+            <div class="crew-meta">
+              <div class="cmi">Current Site<strong>Helena Deck</strong></div>
+              <div class="cmi">Hrs This Wk<strong>36.0h</strong></div>
+              <div class="cmi">Today Jobs<strong>1 active</strong></div>
+              <div class="cmi">Tenure<strong>8.1 yr</strong></div>
+            </div>
+          </div>
+
+          <div class="crew">
+            <div class="crew-head">
+              <div class="crew-av">EC</div>
+              <div><div class="crew-nm">Elena Cruz</div><div class="crew-rl">CREW ECHO · FENCE LEAD</div></div>
+              <div class="crew-status"><span class="csd"></span>ON SITE</div>
+            </div>
+            <div class="crew-cert">
+              <span>ALA CONTR.</span><span>OSHA-10</span>
+            </div>
+            <div class="crew-meta">
+              <div class="cmi">Current Site<strong>Witcomb Property</strong></div>
+              <div class="cmi">Hrs This Wk<strong>32.0h</strong></div>
+              <div class="cmi">Today Jobs<strong>1 active</strong></div>
+              <div class="cmi">Tenure<strong>2.7 yr</strong></div>
+            </div>
+          </div>
+
+          <div class="crew">
+            <div class="crew-head">
+              <div class="crew-av g">PG</div>
+              <div><div class="crew-nm">Pedro Galvan</div><div class="crew-rl">CREW FOXTROT · PLUMBING LEAD</div></div>
+              <div class="crew-status brk"><span class="csd"></span>LUNCH</div>
+            </div>
+            <div class="crew-cert">
+              <span>MASTER PLUMB</span><span>BACKFLOW</span><span>GAS CERT</span>
+            </div>
+            <div class="crew-meta">
+              <div class="cmi">Current Site<strong>Davenport Repipe</strong></div>
+              <div class="cmi">Hrs This Wk<strong>33.5h</strong></div>
+              <div class="cmi">Today Jobs<strong>1 active</strong></div>
+              <div class="cmi">Tenure<strong>5.6 yr</strong></div>
+            </div>
+          </div>
+
+          <div class="crew">
+            <div class="crew-head">
+              <div class="crew-av r">AK</div>
+              <div><div class="crew-nm">Aaron Knight</div><div class="crew-rl">CREW INDIA · ELECTRICAL LEAD</div></div>
+              <div class="crew-status"><span class="csd"></span>ON SITE</div>
+            </div>
+            <div class="crew-cert">
+              <span>MASTER ELEC</span><span>EV CHARGER</span><span>GEN. CERT</span>
+            </div>
+            <div class="crew-meta">
+              <div class="cmi">Current Site<strong>Bellevue HOA</strong></div>
+              <div class="cmi">Hrs This Wk<strong>30.0h</strong></div>
+              <div class="cmi">Today Jobs<strong>1 active</strong></div>
+              <div class="cmi">Tenure<strong>4.2 yr</strong></div>
+            </div>
+          </div>
+
+          <div class="crew">
+            <div class="crew-head">
+              <div class="crew-av s">JK</div>
+              <div><div class="crew-nm">James Kingsley</div><div class="crew-rl">CREW JULIET · TREE LEAD</div></div>
+              <div class="crew-status off"><span class="csd"></span>OFF DUTY</div>
+            </div>
+            <div class="crew-cert">
+              <span>ISA ARBORIST</span><span>CHAINSAW CERT</span><span>CRANE OP</span>
+            </div>
+            <div class="crew-meta">
+              <div class="cmi">Next Site<strong>Trussville (THU)</strong></div>
+              <div class="cmi">Hrs This Wk<strong>22.0h</strong></div>
+              <div class="cmi">Today Jobs<strong>none</strong></div>
+              <div class="cmi">Tenure<strong>3.0 yr</strong></div>
+            </div>
+          </div>
+
+          <div class="crew">
+            <div class="crew-head">
+              <div class="crew-av b">JT</div>
+              <div><div class="crew-nm">Jordan Tran</div><div class="crew-rl">SERVICE TRUCK 2 · MULTI-TRADE</div></div>
+              <div class="crew-status"><span class="csd"></span>EN ROUTE</div>
+            </div>
+            <div class="crew-cert">
+              <span>EPA 608</span><span>OSHA-10</span><span>PLUMB JRMN</span><span>ELEC JRMN</span>
+            </div>
+            <div class="crew-meta">
+              <div class="cmi">Next Site<strong>Bishop Hardware (15min)</strong></div>
+              <div class="cmi">Hrs This Wk<strong>35.5h</strong></div>
+              <div class="cmi">Today Jobs<strong>3 calls</strong></div>
+              <div class="cmi">Tenure<strong>1.9 yr</strong></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== EQUIPMENT ============== -->
+      <section class="view" id="view-equipment">
+        <div class="kpi-row" style="grid-template-columns:repeat(5,1fr)">
+          <div class="kpi"><div class="kl">Total Assets</div><div class="kv">47</div><div class="kd">tracked</div></div>
+          <div class="kpi blue"><div class="kl">Trucks & Trailers</div><div class="kv">14</div><div class="kd">11 deployed</div></div>
+          <div class="kpi green"><div class="kl">Power Equipment</div><div class="kv">22</div><div class="kd">mowers, saws, etc</div></div>
+          <div class="kpi yellow"><div class="kl">Heavy Equip</div><div class="kv">8</div><div class="kd">2 rented out</div></div>
+          <div class="kpi red"><div class="kl">Maintenance Due</div><div class="kv">3</div><div class="kd">this week</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><h3>Equipment Roster</h3><div class="ch-sub">// click any asset for maintenance log</div></div>
+            <div class="ch-right">
+              <span class="chip on">All</span>
+              <span class="chip">Trucks</span>
+              <span class="chip">Trailers</span>
+              <span class="chip">Power</span>
+              <span class="chip">Heavy</span>
+              <span class="chip r">Service Due</span>
+            </div>
+          </div>
+          <table class="eq-table">
+            <thead><tr><th>Asset</th><th>ID / VIN</th><th>Type</th><th>Assigned To</th><th>Location</th><th>Hours/Miles</th><th>Next Service</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span class="eq-icn">🚚</span><strong>Ford F-350 Crew #1</strong></td><td class="mono">SUM-T01</td><td>Truck</td><td>Crew Alpha</td><td>Mountain Brook</td><td>87,420 mi</td><td>+1,200 mi</td><td><span class="chip g">ACTIVE</span></td></tr>
+              <tr><td><span class="eq-icn">🚛</span><strong>Ford F-450 Dump</strong></td><td class="mono">SUM-T04</td><td>Truck</td><td>Crew Bravo</td><td>Vestavia</td><td>42,180 mi</td><td>+3,800 mi</td><td><span class="chip g">ACTIVE</span></td></tr>
+              <tr><td><span class="eq-icn">🚐</span><strong>Service Van #2</strong></td><td class="mono">SUM-V02</td><td>Van</td><td>Jordan Tran</td><td>En route</td><td>61,940 mi</td><td>+200 mi</td><td><span class="chip y">SVC DUE SOON</span></td></tr>
+              <tr><td><span class="eq-icn">▭</span><strong>20ft Enclosed Trailer</strong></td><td class="mono">SUM-TR03</td><td>Trailer</td><td>Crew Echo</td><td>Hoover</td><td>—</td><td>Inspection Aug</td><td><span class="chip g">ACTIVE</span></td></tr>
+              <tr><td><span class="eq-icn">▭</span><strong>16ft Dump Trailer</strong></td><td class="mono">SUM-TR05</td><td>Trailer</td><td>Crew Bravo</td><td>Vestavia</td><td>—</td><td>Tires due</td><td><span class="chip y">CHECK</span></td></tr>
+              <tr><td><span class="eq-icn">🌾</span><strong>Toro Z-Master Mower</strong></td><td class="mono">SUM-M01</td><td>Power</td><td>Crew Bravo</td><td>Vestavia</td><td>892 hrs</td><td>+15 hrs</td><td><span class="chip g">ACTIVE</span></td></tr>
+              <tr><td><span class="eq-icn">🌾</span><strong>Toro Z-Master Mower #2</strong></td><td class="mono">SUM-M02</td><td>Power</td><td>Crew Golf</td><td>Yard</td><td>1,140 hrs</td><td>Overdue 20h</td><td><span class="chip r">SVC OVERDUE</span></td></tr>
+              <tr><td><span class="eq-icn">⛟</span><strong>Bobcat S570 Skid Steer</strong></td><td class="mono">SUM-H01</td><td>Heavy</td><td>Crew Delta</td><td>Helena</td><td>1,860 hrs</td><td>+40 hrs</td><td><span class="chip g">ACTIVE</span></td></tr>
+              <tr><td><span class="eq-icn">⛏</span><strong>Kubota Mini Excavator</strong></td><td class="mono">SUM-H02</td><td>Heavy</td><td>Crew Charlie</td><td>Trussville</td><td>2,418 hrs</td><td>+120 hrs</td><td><span class="chip g">ACTIVE</span></td></tr>
+              <tr><td><span class="eq-icn">⛏</span><strong>Stump Grinder 35HP</strong></td><td class="mono">SUM-H04</td><td>Heavy</td><td>Crew Juliet</td><td>Yard</td><td>540 hrs</td><td>+60 hrs</td><td><span class="chip">STAGED</span></td></tr>
+              <tr><td><span class="eq-icn">⚡</span><strong>Honda EU7000i Generator</strong></td><td class="mono">SUM-P03</td><td>Power</td><td>Crew Alpha</td><td>Mountain Brook</td><td>320 hrs</td><td>+80 hrs</td><td><span class="chip g">ACTIVE</span></td></tr>
+              <tr><td><span class="eq-icn">⚡</span><strong>Stihl MS500i Chainsaw</strong></td><td class="mono">SUM-P08</td><td>Power</td><td>Crew Juliet</td><td>Yard</td><td>—</td><td>Chain replace</td><td><span class="chip y">CHECK</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============== MAP ============== -->
+      <section class="view" id="view-map">
+        <div class="map-wrap">
+          <svg viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid-d" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+              </pattern>
+              <radialGradient id="zone-d-primary" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#f26a1f" stop-opacity="0.30"/>
+                <stop offset="60%" stop-color="#f26a1f" stop-opacity="0.10"/>
+                <stop offset="100%" stop-color="#f26a1f" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="1200" height="600" fill="url(#grid-d)"/>
+            <!-- stylized roads -->
+            <path d="M0 320 Q300 280 600 340 T1200 360" stroke="rgba(255,255,255,.08)" stroke-width="1.5" fill="none"/>
+            <path d="M200 0 Q260 200 320 320 T380 600" stroke="rgba(255,255,255,.07)" stroke-width="1.5" fill="none"/>
+            <path d="M800 0 Q780 220 720 360 T620 600" stroke="rgba(255,255,255,.07)" stroke-width="1.5" fill="none"/>
+            <!-- water -->
+            <path d="M0 480 Q200 460 380 490 T720 510 Q900 500 1200 530 L1200 600 L0 600 Z" fill="rgba(58,203,177,.04)" stroke="rgba(58,203,177,.08)" stroke-width="1"/>
+            <!-- service zone -->
+            <ellipse cx="600" cy="300" rx="520" ry="260" fill="url(#zone-d-primary)"/>
+
+            <!-- HQ -->
+            <g font-family="JetBrains Mono, monospace" font-size="11" fill="#fff">
+              <circle cx="600" cy="300" r="18" fill="#f26a1f" stroke="#fff" stroke-width="2.5"/>
+              <circle cx="600" cy="300" r="28" fill="none" stroke="#f26a1f" stroke-width="1.5" opacity="0.5"/>
+              <text x="615" y="296" font-weight="700" letter-spacing="0.5">SUMMIT HQ</text>
+              <text x="615" y="312" opacity="0.65">— Oxmoor Rd</text>
+            </g>
+
+            <!-- Active job sites (orange) -->
+            <g font-family="JetBrains Mono, monospace" font-size="10" fill="#fff">
+              <g><circle cx="430" cy="200" r="10" fill="#f26a1f" stroke="#fff" stroke-width="2"/><text x="445" y="200" letter-spacing="0.3">PRUITT · ROOF</text><text x="445" y="214" opacity="0.6" font-size="9">Mountain Brook · 86%</text></g>
+              <g><circle cx="520" cy="430" r="10" fill="#3cd07c" stroke="#fff" stroke-width="2"/><text x="535" y="430">ADLER · LANDSCAPE</text><text x="535" y="444" opacity="0.6" font-size="9">Vestavia · 72%</text></g>
+              <g><circle cx="720" cy="240" r="10" fill="#5aa9f4" stroke="#fff" stroke-width="2"/><text x="735" y="240">MAGNOLIA · HVAC</text><text x="735" y="254" opacity="0.6" font-size="9">Birmingham · 28%</text></g>
+              <g><circle cx="380" cy="380" r="10" fill="#a774f0" stroke="#fff" stroke-width="2"/><text x="395" y="380">HELENA DECK</text><text x="395" y="394" opacity="0.6" font-size="9">Helena · 62%</text></g>
+              <g><circle cx="800" cy="380" r="10" fill="#f26a1f" stroke="#fff" stroke-width="2"/><text x="815" y="380">WITCOMB · FENCE</text><text x="815" y="394" opacity="0.6" font-size="9">Hoover · 68%</text></g>
+              <g><circle cx="280" cy="280" r="10" fill="#3cd07c" stroke="#fff" stroke-width="2"/><text x="295" y="280">CAHABA REPIPE</text><text x="295" y="294" opacity="0.6" font-size="9">Cahaba Hts · 96%</text></g>
+              <g><circle cx="900" cy="180" r="10" fill="#5aa9f4" stroke="#fff" stroke-width="2"/><text x="915" y="180">TRUSSVILLE TREE</text><text x="915" y="194" opacity="0.6" font-size="9">Trussville · 42%</text></g>
+              <g><circle cx="640" cy="120" r="10" fill="#5aa9f4" stroke="#fff" stroke-width="2"/><text x="655" y="120">BELLEVUE LIGHT</text><text x="655" y="134" opacity="0.6" font-size="9">Hoover · 48%</text></g>
+            </g>
+
+            <!-- Leads (yellow) -->
+            <g font-family="JetBrains Mono, monospace" font-size="9" fill="#f4b740">
+              <g><circle cx="160" cy="160" r="6" fill="#f4b740"/><text x="172" y="162" opacity="0.8">McGEHEE · LEAD</text></g>
+              <g><circle cx="940" cy="430" r="6" fill="#f4b740"/><text x="952" y="432" opacity="0.8">CARRERA · LEAD</text></g>
+              <g><circle cx="240" cy="460" r="6" fill="#f4b740"/><text x="252" y="462" opacity="0.8">KOWALSKI · LEAD</text></g>
+              <g><circle cx="1020" cy="270" r="6" fill="#f4b740"/><text x="980" y="290" opacity="0.8">THORNTON · LEAD</text></g>
+            </g>
+
+            <!-- Crew vehicles (moving) -->
+            <g font-family="JetBrains Mono, monospace" font-size="9" fill="#fff">
+              <g><circle cx="690" cy="500" r="7" fill="#3acbb1" stroke="#fff" stroke-width="2"/><text x="705" y="503" opacity="0.85">SVC-2 EN ROUTE</text></g>
+            </g>
+          </svg>
+
+          <div class="map-overlay">
+            <span class="map-fil on">All</span>
+            <span class="map-fil">Active Jobs</span>
+            <span class="map-fil">Leads</span>
+            <span class="map-fil">Crews Live</span>
+            <span class="map-fil">Service Area</span>
+            <span class="map-fil">Past 30 Days</span>
+          </div>
+
+          <div class="map-legend-d">
+            <h4>LEGEND</h4>
+            <div class="lgi"><span class="dt" style="background:#f26a1f"></span>Active job site (8)</div>
+            <div class="lgi"><span class="dt" style="background:#f4b740"></span>Open lead (4 shown / 47 total)</div>
+            <div class="lgi"><span class="dt" style="background:#3acbb1"></span>Crew in transit (1)</div>
+            <div class="lgi"><span class="dt" style="background:#5aa9f4"></span>Service zone overlay</div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:18px">
+          <div class="card">
+            <div class="card-head"><div><h3>Crew Density · This Week</h3><div class="ch-sub">// by zip code</div></div></div>
+            <div class="list">
+              <div class="list-row"><div class="lav">35213</div><div class="lt"><div class="lt-1">Mountain Brook</div><div class="lt-2">3 active jobs · $61k contract</div></div><div class="lr">3</div></div>
+              <div class="list-row"><div class="lav g">35216</div><div class="lt"><div class="lt-1">Vestavia Hills</div><div class="lt-2">2 active jobs · $24k contract</div></div><div class="lr">2</div></div>
+              <div class="list-row"><div class="lav b">35226</div><div class="lt"><div class="lt-1">Hoover</div><div class="lt-2">2 active jobs · $37k contract</div></div><div class="lr">2</div></div>
+              <div class="list-row"><div class="lav p">35080</div><div class="lt"><div class="lt-1">Helena</div><div class="lt-2">2 active jobs · $68k contract</div></div><div class="lr">2</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Drive-Time Heat Map</h3><div class="ch-sub">// avg windshield time per crew</div></div></div>
+            <div class="list">
+              <div class="list-row"><div class="lav">A</div><div class="lt"><div class="lt-1">Crew Alpha — Roofing</div><div class="lt-2">28 min avg · within target</div></div><div class="lr" style="color:var(--green)">28m</div></div>
+              <div class="list-row"><div class="lav g">B</div><div class="lt"><div class="lt-1">Crew Bravo — Landscape</div><div class="lt-2">22 min avg · within target</div></div><div class="lr" style="color:var(--green)">22m</div></div>
+              <div class="list-row"><div class="lav p">D</div><div class="lt"><div class="lt-1">Crew Delta — Construction</div><div class="lt-2">48 min avg · above target</div></div><div class="lr" style="color:var(--yellow)">48m</div></div>
+              <div class="list-row"><div class="lav b">H</div><div class="lt"><div class="lt-1">Crew Hotel — HVAC</div><div class="lt-2">62 min avg · re-route this wk</div></div><div class="lr" style="color:var(--red)">62m</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== CUSTOMER PORTAL ============== -->
+      <section class="view" id="view-portal">
+        <div class="pm-grid">
+          <div class="card">
+            <div class="card-head"><div><h3>Portal Inbox</h3><div class="ch-sub">// 3 unread customer threads</div></div></div>
+            <div class="msg-list">
+              <div class="msg-row on">
+                <div class="msg-av">SP</div>
+                <div class="msg-body">
+                  <div class="msg-top"><div class="msg-nm">Sarah Pruitt</div><div class="msg-tm">2m ago</div></div>
+                  <div class="msg-prev"><strong>Sarah:</strong> photos look great — when does the final invoice…<span class="msg-unread" style="display:inline-block"></span></div>
+                </div>
+              </div>
+              <div class="msg-row">
+                <div class="msg-av b">JA</div>
+                <div class="msg-body">
+                  <div class="msg-top"><div class="msg-nm">Jeff Adler</div><div class="msg-tm">14m</div></div>
+                  <div class="msg-prev"><strong>You:</strong> all set — Carla's crew finishes lighting…</div>
+                </div>
+              </div>
+              <div class="msg-row">
+                <div class="msg-av g">MR</div>
+                <div class="msg-body">
+                  <div class="msg-top"><div class="msg-nm">Mark Russo</div><div class="msg-tm">1h</div></div>
+                  <div class="msg-prev"><strong>Mark:</strong> can we add post-cap lighting before final?<span class="msg-unread" style="display:inline-block"></span></div>
+                </div>
+              </div>
+              <div class="msg-row">
+                <div class="msg-av p">YD</div>
+                <div class="msg-body">
+                  <div class="msg-top"><div class="msg-nm">Yolanda Davenport</div><div class="msg-tm">3h</div></div>
+                  <div class="msg-prev"><strong>Yolanda:</strong> approving change order $1,840…<span class="msg-unread" style="display:inline-block"></span></div>
+                </div>
+              </div>
+              <div class="msg-row">
+                <div class="msg-av">CW</div>
+                <div class="msg-body">
+                  <div class="msg-top"><div class="msg-nm">Cassie Witcomb</div><div class="msg-tm">yesterday</div></div>
+                  <div class="msg-prev"><strong>You:</strong> sending the warranty packet now…</div>
+                </div>
+              </div>
+              <div class="msg-row">
+                <div class="msg-av b">CH</div>
+                <div class="msg-body">
+                  <div class="msg-top"><div class="msg-nm">Caleb Hayworth</div><div class="msg-tm">2d</div></div>
+                  <div class="msg-prev"><strong>Caleb:</strong> any update on the city permit?</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg-thread">
+            <div class="mt-head">
+              <div class="msg-av">SP</div>
+              <div class="mt-info">
+                <div class="mt-nm">Sarah Pruitt</div>
+                <div class="mt-sub">// Project: Roof Replacement · #Q-2026-0847 · Mountain Brook</div>
+              </div>
+              <span class="chip g">PROJECT 96% COMPLETE</span>
+            </div>
+
+            <div style="overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+              <div class="mt-msg">
+                <div class="msg-av" style="width:30px;height:30px;font-size:.7rem">SP</div>
+                <div class="mt-bub">Hey Dylan! Photos look amazing — driveway is spotless. When does the final invoice come through? Want to make sure I can pay before the weekend.<span class="mt-tm">Today 2:14 PM</span></div>
+              </div>
+              <div class="mt-msg us">
+                <div class="mt-bub">So glad you're happy! Final invoice goes out automatically after Ryan does the walk-through tomorrow at 9am — should hit your portal by 11. Stripe link inside, takes 30 seconds. <span class="mt-tm">Today 2:16 PM</span></div>
+              </div>
+              <div class="mt-msg us">
+                <div class="mt-bub">FYI your 10-yr workmanship warranty is already attached to the project — you can download the PDF from your portal anytime. Also enrolled you in our complimentary 1-yr inspection. <span class="mt-tm">Today 2:17 PM</span></div>
+              </div>
+              <div class="mt-msg">
+                <div class="msg-av" style="width:30px;height:30px;font-size:.7rem">SP</div>
+                <div class="mt-bub">Perfect — and we're still good on the leaf guard add-on Ryan mentioned? <span class="mt-tm">Today 2:19 PM</span></div>
+              </div>
+            </div>
+
+            <div class="mt-input">
+              <input placeholder="Type your reply…">
+              <button>Send</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== MARKETING ============== -->
+      <section class="view" id="view-marketing">
+        <div class="kpi-row" style="grid-template-columns:repeat(5,1fr)">
+          <div class="kpi"><div class="kl">Total Leads (30d)</div><div class="kv">182</div><div class="kd">▲ +24% MoM</div></div>
+          <div class="kpi blue"><div class="kl">Cost Per Lead</div><div class="kv">$48</div><div class="kd">▼ -$9 vs target</div></div>
+          <div class="kpi green"><div class="kl">Lead → Customer</div><div class="kv">38<small>%</small></div><div class="kd">▲ +4pp</div></div>
+          <div class="kpi yellow"><div class="kl">CAC</div><div class="kv">$126</div><div class="kd">▼ improving</div></div>
+          <div class="kpi purple"><div class="kl">ROAS</div><div class="kv">8.4<small>x</small></div><div class="kd">▲ +1.2x</div></div>
+        </div>
+
+        <div class="src-grid">
+          <div class="src">
+            <div class="src-head">
+              <div style="display:flex;align-items:center;gap:10px"><div class="si g">G</div><div><div class="nm">Google Ads</div><div style="font-size:.66rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-family:'JetBrains Mono',monospace">Performance Max + LSA</div></div></div>
+              <div class="nv">68</div>
+            </div>
+            <div class="src-met">
+              <div class="smi"><div class="sml">Spend</div><div class="smv">$3,240</div></div>
+              <div class="smi"><div class="sml">CPL</div><div class="smv">$48</div></div>
+              <div class="smi"><div class="sml">Conv.</div><div class="smv">41%</div></div>
+            </div>
+          </div>
+          <div class="src">
+            <div class="src-head">
+              <div style="display:flex;align-items:center;gap:10px"><div class="si f">f</div><div><div class="nm">Facebook + IG</div><div style="font-size:.66rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-family:'JetBrains Mono',monospace">Lead-form + Carousel</div></div></div>
+              <div class="nv">42</div>
+            </div>
+            <div class="src-met">
+              <div class="smi"><div class="sml">Spend</div><div class="smv">$1,840</div></div>
+              <div class="smi"><div class="sml">CPL</div><div class="smv">$44</div></div>
+              <div class="smi"><div class="sml">Conv.</div><div class="smv">28%</div></div>
+            </div>
+          </div>
+          <div class="src">
+            <div class="src-head">
+              <div style="display:flex;align-items:center;gap:10px"><div class="si w">W</div><div><div class="nm">Website Direct</div><div style="font-size:.66rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-family:'JetBrains Mono',monospace">Organic + SEO</div></div></div>
+              <div class="nv">38</div>
+            </div>
+            <div class="src-met">
+              <div class="smi"><div class="sml">Spend</div><div class="smv">$0</div></div>
+              <div class="smi"><div class="sml">CPL</div><div class="smv">$0</div></div>
+              <div class="smi"><div class="sml">Conv.</div><div class="smv">46%</div></div>
+            </div>
+          </div>
+          <div class="src">
+            <div class="src-head">
+              <div style="display:flex;align-items:center;gap:10px"><div class="si r">★</div><div><div class="nm">Referral / Repeat</div><div style="font-size:.66rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;font-family:'JetBrains Mono',monospace">Past customers + reviews</div></div></div>
+              <div class="nv">34</div>
+            </div>
+            <div class="src-met">
+              <div class="smi"><div class="sml">Spend</div><div class="smv">$0</div></div>
+              <div class="smi"><div class="sml">CPL</div><div class="smv">$0</div></div>
+              <div class="smi"><div class="sml">Conv.</div><div class="smv">62%</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top:18px">
+          <div class="card">
+            <div class="card-head"><div><h3>Top Performing Campaigns</h3><div class="ch-sub">// last 30 days · by ROAS</div></div></div>
+            <table>
+              <thead><tr><th>Campaign</th><th>Source</th><th>Leads</th><th>Spend</th><th>Pipeline</th><th>ROAS</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Roof Storm Damage — May</strong></td><td>Google PMax</td><td>34</td><td>$1,420</td><td>$48k</td><td><span class="chip g">11.2x</span></td></tr>
+                <tr><td><strong>Backyard Reset — Spring</strong></td><td>FB Carousel</td><td>22</td><td>$890</td><td>$28k</td><td><span class="chip g">9.8x</span></td></tr>
+                <tr><td><strong>Tune-Up Specials — HVAC</strong></td><td>Google LSA</td><td>28</td><td>$680</td><td>$14k</td><td><span class="chip">7.4x</span></td></tr>
+                <tr><td><strong>Fence Financing — All Year</strong></td><td>FB Lead Form</td><td>20</td><td>$950</td><td>$18k</td><td><span class="chip">6.2x</span></td></tr>
+                <tr><td><strong>Tree Storm Response</strong></td><td>Google Search</td><td>12</td><td>$420</td><td>$8k</td><td><span class="chip y">4.8x</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h3>Review Funnel</h3><div class="ch-sub">// 1-yr Google + BBB inflow</div></div></div>
+            <div class="list">
+              <div class="list-row"><div class="lav">📨</div><div class="lt"><div class="lt-1">Auto-Send: Post-Job Survey</div><div class="lt-2">SMS · 1 day after final walk</div></div><div class="lr">412 sent</div></div>
+              <div class="list-row"><div class="lav g">★</div><div class="lt"><div class="lt-1">5-Star → Google Public Review Ask</div><div class="lt-2">Automatic SMS w/ direct link</div></div><div class="lr">186 left</div></div>
+              <div class="list-row"><div class="lav y">⚠</div><div class="lt"><div class="lt-1">≤ 4-Star → Internal Triage</div><div class="lt-2">Routed to Dylan for direct call</div></div><div class="lr">8 flagged</div></div>
+              <div class="list-row"><div class="lav b">📈</div><div class="lt"><div class="lt-1">Google Star Average</div><div class="lt-2">418 reviews · last 12mo</div></div><div class="lr" style="color:var(--green)">4.9 ★</div></div>
+              <div class="list-row"><div class="lav">★</div><div class="lt"><div class="lt-1">BBB Rating</div><div class="lt-2">A+ · since 2014</div></div><div class="lr" style="color:var(--green)">A+</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============== ACCOUNTING ============== -->
+      <section class="view" id="view-accounting">
+        <div class="ac-summary">
+          <div class="ac-card green"><div class="acl">Revenue MTD</div><div class="acv">$284,140</div><div class="acs">// 28 invoices closed · +18% MoM</div></div>
+          <div class="ac-card"><div class="acl">A/R Outstanding</div><div class="acv">$67,420</div><div class="acs">// 14 invoices · avg 9.2 days</div></div>
+          <div class="ac-card blue"><div class="acl">Bank Position</div><div class="acv">$184,920</div><div class="acs">// Regions Ops · synced 14:32</div></div>
+          <div class="ac-card red"><div class="acl">A/P Due (7d)</div><div class="acv">$42,180</div><div class="acs">// suppliers + subs + payroll</div></div>
+        </div>
+
+        <div class="grid grid-2-1" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-head">
+              <div><h3>Open Invoices</h3><div class="ch-sub">// Stripe + QuickBooks synced · 14 outstanding</div></div>
+              <div class="ch-right"><span class="chip on">All</span><span class="chip">Overdue</span><span class="chip">This Week</span></div>
+            </div>
+            <table>
+              <thead><tr><th>Invoice</th><th>Customer</th><th>Project</th><th>Amount</th><th>Sent</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><strong class="mono">INV-2026-0918</strong></td><td>Sarah Pruitt</td><td>Roof Replacement</td><td><strong>$18,400</strong></td><td>queued for 06/04</td><td><span class="chip y">QUEUED</span></td></tr>
+                <tr><td><strong class="mono">INV-2026-0917</strong></td><td>Magnolia Holdings</td><td>HVAC — Deposit</td><td><strong>$16,200</strong></td><td>2 days ago</td><td><span class="chip">SENT</span></td></tr>
+                <tr><td><strong class="mono">INV-2026-0915</strong></td><td>Adler Family</td><td>Landscape — Progress</td><td><strong>$5,800</strong></td><td>5 days ago</td><td><span class="chip b">VIEWED</span></td></tr>
+                <tr><td><strong class="mono">INV-2026-0911</strong></td><td>Russo (Helena)</td><td>Deck — Materials Draw</td><td><strong>$8,400</strong></td><td>7 days ago</td><td><span class="chip g">PAID 06/02</span></td></tr>
+                <tr><td><strong class="mono">INV-2026-0908</strong></td><td>Witcomb</td><td>Fence — Final</td><td><strong>$4,475</strong></td><td>9 days ago</td><td><span class="chip g">PAID 06/01</span></td></tr>
+                <tr><td><strong class="mono">INV-2026-0902</strong></td><td>Berkeley</td><td>Plumbing Repair</td><td><strong>$1,840</strong></td><td>14 days ago</td><td><span class="chip r">OVERDUE 4d</span></td></tr>
+                <tr><td><strong class="mono">INV-2026-0898</strong></td><td>Bellevue HOA</td><td>Electrical — Deposit</td><td><strong>$14,200</strong></td><td>18 days ago</td><td><span class="chip r">OVERDUE 8d</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><div><h3>Cash Flow</h3><div class="ch-sub">// 8-week forecast</div></div></div>
+            <div class="chart" style="height:160px">
+              <div class="bar"><div class="bv" style="height:48%"></div><div class="bl">W21</div></div>
+              <div class="bar"><div class="bv" style="height:55%"></div><div class="bl">W22</div></div>
+              <div class="bar"><div class="bv" style="height:68%"></div><div class="bl">W23</div></div>
+              <div class="bar alt"><div class="bv" style="height:72%"></div><div class="bl">W24</div></div>
+              <div class="bar alt"><div class="bv" style="height:80%"></div><div class="bl">W25</div></div>
+              <div class="bar alt"><div class="bv" style="height:74%"></div><div class="bl">W26</div></div>
+              <div class="bar alt"><div class="bv" style="height:88%"></div><div class="bl">W27</div></div>
+              <div class="bar alt"><div class="bv" style="height:82%"></div><div class="bl">W28</div></div>
+            </div>
+            <div class="chart-legend"><span>Closed</span><span class="blue">Projected (avg 76%)</span></div>
+
+            <div style="margin-top:34px;padding-top:18px;border-top:1px solid var(--line)">
+              <div class="card-head" style="margin-bottom:10px"><div><h3 style="font-size:.84rem">Integrations</h3><div class="ch-sub">// sync status</div></div></div>
+              <div class="list">
+                <div class="list-row"><div class="lav g">$</div><div class="lt"><div class="lt-1">Stripe</div><div class="lt-2">last sync 2m ago · all green</div></div><div class="lr" style="color:var(--green)">●</div></div>
+                <div class="list-row"><div class="lav b">QB</div><div class="lt"><div class="lt-1">QuickBooks Online</div><div class="lt-2">last sync 14m ago</div></div><div class="lr" style="color:var(--green)">●</div></div>
+                <div class="list-row"><div class="lav">G</div><div class="lt"><div class="lt-1">GreenSky Financing</div><div class="lt-2">webhook active</div></div><div class="lr" style="color:var(--green)">●</div></div>
+                <div class="list-row"><div class="lav">SY</div><div class="lt"><div class="lt-1">Synchrony</div><div class="lt-2">webhook active</div></div><div class="lr" style="color:var(--green)">●</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  const navItems = document.querySelectorAll('.nav-item');
+  const views = document.querySelectorAll('.view');
+  const pageTitle = document.getElementById('page-title');
+  const pageSub = document.getElementById('page-sub');
+  const titles = {
+    exec:['Executive Dashboard','// Wednesday, June 3, 2026 · Q2 in progress'],
+    crm:['Lead CRM','// 47 leads in pipeline · $486k value'],
+    quotes:['Quote Builder','// New quote · Pruitt Family · Roofing'],
+    projects:['Active Projects','// 12 in progress · $486k contract value'],
+    schedule:['Crew Scheduling','// Week 23 · Mon Jun 1 – Fri Jun 5'],
+    crew:['Crew Management','// 9 field crews · 38 employees'],
+    equipment:['Equipment & Fleet','// 47 assets tracked · 3 service due'],
+    map:['Live Operations Map','// real-time crew + job site tracking'],
+    portal:['Customer Portal Inbox','// 3 unread · 6 active threads'],
+    marketing:['Marketing Dashboard','// 182 leads (30d) · 8.4x ROAS'],
+    accounting:['Accounting & Cash Flow','// Stripe + QuickBooks · live sync']
+  };
+
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const v = item.dataset.view;
+      if (!v) return;
+      navItems.forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+      views.forEach(view => view.classList.remove('active'));
+      document.getElementById('view-' + v).classList.add('active');
+      const [t,s] = titles[v];
+      pageTitle.textContent = t;
+      pageSub.textContent = s;
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+
+  // tab toggles
+  document.querySelectorAll('.qb-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      t.parentElement.querySelectorAll('.qb-tab').forEach(x => x.classList.remove('on'));
+      t.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.qtb').forEach(t => {
+    t.addEventListener('click', () => {
+      t.parentElement.querySelectorAll('.qtb').forEach(x => x.classList.remove('on'));
+      t.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.map-fil').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.map-fil').forEach(x => x.classList.remove('on'));
+      t.classList.add('on');
+    });
+  });
+</script>
+
+</body>
+</html>
