@@ -444,6 +444,37 @@
     .bk-foot .actions .btn{width:100%;justify-content:center}
   }
 
+  /* Multi-day picker (tap individual days to toggle) */
+  .bk-mdp{background:var(--ink-3);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .bk-mdp:focus-within{border-color:var(--gold)}
+  .bk-mdp-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .bk-mdp-head .mdp-month{font-family:'Playfair Display',serif;font-size:1.05rem;color:#fff;font-weight:500;letter-spacing:.02em}
+  .bk-mdp-head button{width:30px;height:30px;border-radius:50%;background:var(--ink-2);border:1px solid var(--line);color:#fff;font-family:inherit;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .bk-mdp-head button:hover{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+  .bk-mdp-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+  .bk-mdp-dow span{text-align:center;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:4px 0}
+  .bk-mdp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .bk-mdp-cell{aspect-ratio:1/1;border-radius:7px;background:transparent;border:1px solid transparent;color:var(--text-soft);font-family:'JetBrains Mono',monospace;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s;font-weight:500;padding:0;position:relative}
+  .bk-mdp-cell:hover:not(.muted):not(.disabled){background:rgba(212,181,116,.14);color:#fff}
+  .bk-mdp-cell.muted{opacity:.25;cursor:default;pointer-events:none}
+  .bk-mdp-cell.today{box-shadow:inset 0 0 0 1px var(--gold-deep)}
+  .bk-mdp-cell.selected{background:var(--gold);color:var(--ink);font-weight:700;box-shadow:0 2px 8px rgba(212,181,116,.35)}
+  .bk-mdp-cell.selected:hover{background:var(--gold);color:var(--ink)}
+  .bk-mdp-cell.disabled{opacity:.3;cursor:not-allowed;text-decoration:line-through}
+  .bk-mdp-cell.range-edge{position:relative}
+  .bk-mdp-foot{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);gap:10px;flex-wrap:wrap}
+  .bk-mdp-summary{font-size:.78rem;color:var(--text-soft)}
+  .bk-mdp-summary strong{color:var(--gold);font-weight:700}
+  .bk-mdp-clear{background:transparent;border:none;color:var(--muted);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;cursor:pointer;font-family:inherit;padding:4px 8px}
+  .bk-mdp-clear:hover{color:var(--gold)}
+  .bk-mdp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:60px;overflow-y:auto}
+  .bk-mdp-chip{background:rgba(212,181,116,.14);color:var(--gold);border:1px solid var(--gold-deep);border-radius:14px;padding:3px 10px;font-size:.7rem;font-family:'JetBrains Mono',monospace;display:inline-flex;align-items:center;gap:4px}
+  .bk-mdp-chip button{background:none;border:none;color:var(--gold);cursor:pointer;font-size:.9rem;line-height:1;padding:0 0 0 2px;font-family:inherit}
+  .bk-mdp-chip button:hover{color:#fff}
+  .bk-mdp-quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .bk-mdp-quick button{background:var(--ink-2);border:1px solid var(--line);color:var(--text-soft);padding:6px 10px;border-radius:6px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+  .bk-mdp-quick button:hover{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+
   /* Toast */
   .toast-stack{position:fixed;bottom:24px;left:24px;z-index:250;display:flex;flex-direction:column;gap:10px;pointer-events:none}
   .toast{background:var(--ink-2);border:1px solid var(--gold-deep);color:#fff;padding:14px 18px;border-radius:10px;font-size:.86rem;box-shadow:0 12px 36px rgba(0,0,0,.45);min-width:280px;max-width:380px;pointer-events:auto;display:flex;align-items:center;gap:12px;animation:toastIn .3s cubic-bezier(.2,.7,.3,1)}
@@ -577,7 +608,7 @@
   </div>
   <div class="top-actions">
     <button class="btn" id="settingsBtn">Settings</button>
-    <button class="btn primary" id="newBookingBtn">+ New Booking</button>
+    <button class="btn primary" id="newBookingBtn">+ New Trip</button>
     <div class="avatar" id="userAvatar" title="Veton · click to sign out">VG</div>
   </div>
 </header>
@@ -1266,77 +1297,117 @@
   <div class="bk-card" role="dialog" aria-modal="true">
     <div class="bk-head">
       <div>
-        <span class="bk-eyebrow">New booking</span>
-        <h2>Create a new booking</h2>
+        <span class="bk-eyebrow">New trip</span>
+        <h2>Schedule a trip</h2>
       </div>
       <button class="bk-close" id="bkClose" aria-label="Close">×</button>
     </div>
     <div id="bkForm">
       <div class="bk-body">
         <div class="bk-field">
-          <label>Customer Name</label>
-          <input type="text" placeholder="e.g. Sarah Mitchell">
+          <label>Trip Title *</label>
+          <input type="text" id="bkTitle" placeholder="e.g. Wedding shuttle">
         </div>
         <div class="bk-field">
-          <label>Phone</label>
-          <input type="tel" placeholder="(205) 555-0000">
-        </div>
-        <div class="bk-field">
-          <label>Service Type</label>
-          <select>
-            <option>Chauffeured — Round Trip</option>
-            <option>Chauffeured — Multi-stop</option>
-            <option>Self-Drive Rental</option>
-            <option>Airport Transfer</option>
-            <option>Wedding Shuttle</option>
-            <option>Game-Day Package</option>
+          <label>Vehicle *</label>
+          <select id="bkVehicle">
+            <option>Black Van</option>
+            <option>White Van</option>
           </select>
         </div>
         <div class="bk-field">
-          <label>Vehicle</label>
-          <select>
-            <option>Black Van · 10 pax (9 w/ driver)</option>
-            <option>White Van · 8 pax (7 w/ driver)</option>
-            <option>Recommend best fit</option>
+          <label>Type</label>
+          <select id="bkType">
+            <option value="chauffeured">Chauffeured</option>
+            <option value="self-drive">Self-drive</option>
+            <option value="airport">Airport transfer</option>
+            <option value="wedding">Wedding shuttle</option>
+            <option value="game">Game day</option>
+            <option value="maint">Maintenance / blocked</option>
           </select>
         </div>
-        <div class="bk-field">
-          <label>Pickup Date</label>
-          <input type="date">
+        <div class="bk-field" id="bkDriverField">
+          <label>Driver</label>
+          <select id="bkDriver">
+            <option>— Unassigned —</option>
+            <option>Marko Krasniqi</option>
+            <option>Dren Berisha</option>
+            <option>Ardit Hoxha</option>
+          </select>
+        </div>
+        <div class="bk-field full">
+          <label>Dates * <span style="text-transform:none;letter-spacing:.04em;color:var(--muted);font-weight:500;margin-left:6px">— tap any day to add or remove it. Pick one day, several scattered days, or a whole range.</span></label>
+          <div class="bk-mdp" id="bkMdp">
+            <div class="bk-mdp-head">
+              <button type="button" id="mdpPrev" aria-label="Previous month">‹</button>
+              <div class="mdp-month" id="mdpMonth"></div>
+              <button type="button" id="mdpNext" aria-label="Next month">›</button>
+            </div>
+            <div class="bk-mdp-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+            <div class="bk-mdp-grid" id="mdpGrid"></div>
+            <div class="bk-mdp-quick">
+              <button type="button" data-quick="today">Today</button>
+              <button type="button" data-quick="tomorrow">Tomorrow</button>
+              <button type="button" data-quick="weekend">This weekend</button>
+              <button type="button" data-quick="week">Next 7 days</button>
+            </div>
+            <div class="bk-mdp-foot">
+              <div class="bk-mdp-summary"><strong id="mdpCount">0</strong> day(s) selected</div>
+              <button type="button" class="bk-mdp-clear" id="mdpClear">Clear all</button>
+            </div>
+            <div class="bk-mdp-chips" id="mdpChips"></div>
+          </div>
         </div>
         <div class="bk-field">
-          <label>Pickup Time</label>
-          <input type="time">
+          <label>Start Time *</label>
+          <input type="time" id="bkStartTime" value="09:00">
+        </div>
+        <div class="bk-field">
+          <label>End Time *</label>
+          <input type="time" id="bkEndTime" value="13:00">
+        </div>
+        <div class="bk-field">
+          <label>Client</label>
+          <select id="bkClient">
+            <option>— No linked client —</option>
+            <option>Sarah Mitchell</option>
+            <option>Whitt Family</option>
+            <option>BBVA Compass</option>
+          </select>
         </div>
         <div class="bk-field">
           <label>Passengers</label>
-          <input type="number" min="1" max="15" placeholder="6">
+          <input type="number" min="1" max="15" placeholder="e.g. 6">
         </div>
         <div class="bk-field">
-          <label>Estimated Hours</label>
-          <input type="number" min="1" placeholder="4">
+          <label>Total ($)</label>
+          <input type="number" min="0" placeholder="e.g. 625">
         </div>
-        <div class="bk-field full">
-          <label>Pickup & Stops</label>
-          <textarea placeholder="Pickup address, then any stops..."></textarea>
+        <div class="bk-field">
+          <label>Pickup Address</label>
+          <input type="text" placeholder="Optional">
+        </div>
+        <div class="bk-field">
+          <label>Drop-off Address</label>
+          <input type="text" placeholder="Optional">
         </div>
         <div class="bk-field full">
           <label>Notes</label>
-          <textarea placeholder="Special requests, decor, cooler stock..."></textarea>
+          <textarea placeholder="Special requests, decor, cooler stock, return-condition notes..."></textarea>
         </div>
       </div>
       <div class="bk-foot">
-        <div class="hint">A draft quote will be created from this booking.</div>
+        <div class="hint">Use this for phone bookings or manual additions. The trip goes directly on the calendar — no inquiry needed.</div>
         <div class="actions">
           <button class="btn" id="bkCancel">Cancel</button>
-          <button class="btn primary" id="bkSubmit">Create Booking →</button>
+          <button class="btn primary" id="bkSubmit">Schedule Trip →</button>
         </div>
       </div>
     </div>
     <div class="bk-success" id="bkSuccess" style="display:none">
       <div class="checkmark">✓</div>
-      <h3>Booking created.</h3>
-      <p>Draft quote saved and the calendar has been updated. Customer will get a text confirmation.</p>
+      <h3 id="bkSuccessTitle">Trip scheduled.</h3>
+      <p id="bkSuccessMsg">Calendar has been updated. The vehicle is blocked off for the entire span.</p>
       <button class="btn primary" id="bkSuccessClose">Done</button>
     </div>
   </div>
@@ -1719,9 +1790,148 @@
   const bookingModal = document.getElementById('bookingModal');
   const bkForm = document.getElementById('bkForm');
   const bkSuccess = document.getElementById('bkSuccess');
+  const bkType = document.getElementById('bkType');
+  const bkDriverField = document.getElementById('bkDriverField');
+  const bkSuccessTitle = document.getElementById('bkSuccessTitle');
+  const bkSuccessMsg = document.getElementById('bkSuccessMsg');
+
+  // Multi-day picker state
+  const mdpGrid = document.getElementById('mdpGrid');
+  const mdpMonth = document.getElementById('mdpMonth');
+  const mdpCount = document.getElementById('mdpCount');
+  const mdpChips = document.getElementById('mdpChips');
+  const selectedDays = new Set(); // ISO strings YYYY-MM-DD
+  let mdpView = new Date(); mdpView.setDate(1);
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function isoFromDate(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function todayISO(){ return isoFromDate(new Date()); }
+  function prettyShort(iso){
+    const [y,m,d] = iso.split('-').map(Number);
+    return MONTH_NAMES[m-1].slice(0,3)+' '+d;
+  }
+
+  function renderMdp(){
+    const year = mdpView.getFullYear();
+    const month = mdpView.getMonth();
+    mdpMonth.textContent = MONTH_NAMES[month]+' '+year;
+    mdpGrid.innerHTML = '';
+    const first = new Date(year, month, 1);
+    const startDow = first.getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const daysPrev = new Date(year, month, 0).getDate();
+    const todayIso = todayISO();
+    // Leading muted days
+    for(let i=startDow-1; i>=0; i--){
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'bk-mdp-cell muted';
+      cell.textContent = daysPrev - i;
+      mdpGrid.appendChild(cell);
+    }
+    // Days in this month
+    for(let d=1; d<=daysInMonth; d++){
+      const iso = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'bk-mdp-cell';
+      if(iso === todayIso) cell.classList.add('today');
+      if(selectedDays.has(iso)) cell.classList.add('selected');
+      if(iso < todayIso) cell.classList.add('disabled');
+      cell.textContent = d;
+      cell.dataset.iso = iso;
+      cell.addEventListener('click', ()=>{
+        if(cell.classList.contains('disabled')) return;
+        if(selectedDays.has(iso)) selectedDays.delete(iso);
+        else selectedDays.add(iso);
+        renderMdp();
+        renderChips();
+      });
+      mdpGrid.appendChild(cell);
+    }
+    // Trailing muted days to fill 6 rows
+    const total = startDow + daysInMonth;
+    const trailing = (7 - (total % 7)) % 7;
+    for(let i=1; i<=trailing; i++){
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'bk-mdp-cell muted';
+      cell.textContent = i;
+      mdpGrid.appendChild(cell);
+    }
+    mdpCount.textContent = selectedDays.size;
+  }
+  function renderChips(){
+    mdpChips.innerHTML = '';
+    const sorted = [...selectedDays].sort();
+    sorted.forEach(iso=>{
+      const chip = document.createElement('span');
+      chip.className = 'bk-mdp-chip';
+      chip.innerHTML = prettyShort(iso) + ' <button type="button" aria-label="Remove">×</button>';
+      chip.querySelector('button').addEventListener('click', ()=>{
+        selectedDays.delete(iso);
+        renderMdp(); renderChips();
+      });
+      mdpChips.appendChild(chip);
+    });
+  }
+  function jumpToFirstSelected(){
+    if(!selectedDays.size) return;
+    const first = [...selectedDays].sort()[0];
+    const [y,m] = first.split('-').map(Number);
+    mdpView = new Date(y, m-1, 1);
+  }
+
+  document.getElementById('mdpPrev').addEventListener('click', ()=>{
+    mdpView = new Date(mdpView.getFullYear(), mdpView.getMonth()-1, 1);
+    renderMdp();
+  });
+  document.getElementById('mdpNext').addEventListener('click', ()=>{
+    mdpView = new Date(mdpView.getFullYear(), mdpView.getMonth()+1, 1);
+    renderMdp();
+  });
+  document.getElementById('mdpClear').addEventListener('click', ()=>{
+    selectedDays.clear();
+    renderMdp(); renderChips();
+  });
+  document.querySelectorAll('[data-quick]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const kind = btn.dataset.quick;
+      const t = new Date();
+      const addIso = (d)=> selectedDays.add(isoFromDate(d));
+      if(kind === 'today'){ addIso(t); }
+      else if(kind === 'tomorrow'){ const d = new Date(t); d.setDate(d.getDate()+1); addIso(d); }
+      else if(kind === 'weekend'){
+        // next Saturday + Sunday
+        const d = new Date(t);
+        const dow = d.getDay();
+        const toSat = (6 - dow + 7) % 7 || 7;
+        d.setDate(d.getDate() + (dow === 6 ? 0 : toSat));
+        addIso(d);
+        const sun = new Date(d); sun.setDate(sun.getDate()+1); addIso(sun);
+      }
+      else if(kind === 'week'){
+        for(let i=0;i<7;i++){ const d = new Date(t); d.setDate(d.getDate()+i); addIso(d); }
+      }
+      jumpToFirstSelected();
+      renderMdp(); renderChips();
+    });
+  });
+
+  function syncTypeUI(){
+    const t = bkType.value;
+    const multiDayType = (t === 'self-drive' || t === 'maint');
+    bkDriverField.style.display = multiDayType ? 'none' : '';
+  }
+
   function openBooking(){
     bkForm.style.display='';
     bkSuccess.style.display='none';
+    // Default view to current month
+    mdpView = new Date(); mdpView.setDate(1);
+    jumpToFirstSelected();
+    renderMdp(); renderChips();
+    syncTypeUI();
     bookingModal.hidden=false;
     document.body.style.overflow='hidden';
   }
@@ -1733,13 +1943,34 @@
   document.getElementById('bkClose').addEventListener('click', closeBooking);
   document.getElementById('bkCancel').addEventListener('click', closeBooking);
   bookingModal.addEventListener('click', e=>{ if(e.target===bookingModal) closeBooking(); });
+  bkType.addEventListener('change', syncTypeUI);
+
+  function summarizeSelected(){
+    const sorted = [...selectedDays].sort();
+    if(sorted.length === 0) return '';
+    if(sorted.length === 1) return prettyShort(sorted[0]);
+    if(sorted.length <= 4) return sorted.map(prettyShort).join(', ');
+    return prettyShort(sorted[0])+' → '+prettyShort(sorted[sorted.length-1])+' ('+sorted.length+' days)';
+  }
+
   document.getElementById('bkSubmit').addEventListener('click', ()=>{
+    if(selectedDays.size === 0){
+      toast('Pick at least one day on the calendar', 'error');
+      document.getElementById('bkMdp').scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+    const n = selectedDays.size;
+    const summary = summarizeSelected();
+    bkSuccessTitle.textContent = n > 1 ? 'Trip scheduled · ' + n + ' days blocked.' : 'Trip scheduled.';
+    bkSuccessMsg.textContent = 'Vehicle is blocked off on '+summary+'. No other bookings can overlap these days.';
     bkForm.style.display='none';
     bkSuccess.style.display='';
   });
   document.getElementById('bkSuccessClose').addEventListener('click', ()=>{
+    const n = selectedDays.size;
     closeBooking();
-    toast('Booking created · draft quote saved', 'success');
+    toast(n > 1 ? ('Trip scheduled · ' + n + ' days blocked on calendar') : 'Trip scheduled · calendar updated', 'success');
+    selectedDays.clear();
   });
 
   // ---------------- Quote action buttons ----------------
