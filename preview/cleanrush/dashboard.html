@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CleanRush Dispatch — Concept by Williams Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0b1a2b;
+    --ink-soft: #1f3147;
+    --muted: #6c7a8a;
+    --line: #e6ebf2;
+    --bg: #f3f6fa;
+    --panel: #ffffff;
+    --rush: #0d6efd;
+    --rush-deep: #0a3a8c;
+    --rush-bright: #2da8ff;
+    --good: #16a34a;
+    --warn: #f59e0b;
+    --bad: #dc2626;
+    --accent: #ffd84d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg); color: var(--ink); font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  /* Layout */
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  aside {
+    background: #0a1c33;
+    color: rgba(255,255,255,.85);
+    padding: 20px 14px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  aside .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 22px; }
+  aside .brand .mark {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--rush), var(--rush-bright));
+    display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 14px;
+  }
+  aside .brand .title { font-weight: 800; font-size: 15.5px; color: #fff; }
+  aside .brand .sub { font-size: 11px; color: rgba(255,255,255,.5); font-weight: 500; letter-spacing: .05em; text-transform: uppercase; }
+
+  .nav-section { margin-top: 18px; }
+  .nav-section h5 {
+    font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: rgba(255,255,255,.4); margin: 0 0 8px; padding: 0 8px; font-weight: 700;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 12px; border-radius: 8px;
+    font-size: 13.5px; font-weight: 500;
+    color: rgba(255,255,255,.75);
+    cursor: pointer; margin-bottom: 2px;
+    transition: background .15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .nav-item.active { background: rgba(13,110,253,.2); color: #fff; box-shadow: inset 2px 0 0 var(--rush-bright); }
+  .nav-item .ico { width: 16px; text-align: center; opacity: .85; }
+  .nav-item .badge {
+    margin-left: auto; background: var(--accent); color: var(--ink);
+    font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px;
+  }
+
+  /* Main */
+  main { padding: 0; min-width: 0; }
+  header.top {
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 28px; display: flex; align-items: center; gap: 18px;
+    position: sticky; top: 0; z-index: 20;
+  }
+  header.top .crumb { font-size: 13px; color: var(--muted); }
+  header.top .crumb b { color: var(--ink); }
+  header.top .right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .search {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 12px; width: 280px; font-size: 13px; color: var(--ink);
+  }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel); cursor: pointer; position: relative;
+    display: grid; place-items: center; font-size: 14px;
+  }
+  .icon-btn .ping {
+    position: absolute; top: 5px; right: 5px;
+    width: 8px; height: 8px; background: var(--bad); border-radius: 50%;
+    border: 2px solid var(--panel);
+  }
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 12px 4px 4px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--line);
+  }
+  .user-chip .av {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd, #2da8ff);
+    color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700;
+  }
+  .user-chip .name { font-size: 12.5px; font-weight: 600; }
+
+  /* Page header */
+  .page-head {
+    padding: 28px 28px 18px; display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap;
+  }
+  .page-head h1 { font-family: 'Fraunces', serif; font-size: 28px; margin: 0 0 4px; }
+  .page-head .sub { color: var(--muted); font-size: 14px; margin: 0; }
+  .page-head .actions { margin-left: auto; display: flex; gap: 10px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer; font-family: inherit;
+  }
+  .btn-primary { background: var(--rush); color: #fff; }
+  .btn-primary:hover { background: var(--rush-deep); }
+  .btn-ghost { background: var(--panel); color: var(--ink); border-color: var(--line); }
+  .btn-ghost:hover { border-color: var(--rush); color: var(--rush); }
+
+  /* KPI strip */
+  .kpis {
+    padding: 0 28px 22px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px;
+  }
+  .kpi {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .kpi .lbl { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; margin-bottom: 6px; }
+  .kpi .val { font-family: 'Fraunces', serif; font-size: 26px; font-weight: 700; line-height: 1; }
+  .kpi .delta { font-size: 11.5px; font-weight: 600; margin-top: 6px; }
+  .kpi .delta.up { color: var(--good); }
+  .kpi .delta.down { color: var(--bad); }
+  .kpi .delta.flat { color: var(--muted); }
+
+  /* Layout grid */
+  .grid {
+    padding: 0 28px 32px;
+    display: grid; grid-template-columns: 1.6fr 1fr; gap: 22px;
+  }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .panel-head h3 {
+    font-family: 'Fraunces', serif; font-size: 17px; margin: 0;
+  }
+  .panel-head .badge {
+    background: var(--bg); border: 1px solid var(--line);
+    padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--muted);
+  }
+  .panel-head .right { margin-left: auto; display: flex; gap: 6px; font-size: 12.5px; color: var(--muted); }
+  .panel-head .right a { padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+  .panel-head .right a:hover { background: var(--bg); }
+  .panel-head .right a.active { background: var(--rush); color: #fff; }
+
+  /* Jobs board */
+  .jobs-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+  .col { padding: 16px; border-right: 1px solid var(--line); min-height: 380px; }
+  .col:last-child { border-right: none; }
+  .col-head {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  }
+  .col-head .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .col-head .count { margin-left: auto; color: var(--muted); font-weight: 600; }
+  .col-scheduled .dot { background: #94a3b8; }
+  .col-progress .dot { background: var(--rush); animation: pulse 1.6s infinite; }
+  .col-done .dot { background: var(--good); }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(13,110,253,.5); }
+    50% { box-shadow: 0 0 0 6px rgba(13,110,253,0); }
+  }
+  .job {
+    background: #fff; border: 1px solid var(--line); border-radius: 9px;
+    padding: 12px; margin-bottom: 9px; cursor: grab;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .job:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -10px rgba(11,26,43,.2); border-color: rgba(13,110,253,.3); }
+  .job .row1 { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .job .time { font-size: 12px; font-weight: 700; color: var(--ink); }
+  .job .svc { font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--bg); color: var(--ink-soft); font-weight: 600; }
+  .job .svc.deep { background: rgba(22,163,74,.1); color: var(--good); }
+  .job .svc.move { background: rgba(13,110,253,.1); color: var(--rush); }
+  .job .svc.airbnb { background: rgba(217,119,6,.12); color: #b45309; }
+  .job .addr { font-size: 12.5px; color: var(--ink-soft); font-weight: 500; margin-bottom: 6px; }
+  .job .meta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+  .job .pro { display: flex; align-items: center; gap: 6px; }
+  .job .pro .a {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd, #2da8ff);
+    color: #fff; display: grid; place-items: center; font-size: 9px; font-weight: 700;
+  }
+  .job .price { margin-left: auto; font-weight: 700; color: var(--ink); }
+
+  /* Schedule strip */
+  .schedule { padding: 16px 20px; }
+  .timeline {
+    display: grid; grid-template-columns: 80px 1fr; gap: 16px;
+    margin-bottom: 8px;
+  }
+  .timeline .pro {
+    display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600;
+  }
+  .timeline .pro .a {
+    width: 22px; height: 22px; border-radius: 50%; color: #fff;
+    display: grid; place-items: center; font-size: 10px; font-weight: 700;
+  }
+  .timeline .bar {
+    position: relative; height: 32px; background: var(--bg); border-radius: 6px;
+  }
+  .slot {
+    position: absolute; top: 4px; bottom: 4px;
+    border-radius: 4px; font-size: 11px; font-weight: 600; color: #fff;
+    display: flex; align-items: center; padding: 0 8px;
+    cursor: pointer; overflow: hidden;
+  }
+
+  /* SMS composer */
+  .composer { padding: 16px 20px; }
+  .composer textarea {
+    width: 100%; border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 12px; font-family: inherit; font-size: 13px;
+    resize: vertical; min-height: 70px; background: var(--bg);
+  }
+  .composer .row {
+    display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap;
+  }
+  .lang-toggle {
+    display: inline-flex; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 2px; font-size: 12px;
+  }
+  .lang-toggle span { padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--muted); }
+  .lang-toggle span.active { background: var(--panel); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .audience { font-size: 12px; color: var(--muted); }
+  .audience b { color: var(--ink); }
+
+  /* Customers / lists */
+  .list-row {
+    padding: 13px 20px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row .av {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #0d6efd, #2da8ff);
+    color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .list-row .name { font-size: 13.5px; font-weight: 600; }
+  .list-row .meta { font-size: 12px; color: var(--muted); }
+  .list-row .tag {
+    margin-left: auto; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+    background: var(--bg); color: var(--ink-soft);
+  }
+  .tag.recurring { background: rgba(13,110,253,.1); color: var(--rush); }
+  .tag.new { background: rgba(22,163,74,.12); color: var(--good); }
+  .tag.lapsed { background: rgba(220,38,38,.1); color: var(--bad); }
+
+  /* Campaigns */
+  .campaign {
+    padding: 14px 20px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .campaign:last-child { border-bottom: none; }
+  .campaign .ico {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: rgba(13,110,253,.08); color: var(--rush);
+    display: grid; place-items: center; font-size: 15px; flex-shrink: 0;
+  }
+  .campaign .title { font-size: 13.5px; font-weight: 600; margin-bottom: 2px; }
+  .campaign .desc { font-size: 12px; color: var(--muted); }
+  .campaign .stat { margin-left: auto; text-align: right; }
+  .campaign .stat .v { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700; color: var(--ink); }
+  .campaign .stat .l { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+  .toggle {
+    width: 36px; height: 20px; background: var(--good); border-radius: 999px;
+    position: relative; cursor: pointer; flex-shrink: 0;
+  }
+  .toggle.off { background: #cbd5e1; }
+  .toggle::after {
+    content: ""; position: absolute; top: 2px; left: 18px;
+    width: 16px; height: 16px; background: #fff; border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2); transition: left .15s;
+  }
+  .toggle.off::after { left: 2px; }
+
+  /* Bottom split */
+  .grid-2 {
+    padding: 0 28px 32px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+  }
+
+  /* Concept banner */
+  .concept-banner {
+    background: linear-gradient(135deg, #0a1c33, #0d6efd 130%);
+    color: #fff; padding: 12px 28px;
+    font-size: 12.5px; display: flex; align-items: center; gap: 14px;
+  }
+  .concept-banner strong { color: var(--accent); }
+  .concept-banner a {
+    margin-left: auto; background: rgba(255,255,255,.15); padding: 5px 12px;
+    border-radius: 999px; font-weight: 600;
+  }
+
+  @media (max-width: 1100px) {
+    .grid, .grid-2 { grid-template-columns: 1fr; }
+    .jobs-board { grid-template-columns: 1fr; }
+    .col { border-right: none; border-bottom: 1px solid var(--line); }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 800px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: relative; height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ====== Sidebar ====== -->
+  <aside>
+    <div class="brand">
+      <div class="mark">CR</div>
+      <div>
+        <div class="title">CleanRush</div>
+        <div class="sub">Dispatch</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <h5>Today</h5>
+      <div class="nav-item active"><span class="ico">📋</span> Dispatch board <span class="badge">14</span></div>
+      <div class="nav-item"><span class="ico">📍</span> Live map</div>
+      <div class="nav-item"><span class="ico">🗓</span> Schedule</div>
+    </div>
+
+    <div class="nav-section">
+      <h5>People</h5>
+      <div class="nav-item"><span class="ico">🧑</span> Customers</div>
+      <div class="nav-item"><span class="ico">🧹</span> Cleaning pros</div>
+      <div class="nav-item"><span class="ico">🏠</span> Airbnb hosts</div>
+    </div>
+
+    <div class="nav-section">
+      <h5>Growth</h5>
+      <div class="nav-item"><span class="ico">💬</span> SMS campaigns</div>
+      <div class="nav-item"><span class="ico">⭐</span> Reviews</div>
+      <div class="nav-item"><span class="ico">🔁</span> Repeat-booking</div>
+      <div class="nav-item"><span class="ico">🤝</span> Referrals</div>
+    </div>
+
+    <div class="nav-section">
+      <h5>Operations</h5>
+      <div class="nav-item"><span class="ico">💰</span> Payments</div>
+      <div class="nav-item"><span class="ico">📊</span> Analytics</div>
+      <div class="nav-item"><span class="ico">⚙️</span> Settings</div>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- Concept banner -->
+    <div class="concept-banner">
+      <span><strong>Concept demo</strong> · CleanRush Dispatch · prepared by Williams Digital</span>
+      <a href="index.html">← Back to homepage concept</a>
+    </div>
+
+    <!-- Top bar -->
+    <header class="top">
+      <div class="crumb">Today · <b>Friday, June 6</b></div>
+      <input class="search" type="text" placeholder="Search customers, bookings, pros…" />
+      <div class="right">
+        <div class="icon-btn">🔔<span class="ping"></span></div>
+        <div class="icon-btn">💬</div>
+        <div class="user-chip">
+          <div class="av">SR</div>
+          <div class="name">Sofia R.</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page head -->
+    <div class="page-head">
+      <div>
+        <h1>Dispatch board</h1>
+        <p class="sub">14 jobs · 8 cleaning pros active · 3 same-day requests in queue</p>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost">Export day</button>
+        <button class="btn btn-primary">+ New booking</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi">
+        <div class="lbl">Bookings today</div>
+        <div class="val">14</div>
+        <div class="delta up">↑ 3 vs avg Fri</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Revenue today</div>
+        <div class="val">$2,840</div>
+        <div class="delta up">↑ 12% vs avg Fri</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Avg ticket</div>
+        <div class="val">$203</div>
+        <div class="delta flat">— flat WoW</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">Same-day fill rate</div>
+        <div class="val">86%</div>
+        <div class="delta up">↑ 4 pts</div>
+      </div>
+      <div class="kpi">
+        <div class="lbl">★ Avg rating (7d)</div>
+        <div class="val">4.92</div>
+        <div class="delta up">↑ from 4.88</div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="grid">
+
+      <!-- Jobs board -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Today's jobs</h3>
+          <span class="badge">14 jobs</span>
+          <div class="right">
+            <a class="active">Board</a>
+            <a>Map</a>
+            <a>Timeline</a>
+          </div>
+        </div>
+
+        <div class="jobs-board">
+          <div class="col">
+            <div class="col-head col-scheduled">
+              <span class="dot"></span> Scheduled <span class="count">5</span>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">9:00 AM</span>
+                <span class="svc">Standard</span>
+                <span class="price">$140</span>
+              </div>
+              <div class="addr">2814 Westheimer Rd · Houston</div>
+              <div class="meta">
+                <div class="pro"><div class="a">MA</div> Maria A.</div>
+                <span>·</span><span>2 bd · 2 ba</span>
+              </div>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">10:30 AM</span>
+                <span class="svc deep">Deep</span>
+                <span class="price">$340</span>
+              </div>
+              <div class="addr">14207 Memorial Dr · Houston</div>
+              <div class="meta">
+                <div class="pro"><div class="a">JC</div> Javier C.</div>
+                <span>·</span><span>3 bd · 2 ba</span>
+              </div>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">11:00 AM</span>
+                <span class="svc move">Move-out</span>
+                <span class="price">$420</span>
+              </div>
+              <div class="addr">5601 Kirby Dr · Houston</div>
+              <div class="meta">
+                <div class="pro"><div class="a">RT</div> Rosa T.</div>
+                <span>·</span><span>1 bd · 1 ba · empty</span>
+              </div>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">2:00 PM</span>
+                <span class="svc">Standard</span>
+                <span class="price">$160</span>
+              </div>
+              <div class="addr">9402 Bissonnet St · Sugar Land</div>
+              <div class="meta">
+                <div class="pro"><div class="a">MA</div> Maria A.</div>
+                <span>·</span><span>recurring · biweekly</span>
+              </div>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">4:30 PM</span>
+                <span class="svc airbnb">Airbnb</span>
+                <span class="price">$120</span>
+              </div>
+              <div class="addr">1102 Studemont · The Heights</div>
+              <div class="meta">
+                <div class="pro"><div class="a">EL</div> Elena L.</div>
+                <span>·</span><span>turnover · 5pm check-in</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="col-head col-progress">
+              <span class="dot"></span> In progress <span class="count">3</span>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">8:00 AM →</span>
+                <span class="svc">Standard</span>
+                <span class="price">$180</span>
+              </div>
+              <div class="addr">2210 Welch St · Houston</div>
+              <div class="meta">
+                <div class="pro"><div class="a">LD</div> Luis D.</div>
+                <span>·</span><span>2 bd · 2 ba</span>
+              </div>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">8:30 AM →</span>
+                <span class="svc deep">Deep</span>
+                <span class="price">$310</span>
+              </div>
+              <div class="addr">3318 Bellaire Blvd · Bellaire</div>
+              <div class="meta">
+                <div class="pro"><div class="a">CV</div> Carmen V.</div>
+                <span>·</span><span>3 bd · 2 ba</span>
+              </div>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">9:30 AM →</span>
+                <span class="svc airbnb">Airbnb</span>
+                <span class="price">$95</span>
+              </div>
+              <div class="addr">807 Oxford St · The Heights</div>
+              <div class="meta">
+                <div class="pro"><div class="a">EL</div> Elena L.</div>
+                <span>·</span><span>turnover · 3 of 6 today</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col">
+            <div class="col-head col-done">
+              <span class="dot"></span> Complete <span class="count">6</span>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">7:00 AM ✓</span>
+                <span class="svc airbnb">Airbnb</span>
+                <span class="price">$95</span>
+              </div>
+              <div class="addr">1418 Heights Blvd · The Heights</div>
+              <div class="meta">
+                <div class="pro"><div class="a">EL</div> Elena L.</div>
+                <span>·</span><span>★ 5.0 · review requested</span>
+              </div>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">7:30 AM ✓</span>
+                <span class="svc">Standard</span>
+                <span class="price">$140</span>
+              </div>
+              <div class="addr">5440 Hidalgo St · Houston</div>
+              <div class="meta">
+                <div class="pro"><div class="a">JC</div> Javier C.</div>
+                <span>·</span><span>★ 5.0 · paid</span>
+              </div>
+            </div>
+
+            <div class="job">
+              <div class="row1">
+                <span class="time">8:00 AM ✓</span>
+                <span class="svc airbnb">Airbnb</span>
+                <span class="price">$110</span>
+              </div>
+              <div class="addr">907 Studemont · The Heights</div>
+              <div class="meta">
+                <div class="pro"><div class="a">EL</div> Elena L.</div>
+                <span>·</span><span>★ 4.8 · review requested</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right rail: schedule + SMS composer -->
+      <div style="display: flex; flex-direction: column; gap: 22px;">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Crew schedule</h3>
+            <span class="badge">8 pros · today</span>
+          </div>
+          <div class="schedule">
+            <div class="timeline">
+              <div class="pro"><div class="a" style="background:#0d6efd">MA</div> Maria A.</div>
+              <div class="bar">
+                <div class="slot" style="left: 6%; width: 14%; background: #0d6efd;">9–11a</div>
+                <div class="slot" style="left: 42%; width: 16%; background: #0d6efd;">2–4p</div>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="pro"><div class="a" style="background:#16a34a">JC</div> Javier C.</div>
+              <div class="bar">
+                <div class="slot" style="left: 14%; width: 22%; background: #16a34a;">10:30a–2p</div>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="pro"><div class="a" style="background:#d97706">EL</div> Elena L.</div>
+              <div class="bar">
+                <div class="slot" style="left: 2%; width: 8%; background: #d97706;">7a</div>
+                <div class="slot" style="left: 12%; width: 8%; background: #d97706;">8a</div>
+                <div class="slot" style="left: 22%; width: 8%; background: #d97706;">9:30a</div>
+                <div class="slot" style="left: 60%; width: 8%; background: #d97706;">4:30p</div>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="pro"><div class="a" style="background:#7c3aed">CV</div> Carmen V.</div>
+              <div class="bar">
+                <div class="slot" style="left: 14%; width: 20%; background: #7c3aed;">8:30a–12p</div>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="pro"><div class="a" style="background:#dc2626">RT</div> Rosa T.</div>
+              <div class="bar">
+                <div class="slot" style="left: 18%; width: 28%; background: #dc2626;">11a–3p</div>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="pro"><div class="a" style="background:#0891b2">LD</div> Luis D.</div>
+              <div class="bar">
+                <div class="slot" style="left: 8%; width: 16%; background: #0891b2;">8a–10:30a</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>SMS composer</h3>
+            <span class="badge">Twilio · live</span>
+          </div>
+          <div class="composer">
+            <div style="margin-bottom: 10px; font-size: 12.5px; color: var(--muted);">
+              Sending to <span class="audience"><b>recurring customers</b> · 412 people · last clean 7+ days ago</span>
+            </div>
+            <textarea>Hey! Maria here from CleanRush 👋 You're due for your next clean. Reply YES and we'll match you with the same pro as last time. — CleanRush</textarea>
+            <div class="row">
+              <div class="lang-toggle">
+                <span class="active">EN</span>
+                <span>ES</span>
+              </div>
+              <span style="font-size: 11.5px; color: var(--muted);">142 chars · 1 segment</span>
+              <button class="btn btn-ghost" style="margin-left: auto;">Preview</button>
+              <button class="btn btn-primary">Send to 412</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom split: customers + campaigns -->
+    <div class="grid-2">
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Customers needing attention</h3>
+          <span class="badge">9</span>
+          <div class="right"><a>See all →</a></div>
+        </div>
+
+        <div class="list-row">
+          <div class="av">SM</div>
+          <div>
+            <div class="name">Samantha M.</div>
+            <div class="meta">Recurring biweekly · last clean 21 days ago · likely churning</div>
+          </div>
+          <span class="tag lapsed">At risk</span>
+        </div>
+        <div class="list-row">
+          <div class="av">DH</div>
+          <div>
+            <div class="name">David H.</div>
+            <div class="meta">3 Airbnb properties · invoice 9 days overdue · $470</div>
+          </div>
+          <span class="tag lapsed">Past due</span>
+        </div>
+        <div class="list-row">
+          <div class="av">PJ</div>
+          <div>
+            <div class="name">Priya J.</div>
+            <div class="meta">First clean tomorrow 9am · welcome SMS not yet sent</div>
+          </div>
+          <span class="tag new">New</span>
+        </div>
+        <div class="list-row">
+          <div class="av">TR</div>
+          <div>
+            <div class="name">Tyler R.</div>
+            <div class="meta">Left 5★ review yesterday — referral ask not yet sent</div>
+          </div>
+          <span class="tag recurring">Recurring</span>
+        </div>
+        <div class="list-row">
+          <div class="av">KO</div>
+          <div>
+            <div class="name">Kara O.</div>
+            <div class="meta">Reschedule request via SMS — 14 minutes ago</div>
+          </div>
+          <span class="tag">Needs reply</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Retention campaigns</h3>
+          <span class="badge">5 running</span>
+          <div class="right"><a>Manage →</a></div>
+        </div>
+
+        <div class="campaign">
+          <div class="ico">⏰</div>
+          <div>
+            <div class="title">Day-before reminder</div>
+            <div class="desc">Auto-SMS 24hr before scheduled clean · EN / ES</div>
+          </div>
+          <div class="stat">
+            <div class="v">98%</div>
+            <div class="l">delivered</div>
+          </div>
+          <div class="toggle"></div>
+        </div>
+
+        <div class="campaign">
+          <div class="ico">⭐</div>
+          <div>
+            <div class="title">Review request (post-clean)</div>
+            <div class="desc">Sent 2hr after job marked complete · 5★ → Google, &lt;5★ → support</div>
+          </div>
+          <div class="stat">
+            <div class="v">31%</div>
+            <div class="l">5★ left</div>
+          </div>
+          <div class="toggle"></div>
+        </div>
+
+        <div class="campaign">
+          <div class="ico">🔁</div>
+          <div>
+            <div class="title">30-day re-book nudge</div>
+            <div class="desc">"Time for another clean?" · 10% off if booked in 48hr</div>
+          </div>
+          <div class="stat">
+            <div class="v">18%</div>
+            <div class="l">conv.</div>
+          </div>
+          <div class="toggle"></div>
+        </div>
+
+        <div class="campaign">
+          <div class="ico">🤝</div>
+          <div>
+            <div class="title">Referral loop</div>
+            <div class="desc">$25 for you, $25 for a friend · sent after every 5★ clean</div>
+          </div>
+          <div class="stat">
+            <div class="v">42</div>
+            <div class="l">referrals MTD</div>
+          </div>
+          <div class="toggle"></div>
+        </div>
+
+        <div class="campaign">
+          <div class="ico">💤</div>
+          <div>
+            <div class="title">Win-back (60-day lapse)</div>
+            <div class="desc">$25 off · sent if last clean &gt; 60 days ago and not recurring</div>
+          </div>
+          <div class="stat">
+            <div class="v">9%</div>
+            <div class="l">conv.</div>
+          </div>
+          <div class="toggle off"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>
