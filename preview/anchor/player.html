@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anchor Player · Live Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5f1;
+  --navy:#0f2540;
+  --navy-deep:#081a30;
+  --brass:#c79547;
+  --brass-light:#e0b772;
+  --good:#67c285;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:#000;color:var(--bg)}
+
+.stage{
+  position:fixed;inset:0;
+  display:grid;place-items:center;
+  background:#000;
+  overflow:hidden;
+}
+.slide{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .6s ease;
+  padding:80px;
+  text-align:center;
+}
+.slide.active{opacity:1}
+
+/* ========== SLIDE STYLES ========== */
+.slide-welcome{
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(199,149,71,.2) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 70%, rgba(58,125,78,.15) 0%, transparent 55%),
+    linear-gradient(180deg,#0f2540,#081a30);
+}
+.slide-welcome::before{
+  content:"";position:absolute;inset:0;
+  background-image:
+    repeating-linear-gradient(90deg,rgba(224,183,114,.04) 0 1px,transparent 1px 100px),
+    repeating-linear-gradient(0deg,rgba(224,183,114,.04) 0 1px,transparent 1px 100px);
+}
+.slide-welcome .content{position:relative}
+.slide-welcome .eyebrow{
+  color:var(--brass-light);
+  font-size:14px;letter-spacing:.4em;text-transform:uppercase;font-weight:600;
+  margin-bottom:40px;display:inline-block;
+}
+.slide-welcome h1{
+  font-family:'Fraunces',serif;
+  font-size:clamp(80px,12vw,180px);
+  font-weight:900;line-height:.95;letter-spacing:-.03em;
+  color:var(--bg);margin-bottom:30px;
+}
+.slide-welcome h1 em{font-style:italic;color:var(--brass-light);font-weight:500}
+.slide-welcome p{
+  font-family:'Fraunces',serif;
+  font-size:clamp(24px,2.2vw,38px);
+  color:rgba(246,245,241,.78);
+  font-style:italic;
+  max-width:28ch;margin:0 auto;
+}
+
+/* MENU SLIDE */
+.slide-menu{
+  background:linear-gradient(135deg,#3a2516,#1c1108);
+  flex-direction:column;
+  align-items:stretch;
+  padding:80px 100px;
+}
+.slide-menu .menu-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding-bottom:30px;border-bottom:2px solid rgba(224,183,114,.3);margin-bottom:50px;
+}
+.slide-menu .menu-head h2{
+  font-family:'Fraunces',serif;font-size:80px;font-weight:900;color:#e6b870;letter-spacing:-.02em;
+}
+.slide-menu .menu-head span{
+  font-size:18px;letter-spacing:.4em;text-transform:uppercase;color:rgba(230,184,112,.6);font-weight:600;
+}
+.slide-menu .menu-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:40px 80px;flex:1;
+}
+.menu-item{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
+  padding-bottom:24px;border-bottom:1px dashed rgba(224,183,114,.18);
+}
+.menu-item:last-child{border-bottom:none}
+.menu-item .name{font-family:'Fraunces',serif;font-size:36px;font-weight:700;color:#f5d9b8;letter-spacing:-.01em;margin-bottom:6px}
+.menu-item .desc{font-size:17px;color:rgba(245,217,184,.6);font-style:italic;line-height:1.4}
+.menu-item .price{font-family:'Fraunces',serif;font-size:36px;font-weight:700;color:var(--brass-light);flex-shrink:0}
+
+/* KIDS SLIDE */
+.slide-kids{
+  background:
+    radial-gradient(ellipse at 70% 30%, rgba(103,194,133,.3) 0%, transparent 55%),
+    linear-gradient(135deg,#1e4d3a,#0f2e22);
+  flex-direction:column;
+}
+.slide-kids .icon{
+  width:200px;height:200px;border-radius:50%;
+  background:rgba(168,217,184,.18);
+  display:grid;place-items:center;
+  margin-bottom:50px;
+  color:#a8d9b8;
+  border:3px dashed rgba(168,217,184,.5);
+}
+.slide-kids h1{
+  font-family:'Fraunces',serif;font-size:clamp(70px,10vw,140px);
+  font-weight:900;color:#e8f4ec;letter-spacing:-.02em;line-height:.95;margin-bottom:24px;
+}
+.slide-kids p{
+  font-size:clamp(22px,2vw,34px);
+  color:rgba(232,244,236,.78);font-weight:500;max-width:30ch;margin:0 auto 50px;
+}
+.slide-kids .arrow{
+  display:inline-flex;align-items:center;gap:24px;
+  background:rgba(168,217,184,.2);
+  border:2px solid rgba(168,217,184,.4);
+  border-radius:999px;padding:24px 50px;
+  color:#a8d9b8;font-size:24px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+}
+.slide-kids .arrow svg{animation:bounce 1.4s ease infinite}
+@keyframes bounce{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}
+
+/* SERMON SLIDE */
+.slide-sermon{
+  background:linear-gradient(180deg,#3e2c4f,#21172b);
+  flex-direction:column;
+}
+.slide-sermon::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 30%, rgba(212,184,224,.16) 0%, transparent 60%);
+}
+.slide-sermon .content{position:relative;text-align:center}
+.slide-sermon .series{
+  font-size:16px;letter-spacing:.5em;text-transform:uppercase;
+  color:rgba(212,184,224,.7);font-weight:600;margin-bottom:30px;
+}
+.slide-sermon h1{
+  font-family:'Fraunces',serif;
+  font-size:clamp(70px,10vw,160px);
+  font-weight:900;letter-spacing:-.03em;line-height:.95;
+  color:#f0e2f5;margin-bottom:24px;
+}
+.slide-sermon h1 em{font-style:italic;color:#d4b8e0;font-weight:500}
+.slide-sermon .verse{
+  font-family:'Fraunces',serif;font-style:italic;
+  font-size:clamp(20px,1.7vw,30px);
+  color:rgba(240,226,245,.7);max-width:32ch;margin:0 auto;
+  line-height:1.4;
+}
+.slide-sermon .cite{
+  display:block;margin-top:20px;
+  font-style:normal;font-family:'Inter',sans-serif;
+  font-size:14px;letter-spacing:.3em;text-transform:uppercase;
+  color:rgba(212,184,224,.6);font-weight:600;
+}
+
+/* SERVICE TIMES */
+.slide-times{
+  background:linear-gradient(135deg,#0f2540,#081a30);
+  flex-direction:column;
+}
+.slide-times .eyebrow{
+  color:var(--brass-light);
+  font-size:14px;letter-spacing:.4em;text-transform:uppercase;font-weight:600;
+  margin-bottom:40px;
+}
+.slide-times h1{
+  font-family:'Fraunces',serif;font-size:clamp(60px,8vw,110px);
+  font-weight:900;color:var(--bg);margin-bottom:60px;
+  letter-spacing:-.02em;
+}
+.slide-times .times-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:40px;max-width:1100px;margin:0 auto;
+}
+.time-card{
+  background:rgba(199,149,71,.1);
+  border:1.5px solid rgba(199,149,71,.4);
+  border-radius:20px;
+  padding:40px 30px;
+}
+.time-card .day{
+  font-family:'Fraunces',serif;font-size:32px;font-weight:700;color:var(--brass-light);
+  margin-bottom:14px;
+}
+.time-card .time{
+  font-family:'Fraunces',serif;font-size:48px;font-weight:900;color:var(--bg);line-height:1;margin-bottom:10px;
+}
+.time-card .desc{font-size:16px;color:rgba(246,245,241,.7);font-style:italic}
+
+/* COUNTDOWN */
+.slide-countdown{
+  background:
+    radial-gradient(ellipse at 70% 70%, rgba(199,149,71,.2) 0%, transparent 55%),
+    linear-gradient(135deg,#2a1845,#1c0f30);
+  flex-direction:column;
+}
+.slide-countdown .eyebrow{
+  color:var(--brass-light);
+  font-size:18px;letter-spacing:.5em;text-transform:uppercase;font-weight:600;
+  margin-bottom:50px;
+}
+.slide-countdown h1{
+  font-family:'Fraunces',serif;font-size:clamp(60px,8vw,120px);
+  font-weight:900;color:var(--bg);letter-spacing:-.02em;line-height:.95;
+  margin-bottom:80px;
+}
+.slide-countdown h1 em{font-style:italic;color:var(--brass-light);font-weight:500}
+.countdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;max-width:900px;margin:0 auto}
+.cd-cell{
+  display:flex;flex-direction:column;gap:12px;
+}
+.cd-cell .num{
+  font-family:'Fraunces',serif;font-size:clamp(60px,9vw,130px);font-weight:900;
+  color:var(--brass-light);line-height:1;letter-spacing:-.04em;
+}
+.cd-cell .lbl{
+  font-size:13px;letter-spacing:.4em;text-transform:uppercase;
+  color:rgba(246,245,241,.5);font-weight:600;
+}
+
+/* ========== OVERLAY UI ========== */
+.player-overlay{
+  position:fixed;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 24px;
+  background:linear-gradient(180deg,rgba(0,0,0,.4) 0%,transparent 100%);
+  z-index:20;pointer-events:none;
+  transition:opacity .3s ease;
+}
+.player-overlay.hidden{opacity:0}
+.player-brand{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(10px);
+  padding:8px 14px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.1);
+  font-family:'Fraunces',serif;font-weight:900;font-size:15px;color:var(--bg);
+  letter-spacing:-.01em;
+}
+.player-brand .mark{
+  width:24px;height:24px;border-radius:6px;
+  background:linear-gradient(135deg,var(--navy),var(--navy-deep));
+  display:grid;place-items:center;color:var(--brass-light);
+  box-shadow:inset 0 0 0 1px rgba(199,149,71,.4);
+}
+.player-brand .mark svg{width:14px;height:14px}
+.player-meta{
+  display:flex;gap:8px;
+}
+.meta-chip{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(10px);
+  padding:8px 14px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.1);
+  font-size:12px;color:rgba(255,255,255,.8);font-weight:500;
+}
+.meta-chip strong{color:var(--bg)}
+.meta-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 6px var(--good)}
+.meta-chip.warn .dot{background:#f5b06e;box-shadow:0 0 6px #f5b06e}
+.meta-chip.offline .dot{background:#e89878;box-shadow:0 0 6px #e89878;animation:pulse 1.5s ease infinite}
+
+/* ========== BOTTOM CONTROLS ========== */
+.player-controls{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:16px 24px;
+  background:linear-gradient(0deg,rgba(0,0,0,.6) 0%,transparent 100%);
+  z-index:20;
+  display:flex;align-items:center;gap:18px;
+  transition:opacity .3s ease;
+}
+.player-controls.hidden{opacity:0}
+.progress-wrap{
+  flex:1;display:flex;flex-direction:column;gap:6px;
+}
+.progress-meta{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.6);font-weight:600;
+}
+.progress-meta span:first-child{color:rgba(255,255,255,.9)}
+.progress{
+  height:3px;background:rgba(255,255,255,.15);border-radius:99px;overflow:hidden;
+}
+.progress .bar{height:100%;background:var(--brass);width:0%;transition:width .2s linear}
+
+.control-btn{
+  width:42px;height:42px;border-radius:50%;
+  background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1);
+  display:grid;place-items:center;cursor:pointer;
+  color:rgba(255,255,255,.8);
+  pointer-events:auto;
+}
+.control-btn:hover{background:rgba(0,0,0,.7);color:var(--bg)}
+
+/* ========== KIOSK BANNER (top right always) ========== */
+.kiosk-banner{
+  position:fixed;bottom:16px;right:16px;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(14px);
+  border:1px solid rgba(199,149,71,.3);
+  border-radius:14px;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;
+  z-index:30;
+  font-size:12px;color:rgba(255,255,255,.85);
+  max-width:340px;
+}
+.kiosk-banner .dot{
+  width:8px;height:8px;border-radius:50%;background:var(--good);
+  box-shadow:0 0 8px var(--good);
+  flex-shrink:0;
+}
+.kiosk-banner strong{color:var(--bg)}
+.kiosk-banner a{color:var(--brass-light);text-decoration:underline;text-decoration-color:rgba(199,149,71,.4);font-weight:600}
+.kiosk-banner a:hover{text-decoration-color:var(--brass-light)}
+
+/* ========== OFFLINE TOAST ========== */
+.offline-toast{
+  position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:linear-gradient(135deg,#c2702a,#9c5418);
+  color:var(--bg);
+  padding:14px 24px;border-radius:14px;
+  display:flex;align-items:center;gap:14px;
+  font-size:14px;font-weight:600;
+  z-index:40;
+  box-shadow:0 20px 40px rgba(194,112,42,.4);
+  opacity:0;transition:all .4s ease;pointer-events:none;
+}
+.offline-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.offline-toast svg{flex-shrink:0}
+.offline-toast em{
+  font-style:normal;color:#fce0c0;font-weight:700;
+}
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <!-- Slide 1: Welcome -->
+  <div class="slide slide-welcome active" data-duration="6000">
+    <div class="content">
+      <span class="eyebrow">Welcome to</span>
+      <h1>Grace <em>Table.</em></h1>
+      <p>We're so glad you're here this morning.</p>
+    </div>
+  </div>
+
+  <!-- Slide 2: Service times -->
+  <div class="slide slide-times" data-duration="5500">
+    <span class="eyebrow">Sundays at Grace Table</span>
+    <h1>Service times</h1>
+    <div class="times-grid">
+      <div class="time-card">
+        <div class="day">Sunday</div>
+        <div class="time">8:30</div>
+        <div class="desc">Traditional service</div>
+      </div>
+      <div class="time-card">
+        <div class="day">Sunday</div>
+        <div class="time">10:00</div>
+        <div class="desc">Contemporary service</div>
+      </div>
+      <div class="time-card">
+        <div class="day">Sunday</div>
+        <div class="time">11:30</div>
+        <div class="desc">Family service</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 3: Kids check-in -->
+  <div class="slide slide-kids" data-duration="5000">
+    <div class="content">
+      <div class="icon">
+        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6M8 11l2-1.5L12 11l2-1.5L16 11"/>
+        </svg>
+      </div>
+      <h1>Check in at the<br>Treehouse.</h1>
+      <p>Kids and families — head down the hall.</p>
+      <div class="arrow">
+        This way
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M13 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 4: Café Menu -->
+  <div class="slide slide-menu" data-duration="6500">
+    <div class="menu-head">
+      <h2>Café Menu</h2>
+      <span>Sunday Pours</span>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-item">
+        <div>
+          <div class="name">Drip Coffee</div>
+          <div class="desc">Light or medium roast, fresh ground</div>
+        </div>
+        <div class="price">$3</div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="name">Cappuccino</div>
+          <div class="desc">Double espresso, steamed whole milk, foam</div>
+        </div>
+        <div class="price">$5</div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="name">Latte</div>
+          <div class="desc">Vanilla, caramel, hazelnut, or plain</div>
+        </div>
+        <div class="price">$5</div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="name">Cold Brew</div>
+          <div class="desc">24-hour steeped, served over ice</div>
+        </div>
+        <div class="price">$5</div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="name">Pastry of the Day</div>
+          <div class="desc">Today: blueberry scone, lemon glaze</div>
+        </div>
+        <div class="price">$4</div>
+      </div>
+      <div class="menu-item">
+        <div>
+          <div class="name">Kids Hot Cocoa</div>
+          <div class="desc">Whipped cream + a little extra love</div>
+        </div>
+        <div class="price">$3</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 5: Series promo -->
+  <div class="slide slide-sermon" data-duration="6000">
+    <div class="content">
+      <span class="series">Sermon Series · Summer 2026</span>
+      <h1>Anchored<br><em>in the storm.</em></h1>
+      <p class="verse">"We have this hope as an anchor for the soul, firm and secure."<span class="cite">Hebrews 6:19</span></p>
+    </div>
+  </div>
+
+  <!-- Slide 6: Countdown -->
+  <div class="slide slide-countdown" data-duration="5500">
+    <span class="eyebrow">Service starts in</span>
+    <h1>10:00 service<br><em>begins soon.</em></h1>
+    <div class="countdown-grid">
+      <div class="cd-cell"><div class="num" id="cd-d">00</div><div class="lbl">Days</div></div>
+      <div class="cd-cell"><div class="num" id="cd-h">01</div><div class="lbl">Hours</div></div>
+      <div class="cd-cell"><div class="num" id="cd-m">18</div><div class="lbl">Minutes</div></div>
+      <div class="cd-cell"><div class="num" id="cd-s">42</div><div class="lbl">Seconds</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== OVERLAY ========== -->
+<div class="player-overlay" id="overlay">
+  <div class="player-brand">
+    <span class="mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="5" r="2.2"/><path d="M12 7.2v13.8"/>
+        <path d="M5 13a7 7 0 0 0 14 0"/><path d="M8 10h8"/>
+      </svg>
+    </span>
+    Anchor Player
+  </div>
+  <div class="player-meta">
+    <div class="meta-chip" id="conn-chip">
+      <span class="dot"></span>
+      <span><strong>Lobby — North</strong></span>
+    </div>
+    <div class="meta-chip" id="cache-chip">
+      <span class="dot"></span>
+      <span>Cached locally · <strong>7 days ahead</strong></span>
+    </div>
+  </div>
+</div>
+
+<!-- ========== CONTROLS ========== -->
+<div class="player-controls" id="controls">
+  <div class="control-btn" onclick="prevSlide()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 20L9 12l10-8"/>
+    </svg>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span id="slide-name">Welcome Loop · slide 1 of 6</span>
+      <span id="slide-time">0:00 / 0:06</span>
+    </div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+  </div>
+  <div class="control-btn" onclick="nextSlide()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 4l10 8-10 8"/>
+    </svg>
+  </div>
+  <div class="control-btn" onclick="toggleOffline()" title="Simulate internet outage">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 8.82a15 15 0 0 1 20 0M5 12.86a10 10 0 0 1 14 0M8.5 16.42a5 5 0 0 1 7 0M12 20h.01"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ========== KIOSK INFO BANNER (always visible, marketing the offline-first angle) ========== -->
+<div class="kiosk-banner">
+  <span class="dot"></span>
+  <div>
+    <strong>This is a live Anchor player demo.</strong><br>
+    Slides auto-advance. Click the <span style="opacity:.8">cloud icon</span> below to simulate an internet outage —
+    <a href="dashboard.html">open the dashboard</a> or
+    <a href="index.html">return to landing</a>.
+  </div>
+</div>
+
+<!-- Offline toast -->
+<div class="offline-toast" id="offline-toast">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="2" y1="2" x2="22" y2="22"/>
+    <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+  </svg>
+  <div>
+    Internet disconnected — <em>player keeps running from local cache.</em>
+  </div>
+</div>
+
+<script>
+// ============================================
+// Anchor Player demo — auto-rotating playlist
+// ============================================
+
+const slides = Array.from(document.querySelectorAll('.slide'));
+const slideNames = [
+  'Welcome',
+  'Service Times',
+  'Kids Check-in',
+  'Café Menu',
+  'Series Promo',
+  'Service Countdown'
+];
+
+let idx = 0;
+let elapsed = 0;
+let startedAt = Date.now();
+let paused = false;
+let offlineSim = false;
+
+const bar = document.getElementById('bar');
+const slideName = document.getElementById('slide-name');
+const slideTime = document.getElementById('slide-time');
+const overlay = document.getElementById('overlay');
+const controls = document.getElementById('controls');
+
+function fmt(secs){
+  const m = Math.floor(secs/60);
+  const s = Math.floor(secs%60);
+  return m + ':' + (s<10?'0':'') + s;
+}
+
+function showSlide(n){
+  slides.forEach((s,i)=>s.classList.toggle('active', i===n));
+  startedAt = Date.now();
+  elapsed = 0;
+  const dur = parseInt(slides[n].dataset.duration, 10) || 5000;
+  slideName.textContent = slideNames[n] + ' · slide ' + (n+1) + ' of ' + slides.length;
+  slideTime.textContent = '0:00 / ' + fmt(dur/1000);
+}
+
+function nextSlide(){
+  idx = (idx + 1) % slides.length;
+  showSlide(idx);
+}
+function prevSlide(){
+  idx = (idx - 1 + slides.length) % slides.length;
+  showSlide(idx);
+}
+
+function tick(){
+  if(!paused){
+    const dur = parseInt(slides[idx].dataset.duration, 10) || 5000;
+    elapsed = Date.now() - startedAt;
+    const pct = Math.min(100, (elapsed / dur) * 100);
+    bar.style.width = pct + '%';
+    slideTime.textContent = fmt(elapsed/1000) + ' / ' + fmt(dur/1000);
+    if(elapsed >= dur){
+      nextSlide();
+    }
+  }
+  requestAnimationFrame(tick);
+}
+showSlide(0);
+tick();
+
+// ============================================
+// Countdown widget (live)
+// ============================================
+function updateCountdown(){
+  const target = new Date();
+  target.setHours(10,0,0,0);
+  if(target < new Date()) target.setDate(target.getDate()+1);
+  const diff = Math.max(0, target - new Date());
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff / 3600000) % 24);
+  const m = Math.floor((diff / 60000) % 60);
+  const s = Math.floor((diff / 1000) % 60);
+  document.getElementById('cd-d').textContent = String(d).padStart(2,'0');
+  document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+  document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+  document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+}
+updateCountdown();
+setInterval(updateCountdown, 1000);
+
+// ============================================
+// Auto-hide overlay
+// ============================================
+let hideTimer;
+function showOverlay(){
+  overlay.classList.remove('hidden');
+  controls.classList.remove('hidden');
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(()=>{
+    overlay.classList.add('hidden');
+    controls.classList.add('hidden');
+  }, 3500);
+}
+document.addEventListener('mousemove', showOverlay);
+document.addEventListener('click', showOverlay);
+showOverlay();
+
+// ============================================
+// Offline simulation
+// ============================================
+function toggleOffline(){
+  offlineSim = !offlineSim;
+  const connChip = document.getElementById('conn-chip');
+  const cacheChip = document.getElementById('cache-chip');
+  const toast = document.getElementById('offline-toast');
+  if(offlineSim){
+    connChip.classList.add('offline');
+    connChip.querySelector('span:last-child').innerHTML = '<strong>Lobby — North</strong> · disconnected';
+    cacheChip.classList.add('warn');
+    cacheChip.querySelector('span:last-child').innerHTML = 'Running from cache · <strong>still playing</strong>';
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 4000);
+  } else {
+    connChip.classList.remove('offline');
+    connChip.querySelector('span:last-child').innerHTML = '<strong>Lobby — North</strong>';
+    cacheChip.classList.remove('warn');
+    cacheChip.querySelector('span:last-child').innerHTML = 'Cached locally · <strong>7 days ahead</strong>';
+  }
+}
+
+// Keyboard nav
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowRight'){nextSlide(); showOverlay();}
+  if(e.key === 'ArrowLeft'){prevSlide(); showOverlay();}
+  if(e.key === ' '){paused = !paused; e.preventDefault(); showOverlay();}
+  if(e.key === 'o' || e.key === 'O'){toggleOffline(); showOverlay();}
+});
+</script>
+
+</body>
+</html>

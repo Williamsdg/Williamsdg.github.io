@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hub · Anchor Operator Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5f1;
+  --bg-2:#ecebe4;
+  --ink:#0e1a2b;
+  --ink-2:#1a2940;
+  --ink-3:#2a3a55;
+  --navy:#0f2540;
+  --navy-deep:#081a30;
+  --navy-soft:#1c3556;
+  --brass:#c79547;
+  --brass-light:#e0b772;
+  --brass-deep:#9c7234;
+  --muted:#6a7180;
+  --line:rgba(14,26,43,.10);
+  --line-strong:rgba(14,26,43,.18);
+  --good:#3a7d4e;
+  --warn:#c2702a;
+  --bad:#a93628;
+  --info:#3e6a86;
+  --shadow-sm:0 2px 8px rgba(14,26,43,.06);
+  --shadow:0 10px 28px -14px rgba(14,26,43,.25);
+  --radius:14px;
+  --radius-sm:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:700;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ========== APP SHELL ========== */
+.app{display:grid;grid-template-columns:260px 1fr;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+aside{
+  background:var(--navy-deep);
+  color:rgba(246,245,241,.78);
+  display:flex;flex-direction:column;
+  border-right:1px solid var(--ink-3);
+  overflow:hidden;
+}
+.brand{
+  padding:22px 22px 18px;
+  border-bottom:1px solid rgba(199,149,71,.18);
+  display:flex;align-items:center;gap:12px;
+}
+.brand-mark{
+  width:40px;height:40px;border-radius:11px;
+  background:linear-gradient(135deg,var(--navy) 0%,var(--navy-soft) 100%);
+  display:grid;place-items:center;
+  color:var(--brass-light);
+  box-shadow:inset 0 0 0 1px rgba(199,149,71,.4);
+}
+.brand-mark svg{width:22px;height:22px}
+.brand-text{font-family:'Fraunces',serif;font-weight:900;font-size:17px;color:var(--bg);line-height:1.1}
+.brand-text small{display:block;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:.18em;color:var(--brass-light);font-weight:600;text-transform:uppercase;margin-top:3px}
+
+.nav-section{padding:18px 12px 8px}
+.nav-section-label{
+  padding:0 12px 8px;
+  font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(246,245,241,.4);font-weight:700;
+}
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  padding:10px 14px;border-radius:10px;
+  cursor:pointer;color:rgba(246,245,241,.7);font-size:13.5px;font-weight:500;
+  margin-bottom:2px;
+  transition:background .15s ease, color .15s ease;
+}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.nav-item:hover{background:rgba(246,245,241,.05);color:var(--bg)}
+.nav-item.active{background:rgba(199,149,71,.16);color:var(--brass-light)}
+.nav-item .badge{
+  margin-left:auto;
+  background:rgba(199,149,71,.2);color:var(--brass-light);
+  padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700;
+}
+.nav-item .badge.alert{background:rgba(169,54,40,.2);color:#e8857a}
+
+.hub-status{
+  margin:auto 12px 14px;padding:14px;border-radius:12px;
+  background:rgba(58,125,78,.14);border:1px solid rgba(58,125,78,.3);
+  display:flex;flex-direction:column;gap:8px;
+}
+.hub-status .row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:rgba(246,245,241,.7)}
+.hub-status .row strong{color:var(--bg);font-weight:600}
+.hub-status .dot{width:7px;height:7px;border-radius:50%;background:#67c285;box-shadow:0 0 8px #67c285}
+
+/* ========== MAIN ========== */
+main{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.top-bar{
+  display:flex;align-items:center;gap:18px;
+  padding:16px 28px;
+  background:var(--bg);border-bottom:1px solid var(--line);
+}
+.top-bar h1{font-size:22px;font-weight:700}
+.top-bar h1 .sub{
+  font-family:'Inter',sans-serif;font-weight:500;font-size:12px;
+  letter-spacing:.06em;color:var(--muted);
+  display:block;margin-top:2px;text-transform:none;
+}
+.top-bar .grow{flex:1}
+.search{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 14px;border-radius:999px;
+  background:var(--bg-2);border:1px solid var(--line);
+  font-size:13px;color:var(--muted);min-width:280px;
+}
+.search input{
+  flex:1;border:none;background:none;outline:none;font-family:inherit;font-size:13px;color:var(--ink);
+}
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 16px;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;
+  transition:transform .12s ease, background .15s ease;
+}
+.btn-primary{background:var(--navy);color:var(--bg)}
+.btn-primary:hover{background:var(--ink-2)}
+.btn-ghost{background:var(--bg-2);color:var(--ink);border:1px solid var(--line)}
+.btn-ghost:hover{background:var(--bg);border-color:var(--line-strong)}
+.btn-emergency{background:var(--bad);color:var(--bg)}
+.btn-emergency:hover{background:#8e2c20}
+.btn-brass{background:var(--brass);color:var(--navy-deep)}
+.btn-brass:hover{background:var(--brass-light)}
+
+/* ========== CONTENT ========== */
+.content{flex:1;overflow-y:auto;padding:28px}
+.view{display:none}
+.view.active{display:block}
+
+/* KPI ROW */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.kpi{
+  background:var(--bg-2);border:1px solid var(--line);
+  border-radius:var(--radius);padding:18px;
+  display:flex;flex-direction:column;gap:6px;
+  position:relative;overflow:hidden;
+}
+.kpi .label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.kpi .value{font-family:'Fraunces',serif;font-size:30px;font-weight:700;color:var(--ink);line-height:1.1}
+.kpi .delta{font-size:11.5px;display:inline-flex;align-items:center;gap:4px;font-weight:600}
+.kpi .delta.up{color:var(--good)}
+.kpi .delta.down{color:var(--bad)}
+.kpi .delta.neutral{color:var(--muted)}
+.kpi .icon{
+  position:absolute;top:14px;right:14px;
+  width:32px;height:32px;border-radius:8px;
+  background:var(--bg);color:var(--brass-deep);
+  display:grid;place-items:center;
+}
+.kpi .icon svg{width:16px;height:16px}
+
+/* PANELS */
+.panel{
+  background:var(--bg-2);border:1px solid var(--line);
+  border-radius:var(--radius);overflow:hidden;
+  margin-bottom:20px;
+}
+.panel-head{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 22px;border-bottom:1px solid var(--line);
+  background:var(--bg);
+}
+.panel-head h3{font-size:16px;font-weight:700}
+.panel-head .sub{font-size:12px;color:var(--muted)}
+.panel-head .grow{flex:1}
+.panel-head .actions{display:flex;gap:8px}
+.panel-body{padding:20px 22px}
+
+.grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+@media(max-width:1180px){.grid-2{grid-template-columns:1fr}}
+
+/* SCREENS GRID */
+.screens-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.screen-card{
+  background:var(--bg);border:1px solid var(--line);
+  border-radius:12px;overflow:hidden;
+  cursor:pointer;transition:transform .15s ease, box-shadow .15s ease;
+}
+.screen-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.screen-display{
+  aspect-ratio:16/9;
+  background:linear-gradient(135deg,var(--navy),var(--navy-deep));
+  display:grid;place-items:center;
+  position:relative;overflow:hidden;
+  color:var(--brass-light);
+}
+.screen-display::before{
+  content:"";position:absolute;inset:0;
+  background-image:
+    repeating-linear-gradient(90deg,rgba(224,183,114,.05) 0 1px,transparent 1px 30px),
+    repeating-linear-gradient(0deg,rgba(224,183,114,.05) 0 1px,transparent 1px 30px);
+}
+.screen-display .title{
+  font-family:'Fraunces',serif;font-weight:700;font-size:18px;
+  z-index:1;text-align:center;line-height:1.2;
+  padding:0 14px;
+}
+.screen-display.menu{background:linear-gradient(135deg,#3a2516,#1c1108);color:#e6b870}
+.screen-display.kids{background:linear-gradient(135deg,#1e4d3a,#0f2e22);color:#a8d9b8}
+.screen-display.lobby{background:linear-gradient(135deg,#3e2c4f,#21172b);color:#d4b8e0}
+.screen-display.gym{background:linear-gradient(135deg,#4a1f1f,#251010);color:#e8857a}
+.screen-display.office{background:linear-gradient(135deg,#1c3556,#0f2540);color:#a8c4e0}
+.screen-info{padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.screen-info .name{font-size:13.5px;font-weight:600}
+.screen-info .playing{font-size:11.5px;color:var(--muted)}
+.screen-info .status{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10.5px;font-weight:600;letter-spacing:.04em;
+  margin-top:4px;
+}
+.screen-info .status .pill-dot{width:6px;height:6px;border-radius:50%}
+.screen-info .status.online{color:var(--good)}
+.screen-info .status.online .pill-dot{background:#67c285;box-shadow:0 0 6px #67c285}
+.screen-info .status.offline{color:var(--bad)}
+.screen-info .status.offline .pill-dot{background:#c2554a}
+.screen-info .status.syncing{color:var(--info)}
+.screen-info .status.syncing .pill-dot{background:#6e9bbc;animation:pulse 1.4s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@media(max-width:1380px){.screens-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ACTIVITY FEED */
+.activity{display:flex;flex-direction:column;gap:0}
+.act{
+  display:flex;gap:12px;padding:12px 0;
+  border-bottom:1px dashed var(--line);
+  align-items:flex-start;
+}
+.act:last-child{border-bottom:none}
+.act-icon{
+  flex-shrink:0;width:30px;height:30px;border-radius:8px;
+  display:grid;place-items:center;
+  background:var(--bg);color:var(--brass-deep);
+}
+.act-icon.good{background:rgba(58,125,78,.12);color:var(--good)}
+.act-icon.warn{background:rgba(194,112,42,.12);color:var(--warn)}
+.act-icon.info{background:rgba(62,106,134,.12);color:var(--info)}
+.act-icon svg{width:14px;height:14px}
+.act-body{flex:1}
+.act-body p{font-size:13px;color:var(--ink);line-height:1.5}
+.act-body p strong{font-weight:600}
+.act-body .meta{font-size:11.5px;color:var(--muted);margin-top:2px;display:flex;gap:8px;align-items:center}
+.act-body .meta .dot{width:3px;height:3px;border-radius:50%;background:var(--muted)}
+
+/* SCHEDULE TIMELINE */
+.timeline{
+  background:var(--bg);border:1px solid var(--line);border-radius:12px;
+  padding:18px;
+}
+.timeline-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.timeline-head h4{font-size:14px;font-weight:700}
+.timeline-head .now{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(199,149,71,.16);color:var(--brass-deep);
+  padding:4px 10px;border-radius:999px;
+  font-size:11px;font-weight:600;letter-spacing:.04em;
+}
+.timeline-head .now .dot{width:5px;height:5px;border-radius:50%;background:var(--brass);animation:pulse 2s ease infinite}
+.timeline-rows{display:flex;flex-direction:column;gap:8px}
+.timeline-row{display:grid;grid-template-columns:90px 1fr;gap:14px;align-items:center}
+.timeline-row .screen-label{font-size:12px;color:var(--muted);font-weight:600;text-align:right}
+.timeline-track{
+  position:relative;height:32px;border-radius:8px;
+  background:var(--bg-2);overflow:hidden;
+}
+.tl-block{
+  position:absolute;top:0;bottom:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-weight:600;color:var(--bg);
+  padding:0 6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tl-block.welcome{background:linear-gradient(90deg,#0f2540,#1c3556)}
+.tl-block.service{background:linear-gradient(90deg,#7c4d96,#5a3673);color:var(--bg)}
+.tl-block.menu{background:linear-gradient(90deg,#9c5e2e,#7a4520);color:var(--bg)}
+.tl-block.kids{background:linear-gradient(90deg,#3a7d4e,#28593a);color:var(--bg)}
+.tl-block.idle{background:repeating-linear-gradient(45deg,#d6d3ca 0 6px,#cecbc1 6px 12px);color:var(--muted)}
+.tl-block.event{background:linear-gradient(90deg,#c79547,#9c7234);color:var(--navy-deep)}
+.tl-marker{
+  position:absolute;top:-4px;bottom:-4px;width:2px;
+  background:var(--bad);z-index:5;
+}
+.tl-marker::before{
+  content:"";position:absolute;top:-4px;left:-4px;
+  width:10px;height:10px;border-radius:50%;background:var(--bad);
+}
+.tl-hours{
+  display:grid;grid-template-columns:90px 1fr;gap:14px;
+  margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);
+}
+.tl-hours .blank{}
+.tl-hours .marks{
+  display:flex;justify-content:space-between;
+  font-size:10px;color:var(--muted);font-weight:600;
+}
+
+/* ========== MEDIA LIBRARY ========== */
+.media-toolbar{display:flex;gap:10px;margin-bottom:18px;align-items:center;flex-wrap:wrap}
+.chip{
+  padding:6px 12px;border-radius:999px;
+  background:var(--bg-2);border:1px solid var(--line);
+  font-size:12px;font-weight:500;color:var(--muted);
+  cursor:pointer;
+}
+.chip.active{background:var(--navy);color:var(--bg);border-color:var(--navy)}
+.media-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+@media(max-width:1380px){.media-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:980px){.media-grid{grid-template-columns:repeat(3,1fr)}}
+.media-card{
+  background:var(--bg);border:1px solid var(--line);
+  border-radius:12px;overflow:hidden;
+  cursor:pointer;transition:transform .12s ease;
+}
+.media-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.media-thumb{
+  aspect-ratio:16/9;
+  display:grid;place-items:center;
+  font-family:'Fraunces',serif;font-weight:700;font-size:14px;
+  color:var(--bg);text-align:center;padding:6px;
+  position:relative;
+}
+.media-thumb .badge{
+  position:absolute;top:8px;left:8px;
+  background:rgba(0,0,0,.45);color:var(--bg);
+  padding:3px 7px;border-radius:5px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;
+  letter-spacing:.06em;
+}
+.media-thumb .duration{
+  position:absolute;bottom:8px;right:8px;
+  background:rgba(0,0,0,.55);color:var(--bg);
+  padding:3px 7px;border-radius:5px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+}
+.media-info{padding:10px 12px}
+.media-info .name{font-size:12.5px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.media-info .meta{font-size:10.5px;color:var(--muted)}
+
+/* ========== EMERGENCY ========== */
+.emergency-card{
+  background:linear-gradient(135deg,var(--bad),#8e2c20);
+  color:var(--bg);
+  border-radius:var(--radius);
+  padding:28px;
+  display:flex;gap:24px;align-items:center;
+}
+.emergency-card .icon{
+  width:60px;height:60px;border-radius:16px;
+  background:rgba(246,245,241,.14);
+  display:grid;place-items:center;
+  flex-shrink:0;
+}
+.emergency-card h3{color:var(--bg);font-size:22px;margin-bottom:6px}
+.emergency-card p{color:rgba(246,245,241,.85);font-size:14px;max-width:60ch}
+.emergency-card .actions{margin-left:auto;display:flex;gap:10px;flex-shrink:0}
+.emergency-card .btn{background:var(--bg);color:var(--bad);font-weight:700}
+.emergency-card .btn-outline{background:transparent;color:var(--bg);border:1px solid rgba(246,245,241,.4)}
+
+/* ========== PLAYLISTS ========== */
+.playlist-card{
+  background:var(--bg-2);border:1px solid var(--line);
+  border-radius:12px;padding:18px;
+  display:flex;flex-direction:column;gap:12px;
+}
+.playlist-card .head{display:flex;align-items:center;gap:12px}
+.playlist-card .head .stack{
+  display:flex;
+}
+.playlist-card .head .stack .thumb{
+  width:42px;height:42px;border-radius:8px;
+  margin-left:-10px;border:2px solid var(--bg-2);
+  display:grid;place-items:center;
+  font-family:'Fraunces',serif;font-weight:700;font-size:9px;color:var(--bg);
+}
+.playlist-card .head .stack .thumb:first-child{margin-left:0}
+.playlist-card .head h4{font-size:15px;font-weight:700}
+.playlist-card .head .meta{font-size:11.5px;color:var(--muted)}
+.playlist-card .timeline{
+  background:var(--bg);padding:10px;border-radius:8px;
+  display:flex;gap:4px;align-items:center;
+}
+.playlist-card .timeline .slot{
+  flex:1;height:24px;border-radius:4px;
+  display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--bg);font-weight:600;
+}
+.playlist-card .footer{
+  display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);
+}
+.playlist-card .footer strong{color:var(--ink)}
+
+/* RIGHT RAIL */
+.right-rail{display:flex;flex-direction:column;gap:20px}
+
+/* SECTION TITLE */
+.sec-title{
+  display:flex;align-items:baseline;gap:14px;margin-bottom:14px;
+}
+.sec-title h2{font-size:18px;font-weight:700}
+.sec-title .meta{font-size:12px;color:var(--muted)}
+.sec-title .grow{flex:1}
+.sec-title .actions{display:flex;gap:8px}
+
+/* TABLE */
+table.t{
+  width:100%;border-collapse:collapse;font-size:13px;
+}
+table.t th{
+  text-align:left;font-size:10.5px;letter-spacing:.1em;
+  color:var(--muted);text-transform:uppercase;font-weight:700;
+  padding:10px 14px;border-bottom:1px solid var(--line);
+}
+table.t td{
+  padding:14px;border-bottom:1px solid var(--line);
+}
+table.t tr:hover td{background:var(--bg)}
+table.t tr:last-child td{border-bottom:none}
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:999px;
+  font-size:11px;font-weight:600;
+}
+.pill.good{background:rgba(58,125,78,.14);color:var(--good)}
+.pill.warn{background:rgba(194,112,42,.14);color:var(--warn)}
+.pill.bad{background:rgba(169,54,40,.14);color:var(--bad)}
+.pill.info{background:rgba(62,106,134,.14);color:var(--info)}
+.pill.muted{background:var(--bg-2);color:var(--muted)}
+
+.demo-banner{
+  background:linear-gradient(90deg,var(--brass),#b6863f);
+  color:var(--navy-deep);font-size:12px;font-weight:600;
+  padding:8px 28px;letter-spacing:.04em;
+  display:flex;align-items:center;gap:10px;
+}
+.demo-banner a{color:var(--navy-deep);text-decoration:underline;font-weight:700}
+
+@media(max-width:880px){
+  .app{grid-template-columns:1fr}
+  aside{display:none}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside>
+    <div class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5" r="2.2"/><path d="M12 7.2v13.8"/>
+          <path d="M5 13a7 7 0 0 0 14 0"/><path d="M8 10h8"/>
+        </svg>
+      </span>
+      <div class="brand-text">Anchor<small>The Hub</small></div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Operate</div>
+      <div class="nav-item active" data-view="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" data-view="screens">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Screens
+        <span class="badge">14</span>
+      </div>
+      <div class="nav-item" data-view="schedule">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Schedule
+      </div>
+      <div class="nav-item" data-view="playlists">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Playlists
+      </div>
+      <div class="nav-item" data-view="media">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Media Library
+        <span class="badge">182</span>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Build</div>
+      <div class="nav-item" data-view="layouts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Layouts
+      </div>
+      <div class="nav-item" data-view="widgets">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        Widgets
+      </div>
+      <div class="nav-item" data-view="emergency">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Emergency
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">System</div>
+      <div class="nav-item" data-view="hubs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Hubs
+      </div>
+      <div class="nav-item" data-view="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+    </div>
+
+    <div class="hub-status">
+      <div class="row"><span class="dot"></span><strong>Lobby Mac mini</strong></div>
+      <div class="row">192.168.1.42 · v1.4.2</div>
+      <div class="row">84.2 GB · 14 players</div>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <main>
+    <div class="demo-banner">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+      Interactive demo · sample data for <strong>Grace Table Church</strong> · <a href="index.html">Back to landing page</a>
+    </div>
+
+    <div class="top-bar">
+      <div>
+        <h1 id="view-title">Overview
+          <span class="sub" id="view-sub">Sunday, June 7 · 14 screens online · all systems steady</span>
+        </h1>
+      </div>
+      <div class="grow"></div>
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input placeholder="Search media, screens, schedules…">
+      </div>
+      <button class="btn btn-emergency" onclick="switchView('emergency')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Broadcast
+      </button>
+      <button class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Add media
+      </button>
+    </div>
+
+    <div class="content">
+
+      <!-- ===== OVERVIEW ===== -->
+      <section class="view active" data-view="overview">
+        <div class="kpis">
+          <div class="kpi">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="13" rx="2"/></svg></div>
+            <div class="label">Screens online</div>
+            <div class="value">14<span style="font-size:18px;color:var(--muted);font-weight:500"> / 14</span></div>
+            <div class="delta up">↑ all paired · 100% uptime today</div>
+          </div>
+          <div class="kpi">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+            <div class="label">Next schedule change</div>
+            <div class="value">10:00 <span style="font-size:18px;color:var(--muted);font-weight:500">AM</span></div>
+            <div class="delta neutral">Service Slides → Auditorium</div>
+          </div>
+          <div class="kpi">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div>
+            <div class="label">Hub storage used</div>
+            <div class="value">84.2<span style="font-size:18px;color:var(--muted);font-weight:500"> GB</span></div>
+            <div class="delta neutral">42% of 200 GB available</div>
+          </div>
+          <div class="kpi">
+            <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+            <div class="label">Last sync verified</div>
+            <div class="value">3<span style="font-size:18px;color:var(--muted);font-weight:500">m ago</span></div>
+            <div class="delta up">All 14 players cached & verified</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <div class="sec-title">
+              <h2>Live screens</h2>
+              <span class="meta">14 paired players · click a screen to inspect</span>
+              <div class="grow"></div>
+              <div class="actions">
+                <button class="btn btn-ghost" onclick="switchView('screens')">View all</button>
+              </div>
+            </div>
+
+            <div class="screens-grid">
+              <div class="screen-card">
+                <div class="screen-display lobby"><span class="title">WELCOME<br>HOME</span></div>
+                <div class="screen-info">
+                  <div class="name">Main Lobby — North</div>
+                  <div class="playing">Welcome Loop · 2:14 / 5:00</div>
+                  <div class="status online"><span class="pill-dot"></span>Live · Apple TV</div>
+                </div>
+              </div>
+              <div class="screen-card">
+                <div class="screen-display lobby"><span class="title">SERVING<br>THIS WEEK</span></div>
+                <div class="screen-info">
+                  <div class="name">Main Lobby — South</div>
+                  <div class="playing">Welcome Loop · 2:14 / 5:00</div>
+                  <div class="status online"><span class="pill-dot"></span>Live · Apple TV</div>
+                </div>
+              </div>
+              <div class="screen-card">
+                <div class="screen-display kids"><span class="title">CHECK IN<br>AT THE TREEHOUSE</span></div>
+                <div class="screen-info">
+                  <div class="name">Kids Wing — Check-in</div>
+                  <div class="playing">Kids Check-in Graphics</div>
+                  <div class="status online"><span class="pill-dot"></span>Live · Mini PC</div>
+                </div>
+              </div>
+              <div class="screen-card">
+                <div class="screen-display menu"><span class="title">CAFÉ MENU</span></div>
+                <div class="screen-info">
+                  <div class="name">Lobby Café</div>
+                  <div class="playing">Sunday Menu Board</div>
+                  <div class="status online"><span class="pill-dot"></span>Live · Apple TV</div>
+                </div>
+              </div>
+              <div class="screen-card">
+                <div class="screen-display gym"><span class="title">YOUTH<br>NIGHT</span></div>
+                <div class="screen-info">
+                  <div class="name">Youth Room</div>
+                  <div class="playing">Series Promo · 0:38 / 2:00</div>
+                  <div class="status online"><span class="pill-dot"></span>Live · Pi 4</div>
+                </div>
+              </div>
+              <div class="screen-card">
+                <div class="screen-display office"><span class="title">ROOM 204<br>NEXT GEN MTG · 9:30A</span></div>
+                <div class="screen-info">
+                  <div class="name">Hallway Directory</div>
+                  <div class="playing">Room Directory</div>
+                  <div class="status syncing"><span class="pill-dot"></span>Syncing · 87%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="right-rail">
+            <div class="panel">
+              <div class="panel-head">
+                <h3>Activity</h3>
+                <div class="grow"></div>
+                <span class="sub">Live</span>
+              </div>
+              <div class="panel-body">
+                <div class="activity">
+                  <div class="act">
+                    <div class="act-icon good"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg></div>
+                    <div class="act-body">
+                      <p><strong>Hallway Directory</strong> finished syncing 4 assets (12.4 MB)</p>
+                      <div class="meta"><span>just now</span></div>
+                    </div>
+                  </div>
+                  <div class="act">
+                    <div class="act-icon info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+                    <div class="act-body">
+                      <p>Schedule <strong>Sunday Morning</strong> activated for all lobby screens</p>
+                      <div class="meta"><span>2 min ago</span><span class="dot"></span><span>auto-trigger 7:00 AM</span></div>
+                    </div>
+                  </div>
+                  <div class="act">
+                    <div class="act-icon good"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg></div>
+                    <div class="act-body">
+                      <p><strong>Kids Wing — Check-in</strong> came online after restart</p>
+                      <div class="meta"><span>14 min ago</span></div>
+                    </div>
+                  </div>
+                  <div class="act">
+                    <div class="act-icon warn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+                    <div class="act-body">
+                      <p>Internet outage detected · screens continued playing from cache</p>
+                      <div class="meta"><span>32 min ago</span><span class="dot"></span><span>recovered at 7:14 AM</span></div>
+                    </div>
+                  </div>
+                  <div class="act">
+                    <div class="act-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                    <div class="act-body">
+                      <p>Pastor Mark uploaded <strong>"Series 4 Promo"</strong> (1080p MP4)</p>
+                      <div class="meta"><span>1 hr ago</span><span class="dot"></span><span>scheduled for 6/14</span></div>
+                    </div>
+                  </div>
+                  <div class="act">
+                    <div class="act-icon info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+                    <div class="act-body">
+                      <p>Daylight schedule turned all hallway screens on</p>
+                      <div class="meta"><span>6:00 AM</span><span class="dot"></span><span>automatic</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-title" style="margin-top:32px">
+          <h2>Today's schedule</h2>
+          <span class="meta">Sunday · all 14 screens</span>
+          <div class="grow"></div>
+          <div class="actions">
+            <button class="btn btn-ghost" onclick="switchView('schedule')">Open scheduler</button>
+          </div>
+        </div>
+        <div class="timeline">
+          <div class="timeline-head">
+            <h4>Now playing across the building</h4>
+            <span class="now"><span class="dot"></span>Now · 8:42 AM</span>
+          </div>
+          <div class="timeline-rows">
+            <div class="timeline-row">
+              <span class="screen-label">Lobby (×2)</span>
+              <div class="timeline-track">
+                <div class="tl-block welcome" style="left:0%;width:33%">Welcome Loop · 7:00 – 8:30</div>
+                <div class="tl-block welcome" style="left:33%;width:25%">Welcome Loop · 8:30 – 10:00</div>
+                <div class="tl-block service" style="left:58%;width:18%">Service Slides · 10:00 – 11:30</div>
+                <div class="tl-block welcome" style="left:76%;width:14%">Welcome Loop · 11:30 – 12:30</div>
+                <div class="tl-block idle" style="left:90%;width:10%">Idle</div>
+                <div class="tl-marker" style="left:24%"></div>
+              </div>
+            </div>
+            <div class="timeline-row">
+              <span class="screen-label">Café</span>
+              <div class="timeline-track">
+                <div class="tl-block menu" style="left:0%;width:90%">Café Menu Board · 7:00 AM – 1:00 PM</div>
+                <div class="tl-block idle" style="left:90%;width:10%">Idle</div>
+                <div class="tl-marker" style="left:24%"></div>
+              </div>
+            </div>
+            <div class="timeline-row">
+              <span class="screen-label">Kids Wing (×3)</span>
+              <div class="timeline-track">
+                <div class="tl-block idle" style="left:0%;width:14%">Off</div>
+                <div class="tl-block kids" style="left:14%;width:60%">Kids Check-in · 8:00 – 11:45</div>
+                <div class="tl-block kids" style="left:74%;width:12%">Pickup Promo</div>
+                <div class="tl-block idle" style="left:86%;width:14%">Off</div>
+                <div class="tl-marker" style="left:24%"></div>
+              </div>
+            </div>
+            <div class="timeline-row">
+              <span class="screen-label">Auditorium (×4)</span>
+              <div class="timeline-track">
+                <div class="tl-block idle" style="left:0%;width:33%">Off</div>
+                <div class="tl-block welcome" style="left:33%;width:12%">Pre-roll</div>
+                <div class="tl-block service" style="left:45%;width:32%">Worship + Sermon Slides</div>
+                <div class="tl-block event" style="left:77%;width:13%">Giving + Next Steps</div>
+                <div class="tl-block idle" style="left:90%;width:10%">Off</div>
+                <div class="tl-marker" style="left:24%"></div>
+              </div>
+            </div>
+            <div class="timeline-row">
+              <span class="screen-label">Youth Room</span>
+              <div class="timeline-track">
+                <div class="tl-block idle" style="left:0%;width:33%">Off</div>
+                <div class="tl-block event" style="left:33%;width:42%">Series Promo Loop</div>
+                <div class="tl-block idle" style="left:75%;width:25%">Off</div>
+                <div class="tl-marker" style="left:24%"></div>
+              </div>
+            </div>
+            <div class="timeline-row">
+              <span class="screen-label">Hallways (×3)</span>
+              <div class="timeline-track">
+                <div class="tl-block welcome" style="left:0%;width:90%">Room Directory + Daily Verse</div>
+                <div class="tl-block idle" style="left:90%;width:10%">Off</div>
+                <div class="tl-marker" style="left:24%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="tl-hours">
+            <div class="blank"></div>
+            <div class="marks">
+              <span>6 AM</span><span>8 AM</span><span>10 AM</span><span>Noon</span><span>2 PM</span><span>4 PM</span><span>6 PM</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SCREENS ===== -->
+      <section class="view" data-view="screens">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>All paired screens</h3>
+            <span class="sub">14 active · drag to reorder rooms</span>
+            <div class="grow"></div>
+            <div class="actions">
+              <button class="btn btn-ghost">Filter</button>
+              <button class="btn btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                Pair new screen
+              </button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <table class="t">
+              <thead>
+                <tr>
+                  <th>Screen</th>
+                  <th>Player</th>
+                  <th>Now playing</th>
+                  <th>Storage</th>
+                  <th>Last sync</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Main Lobby — North</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Lobby · Group: Welcome</span></td>
+                  <td><span class="mono" style="font-size:12px">apple-tv-4k · v1.4.2</span></td>
+                  <td>Welcome Loop</td>
+                  <td>1.8 / 32 GB</td>
+                  <td>3m ago</td>
+                  <td><span class="pill good">●  online</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Main Lobby — South</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Lobby · Group: Welcome</span></td>
+                  <td><span class="mono" style="font-size:12px">apple-tv-4k · v1.4.2</span></td>
+                  <td>Welcome Loop</td>
+                  <td>1.8 / 32 GB</td>
+                  <td>3m ago</td>
+                  <td><span class="pill good">●  online</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Lobby Café</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Café · Group: Menu Boards</span></td>
+                  <td><span class="mono" style="font-size:12px">apple-tv-4k · v1.4.2</span></td>
+                  <td>Sunday Menu Board</td>
+                  <td>820 MB / 32 GB</td>
+                  <td>3m ago</td>
+                  <td><span class="pill good">●  online</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Kids Wing — Check-in</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Kids · Group: Kids</span></td>
+                  <td><span class="mono" style="font-size:12px">mini-pc · v1.4.2</span></td>
+                  <td>Kids Check-in Graphics</td>
+                  <td>3.2 / 256 GB</td>
+                  <td>3m ago</td>
+                  <td><span class="pill good">●  online</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Kids Wing — Hallway</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Kids · Group: Kids</span></td>
+                  <td><span class="mono" style="font-size:12px">raspberry-pi-4 · v1.4.2</span></td>
+                  <td>Kids Check-in Graphics</td>
+                  <td>3.2 / 64 GB</td>
+                  <td>4m ago</td>
+                  <td><span class="pill good">●  online</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Kids Wing — Pickup</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Kids · Group: Kids</span></td>
+                  <td><span class="mono" style="font-size:12px">raspberry-pi-4 · v1.4.2</span></td>
+                  <td>Kids Check-in Graphics</td>
+                  <td>3.2 / 64 GB</td>
+                  <td>4m ago</td>
+                  <td><span class="pill good">●  online</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Auditorium — IMAG L</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Auditorium · Group: Worship</span></td>
+                  <td><span class="mono" style="font-size:12px">mini-pc · v1.4.2</span></td>
+                  <td>Idle · scheduled 10:00 AM</td>
+                  <td>12.6 / 512 GB</td>
+                  <td>5m ago</td>
+                  <td><span class="pill good">●  online</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Auditorium — IMAG R</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Auditorium · Group: Worship</span></td>
+                  <td><span class="mono" style="font-size:12px">mini-pc · v1.4.2</span></td>
+                  <td>Idle · scheduled 10:00 AM</td>
+                  <td>12.6 / 512 GB</td>
+                  <td>5m ago</td>
+                  <td><span class="pill good">●  online</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Hallway Directory</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Main Hallway · Group: Directory</span></td>
+                  <td><span class="mono" style="font-size:12px">raspberry-pi-4 · v1.4.2</span></td>
+                  <td>Room Directory</td>
+                  <td>510 MB / 64 GB</td>
+                  <td>2m ago</td>
+                  <td><span class="pill info">●  syncing 87%</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+                <tr>
+                  <td><strong>Youth Room</strong><br><span style="color:var(--muted);font-size:11.5px">Room: Youth · Group: Youth</span></td>
+                  <td><span class="mono" style="font-size:12px">raspberry-pi-4 · v1.4.2</span></td>
+                  <td>Series Promo Loop</td>
+                  <td>1.4 / 64 GB</td>
+                  <td>6m ago</td>
+                  <td><span class="pill good">●  online</span></td>
+                  <td><button class="btn btn-ghost" style="padding:6px 10px">⋯</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SCHEDULE ===== -->
+      <section class="view" data-view="schedule">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Schedule builder</h3>
+            <span class="sub">Recurring playlists per screen · drag blocks to adjust</span>
+            <div class="grow"></div>
+            <div class="actions">
+              <button class="btn btn-ghost">Week view</button>
+              <button class="btn btn-ghost">Calendar view</button>
+              <button class="btn btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                New schedule
+              </button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px">
+              <div style="background:var(--bg);border-radius:10px;padding:14px;border:1px solid var(--line)">
+                <div style="font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Recurring weekly</div>
+                <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700">12</div>
+              </div>
+              <div style="background:var(--bg);border-radius:10px;padding:14px;border:1px solid var(--line)">
+                <div style="font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px">One-off events</div>
+                <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700">3</div>
+              </div>
+              <div style="background:var(--bg);border-radius:10px;padding:14px;border:1px solid var(--line)">
+                <div style="font-size:11px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Active overrides</div>
+                <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700">0</div>
+              </div>
+            </div>
+
+            <table class="t">
+              <thead>
+                <tr>
+                  <th>Schedule</th>
+                  <th>Playlist</th>
+                  <th>Screens</th>
+                  <th>Recurrence</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Sunday Morning Welcome</strong></td>
+                  <td>Welcome Loop</td>
+                  <td>Lobby (×2)</td>
+                  <td><span class="mono" style="font-size:12px">Sun · 7:00 – 10:00 AM</span></td>
+                  <td>1</td>
+                  <td><span class="pill good">● active now</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Service Slides</strong></td>
+                  <td>Sermon Series 4</td>
+                  <td>Auditorium (×4), Lobby (×2)</td>
+                  <td><span class="mono" style="font-size:12px">Sun · 10:00 – 11:30 AM</span></td>
+                  <td>2</td>
+                  <td><span class="pill info">● scheduled</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Kids Check-in</strong></td>
+                  <td>Kids Welcome Graphics</td>
+                  <td>Kids Wing (×3)</td>
+                  <td><span class="mono" style="font-size:12px">Sun + Wed · 8 AM – 12 PM</span></td>
+                  <td>1</td>
+                  <td><span class="pill good">● active now</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Café Menu</strong></td>
+                  <td>Sunday Menu Board</td>
+                  <td>Café</td>
+                  <td><span class="mono" style="font-size:12px">Sun · 7:00 AM – 1:00 PM</span></td>
+                  <td>1</td>
+                  <td><span class="pill good">● active now</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Youth Night</strong></td>
+                  <td>Youth Promo Loop</td>
+                  <td>Youth Room</td>
+                  <td><span class="mono" style="font-size:12px">Wed · 6:00 – 9:00 PM</span></td>
+                  <td>1</td>
+                  <td><span class="pill muted">○  scheduled</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Daily Verse Loop</strong></td>
+                  <td>Verse + Welcome Loop</td>
+                  <td>Hallways (×3)</td>
+                  <td><span class="mono" style="font-size:12px">Daily · 6 AM – 9 PM</span></td>
+                  <td>0</td>
+                  <td><span class="pill good">● active now</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Series 4 Launch (6/14)</strong></td>
+                  <td>Series 4 Promo</td>
+                  <td>All Lobby + Youth</td>
+                  <td><span class="mono" style="font-size:12px">One-off · 6/14 8 AM – 8 PM</span></td>
+                  <td>3</td>
+                  <td><span class="pill warn">● upcoming</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Display Off — Late Night</strong></td>
+                  <td>—</td>
+                  <td>All screens</td>
+                  <td><span class="mono" style="font-size:12px">Daily · 10 PM – 5 AM</span></td>
+                  <td>0</td>
+                  <td><span class="pill muted">○  scheduled</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== PLAYLISTS ===== -->
+      <section class="view" data-view="playlists">
+        <div class="sec-title">
+          <h2>Playlists</h2>
+          <span class="meta">11 playlists · 5 in active rotation today</span>
+          <div class="grow"></div>
+          <div class="actions">
+            <button class="btn btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              New playlist
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px">
+          <div class="playlist-card">
+            <div class="head">
+              <div class="stack">
+                <div class="thumb" style="background:linear-gradient(135deg,#1a3a5e,#0f2540)">LOOP</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#7c4d96,#5a3673)">VRS</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#9c7234,#7a521f)">CTA</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#2a4a3a,#1a2e26)">SVR</div>
+              </div>
+              <div>
+                <h4>Welcome Loop</h4>
+                <div class="meta">8 items · 5:00 total · last updated yesterday</div>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="slot" style="flex:2;background:#1a3a5e">Welcome</div>
+              <div class="slot" style="flex:1;background:#7c4d96">Verse</div>
+              <div class="slot" style="flex:3;background:#1a3a5e">Service Times</div>
+              <div class="slot" style="flex:1;background:#9c7234">Café CTA</div>
+              <div class="slot" style="flex:1;background:#2a4a3a">Serving</div>
+              <div class="slot" style="flex:2;background:#1a3a5e">Series Promo</div>
+            </div>
+            <div class="footer">
+              <span>Used in <strong>3 schedules</strong></span>
+              <span>Live on <strong>Lobby N, Lobby S</strong></span>
+            </div>
+          </div>
+
+          <div class="playlist-card">
+            <div class="head">
+              <div class="stack">
+                <div class="thumb" style="background:linear-gradient(135deg,#3a2516,#1c1108)">CAFÉ</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#9c5e2e,#7a4520)">MENU</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#3a2516,#1c1108)">DAILY</div>
+              </div>
+              <div>
+                <h4>Sunday Menu Board</h4>
+                <div class="meta">5 items · 2:00 loop · POS-synced prices</div>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="slot" style="flex:5;background:#9c5e2e">Drinks Menu</div>
+              <div class="slot" style="flex:3;background:#9c5e2e">Pastries</div>
+              <div class="slot" style="flex:2;background:#3a2516">Daily Special</div>
+            </div>
+            <div class="footer">
+              <span>Used in <strong>1 schedule</strong></span>
+              <span>Live on <strong>Café</strong></span>
+            </div>
+          </div>
+
+          <div class="playlist-card">
+            <div class="head">
+              <div class="stack">
+                <div class="thumb" style="background:linear-gradient(135deg,#1e4d3a,#0f2e22)">KIDS</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#3a7d4e,#28593a)">WAY</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#1e4d3a,#0f2e22)">FUN</div>
+              </div>
+              <div>
+                <h4>Kids Welcome Graphics</h4>
+                <div class="meta">6 items · 4:00 loop · auto-rotates</div>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="slot" style="flex:3;background:#3a7d4e">Welcome</div>
+              <div class="slot" style="flex:2;background:#1e4d3a">Wayfinding</div>
+              <div class="slot" style="flex:3;background:#3a7d4e">Bible Story</div>
+              <div class="slot" style="flex:2;background:#1e4d3a">Memory Verse</div>
+            </div>
+            <div class="footer">
+              <span>Used in <strong>2 schedules</strong></span>
+              <span>Live on <strong>Kids Wing ×3</strong></span>
+            </div>
+          </div>
+
+          <div class="playlist-card">
+            <div class="head">
+              <div class="stack">
+                <div class="thumb" style="background:linear-gradient(135deg,#7c4d96,#5a3673)">S4</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#1a3a5e,#0f2540)">SLD</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#9c5e2e,#7a4520)">GVG</div>
+                <div class="thumb" style="background:linear-gradient(135deg,#2a4a3a,#1a2e26)">NXT</div>
+              </div>
+              <div>
+                <h4>Sermon Series 4</h4>
+                <div class="meta">14 slides · 1:30:00 · ProPresenter-imported</div>
+              </div>
+            </div>
+            <div class="timeline">
+              <div class="slot" style="flex:2;background:#7c4d96">Title</div>
+              <div class="slot" style="flex:1;background:#1a3a5e">Worship</div>
+              <div class="slot" style="flex:6;background:#7c4d96">Sermon Slides</div>
+              <div class="slot" style="flex:1;background:#9c5e2e">Giving</div>
+              <div class="slot" style="flex:1;background:#2a4a3a">Next Steps</div>
+            </div>
+            <div class="footer">
+              <span>Used in <strong>1 schedule</strong></span>
+              <span>Live on <strong>Auditorium ×4 + Lobby ×2</strong> at 10 AM</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== MEDIA ===== -->
+      <section class="view" data-view="media">
+        <div class="media-toolbar">
+          <div class="chip active">All <span style="opacity:.6">· 182</span></div>
+          <div class="chip">Video</div>
+          <div class="chip">Image</div>
+          <div class="chip">Slides</div>
+          <div class="chip">Web</div>
+          <div class="chip">PDF</div>
+          <div style="flex:1"></div>
+          <button class="btn btn-ghost">Sort: newest</button>
+          <button class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            Upload media
+          </button>
+        </div>
+        <div class="media-grid">
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#1a3a5e,#0f2540)">
+              <span class="badge">MP4</span>
+              <span class="duration">1:30</span>
+              Welcome Loop v4
+            </div>
+            <div class="media-info"><div class="name">Welcome Loop v4</div><div class="meta">1920×1080 · 24 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#7c4d96,#5a3673)">
+              <span class="badge">PNG</span>
+              Series 4 Title
+            </div>
+            <div class="media-info"><div class="name">Series 4 Title</div><div class="meta">1920×1080 · 1.4 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#9c5e2e,#7a4520)">
+              <span class="badge">MP4</span>
+              <span class="duration">0:38</span>
+              Café Pastries
+            </div>
+            <div class="media-info"><div class="name">Café Pastries</div><div class="meta">1920×1080 · 8.2 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#3a7d4e,#28593a)">
+              <span class="badge">PNG</span>
+              Kids Welcome
+            </div>
+            <div class="media-info"><div class="name">Kids Welcome</div><div class="meta">1920×1080 · 2.1 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#3a2516,#1c1108)">
+              <span class="badge">PDF</span>
+              Sunday Menu
+            </div>
+            <div class="media-info"><div class="name">Sunday Menu PDF</div><div class="meta">2 pages · 720 KB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#1c3556,#0f2540)">
+              <span class="badge">PNG</span>
+              Room Directory
+            </div>
+            <div class="media-info"><div class="name">Room Directory</div><div class="meta">1920×1080 · 3.2 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#7c4d96,#5a3673)">
+              <span class="badge">MP4</span>
+              <span class="duration">2:00</span>
+              Series 4 Promo
+            </div>
+            <div class="media-info"><div class="name">Series 4 Promo</div><div class="meta">1080p · 42 MB · new</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#3a7d4e,#28593a)">
+              <span class="badge">PNG</span>
+              Memory Verse
+            </div>
+            <div class="media-info"><div class="name">Memory Verse Week 2</div><div class="meta">1920×1080 · 0.9 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#4a1f1f,#251010)">
+              <span class="badge">MP4</span>
+              <span class="duration">1:24</span>
+              Youth Promo
+            </div>
+            <div class="media-info"><div class="name">Youth Night Promo</div><div class="meta">1080p · 18 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#9c7234,#7a521f)">
+              <span class="badge">PNG</span>
+              Giving CTA
+            </div>
+            <div class="media-info"><div class="name">Giving CTA</div><div class="meta">1920×1080 · 1.6 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#2a4a3a,#1a2e26)">
+              <span class="badge">PNG</span>
+              Serving Card
+            </div>
+            <div class="media-info"><div class="name">Serving Card</div><div class="meta">1920×1080 · 1.2 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#1c3556,#0f2540)">
+              <span class="badge">WEB</span>
+              Live Verse
+            </div>
+            <div class="media-info"><div class="name">Live Verse Widget</div><div class="meta">URL · refreshes hourly</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#1a3a5e,#0f2540)">
+              <span class="badge">PNG</span>
+              Next Steps
+            </div>
+            <div class="media-info"><div class="name">Next Steps Card</div><div class="meta">1920×1080 · 1.0 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#3e2c4f,#21172b)">
+              <span class="badge">MP4</span>
+              <span class="duration">5:00</span>
+              Pre-roll Reel
+            </div>
+            <div class="media-info"><div class="name">Worship Pre-roll</div><div class="meta">1080p · 92 MB</div></div>
+          </div>
+          <div class="media-card">
+            <div class="media-thumb" style="background:linear-gradient(135deg,#3a7d4e,#28593a)">
+              <span class="badge">PNG</span>
+              Bible Story
+            </div>
+            <div class="media-info"><div class="name">Bible Story Promo</div><div class="meta">1920×1080 · 1.1 MB</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== EMERGENCY ===== -->
+      <section class="view" data-view="emergency">
+        <div class="emergency-card">
+          <div class="icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <h3>Emergency broadcast</h3>
+            <p>Take over every screen in the building with a single message. Reverts to normal schedule when you cancel — no clean-up needed.</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-outline">Templates</button>
+            <button class="btn">Broadcast now</button>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:24px">
+          <div class="panel-head">
+            <h3>Compose message</h3>
+            <span class="sub">Test on one screen first, then broadcast</span>
+          </div>
+          <div class="panel-body">
+            <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:24px">
+              <div>
+                <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px">Template</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+                  <div style="border:1.5px solid var(--bad);background:rgba(169,54,40,.06);border-radius:10px;padding:14px;cursor:pointer">
+                    <div style="font-weight:700;color:var(--bad);font-size:13px;margin-bottom:4px">Weather</div>
+                    <div style="font-size:11.5px;color:var(--muted)">Severe weather alert — take cover</div>
+                  </div>
+                  <div style="border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:14px;cursor:pointer">
+                    <div style="font-weight:700;font-size:13px;margin-bottom:4px">Evacuation</div>
+                    <div style="font-size:11.5px;color:var(--muted)">Building evacuation in progress</div>
+                  </div>
+                  <div style="border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:14px;cursor:pointer">
+                    <div style="font-weight:700;font-size:13px;margin-bottom:4px">Closure</div>
+                    <div style="font-size:11.5px;color:var(--muted)">Service cancelled · go home safely</div>
+                  </div>
+                  <div style="border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:14px;cursor:pointer">
+                    <div style="font-weight:700;font-size:13px;margin-bottom:4px">Custom</div>
+                    <div style="font-size:11.5px;color:var(--muted)">Write your own message</div>
+                  </div>
+                </div>
+                <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px">Message</div>
+                <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:14px;color:var(--ink);line-height:1.5">
+                  <strong>TORNADO WARNING</strong><br>
+                  Take shelter immediately. Move to the basement or interior hallway away from windows.<br>
+                  Stay until the all-clear is given.
+                </div>
+                <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:18px 0 8px">Apply to</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <div class="chip active">All screens · 14</div>
+                  <div class="chip">Lobby only</div>
+                  <div class="chip">Auditorium only</div>
+                  <div class="chip">Choose…</div>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px">Preview</div>
+                <div style="aspect-ratio:16/9;background:linear-gradient(135deg,var(--bad),#8e2c20);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--bg);padding:24px;text-align:center">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <h2 style="color:var(--bg);font-size:28px;font-family:'Fraunces',serif">TORNADO WARNING</h2>
+                  <p style="color:rgba(246,245,241,.9);font-size:14px;max-width:30ch">Take shelter immediately. Move to interior hallways away from windows.</p>
+                </div>
+                <div style="margin-top:14px;display:flex;gap:8px">
+                  <button class="btn btn-ghost" style="flex:1;justify-content:center">Test on one screen</button>
+                  <button class="btn btn-emergency" style="flex:1;justify-content:center">Broadcast to 14 screens</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== LAYOUTS / WIDGETS / HUBS / SETTINGS (placeholder rows) ===== -->
+      <section class="view" data-view="layouts">
+        <div class="panel">
+          <div class="panel-head"><h3>Layouts</h3><span class="sub">Multi-zone screen layouts</span></div>
+          <div class="panel-body" style="padding:60px;text-align:center;color:var(--muted)">
+            <p style="font-size:16px">Drag-and-drop multi-zone layout builder.<br>Picture-in-picture, ticker overlay, side panels, full-bleed video.</p>
+            <p style="margin-top:16px;font-size:13px">Available in Venue and Network tiers.</p>
+          </div>
+        </div>
+      </section>
+      <section class="view" data-view="widgets">
+        <div class="panel">
+          <div class="panel-head"><h3>Widgets</h3><span class="sub">Live data overlays</span></div>
+          <div class="panel-body" style="padding:60px;text-align:center;color:var(--muted)">
+            <p style="font-size:16px">Weather, clock, countdowns, calendar feeds, RSS, social feeds.<br>Layer on top of any playlist.</p>
+          </div>
+        </div>
+      </section>
+      <section class="view" data-view="hubs">
+        <div class="panel">
+          <div class="panel-head"><h3>Hubs</h3><span class="sub">Multi-Hub management (Network tier)</span></div>
+          <div class="panel-body" style="padding:60px;text-align:center;color:var(--muted)">
+            <p style="font-size:16px">Manage Hubs across multiple buildings or campuses from one console.<br>Available in Network tier.</p>
+          </div>
+        </div>
+      </section>
+      <section class="view" data-view="settings">
+        <div class="panel">
+          <div class="panel-head"><h3>Settings</h3><span class="sub">Hub configuration</span></div>
+          <div class="panel-body" style="padding:60px;text-align:center;color:var(--muted)">
+            <p style="font-size:16px">Network, storage, backup, users & roles, update channel, integrations.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const viewTitles = {
+  overview:['Overview','Sunday, June 7 · 14 screens online · all systems steady'],
+  screens:['Screens','14 paired players · drag to group by room'],
+  schedule:['Schedule','Weekly + one-off + emergency overrides'],
+  playlists:['Playlists','Reusable content sequences across screens'],
+  media:['Media Library','182 assets · 84.2 GB local storage'],
+  layouts:['Layouts','Multi-zone screen layouts'],
+  widgets:['Widgets','Live data overlays · clock, weather, calendar'],
+  emergency:['Emergency','Building-wide alert broadcast'],
+  hubs:['Hubs','Multi-Hub management'],
+  settings:['Settings','Hub configuration'],
+};
+
+function switchView(name){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active', n.dataset.view===name));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.dataset.view===name));
+  const t = viewTitles[name] || ['Anchor',''];
+  document.getElementById('view-title').firstChild.textContent = t[0] + ' ';
+  document.getElementById('view-sub').textContent = t[1];
+  document.querySelector('.content').scrollTo({top:0,behavior:'smooth'});
+}
+
+document.querySelectorAll('.nav-item').forEach(n=>{
+  n.addEventListener('click', ()=>{
+    const v = n.dataset.view;
+    if(v) switchView(v);
+  });
+});
+</script>
+
+</body>
+</html>
