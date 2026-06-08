@@ -137,12 +137,25 @@ collecting from the moment the snippet is live.
 
 ## Voice commands
 
+- "Hey Jarvis, how's it going today?" → time-aware greeting + live status
 - "Morning briefing" / "rundown" → health checks **+** traffic
 - "Check all sites for issues" · "Is Mousetrap up?"
 - "How is Buy Auburn doing this week?" · "Traffic for Vardar this month"
 - "Which site is leading?" · "Compare my sites"
 - "Open Shannon Harris Art"
-- Hands-free mode: toggle it, then start any command with **"Jarvis, …"**
+- "Play my theme" / "suit up" · "Stop the music"
+- Hands-free mode: toggle it, then start any command with **"Hey Jarvis, …"**
+
+## Theme song / boot sound
+
+On the first click, Jarvis plays a synthesized **arc-reactor power-up chime**,
+then a **theme**. By default the theme is a built-in synthesized JARVIS riff
+(no copyright, always plays). To use a real track — e.g. AC/DC **"Shoot to
+Thrill"** — paste a YouTube link or a direct `.mp3` URL in **Settings → Theme
+song**. Heads-up: some official music videos disable embedding, in which case
+they won't autoplay; a direct audio URL or a different upload always will.
+Browsers block autoplay until you interact, so the music starts on your first
+click, not on page load.
 
 ## Privacy & cost
 - No analytics data is stored anywhere — Jarvis fetches it live and shows it.

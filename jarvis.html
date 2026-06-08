@@ -185,7 +185,7 @@ code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:rgba(255,
       <div class="reactor"><div class="core" id="core"><b>JARVIS</b></div></div>
     </div>
     <div class="viz" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-    <div class="status-line" id="status">Tap the mic and say "give me the morning briefing."</div>
+    <div class="status-line" id="status">Tap the mic and say "Hey Jarvis, how's it going today?"</div>
     <div class="heard" id="heard"></div>
 
     <div class="controls">
@@ -254,8 +254,8 @@ code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:rgba(255,
     </div>
     <div class="field">
       <label>Theme song <span style="color:var(--mute)">(the suit-boot music)</span></label>
-      <input id="cfgSong" placeholder="YouTube link or .mp3 URL — e.g. AC/DC “Shoot to Thrill”">
-      <div class="hint">Paste a YouTube link or a direct audio URL. Plays on power-up and when you say “play my theme.”</div>
+      <input id="cfgSong" placeholder="Leave blank for the built-in JARVIS theme">
+      <div class="hint">Blank = the synthesized JARVIS theme (always works). Or paste a YouTube link / .mp3 URL — e.g. AC/DC “Shoot to Thrill.” Plays on power-up and on “play my theme.” Note: some official videos block embedding.</div>
     </div>
     <div class="field" style="display:flex;align-items:center;gap:.5rem">
       <input type="checkbox" id="cfgSongBoot" style="width:auto">
@@ -360,23 +360,54 @@ function setStatus(t){ statusEl.textContent=t; }
 /* =========================================================================
    AUDIO — arc-reactor boot chime (synthesized) + configurable theme song
    ========================================================================= */
-let _ac=null, _booted=false, _audioEl=null, _playing=false;
+let _ac=null, _booted=false, _audioEl=null, _playing=false, _themeMaster=null, _themeTimer=null;
+function audioCtx(){ try{ _ac=_ac||new (window.AudioContext||window.webkitAudioContext)(); if(_ac.state==='suspended') _ac.resume(); }catch(e){ _ac=null; } return _ac; }
 function bootChime(){
-  try{
-    _ac=_ac||new (window.AudioContext||window.webkitAudioContext)();
-    if(_ac.state==='suspended') _ac.resume();
-    const t=_ac.currentTime, master=_ac.createGain();
-    master.gain.value=.0001; master.connect(_ac.destination);
-    master.gain.exponentialRampToValueAtTime(.3,t+.08);
-    master.gain.exponentialRampToValueAtTime(.0001,t+1.1);
-    [110,220,330].forEach((f,i)=>{ const o=_ac.createOscillator(); o.type=i?'sine':'triangle';
-      o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(f*4,t+.5);
-      o.connect(master); o.start(t); o.stop(t+1.1); });
-  }catch(e){}
+  const ctx=audioCtx(); if(!ctx) return;
+  const t=ctx.currentTime, master=ctx.createGain();
+  master.gain.value=.0001; master.connect(ctx.destination);
+  master.gain.exponentialRampToValueAtTime(.3,t+.08);
+  master.gain.exponentialRampToValueAtTime(.0001,t+1.1);
+  [110,220,330].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type=i?'sine':'triangle';
+    o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(f*4,t+.5);
+    o.connect(master); o.start(t); o.stop(t+1.1); });
+}
+/* --- built-in synthesized JARVIS theme (no copyright, always available) --- */
+function _tone(ctx,dest,freq,start,dur,type,gain){
+  const o=ctx.createOscillator(), g=ctx.createGain(); o.type=type; o.frequency.value=freq;
+  g.gain.setValueAtTime(.0001,start); g.gain.exponentialRampToValueAtTime(gain,start+.012);
+  g.gain.exponentialRampToValueAtTime(.0001,start+dur);
+  o.connect(g); g.connect(dest); o.start(start); o.stop(start+dur+.03);
+}
+function _kick(ctx,dest,start){
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.frequency.setValueAtTime(150,start); o.frequency.exponentialRampToValueAtTime(50,start+.12);
+  g.gain.setValueAtTime(.7,start); g.gain.exponentialRampToValueAtTime(.001,start+.18);
+  o.connect(g); g.connect(dest); o.start(start); o.stop(start+.2);
+}
+function playBuiltinTheme(){
+  const ctx=audioCtx(); if(!ctx){ speak("Audio isn't available in this browser."); return; }
+  stopSong();
+  const master=ctx.createGain(); master.gain.value=.5; master.connect(ctx.destination); _themeMaster=master;
+  const bpm=146, beat=60/bpm, bar=beat*2;
+  const roots=[82.41,65.41,98.00,73.42];           // Em – C – G – D, the heroic progression
+  const fifth=f=>f*1.4983, oct=f=>f*2;
+  let t=ctx.currentTime+.06; const LOOPS=4;
+  for(let l=0;l<LOOPS;l++){
+    roots.forEach(r=>{
+      _tone(ctx,master,r,t,beat*.9,'sawtooth',.32); _tone(ctx,master,r,t+beat,beat*.9,'sawtooth',.32);
+      _kick(ctx,master,t); _kick(ctx,master,t+beat);
+      [oct(r),oct(fifth(r)),oct(oct(r)),oct(fifth(r))].forEach((f,i)=>_tone(ctx,master,f,t+i*(beat/2),beat/2*.9,'square',.11));
+      t+=bar;
+    });
+  }
+  master.gain.setValueAtTime(.5,t-.4); master.gain.exponentialRampToValueAtTime(.0001,t);
+  _playing=true; songBtnUI(); setStatus('♪ JARVIS theme — say "stop the music" to cut it.');
+  _themeTimer=setTimeout(()=>{ _playing=false; songBtnUI(); }, (t-ctx.currentTime+.1)*1000);
 }
 function ytId(u){ const m=String(u).match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/|live\/)([A-Za-z0-9_-]{11})/); return m?m[1]:(/^[A-Za-z0-9_-]{11}$/.test(u)?u:null); }
 function playSong(){
-  if(!CFG.song){ speak("No theme song set yet. Open settings and paste a YouTube link or an MP3 URL — Shoot to Thrill is the classic."); openModal(); return; }
+  if(!CFG.song){ return playBuiltinTheme(); }      // no custom track -> built-in theme
   stopSong();
   const id=ytId(CFG.song), host=$('#songHost');
   if(id){
@@ -389,13 +420,18 @@ function playSong(){
   }
   _playing=true; songBtnUI(); setStatus('♪ Theme playing — say "stop the music" to cut it.');
 }
-function stopSong(){ $('#songHost').innerHTML=''; if(_audioEl){ _audioEl.pause(); _audioEl=null; } _playing=false; songBtnUI(); }
+function stopSong(){
+  $('#songHost').innerHTML=''; if(_audioEl){ _audioEl.pause(); _audioEl=null; }
+  if(_themeMaster && _ac){ try{ _themeMaster.gain.cancelScheduledValues(_ac.currentTime); _themeMaster.gain.setValueAtTime(.0001,_ac.currentTime); }catch(e){} _themeMaster=null; }
+  if(_themeTimer){ clearTimeout(_themeTimer); _themeTimer=null; }
+  _playing=false; songBtnUI();
+}
 function toggleSong(){ _playing?stopSong():playSong(); }
 function songBtnUI(){ const b=$('#songBtn'); if(!b) return; b.classList.toggle('active',_playing);
   b.querySelector('span').textContent=_playing?'Stop theme':'Play theme'; }
-// First user gesture = "power up": chime, then optional theme.
+// First user gesture = "power up": chime, then theme (custom or built-in).
 function powerUp(){ if(_booted) return; _booted=true; bootChime();
-  if(CFG.song && CFG.songBoot) setTimeout(playSong, 950); }
+  if(CFG.songBoot) setTimeout(playSong, 950); }
 
 /* ---------- Number helpers ------------------------------------------------- */
 const fmt = n => n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,'')+'M' : n>=1e3?(n/1e3).toFixed(1).replace(/\.0$/,'')+'k' : String(n);
@@ -472,6 +508,7 @@ function renderIssues(c, issues){
     d.textContent=i.t; c.issues.appendChild(d); });
 }
 
+let lastScan=null;
 async function runHealthScan(only){
   const list = only?[only]:SITES;
   setStatus('Running health checks…'); document.body.classList.add('thinking');
@@ -479,6 +516,7 @@ async function runHealthScan(only){
   document.body.classList.remove('thinking');
   const down=results.filter(r=>!r.ok);
   const withIssues=results.filter(r=>r.ok && r.issues && r.issues.length);
+  if(!only) lastScan={total:results.length, down:down.length, issues:withIssues.length};
   let msg;
   if(only){
     const r=results[0];
@@ -560,13 +598,30 @@ function resolveSite(t){
   }
   return null;
 }
+function greetingReply(){
+  const h=new Date().getHours();
+  const tod = h<5?'evening':h<12?'morning':h<18?'afternoon':'evening';
+  const hi = ['Good '+tod+'.', 'Good '+tod+', sir.', 'All systems online.', 'Right here.'][Math.floor(Math.random()*4)];
+  let status;
+  if(lastScan){
+    if(lastScan.down) status = `Things are mostly running — though heads up, ${lastScan.down} site${lastScan.down>1?'s are':' is'} not responding.`;
+    else if(lastScan.issues) status = `Everything's running smoothly. All ${lastScan.total} sites are up; ${lastScan.issues} ${lastScan.issues>1?'have':'has'} a minor note when you have a moment.`;
+    else status = `Couldn't be better — all ${lastScan.total} sites are up and clean.`;
+  } else {
+    status = "Everything's standing by. Want me to run a quick health check?";
+  }
+  return `${hi} ${status} What can I do for you?`;
+}
 async function handle(raw){
   const t=raw.toLowerCase().trim(); if(!t) return;
   heardEl.textContent='“'+raw+'”'; log('you', raw);
 
-  // greetings / identity
-  if(/^(hi|hey|hello|yo|jarvis)\b[\s!.]*$/.test(t) || /are you (there|online|awake)/.test(t)){
-    return speak("At your service. Ask me to run a health check, pull traffic for a site, or give you the morning briefing.");
+  // conversational greetings / "how's it going" / identity
+  if(/^(hi|hey|hello|yo|sup|jarvis|good (morning|afternoon|evening))\b[\s!.]*$/.test(t)
+     || /are you (there|online|awake|up|with me)/.test(t)
+     || /how('?s| is| are| ?ya| you)\b.*(it going|going|you|doing|things|your day|today)/.test(t)
+     || /what'?s up|how do you do|you good|everything (ok|okay|good|alright)/.test(t)){
+    return speak(greetingReply());
   }
   if(/what can you|help|commands|how do (i|you)/.test(t)){
     return speak("I can do four things. One — run health checks across your sites and flag issues. Two — pull visits, search impressions and clicks from Google. Three — give you a morning briefing combining both. Four — open any site. Try: 'how is Mousetrap doing this week,' or 'check all sites for issues.'");
@@ -626,8 +681,8 @@ if(SR){
       let cmd=fin.trim();
       if(wakeMode){
         const m=cmd.toLowerCase().match(/\bjarvis\b[,!.]?\s*(.*)$/);
-        if(!m){ return; }              // ignore speech without the wake word
-        cmd=m[1].trim(); if(!cmd){ speak('Yes?'); return; }
+        if(!m){ return; }              // ignore speech without the wake word ("Jarvis"/"Hey Jarvis")
+        cmd=m[1].trim(); if(!cmd){ speak(greetingReply()); return; }
       }
       handle(cmd);
     }
@@ -648,7 +703,7 @@ micBtn.addEventListener('click', ()=>{ powerUp(); if(listening){ stopRecognition
 $('#songBtn').addEventListener('click', ()=>{ _booted=true; toggleSong(); });
 wakeBtn.addEventListener('click', ()=>{
   wakeMode=!wakeMode; wakeBtn.classList.toggle('active',wakeMode);
-  if(wakeMode){ setStatus('Hands-free on — say "Jarvis" then your command.'); speak('Hands-free mode on. Say my name and I\'m listening.'); }
+  if(wakeMode){ setStatus('Hands-free on — say "Hey Jarvis…" then your command.'); speak('Hands-free mode on. Just say "Hey Jarvis" and I\'m listening.'); }
   else { setStatus('Hands-free off.'); stopRecognition(); }
 });
 muteBtn.addEventListener('click', ()=>{ CFG.muted=!CFG.muted; save();
@@ -658,7 +713,7 @@ if(CFG.muted){ muteBtn.classList.add('active'); muteBtn.querySelector('span').te
 
 /* ---------- Text input + chips --------------------------------------------- */
 $('#askForm').addEventListener('submit', e=>{ e.preventDefault(); const v=$('#askInput').value; $('#askInput').value=''; if(v.trim()) handle(v); });
-const CHIPS=['Morning briefing','Check all sites for issues','How is Mousetrap doing this week?','Traffic for Buy Auburn','Which site is leading?','Play my theme'];
+const CHIPS=["Hey Jarvis, how's it going today?",'Morning briefing','Check all sites for issues','How is Mousetrap doing this week?','Which site is leading?','Play my theme'];
 CHIPS.forEach(c=>{ const b=document.createElement('button'); b.className='chip'; b.textContent=c;
   b.onclick=()=>handle(c); $('#chips').appendChild(b); });
 
