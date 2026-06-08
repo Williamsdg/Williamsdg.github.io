@@ -55,6 +55,10 @@ export default {
         const { url: target } = await request.json();
         return json(await healthProbe(target, env), 200, cors);
       }
+      if (url.pathname === '/tts' && request.method === 'POST') {
+        const { text, voice } = await request.json();
+        return ttsElevenLabs(text, voice, env, cors);
+      }
       return json({ error: 'not found' }, 404, cors);
     } catch (err) {
       return json({ error: String(err.message || err) }, 500, cors);
@@ -205,6 +209,36 @@ async function fetchGSC(siteUrl, start, end, token) {
   if (data.error) throw new Error('GSC: ' + data.error.message);
   const r = (data.rows && data.rows[0]) || { impressions: 0, clicks: 0, ctr: 0, position: 0 };
   return { impressions: r.impressions, clicks: r.clicks, ctr: r.ctr, position: r.position };
+}
+
+/* --------------------------------------------- ElevenLabs text-to-speech --- */
+async function ttsElevenLabs(text, voiceOverride, env, cors) {
+  const key = env.ELEVENLABS_API_KEY;
+  if (!key) return json({ error: 'TTS not configured (set ELEVENLABS_API_KEY)' }, 400, cors);
+  if (!text || !text.trim()) return json({ error: 'no text' }, 400, cors);
+
+  // Default voice "George" (calm British male) — override with ELEVENLABS_VOICE_ID
+  // or per-request `voice`. Find your JARVIS voice ID in the ElevenLabs dashboard.
+  const voiceId = voiceOverride || env.ELEVENLABS_VOICE_ID || 'JBFqnCBsd6RMkjVDRZzb';
+  const modelId = env.ELEVENLABS_MODEL || 'eleven_turbo_v2_5';
+
+  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    method: 'POST',
+    headers: { 'xi-api-key': key, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
+    body: JSON.stringify({
+      text: text.slice(0, 800),
+      model_id: modelId,
+      voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.0, use_speaker_boost: true }
+    })
+  });
+  if (!r.ok) {
+    const detail = await r.text();
+    return json({ error: 'elevenlabs ' + r.status, detail: detail.slice(0, 300) }, 502, cors);
+  }
+  return new Response(r.body, {
+    status: 200,
+    headers: { ...cors, 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store' }
+  });
 }
 
 /* ------------------------------------------------------- uptime proxy ------ */

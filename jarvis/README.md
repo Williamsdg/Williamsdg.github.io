@@ -130,6 +130,7 @@ collecting from the moment the snippet is live.
 | `/ping` | GET | — | `{ ok: true }` (used by the Settings "Test" button) |
 | `/analytics` | POST | `{ site, range }` | visits, users, pageviews, events, impressions, clicks, ctr, position |
 | `/health` | POST | `{ url }` | `{ ok, status, ms }` cross-origin uptime probe |
+| `/tts` | POST | `{ text, voice? }` | `audio/mpeg` — ElevenLabs speech (the exact JARVIS voice) |
 
 `range` is one of `today`, `yesterday`, `7d`, `28d`.
 
@@ -145,6 +146,30 @@ collecting from the moment the snippet is live.
 - "Open Shannon Harris Art"
 - "Play my theme" / "suit up" · "Stop the music"
 - Hands-free mode: toggle it, then start any command with **"Hey Jarvis, …"**
+
+## The JARVIS voice — three tiers
+
+Pick the engine in **Settings → Voice engine**. Each falls back to the next if unavailable.
+
+1. **ElevenLabs (exact match, paid)** — the closest to the films. The API key lives
+   in your worker; the page only calls `/tts`. Add these to the worker:
+   ```bash
+   wrangler secret put ELEVENLABS_API_KEY        # your ElevenLabs key
+   wrangler secret put ELEVENLABS_VOICE_ID       # the voice ID for your JARVIS voice
+   # optional: ELEVENLABS_MODEL (default eleven_turbo_v2_5, low latency)
+   ```
+   Find/clone a calm **British male** voice in the ElevenLabs dashboard and copy its
+   **Voice ID**. You can also override per-device in Settings → *ElevenLabs voice ID*.
+   Then set **Voice engine = ElevenLabs** and make sure the worker URL is filled in.
+
+2. **Kokoro (open-source, free, no key)** — an 82M-param neural voice that runs
+   entirely in your browser via WebAssembly ([kokoro-js](https://www.npmjs.com/package/kokoro-js)).
+   First use downloads ~80MB (cached after that). British male voices:
+   `bm_george`, `bm_lewis`, `bm_daniel`, `bm_fable`. Set **Voice engine = Neural**
+   and pick one — no setup required. Needs a modern browser (Chrome/Edge best).
+
+3. **Browser voice (free, instant)** — the Web Speech API. For the best result use
+   **Microsoft Edge** and choose a "Ryan / Thomas (Natural)" voice.
 
 ## Theme song / boot sound
 
