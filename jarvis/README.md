@@ -29,6 +29,21 @@ numbers — visits, impressions, clicks. Free tier is far more than enough.
 
 ---
 
+## Quick deploy (script)
+
+Already comfortable with Wrangler? Skip the long version:
+
+```bash
+npm i -g wrangler && wrangler login      # if you haven't
+cd jarvis
+./setup.sh                                # prompts for Google JSON, ElevenLabs key, deploys
+```
+
+`setup.sh` reads your Google service-account JSON, sets every secret, uploads
+`sites.example.json` as `SITES`, and deploys. Then paste the `*.workers.dev`
+URL into JARVIS → gear ⚙️. The manual walk-through below covers the Google
+Cloud + Search Console prerequisites the script assumes are done.
+
 ## One-time setup (~10–15 min)
 
 ### 1. Create a Google service account
