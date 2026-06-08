@@ -158,12 +158,50 @@ code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:rgba(255,
 
 .tiny{font-size:.72rem;color:var(--mute);text-align:center;margin-top:2.5rem;font-family:'JetBrains Mono',monospace}
 .tiny a{color:var(--soft)}
+/* ===== Stark-workshop holographic skin ===== */
+.holo-scan{position:fixed;inset:0;pointer-events:none;z-index:3;opacity:.45;mix-blend-mode:screen;
+  background:repeating-linear-gradient(0deg,rgba(6,182,212,.05) 0,rgba(6,182,212,.05) 1px,transparent 2px,transparent 5px);
+  animation:scanMove 7s linear infinite}
+@keyframes scanMove{to{background-position:0 220px}}
+/* holographic panels with corner brackets */
+.scard{backdrop-filter:blur(5px);border-color:rgba(6,182,212,.22);box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 0 1px rgba(6,182,212,.05) inset}
+.scard:hover{border-color:rgba(6,182,212,.5);box-shadow:0 0 26px rgba(6,182,212,.18),0 0 0 1px rgba(6,182,212,.3) inset}
+.scard::before{content:'';position:absolute;top:7px;left:7px;width:13px;height:13px;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan);opacity:.55;pointer-events:none}
+.scard::after{content:'';position:absolute;bottom:7px;right:7px;width:13px;height:13px;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan);opacity:.55;pointer-events:none}
+
+/* ===== "Welcome home, sir" boot overlay ===== */
+.bootseq{position:fixed;inset:0;z-index:400;display:grid;place-items:center;opacity:0;visibility:hidden;
+  background:radial-gradient(ellipse at 50% 45%,rgba(5,28,40,.96),rgba(2,4,10,.985));transition:opacity .8s ease,visibility .8s ease}
+.bootseq.show{opacity:1;visibility:visible}
+.boot-scan{position:absolute;inset:0;pointer-events:none;opacity:.6;
+  background:repeating-linear-gradient(0deg,rgba(6,182,212,.07) 0,rgba(6,182,212,.07) 1px,transparent 2px,transparent 4px);
+  animation:scanMove 6s linear infinite}
+.boot-inner{position:relative;text-align:center;padding:2rem}
+.boot-reticle{width:118px;height:118px;margin:0 auto 1.6rem;border-radius:50%;position:relative;border:1.5px solid rgba(6,182,212,.5);animation:spin 6s linear infinite}
+.boot-reticle::before{content:'';position:absolute;inset:13px;border-radius:50%;border:1px dashed rgba(245,196,81,.55);animation:spin 4s linear infinite reverse}
+.boot-reticle::after{content:'';position:absolute;inset:44px;border-radius:50%;background:radial-gradient(circle at 50% 40%,#bdf3ff,#06b6d4 60%,#1e3a8a);box-shadow:0 0 34px rgba(6,182,212,.85)}
+.boot-line{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:clamp(1.25rem,4.4vw,2.5rem);letter-spacing:.22em;
+  color:#cdf6ff;text-shadow:0 0 10px rgba(6,182,212,.7),0 0 28px rgba(6,182,212,.5);min-height:1.3em;animation:holoFlicker 3.5s linear infinite}
+@keyframes holoFlicker{0%,100%{opacity:1}48%{opacity:1}49%{opacity:.78}50%{opacity:1}92%{opacity:1}93%{opacity:.85}94%{opacity:1}}
+.boot-sub{margin-top:.85rem;font-family:'JetBrains Mono',monospace;font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);opacity:.7}
+
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important}}
 </style>
 </head>
 <body>
 <div class="bg-grid"></div>
 <div class="bg-mesh"></div>
+<div class="holo-scan" aria-hidden="true"></div>
+
+<!-- "Welcome home, sir" boot sequence (Iron Man 2 workshop scene) -->
+<div class="bootseq" id="bootSeq" aria-hidden="true">
+  <div class="boot-scan"></div>
+  <div class="boot-inner">
+    <div class="boot-reticle"></div>
+    <div class="boot-line" id="bootLine"></div>
+    <div class="boot-sub">JARVIS · Williams Digital workshop online</div>
+  </div>
+</div>
 
 <nav>
   <div class="nav-inner">
@@ -225,7 +263,7 @@ code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:rgba(255,
   <!-- Conversation log -->
   <div class="section-label">CONVERSATION</div>
   <div class="log" id="log">
-    <div class="msg jarvis"><span class="who">JARVIS</span><span class="body">Systems online. I'm watching <span id="siteCount">your</span> sites. Ask me to run a health check, pull this week's visits, or give you the morning briefing.</span></div>
+    <div class="msg jarvis"><span class="who">JARVIS</span><span class="body">Welcome home, sir. Workshop online — I'm watching <span id="siteCount">your</span> sites. Tap the mic to power up, then ask me to run a health check, pull this week's visits, or give you the morning briefing.</span></div>
   </div>
 
   <div class="tiny">Williams Digital · JARVIS runs entirely in your browser. Voice via the Web Speech API. Analytics via your private Cloudflare Worker. · <a href="https://github.com/williamsdg/williamsdg.github.io/blob/main/jarvis/README.md" target="_blank" rel="noopener" id="setupLink">setup guide</a></div>
@@ -290,7 +328,7 @@ const SITES = [
 ];
 
 /* ---------- Persisted config ---------------------------------------------- */
-const CFG = Object.assign({ endpoint:'', token:'', voice:'', muted:false, song:'', songBoot:true }, load('jarvis.cfg'));
+const CFG = Object.assign({ endpoint:'', token:'', voice:'', muted:false, song:'https://www.youtube.com/watch?v=xMaE6toi4mk', songBoot:true }, load('jarvis.cfg'));
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){ return {}; } }
 function save(){ localStorage.setItem('jarvis.cfg', JSON.stringify(CFG)); }
 
@@ -429,9 +467,21 @@ function stopSong(){
 function toggleSong(){ _playing?stopSong():playSong(); }
 function songBtnUI(){ const b=$('#songBtn'); if(!b) return; b.classList.toggle('active',_playing);
   b.querySelector('span').textContent=_playing?'Stop theme':'Play theme'; }
-// First user gesture = "power up": chime, then theme (custom or built-in).
-function powerUp(){ if(_booted) return; _booted=true; bootChime();
-  if(CFG.songBoot) setTimeout(playSong, 950); }
+// Typewriter for the boot title
+function typeOut(el,text,sp,done){ if(!el){ done&&done(); return; } el.textContent=''; let i=0;
+  (function step(){ if(i<text.length){ el.textContent=text.slice(0,i+1)+'▋'; i++; setTimeout(step,sp); }
+    else { el.textContent=text; done&&done(); } })(); }
+// First user gesture = "power up": the Iron Man 2 "Welcome home, sir" workshop boot.
+function powerUp(){ if(_booted) return; _booted=true;
+  bootChime();
+  const seq=$('#bootSeq'), line=$('#bootLine');
+  if(seq){
+    seq.classList.add('show');
+    typeOut(line,'WELCOME HOME, SIR',75,()=>{ setTimeout(()=>speak('Welcome home, sir.'),150); });
+    setTimeout(()=>seq.classList.remove('show'), 3600);
+  } else { speak('Welcome home, sir.'); }
+  if(CFG.songBoot) setTimeout(playSong, 2600);   // theme swells in after the line
+}
 
 /* ---------- Number helpers ------------------------------------------------- */
 const fmt = n => n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,'')+'M' : n>=1e3?(n/1e3).toFixed(1).replace(/\.0$/,'')+'k' : String(n);
