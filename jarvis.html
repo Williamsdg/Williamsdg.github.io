@@ -288,7 +288,7 @@ code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:rgba(255,
     <div class="field">
       <label>Voice</label>
       <select id="cfgVoice"><option value="">System default</option></select>
-      <div class="hint">A British male voice gets closest to the movie Jarvis.</div>
+      <div class="hint">Auto-picks the best British male voice on your device. For a screen-accurate JARVIS, use <b>Microsoft Edge</b> and choose a “Ryan / Thomas (Natural)” voice — Edge bundles high-quality neural British voices.</div>
     </div>
     <div class="field">
       <label>Theme song <span style="color:var(--mute)">(the suit-boot music)</span></label>
@@ -377,17 +377,29 @@ if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged=loadVo
 function pickVoice(){
   if(!voices.length) return null;
   if(CFG.voice){ const v=voices.find(x=>x.name===CFG.voice); if(v) return v; }
-  const prefs=[/Daniel/i,/UK English Male/i,/Arthur/i,/British/i,/Google UK/i,/en-GB/i];
-  for(const p of prefs){ const v=voices.find(x=>p.test(x.name)||p.test(x.lang)); if(v) return v; }
-  return voices.find(x=>/en[-_]/i.test(x.lang))||voices[0];
+  // Best → worst for a screen-accurate JARVIS (calm British male). Edge's
+  // "Natural"/Online neural voices sound closest; then OS British males.
+  const prefs=[
+    /Ryan.*Natural/i, /Thomas.*Natural/i, /George.*Natural/i, /Brian.*Natural/i,
+    /Microsoft (Ryan|Thomas|George|Brian)/i,
+    /Google UK English Male/i,
+    /^Daniel/i, /Arthur/i, /Oliver/i, /Jamie/i,
+    /UK English Male/i, /British.*Male/i, /en-GB.*Male/i
+  ];
+  for(const p of prefs){ const v=voices.find(x=>p.test(x.name)); if(v) return v; }
+  // any en-GB voice, else any English, else first
+  return voices.find(x=>/en[-_]GB/i.test(x.lang)) || voices.find(x=>/en[-_]/i.test(x.lang)) || voices[0];
 }
+function isNatural(v){ return v && /natural|online/i.test(v.name); }
 function speak(text){
   log('jarvis', text);
   if(CFG.muted || !window.speechSynthesis) return;
   try{ speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text.replace(/[*_`#]/g,''));
     const v=pickVoice(); if(v) u.voice=v;
-    u.rate=1.03; u.pitch=.95;
+    // Measured, refined butler cadence. Neural voices already sound natural,
+    // so give them less manipulation; legacy voices get the lower/slower JARVIS tone.
+    if(isNatural(v)){ u.rate=.98; u.pitch=1.0; } else { u.rate=.94; u.pitch=.9; }
     u.onstart=()=>document.body.classList.add('speaking');
     u.onend=()=>{ document.body.classList.remove('speaking'); if(wakeMode&&!listening) startRecognition(); };
     document.body.classList.add('speaking'); speechSynthesis.speak(u);
@@ -648,6 +660,7 @@ function resolveSite(t){
   }
   return null;
 }
+const pick = a => a[Math.floor(Math.random()*a.length)];
 function greetingReply(){
   const h=new Date().getHours();
   const tod = h<5?'evening':h<12?'morning':h<18?'afternoon':'evening';
@@ -673,8 +686,35 @@ async function handle(raw){
      || /what'?s up|how do you do|you good|everything (ok|okay|good|alright)/.test(t)){
     return speak(greetingReply());
   }
+  // --- small talk, in the JARVIS register ---
+  if(/\b(thanks|thank you|cheers|appreciate it|ty)\b/.test(t)){
+    return speak(pick(["Of course, sir.","My pleasure, sir.","Anytime, sir.","Always a pleasure."]));
+  }
+  if(/good night|goodnight|i'?m (heading out|off|done)|that'?s all|talk later|see you/.test(t)){
+    return speak(pick(["Good night, sir. I'll keep watch over the sites.","Very good, sir. I'll be here if anything comes up.","Rest easy, sir — I've got the watch."]));
+  }
+  if(/(who are you|what are you|your name|what'?s your name|what does jarvis (mean|stand for))/.test(t)){
+    return speak("I'm JARVIS — Just A Rather Very Intelligent System. I look after your sites, sir: uptime, issues, and the numbers from Google.");
+  }
+  if(/(you'?re|your) (the best|awesome|great|amazing|brilliant|good)|good (job|work|boy)|nice (job|work)|well done|love (you|it)/.test(t)){
+    return speak(pick(["You're too kind, sir.","Merely doing my job, sir.","I do try, sir.","Most kind of you to say."]));
+  }
+  if(/tell me a joke|make me laugh|got any jokes/.test(t)){
+    return speak(pick([
+      "A clean codebase walked into a bar. There were no bugs. I found it deeply suspicious, sir.",
+      "I'd tell you a UDP joke, sir, but you might not get it.",
+      "Your sites and I have something in common — we both run best when no one's touching the production server."
+    ]));
+  }
+  if(/what time|what'?s the time|what day|what'?s the date/.test(t)){
+    const now=new Date();
+    return speak(`It's ${now.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})} on ${now.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric'})}, sir.`);
+  }
+  if(/^(yes|yeah|yep|sure|go ahead|do it|please)\b/.test(t) && lastScan===null){
+    return runHealthScan(null);   // answer to "want me to run a health check?"
+  }
   if(/what can you|help|commands|how do (i|you)/.test(t)){
-    return speak("I can do four things. One — run health checks across your sites and flag issues. Two — pull visits, search impressions and clicks from Google. Three — give you a morning briefing combining both. Four — open any site. Try: 'how is Mousetrap doing this week,' or 'check all sites for issues.'");
+    return speak("Happy to help, sir. I can run health checks across your sites and flag any issues, pull visits, search impressions and clicks from Google, give you a full morning briefing, open any site, or cue your theme. Try: 'how is Mousetrap doing this week,' or 'check all sites for issues.'");
   }
   if(/list .*(sites|websites)|what sites|which sites/.test(t)){
     return speak(`I'm watching ${SITES.length} sites: ${SITES.map(s=>s.name).join(', ')}.`);
@@ -710,7 +750,7 @@ async function handle(raw){
   const s=resolveSite(t);
   if(s){ if(CFG.endpoint){ getAnalytics(s, parseRange(t)); } runHealthScan(s); return; }
 
-  speak("I didn't quite catch a command there. Try 'morning briefing', 'check all sites', or 'how is Buy Auburn doing this week.'");
+  speak(pick(["I'm afraid I didn't quite catch that, sir. Try 'morning briefing', 'check all sites', or 'how is Buy Auburn doing this week.'","Apologies, sir — I didn't follow. You can ask me to run a health check, pull a site's traffic, or give you the briefing."]));
 }
 
 /* =========================================================================
