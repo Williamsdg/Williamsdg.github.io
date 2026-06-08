@@ -201,7 +201,12 @@ code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:rgba(255,
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>
         <span>Mute voice</span>
       </button>
+      <button class="btn btn-ghost" id="songBtn" title="Play / stop your theme song">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        <span>Play theme</span>
+      </button>
     </div>
+    <div id="songHost" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"></div>
 
     <form class="ask" id="askForm" autocomplete="off">
       <input id="askInput" placeholder="…or type a command — e.g. “how is mousetrap doing this week?”" aria-label="Type a command">
@@ -247,6 +252,15 @@ code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:rgba(255,
       <select id="cfgVoice"><option value="">System default</option></select>
       <div class="hint">A British male voice gets closest to the movie Jarvis.</div>
     </div>
+    <div class="field">
+      <label>Theme song <span style="color:var(--mute)">(the suit-boot music)</span></label>
+      <input id="cfgSong" placeholder="YouTube link or .mp3 URL — e.g. AC/DC “Shoot to Thrill”">
+      <div class="hint">Paste a YouTube link or a direct audio URL. Plays on power-up and when you say “play my theme.”</div>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:.5rem">
+      <input type="checkbox" id="cfgSongBoot" style="width:auto">
+      <label for="cfgSongBoot" style="margin:0">Play the theme when Jarvis powers up</label>
+    </div>
     <div class="sheet-actions">
       <button class="btn btn-ghost" id="cfgTest">Test connection</button>
       <button class="btn btn-primary" id="cfgSave">Save</button>
@@ -276,7 +290,7 @@ const SITES = [
 ];
 
 /* ---------- Persisted config ---------------------------------------------- */
-const CFG = Object.assign({ endpoint:'', token:'', voice:'', muted:false }, load('jarvis.cfg'));
+const CFG = Object.assign({ endpoint:'', token:'', voice:'', muted:false, song:'', songBoot:true }, load('jarvis.cfg'));
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)||'{}'); }catch(e){ return {}; } }
 function save(){ localStorage.setItem('jarvis.cfg', JSON.stringify(CFG)); }
 
@@ -342,6 +356,46 @@ function speak(text){
   }catch(e){}
 }
 function setStatus(t){ statusEl.textContent=t; }
+
+/* =========================================================================
+   AUDIO — arc-reactor boot chime (synthesized) + configurable theme song
+   ========================================================================= */
+let _ac=null, _booted=false, _audioEl=null, _playing=false;
+function bootChime(){
+  try{
+    _ac=_ac||new (window.AudioContext||window.webkitAudioContext)();
+    if(_ac.state==='suspended') _ac.resume();
+    const t=_ac.currentTime, master=_ac.createGain();
+    master.gain.value=.0001; master.connect(_ac.destination);
+    master.gain.exponentialRampToValueAtTime(.3,t+.08);
+    master.gain.exponentialRampToValueAtTime(.0001,t+1.1);
+    [110,220,330].forEach((f,i)=>{ const o=_ac.createOscillator(); o.type=i?'sine':'triangle';
+      o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(f*4,t+.5);
+      o.connect(master); o.start(t); o.stop(t+1.1); });
+  }catch(e){}
+}
+function ytId(u){ const m=String(u).match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/|live\/)([A-Za-z0-9_-]{11})/); return m?m[1]:(/^[A-Za-z0-9_-]{11}$/.test(u)?u:null); }
+function playSong(){
+  if(!CFG.song){ speak("No theme song set yet. Open settings and paste a YouTube link or an MP3 URL — Shoot to Thrill is the classic."); openModal(); return; }
+  stopSong();
+  const id=ytId(CFG.song), host=$('#songHost');
+  if(id){
+    host.innerHTML='<iframe width="1" height="1" allow="autoplay" referrerpolicy="origin" '+
+      'src="https://www.youtube.com/embed/'+id+'?autoplay=1&playsinline=1&rel=0"></iframe>';
+  } else {
+    _audioEl=new Audio(CFG.song); _audioEl.volume=.85;
+    _audioEl.play().catch(()=>{ speak("The browser blocked autoplay — tap the play-theme button once and it'll work after that."); });
+    _audioEl.onended=()=>{ _playing=false; songBtnUI(); };
+  }
+  _playing=true; songBtnUI(); setStatus('♪ Theme playing — say "stop the music" to cut it.');
+}
+function stopSong(){ $('#songHost').innerHTML=''; if(_audioEl){ _audioEl.pause(); _audioEl=null; } _playing=false; songBtnUI(); }
+function toggleSong(){ _playing?stopSong():playSong(); }
+function songBtnUI(){ const b=$('#songBtn'); if(!b) return; b.classList.toggle('active',_playing);
+  b.querySelector('span').textContent=_playing?'Stop theme':'Play theme'; }
+// First user gesture = "power up": chime, then optional theme.
+function powerUp(){ if(_booted) return; _booted=true; bootChime();
+  if(CFG.song && CFG.songBoot) setTimeout(playSong, 950); }
 
 /* ---------- Number helpers ------------------------------------------------- */
 const fmt = n => n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,'')+'M' : n>=1e3?(n/1e3).toFixed(1).replace(/\.0$/,'')+'k' : String(n);
@@ -520,6 +574,14 @@ async function handle(raw){
   if(/list .*(sites|websites)|what sites|which sites/.test(t)){
     return speak(`I'm watching ${SITES.length} sites: ${SITES.map(s=>s.name).join(', ')}.`);
   }
+  // theme song
+  if(/\b(stop|pause|kill|cut|silence|shut)\b.*(song|music|theme|tune)|stop the music|cut the music|enough music/.test(t)){
+    stopSong(); return speak('Music off.');
+  }
+  if(/\b(play|start|cue|hit|drop|pump|crank|blast)\b.*(song|music|theme|tune|track)|play it|play my (song|theme|music)|hit the music|suit up/.test(t)){
+    if(/suit up/.test(t)) speak('Suiting up.');
+    return playSong();
+  }
   // open a site
   if(/\b(open|go to|launch|pull up|show me the site)\b/.test(t)){
     const s=resolveSite(t); if(s){ window.open(s.url,'_blank'); return speak(`Opening ${s.name}.`); }
@@ -582,7 +644,8 @@ if(SR){
 function startRecognition(){ if(!recog||listening) return; try{ recog.start(); }catch(e){} }
 function stopRecognition(){ if(!recog||!listening) return; manualStop=true; try{ recog.stop(); }catch(e){} }
 
-micBtn.addEventListener('click', ()=>{ if(listening){ stopRecognition(); } else { wakeMode=false; wakeBtn.classList.remove('active'); startRecognition(); } });
+micBtn.addEventListener('click', ()=>{ powerUp(); if(listening){ stopRecognition(); } else { wakeMode=false; wakeBtn.classList.remove('active'); startRecognition(); } });
+$('#songBtn').addEventListener('click', ()=>{ _booted=true; toggleSong(); });
 wakeBtn.addEventListener('click', ()=>{
   wakeMode=!wakeMode; wakeBtn.classList.toggle('active',wakeMode);
   if(wakeMode){ setStatus('Hands-free on — say "Jarvis" then your command.'); speak('Hands-free mode on. Say my name and I\'m listening.'); }
@@ -595,17 +658,18 @@ if(CFG.muted){ muteBtn.classList.add('active'); muteBtn.querySelector('span').te
 
 /* ---------- Text input + chips --------------------------------------------- */
 $('#askForm').addEventListener('submit', e=>{ e.preventDefault(); const v=$('#askInput').value; $('#askInput').value=''; if(v.trim()) handle(v); });
-const CHIPS=['Morning briefing','Check all sites for issues','How is Mousetrap doing this week?','Traffic for Buy Auburn','Which site is leading?','Open Cartpath Club'];
+const CHIPS=['Morning briefing','Check all sites for issues','How is Mousetrap doing this week?','Traffic for Buy Auburn','Which site is leading?','Play my theme'];
 CHIPS.forEach(c=>{ const b=document.createElement('button'); b.className='chip'; b.textContent=c;
   b.onclick=()=>handle(c); $('#chips').appendChild(b); });
 
 /* ---------- Settings modal ------------------------------------------------- */
 const modal=$('#modal');
-function openModal(){ $('#cfgEndpoint').value=CFG.endpoint; $('#cfgToken').value=CFG.token; modal.classList.add('open'); }
+function openModal(){ $('#cfgEndpoint').value=CFG.endpoint; $('#cfgToken').value=CFG.token; $('#cfgSong').value=CFG.song; $('#cfgSongBoot').checked=CFG.songBoot; modal.classList.add('open'); }
 $('#settingsBtn').onclick=openModal;
 modal.addEventListener('click',e=>{ if(e.target===modal) modal.classList.remove('open'); });
 $('#cfgSave').onclick=()=>{ CFG.endpoint=$('#cfgEndpoint').value.trim(); CFG.token=$('#cfgToken').value.trim();
-  CFG.voice=$('#cfgVoice').value; save(); modal.classList.remove('open'); refreshApiPill();
+  CFG.voice=$('#cfgVoice').value; CFG.song=$('#cfgSong').value.trim(); CFG.songBoot=$('#cfgSongBoot').checked;
+  save(); modal.classList.remove('open'); refreshApiPill();
   speak(CFG.endpoint?'Analytics connected. Ask me how a site is doing.':'Saved. Running in health-check mode.'); };
 $('#cfgTest').onclick=async()=>{ const url=$('#cfgEndpoint').value.trim(); const tok=$('#cfgToken').value.trim();
   if(!url){ alert('Enter a worker URL first.'); return; }
