@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>George — Build rasters for any LED wall</title>
+<meta name="description" content="A free tool for broadcast engineers to build LED wall rasters: total resolution, physical size, power/weight, processor port mapping, and an exportable raster map. Preset product library plus full custom entry.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="George">
+<meta property="og:description" content="Build rasters for any LED wall — resolution, size, power, processor port mapping, and an exportable raster map.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0e14'/%3E%3Cg fill='none' stroke='%2300e0c6' stroke-width='1.4'%3E%3Crect x='6' y='6' width='8' height='8'/%3E%3Crect x='18' y='6' width='8' height='8'/%3E%3Crect x='6' y='18' width='8' height='8'/%3E%3Crect x='18' y='18' width='8' height='8'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0a0d13; --panel:#11151e; --panel2:#161b27; --line:#222a3a;
+    --txt:#e7ecf4; --mut:#8b97ad; --acc:#00e0c6; --acc2:#5b8cff; --warn:#ffb454; --bad:#ff5d6c;
+    --radius:12px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15px;line-height:1.45}
+  a{color:var(--acc)}
+  h1,h2,h3{margin:0;font-weight:700;letter-spacing:-.01em}
+  .wrap{max-width:1320px;margin:0 auto;padding:22px clamp(14px,3vw,34px) 80px}
+  header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .logo{display:flex;align-items:center;gap:11px}
+  .logo .mark{width:34px;height:34px;border-radius:8px;background:#0b0e14;border:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:6px}
+  .logo .mark i{background:var(--acc);border-radius:1px;display:block;opacity:.85}
+  .logo .mark i:nth-child(2){background:var(--acc2)}
+  .logo .mark i:nth-child(3){background:var(--acc2)}
+  .logo h1{font-size:18px}
+  .logo .sub{font-size:12px;color:var(--mut);margin-top:1px}
+  .top .spacer{flex:1}
+  .pill{font-size:12px;color:var(--mut);border:1px solid var(--line);padding:5px 10px;border-radius:999px;background:var(--panel)}
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:22px;align-items:start}
+  @media(max-width:1000px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 18px}
+  .card + .card{margin-top:18px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .card h2 .n{width:20px;height:20px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center;color:var(--acc);font-size:11px;font-weight:700}
+  label{display:block;font-size:12px;color:var(--mut);margin:0 0 5px}
+  .field{margin-bottom:13px}
+  .row{display:flex;gap:10px}
+  .row > *{flex:1;min-width:0}
+  input,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:9px;padding:9px 10px;font-size:14px;font-family:var(--sans);outline:none}
+  input:focus,select:focus{border-color:var(--acc2);box-shadow:0 0 0 3px rgba(91,140,255,.15)}
+  input[type=number]{font-family:var(--mono)}
+  select{cursor:pointer}
+  .seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:3px}
+  .seg button{flex:1;background:transparent;border:0;color:var(--mut);padding:7px 6px;border-radius:6px;font-size:12.5px;cursor:pointer;font-weight:600}
+  .seg button.on{background:var(--acc);color:#04211d}
+  .hint{font-size:11.5px;color:var(--mut);margin-top:4px;line-height:1.4}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--panel2);
+    border:1px solid var(--line);color:var(--txt);padding:9px 13px;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;text-decoration:none}
+  .btn:hover{border-color:var(--acc2)}
+  .btn.acc{background:var(--acc);color:#04211d;border-color:var(--acc)}
+  .btn.acc:hover{filter:brightness(1.06)}
+  .btn.ghost{background:transparent}
+  .btns{display:flex;gap:9px;flex-wrap:wrap}
+  /* results */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 13px}
+  .stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+  .stat .v{font-size:21px;font-weight:700;font-family:var(--mono);margin-top:3px;letter-spacing:-.02em}
+  .stat .v small{font-size:12px;color:var(--mut);font-weight:500;font-family:var(--sans)}
+  .stat.big .v{font-size:25px;color:var(--acc)}
+  .stat .sub{font-size:11.5px;color:var(--mut);margin-top:2px}
+  /* canvas */
+  .canvas-wrap{background:#070a0f;border:1px solid var(--line);border-radius:10px;padding:14px;overflow:auto}
+  #map{display:block;width:100%;height:auto}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:12px;color:var(--mut)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:13px;height:13px;border-radius:3px;display:inline-block;border:1px solid rgba(255,255,255,.15)}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar .chk{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--mut);cursor:pointer;user-select:none}
+  .toolbar .chk input{width:auto}
+  table.spec{width:100%;border-collapse:collapse;font-size:13px}
+  table.spec td{padding:7px 6px;border-bottom:1px solid var(--line)}
+  table.spec td:first-child{color:var(--mut)}
+  table.spec td:last-child{text-align:right;font-family:var(--mono)}
+  .note{font-size:12px;color:var(--warn);background:rgba(255,180,84,.08);border:1px solid rgba(255,180,84,.25);
+    border-radius:9px;padding:10px 12px;margin-top:14px;line-height:1.5}
+  .warnrow{color:var(--bad);font-weight:600}
+  .okrow{color:var(--acc)}
+  .fitlist{display:grid;gap:8px;margin-top:4px}
+  .fit{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;padding:8px 11px;font-size:13px}
+  .fit .tag{font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700}
+  .fit .tag.exact{background:rgba(0,224,198,.15);color:var(--acc)}
+  .fit .tag.fits{background:rgba(91,140,255,.15);color:var(--acc2)}
+  .fit .tag.over{background:rgba(255,93,108,.15);color:var(--bad)}
+  details.custom{margin-top:6px;border-top:1px dashed var(--line);padding-top:12px}
+  details.custom summary{cursor:pointer;font-size:12px;color:var(--acc2);font-weight:600;list-style:none}
+  details.custom summary::-webkit-details-marker{display:none}
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--mut);font-size:12.5px;line-height:1.6}
+  .kbd{font-family:var(--mono);background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11px}
+  @media print{
+    body{background:#fff;color:#000}
+    .noprint{display:none!important}
+    .card,.stat,.fit{border-color:#ccc!important;background:#fff!important;color:#000!important}
+    .stat .v{color:#000!important}
+    .wrap{max-width:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo">
+      <div class="mark"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h1>George</h1>
+        <div class="sub">Plan resolutions, port maps &amp; raster sheets for any LED wall</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <span class="pill noprint">Runs 100% in your browser · nothing uploaded</span>
+  </header>
+
+  <div class="grid">
+    <!-- ============ LEFT: INPUTS ============ -->
+    <div class="col-inputs noprint">
+      <div class="card">
+        <h2><span class="n">1</span> LED Product</h2>
+        <div class="field">
+          <label for="product">Product preset</label>
+          <select id="product"></select>
+          <div class="hint" id="productHint"></div>
+        </div>
+        <details class="custom" id="customWrap">
+          <summary>Edit / enter custom panel specs ▾</summary>
+          <div style="margin-top:12px">
+            <div class="row">
+              <div class="field"><label>Panel px — W</label><input type="number" id="pxW" min="1" step="1"></div>
+              <div class="field"><label>Panel px — H</label><input type="number" id="pxH" min="1" step="1"></div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Cabinet mm — W</label><input type="number" id="mmW" min="1" step="0.1"></div>
+              <div class="field"><label>Cabinet mm — H</label><input type="number" id="mmH" min="1" step="0.1"></div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Pixel pitch (mm)</label><input type="number" id="pitch" min="0.1" step="0.01"></div>
+              <div class="field"><label>Weight / cab (kg)</label><input type="number" id="weight" min="0" step="0.1"></div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Avg power / cab (W)</label><input type="number" id="pwrAvg" min="0" step="1"></div>
+              <div class="field"><label>Max power / cab (W)</label><input type="number" id="pwrMax" min="0" step="1"></div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">2</span> Wall Size</h2>
+        <div class="field">
+          <label>Size the wall by</label>
+          <div class="seg" id="sizeMode">
+            <button data-mode="panels" class="on">Panel count</button>
+            <button data-mode="meters">Target size</button>
+          </div>
+        </div>
+        <div id="byPanels">
+          <div class="row">
+            <div class="field"><label>Panels wide</label><input type="number" id="panelsW" min="1" step="1" value="10"></div>
+            <div class="field"><label>Panels tall</label><input type="number" id="panelsH" min="1" step="1" value="6"></div>
+          </div>
+        </div>
+        <div id="byMeters" style="display:none">
+          <div class="field">
+            <label>Units</label>
+            <div class="seg" id="unitMode">
+              <button data-u="m" class="on">Metres</button>
+              <button data-u="ft">Feet</button>
+            </div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Target width</label><input type="number" id="targetW" min="0.1" step="0.1" value="5"></div>
+            <div class="field"><label>Target height</label><input type="number" id="targetH" min="0.1" step="0.1" value="3"></div>
+          </div>
+          <div class="hint">Rounds to the nearest whole cabinet that fits the target.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">3</span> Processor</h2>
+        <div class="field">
+          <label for="processor">Video processor</label>
+          <select id="processor"></select>
+          <div class="hint" id="procHint"></div>
+        </div>
+        <div class="field">
+          <label>Frame rate / scan</label>
+          <select id="refresh">
+            <option value="60">60 Hz (baseline)</option>
+            <option value="50">50 Hz</option>
+            <option value="120">120 Hz (HFR)</option>
+            <option value="240">240 Hz</option>
+          </select>
+          <div class="hint">Higher frame rates lower the usable pixels per port proportionally.</div>
+        </div>
+        <details class="custom">
+          <summary>Edit processor capacity ▾</summary>
+          <div style="margin-top:12px">
+            <div class="row">
+              <div class="field"><label>Px / port @60Hz</label><input type="number" id="pxPort" min="1" step="1000"></div>
+              <div class="field"><label>Ports / unit</label><input type="number" id="portsUnit" min="1" step="1"></div>
+            </div>
+            <div class="hint">Port capacity is usually quoted at 8-bit / 60 Hz. Drop it for higher bit depth or HFR.</div>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">4</span> Export</h2>
+        <div class="btns">
+          <button class="btn acc" id="dlPng">⬇ Raster map (PNG)</button>
+          <button class="btn" id="dlJson">⬇ Spec (JSON)</button>
+          <button class="btn ghost" id="print">🖨 Print / PDF</button>
+          <button class="btn ghost" id="share">🔗 Copy link</button>
+        </div>
+        <div class="hint">The link encodes your full configuration so you can bookmark or hand it off.</div>
+      </div>
+    </div>
+
+    <!-- ============ RIGHT: RESULTS ============ -->
+    <div class="col-results">
+      <div class="card">
+        <h2>Raster summary <span id="cfgName" style="margin-left:auto;color:var(--txt);text-transform:none;letter-spacing:0;font-weight:600"></span></h2>
+        <div class="stats" id="stats"></div>
+        <div class="note" id="capNote" style="display:none"></div>
+      </div>
+
+      <div class="card">
+        <h2>Raster map</h2>
+        <div class="toolbar noprint">
+          <label class="chk"><input type="checkbox" id="showPorts" checked> Colour by processor port</label>
+          <label class="chk"><input type="checkbox" id="showGrid" checked> Panel grid</label>
+          <label class="chk"><input type="checkbox" id="showLabels" checked> Dimensions</label>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="map"></canvas>
+        </div>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="card">
+        <h2>Content / canvas fit</h2>
+        <div class="fitlist" id="fitlist"></div>
+        <div class="hint" style="margin-top:10px">A 1:1 pixel map (source canvas = raster resolution) is always ideal — anything else is scaled by the processor.</div>
+      </div>
+
+      <div class="card">
+        <h2>Full spec sheet</h2>
+        <table class="spec" id="specTable"></table>
+        <div class="note">⚠ Preset product &amp; processor figures are editable starting points, not a substitute for the manufacturer datasheet. Always verify pixel pitch, cabinet resolution, power and port capacity (at your bit depth &amp; frame rate) against the official spec before locking a design.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>George</strong> — a free utility for broadcast &amp; live-event engineers.
+    Build a wall from a product preset (or custom cabinet), get total resolution, physical size, weight, power and
+    processor port mapping, then export the raster map and spec sheet. No login, no upload — everything is computed locally.
+  </footer>
+</div>
+
+<script>
+//// ---------- Product library (editable starting points — verify vs datasheet) ----------
+// fields: pxW,pxH (cabinet pixels) · mmW,mmH (cabinet mm) · pitch(mm) · kg · pwrAvg,pwrMax (W per cabinet)
+const PRODUCTS = [
+  {id:'roe-bp2',  brand:'ROE Visual', name:'Black Pearl BP2 V2', pitch:2.84, pxW:176,pxH:176, mmW:500,mmH:500, kg:8.6,  pwrAvg:90, pwrMax:260},
+  {id:'roe-bq3',  brand:'ROE Visual', name:'Black Quartz BQ3',   pitch:3.47, pxW:144,pxH:144, mmW:500,mmH:500, kg:8.2,  pwrAvg:85, pwrMax:240},
+  {id:'roe-cb5',  brand:'ROE Visual', name:'Carbon CB5 MKII',    pitch:5.77, pxW:104,pxH:104, mmW:600,mmH:600, kg:9.0,  pwrAvg:95, pwrMax:300},
+  {id:'roe-bm4',  brand:'ROE Visual', name:'Black Marble BM4 (floor)', pitch:4.81, pxW:104,pxH:104, mmW:500,mmH:500, kg:12.5, pwrAvg:80, pwrMax:230},
+  {id:'roe-rb2',  brand:'ROE Visual', name:'Ruby RB2.3',         pitch:2.31, pxW:208,pxH:208, mmW:480,mmH:480, kg:7.8,  pwrAvg:88, pwrMax:250},
+  {id:'roe-v8',   brand:'ROE Visual', name:'Vanish V8T (transp.)',pitch:8.33, pxW:60, pxH:60,  mmW:500,mmH:500, kg:6.5,  pwrAvg:45, pwrMax:140},
+  {id:'absen-pl25',brand:'Absen',     name:'PL2.5 Pro',          pitch:2.5,  pxW:192,pxH:192, mmW:480,mmH:480, kg:8.0,  pwrAvg:90, pwrMax:260},
+  {id:'absen-pl39',brand:'Absen',     name:'PL3.9 Lite',         pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:7.2,  pwrAvg:80, pwrMax:230},
+  {id:'absen-ax15',brand:'Absen',     name:'AX1.5 Acclaim Plus', pitch:1.5,  pxW:320,pxH:180, mmW:480,mmH:270, kg:5.5,  pwrAvg:55, pwrMax:160},
+  {id:'uni-h26',  brand:'Unilumin',   name:'UpadIII H2.6',       pitch:2.6,  pxW:192,pxH:192, mmW:500,mmH:500, kg:7.6,  pwrAvg:90, pwrMax:260},
+  {id:'uni-h39',  brand:'Unilumin',   name:'UpadIV H3.9',        pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:7.4,  pwrAvg:82, pwrMax:240},
+  {id:'inf-er39', brand:'INFiLED',    name:'ER3.9 II',           pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:8.4,  pwrAvg:85, pwrMax:250},
+  {id:'inf-db15', brand:'INFiLED',    name:'DB1.5',              pitch:1.56, pxW:320,pxH:180, mmW:500,mmH:281.25, kg:6.8, pwrAvg:60, pwrMax:180},
+  {id:'lyd-cli',  brand:'Leyard',     name:'CLI 2.6',            pitch:2.6,  pxW:192,pxH:192, mmW:500,mmH:500, kg:8.8,  pwrAvg:88, pwrMax:260},
+  {id:'png-vt28', brand:'Pixled / Generic', name:'2.8 mm Rental Tile', pitch:2.84, pxW:176,pxH:176, mmW:500,mmH:500, kg:8.0, pwrAvg:85, pwrMax:250},
+  {id:'custom',   brand:'', name:'— Custom panel —', pitch:2.6, pxW:200,pxH:200, mmW:500,mmH:500, kg:8.0, pwrAvg:85, pwrMax:250}
+];
+
+//// ---------- Processor library (px/port @ ~8-bit/60Hz — editable, verify vs datasheet) ----------
+const PROCESSORS = [
+  {id:'bromp-sx40', name:'Brompton Tessera SX40',  pxPort:2621440, ports:4,  total:10485760, note:'4 × 10G outputs'},
+  {id:'bromp-s8',   name:'Brompton Tessera S8',    pxPort:1150000, ports:4,  total:4600000,  note:'4 outputs'},
+  {id:'bromp-t1',   name:'Brompton Tessera T1',    pxPort:1150000, ports:2,  total:2300000,  note:'2 outputs, compact'},
+  {id:'nova-mx40',  name:'NovaStar MX40 Pro',      pxPort:2300000, ports:4,  total:9000000,  note:'4 × 10G outputs'},
+  {id:'nova-mx30',  name:'NovaStar MX30',          pxPort:1300000, ports:4,  total:5200000,  note:'4 outputs'},
+  {id:'nova-vx1000',name:'NovaStar VX1000',        pxPort:650000,  ports:10, total:6500000,  note:'10 × 1G (Gigabit) ports'},
+  {id:'nova-vx600', name:'NovaStar VX600',         pxPort:650000,  ports:6,  total:3900000,  note:'6 × 1G ports'},
+  {id:'mega-helios',name:'Megapixel HELIOS',       pxPort:2400000, ports:8,  total:19000000, note:'8 × 10G outputs'},
+  {id:'gen-1g',     name:'Generic 1G port system', pxPort:655360,  ports:8,  total:5242880,  note:'~650k px / Gigabit port'},
+  {id:'custom',     name:'— Custom processor —',   pxPort:650000,  ports:8,  total:5200000,  note:''}
+];
+
+// Port colour palette
+const PALETTE = ['#00e0c6','#5b8cff','#ffb454','#ff6fae','#9d7bff','#5ad15a','#ff7a59','#4fd0e0','#e0c14f','#c44fe0','#4fe09a','#e04f6f'];
+
+//// ---------- State & elements ----------
+const $ = id => document.getElementById(id);
+let state = {
+  productId:'roe-bp2',
+  panel:null,            // resolved panel specs (after custom edits)
+  sizeMode:'panels',
+  panelsW:10, panelsH:6,
+  unit:'m', targetW:5, targetH:3,
+  processorId:'bromp-sx40',
+  proc:null,
+  refresh:60,
+  showPorts:true, showGrid:true, showLabels:true
+};
+
+//// ---------- Init dropdowns ----------
+function initSelects(){
+  const ps = $('product');
+  PRODUCTS.forEach(p=>{
+    const o=document.createElement('option');
+    o.value=p.id; o.textContent = p.brand? `${p.brand} — ${p.name}` : p.name;
+    ps.appendChild(o);
+  });
+  const pr = $('processor');
+  PROCESSORS.forEach(p=>{
+    const o=document.createElement('option');
+    o.value=p.id; o.textContent=p.name; pr.appendChild(o);
+  });
+}
+
+function loadPanelInputs(p){
+  $('pxW').value=p.pxW; $('pxH').value=p.pxH;
+  $('mmW').value=p.mmW; $('mmH').value=p.mmH;
+  $('pitch').value=p.pitch; $('weight').value=p.kg;
+  $('pwrAvg').value=p.pwrAvg; $('pwrMax').value=p.pwrMax;
+}
+function loadProcInputs(p){
+  $('pxPort').value=p.pxPort; $('portsUnit').value=p.ports;
+}
+
+// read current panel from inputs (custom-aware)
+function readPanel(){
+  return {
+    pxW:+$('pxW').value||1, pxH:+$('pxH').value||1,
+    mmW:+$('mmW').value||1, mmH:+$('mmH').value||1,
+    pitch:+$('pitch').value||0, kg:+$('weight').value||0,
+    pwrAvg:+$('pwrAvg').value||0, pwrMax:+$('pwrMax').value||0
+  };
+}
+function readProc(){
+  return { pxPort:+$('pxPort').value||1, ports:+$('portsUnit').value||1 };
+}
+
+//// ---------- Helpers ----------
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const fmt1 = n => (Math.round(n*10)/10).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});
+const fmt2 = n => (Math.round(n*100)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function gcd(a,b){a=Math.round(a);b=Math.round(b);while(b){[a,b]=[b,a%b];}return a||1;}
+function aspect(w,h){const g=gcd(w,h);let aw=w/g,ah=h/g;
+  // collapse ugly ratios to nearest common
+  if(aw>50||ah>50){const r=w/h;const commons=[[16,9],[16,10],[4,3],[21,9],[1,1],[3,2],[2,1],[32,9],[5,4]];
+    let best=commons[0],bd=1e9;commons.forEach(c=>{const d=Math.abs(c[0]/c[1]-r);if(d<bd){bd=d;best=c;}});
+    if(bd<0.02)return best[0]+':'+best[1];return (Math.round(r*100)/100)+':1';}
+  return aw+':'+ah;}
+
+//// ---------- Core compute ----------
+function compute(){
+  const panel = readPanel();
+  const proc  = readProc();
+  state.panel=panel; state.proc=proc;
+
+  // resolve panel count
+  let pw,ph;
+  if(state.sizeMode==='meters'){
+    const mult = state.unit==='ft'?304.8:1000; // to mm
+    const tW=(+$('targetW').value||0)*mult, tH=(+$('targetH').value||0)*mult;
+    pw=Math.max(1,Math.round(tW/panel.mmW));
+    ph=Math.max(1,Math.round(tH/panel.mmH));
+    $('panelsW').value=pw; $('panelsH').value=ph;
+  } else {
+    pw=Math.max(1,Math.floor(+$('panelsW').value||1));
+    ph=Math.max(1,Math.floor(+$('panelsH').value||1));
+  }
+  state.panelsW=pw; state.panelsH=ph;
+
+  const resW=pw*panel.pxW, resH=ph*panel.pxH;
+  const totalPx=resW*resH;
+  const physW=pw*panel.mmW, physH=ph*panel.mmH; // mm
+  const cabs=pw*ph;
+  const panelPx=panel.pxW*panel.pxH;
+
+  // processor capacity scaled by frame rate (baseline 60)
+  const rate=+state.refresh;
+  const pxPortEff=Math.floor(proc.pxPort*(60/rate));
+  const panelsPerPort=Math.max(1,Math.floor(pxPortEff/panelPx));
+  const portsNeeded=Math.ceil(cabs/panelsPerPort);
+  const unitsNeeded=Math.ceil(portsNeeded/proc.ports);
+  const portsAvail=unitsNeeded*proc.ports;
+  const portLoadPx=panelsPerPort*panelPx;
+  const portUtil=portLoadPx/pxPortEff;
+  const overByPixels=totalPx > pxPortEff*proc.ports; // exceeds a single unit?
+
+  return {panel,proc,pw,ph,resW,resH,totalPx,physW,physH,cabs,panelPx,
+          rate,pxPortEff,panelsPerPort,portsNeeded,unitsNeeded,portsAvail,portUtil};
+}
+
+//// ---------- Render ----------
+function render(){
+  const c=compute();
+  const p=c.panel;
+
+  // product name
+  const prod=PRODUCTS.find(x=>x.id===state.productId);
+  $('cfgName').textContent = prod && prod.id!=='custom' ? `${prod.brand} ${prod.name}` : 'Custom panel';
+
+  // stats
+  const physW_m=c.physW/1000, physH_m=c.physH/1000;
+  const physW_ft=c.physW/304.8, physH_ft=c.physH/304.8;
+  const weight=c.cabs*p.kg;
+  const pAvg=c.cabs*p.pwrAvg, pMax=c.cabs*p.pwrMax;
+  const ampsMax=pMax/120; // US 120V single phase estimate
+  const stats=[
+    {k:'Raster resolution', v:`${fmt(c.resW)} × ${fmt(c.resH)}`, sub:`${(c.totalPx/1e6).toFixed(2)} megapixels`, big:true},
+    {k:'Aspect ratio', v:aspect(c.resW,c.resH), sub:`${fmt2(c.resW/c.resH)} : 1`},
+    {k:'Physical size', v:`${fmt2(physW_m)} × ${fmt2(physH_m)} m`, sub:`${fmt1(physW_ft)} × ${fmt1(physH_ft)} ft`},
+    {k:'Cabinets', v:`${fmt(c.cabs)}`, sub:`${c.pw} wide × ${c.ph} tall`},
+    {k:'Processor ports', v:`${fmt(c.portsNeeded)}`, sub:`${fmt(c.panelsPerPort)} cab/port · ${(c.portUtil*100).toFixed(0)}% load`, big:true},
+    {k:'Processors', v:`${fmt(c.unitsNeeded)}`, sub:`${PROCESSORS.find(x=>x.id===state.processorId).name.replace(/^(Brompton |NovaStar |Megapixel )/,'')}`},
+    {k:'Weight', v:`${fmt(weight)} kg`, sub:`${fmt(weight*2.20462)} lb`},
+    {k:'Power (max)', v:`${fmt(pMax)} W`, sub:`≈ ${fmt(ampsMax)} A @120V · avg ${fmt(pAvg)} W`},
+  ];
+  $('stats').innerHTML = stats.map(s=>`<div class="stat ${s.big?'big':''}"><div class="k">${s.k}</div><div class="v">${s.v}</div><div class="sub">${s.sub}</div></div>`).join('');
+
+  // capacity note
+  const note=$('capNote');
+  const procName=PROCESSORS.find(x=>x.id===state.processorId).name;
+  if(c.unitsNeeded>1){
+    note.style.display='block';
+    note.innerHTML=`This raster needs <b>${c.unitsNeeded}× ${procName}</b> (${fmt(c.portsNeeded)} ports total). Plan how the canvas splits across processors and how they're genlocked/synced.`;
+  } else if(c.portUtil>0.92){
+    note.style.display='block';
+    note.innerHTML=`Ports are running at <b>${(c.portUtil*100).toFixed(0)}%</b> capacity at ${c.rate} Hz — little headroom for higher bit depth, HDR or frame-rate increases.`;
+  } else { note.style.display='none'; }
+
+  // content fit list
+  renderFit(c);
+
+  // spec table
+  renderSpec(c,{weight,pAvg,pMax,physW_m,physH_m,physW_ft,physH_ft,procName});
+
+  // legend
+  renderLegend(c);
+
+  // canvas
+  drawMap(c);
+
+  // sync state + url
+  state.refresh=+$('refresh').value;
+  updateUrl();
+}
+
+function renderFit(c){
+  const canvases=[
+    {n:'HD 1080',w:1920,h:1080},{n:'WQHD 1440',w:2560,h:1440},
+    {n:'UHD 4K',w:3840,h:2160},{n:'DCI 4K',w:4096,h:2160},
+    {n:'8K UHD',w:7680,h:4320}
+  ];
+  const out=canvases.map(cv=>{
+    let tag,txt;
+    if(cv.w===c.resW&&cv.h===c.resH){tag='exact';txt='1:1 exact match';}
+    else if(c.resW<=cv.w&&c.resH<=cv.h){
+      const occ=((c.resW*c.resH)/(cv.w*cv.h)*100);
+      tag='fits';txt=`fits 1:1 · uses ${occ.toFixed(0)}% of canvas`;
+    } else {
+      const scale=Math.min(cv.w/c.resW,cv.h/c.resH)*100;
+      tag='over';txt=`larger than canvas · scale to ${scale.toFixed(0)}%`;
+    }
+    return `<div class="fit"><span>${cv.n} <span style="color:var(--mut);font-family:var(--mono)">${cv.w}×${cv.h}</span></span><span class="tag ${tag}">${txt}</span></div>`;
+  }).join('');
+  // ideal source
+  const ideal=`<div class="fit" style="border-color:var(--acc)"><span><b>Native 1:1 source</b></span><span class="tag exact">${fmt(c.resW)}×${fmt(c.resH)}</span></div>`;
+  $('fitlist').innerHTML=ideal+out;
+}
+
+function renderSpec(c,e){
+  const p=c.panel;
+  const rows=[
+    ['Product', $('cfgName').textContent],
+    ['Pixel pitch', `${fmt2(p.pitch)} mm`],
+    ['Cabinet resolution', `${p.pxW} × ${p.pxH} px (${fmt(c.panelPx)} px)`],
+    ['Cabinet size', `${fmt1(p.mmW)} × ${fmt1(p.mmH)} mm`],
+    ['Wall layout', `${c.pw} × ${c.ph} = ${fmt(c.cabs)} cabinets`],
+    ['Raster resolution', `${fmt(c.resW)} × ${fmt(c.resH)} px`],
+    ['Total pixels', `${fmt(c.totalPx)} (${(c.totalPx/1e6).toFixed(2)} MP)`],
+    ['Aspect ratio', `${aspect(c.resW,c.resH)} (${fmt2(c.resW/c.resH)}:1)`],
+    ['Physical size', `${fmt2(e.physW_m)} × ${fmt2(e.physH_m)} m  ·  ${fmt1(e.physW_ft)} × ${fmt1(e.physH_ft)} ft`],
+    ['Weight', `${fmt(e.weight)} kg  ·  ${fmt(e.weight*2.20462)} lb`],
+    ['Power — average', `${fmt(e.pAvg)} W`],
+    ['Power — max', `${fmt(e.pMax)} W  (≈ ${fmt(e.pMax/120)} A @120V, ${fmt(e.pMax/230)} A @230V)`],
+    ['Processor', `${e.procName}`],
+    ['Frame rate', `${c.rate} Hz`],
+    ['Usable px / port', `${fmt(c.pxPortEff)} @ ${c.rate} Hz`],
+    ['Cabinets / port', `${fmt(c.panelsPerPort)}  (${(c.portUtil*100).toFixed(0)}% port load)`],
+    ['Ports required', `${fmt(c.portsNeeded)}`],
+    ['Processors required', `${fmt(c.unitsNeeded)}  (${fmt(c.portsAvail)} ports available)`],
+  ];
+  $('specTable').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+}
+
+// assign each cabinet (col-major serpentine) to a port group
+function portAssignments(c){
+  const map=[]; // map[col][row] = portIndex
+  for(let x=0;x<c.pw;x++)map[x]=[];
+  let order=[];
+  for(let x=0;x<c.pw;x++){
+    if(x%2===0){for(let y=0;y<c.ph;y++)order.push([x,y]);}
+    else{for(let y=c.ph-1;y>=0;y--)order.push([x,y]);}
+  }
+  order.forEach((cell,i)=>{ map[cell[0]][cell[1]]=Math.floor(i/c.panelsPerPort); });
+  return map;
+}
+
+function renderLegend(c){
+  const ports=c.portsNeeded;
+  if(!state.showPorts||ports<=1){$('legend').innerHTML=`<span><i style="background:#1d2533"></i> ${fmt(c.cabs)} cabinets · single port group</span>`;return;}
+  const shown=Math.min(ports,12);
+  let html='';
+  for(let i=0;i<shown;i++){
+    const unit=Math.floor(i/c.proc.ports)+1, portInUnit=(i%c.proc.ports)+1;
+    html+=`<span><i style="background:${PALETTE[i%PALETTE.length]}"></i> Port ${i+1} <small style="color:var(--mut)">(unit ${unit}·out ${portInUnit})</small></span>`;
+  }
+  if(ports>shown)html+=`<span style="color:var(--mut)">+${ports-shown} more ports…</span>`;
+  $('legend').innerHTML=html;
+}
+
+//// ---------- Canvas raster map ----------
+function drawMap(c){
+  const cv=$('map'); const ctx=cv.getContext('2d');
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const cssW=cv.parentElement.clientWidth-28; // padding
+  // keep aspect of wall + label margins
+  const pad={l:64,r:24,t:30,b:48};
+  const drawAspect=c.resW/c.resH;
+  let innerW=cssW-pad.l-pad.r;
+  let innerH=innerW/drawAspect;
+  const maxH=560;
+  if(innerH>maxH){innerH=maxH;innerW=innerH*drawAspect;}
+  const cssH=innerH+pad.t+pad.b;
+  cv.width=Math.round((innerW+pad.l+pad.r)*dpr);
+  cv.height=Math.round(cssH*dpr);
+  cv.style.width=(innerW+pad.l+pad.r)+'px';
+  cv.style.height=cssH+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,cv.width,cv.height);
+
+  const ox=pad.l, oy=pad.t, W=innerW, H=innerH;
+  const cw=W/c.pw, ch=H/c.ph;
+  const ports=state.showPorts?portAssignments(c):null;
+
+  // background
+  ctx.fillStyle='#0b0f16';ctx.fillRect(ox,oy,W,H);
+
+  // cabinets
+  for(let x=0;x<c.pw;x++){
+    for(let y=0;y<c.ph;y++){
+      const px=ox+x*cw, py=oy+y*ch;
+      if(ports){
+        const pi=ports[x][y];
+        ctx.fillStyle=PALETTE[pi%PALETTE.length];
+        ctx.globalAlpha=0.78;ctx.fillRect(px,py,cw,ch);ctx.globalAlpha=1;
+      }else{
+        ctx.fillStyle=(x+y)%2?'#121826':'#0e1320';ctx.fillRect(px,py,cw,ch);
+      }
+      if(state.showGrid){
+        ctx.strokeStyle='rgba(0,0,0,.55)';ctx.lineWidth=1;
+        ctx.strokeRect(px+.5,py+.5,cw,ch);
+      }
+    }
+  }
+  // outer frame
+  ctx.strokeStyle='#33405a';ctx.lineWidth=1.5;ctx.strokeRect(ox+.5,oy+.5,W,H);
+
+  if(state.showLabels){
+    ctx.fillStyle='#9fb0cc';ctx.font='600 12px '+getComputedStyle(document.body).fontFamily;
+    // top: width px
+    ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    ctx.fillText(`${fmt(c.resW)} px  ·  ${fmt2(c.physW/1000)} m`, ox+W/2, oy-12);
+    // bottom: cabinet count W
+    ctx.fillStyle='#6b7a96';ctx.font='500 11px '+getComputedStyle(document.body).fontFamily;
+    ctx.fillText(`${c.pw} cabinets wide`, ox+W/2, oy+H+18);
+    // left: height px (rotated)
+    ctx.save();ctx.translate(ox-40,oy+H/2);ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='#9fb0cc';ctx.font='600 12px '+getComputedStyle(document.body).fontFamily;ctx.textAlign='center';
+    ctx.fillText(`${fmt(c.resH)} px · ${fmt2(c.physH/1000)} m`,0,0);ctx.restore();
+    ctx.save();ctx.translate(ox-22,oy+H/2);ctx.rotate(-Math.PI/2);
+    ctx.fillStyle='#6b7a96';ctx.font='500 11px '+getComputedStyle(document.body).fontFamily;ctx.textAlign='center';
+    ctx.fillText(`${c.ph} tall`,0,0);ctx.restore();
+    // center overlay big res
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(255,255,255,.92)';
+    const fs=Math.max(14,Math.min(34,W/14));
+    ctx.font=`700 ${fs}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=8;
+    ctx.fillText(`${fmt(c.resW)} × ${fmt(c.resH)}`, ox+W/2, oy+H/2-fs*0.35);
+    ctx.shadowBlur=0;
+    ctx.font=`600 ${fs*0.42}px ${getComputedStyle(document.body).fontFamily}`;
+    ctx.fillStyle='rgba(255,255,255,.6)';
+    ctx.fillText(`${(c.totalPx/1e6).toFixed(2)} MP · ${aspect(c.resW,c.resH)}`, ox+W/2, oy+H/2+fs*0.55);
+  }
+}
+
+//// ---------- Export ----------
+function exportPng(){
+  const c=compute();
+  const src=$('map');           // current rendered map (already high-DPI)
+  const headH=92, footH=44;     // title + footer bands (in source px)
+  const off=document.createElement('canvas');
+  off.width=src.width;
+  off.height=src.height+headH+footH;
+  const x=off.getContext('2d');
+  x.fillStyle='#0a0d13';x.fillRect(0,0,off.width,off.height);
+  x.textBaseline='top';
+  x.fillStyle='#e7ecf4';x.font='700 30px sans-serif';
+  x.fillText('George', 28, 22);
+  x.fillStyle='#8b97ad';x.font='500 19px sans-serif';
+  x.fillText(`${$('cfgName').textContent}  ·  ${fmt(c.resW)}×${fmt(c.resH)} px  ·  ${c.pw}×${c.ph} cab  ·  ${fmt2(c.physW/1000)}×${fmt2(c.physH/1000)} m  ·  ${c.portsNeeded} ports`, 28, 60);
+  x.drawImage(src,0,headH);
+  x.fillStyle='#5a6a8c';x.font='400 15px sans-serif';
+  x.fillText('Generated with George — verify product & processor specs against the manufacturer datasheet.', 28, off.height-30);
+  const a=document.createElement('a');
+  a.download=`raster_${c.resW}x${c.resH}_${c.pw}x${c.ph}.png`;
+  a.href=off.toDataURL('image/png');a.click();
+}
+
+function exportJson(){
+  const c=compute();
+  const prod=PRODUCTS.find(x=>x.id===state.productId);
+  const data={
+    generatedBy:'George', date:new Date().toISOString(),
+    product:{ name:$('cfgName').textContent, pitch_mm:c.panel.pitch,
+      cabinet_px:[c.panel.pxW,c.panel.pxH], cabinet_mm:[c.panel.mmW,c.panel.mmH],
+      kg:c.panel.kg, power_avg_w:c.panel.pwrAvg, power_max_w:c.panel.pwrMax },
+    wall:{ cabinets:[c.pw,c.ph], total_cabinets:c.cabs },
+    raster:{ width_px:c.resW, height_px:c.resH, total_px:c.totalPx,
+      megapixels:+(c.totalPx/1e6).toFixed(3), aspect:aspect(c.resW,c.resH) },
+    physical:{ width_m:+(c.physW/1000).toFixed(3), height_m:+(c.physH/1000).toFixed(3),
+      weight_kg:Math.round(c.cabs*c.panel.kg),
+      power_avg_w:Math.round(c.cabs*c.panel.pwrAvg), power_max_w:Math.round(c.cabs*c.panel.pwrMax) },
+    processor:{ model:PROCESSORS.find(x=>x.id===state.processorId).name, frame_rate_hz:c.rate,
+      usable_px_per_port:c.pxPortEff, cabinets_per_port:c.panelsPerPort,
+      ports_required:c.portsNeeded, processors_required:c.unitsNeeded }
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.download=`raster_${c.resW}x${c.resH}.json`;
+  a.href=URL.createObjectURL(blob);a.click();
+}
+
+//// ---------- URL state ----------
+function updateUrl(){
+  const params=new URLSearchParams();
+  params.set('p',state.productId);
+  params.set('w',state.panelsW);params.set('h',state.panelsH);
+  params.set('proc',state.processorId);params.set('r',state.refresh);
+  if(state.productId==='custom'){
+    const p=state.panel;
+    params.set('c',[p.pxW,p.pxH,p.mmW,p.mmH,p.pitch,p.kg,p.pwrAvg,p.pwrMax].join(','));
+  }
+  history.replaceState(null,'','?'+params.toString());
+}
+function loadUrl(){
+  const q=new URLSearchParams(location.search);
+  if(q.get('p')){state.productId=q.get('p');$('product').value=state.productId;}
+  if(q.get('proc')){state.processorId=q.get('proc');$('processor').value=state.processorId;}
+  if(q.get('r')){state.refresh=+q.get('r');$('refresh').value=state.refresh;}
+  const prod=PRODUCTS.find(x=>x.id===state.productId)||PRODUCTS[0];
+  loadPanelInputs(prod);
+  if(state.productId==='custom'&&q.get('c')){
+    const v=q.get('c').split(',').map(Number);
+    ['pxW','pxH','mmW','mmH','pitch','weight','pwrAvg','pwrMax'].forEach((id,i)=>{if(!isNaN(v[i]))$(id).value=v[i];});
+  }
+  const proc=PROCESSORS.find(x=>x.id===state.processorId)||PROCESSORS[0];
+  loadProcInputs(proc);
+  if(q.get('w'))$('panelsW').value=+q.get('w');
+  if(q.get('h'))$('panelsH').value=+q.get('h');
+}
+
+//// ---------- Events ----------
+function bind(){
+  $('product').addEventListener('change',e=>{
+    state.productId=e.target.value;
+    const p=PRODUCTS.find(x=>x.id===state.productId);
+    loadPanelInputs(p);
+    $('productHint').textContent = p.id==='custom'? 'Enter your cabinet specs below.' :
+      `${fmt2(p.pitch)} mm · ${p.pxW}×${p.pxH} px · ${p.mmW}×${p.mmH} mm cabinet`;
+    if(p.id==='custom')$('customWrap').open=true;
+    render();
+  });
+  $('processor').addEventListener('change',e=>{
+    state.processorId=e.target.value;
+    const p=PROCESSORS.find(x=>x.id===state.processorId);
+    loadProcInputs(p);
+    $('procHint').textContent = p.note? `${p.note} · ${(p.total/1e6).toFixed(1)} MP total @60Hz` : '';
+    render();
+  });
+  // panel/proc inputs
+  ['pxW','pxH','mmW','mmH','pitch','weight','pwrAvg','pwrMax','pxPort','portsUnit','panelsW','panelsH','targetW','targetH']
+    .forEach(id=>$(id).addEventListener('input',render));
+  $('refresh').addEventListener('change',()=>{state.refresh=+$('refresh').value;render();});
+  // size mode
+  document.querySelectorAll('#sizeMode button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#sizeMode button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');state.sizeMode=b.dataset.mode;
+    $('byPanels').style.display=state.sizeMode==='panels'?'':'none';
+    $('byMeters').style.display=state.sizeMode==='meters'?'':'none';
+    render();
+  }));
+  document.querySelectorAll('#unitMode button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#unitMode button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');state.unit=b.dataset.u;render();
+  }));
+  // toggles
+  $('showPorts').addEventListener('change',e=>{state.showPorts=e.target.checked;render();});
+  $('showGrid').addEventListener('change',e=>{state.showGrid=e.target.checked;render();});
+  $('showLabels').addEventListener('change',e=>{state.showLabels=e.target.checked;render();});
+  // export
+  $('dlPng').addEventListener('click',exportPng);
+  $('dlJson').addEventListener('click',exportJson);
+  $('print').addEventListener('click',()=>window.print());
+  $('share').addEventListener('click',()=>{
+    navigator.clipboard.writeText(location.href).then(()=>{
+      const b=$('share');const t=b.textContent;b.textContent='✓ Copied!';setTimeout(()=>b.textContent=t,1400);
+    });
+  });
+  window.addEventListener('resize',()=>drawMap(compute()));
+}
+
+//// ---------- Boot ----------
+initSelects();
+loadUrl();
+bind();
+// init hints
+(function(){
+  const p=PRODUCTS.find(x=>x.id===state.productId);
+  $('productHint').textContent=p.id==='custom'?'Enter your cabinet specs below.':`${fmt2(p.pitch)} mm · ${p.pxW}×${p.pxH} px · ${p.mmW}×${p.mmH} mm cabinet`;
+  const pr=PROCESSORS.find(x=>x.id===state.processorId);
+  $('procHint').textContent=pr.note?`${pr.note} · ${(pr.total/1e6).toFixed(1)} MP total @60Hz`:'';
+})();
+render();
+</script>
+</body>
+</html>
