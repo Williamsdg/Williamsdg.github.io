@@ -266,9 +266,24 @@
       </div>
 
       <div class="card">
-        <h2>Raster map</h2>
+        <h2>Raster &amp; wiring map</h2>
         <div class="toolbar noprint">
-          <label class="chk"><input type="checkbox" id="showPorts" checked> Colour by processor port</label>
+          <label class="chk">Overlay
+            <select id="overlay" style="width:auto;padding:5px 8px">
+              <option value="ports">Data ports</option>
+              <option value="power">Power circuits</option>
+              <option value="none">None</option>
+            </select>
+          </label>
+          <label class="chk">Cabling
+            <select id="cabOrder" style="width:auto;padding:5px 8px">
+              <option value="col-tl">Columns · top-left start</option>
+              <option value="col-bl">Columns · bottom-left start</option>
+              <option value="row-tl">Rows · top-left start</option>
+              <option value="row-bl">Rows · bottom-left start</option>
+            </select>
+          </label>
+          <label class="chk"><input type="checkbox" id="showChain" checked> Chain order + arrows</label>
           <label class="chk"><input type="checkbox" id="showGrid" checked> Panel grid</label>
           <label class="chk"><input type="checkbox" id="showLabels" checked> Dimensions</label>
         </div>
@@ -276,6 +291,12 @@
           <canvas id="map"></canvas>
         </div>
         <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="card">
+        <h2>Patch schedule <span id="schedCfg" style="margin-left:auto;color:var(--txt);text-transform:none;letter-spacing:0;font-weight:600"></span></h2>
+        <table class="spec" id="schedTable"></table>
+        <div class="hint" style="margin-top:10px" id="schedHint"></div>
       </div>
 
       <div class="card">
@@ -350,7 +371,7 @@ let state = {
   proc:null,
   refresh:60,
   phase:1, circV:120, circA:20, loadPct:80, powerBasis:'max',
-  showPorts:true, showGrid:true, showLabels:true
+  overlay:'ports', cabOrder:'col-tl', showChain:true, showGrid:true, showLabels:true
 };
 
 //// ---------- Init dropdowns ----------
@@ -507,8 +528,9 @@ function render(){
   // spec table
   renderSpec(c,{weight,pAvg,pMax,physW_m,physH_m,physW_ft,physH_ft,procName});
 
-  // legend
+  // legend + patch schedule
   renderLegend(c);
+  renderSchedule(c);
 
   // canvas
   drawMap(c);
@@ -593,29 +615,92 @@ function renderSpec(c,e){
 }
 
 // assign each cabinet (col-major serpentine) to a port group
-function portAssignments(c){
-  const map=[]; // map[col][row] = portIndex
-  for(let x=0;x<c.pw;x++)map[x]=[];
-  let order=[];
-  for(let x=0;x<c.pw;x++){
-    if(x%2===0){for(let y=0;y<c.ph;y++)order.push([x,y]);}
-    else{for(let y=c.ph-1;y>=0;y--)order.push([x,y]);}
+// Walk the cabinet grid in physical cabling order (serpentine).
+function cablingOrder(pw,ph,mode){
+  const order=[];
+  if(mode==='col-tl'||mode==='col-bl'){
+    const startBottom=mode==='col-bl';
+    for(let x=0;x<pw;x++){
+      const even=x%2===0;
+      const down = startBottom ? !even : even;   // col0: TL→down, BL→up; then serpentine
+      if(down){for(let y=0;y<ph;y++)order.push([x,y]);}
+      else{for(let y=ph-1;y>=0;y--)order.push([x,y]);}
+    }
+  }else{
+    const startBottom=mode==='row-bl';
+    for(let r=0;r<ph;r++){
+      const y=startBottom?ph-1-r:r;
+      const right=r%2===0;                        // row0: →right; then serpentine
+      if(right){for(let x=0;x<pw;x++)order.push([x,y]);}
+      else{for(let x=pw-1;x>=0;x--)order.push([x,y]);}
+    }
   }
-  order.forEach((cell,i)=>{ map[cell[0]][cell[1]]=Math.floor(i/c.panelsPerPort); });
-  return map;
+  return order;
+}
+function cabLabel(mode){return{
+  'col-tl':'columns, top-left start','col-bl':'columns, bottom-left start',
+  'row-tl':'rows, top-left start','row-bl':'rows, bottom-left start'}[mode]||mode;}
+
+// Build chains/groups for the active (or given) overlay.
+function wiringPlan(c,overlay){
+  overlay = overlay||state.overlay;
+  const order=cablingOrder(c.pw,c.ph,state.cabOrder);
+  let groupSize, groupCount;
+  if(overlay==='power'){ groupSize=Math.max(1,c.cabsPerCircuit); groupCount=c.circuitsNeeded; }
+  else { groupSize=Math.max(1,c.panelsPerPort); groupCount=c.portsNeeded; }
+  const gIdx=[],seq=[];
+  for(let x=0;x<c.pw;x++){gIdx[x]=[];seq[x]=[];}
+  const groups=[];
+  order.forEach((cell,i)=>{
+    const g=Math.floor(i/groupSize), s=(i%groupSize)+1;
+    gIdx[cell[0]][cell[1]]=g; seq[cell[0]][cell[1]]=s;
+    (groups[g]=groups[g]||{idx:g,cells:[]}).cells.push(cell);
+  });
+  return {order,gIdx,seq,groups,groupSize,groupCount,overlay};
 }
 
 function renderLegend(c){
-  const ports=c.portsNeeded;
-  if(!state.showPorts||ports<=1){$('legend').innerHTML=`<span><i style="background:#1d2533"></i> ${fmt(c.cabs)} cabinets · single port group</span>`;return;}
-  const shown=Math.min(ports,12);
-  let html='';
+  if(state.overlay==='none'){$('legend').innerHTML=`<span><i style="background:#121826"></i> ${fmt(c.cabs)} cabinets · overlay off</span>`;return;}
+  const isPower=state.overlay==='power';
+  const count=isPower?c.circuitsNeeded:c.portsNeeded;
+  if(count<=1){$('legend').innerHTML=`<span><i style="background:${PALETTE[0]}"></i> ${fmt(c.cabs)} cabinets · single ${isPower?'circuit':'port group'}</span>`;return;}
+  const shown=Math.min(count,12); let html='';
   for(let i=0;i<shown;i++){
-    const unit=Math.floor(i/c.proc.ports)+1, portInUnit=(i%c.proc.ports)+1;
-    html+=`<span><i style="background:${PALETTE[i%PALETTE.length]}"></i> Port ${i+1} <small style="color:var(--mut)">(unit ${unit}·out ${portInUnit})</small></span>`;
+    const meta = isPower ? `<small style="color:var(--mut)">(${fmt(c.cabsPerCircuit)} cab)</small>`
+      : `<small style="color:var(--mut)">(unit ${Math.floor(i/c.proc.ports)+1}·out ${(i%c.proc.ports)+1})</small>`;
+    html+=`<span><i style="background:${PALETTE[i%PALETTE.length]}"></i> ${isPower?'Circuit':'Port'} ${i+1} ${meta}</span>`;
   }
-  if(ports>shown)html+=`<span style="color:var(--mut)">+${ports-shown} more ports…</span>`;
+  if(count>shown)html+=`<span style="color:var(--mut)">+${count-shown} more…</span>`;
   $('legend').innerHTML=html;
+}
+
+function renderSchedule(c){
+  const ov = state.overlay==='power'?'power':'ports';
+  const plan=wiringPlan(c,ov), isPower=ov==='power';
+  $('schedCfg').textContent = `${plan.groups.length} ${isPower?'circuits':'ports'} · ${plan.groupSize} cab each`;
+  let rows=`<tr><td>${isPower?'Circuit':'Port'}</td><td>${isPower?'Breaker':'Source'}</td><td style="text-align:right">Cabs</td><td style="text-align:right">Start → End</td></tr>`;
+  const max=Math.min(plan.groups.length,64);
+  for(let i=0;i<max;i++){
+    const g=plan.groups[i], s=g.cells[0], e=g.cells[g.cells.length-1];
+    const src = isPower ? `${state.phase===3?'3φ':'1φ'} ${fmt(c.V)}V·${c.A}A` : `U${Math.floor(i/c.proc.ports)+1}·O${(i%c.proc.ports)+1}`;
+    rows+=`<tr><td>${isPower?'Ckt':'Port'} ${i+1}</td><td>${src}</td><td style="text-align:right">${g.cells.length}</td><td style="text-align:right">C${s[0]+1}R${s[1]+1} → C${e[0]+1}R${e[1]+1}</td></tr>`;
+  }
+  $('schedTable').innerHTML=rows;
+  const more = plan.groups.length>max ? ` · showing first ${max}` : '';
+  $('schedHint').textContent = `Cabling order: ${cabLabel(state.cabOrder)}. Columns C1…C${c.pw} left→right, rows R1…R${c.ph} top→bottom${more}.`;
+}
+
+// Schedule rows for export (per overlay).
+function schedule(c,overlay){
+  const plan=wiringPlan(c,overlay);
+  return plan.groups.map((g,i)=>{
+    const s=g.cells[0], e=g.cells[g.cells.length-1];
+    const row={ group:i+1, cabinets:g.cells.length,
+      start:{col:s[0]+1,row:s[1]+1}, end:{col:e[0]+1,row:e[1]+1} };
+    if(overlay==='power') row.breaker=`${c.A}A ${c.phase===3?'3-phase':'single-phase'} ${c.V}V`;
+    else row.source=`unit ${Math.floor(i/c.proc.ports)+1} output ${(i%c.proc.ports)+1}`;
+    return row;
+  });
 }
 
 //// ---------- Canvas raster map ----------
@@ -640,7 +725,8 @@ function drawMap(c){
 
   const ox=pad.l, oy=pad.t, W=innerW, H=innerH;
   const cw=W/c.pw, ch=H/c.ph;
-  const ports=state.showPorts?portAssignments(c):null;
+  const plan = state.overlay!=='none' ? wiringPlan(c) : null;
+  const centerOf=(x,y)=>[ox+(x+0.5)*cw, oy+(y+0.5)*ch];
 
   // background
   ctx.fillStyle='#0b0f16';ctx.fillRect(ox,oy,W,H);
@@ -649,10 +735,9 @@ function drawMap(c){
   for(let x=0;x<c.pw;x++){
     for(let y=0;y<c.ph;y++){
       const px=ox+x*cw, py=oy+y*ch;
-      if(ports){
-        const pi=ports[x][y];
-        ctx.fillStyle=PALETTE[pi%PALETTE.length];
-        ctx.globalAlpha=0.78;ctx.fillRect(px,py,cw,ch);ctx.globalAlpha=1;
+      if(plan){
+        ctx.fillStyle=PALETTE[plan.gIdx[x][y]%PALETTE.length];
+        ctx.globalAlpha=0.74;ctx.fillRect(px,py,cw,ch);ctx.globalAlpha=1;
       }else{
         ctx.fillStyle=(x+y)%2?'#121826':'#0e1320';ctx.fillRect(px,py,cw,ch);
       }
@@ -664,6 +749,47 @@ function drawMap(c){
   }
   // outer frame
   ctx.strokeStyle='#33405a';ctx.lineWidth=1.5;ctx.strokeRect(ox+.5,oy+.5,W,H);
+
+  // wiring chains + arrows + sequence numbers
+  if(plan && state.showChain){
+    const order=plan.order;
+    const segLen=Math.min(cw,ch);
+    ctx.lineCap='round';ctx.lineJoin='round';
+    for(let i=1;i<order.length;i++){
+      const a=order[i-1], b=order[i];
+      if(plan.gIdx[a[0]][a[1]]!==plan.gIdx[b[0]][b[1]])continue; // chain breaks at group boundary
+      const [ax,ay]=centerOf(a[0],a[1]), [bx,by]=centerOf(b[0],b[1]);
+      ctx.strokeStyle='rgba(7,10,15,.55)';ctx.lineWidth=3.4;
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,.92)';ctx.lineWidth=1.7;
+      ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+      // arrowhead at 62% along the segment
+      const ang=Math.atan2(by-ay,bx-ax), hx=ax+(bx-ax)*0.62, hy=ay+(by-ay)*0.62;
+      const s=Math.max(4,Math.min(8,segLen*0.22));
+      ctx.fillStyle='rgba(255,255,255,.95)';ctx.beginPath();
+      ctx.moveTo(hx,hy);
+      ctx.lineTo(hx-s*Math.cos(ang-0.5),hy-s*Math.sin(ang-0.5));
+      ctx.lineTo(hx-s*Math.cos(ang+0.5),hy-s*Math.sin(ang+0.5));
+      ctx.closePath();ctx.fill();
+    }
+    // start markers (chain origin per group)
+    plan.groups.forEach(g=>{
+      const [sx,sy]=centerOf(g.cells[0][0],g.cells[0][1]);
+      const r=Math.max(4,Math.min(9,segLen*0.26));
+      ctx.fillStyle='#04211d';ctx.strokeStyle='#00e0c6';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(sx,sy,r,0,Math.PI*2);ctx.fill();ctx.stroke();
+    });
+    // sequence numbers when cells are large enough
+    if(cw>=30&&ch>=20){
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.font=`700 ${Math.min(13,segLen*0.34)}px ${getComputedStyle(document.body).fontFamily}`;
+      for(let x=0;x<c.pw;x++)for(let y=0;y<c.ph;y++){
+        const [cx,cy]=centerOf(x,y);
+        ctx.fillStyle='rgba(7,10,15,.85)';ctx.fillText(plan.seq[x][y], cx+0.6, cy+0.6);
+        ctx.fillStyle='rgba(255,255,255,.95)';ctx.fillText(plan.seq[x][y], cx, cy);
+      }
+    }
+  }
 
   if(state.showLabels){
     ctx.fillStyle='#9fb0cc';ctx.font='600 12px '+getComputedStyle(document.body).fontFamily;
@@ -680,7 +806,8 @@ function drawMap(c){
     ctx.save();ctx.translate(ox-22,oy+H/2);ctx.rotate(-Math.PI/2);
     ctx.fillStyle='#6b7a96';ctx.font='500 11px '+getComputedStyle(document.body).fontFamily;ctx.textAlign='center';
     ctx.fillText(`${c.ph} tall`,0,0);ctx.restore();
-    // center overlay big res
+    // center overlay big res — hidden when chain numbers would clash
+    if(!(plan && state.showChain)){
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillStyle='rgba(255,255,255,.92)';
     const fs=Math.max(14,Math.min(34,W/14));
@@ -691,6 +818,7 @@ function drawMap(c){
     ctx.font=`600 ${fs*0.42}px ${getComputedStyle(document.body).fontFamily}`;
     ctx.fillStyle='rgba(255,255,255,.6)';
     ctx.fillText(`${(c.totalPx/1e6).toFixed(2)} MP · ${aspect(c.resW,c.resH)}`, ox+W/2, oy+H/2+fs*0.55);
+    }
   }
 }
 
@@ -738,7 +866,10 @@ function exportJson(){
       load_limit_pct:Math.round(c.loadFrac*100), sized_by:state.powerBasis,
       usable_a_per_circuit:+c.usableAmps.toFixed(1), watts_per_circuit:Math.round(c.wattsPerCircuit),
       cabinets_per_circuit:c.cabsPerCircuit, circuits_required:c.circuitsNeeded,
-      total_line_current_a:Math.round(c.totalLineAmps) }
+      total_line_current_a:Math.round(c.totalLineAmps) },
+    wiring:{ cabling_order:state.cabOrder,
+      data_chains: schedule(c,'ports'),
+      power_chains: schedule(c,'power') }
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
@@ -753,6 +884,7 @@ function updateUrl(){
   params.set('w',state.panelsW);params.set('h',state.panelsH);
   params.set('proc',state.processorId);params.set('r',state.refresh);
   params.set('pw',[state.phase,state.circV,state.circA,state.loadPct,state.powerBasis].join(','));
+  params.set('m',[state.overlay,state.cabOrder,state.showChain?1:0].join(','));
   if(state.productId==='custom'){
     const p=state.panel;
     params.set('c',[p.pxW,p.pxH,p.mmW,p.mmH,p.pitch,p.kg,p.pwrAvg,p.pwrMax].join(','));
@@ -781,6 +913,12 @@ function loadUrl(){
     $('circV').value=state.circV; $('circA').value=state.circA;
     $('loadPct').value=state.loadPct; $('powerBasis').value=state.powerBasis;
     document.querySelectorAll('#phaseMode button').forEach(b=>b.classList.toggle('on',+b.dataset.ph===state.phase));
+  }
+  if(q.get('m')){
+    const v=q.get('m').split(',');
+    if(['ports','power','none'].includes(v[0])){state.overlay=v[0];$('overlay').value=v[0];}
+    if(['col-tl','col-bl','row-tl','row-bl'].includes(v[1])){state.cabOrder=v[1];$('cabOrder').value=v[1];}
+    state.showChain = v[2]!=='0'; $('showChain').checked=state.showChain;
   }
 }
 
@@ -829,8 +967,10 @@ function bind(){
     document.querySelectorAll('#unitMode button').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');state.unit=b.dataset.u;render();
   }));
-  // toggles
-  $('showPorts').addEventListener('change',e=>{state.showPorts=e.target.checked;render();});
+  // map / wiring toggles
+  $('overlay').addEventListener('change',e=>{state.overlay=e.target.value;render();});
+  $('cabOrder').addEventListener('change',e=>{state.cabOrder=e.target.value;render();});
+  $('showChain').addEventListener('change',e=>{state.showChain=e.target.checked;render();});
   $('showGrid').addEventListener('change',e=>{state.showGrid=e.target.checked;render();});
   $('showLabels').addEventListener('change',e=>{state.showLabels=e.target.checked;render();});
   // export
