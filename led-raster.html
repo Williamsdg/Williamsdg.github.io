@@ -146,6 +146,17 @@
               <div class="field"><label>Avg power / cab (W)</label><input type="number" id="pwrAvg" min="0" step="1"></div>
               <div class="field"><label>Max power / cab (W)</label><input type="number" id="pwrMax" min="0" step="1"></div>
             </div>
+            <div class="row">
+              <div class="field"><label>Brightness (nits)</label><input type="number" id="nits" min="0" step="50"></div>
+              <div class="field">
+                <label>Environment</label>
+                <select id="env"><option value="indoor">Indoor</option><option value="outdoor">Outdoor</option></select>
+              </div>
+            </div>
+            <div class="row">
+              <div class="field"><label>Data ports / cab</label><input type="number" id="dataPorts" min="1" step="1"></div>
+              <div class="field"><label>Power ports / cab</label><input type="number" id="pwrPorts" min="1" step="1"></div>
+            </div>
           </div>
         </details>
       </div>
@@ -178,6 +189,11 @@
             <div class="field"><label>Target height</label><input type="number" id="targetH" min="0.1" step="0.1" value="3"></div>
           </div>
           <div class="hint">Rounds to the nearest whole cabinet that fits the target.</div>
+        </div>
+        <div class="field" style="margin-top:6px">
+          <label>Nearest viewer distance (m)</label>
+          <input type="number" id="nearViewer" min="0.1" step="0.5" value="5">
+          <div class="hint">Used to judge whether the pixel pitch is sharp enough for the closest seats.</div>
         </div>
       </div>
 
@@ -260,6 +276,12 @@
       </div>
 
       <div class="card">
+        <h2>Sightlines, brightness &amp; heat</h2>
+        <div class="stats" id="envStats"></div>
+        <div class="note" id="envNote" style="display:none"></div>
+      </div>
+
+      <div class="card">
         <h2>Power &amp; circuit plan <span id="powerCfg" style="margin-left:auto;color:var(--txt);text-transform:none;letter-spacing:0;font-weight:600"></span></h2>
         <div class="stats" id="powerStats"></div>
         <div class="note" id="powerNote" style="display:none"></div>
@@ -322,24 +344,40 @@
 
 <script>
 //// ---------- Product library (editable starting points — verify vs datasheet) ----------
-// fields: pxW,pxH (cabinet pixels) · mmW,mmH (cabinet mm) · pitch(mm) · kg · pwrAvg,pwrMax (W per cabinet)
+// fields: pxW,pxH (cabinet px) · mmW,mmH (cabinet mm) · pitch(mm) · kg · pwrAvg,pwrMax (W/cab)
+//         nits (peak brightness) · env (indoor|outdoor) · dataPorts,pwrPorts (connectors/cab)
 const PRODUCTS = [
-  {id:'roe-bp2',  brand:'ROE Visual', name:'Black Pearl BP2 V2', pitch:2.84, pxW:176,pxH:176, mmW:500,mmH:500, kg:8.6,  pwrAvg:90, pwrMax:260},
-  {id:'roe-bq3',  brand:'ROE Visual', name:'Black Quartz BQ3',   pitch:3.47, pxW:144,pxH:144, mmW:500,mmH:500, kg:8.2,  pwrAvg:85, pwrMax:240},
-  {id:'roe-cb5',  brand:'ROE Visual', name:'Carbon CB5 MKII',    pitch:5.77, pxW:104,pxH:104, mmW:600,mmH:600, kg:9.0,  pwrAvg:95, pwrMax:300},
-  {id:'roe-bm4',  brand:'ROE Visual', name:'Black Marble BM4 (floor)', pitch:4.81, pxW:104,pxH:104, mmW:500,mmH:500, kg:12.5, pwrAvg:80, pwrMax:230},
-  {id:'roe-rb2',  brand:'ROE Visual', name:'Ruby RB2.3',         pitch:2.31, pxW:208,pxH:208, mmW:480,mmH:480, kg:7.8,  pwrAvg:88, pwrMax:250},
-  {id:'roe-v8',   brand:'ROE Visual', name:'Vanish V8T (transp.)',pitch:8.33, pxW:60, pxH:60,  mmW:500,mmH:500, kg:6.5,  pwrAvg:45, pwrMax:140},
-  {id:'absen-pl25',brand:'Absen',     name:'PL2.5 Pro',          pitch:2.5,  pxW:192,pxH:192, mmW:480,mmH:480, kg:8.0,  pwrAvg:90, pwrMax:260},
-  {id:'absen-pl39',brand:'Absen',     name:'PL3.9 Lite',         pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:7.2,  pwrAvg:80, pwrMax:230},
-  {id:'absen-ax15',brand:'Absen',     name:'AX1.5 Acclaim Plus', pitch:1.5,  pxW:320,pxH:180, mmW:480,mmH:270, kg:5.5,  pwrAvg:55, pwrMax:160},
-  {id:'uni-h26',  brand:'Unilumin',   name:'UpadIII H2.6',       pitch:2.6,  pxW:192,pxH:192, mmW:500,mmH:500, kg:7.6,  pwrAvg:90, pwrMax:260},
-  {id:'uni-h39',  brand:'Unilumin',   name:'UpadIV H3.9',        pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:7.4,  pwrAvg:82, pwrMax:240},
-  {id:'inf-er39', brand:'INFiLED',    name:'ER3.9 II',           pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:8.4,  pwrAvg:85, pwrMax:250},
-  {id:'inf-db15', brand:'INFiLED',    name:'DB1.5',              pitch:1.56, pxW:320,pxH:180, mmW:500,mmH:281.25, kg:6.8, pwrAvg:60, pwrMax:180},
-  {id:'lyd-cli',  brand:'Leyard',     name:'CLI 2.6',            pitch:2.6,  pxW:192,pxH:192, mmW:500,mmH:500, kg:8.8,  pwrAvg:88, pwrMax:260},
-  {id:'png-vt28', brand:'Pixled / Generic', name:'2.8 mm Rental Tile', pitch:2.84, pxW:176,pxH:176, mmW:500,mmH:500, kg:8.0, pwrAvg:85, pwrMax:250},
-  {id:'custom',   brand:'', name:'— Custom panel —', pitch:2.6, pxW:200,pxH:200, mmW:500,mmH:500, kg:8.0, pwrAvg:85, pwrMax:250}
+  {id:'roe-bp2',  brand:'ROE Visual', name:'Black Pearl BP2 V2', pitch:2.84, pxW:176,pxH:176, mmW:500,mmH:500, kg:8.6,  pwrAvg:90, pwrMax:260, nits:1500, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'roe-bq3',  brand:'ROE Visual', name:'Black Quartz BQ3',   pitch:3.47, pxW:144,pxH:144, mmW:500,mmH:500, kg:8.2,  pwrAvg:85, pwrMax:240, nits:1500, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'roe-cb5',  brand:'ROE Visual', name:'Carbon CB5 MKII',    pitch:5.77, pxW:104,pxH:104, mmW:600,mmH:600, kg:9.0,  pwrAvg:95, pwrMax:300, nits:1500, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'roe-bm4',  brand:'ROE Visual', name:'Black Marble BM4 (floor)', pitch:4.81, pxW:104,pxH:104, mmW:500,mmH:500, kg:12.5, pwrAvg:80, pwrMax:230, nits:1200, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'roe-rb2',  brand:'ROE Visual', name:'Ruby RB2.3',         pitch:2.31, pxW:208,pxH:208, mmW:480,mmH:480, kg:7.8,  pwrAvg:88, pwrMax:250, nits:1500, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'roe-v8',   brand:'ROE Visual', name:'Vanish V8T (transp.)',pitch:8.33, pxW:60, pxH:60,  mmW:500,mmH:500, kg:6.5,  pwrAvg:45, pwrMax:140, nits:1000, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'absen-pl25',brand:'Absen',     name:'PL2.5 Pro',          pitch:2.5,  pxW:192,pxH:192, mmW:480,mmH:480, kg:8.0,  pwrAvg:90, pwrMax:260, nits:1200, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'absen-pl39',brand:'Absen',     name:'PL3.9 Lite',         pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:7.2,  pwrAvg:80, pwrMax:230, nits:1000, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'absen-ax15',brand:'Absen',     name:'AX1.5 Acclaim Plus', pitch:1.5,  pxW:320,pxH:180, mmW:480,mmH:270, kg:5.5,  pwrAvg:55, pwrMax:160, nits:1000, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'absen-pl16',brand:'Absen',     name:'PL1.6 Pro',          pitch:1.5,  pxW:300,pxH:300, mmW:480,mmH:480, kg:7.8,  pwrAvg:85, pwrMax:240, nits:1200, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'absen-ad5', brand:'Absen',     name:'AD5 (outdoor)',      pitch:5.95, pxW:84, pxH:84,  mmW:500,mmH:500, kg:9.5,  pwrAvg:160,pwrMax:500, nits:5500, env:'outdoor',dataPorts:1, pwrPorts:1},
+  {id:'uni-h26',  brand:'Unilumin',   name:'UpadIII H2.6',       pitch:2.6,  pxW:192,pxH:192, mmW:500,mmH:500, kg:7.6,  pwrAvg:90, pwrMax:260, nits:1200, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'uni-h39',  brand:'Unilumin',   name:'UpadIV H3.9',        pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:7.4,  pwrAvg:82, pwrMax:240, nits:1000, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'uni-uslim2',brand:'Unilumin',  name:'Uslim II 2.6',       pitch:2.6,  pxW:168,pxH:168, mmW:437.5,mmH:437.5, kg:6.5, pwrAvg:75, pwrMax:220, nits:800, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'inf-er39', brand:'INFiLED',    name:'ER3.9 II',           pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:8.4,  pwrAvg:85, pwrMax:250, nits:1200, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'inf-db15', brand:'INFiLED',    name:'DB1.5',              pitch:1.56, pxW:320,pxH:180, mmW:500,mmH:281.25, kg:6.8, pwrAvg:60, pwrMax:180, nits:1000, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'inf-wp39', brand:'INFiLED',    name:'WP3.9 (outdoor)',    pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:11.0, pwrAvg:180,pwrMax:560, nits:5000, env:'outdoor',dataPorts:1, pwrPorts:1},
+  {id:'lyd-cli',  brand:'Leyard',     name:'CLI 2.6',            pitch:2.6,  pxW:192,pxH:192, mmW:500,mmH:500, kg:8.8,  pwrAvg:88, pwrMax:260, nits:1200, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'planar-dle15',brand:'Planar',  name:'DLE 1.5',            pitch:1.5,  pxW:320,pxH:180, mmW:480,mmH:270, kg:5.4,  pwrAvg:55, pwrMax:165, nits:600,  env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'samsung-if25',brand:'Samsung', name:'IF025 (The Wall)',   pitch:2.5,  pxW:192,pxH:192, mmW:480,mmH:480, kg:7.4,  pwrAvg:85, pwrMax:230, nits:1600, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'lg-lsab',  brand:'LG',         name:'LSAB 1.5',           pitch:1.5,  pxW:320,pxH:180, mmW:480,mmH:270, kg:5.6,  pwrAvg:55, pwrMax:170, nits:800,  env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'dak-fxi',  brand:'Daktronics', name:'FX-2.5',             pitch:2.5,  pxW:192,pxH:192, mmW:480,mmH:480, kg:9.0,  pwrAvg:95, pwrMax:280, nits:1500, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'aoto-m25', brand:'AOTO',       name:'Mb2.5',              pitch:2.5,  pxW:192,pxH:192, mmW:480,mmH:480, kg:7.5,  pwrAvg:85, pwrMax:250, nits:1500, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'liantronics-flu',brand:'Liantronics',name:'FLU3.9 (outdoor)',pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:10.5,pwrAvg:175,pwrMax:550, nits:6000, env:'outdoor',dataPorts:1, pwrPorts:1},
+  {id:'esd-her68',brand:'Esdlumen',   name:'Hercules 6.8 (outdoor)',pitch:6.8, pxW:128,pxH:72, mmW:870.4,mmH:489.6, kg:10.0,pwrAvg:150,pwrMax:480, nits:5500, env:'outdoor',dataPorts:1, pwrPorts:1},
+  {id:'uniview-aq39',brand:'Uniview', name:'AQ3.9',              pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:7.0,  pwrAvg:80, pwrMax:240, nits:1000, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'thor-canvas15',brand:'Thor',   name:'Canvas 1.5',         pitch:1.5,  pxW:320,pxH:160, mmW:480,mmH:240, kg:4.8,  pwrAvg:50, pwrMax:150, nits:800,  env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'thor-terra26',brand:'Thor',    name:'Terra 2.6',          pitch:2.6,  pxW:192,pxH:192, mmW:500,mmH:500, kg:7.8,  pwrAvg:88, pwrMax:250, nits:1500, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'gen-26',   brand:'Generic',    name:'2.6 mm Rental Tile', pitch:2.6,  pxW:192,pxH:192, mmW:500,mmH:500, kg:8.0,  pwrAvg:85, pwrMax:250, nits:1200, env:'indoor', dataPorts:1, pwrPorts:1},
+  {id:'gen-39out',brand:'Generic',    name:'3.9 mm Outdoor Tile',pitch:3.91, pxW:128,pxH:128, mmW:500,mmH:500, kg:11.0, pwrAvg:180,pwrMax:560, nits:5000, env:'outdoor',dataPorts:1, pwrPorts:1},
+  {id:'custom',   brand:'', name:'— Custom panel —', pitch:2.6, pxW:200,pxH:200, mmW:500,mmH:500, kg:8.0, pwrAvg:85, pwrMax:250, nits:1200, env:'indoor', dataPorts:1, pwrPorts:1}
 ];
 
 //// ---------- Processor library (px/port @ ~8-bit/60Hz — editable, verify vs datasheet) ----------
@@ -371,6 +409,7 @@ let state = {
   proc:null,
   refresh:60,
   phase:1, circV:120, circA:20, loadPct:80, powerBasis:'max',
+  nearViewer:5,
   overlay:'ports', cabOrder:'col-tl', showChain:true, showGrid:true, showLabels:true
 };
 
@@ -394,6 +433,9 @@ function loadPanelInputs(p){
   $('mmW').value=p.mmW; $('mmH').value=p.mmH;
   $('pitch').value=p.pitch; $('weight').value=p.kg;
   $('pwrAvg').value=p.pwrAvg; $('pwrMax').value=p.pwrMax;
+  $('nits').value=p.nits!=null?p.nits:1200;
+  $('env').value=p.env||'indoor';
+  $('dataPorts').value=p.dataPorts||1; $('pwrPorts').value=p.pwrPorts||1;
 }
 function loadProcInputs(p){
   $('pxPort').value=p.pxPort; $('portsUnit').value=p.ports;
@@ -405,7 +447,9 @@ function readPanel(){
     pxW:+$('pxW').value||1, pxH:+$('pxH').value||1,
     mmW:+$('mmW').value||1, mmH:+$('mmH').value||1,
     pitch:+$('pitch').value||0, kg:+$('weight').value||0,
-    pwrAvg:+$('pwrAvg').value||0, pwrMax:+$('pwrMax').value||0
+    pwrAvg:+$('pwrAvg').value||0, pwrMax:+$('pwrMax').value||0,
+    nits:+$('nits').value||0, env:$('env').value||'indoor',
+    dataPorts:Math.max(1,+$('dataPorts').value||1), pwrPorts:Math.max(1,+$('pwrPorts').value||1)
   };
 }
 function readProc(){
@@ -475,10 +519,29 @@ function compute(){
   const totalLineAmps = sizingPower/(phaseK*V);          // total line current draw
   const ampsPerCircuit = circuitsNeeded? (sizingPower/(phaseK*V))/circuitsNeeded : 0;
 
+  // ---- sightlines, brightness, heat, connectors ----
+  const diagMM = Math.hypot(physW,physH);
+  const diagM = diagMM/1000, diagFt = diagMM/304.8, diagIn = diagMM/25.4;
+  const pitch = panel.pitch;
+  // viewing-distance rules of thumb (metres):
+  const minDist = pitch;            // ~1 m per mm of pitch — image reads solid
+  const optDist = pitch*2;          // comfortable / recommended seating
+  const retinaDist = pitch*3.438;   // pixels fall below 1 arc-minute (visual acuity)
+  const near = Math.max(0.1,+state.nearViewer||0.1);
+  const pitchOK = near >= minDist;  // viewer not closer than the solid-image distance
+  const recPitchMax = near;         // for that nearest seat, pitch should be ≤ near(m) in mm
+  // heat load
+  const btuMax = pMax*3.412, btuAvg = pAvg*3.412;
+  const coolingTons = btuMax/12000;
+  // connectors
+  const dataConn = cabs*panel.dataPorts, pwrConn = cabs*panel.pwrPorts;
+
   return {panel,proc,pw,ph,resW,resH,totalPx,physW,physH,cabs,panelPx,
           rate,pxPortEff,panelsPerPort,portsNeeded,unitsNeeded,portsAvail,portUtil,
           pAvg,pMax,phase,V,A,loadFrac,sizingPower,wattsPerCircuit,circuitsNeeded,
-          cabsPerCircuit,totalLineAmps,usableAmps};
+          cabsPerCircuit,totalLineAmps,usableAmps,
+          diagM,diagFt,diagIn,pitch,minDist,optDist,retinaDist,near,pitchOK,recPitchMax,
+          btuMax,btuAvg,coolingTons,dataConn,pwrConn};
 }
 
 //// ---------- Render ----------
@@ -519,6 +582,9 @@ function render(){
     note.innerHTML=`Ports are running at <b>${(c.portUtil*100).toFixed(0)}%</b> capacity at ${c.rate} Hz — little headroom for higher bit depth, HDR or frame-rate increases.`;
   } else { note.style.display='none'; }
 
+  // sightlines / brightness / heat
+  renderEnv(c);
+
   // power & circuits
   renderPower(c);
 
@@ -538,6 +604,32 @@ function render(){
   // sync state + url
   state.refresh=+$('refresh').value;
   updateUrl();
+}
+
+function renderEnv(c){
+  const p=c.panel;
+  const envTxt = (p.env==='outdoor'?'Outdoor':'Indoor');
+  const stats=[
+    {k:'Pixel pitch', v:`${fmt2(c.pitch)} mm`, sub:`${envTxt} · ${fmt(p.nits)} nits`, big:true},
+    {k:'Screen diagonal', v:`${fmt1(c.diagM)} m`, sub:`${fmt1(c.diagFt)} ft · ${fmt(c.diagIn)}"`},
+    {k:'Min. viewing dist.', v:`${fmt1(c.minDist)} m`, sub:`solid image · ${fmt1(c.minDist/0.3048)} ft`},
+    {k:'Optimal viewing', v:`${fmt1(c.optDist)} m`, sub:`recommended seating`},
+    {k:'Retina distance', v:`${fmt1(c.retinaDist)} m`, sub:`pixels imperceptible`},
+    {k:'Brightness', v:`${fmt(p.nits)} nits`, sub:`${envTxt} rated`},
+    {k:'Heat load (max)', v:`${fmt(c.btuMax)} BTU/h`, sub:`≈ ${fmt1(c.coolingTons)} ton cooling · avg ${fmt(c.btuAvg)}`, big:true},
+    {k:'Connectors', v:`${fmt(c.dataConn)} data`, sub:`${fmt(c.pwrConn)} power · ${p.dataPorts}/${p.pwrPorts} per cab`},
+  ];
+  $('envStats').innerHTML = stats.map(s=>`<div class="stat ${s.big?'big':''}"><div class="k">${s.k}</div><div class="v">${s.v}</div><div class="sub">${s.sub}</div></div>`).join('');
+  const note=$('envNote');
+  if(!c.pitchOK){
+    note.style.display='block';
+    note.style.color='var(--warn)';note.style.background='rgba(255,180,84,.08)';note.style.borderColor='rgba(255,180,84,.25)';
+    note.innerHTML=`⚠ At ${fmt1(c.near)} m the nearest viewer is <b>closer than the ${fmt1(c.minDist)} m solid-image distance</b> for ${fmt2(c.pitch)} mm pitch — pixels may be visible. For that seat, aim for pitch ≤ <b>${fmt2(c.recPitchMax)} mm</b>.`;
+  } else {
+    note.style.display='block';
+    note.style.color='var(--acc)';note.style.background='rgba(0,224,198,.08)';note.style.borderColor='rgba(0,224,198,.25)';
+    note.innerHTML=`✓ ${fmt2(c.pitch)} mm pitch reads clean from ${fmt1(c.near)} m. Pixels become fully imperceptible past ${fmt1(c.retinaDist)} m.`;
+  }
 }
 
 function renderPower(c){
@@ -592,12 +684,17 @@ function renderSpec(c,e){
     ['Pixel pitch', `${fmt2(p.pitch)} mm`],
     ['Cabinet resolution', `${p.pxW} × ${p.pxH} px (${fmt(c.panelPx)} px)`],
     ['Cabinet size', `${fmt1(p.mmW)} × ${fmt1(p.mmH)} mm`],
+    ['Brightness', `${fmt(p.nits)} nits (${p.env==='outdoor'?'outdoor':'indoor'})`],
     ['Wall layout', `${c.pw} × ${c.ph} = ${fmt(c.cabs)} cabinets`],
     ['Raster resolution', `${fmt(c.resW)} × ${fmt(c.resH)} px`],
     ['Total pixels', `${fmt(c.totalPx)} (${(c.totalPx/1e6).toFixed(2)} MP)`],
     ['Aspect ratio', `${aspect(c.resW,c.resH)} (${fmt2(c.resW/c.resH)}:1)`],
     ['Physical size', `${fmt2(e.physW_m)} × ${fmt2(e.physH_m)} m  ·  ${fmt1(e.physW_ft)} × ${fmt1(e.physH_ft)} ft`],
+    ['Screen diagonal', `${fmt1(c.diagM)} m  ·  ${fmt1(c.diagFt)} ft  ·  ${fmt(c.diagIn)}"`],
+    ['Viewing distance', `min ${fmt1(c.minDist)} m · optimal ${fmt1(c.optDist)} m · retina ${fmt1(c.retinaDist)} m`],
     ['Weight', `${fmt(e.weight)} kg  ·  ${fmt(e.weight*2.20462)} lb`],
+    ['Heat load', `${fmt(c.btuMax)} BTU/h max (${fmt1(c.coolingTons)} ton) · ${fmt(c.btuAvg)} avg`],
+    ['Connectors', `${fmt(c.dataConn)} data · ${fmt(c.pwrConn)} power (${p.dataPorts}/${p.pwrPorts} per cab)`],
     ['Power — average', `${fmt(e.pAvg)} W`],
     ['Power — max', `${fmt(e.pMax)} W  (≈ ${fmt(e.pMax/120)} A @120V, ${fmt(e.pMax/230)} A @230V)`],
     ['Processor', `${e.procName}`],
@@ -852,13 +949,20 @@ function exportJson(){
     generatedBy:'George', date:new Date().toISOString(),
     product:{ name:$('cfgName').textContent, pitch_mm:c.panel.pitch,
       cabinet_px:[c.panel.pxW,c.panel.pxH], cabinet_mm:[c.panel.mmW,c.panel.mmH],
-      kg:c.panel.kg, power_avg_w:c.panel.pwrAvg, power_max_w:c.panel.pwrMax },
+      kg:c.panel.kg, power_avg_w:c.panel.pwrAvg, power_max_w:c.panel.pwrMax,
+      brightness_nits:c.panel.nits, environment:c.panel.env,
+      data_ports_per_cab:c.panel.dataPorts, power_ports_per_cab:c.panel.pwrPorts },
     wall:{ cabinets:[c.pw,c.ph], total_cabinets:c.cabs },
     raster:{ width_px:c.resW, height_px:c.resH, total_px:c.totalPx,
       megapixels:+(c.totalPx/1e6).toFixed(3), aspect:aspect(c.resW,c.resH) },
     physical:{ width_m:+(c.physW/1000).toFixed(3), height_m:+(c.physH/1000).toFixed(3),
+      diagonal_m:+c.diagM.toFixed(3), diagonal_ft:+c.diagFt.toFixed(2), diagonal_in:Math.round(c.diagIn),
       weight_kg:Math.round(c.cabs*c.panel.kg),
       power_avg_w:Math.round(c.cabs*c.panel.pwrAvg), power_max_w:Math.round(c.cabs*c.panel.pwrMax) },
+    sightlines_heat:{ min_viewing_m:+c.minDist.toFixed(2), optimal_viewing_m:+c.optDist.toFixed(2),
+      retina_viewing_m:+c.retinaDist.toFixed(2), nearest_viewer_m:+c.near.toFixed(2), pitch_ok:c.pitchOK,
+      heat_max_btu_h:Math.round(c.btuMax), heat_avg_btu_h:Math.round(c.btuAvg), cooling_tons:+c.coolingTons.toFixed(2),
+      data_connectors:c.dataConn, power_connectors:c.pwrConn },
     processor:{ model:PROCESSORS.find(x=>x.id===state.processorId).name, frame_rate_hz:c.rate,
       usable_px_per_port:c.pxPortEff, cabinets_per_port:c.panelsPerPort,
       ports_required:c.portsNeeded, processors_required:c.unitsNeeded },
@@ -885,9 +989,11 @@ function updateUrl(){
   params.set('proc',state.processorId);params.set('r',state.refresh);
   params.set('pw',[state.phase,state.circV,state.circA,state.loadPct,state.powerBasis].join(','));
   params.set('m',[state.overlay,state.cabOrder,state.showChain?1:0].join(','));
+  params.set('nv',state.nearViewer);
   if(state.productId==='custom'){
     const p=state.panel;
-    params.set('c',[p.pxW,p.pxH,p.mmW,p.mmH,p.pitch,p.kg,p.pwrAvg,p.pwrMax].join(','));
+    params.set('c',[p.pxW,p.pxH,p.mmW,p.mmH,p.pitch,p.kg,p.pwrAvg,p.pwrMax,p.nits,p.dataPorts,p.pwrPorts].join(','));
+    params.set('env',p.env);
   }
   history.replaceState(null,'','?'+params.toString());
 }
@@ -900,12 +1006,14 @@ function loadUrl(){
   loadPanelInputs(prod);
   if(state.productId==='custom'&&q.get('c')){
     const v=q.get('c').split(',').map(Number);
-    ['pxW','pxH','mmW','mmH','pitch','weight','pwrAvg','pwrMax'].forEach((id,i)=>{if(!isNaN(v[i]))$(id).value=v[i];});
+    ['pxW','pxH','mmW','mmH','pitch','weight','pwrAvg','pwrMax','nits','dataPorts','pwrPorts'].forEach((id,i)=>{if(!isNaN(v[i]))$(id).value=v[i];});
+    if(q.get('env'))$('env').value=q.get('env');
   }
   const proc=PROCESSORS.find(x=>x.id===state.processorId)||PROCESSORS[0];
   loadProcInputs(proc);
   if(q.get('w'))$('panelsW').value=+q.get('w');
   if(q.get('h'))$('panelsH').value=+q.get('h');
+  if(q.get('nv')){state.nearViewer=+q.get('nv');$('nearViewer').value=state.nearViewer;}
   if(q.get('pw')){
     const v=q.get('pw').split(',');
     state.phase=+v[0]||1; state.circV=+v[1]||120; state.circA=+v[2]||20;
@@ -941,8 +1049,10 @@ function bind(){
     render();
   });
   // panel/proc inputs
-  ['pxW','pxH','mmW','mmH','pitch','weight','pwrAvg','pwrMax','pxPort','portsUnit','panelsW','panelsH','targetW','targetH']
+  ['pxW','pxH','mmW','mmH','pitch','weight','pwrAvg','pwrMax','nits','dataPorts','pwrPorts','pxPort','portsUnit','panelsW','panelsH','targetW','targetH']
     .forEach(id=>$(id).addEventListener('input',render));
+  $('env').addEventListener('change',render);
+  $('nearViewer').addEventListener('input',()=>{state.nearViewer=+$('nearViewer').value;render();});
   $('refresh').addEventListener('change',()=>{state.refresh=+$('refresh').value;render();});
   // power & circuits
   $('circV').addEventListener('input',()=>{state.circV=+$('circV').value;render();});
