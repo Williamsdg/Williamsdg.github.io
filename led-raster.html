@@ -211,7 +211,36 @@
       </div>
 
       <div class="card">
-        <h2><span class="n">4</span> Export</h2>
+        <h2><span class="n">4</span> Power &amp; Circuits</h2>
+        <div class="field">
+          <label>Supply</label>
+          <div class="seg" id="phaseMode">
+            <button data-ph="1" class="on">Single phase</button>
+            <button data-ph="3">Three phase</button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Circuit voltage (V)</label><input type="number" id="circV" min="1" step="1" value="120"></div>
+          <div class="field"><label>Circuit rating (A)</label><input type="number" id="circA" min="1" step="1" value="20"></div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Load limit (%)</label>
+            <input type="number" id="loadPct" min="1" max="100" step="1" value="80">
+          </div>
+          <div class="field">
+            <label>Size circuits by</label>
+            <select id="powerBasis">
+              <option value="max">Max power</option>
+              <option value="avg">Average power</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint" id="circHint"></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">5</span> Export</h2>
         <div class="btns">
           <button class="btn acc" id="dlPng">⬇ Raster map (PNG)</button>
           <button class="btn" id="dlJson">⬇ Spec (JSON)</button>
@@ -228,6 +257,12 @@
         <h2>Raster summary <span id="cfgName" style="margin-left:auto;color:var(--txt);text-transform:none;letter-spacing:0;font-weight:600"></span></h2>
         <div class="stats" id="stats"></div>
         <div class="note" id="capNote" style="display:none"></div>
+      </div>
+
+      <div class="card">
+        <h2>Power &amp; circuit plan <span id="powerCfg" style="margin-left:auto;color:var(--txt);text-transform:none;letter-spacing:0;font-weight:600"></span></h2>
+        <div class="stats" id="powerStats"></div>
+        <div class="note" id="powerNote" style="display:none"></div>
       </div>
 
       <div class="card">
@@ -314,6 +349,7 @@ let state = {
   processorId:'bromp-sx40',
   proc:null,
   refresh:60,
+  phase:1, circV:120, circA:20, loadPct:80, powerBasis:'max',
   showPorts:true, showGrid:true, showLabels:true
 };
 
@@ -404,8 +440,24 @@ function compute(){
   const portUtil=portLoadPx/pxPortEff;
   const overByPixels=totalPx > pxPortEff*proc.ports; // exceeds a single unit?
 
+  // ---- power & circuits ----
+  const pAvg=cabs*panel.pwrAvg, pMax=cabs*panel.pwrMax;
+  const phase=+state.phase, V=Math.max(1,+state.circV||1), A=Math.max(1,+state.circA||1);
+  const loadFrac=Math.min(1,Math.max(0.01,(+state.loadPct||80)/100));
+  const sizingPower = state.powerBasis==='avg' ? pAvg : pMax;
+  const perCabPower = state.powerBasis==='avg' ? panel.pwrAvg : panel.pwrMax;
+  const phaseK = phase===3 ? Math.sqrt(3) : 1;          // P = √3·V·I for 3-phase (line-to-line V)
+  const usableAmps = A*loadFrac;                         // derated breaker capacity
+  const wattsPerCircuit = phaseK*V*usableAmps;           // usable W per circuit
+  const circuitsNeeded = Math.ceil(sizingPower/wattsPerCircuit);
+  const cabsPerCircuit = Math.max(0,Math.floor(wattsPerCircuit/Math.max(1,perCabPower)));
+  const totalLineAmps = sizingPower/(phaseK*V);          // total line current draw
+  const ampsPerCircuit = circuitsNeeded? (sizingPower/(phaseK*V))/circuitsNeeded : 0;
+
   return {panel,proc,pw,ph,resW,resH,totalPx,physW,physH,cabs,panelPx,
-          rate,pxPortEff,panelsPerPort,portsNeeded,unitsNeeded,portsAvail,portUtil};
+          rate,pxPortEff,panelsPerPort,portsNeeded,unitsNeeded,portsAvail,portUtil,
+          pAvg,pMax,phase,V,A,loadFrac,sizingPower,wattsPerCircuit,circuitsNeeded,
+          cabsPerCircuit,totalLineAmps,usableAmps};
 }
 
 //// ---------- Render ----------
@@ -446,6 +498,9 @@ function render(){
     note.innerHTML=`Ports are running at <b>${(c.portUtil*100).toFixed(0)}%</b> capacity at ${c.rate} Hz — little headroom for higher bit depth, HDR or frame-rate increases.`;
   } else { note.style.display='none'; }
 
+  // power & circuits
+  renderPower(c);
+
   // content fit list
   renderFit(c);
 
@@ -461,6 +516,28 @@ function render(){
   // sync state + url
   state.refresh=+$('refresh').value;
   updateUrl();
+}
+
+function renderPower(c){
+  const basis = state.powerBasis==='avg' ? 'average' : 'max';
+  const phaseTxt = c.phase===3 ? `3-phase ${fmt(c.V)}V` : `${fmt(c.V)}V single-phase`;
+  $('powerCfg').textContent = `${c.A}A @ ${fmt(c.loadFrac*100)}% · ${phaseTxt}`;
+  $('circHint').textContent = `${fmt(c.usableAmps)}A usable / circuit → ${fmt(c.wattsPerCircuit)} W. Sizing by ${basis} draw.`;
+  const stats=[
+    {k:'Circuits required', v:`${fmt(c.circuitsNeeded)}`, sub:`${c.A}A @ ${fmt(c.loadFrac*100)}% · ${phaseTxt}`, big:true},
+    {k:'Per circuit', v:`${fmt(c.usableAmps)} A`, sub:`${fmt(c.wattsPerCircuit)} W usable (derated)`},
+    {k:'Cabinets / circuit', v:`${fmt(c.cabsPerCircuit)}`, sub:`at ${basis} draw per cabinet`},
+    {k:'Total draw', v:`${fmt(c.totalLineAmps)} A`, sub:`${fmt(c.sizingPower)} W ${basis} · per phase leg`},
+  ];
+  $('powerStats').innerHTML = stats.map(s=>`<div class="stat ${s.big?'big':''}"><div class="k">${s.k}</div><div class="v">${s.v}</div><div class="sub">${s.sub}</div></div>`).join('');
+  const note=$('powerNote');
+  if(c.cabsPerCircuit<1){
+    note.style.display='block';
+    note.innerHTML=`⚠ A single cabinet's ${basis} draw (${fmt(state.powerBasis==='avg'?c.panel.pwrAvg:c.panel.pwrMax)} W) exceeds one derated circuit — increase voltage/amperage or reduce the load limit.`;
+  } else if(state.powerBasis==='avg'){
+    note.style.display='block';
+    note.innerHTML=`Sizing by <b>average</b> draw — fine for typical content, but peaks (all-white / high-brightness) can trip breakers. Size by <b>max</b> for a guaranteed-safe count.`;
+  } else { note.style.display='none'; }
 }
 
 function renderFit(c){
@@ -507,6 +584,10 @@ function renderSpec(c,e){
     ['Cabinets / port', `${fmt(c.panelsPerPort)}  (${(c.portUtil*100).toFixed(0)}% port load)`],
     ['Ports required', `${fmt(c.portsNeeded)}`],
     ['Processors required', `${fmt(c.unitsNeeded)}  (${fmt(c.portsAvail)} ports available)`],
+    ['Circuit', `${c.A}A @ ${fmt(c.loadFrac*100)}% · ${c.phase===3?'3-phase':'single-phase'} ${fmt(c.V)}V`],
+    ['Usable per circuit', `${fmt(c.usableAmps)} A  ·  ${fmt(c.wattsPerCircuit)} W`],
+    ['Circuits required', `${fmt(c.circuitsNeeded)}  (${fmt(c.cabsPerCircuit)} cab/circuit, by ${state.powerBasis} draw)`],
+    ['Total line current', `${fmt(c.totalLineAmps)} A`],
   ];
   $('specTable').innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
 }
@@ -652,7 +733,12 @@ function exportJson(){
       power_avg_w:Math.round(c.cabs*c.panel.pwrAvg), power_max_w:Math.round(c.cabs*c.panel.pwrMax) },
     processor:{ model:PROCESSORS.find(x=>x.id===state.processorId).name, frame_rate_hz:c.rate,
       usable_px_per_port:c.pxPortEff, cabinets_per_port:c.panelsPerPort,
-      ports_required:c.portsNeeded, processors_required:c.unitsNeeded }
+      ports_required:c.portsNeeded, processors_required:c.unitsNeeded },
+    power_circuits:{ voltage_v:c.V, phase:c.phase===3?'three':'single', breaker_a:c.A,
+      load_limit_pct:Math.round(c.loadFrac*100), sized_by:state.powerBasis,
+      usable_a_per_circuit:+c.usableAmps.toFixed(1), watts_per_circuit:Math.round(c.wattsPerCircuit),
+      cabinets_per_circuit:c.cabsPerCircuit, circuits_required:c.circuitsNeeded,
+      total_line_current_a:Math.round(c.totalLineAmps) }
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
@@ -666,6 +752,7 @@ function updateUrl(){
   params.set('p',state.productId);
   params.set('w',state.panelsW);params.set('h',state.panelsH);
   params.set('proc',state.processorId);params.set('r',state.refresh);
+  params.set('pw',[state.phase,state.circV,state.circA,state.loadPct,state.powerBasis].join(','));
   if(state.productId==='custom'){
     const p=state.panel;
     params.set('c',[p.pxW,p.pxH,p.mmW,p.mmH,p.pitch,p.kg,p.pwrAvg,p.pwrMax].join(','));
@@ -687,6 +774,14 @@ function loadUrl(){
   loadProcInputs(proc);
   if(q.get('w'))$('panelsW').value=+q.get('w');
   if(q.get('h'))$('panelsH').value=+q.get('h');
+  if(q.get('pw')){
+    const v=q.get('pw').split(',');
+    state.phase=+v[0]||1; state.circV=+v[1]||120; state.circA=+v[2]||20;
+    state.loadPct=+v[3]||80; state.powerBasis=(v[4]==='avg')?'avg':'max';
+    $('circV').value=state.circV; $('circA').value=state.circA;
+    $('loadPct').value=state.loadPct; $('powerBasis').value=state.powerBasis;
+    document.querySelectorAll('#phaseMode button').forEach(b=>b.classList.toggle('on',+b.dataset.ph===state.phase));
+  }
 }
 
 //// ---------- Events ----------
@@ -711,6 +806,17 @@ function bind(){
   ['pxW','pxH','mmW','mmH','pitch','weight','pwrAvg','pwrMax','pxPort','portsUnit','panelsW','panelsH','targetW','targetH']
     .forEach(id=>$(id).addEventListener('input',render));
   $('refresh').addEventListener('change',()=>{state.refresh=+$('refresh').value;render();});
+  // power & circuits
+  $('circV').addEventListener('input',()=>{state.circV=+$('circV').value;render();});
+  $('circA').addEventListener('input',()=>{state.circA=+$('circA').value;render();});
+  $('loadPct').addEventListener('input',()=>{state.loadPct=+$('loadPct').value;render();});
+  $('powerBasis').addEventListener('change',()=>{state.powerBasis=$('powerBasis').value;render();});
+  document.querySelectorAll('#phaseMode button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#phaseMode button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');state.phase=+b.dataset.ph;
+    if(state.phase===3&&+$('circV').value<200){state.circV=208;$('circV').value=208;}
+    render();
+  }));
   // size mode
   document.querySelectorAll('#sizeMode button').forEach(b=>b.addEventListener('click',()=>{
     document.querySelectorAll('#sizeMode button').forEach(x=>x.classList.remove('on'));
