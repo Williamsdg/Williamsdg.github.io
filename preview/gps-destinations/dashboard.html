@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Operations Console — Voyance Destinations</title>
+<meta name="description" content="Internal admin dashboard for Voyance Destinations: PlannerConnect event pipeline, planner & exhibitor CRM, DMC Collective roster, members, and registrations." />
+<meta name="theme-color" content="#0a1521" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --navy:#0c1a2b; --navy-2:#10243a; --navy-3:#16314c; --ink:#0a1521;
+    --gold:#c8a45c; --gold-bright:#dcbd78; --cream:#f6f1e7;
+    --paper:#f4f1ea; --card:#ffffff; --slate:#5d6b7c; --muted:#8a96a4;
+    --line:#e6e0d4; --line-2:#efeae0;
+    --good:#3f8a5f; --good-bg:#e6f2ea; --warn:#c08a2e; --warn-bg:#f7eed9; --hot:#c0492e; --hot-bg:#f7e4dd;
+    --info:#3a6ea5; --info-bg:#e3edf6;
+    --shadow:0 18px 44px -22px rgba(10,21,33,.28);
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4,.serif{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-.01em}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  ::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#cfd6dd;border-radius:9px}
+
+  .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+
+  /* ---- Sidebar ---- */
+  .side{background:var(--ink);color:rgba(246,241,231,.8);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .side-brand{padding:22px 24px 20px;border-bottom:1px solid rgba(246,241,231,.08);display:flex;align-items:center;gap:.7rem}
+  .side-brand .mark{width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(200,164,92,.6);display:grid;place-items:center;flex:none}
+  .side-brand .mark svg{width:22px;height:22px;color:var(--gold)}
+  .side-brand .mark .orbit{transform-origin:center;animation:spin 16s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .side-brand b{font-family:'Fraunces',serif;color:var(--cream);font-size:1.05rem;line-height:1.1;display:block}
+  .side-brand small{font-size:.52rem;letter-spacing:.24em;text-transform:uppercase;color:rgba(200,164,92,.85);font-weight:600}
+  .side-nav{padding:14px 0;flex:1}
+  .side-sec{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(246,241,231,.38);font-weight:600;padding:16px 24px 8px}
+  .side-link{display:flex;align-items:center;gap:11px;padding:9px 24px;font-size:.86rem;color:rgba(246,241,231,.72);border-left:2px solid transparent;transition:.18s;cursor:pointer}
+  .side-link:hover{color:var(--cream);background:rgba(246,241,231,.04)}
+  .side-link.active{color:var(--cream);background:rgba(200,164,92,.12);border-left-color:var(--gold)}
+  .side-link .ic{width:17px;flex:none;color:rgba(200,164,92,.9);display:inline-grid;place-items:center}
+  .side-link .badge{margin-left:auto;background:var(--gold);color:var(--ink);font-size:.6rem;font-weight:700;padding:1px 7px;border-radius:999px}
+  .side-foot{padding:16px 24px;border-top:1px solid rgba(246,241,231,.08);display:flex;align-items:center;gap:10px}
+  .side-foot .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#8a6a38);display:grid;place-items:center;color:var(--ink);font-weight:700;flex:none}
+  .side-foot .nm{color:var(--cream);font-weight:600;font-size:.82rem}
+  .side-foot .rl{color:rgba(246,241,231,.5);font-size:.72rem}
+  .back-site{display:block;margin:6px 14px 10px;text-align:center;font-size:.72rem;color:rgba(200,164,92,.9);border:1px solid rgba(200,164,92,.3);border-radius:999px;padding:.55em;transition:.2s}
+  .back-site:hover{background:rgba(200,164,92,.12)}
+
+  /* ---- Main ---- */
+  main{padding:24px 30px 70px;max-width:1480px;width:100%;margin:0 auto}
+  .pitch-strip{background:linear-gradient(90deg,var(--navy),var(--navy-3));color:var(--cream);border-radius:12px;padding:.7em 1.1em;display:flex;align-items:center;gap:.8rem;font-size:.8rem;margin-bottom:22px;flex-wrap:wrap}
+  .pitch-strip .tag{font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--ink);background:var(--gold);padding:.3em .7em;border-radius:999px}
+  .pitch-strip b{color:var(--gold-bright)}
+  .pitch-strip a{margin-left:auto;color:var(--gold-bright);font-weight:600;border:1px solid rgba(200,164,92,.4);padding:.4em .9em;border-radius:999px;font-size:.74rem;transition:.2s}
+  .pitch-strip a:hover{background:rgba(200,164,92,.15)}
+
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:24px;flex-wrap:wrap}
+  .topbar h1{font-size:1.9rem}
+  .topbar h1 em{font-style:italic;color:var(--gold)}
+  .topbar .sub{color:var(--slate);margin-top:2px;font-size:.9rem}
+  .top-actions{display:flex;gap:10px;align-items:center}
+  .search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);padding:9px 14px;border-radius:999px;min-width:230px;color:var(--muted)}
+  .search input{border:none;outline:none;flex:1;background:transparent;font-family:inherit;font-size:.86rem;color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:999px;font-size:.8rem;font-weight:600;transition:.2s;white-space:nowrap}
+  .btn-primary{background:var(--navy);color:var(--cream)}
+  .btn-primary:hover{background:var(--gold);color:var(--ink)}
+  .btn-ghost{border:1px solid var(--line);background:#fff;color:var(--ink)}
+  .btn-ghost:hover{border-color:var(--navy)}
+
+  /* ---- Stats ---- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:26px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;transition:.2s}
+  .stat:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+  .stat .lab{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .stat .val{font-family:'Fraunces',serif;font-size:2.1rem;margin:8px 0 4px;line-height:1}
+  .stat .val small{font-size:.95rem;color:var(--slate)}
+  .stat .delta{font-size:.76rem;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+  .delta.up{color:var(--good)} .delta.down{color:var(--hot)} .delta.flat{color:var(--muted)}
+
+  /* ---- Cards / panels ---- */
+  .grid{display:grid;gap:18px}
+  .g-2{grid-template-columns:1.6fr 1fr}
+  .g-2b{grid-template-columns:1fr 1fr}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line-2)}
+  .panel-head h3{font-size:1.15rem}
+  .panel-head .link{font-size:.78rem;color:var(--gold);font-weight:600}
+  .panel-body{padding:6px 20px 18px}
+
+  /* ---- Table ---- */
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:12px 10px;border-bottom:1px solid var(--line-2)}
+  td{padding:13px 10px;border-bottom:1px solid var(--line-2);font-size:.86rem;vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tbody tr{transition:.15s;cursor:pointer}
+  tbody tr:hover{background:#faf8f3}
+  .ci{font-weight:600}
+  .sub-txt{color:var(--muted);font-size:.78rem}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+  .pill.good{color:var(--good);background:var(--good-bg)} .pill.warn{color:var(--warn);background:var(--warn-bg)}
+  .pill.hot{color:var(--hot);background:var(--hot-bg)} .pill.info{color:var(--info);background:var(--info-bg)}
+  .pill.mute{color:var(--slate);background:#eceef0}
+  .pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .av-sm{width:30px;height:30px;border-radius:50%;display:inline-grid;place-items:center;font-size:.72rem;font-weight:700;color:#fff;flex:none}
+  .cellflex{display:flex;align-items:center;gap:10px}
+
+  /* capacity bar */
+  .cap{width:120px}
+  .cap .bar{height:7px;background:#eceef0;border-radius:999px;overflow:hidden}
+  .cap .bar i{display:block;height:100%;border-radius:999px}
+  .cap .txt{font-size:.7rem;color:var(--muted);margin-top:3px}
+
+  /* views */
+  .view{display:none;animation:fade .35s var(--ease)}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* progress / list rows for sidebars */
+  .mini{display:flex;flex-direction:column;gap:2px;padding:12px 0;border-bottom:1px solid var(--line-2)}
+  .mini:last-child{border:none}
+  .mini .r{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .mini b{font-size:.9rem}
+  .barline{height:6px;background:#eceef0;border-radius:999px;overflow:hidden;margin-top:6px}
+  .barline i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-bright))}
+
+  .feed{list-style:none}
+  .feed li{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-2)}
+  .feed li:last-child{border:none}
+  .feed .fic{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:.85rem}
+  .feed .ftxt{font-size:.84rem}
+  .feed .ftxt b{font-weight:600}
+  .feed .ftime{color:var(--muted);font-size:.74rem;margin-top:1px}
+
+  .seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+  .seg button{font-size:.76rem;font-weight:600;padding:.42em 1em;border-radius:999px;color:var(--slate)}
+  .seg button.on{background:var(--navy);color:var(--cream)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-size:.76rem;padding:.4em .85em;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--slate);transition:.15s}
+  .chip:hover,.chip.on{border-color:var(--gold);color:var(--ink);background:#fdf8ee}
+
+  .region-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+  .region{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;transition:.2s}
+  .region:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+  .region h4{font-size:1rem;display:flex;align-items:center;justify-content:space-between}
+  .region .n{font-size:.72rem;color:var(--muted);margin:2px 0 10px}
+  .region .dlist{display:flex;flex-wrap:wrap;gap:5px}
+  .region .d{font-size:.72rem;color:var(--slate);background:#f4f1ea;border-radius:6px;padding:2px 7px}
+
+  /* toast */
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(120%);background:var(--ink);color:var(--cream);padding:12px 20px;border-radius:999px;font-size:.84rem;box-shadow:0 16px 40px -12px rgba(0,0,0,.5);transition:transform .4s var(--ease);z-index:500;display:flex;align-items:center;gap:9px}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .toast .ck{color:var(--gold-bright)}
+
+  .mtopbar{display:none}
+  @media(max-width:1080px){.stats{grid-template-columns:repeat(2,1fr)}.g-2,.g-2b{grid-template-columns:1fr}}
+  @media(max-width:860px){
+    .app{grid-template-columns:1fr}
+    .side{position:fixed;left:0;top:0;bottom:0;width:248px;z-index:400;transform:translateX(-100%);transition:transform .3s var(--ease)}
+    .side.open{transform:none}
+    .mtopbar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--ink);color:var(--cream);position:sticky;top:0;z-index:50}
+    .mtopbar .burger{display:flex;flex-direction:column;gap:4px}.mtopbar .burger span{width:22px;height:2px;background:var(--cream)}
+    main{padding:18px 16px 60px}
+    .scrollx{overflow-x:auto}.scrollx table{min-width:680px}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ===== Sidebar ===== -->
+  <aside class="side" id="side">
+    <div class="side-brand">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="8.2"/><ellipse class="orbit" cx="12" cy="12" rx="8.2" ry="3.4"/><line x1="3.8" y1="12" x2="20.2" y2="12"/><circle cx="12" cy="6" r="1.3" fill="currentColor" stroke="none"/></svg></span>
+      <span><b>Voyance</b><small>Operations Console</small></span>
+    </div>
+    <a class="back-site" href="index.html">← View public site</a>
+    <nav class="side-nav" id="nav">
+      <div class="side-sec">Overview</div>
+      <div class="side-link active" data-view="overview"><span class="ic">◎</span> Dashboard</div>
+      <div class="side-sec">PlannerConnect</div>
+      <div class="side-link" data-view="events"><span class="ic">◇</span> Event Pipeline <span class="badge" id="b-events">6</span></div>
+      <div class="side-link" data-view="planners"><span class="ic">✦</span> Planners (CRM) <span class="badge" id="b-planners">9</span></div>
+      <div class="side-link" data-view="exhibitors"><span class="ic">◆</span> Exhibitors</div>
+      <div class="side-link" data-view="regs"><span class="ic">✉</span> Registrations <span class="badge" id="b-regs">7</span></div>
+      <div class="side-sec">Collective</div>
+      <div class="side-link" data-view="dmcs"><span class="ic">⊕</span> DMC Roster</div>
+      <div class="side-link" data-view="members"><span class="ic">♦</span> Members</div>
+      <div class="side-sec">Insight</div>
+      <div class="side-link" data-view="reports"><span class="ic">▢</span> Reports</div>
+    </nav>
+    <div class="side-foot">
+      <span class="av">SM</span>
+      <span><span class="nm">Samantha M.</span><br><span class="rl">Director of Operations</span></span>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <div>
+    <div class="mtopbar"><button class="burger" id="burger"><span></span><span></span><span></span></button><b style="font-family:Fraunces,serif">Voyance Console</b></div>
+    <main>
+      <div class="pitch-strip">
+        <span class="tag">Preview</span>
+        <span>Concept <b>admin dashboard</b> for GPS&nbsp;Destinations — built on spec, <b>no obligation</b>. Sample data shown.</span>
+        <a href="mailto:Dylan@williamsdigital.io?subject=GPS%20Destinations%20Dashboard">Let's talk →</a>
+      </div>
+
+      <!-- ============ OVERVIEW ============ -->
+      <section class="view active" id="v-overview">
+        <div class="topbar">
+          <div><h1>Good morning, <em>Samantha</em></h1><div class="sub">Here's how the Collective is running today — Thursday, June 11, 2026</div></div>
+          <div class="top-actions">
+            <div class="search">🔍<input placeholder="Search planners, events, DMCs…" id="globalSearch"></div>
+            <button class="btn btn-primary" onclick="toast('New PlannerConnect event drafted')">+ New Event</button>
+          </div>
+        </div>
+
+        <div class="stats" id="ovStats"></div>
+
+        <div class="grid g-2">
+          <div class="panel">
+            <div class="panel-head"><h3>PlannerConnect — Aug 2026 Series</h3><span class="link" data-jump="events">View pipeline →</span></div>
+            <div class="panel-body scrollx">
+              <table>
+                <thead><tr><th>City</th><th>Date</th><th>Planners</th><th>Exhibitors</th><th>Capacity</th><th>Status</th></tr></thead>
+                <tbody id="ovEvents"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Activity</h3></div>
+            <div class="panel-body"><ul class="feed" id="ovFeed"></ul></div>
+          </div>
+        </div>
+
+        <div class="grid g-2b" style="margin-top:18px">
+          <div class="panel">
+            <div class="panel-head"><h3>Registrations needing review</h3><span class="link" data-jump="regs">All registrations →</span></div>
+            <div class="panel-body scrollx">
+              <table><thead><tr><th>Name</th><th>Type</th><th>Event</th><th>Status</th></tr></thead><tbody id="ovRegs"></tbody></table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Top destinations by demand</h3><span class="link" data-jump="dmcs">DMC roster →</span></div>
+            <div class="panel-body" id="ovDemand"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ EVENTS ============ -->
+      <section class="view" id="v-events">
+        <div class="topbar">
+          <div><h1>Event <em>Pipeline</em></h1><div class="sub">PlannerConnect runs ~30 three-hour marketplace events/yr across North America</div></div>
+          <div class="top-actions">
+            <div class="seg" id="evSeg"><button class="on" data-f="all">All</button><button data-f="open">Filling</button><button data-f="confirmed">Confirmed</button><button data-f="closed">Sold out</button></div>
+            <button class="btn btn-primary" onclick="toast('New PlannerConnect event drafted')">+ New Event</button>
+          </div>
+        </div>
+        <div class="stats" id="evStats"></div>
+        <div class="panel"><div class="panel-body scrollx" style="padding-top:14px">
+          <table><thead><tr><th>City</th><th>Date</th><th>Venue</th><th>Planners</th><th>Exhibitors</th><th>Fill</th><th>Status</th></tr></thead><tbody id="evRows"></tbody></table>
+        </div></div>
+      </section>
+
+      <!-- ============ PLANNERS ============ -->
+      <section class="view" id="v-planners">
+        <div class="topbar">
+          <div><h1>Meeting <em>Planners</em></h1><div class="sub">Qualified buyers — corporate, association, incentive & agency planners</div></div>
+          <div class="top-actions"><div class="search">🔍<input placeholder="Search planners…" id="plSearch"></div><button class="btn btn-ghost" onclick="toast('Export queued — CSV emailed')">Export</button></div>
+        </div>
+        <div class="chips" id="plChips" style="margin-bottom:16px"></div>
+        <div class="panel"><div class="panel-body scrollx" style="padding-top:14px">
+          <table><thead><tr><th>Planner</th><th>Company</th><th>Segment</th><th>Programs / yr</th><th>Next event</th><th>Status</th></tr></thead><tbody id="plRows"></tbody></table>
+        </div></div>
+      </section>
+
+      <!-- ============ EXHIBITORS ============ -->
+      <section class="view" id="v-exhibitors">
+        <div class="topbar">
+          <div><h1>Exhibitors &amp; <em>Suppliers</em></h1><div class="sub">Luxury hotels, resorts, CVBs, DMCs & corporate gifting partners</div></div>
+          <div class="top-actions"><div class="seg" id="exSeg"><button class="on" data-f="all">All</button><button data-f="Hotel">Hotels</button><button data-f="DMC">DMCs</button><button data-f="CVB">CVBs</button><button data-f="Gifting">Gifting</button></div></div>
+        </div>
+        <div class="stats" id="exStats"></div>
+        <div class="panel"><div class="panel-body scrollx" style="padding-top:14px">
+          <table><thead><tr><th>Supplier</th><th>Type</th><th>Destination</th><th>Events booked</th><th>Spend (YTD)</th><th>Tier</th></tr></thead><tbody id="exRows"></tbody></table>
+        </div></div>
+      </section>
+
+      <!-- ============ REGISTRATIONS ============ -->
+      <section class="view" id="v-regs">
+        <div class="topbar">
+          <div><h1><em>Registrations</em> &amp; Leads</h1><div class="sub">Inbound planner requests and exhibitor sign-ups awaiting action</div></div>
+          <div class="top-actions"><div class="seg" id="rgSeg"><button class="on" data-f="all">All</button><button data-f="Pending">Pending</button><button data-f="Approved">Approved</button><button data-f="Waitlist">Waitlist</button></div></div>
+        </div>
+        <div class="panel"><div class="panel-body scrollx" style="padding-top:14px">
+          <table><thead><tr><th>Name</th><th>Type</th><th>Event</th><th>Submitted</th><th>Status</th><th></th></tr></thead><tbody id="rgRows"></tbody></table>
+        </div></div>
+      </section>
+
+      <!-- ============ DMCs ============ -->
+      <section class="view" id="v-dmcs">
+        <div class="topbar">
+          <div><h1>DMC <em>Collective</em></h1><div class="sub">70+ vetted Destination Management Companies across the globe</div></div>
+          <div class="top-actions"><div class="search">🔍<input placeholder="Search destination…" id="dmcSearch"></div><button class="btn btn-primary" onclick="toast('DMC application form opened')">+ Add Partner</button></div>
+        </div>
+        <div class="stats" id="dmcStats"></div>
+        <div class="region-grid" id="dmcGrid"></div>
+      </section>
+
+      <!-- ============ MEMBERS ============ -->
+      <section class="view" id="v-members">
+        <div class="topbar">
+          <div><h1>Connected <em>Community</em></h1><div class="sub">Members of the Voyance Connected Community</div></div>
+          <div class="top-actions"><div class="seg" id="memSeg"><button class="on" data-f="all">All</button><button data-f="Active">Active</button><button data-f="Pending">Pending</button></div></div>
+        </div>
+        <div class="stats" id="memStats"></div>
+        <div class="panel"><div class="panel-body scrollx" style="padding-top:14px">
+          <table><thead><tr><th>Member</th><th>Role</th><th>Joined</th><th>Events attended</th><th>Last active</th><th>Status</th></tr></thead><tbody id="memRows"></tbody></table>
+        </div></div>
+      </section>
+
+      <!-- ============ REPORTS ============ -->
+      <section class="view" id="v-reports">
+        <div class="topbar"><div><h1>Reports &amp; <em>Insight</em></h1><div class="sub">Series performance and Collective health</div></div></div>
+        <div class="stats" id="rpStats"></div>
+        <div class="grid g-2b">
+          <div class="panel"><div class="panel-head"><h3>Planner attendance by month</h3></div><div class="panel-body"><div id="rpChart" style="padding:10px 0"></div></div></div>
+          <div class="panel"><div class="panel-head"><h3>Exhibitor mix</h3></div><div class="panel-body" id="rpMix" style="padding-top:14px"></div></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="ck">✓</span><span id="toastMsg"></span></div>
+
+<script>
+/* ---------------- DATA ---------------- */
+const COLORS=['#3a6ea5','#3f8a5f','#c08a2e','#9c5bbd','#c0492e','#2e8b9c','#b5572e','#5d6b7c'];
+const ci=(s)=>COLORS[[...s].reduce((a,c)=>a+c.charCodeAt(0),0)%COLORS.length];
+const initials=(n)=>n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+
+const EVENTS=[
+  {city:'San Francisco, CA',date:'Aug 04',venue:'Fairmont San Francisco',planners:62,pcap:75,exhib:28,ecap:30,status:'confirmed'},
+  {city:'San Jose / Silicon Valley',date:'Aug 05',venue:'Signia by Hilton',planners:41,pcap:70,exhib:22,ecap:30,status:'open'},
+  {city:'Seattle, WA',date:'Aug 06',venue:'Four Seasons Seattle',planners:58,pcap:75,exhib:30,ecap:30,status:'open'},
+  {city:'Minneapolis, MN',date:'Aug 18',venue:'Hewing Hotel',planners:75,pcap:75,exhib:29,ecap:30,status:'closed'},
+  {city:'Chicago, IL',date:'Aug 19',venue:'The Langham',planners:69,pcap:80,exhib:31,ecap:32,status:'confirmed'},
+  {city:'Indianapolis, IN',date:'Aug 20',venue:'Conrad Indianapolis',planners:33,pcap:65,exhib:18,ecap:28,status:'open'},
+];
+const PLANNERS=[
+  {n:'Maria Delgado',co:'Salesforce Events',seg:'Corporate',prog:14,next:'San Francisco, CA',st:'VIP'},
+  {n:'James Whitfield',co:'Aon Incentives',seg:'Incentive',prog:9,next:'Chicago, IL',st:'Active'},
+  {n:'Priya Nair',co:'AmEx Global Bus. Travel',seg:'Agency',prog:22,next:'Seattle, WA',st:'VIP'},
+  {n:'Tom Becker',co:'Medtronic',seg:'Corporate',prog:7,next:'Minneapolis, MN',st:'Active'},
+  {n:'Anita Rosario',co:'NACE Association',seg:'Association',prog:5,next:'Chicago, IL',st:'New'},
+  {n:'David Kuo',co:'Cisco Live',seg:'Corporate',prog:11,next:'San Jose / Silicon Valley',st:'Active'},
+  {n:'Sophie Tran',co:'BCD Meetings & Events',seg:'Agency',prog:18,next:'San Francisco, CA',st:'VIP'},
+  {n:'Marcus Hill',co:'Eli Lilly',seg:'Incentive',prog:6,next:'Indianapolis, IN',st:'Active'},
+  {n:'Rebecca Stone',co:'AMA Meetings',seg:'Association',prog:4,next:'—',st:'New'},
+];
+const EXHIB=[
+  {n:'Fairmont Monaco',type:'Hotel',dest:'Monaco',ev:5,spend:48000,tier:'Platinum'},
+  {n:'Visit Cape Town',type:'CVB',dest:'Cape Town',ev:3,spend:21000,tier:'Gold'},
+  {n:'Riviera DMC Collective',type:'DMC',dest:'French Riviera',ev:6,spend:54000,tier:'Platinum'},
+  {n:'Anatolia Events',type:'DMC',dest:'Cappadocia',ev:2,spend:12500,tier:'Silver'},
+  {n:'Costa del Sol Bureau',type:'CVB',dest:'Malaga',ev:4,spend:28000,tier:'Gold'},
+  {n:'Aria Gifting Co.',type:'Gifting',dest:'Global',ev:6,spend:33000,tier:'Gold'},
+  {n:'The Langham Chicago',type:'Hotel',dest:'Chicago',ev:4,spend:26000,tier:'Gold'},
+  {n:'Bahamas Luxury DMC',type:'DMC',dest:'Bahamas',ev:3,spend:19500,tier:'Silver'},
+  {n:'Four Seasons Seattle',type:'Hotel',dest:'Seattle',ev:2,spend:15000,tier:'Silver'},
+];
+const REGS=[
+  {n:'Karen Liu',type:'Planner',ev:'San Francisco, CA',sub:'2h ago',st:'Pending'},
+  {n:'Vista Resorts Group',type:'Exhibitor',ev:'Chicago, IL',sub:'5h ago',st:'Pending'},
+  {n:'Daniel Mwangi',type:'Planner',ev:'Seattle, WA',sub:'Yesterday',st:'Approved'},
+  {n:'Lagoon DMC Mexico',type:'Exhibitor',ev:'San Jose / Silicon Valley',sub:'Yesterday',st:'Waitlist'},
+  {n:'Hannah Berg',type:'Planner',ev:'Minneapolis, MN',sub:'2d ago',st:'Waitlist'},
+  {n:'Conrad Indianapolis',type:'Exhibitor',ev:'Indianapolis, IN',sub:'2d ago',st:'Approved'},
+  {n:'Olivia Park',type:'Planner',ev:'Chicago, IL',sub:'3d ago',st:'Pending'},
+];
+const MEMBERS=[
+  {n:'Maria Delgado',role:'Planner',joined:'Jan 2024',ev:11,last:'Today',st:'Active'},
+  {n:'Fairmont Monaco',role:'Exhibitor',joined:'Mar 2023',ev:18,last:'2d ago',st:'Active'},
+  {n:'Priya Nair',role:'Planner',joined:'Sep 2022',ev:26,last:'Today',st:'Active'},
+  {n:'Anatolia Events',role:'DMC',joined:'Feb 2025',ev:4,last:'1w ago',st:'Active'},
+  {n:'Rebecca Stone',role:'Planner',joined:'Jun 2026',ev:0,last:'Today',st:'Pending'},
+  {n:'Aria Gifting Co.',role:'Exhibitor',joined:'Nov 2024',ev:9,last:'4d ago',st:'Active'},
+  {n:'Lagoon DMC Mexico',role:'DMC',joined:'Jun 2026',ev:0,last:'Yesterday',st:'Pending'},
+];
+const REGIONS=[
+  {r:'North America',dmcs:11,dests:['Napa','San Francisco','Lake Tahoe','Miami','Orlando','Las Vegas','Dallas','Austin','Houston','New Orleans','Palm Beach']},
+  {r:'Caribbean & Latin America',dmcs:9,dests:['Puerto Rico','Bahamas','Costa Rica','Mexico City','Cancun','Los Cabos','Puerto Vallarta','Dominican Rep.','Panama']},
+  {r:'Western Europe',dmcs:14,dests:['Monaco','Cannes','Paris','Rome','Milan','Venice','Florence','Madrid','Barcelona','Lisbon','Porto','Amsterdam','Munich','Berlin']},
+  {r:'Mediterranean & Aegean',dmcs:8,dests:['Athens','Mykonos','Santorini','Sicily','Malaga','Costa del Sol','Tenerife','Cyprus']},
+  {r:'Central & Northern Europe',dmcs:7,dests:['Vienna','Prague','Budapest','Copenhagen','Zurich','Geneva','Dublin']},
+  {r:'UK & Ireland',dmcs:3,dests:['London','Edinburgh','Belfast']},
+  {r:'Türkiye',dmcs:3,dests:['Istanbul','Bodrum','Cappadocia']},
+  {r:'Africa',dmcs:4,dests:['Cape Town','South Africa','Mozambique','Zanzibar']},
+];
+const DEMAND=[['Monaco',92],['Cape Town',81],['Cappadocia',76],['Barcelona',68],['Los Cabos',61]];
+
+/* ---------------- HELPERS ---------------- */
+const $=(s,p=document)=>p.querySelector(s); const $$=(s,p=document)=>[...p.querySelectorAll(s)];
+const money=(n)=>'$'+n.toLocaleString();
+const stPill=(s)=>{const m={confirmed:'good',open:'warn',closed:'mute',VIP:'good',Active:'info',New:'warn',Pending:'warn',Approved:'good',Waitlist:'info',Platinum:'good',Gold:'warn',Silver:'mute'};return `<span class="pill ${m[s]||'mute'}"><span class="dot"></span>${s}</span>`;};
+const statusLabel=(s)=>({confirmed:'Confirmed',open:'Filling',closed:'Sold out'}[s]||s);
+function capBar(used,cap){const pct=Math.round(used/cap*100);const col=pct>=100?'#c0492e':pct>=80?'#c08a2e':'#3f8a5f';return `<div class="cap"><div class="bar"><i style="width:${Math.min(pct,100)}%;background:${col}"></i></div><div class="txt">${used}/${cap} · ${pct}%</div></div>`;}
+function av(n){return `<span class="av-sm" style="background:${ci(n)}">${initials(n)}</span>`;}
+function toast(msg){$('#toastMsg').textContent=msg;$('#toast').classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>$('#toast').classList.remove('show'),2600);}
+
+/* ---------------- RENDERERS ---------------- */
+function statCard(lab,val,delta,dir){return `<div class="stat"><div class="lab">${lab}</div><div class="val">${val}</div><div class="delta ${dir}">${dir==='up'?'▲':dir==='down'?'▼':'■'} ${delta}</div></div>`;}
+
+function renderOverview(){
+  const totP=EVENTS.reduce((a,e)=>a+e.planners,0), totE=EVENTS.reduce((a,e)=>a+e.exhib,0);
+  $('#ovStats').innerHTML=[
+    statCard('Upcoming Events',EVENTS.length,'Aug 2026 series','flat'),
+    statCard('Planners Registered',totP,'+38 this week','up'),
+    statCard('Exhibitor Booths',totE+' <small>/ '+EVENTS.reduce((a,e)=>a+e.ecap,0)+'</small>','94% sold','up'),
+    statCard('DMC Partners','70+','3 in onboarding','up'),
+  ].join('');
+  $('#ovEvents').innerHTML=EVENTS.map(e=>`<tr data-jump="events"><td class="ci">${e.city}</td><td>${e.date}</td><td>${e.planners}</td><td>${e.exhib}</td><td>${capBar(e.planners,e.pcap)}</td><td>${stPill(statusLabel(e.status))}</td></tr>`).join('');
+  $('#ovRegs').innerHTML=REGS.filter(r=>r.st==='Pending'||r.st==='Waitlist').slice(0,5).map(r=>`<tr data-jump="regs"><td class="cellflex">${av(r.n)}<b>${r.n}</b></td><td><span class="sub-txt">${r.type}</span></td><td>${r.ev}</td><td>${stPill(r.st)}</td></tr>`).join('');
+  $('#ovDemand').innerHTML=DEMAND.map(([d,v])=>`<div class="mini"><div class="r"><b>${d}</b><span class="sub-txt">${v} requests</span></div><div class="barline"><i style="width:${v}%"></i></div></div>`).join('');
+  const feed=[
+    ['✦','#e3edf6','<b>Maria Delgado</b> registered for <b>San Francisco</b>','12 min ago'],
+    ['◆','#e6f2ea','<b>Vista Resorts Group</b> requested an exhibitor booth in Chicago','5h ago'],
+    ['⊕','#f7eed9','New DMC <b>Lagoon DMC Mexico</b> submitted onboarding docs','Yesterday'],
+    ['◇','#f7e4dd','<b>Minneapolis</b> reached planner capacity — now sold out','Yesterday'],
+    ['✉','#e3edf6','7 registrations awaiting review','2d ago'],
+  ];
+  $('#ovFeed').innerHTML=feed.map(([i,bg,t,tm])=>`<li><span class="fic" style="background:${bg}">${i}</span><span><span class="ftxt">${t}</span><div class="ftime">${tm}</div></span></li>`).join('');
+}
+
+function renderEvents(f='all'){
+  const rows=EVENTS.filter(e=>f==='all'||e.status===f);
+  $('#evStats').innerHTML=[
+    statCard('Series Events',EVENTS.length,'Aug 2026','flat'),
+    statCard('Avg. Planner Fill',Math.round(EVENTS.reduce((a,e)=>a+e.planners/e.pcap,0)/EVENTS.length*100)+'%','+6 pts vs. last series','up'),
+    statCard('Sold Out',EVENTS.filter(e=>e.status==='closed').length,'Minneapolis','flat'),
+    statCard('Booths Open',EVENTS.reduce((a,e)=>a+(e.ecap-e.exhib),0),'across 6 cities','down'),
+  ].join('');
+  $('#evRows').innerHTML=rows.map(e=>`<tr onclick="toast('Opened ${e.city} event sheet')"><td class="ci">${e.city}</td><td>${e.date}, 2026</td><td class="sub-txt">${e.venue}</td><td>${e.planners}/${e.pcap}</td><td>${e.exhib}/${e.ecap}</td><td>${capBar(e.planners,e.pcap)}</td><td>${stPill(statusLabel(e.status))}</td></tr>`).join('')||emptyRow(7);
+}
+
+function renderPlanners(filter='All',q=''){
+  q=q.toLowerCase();
+  const rows=PLANNERS.filter(p=>(filter==='All'||p.seg===filter)&&(p.n.toLowerCase().includes(q)||p.co.toLowerCase().includes(q)));
+  $('#plRows').innerHTML=rows.map(p=>`<tr onclick="toast('Opened ${p.n}\\'s planner profile')"><td class="cellflex">${av(p.n)}<b>${p.n}</b></td><td>${p.co}</td><td><span class="pill mute">${p.seg}</span></td><td>${p.prog}</td><td class="sub-txt">${p.next}</td><td>${stPill(p.st)}</td></tr>`).join('')||emptyRow(6);
+}
+
+function renderExhib(f='all'){
+  const rows=EXHIB.filter(e=>f==='all'||e.type===f);
+  $('#exStats').innerHTML=[
+    statCard('Active Suppliers',EXHIB.length+'+','across 6 cities','up'),
+    statCard('Booth Revenue YTD',money(EXHIB.reduce((a,e)=>a+e.spend,0)),'+22% YoY','up'),
+    statCard('Platinum Tier',EXHIB.filter(e=>e.tier==='Platinum').length,'top partners','flat'),
+    statCard('Renewal Rate','88%','+4 pts','up'),
+  ].join('');
+  $('#exRows').innerHTML=rows.map(e=>`<tr onclick="toast('Opened ${e.n}')"><td class="cellflex">${av(e.n)}<b>${e.n}</b></td><td><span class="pill info">${e.type}</span></td><td>${e.dest}</td><td>${e.ev}</td><td>${money(e.spend)}</td><td>${stPill(e.tier)}</td></tr>`).join('')||emptyRow(6);
+}
+
+function renderRegs(f='all'){
+  const rows=REGS.filter(r=>f==='all'||r.st===f);
+  $('#rgRows').innerHTML=rows.map((r,i)=>`<tr><td class="cellflex">${av(r.n)}<b>${r.n}</b></td><td><span class="sub-txt">${r.type}</span></td><td>${r.ev}</td><td class="sub-txt">${r.sub}</td><td>${stPill(r.st)}</td><td style="text-align:right">${r.st==='Pending'?`<button class="btn btn-ghost" style="padding:5px 12px;font-size:.74rem" onclick="event.stopPropagation();approve(this,'${r.n}')">Approve</button>`:''}</td></tr>`).join('')||emptyRow(6);
+}
+function approve(btn,n){btn.closest('tr').querySelector('.pill').outerHTML='<span class="pill good"><span class="dot"></span>Approved</span>';btn.remove();toast(n+' approved');}
+
+function renderDMCs(q=''){
+  q=q.toLowerCase();
+  $('#dmcStats').innerHTML=[
+    statCard('Total DMC Partners',REGIONS.reduce((a,r)=>a+r.dmcs,0),'70+ vetted','flat'),
+    statCard('Destinations Covered',REGIONS.reduce((a,r)=>a+r.dests.length,0),'4 continents','up'),
+    statCard('Regions',REGIONS.length,'global reach','flat'),
+    statCard('In Onboarding',3,'new this quarter','up'),
+  ].join('');
+  const rows=REGIONS.map(r=>({...r,dests:r.dests.filter(d=>d.toLowerCase().includes(q))})).filter(r=>!q||r.dests.length);
+  $('#dmcGrid').innerHTML=rows.map(r=>`<div class="region"><h4>${r.r}<span class="pill mute">${r.dmcs}</span></h4><div class="n">${r.dests.length} destinations</div><div class="dlist">${r.dests.map(d=>`<span class="d">${d}</span>`).join('')}</div></div>`).join('')||'<p class="sub-txt">No destinations match.</p>';
+}
+
+function renderMembers(f='all'){
+  const rows=MEMBERS.filter(m=>f==='all'||m.st===f);
+  $('#memStats').innerHTML=[
+    statCard('Community Members','1,240','+86 this quarter','up'),
+    statCard('Active','1,118','90% engaged','up'),
+    statCard('Pending Approval',MEMBERS.filter(m=>m.st==='Pending').length,'review needed','flat'),
+    statCard('Avg. Events / Member','7.2','+0.8 YoY','up'),
+  ].join('');
+  $('#memRows').innerHTML=rows.map(m=>`<tr onclick="toast('Opened ${m.n}')"><td class="cellflex">${av(m.n)}<b>${m.n}</b></td><td><span class="pill mute">${m.role}</span></td><td class="sub-txt">${m.joined}</td><td>${m.ev}</td><td class="sub-txt">${m.last}</td><td>${stPill(m.st)}</td></tr>`).join('')||emptyRow(6);
+}
+
+function renderReports(){
+  $('#rpStats').innerHTML=[
+    statCard('Events / yr',30,'North America','flat'),
+    statCard('Planner Attendance','3,480','YTD 2026','up'),
+    statCard('Avg. NPS',72,'+5 pts','up'),
+    statCard('Booth Revenue',money(257000),'YTD','up'),
+  ].join('');
+  const months=[['Jan',180],['Feb',220],['Mar',310],['Apr',290],['May',360],['Jun',410],['Jul',300],['Aug',338]];
+  const max=Math.max(...months.map(m=>m[1]));
+  $('#rpChart').innerHTML=`<div style="display:flex;align-items:flex-end;gap:12px;height:180px;padding:0 4px">${months.map(([m,v])=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div title="${v}" style="width:100%;border-radius:6px 6px 0 0;height:${v/max*100}%;background:linear-gradient(180deg,var(--gold-bright),var(--gold))"></div><span class="sub-txt">${m}</span></div>`).join('')}</div>`;
+  const mix=[['Hotels & Resorts',38,'#3a6ea5'],['DMCs',27,'#3f8a5f'],['CVBs',21,'#c08a2e'],['Corporate Gifting',14,'#9c5bbd']];
+  $('#rpMix').innerHTML=mix.map(([l,v,c])=>`<div class="mini"><div class="r"><b>${l}</b><span class="sub-txt">${v}%</span></div><div class="barline"><i style="width:${v}%;background:${c}"></i></div></div>`).join('');
+}
+function emptyRow(c){return `<tr><td colspan="${c}" style="text-align:center;color:var(--muted);padding:28px">No records match.</td></tr>`;}
+
+/* ---------------- WIRING ---------------- */
+function switchView(v){
+  $$('.side-link').forEach(l=>l.classList.toggle('active',l.dataset.view===v));
+  $$('.view').forEach(s=>s.classList.toggle('active',s.id==='v-'+v));
+  $('#side').classList.remove('open');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$$('.side-link').forEach(l=>l.addEventListener('click',()=>switchView(l.dataset.view)));
+document.addEventListener('click',e=>{const j=e.target.closest('[data-jump]');if(j)switchView(j.dataset.jump);});
+
+// segmented filters
+function seg(id,cb){const el=$(id);if(!el)return;el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;$$('button',el).forEach(x=>x.classList.toggle('on',x===b));cb(b.dataset.f);});}
+seg('#evSeg',f=>renderEvents(f));
+seg('#exSeg',f=>renderExhib(f));
+seg('#rgSeg',f=>renderRegs(f));
+seg('#memSeg',f=>renderMembers(f));
+
+// planner chips
+const segs=['All','Corporate','Incentive','Agency','Association'];
+$('#plChips').innerHTML=segs.map((s,i)=>`<span class="chip ${i===0?'on':''}" data-seg="${s}">${s}</span>`).join('');
+let plFilter='All';
+$('#plChips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;$$('.chip',$('#plChips')).forEach(x=>x.classList.toggle('on',x===c));plFilter=c.dataset.seg;renderPlanners(plFilter,$('#plSearch').value);});
+$('#plSearch').addEventListener('input',e=>renderPlanners(plFilter,e.target.value));
+$('#dmcSearch').addEventListener('input',e=>renderDMCs(e.target.value));
+$('#burger').addEventListener('click',()=>$('#side').classList.toggle('open'));
+$('#globalSearch').addEventListener('keydown',e=>{if(e.key==='Enter'){switchView('planners');renderPlanners('All',e.target.value);$('#plSearch').value=e.target.value;}});
+
+// init
+renderOverview();renderEvents();renderPlanners();renderExhib();renderRegs();renderDMCs();renderMembers();renderReports();
+</script>
+</body>
+</html>
