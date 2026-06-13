@@ -134,35 +134,54 @@ static func _executive(p: Node3D) -> void:
 	_omni(p, Vector3(2.0, 3.0, -2.0), Color(1.0, 0.85, 0.6), 0.7, 7.0)
 
 static func _startup(p: Node3D) -> void:
-	# Long shared work tables down both sides with monitor rows
+	var green := Color(0.45, 0.72, 0.25)   # lime-green chair accent from the render
+	var table_c := Color(0.62, 0.46, 0.30) # warm butcher-block desk tops
+	# Exposed-concrete pillars down the room
+	for pz in [-2.0, -7.0]:
+		for side in [-1.0, 1.0]:
+			box(p, Vector3(3.7 * side, 1.8, pz), Vector3(0.45, 3.6, 0.45), Color(0.58, 0.58, 0.60))
+	# Long shared work benches down both sides, paired green chairs + monitors
 	for side in [-1.0, 1.0]:
-		box(p, Vector3(3.2 * side, 0.74, -2.2), Vector3(1.3, 0.06, 3.6), Color(0.92, 0.92, 0.9), { "collide": true })
-		for lz in [-3.7, -2.2, -0.7]:
-			box(p, Vector3(3.2 * side, 0.37, lz), Vector3(0.08, 0.74, 0.08), Color(0.2, 0.2, 0.22))
-			_monitor(p, Vector3(3.45 * side, 0.77, lz + 0.7), PI * 0.5 * side)
-			_office_chair(p, Vector3(2.7 * side, 0.0, lz + 0.7), -PI * 0.5 * side)
-	# Ping-pong table along the left wall, past the work table
-	box(p, Vector3(-3.15, 0.76, -7.6), Vector3(1.5, 0.06, 2.6), Color(0.12, 0.35, 0.6), { "collide": true })
-	box(p, Vector3(-3.15, 0.795, -7.6), Vector3(0.04, 0.01, 2.6), Color(0.95, 0.95, 0.95))
-	box(p, Vector3(-3.15, 0.86, -7.6), Vector3(1.5, 0.16, 0.03), Color(0.85, 0.88, 0.9))
-	box(p, Vector3(-3.15, 0.38, -7.6), Vector3(0.9, 0.7, 0.7), Color(0.18, 0.2, 0.24))
-	# Bean bags
-	sphere(p, Vector3(3.2, 0.32, -7.6), 0.55, Color(0.2, 0.3, 0.65), { "squash": Vector3(1, 0.62, 1) })
-	sphere(p, Vector3(3.0, 0.30, 1.4), 0.5, Color(0.45, 0.25, 0.6), { "squash": Vector3(1, 0.62, 1) })
-	# Whiteboard with marker scribbles on the right wall
-	box(p, Vector3(3.92, 1.9, -1.2), Vector3(0.06, 1.3, 2.3), Color(0.96, 0.96, 0.96))
-	box(p, Vector3(3.88, 2.2, -0.7), Vector3(0.05, 0.05, 0.9), Color(0.85, 0.25, 0.25))
-	box(p, Vector3(3.88, 1.95, -1.3), Vector3(0.05, 0.05, 1.2), Color(0.2, 0.4, 0.75))
-	box(p, Vector3(3.88, 1.7, -0.9), Vector3(0.05, 0.05, 0.7), Color(0.25, 0.55, 0.3))
-	# THINK / CODE / BUILD poster on the left wall
-	box(p, Vector3(-3.92, 2.3, -4.5), Vector3(0.06, 1.0, 0.75), Color(0.9, 0.75, 0.2))
-	box(p, Vector3(-3.88, 2.3, -4.5), Vector3(0.05, 0.7, 0.5), Color(0.15, 0.15, 0.2))
-	# Hanging pendant lights over the tables
+		box(p, Vector3(3.1 * side, 0.74, -2.2), Vector3(1.2, 0.06, 3.8), table_c, { "collide": true })
+		box(p, Vector3(3.1 * side, 0.37, -2.2), Vector3(0.08, 0.74, 3.4), Color(0.15, 0.15, 0.17))  # bench leg beam
+		for lz in [-3.6, -2.2, -0.8]:
+			_monitor(p, Vector3(3.35 * side, 0.77, lz), PI * 0.5 * side)
+			_office_chair(p, Vector3(2.55 * side, 0.0, lz), -PI * 0.5 * side, green)
+	# A second cluster of pod desks down the middle-back (kept out of the lane)
+	for side in [-1.0, 1.0]:
+		box(p, Vector3(1.4 * side, 0.74, -8.2), Vector3(1.1, 0.06, 1.4), table_c, { "collide": true })
+		_monitor(p, Vector3(1.4 * side, 0.77, -8.5), 0.0)
+		_office_chair(p, Vector3(1.4 * side, 0.0, -7.5), PI, green)
+	# Ping-pong table along the left wall, past the work bench
+	box(p, Vector3(-3.25, 0.76, -7.6), Vector3(1.4, 0.06, 2.6), Color(0.12, 0.35, 0.6), { "collide": true })
+	box(p, Vector3(-3.25, 0.795, -7.6), Vector3(0.04, 0.01, 2.6), Color(0.95, 0.95, 0.95))
+	box(p, Vector3(-3.25, 0.86, -7.6), Vector3(1.4, 0.16, 0.03), Color(0.85, 0.88, 0.9))
+	box(p, Vector3(-3.25, 0.38, -7.6), Vector3(0.9, 0.7, 0.7), Color(0.18, 0.2, 0.24))
+	# Blue bean bag near the player, like the render's foreground
+	sphere(p, Vector3(-3.0, 0.34, 1.0), 0.6, Color(0.16, 0.30, 0.62), { "squash": Vector3(1, 0.6, 1) })
+	sphere(p, Vector3(-3.0, 0.62, 1.0), 0.42, Color(0.18, 0.34, 0.68), { "squash": Vector3(1, 0.55, 1) })
+	# Exposed-brick left wall with a wooden shelf of supplies
+	box(p, Vector3(-3.95, 1.8, -5.0), Vector3(0.06, 3.6, 6.0), Color(0.52, 0.34, 0.28))
+	for sy in [1.2, 1.9]:
+		box(p, Vector3(-3.78, sy, -5.0), Vector3(0.3, 0.05, 2.4), Color(0.6, 0.45, 0.3))
+		for bx in [-1.0, -0.3, 0.4, 1.0]:
+			box(p, Vector3(-3.78, sy + 0.22, -5.0 + bx), Vector3(0.22, 0.36, 0.3),
+				Color(0.6, 0.3, 0.3).lerp(Color(0.3, 0.5, 0.6), absf(bx)))
+	# THINK / CODE / BUILD / REPEAT poster, top-left on the brick
+	box(p, Vector3(-3.9, 2.6, -8.5), Vector3(0.06, 1.1, 1.0), Color(0.95, 0.95, 0.92))
+	for i in 4:
+		box(p, Vector3(-3.86, 2.95 - i * 0.22, -8.5), Vector3(0.05, 0.12, 0.7), Color(0.15, 0.15, 0.2))
+	# Whiteboard with magnets/notes near the back-left
+	box(p, Vector3(-3.9, 2.0, -2.4), Vector3(0.06, 1.2, 2.0), Color(0.97, 0.97, 0.97))
+	for note in [[2.3, -1.8, Color(0.9, 0.3, 0.3)], [2.0, -2.6, Color(0.3, 0.5, 0.85)], [1.7, -2.0, Color(0.95, 0.85, 0.3)]]:
+		box(p, Vector3(-3.86, note[0], note[1]), Vector3(0.05, 0.14, 0.18), note[2])
+	# Hanging pendant lights over the benches
 	for side in [-1.0, 1.0]:
 		for lz in [-3.0, -1.0]:
-			box(p, Vector3(3.2 * side, 3.0, lz), Vector3(0.025, 1.1, 0.025), Color(0.1, 0.1, 0.1))
-			cylinder(p, Vector3(3.2 * side, 2.4, lz), 0.18, 0.22, Color(1.0, 0.95, 0.8), { "emissive": 2.0 })
-	_plant(p, Vector3(-3.4, 0, 1.6), 1.3)
+			box(p, Vector3(3.1 * side, 3.0, lz), Vector3(0.025, 1.1, 0.025), Color(0.1, 0.1, 0.1))
+			cylinder(p, Vector3(3.1 * side, 2.4, lz), 0.18, 0.22, Color(1.0, 0.95, 0.8), { "emissive": 2.0 })
+	_plant(p, Vector3(-3.4, 0, -0.4), 1.3)
+	_plant(p, Vector3(3.5, 0, -9.0), 1.4)
 
 static func _archive(p: Node3D) -> void:
 	# Steel shelving stacked with cardboard boxes down both walls
