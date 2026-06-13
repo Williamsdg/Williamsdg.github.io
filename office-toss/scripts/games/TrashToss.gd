@@ -249,6 +249,14 @@ func _build_extra_targets() -> void:
 			_make_bin(Vector3(2.9, 0, -5.6), Color(0.22, 0.55, 0.28), 150, "RECYCLE")
 			# Hoop mounted over the glass curtain wall, on a mullion.
 			_make_hoop(Vector3(-2.0, 2.4, -9.55), 200, "BUCKETS")
+		"archive":
+			# Filing cabinet with its top drawer open — drop one in.
+			var cab := Color(0.42, 0.43, 0.46)
+			Decor.box(self, Vector3(3.05, 0.5, -7.4), Vector3(0.5, 1.0, 0.6), cab, { "collide": true })
+			Decor.box(self, Vector3(3.31, 0.42, -7.4), Vector3(0.02, 0.03, 0.3), cab.darkened(0.4))
+			_make_box_target(Vector3(3.05, 1.16, -7.4), Vector3(0.56, 0.3, 0.62), cab.lightened(0.08), 175, "TOP DRAWER")
+			# Hoop on the back wall, left of the door.
+			_make_hoop(Vector3(-2.8, 1.9, -9.55), 200, "BUCKETS")
 		_:
 			pass
 
@@ -325,6 +333,28 @@ func _make_bin(pos: Vector3, color: Color, points: int, label: String) -> Node3D
 	root.add_child(goal)
 	goal.body_entered.connect(_on_goal_entered.bind(points, label))
 	return root
+
+## An open-top rectangular target (open drawer, archive box, planter...):
+## floor + four thin walls with a scoring trigger inside the opening.
+func _make_box_target(pos: Vector3, size: Vector3, color: Color, points: int, label: String) -> void:
+	var t := 0.04  # wall thickness
+	var h := size.y
+	Decor.box(self, pos + Vector3(0, -h * 0.5 + t * 0.5, 0), Vector3(size.x, t, size.z), color, { "collide": true })
+	Decor.box(self, pos + Vector3(0, 0, -size.z * 0.5 + t * 0.5), Vector3(size.x, h, t), color, { "collide": true })
+	Decor.box(self, pos + Vector3(0, 0, size.z * 0.5 - t * 0.5), Vector3(size.x, h, t), color, { "collide": true })
+	Decor.box(self, pos + Vector3(-size.x * 0.5 + t * 0.5, 0, 0), Vector3(t, h, size.z), color, { "collide": true })
+	Decor.box(self, pos + Vector3(size.x * 0.5 - t * 0.5, 0, 0), Vector3(t, h, size.z), color, { "collide": true })
+	var goal := Area3D.new()
+	goal.collision_layer = 0
+	goal.collision_mask = 2
+	goal.position = pos
+	var cs := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(size.x - t * 2.5, h * 0.5, size.z - t * 2.5)
+	cs.shape = shape
+	goal.add_child(cs)
+	add_child(goal)
+	goal.body_entered.connect(_on_goal_entered.bind(points, label))
 
 ## A wall-mounted mini basketball hoop: backboard + orange rim with a
 ## scoring trigger through the ring.

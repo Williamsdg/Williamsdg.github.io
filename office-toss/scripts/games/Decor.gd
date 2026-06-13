@@ -184,30 +184,53 @@ static func _startup(p: Node3D) -> void:
 	_plant(p, Vector3(3.5, 0, -9.0), 1.4)
 
 static func _archive(p: Node3D) -> void:
-	# Steel shelving stacked with cardboard boxes down both walls
-	for side in [-1.0, 1.0]:
-		for z in [-2.0, -4.6, -7.2]:
-			_shelf_unit(p, Vector3(3.4 * side, 0, z))
-	# Big office copier in the back-right corner
-	box(p, Vector3(3.0, 0.55, -9.0), Vector3(1.0, 1.1, 0.75), Color(0.82, 0.82, 0.80), { "collide": true })
-	box(p, Vector3(3.0, 1.14, -9.0), Vector3(0.85, 0.08, 0.6), Color(0.35, 0.36, 0.38))
-	box(p, Vector3(3.0, 0.95, -8.6), Vector3(0.5, 0.06, 0.12), Color(0.3, 0.65, 0.4), { "emissive": 1.2 })
-	box(p, Vector3(2.6, 0.6, -8.55), Vector3(0.3, 0.05, 0.25), Color(0.9, 0.9, 0.88))  # paper tray
-	# Step ladder, loose box stacks
-	for side_x in [-0.2, 0.2]:
-		box(p, Vector3(-3.2 + side_x, 0.8, -8.9), Vector3(0.06, 1.6, 0.06), Color(0.65, 0.65, 0.68))
+	var dark_steel := Color(0.30, 0.31, 0.34)
+	# Dark steel shelving stacked with cardboard boxes down the left wall,
+	# plus one unit at the front-right (the right side hosts the work area).
+	for z in [-3.4, -6.0, -8.6]:
+		_shelf_unit(p, Vector3(-3.4, 0, z), dark_steel)
+	_shelf_unit(p, Vector3(3.4, 0, -1.4), dark_steel)
+	# Big office copier, front-left like the render
+	box(p, Vector3(-3.15, 0.3, -0.8), Vector3(1.0, 0.6, 0.75), Color(0.80, 0.80, 0.78), { "collide": true })
+	box(p, Vector3(-3.15, 0.78, -0.8), Vector3(0.9, 0.36, 0.68), Color(0.86, 0.86, 0.84))
+	box(p, Vector3(-3.15, 1.02, -0.8), Vector3(0.95, 0.12, 0.62), Color(0.70, 0.70, 0.68))
+	box(p, Vector3(-3.0, 1.12, -0.5), Vector3(0.3, 0.05, 0.16), Color(0.3, 0.65, 0.4), { "emissive": 1.2 })  # control panel
+	box(p, Vector3(-2.85, 0.62, -0.45), Vector3(0.35, 0.04, 0.28), Color(0.92, 0.92, 0.9))  # output tray
+	# KEEP IT ORGANIZED framed sign above the copier
+	box(p, Vector3(-3.92, 2.35, -0.9), Vector3(0.06, 0.95, 0.75), Color(0.2, 0.2, 0.22))
+	box(p, Vector3(-3.89, 2.35, -0.9), Vector3(0.05, 0.8, 0.6), Color(0.94, 0.93, 0.9))
+	for i in 3:
+		box(p, Vector3(-3.86, 2.6 - i * 0.22, -0.9), Vector3(0.05, 0.1, 0.42), Color(0.25, 0.25, 0.28))
+	# Step ladder, center-back behind the bin area
+	for lx in [-0.22, 0.22]:
+		box(p, Vector3(-1.85 + lx, 0.8, -8.7), Vector3(0.06, 1.6, 0.06), Color(0.62, 0.62, 0.65), { "collide": true })
 	for step in 4:
-		box(p, Vector3(-3.2, 0.3 + step * 0.36, -8.9), Vector3(0.42, 0.05, 0.16), Color(0.65, 0.65, 0.68))
-	box(p, Vector3(2.7, 0.25, -7.3), Vector3(0.5, 0.5, 0.5), Color(0.66, 0.52, 0.36), { "collide": true })
-	box(p, Vector3(2.72, 0.68, -7.32), Vector3(0.38, 0.38, 0.38), Color(0.72, 0.58, 0.40))
+		box(p, Vector3(-1.85, 0.3 + step * 0.36, -8.7), Vector3(0.5, 0.05, 0.16), Color(0.62, 0.62, 0.65))
+	# Dark door with EXIT sign, back-right
+	box(p, Vector3(2.6, 1.1, -9.88), Vector3(0.95, 2.2, 0.08), Color(0.24, 0.25, 0.27))
+	box(p, Vector3(2.27, 1.05, -9.82), Vector3(0.06, 0.16, 0.05), Color(0.7, 0.7, 0.72))
+	box(p, Vector3(2.6, 2.45, -9.85), Vector3(0.55, 0.26, 0.08), Color(0.2, 0.85, 0.35), { "emissive": 2.2 })
+	# Coat rack with a yellow coat by the door
+	cylinder(p, Vector3(3.65, 0.85, -8.8), 0.035, 1.7, Color(0.35, 0.26, 0.18))
+	for a in [0.0, PI * 0.5, PI, PI * 1.5]:
+		box(p, Vector3(3.65 + cos(a) * 0.14, 1.62, -8.8 + sin(a) * 0.14), Vector3(0.2, 0.03, 0.03), Color(0.35, 0.26, 0.18), { "rot_y": a })
+	box(p, Vector3(3.52, 1.25, -8.7), Vector3(0.32, 0.62, 0.1), Color(0.85, 0.72, 0.2))
+	# Wooden work table, right-center, with boxes and gear on top
+	box(p, Vector3(3.1, 0.74, -3.7), Vector3(1.3, 0.07, 1.1), Color(0.6, 0.44, 0.28), { "collide": true })
+	for leg in [[-0.55, -4.15], [0.55, -4.15], [-0.55, -3.25], [0.55, -3.25]]:
+		box(p, Vector3(3.1 + leg[0], 0.37, leg[1]), Vector3(0.08, 0.74, 0.08), Color(0.5, 0.36, 0.22))
+	box(p, Vector3(2.85, 0.95, -3.9), Vector3(0.36, 0.34, 0.36), Color(0.68, 0.54, 0.38))
+	box(p, Vector3(3.4, 0.88, -3.5), Vector3(0.28, 0.2, 0.28), Color(0.62, 0.48, 0.33))
+	box(p, Vector3(3.1, 0.83, -3.3), Vector3(0.2, 0.12, 0.16), Color(0.2, 0.2, 0.24))
+	# Loose box stacks at the back-left
+	box(p, Vector3(-2.6, 0.25, -9.3), Vector3(0.5, 0.5, 0.5), Color(0.66, 0.52, 0.36), { "collide": true })
+	box(p, Vector3(-2.58, 0.68, -9.32), Vector3(0.38, 0.38, 0.38), Color(0.72, 0.58, 0.40))
 	box(p, Vector3(-2.7, 0.22, -6.9), Vector3(0.45, 0.44, 0.45), Color(0.6, 0.47, 0.33), { "collide": true })
-	# EXIT sign and KEEP IT ORGANIZED poster
-	box(p, Vector3(-1.5, 3.3, -9.85), Vector3(0.55, 0.28, 0.08), Color(0.2, 0.85, 0.35), { "emissive": 2.2 })
-	box(p, Vector3(-3.92, 2.2, -3.2), Vector3(0.06, 0.8, 0.6), Color(0.92, 0.9, 0.85))
 	# One warm hanging bulb — the room itself is kept dim
 	box(p, Vector3(0, 3.3, -5.0), Vector3(0.025, 0.5, 0.025), Color(0.1, 0.1, 0.1))
 	cylinder(p, Vector3(0, 3.0, -5.0), 0.12, 0.18, Color(1.0, 0.9, 0.7), { "emissive": 2.5 })
 	_omni(p, Vector3(0, 3.0, -5.0), Color(1.0, 0.88, 0.65), 1.1, 9.0)
+	_omni(p, Vector3(-3.0, 2.2, -0.8), Color(0.9, 0.92, 1.0), 0.5, 5.0)
 
 static func _rooftop(p: Node3D) -> void:
 	# City skyline poking up beyond the parapet (visual only)
@@ -287,8 +310,7 @@ static func _plant(p: Node3D, pos: Vector3, scale: float) -> void:
 	sphere(p, pos + Vector3(0, 0.62 * scale, 0), 0.3 * scale, Color(0.22, 0.45, 0.22))
 	sphere(p, pos + Vector3(0.12 * scale, 0.85 * scale, 0.05 * scale), 0.22 * scale, Color(0.26, 0.52, 0.26))
 
-static func _shelf_unit(p: Node3D, pos: Vector3) -> void:
-	var steel := Color(0.5, 0.51, 0.54)
+static func _shelf_unit(p: Node3D, pos: Vector3, steel := Color(0.5, 0.51, 0.54)) -> void:
 	for cz in [-0.62, 0.62]:
 		for cx in [-0.24, 0.24]:
 			box(p, pos + Vector3(cx, 1.1, cz), Vector3(0.07, 2.2, 0.07), steel)
