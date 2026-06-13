@@ -118,6 +118,12 @@ var _gravity: float = 9.8
 
 var _bin_root: Node3D             # bin + goal trigger; slides between shots
 
+## Attract mode: when true the scene plays itself as a menu backdrop —
+## no HUD, no input, auto-tossing balls, slowly orbiting camera.
+var _attract := false
+var _cam: Camera3D
+var _cam_angle := 0.0
+
 # Swipe tracking.
 var _dragging := false
 var _drag_start := Vector2.ZERO
@@ -133,6 +139,7 @@ var _wind_label: Label
 var _message_label: Label
 
 func _ready() -> void:
+	_attract = bool(GameState.get_meta("attract_mode", false))
 	var level: Variant = GameState.get_meta("current_level", null)
 	if typeof(level) == TYPE_DICTIONARY:
 		_tint = level.get("tint", _tint)
@@ -146,11 +153,22 @@ func _ready() -> void:
 	_build_bin()
 	_build_desk_with_props()
 	_build_camera_and_light()
-	_build_preview()
-	_build_ui()
 	Decor.build(_level_id, self)
 	_new_wind()
+
+	if _attract:
+		# Backdrop only: skip the HUD/aim preview and start auto-tossing.
+		_auto_toss_loop()
+		return
+
+	_build_preview()
+	_build_ui()
 	_update_hud()
+
+## Configures this scene as a self-playing menu backdrop. Call before adding
+## it to the tree (it reads the flag in _ready via GameState meta).
+func set_attract_mode() -> void:
+	_attract = true
 
 # ---------------------------------------------------------------------------
 # Scene construction
@@ -316,11 +334,12 @@ func _build_desk_with_props() -> void:
 		prop.broken.connect(_on_prop_broken)
 
 func _build_camera_and_light() -> void:
-	var cam := Camera3D.new()
-	cam.position = Vector3(0, 2.0, 3.6)
-	cam.look_at_from_position(cam.position, Vector3(0, 0.7, -5.0), Vector3.UP)
-	cam.fov = 60
-	add_child(cam)
+	_cam = Camera3D.new()
+	_cam.position = Vector3(0, 2.0, 3.6)
+	_cam.look_at_from_position(_cam.position, Vector3(0, 0.7, -5.0), Vector3.UP)
+	_cam.fov = 60
+	_cam.current = true   # render this 3D world even when hosted behind the menu UI
+	add_child(_cam)
 
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55, -40, 0)
@@ -353,7 +372,7 @@ func _build_preview() -> void:
 # ---------------------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _game_over:
+	if _game_over or _attract:
 		return
 	if event is InputEventScreenTouch:
 		if event.pressed:
@@ -465,9 +484,38 @@ func _hide_preview() -> void:
 # light objects aren't blasted sideways; capped well below gravity.
 # ---------------------------------------------------------------------------
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if _active_ball != null and is_instance_valid(_active_ball) and not _active_ball.settled:
 		_active_ball.apply_central_force(_wind * _active_ball.mass)
+	if _attract and _cam != null:
+		# Slow lazy orbit around the bin for the menu backdrop.
+		_cam_angle += delta * 0.12
+		var r := 4.2
+		_cam.position = Vector3(sin(_cam_angle) * r, 2.1, 3.0 + cos(_cam_angle) * 1.2)
+		_cam.look_at_from_position(_cam.position, Vector3(0, 0.7, -4.5), Vector3.UP)
+
+# ---------------------------------------------------------------------------
+# Attract mode — auto-toss balls forever so the menu has a living backdrop.
+# ---------------------------------------------------------------------------
+
+func _auto_toss_loop() -> void:
+	while is_inside_tree() and _attract:
+		await get_tree().create_timer(randf_range(0.9, 1.6)).timeout
+		if not (is_inside_tree() and _attract):
+			return
+		# Aim roughly at the bin with a little spread so some go in, some miss.
+		var to_bin := _bin_root.position - LAUNCH_POS
+		var ball := PaperBall.new()
+		add_child(ball)
+		ball.global_position = LAUNCH_POS
+		var lift := 4.2 + randf_range(-0.3, 0.5)
+		var fwd := -to_bin.z * 1.7 + randf_range(-0.6, 0.6)
+		ball.linear_velocity = Vector3(to_bin.x * 1.6 + randf_range(-0.5, 0.5), lift, -fwd)
+		ball.angular_velocity = Vector3(randf_range(-5, 5), randf_range(-5, 5), randf_range(-5, 5))
+		get_tree().create_timer(4.0).timeout.connect(func():
+			if is_instance_valid(ball):
+				ball.queue_free())
+		_new_wind()
 
 func _new_wind() -> void:
 	var strength := randf_range(0.0, 2.2)   # m/s² of sideways drift
@@ -483,6 +531,8 @@ func _on_goal_entered(body: Node) -> void:
 		return
 	var ball := body as PaperBall
 	ball.has_scored = true
+	if _attract:
+		return  # backdrop: register the sink visually but keep no score/HUD
 	_combo += 1
 	var mult: int = mini(_combo, MAX_COMBO_MULT)
 	var pts := BASE_SINK_POINTS * mult
@@ -497,6 +547,8 @@ func _on_goal_entered(body: Node) -> void:
 		_flash_message("SWISH! +%d" % pts, Color(0.3, 1.0, 0.5))
 
 func _on_prop_broken(points: int) -> void:
+	if _attract:
+		return
 	_add_score(points)
 	_flash_message("+%d" % points, Color(1.0, 0.7, 0.2))
 

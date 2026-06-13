@@ -102,6 +102,7 @@ func _make_level_row(level: Dictionary) -> Control:
 	return panel
 
 func _play(level: Dictionary) -> void:
+	GameState.set_meta("attract_mode", false)
 	GameState.set_meta("current_level", level)
 	get_tree().change_scene_to_file(level["scene"])
 
