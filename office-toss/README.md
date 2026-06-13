@@ -106,16 +106,25 @@ board drop in cleanly:
 
 ## Exporting
 
-Install the matching **export templates** in Godot (`Editor → Manage Export
-Templates`), then `Project → Export…` and add a preset:
+**📱 Full step-by-step iPhone / App Store / web-publish walkthrough:
+[`docs/ios-deploy.md`](docs/ios-deploy.md).** The repo already ships the
+pre-configured export presets (`export_presets.cfg`), the required 1024×1024
+App Store icon (`icon_1024.png`), a privacy-policy page, and a live home for
+the web build at `/office-toss-play/` on the site.
 
-- **iOS** — requires a Mac with Xcode. Add the iOS preset, set the bundle id,
-  team and icons, export an Xcode project, then build/sign in Xcode. The mobile
-  renderer and portrait orientation are already configured.
-- **Android** — add the Android preset, install the Android build template +
+Quick version — install the matching **export templates** in Godot
+(`Editor → Manage Export Templates`), then `Project → Export…`:
+
+- **iOS** — requires a Mac with Xcode. The iOS preset is pre-filled (bundle id
+  `com.dylanwilliams.officetoss`, icon wired up); add your Team ID, export the
+  Xcode project, then build/sign in Xcode. Mobile renderer + portrait are
+  already configured.
+- **Web** — the Web preset outputs straight to `../office-toss-play/index.html`
+  with thread support disabled (required for GitHub Pages hosting and iPhone
+  Safari). Export, commit, push — it goes live at
+  `https://williamsdg.github.io/office-toss-play/`.
+- **Android** — add an Android preset, install the Android build template +
   SDK, then export an `.apk`/`.aab`.
-- **Web** — add the Web preset to export `index.html` + `.wasm`. You can host
-  the result on this very GitHub Pages site (e.g. under `/office-toss-play/`).
 
 ---
 
