@@ -9,14 +9,25 @@ signal broken(points: int)
 @export var points: int = 50
 @export var prop_color: Color = Color(0.8, 0.3, 0.3)
 @export var size: Vector3 = Vector3(0.3, 0.3, 0.3)
-
-const BREAK_SPEED := 1.6   # relative impact speed needed to break it
+@export var break_speed: float = 1.6  # relative impact speed needed to break it
+## Anchored props (e.g. a window on a wall) hold their position instead of
+## falling under gravity, but still break on impact.
+@export var anchored: bool = false
 
 var _alive := true
 var _mesh_instance: MeshInstance3D
 
 func _ready() -> void:
 	mass = 0.5
+	if anchored:
+		gravity_scale = 0.0
+		can_sleep = false
+		axis_lock_linear_x = true
+		axis_lock_linear_y = true
+		axis_lock_linear_z = true
+		axis_lock_angular_x = true
+		axis_lock_angular_y = true
+		axis_lock_angular_z = true
 	# Layer 4 = props. Collide with world(1) and balls(2).
 	collision_layer = 4
 	collision_mask = 1 | 2
@@ -44,7 +55,7 @@ func _on_body_entered(body: Node) -> void:
 	if not _alive or not (body is PaperBall):
 		return
 	var rel_speed: float = (linear_velocity - (body as PaperBall).linear_velocity).length()
-	if rel_speed < BREAK_SPEED:
+	if rel_speed < break_speed:
 		return
 	_break()
 

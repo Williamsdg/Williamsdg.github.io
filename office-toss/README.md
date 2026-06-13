@@ -27,11 +27,17 @@ You can play on desktop with the mouse — mouse input is emulated as touch.
 
 ## How to play
 
-- **Swipe up** to throw a paper ball — a longer / faster swipe = more power.
-- **Swipe left or right** to aim the throw.
-- **Sink it in the bin** for +100. **Smash desk props** (mug, monitor, plant,
-  frame, lamp) for bonus points.
-- Watch the **Wind** indicator — it nudges the ball in flight.
+- **Drag up to aim** — a dotted trajectory preview shows exactly where the
+  throw will go (wind included). **Release to throw.** Longer drag = more
+  power; drag sideways to aim left/right.
+- **Sink it in the bin** for 100 points. Consecutive makes build a **combo
+  multiplier** (up to x5); banking the ball off a wall or the desk first earns
+  a **bank-shot bonus**.
+- **Smash the props** on the desk for bonus points — each office location has
+  its own set (trophy, printer, folder stacks, even a breakable skyline window
+  on the rooftop).
+- The **bin slides to a new spot** between shots and the **wind** changes —
+  watch the indicator.
 - You get **10 shots** per round. Earn coins from your score and spend them in
   **Locations** to unlock new offices.
 
@@ -84,6 +90,12 @@ board drop in cleanly:
 ### Roadmap (from the concept boards)
 - [x] Trash Can paper toss (3D, flick physics, wind, breakables, scoring, coins, save)
 - [x] 5 office locations with coin-gated unlocks
+- [x] Live trajectory aim preview (gravity + wind accurate)
+- [x] Bank shots (bounce off walls/desk) with bonus points
+- [x] Combo multiplier for consecutive makes (up to x5)
+- [x] Moving bin + fresh wind between shots
+- [x] Per-location breakable prop sets (incl. rooftop window, printer, folders)
+- [x] Ball flight trail
 - [ ] Desk basketball / bounce shot
 - [ ] Finger-flick paper football field goal
 - [ ] Throwable variety (stapler, sticky note, rubber band, paper airplane)
