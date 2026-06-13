@@ -96,9 +96,12 @@ board drop in cleanly:
 - [x] Moving bin + fresh wind between shots
 - [x] Per-location breakable prop sets (incl. rooftop window, printer, folders)
 - [x] Ball flight trail
+- [x] Multiple targets per room (moving bin + skill bins + basketball hoops)
+- [x] 8 selectable throwables, each with its own physics + score multiplier
+      (paper ball, sticky note, tape roll, crumpled cup, paper airplane,
+      stapler, pencil, rubber-band ball)
 - [ ] Desk basketball / bounce shot
 - [ ] Finger-flick paper football field goal
-- [ ] Throwable variety (stapler, sticky note, rubber band, paper airplane)
 - [ ] Power-ups (slow-mo, multi-ball, magnet, point boost, wind boost)
 - [ ] Daily rewards, friends & online leaderboards
 

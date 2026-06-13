@@ -137,6 +137,8 @@ var _shots_label: Label
 var _combo_label: Label
 var _wind_label: Label
 var _message_label: Label
+var _throwable_buttons: Dictionary = {}   # id -> Button
+var _throwable_label: Label
 
 func _ready() -> void:
 	_attract = bool(GameState.get_meta("attract_mode", false))
@@ -531,11 +533,15 @@ func _resolve_flick(end_pos: Vector2) -> void:
 	_throw(params["power"], params["aim_x"])
 
 func _throw(power: float, aim_x: float) -> void:
+	var tdef := GameState.throwable_def()
 	var ball := PaperBall.new()
+	ball.def = tdef
 	add_child(ball)
 	ball.global_position = LAUNCH_POS
 	ball.linear_velocity = _launch_velocity(power, aim_x)
-	ball.angular_velocity = Vector3(randf_range(-4, 4), randf_range(-4, 4), randf_range(-4, 4))
+	# Gliders (paper airplane) keep a steady nose; everything else tumbles.
+	var spin: float = 1.0 if tdef.get("gravity", 1.0) < 1.0 else 4.0
+	ball.angular_velocity = Vector3(randf_range(-spin, spin), randf_range(-spin, spin), randf_range(-spin, spin))
 
 	_active_ball = ball
 	_shots_left -= 1
@@ -577,7 +583,11 @@ func _update_preview(current_pos: Vector2) -> void:
 		_hide_preview()
 		return
 	var v := _launch_velocity(params["power"], params["aim_x"])
-	var accel := Vector3(_wind.x, -_gravity, _wind.z)
+	# Match the selected throwable's gravity (gliders fall slower) so the
+	# preview stays accurate. Wind contributes the same acceleration to every
+	# object (force scales with mass), so its term is mass-independent.
+	var g: float = _gravity * float(GameState.throwable_def().get("gravity", 1.0))
+	var accel := Vector3(_wind.x, -g, _wind.z)
 	for i in PREVIEW_DOTS:
 		var t := 0.085 * float(i + 1)
 		var p: Vector3 = LAUNCH_POS + v * t + 0.5 * accel * t * t
@@ -619,6 +629,7 @@ func _auto_toss_loop() -> void:
 		# Aim roughly at the bin with a little spread so some go in, some miss.
 		var to_bin := _bin_root.position - LAUNCH_POS
 		var ball := PaperBall.new()
+		ball.def = GameState.THROWABLES[randi() % GameState.THROWABLES.size()]
 		add_child(ball)
 		ball.global_position = LAUNCH_POS
 		var lift := 4.2 + randf_range(-0.3, 0.5)
@@ -648,7 +659,8 @@ func _on_goal_entered(body: Node, base_points: int, label: String) -> void:
 		return  # backdrop: register the sink visually but keep no score/HUD
 	_combo += 1
 	var mult: int = mini(_combo, MAX_COMBO_MULT)
-	var pts := base_points * mult
+	# Trickier throwables (high bounce, gliders, odd shapes) pay a bonus.
+	var pts := int(round(base_points * mult * ball.score_mult))
 	if ball.banked:
 		pts += BANK_BONUS
 	_add_score(pts)
@@ -787,6 +799,64 @@ func _build_ui() -> void:
 	_message_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_message_label.modulate.a = 0.0
 	layer.add_child(_message_label)
+
+	_build_throwable_strip(layer)
+
+## Bottom strip: tap an object to throw it next. Trickier objects score more
+## (shown as a ×multiplier). Tapping a button is consumed by the UI, so it
+## never triggers a throw.
+func _build_throwable_strip(layer: CanvasLayer) -> void:
+	var wrap := VBoxContainer.new()
+	wrap.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	wrap.offset_top = -112
+	wrap.offset_bottom = -14
+	wrap.offset_left = 10
+	wrap.offset_right = -10
+	wrap.alignment = BoxContainer.ALIGNMENT_CENTER
+	wrap.add_theme_constant_override("separation", 4)
+	layer.add_child(wrap)
+
+	_throwable_label = _hud_label(22, Color(1.0, 0.83, 0.24))
+	_throwable_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	wrap.add_child(_throwable_label)
+
+	var strip := HBoxContainer.new()
+	strip.alignment = BoxContainer.ALIGNMENT_CENTER
+	strip.add_theme_constant_override("separation", 6)
+	wrap.add_child(strip)
+
+	for t in GameState.THROWABLES:
+		var b := Button.new()
+		b.text = t["icon"]
+		b.custom_minimum_size = Vector2(74, 58)
+		b.add_theme_font_size_override("font_size", 28)
+		b.tooltip_text = t["name"]
+		b.focus_mode = Control.FOCUS_NONE
+		b.pressed.connect(_select_throwable.bind(t["id"]))
+		_throwable_buttons[t["id"]] = b
+		strip.add_child(b)
+	_refresh_throwable_strip()
+
+func _select_throwable(id: String) -> void:
+	GameState.selected_throwable = id
+	GameState.save_game()
+	_refresh_throwable_strip()
+
+func _refresh_throwable_strip() -> void:
+	var sel: String = GameState.selected_throwable
+	for t in GameState.THROWABLES:
+		var b: Button = _throwable_buttons[t["id"]]
+		var on: bool = t["id"] == sel
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(0.20, 0.45, 0.30, 0.96) if on else Color(0.14, 0.17, 0.24, 0.85)
+		sb.set_corner_radius_all(12)
+		sb.set_border_width_all(3)
+		sb.border_color = Color(1.0, 0.83, 0.24) if on else Color(0, 0, 0, 0)
+		b.add_theme_stylebox_override("normal", sb)
+		b.add_theme_stylebox_override("hover", sb)
+		b.add_theme_stylebox_override("pressed", sb)
+	var d := GameState.throwable_def()
+	_throwable_label.text = "%s   ×%.2f points" % [d["name"], d["mult"]]
 
 func _update_hud() -> void:
 	_score_label.text = "Score: %d" % _score

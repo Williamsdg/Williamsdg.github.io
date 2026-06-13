@@ -23,6 +23,39 @@ const LEVELS := [
 ## release builds keep the real coin-gated progression automatically.
 const DEV_UNLOCK_ALL := true
 
+## Throwable objects from the concept board. Each has its own physics feel
+## and a score multiplier — the harder it is to sink, the more it pays.
+## shape: "sphere" (radius), "box"/"plane" (size), "cylinder" (radius+height).
+## gravity scales gravity (paper airplane glides); bounce/friction tune feel.
+const THROWABLES := [
+	{ "id": "paper",   "name": "Paper Ball",      "icon": "⚪", "mult": 1.0,  "shape": "sphere",   "radius": 0.13, "color": Color(0.93, 0.93, 0.90), "mass": 0.06, "bounce": 0.25, "friction": 0.8 },
+	{ "id": "sticky",  "name": "Sticky Note Ball", "icon": "🟡", "mult": 0.9,  "shape": "sphere",   "radius": 0.12, "color": Color(0.97, 0.85, 0.25), "mass": 0.09, "bounce": 0.05, "friction": 1.0 },
+	{ "id": "tape",    "name": "Tape Roll",        "icon": "⭕", "mult": 1.1,  "shape": "cylinder", "radius": 0.13, "height": 0.07, "color": Color(0.82, 0.74, 0.58), "mass": 0.10, "bounce": 0.3,  "friction": 0.6 },
+	{ "id": "cup",     "name": "Crumpled Cup",     "icon": "🥤", "mult": 1.2,  "shape": "cylinder", "radius": 0.10, "height": 0.17, "color": Color(0.80, 0.30, 0.28), "mass": 0.08, "bounce": 0.2,  "friction": 0.7 },
+	{ "id": "plane",   "name": "Paper Airplane",   "icon": "✈️", "mult": 1.25, "shape": "plane",    "size": Vector3(0.36, 0.07, 0.44), "color": Color(0.95, 0.95, 0.93), "mass": 0.04, "bounce": 0.1, "friction": 0.6, "gravity": 0.55 },
+	{ "id": "stapler", "name": "Stapler",          "icon": "📎", "mult": 1.3,  "shape": "box",      "size": Vector3(0.30, 0.11, 0.13), "color": Color(0.78, 0.16, 0.14), "mass": 0.45, "bounce": 0.1, "friction": 0.9 },
+	{ "id": "pencil",  "name": "Pencil",           "icon": "✏️", "mult": 1.4,  "shape": "box",      "size": Vector3(0.05, 0.05, 0.48), "color": Color(0.95, 0.72, 0.18), "mass": 0.05, "bounce": 0.35, "friction": 0.5 },
+	{ "id": "rubber",  "name": "Rubber Band Ball", "icon": "🔴", "mult": 1.5,  "shape": "sphere",   "radius": 0.12, "color": Color(0.85, 0.35, 0.20), "mass": 0.12, "bounce": 0.75, "friction": 0.6 },
+]
+
+var selected_throwable: String = "paper"
+
+func throwable_def() -> Dictionary:
+	for t in THROWABLES:
+		if t["id"] == selected_throwable:
+			return t
+	return THROWABLES[0]
+
+## Cycles to the next throwable and returns its definition.
+func next_throwable() -> Dictionary:
+	for i in THROWABLES.size():
+		if THROWABLES[i]["id"] == selected_throwable:
+			selected_throwable = THROWABLES[(i + 1) % THROWABLES.size()]["id"]
+			save_game()
+			return throwable_def()
+	selected_throwable = THROWABLES[0]["id"]
+	return THROWABLES[0]
+
 var coins: int = 0
 var best_scores: Dictionary = {}   # level_id -> int
 var unlocked: Dictionary = { "classic": true }  # level_id -> bool
