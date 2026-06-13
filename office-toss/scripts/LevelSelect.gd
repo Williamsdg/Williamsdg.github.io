@@ -49,6 +49,13 @@ func _build_ui() -> void:
 	title.add_theme_color_override("font_color", Color(0.92, 0.95, 1.0))
 	col.add_child(title)
 
+	if GameState.DEV_UNLOCK_ALL and OS.is_debug_build():
+		var dev := Label.new()
+		dev.text = "dev build: all locations unlocked for testing"
+		dev.add_theme_font_size_override("font_size", 16)
+		dev.add_theme_color_override("font_color", Color(0.95, 0.6, 0.3))
+		col.add_child(dev)
+
 	for level in GameState.LEVELS:
 		col.add_child(_make_level_row(level))
 

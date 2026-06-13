@@ -18,6 +18,11 @@ const LEVELS := [
 	{ "id": "rooftop",   "name": "Rooftop Office",   "tint": Color(0.36, 0.58, 0.78), "cost": 1000, "scene": "res://scenes/games/TrashToss.tscn" },
 ]
 
+## Dev convenience: unlock every location while play-testing. Only takes
+## effect in debug builds (running from the editor / debug exports), so
+## release builds keep the real coin-gated progression automatically.
+const DEV_UNLOCK_ALL := true
+
 var coins: int = 0
 var best_scores: Dictionary = {}   # level_id -> int
 var unlocked: Dictionary = { "classic": true }  # level_id -> bool
@@ -29,6 +34,8 @@ func get_best(level_id: String) -> int:
 	return int(best_scores.get(level_id, 0))
 
 func is_unlocked(level_id: String) -> bool:
+	if DEV_UNLOCK_ALL and OS.is_debug_build():
+		return true
 	return bool(unlocked.get(level_id, false))
 
 ## Records a completed run. Returns true if it set a new best for the level.
