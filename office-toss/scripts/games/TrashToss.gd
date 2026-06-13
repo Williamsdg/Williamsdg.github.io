@@ -226,21 +226,37 @@ func _build_window_wall(wall: Color) -> void:
 		Decor.box(self, Vector3(b[0], h * 0.5 - 2.0, b[1]), Vector3(b[2], h, b[2]), Color(0.40, 0.46, 0.56))
 
 func _build_bin() -> void:
-	# Bin and its scoring trigger live under one root so they slide together
-	# when the bin moves between shots.
-	_bin_root = Node3D.new()
-	_bin_root.position = BIN_POS
-	add_child(_bin_root)
+	# The main bin slides between shots; extra fixed targets pay more.
+	_bin_root = _make_bin(BIN_POS, _cfg["bin"], BASE_SINK_POINTS, "SWISH")
+	_build_extra_targets()
 
-	# Open-top bin made from a ring of thin wall segments + a base, so balls
-	# bounce off the rim on a miss and drop in cleanly on a make.
+## Extra scoring targets per location (positions are skill shots: tucked
+## behind partitions, mounted high on walls, etc.).
+func _build_extra_targets() -> void:
+	match _level_id:
+		"classic":
+			# Red bin hidden behind the left cubicle partition — lob it over.
+			_make_bin(Vector3(-2.95, 0, -6.4), Color(0.75, 0.22, 0.18), 150, "RED BIN")
+			# Mini hoop high on the back wall.
+			_make_hoop(Vector3(3.0, 1.85, -9.55), 200, "BUCKETS")
+		_:
+			pass
+
+## Builds an open-top bin (ring of wall segments + base) with a scoring
+## trigger inside the rim. Returns the root so callers can move it.
+func _make_bin(pos: Vector3, color: Color, points: int, label: String) -> Node3D:
+	var root := Node3D.new()
+	root.position = pos
+	add_child(root)
+
+	# Balls bounce off the rim on a miss and drop in cleanly on a make.
 	var bin := StaticBody3D.new()
 	bin.collision_layer = 1
 	bin.collision_mask = 0
-	_bin_root.add_child(bin)
+	root.add_child(bin)
 
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = _cfg["bin"]
+	mat.albedo_color = color
 	mat.roughness = 0.6
 
 	var segments := 14
@@ -296,8 +312,52 @@ func _build_bin() -> void:
 	goal_shape.height = 0.1
 	goal_cs.shape = goal_shape
 	goal.add_child(goal_cs)
-	_bin_root.add_child(goal)
-	goal.body_entered.connect(_on_goal_entered)
+	root.add_child(goal)
+	goal.body_entered.connect(_on_goal_entered.bind(points, label))
+	return root
+
+## A wall-mounted mini basketball hoop: backboard + orange rim with a
+## scoring trigger through the ring.
+func _make_hoop(ring_pos: Vector3, points: int, label: String) -> void:
+	# Backboard against the wall behind the ring.
+	Decor.box(self, Vector3(ring_pos.x, ring_pos.y + 0.25, -9.84), Vector3(0.95, 0.7, 0.05), Color(0.94, 0.94, 0.92))
+	Decor.box(self, Vector3(ring_pos.x, ring_pos.y + 0.18, -9.80), Vector3(0.45, 0.35, 0.04), Color(0.8, 0.3, 0.2))
+	# Rim (visual) + a short "net" hint below it.
+	var rim := MeshInstance3D.new()
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.22
+	tm.outer_radius = 0.29
+	var rim_mat := StandardMaterial3D.new()
+	rim_mat.albedo_color = Color(0.9, 0.45, 0.15)
+	tm.material = rim_mat
+	rim.mesh = tm
+	rim.position = ring_pos
+	add_child(rim)
+	var net := MeshInstance3D.new()
+	var nm := CylinderMesh.new()
+	nm.top_radius = 0.24
+	nm.bottom_radius = 0.16
+	nm.height = 0.28
+	var net_mat := StandardMaterial3D.new()
+	net_mat.albedo_color = Color(1, 1, 1, 0.4)
+	net_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	nm.material = net_mat
+	net.mesh = nm
+	net.position = ring_pos + Vector3(0, -0.17, 0)
+	add_child(net)
+	# Scoring trigger through the ring.
+	var goal := Area3D.new()
+	goal.collision_layer = 0
+	goal.collision_mask = 2
+	goal.position = ring_pos + Vector3(0, -0.05, 0)
+	var cs := CollisionShape3D.new()
+	var shape := CylinderShape3D.new()
+	shape.radius = 0.2
+	shape.height = 0.12
+	cs.shape = shape
+	goal.add_child(cs)
+	add_child(goal)
+	goal.body_entered.connect(_on_goal_entered.bind(points, label))
 
 func _move_bin() -> void:
 	# Slide the bin to a fresh spot before the next shot.
@@ -526,7 +586,7 @@ func _new_wind() -> void:
 # Scoring — combo multiplier for consecutive makes, bonus for bank shots.
 # ---------------------------------------------------------------------------
 
-func _on_goal_entered(body: Node) -> void:
+func _on_goal_entered(body: Node, base_points: int, label: String) -> void:
 	if not (body is PaperBall) or (body as PaperBall).has_scored:
 		return
 	var ball := body as PaperBall
@@ -535,16 +595,16 @@ func _on_goal_entered(body: Node) -> void:
 		return  # backdrop: register the sink visually but keep no score/HUD
 	_combo += 1
 	var mult: int = mini(_combo, MAX_COMBO_MULT)
-	var pts := BASE_SINK_POINTS * mult
+	var pts := base_points * mult
 	if ball.banked:
 		pts += BANK_BONUS
 	_add_score(pts)
 	if ball.banked:
-		_flash_message("BANK SHOT! +%d" % pts, Color(0.4, 0.85, 1.0))
+		_flash_message("BANK %s! +%d" % [label, pts], Color(0.4, 0.85, 1.0))
 	elif mult > 1:
-		_flash_message("COMBO x%d! +%d" % [mult, pts], Color(1.0, 0.55, 0.9))
+		_flash_message("%s COMBO x%d! +%d" % [label, mult, pts], Color(1.0, 0.55, 0.9))
 	else:
-		_flash_message("SWISH! +%d" % pts, Color(0.3, 1.0, 0.5))
+		_flash_message("%s! +%d" % [label, pts], Color(0.3, 1.0, 0.5))
 
 func _on_prop_broken(points: int) -> void:
 	if _attract:

@@ -23,34 +23,66 @@ static func build(level_id: String, parent: Node3D) -> void:
 # ---------------------------------------------------------------------------
 
 static func _classic(p: Node3D) -> void:
-	var fabric := Color(0.52, 0.56, 0.64)   # cubicle partition fabric
-	var desk_c := Color(0.80, 0.79, 0.76)
+	var fabric := Color(0.48, 0.52, 0.58)            # cubicle partition fabric
+	var desk_c := Color(0.72, 0.58, 0.40)            # light oak desk tops
+	var chair_blue := Color(0.22, 0.38, 0.65)
 	# Cubicle rows down both sides: partition facing the lane, desk + monitor
-	# + chair behind it.
+	# + chair behind it, pedestal cabinet, desk plant, loose papers.
 	for side in [-1.0, 1.0]:
 		for z in [-1.5, -4.5, -7.5]:
 			box(p, Vector3(2.45 * side, 0.8, z), Vector3(0.07, 1.6, 2.5), fabric,
 				{ "collide": true, "bankable": true })
 			# partition top trim
-			box(p, Vector3(2.45 * side, 1.62, z), Vector3(0.10, 0.05, 2.5), fabric.darkened(0.3))
+			box(p, Vector3(2.45 * side, 1.62, z), Vector3(0.10, 0.05, 2.5), fabric.darkened(0.35))
 			box(p, Vector3(3.3 * side, 0.72, z), Vector3(1.3, 0.06, 0.8), desk_c)      # desk top
-			box(p, Vector3(3.3 * side, 0.36, z), Vector3(1.1, 0.66, 0.1), desk_c.darkened(0.15))  # modesty panel
+			box(p, Vector3(3.3 * side, 0.36, z), Vector3(1.1, 0.66, 0.1), desk_c.darkened(0.2))  # modesty panel
 			_monitor(p, Vector3(3.5 * side, 0.75, z), PI * 0.5 * side)
-			_office_chair(p, Vector3(2.95 * side, 0.0, z + 0.6), -PI * 0.5 * side)
-			# loose papers
-			box(p, Vector3(3.2 * side, 0.78, z + 0.45), Vector3(0.25, 0.01, 0.32), Color(0.95, 0.95, 0.93))
+			_office_chair(p, Vector3(2.95 * side, 0.0, z + 0.6), -PI * 0.5 * side, chair_blue)
+			# pedestal filing cabinet under the desk (handle facing the lane)
+			box(p, Vector3(3.45 * side, 0.3, z - 0.5), Vector3(0.42, 0.6, 0.45), Color(0.55, 0.57, 0.60))
+			box(p, Vector3(3.22 * side, 0.45, z - 0.5), Vector3(0.02, 0.03, 0.3), Color(0.35, 0.37, 0.4))
+			# small desk plant + loose papers
+			_plant(p, Vector3(3.55 * side, 0.75, z + 0.32), 0.45)
+			box(p, Vector3(3.1 * side, 0.78, z + 0.42), Vector3(0.25, 0.01, 0.32), Color(0.95, 0.95, 0.93))
 	# Ceiling light panels
 	for z in [-1.0, -4.0, -7.0]:
 		for x in [-1.8, 1.8]:
 			box(p, Vector3(x, 3.5, z), Vector3(1.2, 0.06, 2.2), Color(1, 1, 0.96), { "emissive": 1.6 })
-	# Wall clock on the back wall
-	cylinder(p, Vector3(-1.8, 2.9, -9.85), 0.28, 0.06, Color(0.95, 0.95, 0.95), { "rot_x": PI * 0.5 })
-	cylinder(p, Vector3(-1.8, 2.9, -9.81), 0.05, 0.06, Color(0.15, 0.15, 0.18), { "rot_x": PI * 0.5 })
-	# Filing cabinet + corner plant at the back
-	box(p, Vector3(3.3, 0.65, -8.9), Vector3(0.55, 1.3, 0.6), Color(0.62, 0.64, 0.66), { "collide": true })
+	# --- Back wall, left to right: door + EXIT, two windows, clock high up.
+	# (x ≈ 3.0 stays clear for the wall-mounted hoop target.)
+	box(p, Vector3(-2.9, 1.1, -9.88), Vector3(0.95, 2.2, 0.08), Color(0.45, 0.30, 0.18))
+	box(p, Vector3(-2.55, 1.05, -9.82), Vector3(0.06, 0.16, 0.05), Color(0.75, 0.72, 0.55))  # handle
+	box(p, Vector3(-2.9, 2.45, -9.85), Vector3(0.55, 0.26, 0.08), Color(0.2, 0.85, 0.35), { "emissive": 2.2 })
+	for wx in [-0.9, 1.4]:
+		_window(p, Vector3(wx, 2.2, -9.86), Vector2(1.5, 1.3))
+	cylinder(p, Vector3(0.25, 3.15, -9.85), 0.26, 0.06, Color(0.95, 0.95, 0.95), { "rot_x": PI * 0.5 })
+	cylinder(p, Vector3(0.25, 3.15, -9.81), 0.05, 0.06, Color(0.15, 0.15, 0.18), { "rot_x": PI * 0.5 })
+	# Water cooler beside the door
+	cylinder(p, Vector3(-2.0, 0.5, -9.4), 0.17, 1.0, Color(0.92, 0.93, 0.95))
+	cylinder(p, Vector3(-2.0, 1.18, -9.4), 0.13, 0.36, Color(0.45, 0.7, 0.9, 0.75))
+	# Posters: blue TEAM poster (left wall), corkboard with notes (right wall)
+	box(p, Vector3(-3.92, 2.2, -3.0), Vector3(0.06, 1.0, 0.75), Color(0.18, 0.35, 0.6))
+	box(p, Vector3(-3.88, 2.35, -3.0), Vector3(0.05, 0.18, 0.5), Color(0.9, 0.92, 0.95))
+	box(p, Vector3(3.92, 2.1, -2.4), Vector3(0.06, 0.9, 1.2), Color(0.72, 0.58, 0.42))
+	for note in [[1.95, -2.7, Color(0.95, 0.9, 0.4)], [2.25, -2.2, Color(0.5, 0.8, 0.95)], [1.9, -2.05, Color(0.95, 0.6, 0.6)]]:
+		box(p, Vector3(3.88, note[0], note[1]), Vector3(0.05, 0.16, 0.16), note[2])
+	# Tall filing cabinet + corner plant at the back
+	box(p, Vector3(3.45, 0.65, -8.9), Vector3(0.55, 1.3, 0.6), Color(0.62, 0.64, 0.66), { "collide": true })
 	for dy in [0.35, 0.75, 1.15]:
-		box(p, Vector3(3.3, dy, -8.59), Vector3(0.35, 0.04, 0.03), Color(0.4, 0.42, 0.44))
+		box(p, Vector3(3.45, dy, -8.59), Vector3(0.35, 0.04, 0.03), Color(0.4, 0.42, 0.44))
 	_plant(p, Vector3(-3.4, 0, -9.2), 1.2)
+
+## A framed wall window: sky pane, distant skyline silhouettes and half-drawn
+## venetian blinds (matches the concept board's classic office).
+static func _window(p: Node3D, pos: Vector3, size: Vector2) -> void:
+	box(p, pos, Vector3(size.x + 0.14, size.y + 0.14, 0.06), Color(0.85, 0.85, 0.82))      # frame
+	box(p, pos + Vector3(0, 0, 0.025), Vector3(size.x, size.y, 0.04), Color(0.62, 0.78, 0.92), { "emissive": 0.35 })
+	# skyline silhouettes inside the pane
+	for b in [[-0.35, 0.45, 0.55], [0.05, 0.3, 0.75], [0.42, 0.5, 0.45]]:
+		box(p, pos + Vector3(b[0], -size.y * 0.5 + b[2] * 0.5, 0.045), Vector3(b[1], b[2], 0.02), Color(0.38, 0.45, 0.55))
+	# blinds drawn over the top half
+	for i in 4:
+		box(p, pos + Vector3(0, size.y * 0.5 - 0.10 - i * 0.11, 0.06), Vector3(size.x, 0.06, 0.02), Color(0.9, 0.9, 0.86))
 
 static func _executive(p: Node3D) -> void:
 	var wood := Color(0.34, 0.22, 0.13)
@@ -200,10 +232,10 @@ static func _monitor(p: Node3D, pos: Vector3, rot_y: float) -> void:
 	box(p, pos + Vector3(0, 0.36, 0), Vector3(0.6, 0.38, 0.04), Color(0.1, 0.1, 0.12), { "rot_y": rot_y })
 	box(p, pos + Vector3(0, 0.36, 0) + fwd * 0.022, Vector3(0.54, 0.32, 0.01), Color(0.25, 0.45, 0.6), { "rot_y": rot_y, "emissive": 0.5 })
 
-static func _office_chair(p: Node3D, pos: Vector3, rot_y: float) -> void:
-	box(p, pos + Vector3(0, 0.48, 0), Vector3(0.46, 0.07, 0.46), Color(0.16, 0.17, 0.2), { "rot_y": rot_y })
+static func _office_chair(p: Node3D, pos: Vector3, rot_y: float, seat_color := Color(0.16, 0.17, 0.2)) -> void:
+	box(p, pos + Vector3(0, 0.48, 0), Vector3(0.46, 0.07, 0.46), seat_color, { "rot_y": rot_y })
 	var back := Vector3(-sin(rot_y), 0, -cos(rot_y)) * 0.2
-	box(p, pos + back + Vector3(0, 0.78, 0), Vector3(0.44, 0.55, 0.07), Color(0.16, 0.17, 0.2), { "rot_y": rot_y })
+	box(p, pos + back + Vector3(0, 0.78, 0), Vector3(0.44, 0.55, 0.07), seat_color, { "rot_y": rot_y })
 	box(p, pos + Vector3(0, 0.24, 0), Vector3(0.05, 0.48, 0.05), Color(0.4, 0.4, 0.42))
 	box(p, pos + Vector3(0, 0.02, 0), Vector3(0.4, 0.04, 0.4), Color(0.3, 0.3, 0.32), { "rot_y": rot_y })
 
