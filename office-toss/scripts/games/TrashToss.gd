@@ -239,6 +239,11 @@ func _build_extra_targets() -> void:
 			_make_bin(Vector3(-2.95, 0, -6.4), Color(0.75, 0.22, 0.18), 150, "RED BIN")
 			# Mini hoop high on the back wall.
 			_make_hoop(Vector3(3.0, 1.85, -9.55), 200, "BUCKETS")
+		"executive":
+			# Brass bin against the right wall — precision shot past the credenza.
+			_make_bin(Vector3(2.95, 0, -6.6), Color(0.78, 0.62, 0.25), 150, "BRASS BIN")
+			# The boss's mini hoop, mounted beside the big window.
+			_make_hoop(Vector3(3.3, 2.0, -9.55), 200, "BUCKETS")
 		_:
 			pass
 

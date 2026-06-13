@@ -86,30 +86,49 @@ static func _window(p: Node3D, pos: Vector3, size: Vector2) -> void:
 
 static func _executive(p: Node3D) -> void:
 	var wood := Color(0.34, 0.22, 0.13)
+	var leather := Color(0.13, 0.13, 0.15)
 	# Deep red rug under the lane (visual only — the ball rolls "on" it)
 	box(p, Vector3(0, 0.012, -4.2), Vector3(3.6, 0.02, 5.5), Color(0.45, 0.12, 0.12))
 	box(p, Vector3(0, 0.013, -4.2), Vector3(3.2, 0.02, 5.1), Color(0.55, 0.18, 0.15))
-	# Bookshelf along the left wall
-	box(p, Vector3(-3.65, 1.5, -8.0), Vector3(0.55, 3.0, 2.0), wood, { "collide": true })
+	# The boss's tall black leather chair behind the big desk (offset from
+	# center so it doesn't block straight bin shots).
+	_office_chair(p, Vector3(-0.9, 0.12, -3.6), 0.0, leather)
+	box(p, Vector3(-0.9, 1.32, -3.85), Vector3(0.5, 0.35, 0.09), leather)  # tall headrest
+	# Bookshelf on the back wall, right of the painting
+	box(p, Vector3(0.55, 1.5, -9.7), Vector3(1.9, 3.0, 0.5), wood, { "collide": true })
 	var book_colors := [Color(0.55, 0.2, 0.18), Color(0.2, 0.35, 0.5), Color(0.25, 0.45, 0.25), Color(0.6, 0.5, 0.25)]
 	for row in 3:
 		var y := 0.65 + row * 0.85
 		for i in 4:
 			var c: Color = book_colors[(row + i) % book_colors.size()]
-			box(p, Vector3(-3.55, y, -8.65 + i * 0.44), Vector3(0.35, 0.5, 0.36), c)
-	# Painting on the back wall
-	box(p, Vector3(-1.6, 2.4, -9.86), Vector3(1.7, 1.2, 0.06), Color(0.78, 0.62, 0.25))
-	box(p, Vector3(-1.6, 2.4, -9.82), Vector3(1.5, 1.0, 0.06), Color(0.35, 0.5, 0.62))
-	box(p, Vector3(-1.6, 2.15, -9.78), Vector3(1.5, 0.45, 0.05), Color(0.3, 0.42, 0.3))  # foothills
-	# Mini basketball hoop in the back corner (decor — the desk hoop game comes later)
-	box(p, Vector3(3.0, 2.65, -9.85), Vector3(0.95, 0.7, 0.06), Color(0.92, 0.92, 0.9))
-	_torus(p, Vector3(3.0, 2.35, -9.55), 0.25, 0.03, Color(0.9, 0.45, 0.15))
-	# Guest chairs flanking the lane near the player
+			box(p, Vector3(-0.1 + i * 0.44, y, -9.6), Vector3(0.36, 0.5, 0.3), c)
+	# Mountain painting on the back wall, left side
+	box(p, Vector3(-2.4, 2.4, -9.86), Vector3(1.7, 1.2, 0.06), Color(0.78, 0.62, 0.25))
+	box(p, Vector3(-2.4, 2.4, -9.82), Vector3(1.5, 1.0, 0.06), Color(0.35, 0.5, 0.62))
+	box(p, Vector3(-2.4, 2.15, -9.78), Vector3(1.5, 0.45, 0.05), Color(0.3, 0.42, 0.3))  # foothills
+	# Big window with the city skyline, back-right (the hoop target mounts
+	# beside it at x≈3.3 — built by TrashToss).
+	_window(p, Vector3(2.2, 2.35, -9.86), Vector2(1.2, 1.7))
+	# Credenza along the right wall with framed photos and a small plant
+	box(p, Vector3(3.5, 0.45, -4.2), Vector3(0.55, 0.9, 2.3), wood, { "collide": true })
+	box(p, Vector3(3.45, 1.07, -3.6), Vector3(0.05, 0.3, 0.26), Color(0.7, 0.6, 0.35))
+	box(p, Vector3(3.45, 1.05, -4.8), Vector3(0.05, 0.26, 0.22), Color(0.55, 0.55, 0.58))
+	_plant(p, Vector3(3.5, 0.9, -4.2), 0.5)
+	# Wooden filing cabinet on the left wall
+	box(p, Vector3(-3.5, 0.75, -5.5), Vector3(0.5, 1.5, 0.6), wood.lightened(0.1), { "collide": true })
+	for dy in [0.5, 0.95, 1.35]:
+		box(p, Vector3(-3.24, dy, -5.5), Vector3(0.02, 0.03, 0.3), Color(0.75, 0.65, 0.4))
+	# Side table with a warm lamp on the left
+	box(p, Vector3(-3.3, 0.28, -2.6), Vector3(0.5, 0.56, 0.5), wood)
+	cylinder(p, Vector3(-3.3, 0.66, -2.6), 0.04, 0.2, Color(0.6, 0.5, 0.3))
+	cylinder(p, Vector3(-3.3, 0.88, -2.6), 0.16, 0.22, Color(1.0, 0.9, 0.65), { "emissive": 1.6 })
+	_omni(p, Vector3(-3.3, 1.1, -2.6), Color(1.0, 0.85, 0.6), 0.8, 6.0)
+	# Black leather guest chairs flanking the lane near the player
 	for side in [-1.0, 1.0]:
-		_armchair(p, Vector3(2.9 * side, 0, -0.8), -PI * 0.45 * side)
+		_armchair(p, Vector3(2.9 * side, 0, -0.8), -PI * 0.45 * side, leather)
 	# Tall corner plants
-	_plant(p, Vector3(3.4, 0, -9.1), 1.6)
-	_plant(p, Vector3(-3.4, 0, -1.0), 1.4)
+	_plant(p, Vector3(-3.4, 0, -9.1), 1.6)
+	_plant(p, Vector3(3.4, 0, -1.9), 1.4)
 	# Warm picture lights
 	_omni(p, Vector3(-2.0, 3.0, -7.0), Color(1.0, 0.85, 0.6), 0.9, 7.0)
 	_omni(p, Vector3(2.0, 3.0, -2.0), Color(1.0, 0.85, 0.6), 0.7, 7.0)
@@ -239,8 +258,7 @@ static func _office_chair(p: Node3D, pos: Vector3, rot_y: float, seat_color := C
 	box(p, pos + Vector3(0, 0.24, 0), Vector3(0.05, 0.48, 0.05), Color(0.4, 0.4, 0.42))
 	box(p, pos + Vector3(0, 0.02, 0), Vector3(0.4, 0.04, 0.4), Color(0.3, 0.3, 0.32), { "rot_y": rot_y })
 
-static func _armchair(p: Node3D, pos: Vector3, rot_y: float) -> void:
-	var c := Color(0.3, 0.2, 0.14)
+static func _armchair(p: Node3D, pos: Vector3, rot_y: float, c := Color(0.3, 0.2, 0.14)) -> void:
 	box(p, pos + Vector3(0, 0.3, 0), Vector3(0.7, 0.55, 0.7), c, { "rot_y": rot_y, "collide": true })
 	var back := Vector3(-sin(rot_y), 0, -cos(rot_y)) * 0.28
 	box(p, pos + back + Vector3(0, 0.75, 0), Vector3(0.7, 0.65, 0.16), c.darkened(0.1), { "rot_y": rot_y })
