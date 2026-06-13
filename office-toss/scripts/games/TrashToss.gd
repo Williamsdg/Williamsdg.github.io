@@ -68,13 +68,45 @@ const LEVEL_PROPS := {
 		{ "pos": Vector3(0.6, 0.18, -2.5),  "size": Vector3(0.34, 0.36, 0.34), "color": Color(0.35, 0.60, 0.30), "points": 75 },  # planter
 		{ "pos": Vector3(1.4, 0.20, -2.7),  "size": Vector3(0.16, 0.4, 0.16), "color": Color(0.90, 0.90, 0.92), "points": 60 },   # patio lamp
 		# The skyline window behind the bin — big bonus, breaks easily.
-		{ "abs_pos": Vector3(0, 1.5, -9.6), "size": Vector3(2.2, 1.4, 0.08),  "color": Color(0.55, 0.75, 0.95), "points": 150, "break_speed": 1.0, "anchored": true },
+		# Stands in a freestanding glass divider frame (posts built by Decor).
+		{ "abs_pos": Vector3(0, 1.1, -8.0), "size": Vector3(2.2, 1.4, 0.08),  "color": Color(0.55, 0.75, 0.95), "points": 150, "break_speed": 1.0, "anchored": true },
 	],
+}
+
+## Per-room look: surfaces, lighting and sky. "back" is "solid" or "window"
+## (glass wall with a skyline behind it); rooftop is open-air with parapets.
+const ROOMS := {
+	"classic": {
+		"floor": Color(0.40, 0.44, 0.50), "wall": Color(0.78, 0.78, 0.74), "bg": Color(0.16, 0.18, 0.22),
+		"ambient": Color(0.72, 0.74, 0.78), "ambient_energy": 0.6, "sun": 1.0, "sun_color": Color(1, 1, 1),
+		"indoor": true, "back": "solid", "bin": Color(0.18, 0.32, 0.65), "desk": Color(0.42, 0.30, 0.20),
+	},
+	"executive": {
+		"floor": Color(0.34, 0.23, 0.14), "wall": Color(0.60, 0.48, 0.34), "bg": Color(0.10, 0.08, 0.05),
+		"ambient": Color(0.9, 0.75, 0.55), "ambient_energy": 0.55, "sun": 0.9, "sun_color": Color(1, 0.92, 0.8),
+		"indoor": true, "back": "solid", "bin": Color(0.16, 0.55, 0.27), "desk": Color(0.30, 0.18, 0.10),
+	},
+	"startup": {
+		"floor": Color(0.70, 0.68, 0.64), "wall": Color(0.88, 0.88, 0.86), "bg": Color(0.55, 0.72, 0.90),
+		"ambient": Color(0.80, 0.85, 0.92), "ambient_energy": 0.7, "sun": 1.1, "sun_color": Color(1, 1, 1),
+		"indoor": true, "back": "window", "bin": Color(0.45, 0.28, 0.60), "desk": Color(0.85, 0.83, 0.80),
+	},
+	"archive": {
+		"floor": Color(0.35, 0.33, 0.30), "wall": Color(0.52, 0.47, 0.41), "bg": Color(0.07, 0.06, 0.05),
+		"ambient": Color(0.55, 0.48, 0.40), "ambient_energy": 0.4, "sun": 0.55, "sun_color": Color(1, 0.95, 0.85),
+		"indoor": true, "back": "solid", "bin": Color(0.42, 0.43, 0.46), "desk": Color(0.48, 0.46, 0.44),
+	},
+	"rooftop": {
+		"floor": Color(0.55, 0.55, 0.56), "bg": Color(0.48, 0.72, 0.95),
+		"ambient": Color(0.75, 0.85, 1.0), "ambient_energy": 0.8, "sun": 1.4, "sun_color": Color(1, 0.97, 0.88),
+		"indoor": false, "bin": Color(0.72, 0.24, 0.20), "desk": Color(0.55, 0.40, 0.25),
+	},
 }
 
 var _tint := Color(0.62, 0.66, 0.72)
 var _level_name := "Classic Office"
 var _level_id := "classic"
+var _cfg: Dictionary = ROOMS["classic"]
 
 var _score := 0
 var _shots_left := TOTAL_SHOTS
@@ -108,6 +140,7 @@ func _ready() -> void:
 		_level_id = level.get("id", _level_id)
 
 	_gravity = float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
+	_cfg = ROOMS.get(_level_id, ROOMS["classic"])
 
 	_build_environment()
 	_build_bin()
@@ -115,6 +148,7 @@ func _ready() -> void:
 	_build_camera_and_light()
 	_build_preview()
 	_build_ui()
+	Decor.build(_level_id, self)
 	_new_wind()
 	_update_hud()
 
@@ -126,19 +160,52 @@ func _build_environment() -> void:
 	var env := WorldEnvironment.new()
 	var e := Environment.new()
 	e.background_mode = Environment.BG_COLOR
-	e.background_color = _tint.darkened(0.55)
+	e.background_color = _cfg["bg"]
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = _tint.lightened(0.2)
-	e.ambient_light_energy = 0.6
+	e.ambient_light_color = _cfg["ambient"]
+	e.ambient_light_energy = _cfg["ambient_energy"]
 	env.environment = e
 	add_child(env)
 
 	# Floor.
-	_add_box(Vector3(0, -0.05, -3), Vector3(8, 0.1, 14), _tint.darkened(0.25))
-	# Back and side walls. Walls are bank-shot surfaces.
-	_add_box(Vector3(0, 1.5, -10), Vector3(8, 4, 0.2), _tint.lightened(0.05), true)
-	_add_box(Vector3(-4, 1.5, -3), Vector3(0.2, 4, 14), _tint, true)
-	_add_box(Vector3(4, 1.5, -3), Vector3(0.2, 4, 14), _tint, true)
+	_add_box(Vector3(0, -0.05, -3), Vector3(8, 0.1, 14), _cfg["floor"])
+
+	if _cfg["indoor"]:
+		var wall: Color = _cfg["wall"]
+		# Side walls (bank-shot surfaces) and a ceiling just above max throw apex.
+		_add_box(Vector3(-4, 1.5, -3), Vector3(0.2, 4, 14), wall, true)
+		_add_box(Vector3(4, 1.5, -3), Vector3(0.2, 4, 14), wall, true)
+		_add_box(Vector3(0, 3.55, -3), Vector3(8, 0.1, 14), wall.darkened(0.12))
+		if _cfg["back"] == "window":
+			_build_window_wall(wall)
+		else:
+			_add_box(Vector3(0, 1.5, -10), Vector3(8, 4, 0.2), wall.lightened(0.05), true)
+	else:
+		# Open-air rooftop: low concrete parapets instead of walls.
+		var concrete := Color(0.62, 0.62, 0.63)
+		_add_box(Vector3(0, 0.5, -9.9), Vector3(8, 1.0, 0.25), concrete, true)
+		_add_box(Vector3(-3.9, 0.5, -3), Vector3(0.25, 1.0, 14), concrete, true)
+		_add_box(Vector3(3.9, 0.5, -3), Vector3(0.25, 1.0, 14), concrete, true)
+
+## Floor-to-ceiling glass back wall with a city skyline behind it (startup).
+func _build_window_wall(wall: Color) -> void:
+	var mullion := Color(0.18, 0.19, 0.22)
+	# Solid strips top and bottom, glass panes between mullion posts.
+	_add_box(Vector3(0, 0.25, -10), Vector3(8, 0.5, 0.2), wall, true)
+	_add_box(Vector3(0, 3.65, -10), Vector3(8, 0.4, 0.2), wall)
+	for mx in [-4.0, -2.0, 0.0, 2.0, 4.0]:
+		Decor.box(self, Vector3(mx, 1.95, -10), Vector3(0.12, 2.9, 0.22), mullion, { "collide": true })
+	for gx in [-3.0, -1.0, 1.0, 3.0]:
+		Decor.box(self, Vector3(gx, 1.95, -10), Vector3(1.9, 2.9, 0.06),
+			Color(0.65, 0.8, 0.92, 0.30), { "collide": true, "bankable": true })
+	# Skyline beyond the glass.
+	var sky_buildings := [
+		[-6.0, -14.0, 2.5, 7.0], [-2.0, -15.5, 3.0, 9.0], [1.5, -13.0, 2.0, 5.5],
+		[5.0, -15.0, 2.5, 8.0], [8.5, -13.0, 3.0, 6.0],
+	]
+	for b in sky_buildings:
+		var h: float = b[3]
+		Decor.box(self, Vector3(b[0], h * 0.5 - 2.0, b[1]), Vector3(b[2], h, b[2]), Color(0.40, 0.46, 0.56))
 
 func _build_bin() -> void:
 	# Bin and its scoring trigger live under one root so they slide together
@@ -155,7 +222,7 @@ func _build_bin() -> void:
 	_bin_root.add_child(bin)
 
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.16, 0.55, 0.27)
+	mat.albedo_color = _cfg["bin"]
 	mat.roughness = 0.6
 
 	var segments := 14
@@ -223,12 +290,13 @@ func _move_bin() -> void:
 
 func _build_desk_with_props() -> void:
 	# A desk between the player and the bin, topped with breakable bonus props.
-	# The desk top is a bank-shot surface.
-	_add_box(Vector3(0, DESK_TOP_Y, -2.6), Vector3(3.0, 0.1, 1.2), Color(0.42, 0.30, 0.20), true)
+	# The desk top is a bank-shot surface. Wood tone matches the room.
+	var desk_color: Color = _cfg["desk"]
+	_add_box(Vector3(0, DESK_TOP_Y, -2.6), Vector3(3.0, 0.1, 1.2), desk_color, true)
 	# Desk legs.
 	for sx in [-1.35, 1.35]:
 		for sz in [-3.1, -2.1]:
-			_add_box(Vector3(sx, DESK_TOP_Y * 0.5, sz), Vector3(0.12, DESK_TOP_Y, 0.12), Color(0.32, 0.22, 0.14))
+			_add_box(Vector3(sx, DESK_TOP_Y * 0.5, sz), Vector3(0.12, DESK_TOP_Y, 0.12), desk_color.darkened(0.25))
 
 	var top := DESK_TOP_Y + 0.05
 	var props: Array = LEVEL_PROPS.get(_level_id, LEVEL_PROPS["classic"])
@@ -256,7 +324,8 @@ func _build_camera_and_light() -> void:
 
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55, -40, 0)
-	sun.light_energy = 1.1
+	sun.light_energy = _cfg["sun"]
+	sun.light_color = _cfg["sun_color"]
 	sun.shadow_enabled = true
 	add_child(sun)
 
@@ -317,7 +386,7 @@ func _throw_params(end_pos: Vector2) -> Dictionary:
 
 func _launch_velocity(power: float, aim_x: float) -> Vector3:
 	var forward := 7.5 + power * 6.0          # toward -Z
-	var lift := 3.2 + power * 3.0             # upward arc
+	var lift := 3.2 + power * 2.6             # upward arc (apex stays under the ceiling)
 	var side := aim_x * 3.0                    # left/right aim
 	return Vector3(side, lift, -forward)
 
