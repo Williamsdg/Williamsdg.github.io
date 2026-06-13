@@ -261,22 +261,58 @@ static func _rooftop(p: Node3D) -> void:
 			var bx := -3.6 + t * 7.2
 			var by := 2.75 - 0.5 * sin(PI * t)
 			sphere(p, Vector3(bx, by, lz), 0.055, Color(1.0, 0.85, 0.45), { "emissive": 2.5, "unshaded": true })
-	# Picnic table + benches on the right
-	box(p, Vector3(3.0, 0.7, 1.0), Vector3(1.2, 0.07, 0.95), Color(0.55, 0.40, 0.25), { "collide": true })
-	box(p, Vector3(3.0, 0.35, 1.0), Vector3(0.2, 0.7, 0.7), Color(0.45, 0.32, 0.2))
-	for bz in [0.35, 1.65]:
-		box(p, Vector3(3.0, 0.42, bz), Vector3(1.2, 0.05, 0.25), Color(0.5, 0.36, 0.22))
-	# Grill on the left
-	cylinder(p, Vector3(-3.2, 0.78, 0.8), 0.32, 0.36, Color(0.12, 0.12, 0.13))
-	cylinder(p, Vector3(-3.2, 1.0, 0.8), 0.30, 0.10, Color(0.18, 0.18, 0.2))
-	for leg in 3:
-		var la := TAU * leg / 3.0
-		box(p, Vector3(-3.2 + cos(la) * 0.22, 0.3, 0.8 + sin(la) * 0.22), Vector3(0.04, 0.6, 0.04), Color(0.2, 0.2, 0.22))
-	# Vending machine near the back-left parapet
-	box(p, Vector3(-3.35, 0.9, -8.6), Vector3(0.75, 1.8, 0.65), Color(0.12, 0.2, 0.45), { "collide": true })
-	box(p, Vector3(-3.35, 1.05, -8.26), Vector3(0.5, 1.2, 0.04), Color(0.5, 0.8, 0.95), { "emissive": 0.9 })
+	# --- Break-room kitchen along the left side (the render's indoor half) ---
+	var cabinet := Color(0.42, 0.31, 0.20)
+	box(p, Vector3(-3.95, 1.5, -2.0), Vector3(0.1, 3.0, 7.0), Color(0.48, 0.42, 0.36), { "collide": true, "bankable": true })
+	box(p, Vector3(-3.6, 0.45, -2.0), Vector3(0.6, 0.9, 5.4), cabinet, { "collide": true })       # base cabinets
+	box(p, Vector3(-3.58, 0.93, -2.0), Vector3(0.7, 0.06, 5.5), Color(0.78, 0.78, 0.76))          # countertop
+	box(p, Vector3(-3.72, 2.3, -1.7), Vector3(0.5, 0.8, 4.4), cabinet.lightened(0.08))            # upper cabinets
+	for hz in [-3.3, -2.5, -1.7, -0.9, -0.1]:
+		box(p, Vector3(-3.28, 0.6, hz), Vector3(0.02, 0.12, 0.03), Color(0.7, 0.65, 0.5))         # handles
+	# Counter gear: two coffee makers, microwave, toaster
+	for cz in [-1.4, -2.0]:
+		box(p, Vector3(-3.6, 1.13, cz), Vector3(0.22, 0.34, 0.22), Color(0.16, 0.16, 0.18))
+		cylinder(p, Vector3(-3.52, 1.06, cz), 0.07, 0.14, Color(0.45, 0.30, 0.18))
+	box(p, Vector3(-3.6, 1.12, -3.0), Vector3(0.42, 0.26, 0.3), Color(0.92, 0.92, 0.9))           # microwave
+	box(p, Vector3(-3.49, 1.12, -3.0), Vector3(0.02, 0.18, 0.2), Color(0.2, 0.2, 0.24))
+	box(p, Vector3(-3.6, 1.05, -0.4), Vector3(0.24, 0.16, 0.18), Color(0.75, 0.76, 0.78))         # toaster
+	# Fridge with colorful magnets, at the kitchen's far end
+	box(p, Vector3(-3.5, 1.0, 1.0), Vector3(0.75, 2.0, 0.7), Color(0.84, 0.85, 0.86), { "collide": true })
+	box(p, Vector3(-3.5, 1.05, 1.36), Vector3(0.6, 0.04, 0.02), Color(0.6, 0.6, 0.62))            # door split
+	for m in [[1.5, 0.85, Color(0.9, 0.3, 0.3)], [1.3, 1.15, Color(0.3, 0.5, 0.9)], [1.65, 1.1, Color(0.95, 0.8, 0.3)]]:
+		box(p, Vector3(-3.5 + (m[1] - 1.0), m[0], 1.36), Vector3(0.07, 0.07, 0.02), m[2])
+	# "TAKE A BREAK — YOU EARNED IT!" chalkboard past the cabinets
+	box(p, Vector3(-3.88, 2.1, -4.9), Vector3(0.08, 1.1, 0.85), Color(0.30, 0.24, 0.18))
+	box(p, Vector3(-3.85, 2.1, -4.9), Vector3(0.07, 0.95, 0.7), Color(0.10, 0.12, 0.12))
+	for i in 3:
+		box(p, Vector3(-3.8, 2.35 - i * 0.22, -4.9), Vector3(0.05, 0.09, 0.5), Color(0.85, 0.85, 0.8))
+	# Vending machine at the indoor/outdoor junction
+	box(p, Vector3(-3.4, 0.9, -6.6), Vector3(0.75, 1.8, 0.65), Color(0.12, 0.2, 0.45), { "collide": true })
+	box(p, Vector3(-3.4, 1.05, -6.26), Vector3(0.5, 1.2, 0.04), Color(0.5, 0.8, 0.95), { "emissive": 0.9 })
+	# Wooden dining table with a fruit bowl + chairs, front-left
+	box(p, Vector3(-2.55, 0.72, 1.3), Vector3(1.1, 0.06, 1.1), Color(0.62, 0.45, 0.28), { "collide": true })
+	for leg in [[-0.45, 0.85], [0.45, 0.85], [-0.45, 1.75], [0.45, 1.75]]:
+		box(p, Vector3(-2.55 + leg[0], 0.36, leg[1]), Vector3(0.08, 0.72, 0.08), Color(0.52, 0.37, 0.22))
+	cylinder(p, Vector3(-2.55, 0.79, 1.3), 0.16, 0.08, Color(0.45, 0.32, 0.2))
+	for fruit in [[-0.06, Color(0.85, 0.25, 0.2)], [0.07, Color(0.45, 0.7, 0.25)], [0.0, Color(0.95, 0.8, 0.3)]]:
+		sphere(p, Vector3(-2.55 + fruit[0], 0.88, 1.3 + fruit[0] * 0.5), 0.06, fruit[1])
+	_office_chair(p, Vector3(-1.85, 0, 1.3), PI * 0.5, Color(0.5, 0.36, 0.22))
+	_office_chair(p, Vector3(-2.55, 0, 0.55), PI, Color(0.5, 0.36, 0.22))
+	# --- Patio half: round tables with planters, wooden chairs, lamp post ---
+	for tz in [-3.3, -5.6]:
+		cylinder(p, Vector3(3.0, 0.72, tz), 0.55, 0.06, Color(0.40, 0.30, 0.20))
+		cylinder(p, Vector3(3.0, 0.36, tz), 0.06, 0.72, Color(0.30, 0.22, 0.15))
+		cylinder(p, Vector3(3.0, 0.02, tz), 0.3, 0.04, Color(0.30, 0.22, 0.15))
+		_plant(p, Vector3(3.0, 0.75, tz), 0.4)
+		_office_chair(p, Vector3(2.35, 0, tz + 0.55), PI * 0.75, Color(0.45, 0.32, 0.2))
+		_office_chair(p, Vector3(3.55, 0, tz - 0.55), -PI * 0.25, Color(0.45, 0.32, 0.2))
+	# Lamp post between the patio tables
+	box(p, Vector3(2.45, 1.3, -4.5), Vector3(0.08, 2.6, 0.08), Color(0.15, 0.15, 0.17))
+	box(p, Vector3(2.45, 2.62, -4.35), Vector3(0.3, 0.18, 0.4), Color(0.15, 0.15, 0.17))
+	sphere(p, Vector3(2.45, 2.5, -4.3), 0.09, Color(1.0, 0.9, 0.6), { "emissive": 2.2, "unshaded": true })
+	_omni(p, Vector3(2.45, 2.45, -4.3), Color(1.0, 0.88, 0.6), 0.7, 5.0)
 	# Planters along the back parapet, posts for the breakable glass divider
-	for px in [-2.2, 0.0, 2.2]:
+	for px in [-2.2, 0.0]:
 		_plant(p, Vector3(px, 0, -9.5), 1.0)
 	for side in [-1.0, 1.0]:
 		box(p, Vector3(1.18 * side, 0.9, -8.0), Vector3(0.08, 1.8, 0.08), Color(0.6, 0.62, 0.65), { "collide": true })

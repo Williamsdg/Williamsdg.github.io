@@ -257,12 +257,25 @@ func _build_extra_targets() -> void:
 			_make_box_target(Vector3(3.05, 1.16, -7.4), Vector3(0.56, 0.3, 0.62), cab.lightened(0.08), 175, "TOP DRAWER")
 			# Hoop on the back wall, left of the door.
 			_make_hoop(Vector3(-2.8, 1.9, -9.55), 200, "BUCKETS")
+		"rooftop":
+			# Kettle grill with the lid off — sink one in the coals.
+			_make_bin(Vector3(2.9, 0.55, -7.4), Color(0.10, 0.10, 0.12), 175, "GRILL", 0.34, 0.3)
+			for leg in 3:
+				var la := TAU * leg / 3.0
+				Decor.box(self, Vector3(2.9 + cos(la) * 0.24, 0.28, -7.4 + sin(la) * 0.24),
+					Vector3(0.05, 0.56, 0.05), Color(0.18, 0.18, 0.2))
+			# Freestanding pole hoop by the back parapet.
+			Decor.box(self, Vector3(2.3, 0.95, -9.25), Vector3(0.08, 1.9, 0.08), Color(0.2, 0.2, 0.22), { "collide": true })
+			_make_hoop(Vector3(2.3, 1.9, -8.9), 200, "BUCKETS")
 		_:
 			pass
 
 ## Builds an open-top bin (ring of wall segments + base) with a scoring
 ## trigger inside the rim. Returns the root so callers can move it.
-func _make_bin(pos: Vector3, color: Color, points: int, label: String) -> Node3D:
+## Radius/height are overridable so the same builder makes kettle grills,
+## small bins, etc.
+func _make_bin(pos: Vector3, color: Color, points: int, label: String,
+		radius := BIN_RADIUS, height := BIN_HEIGHT) -> Node3D:
 	var root := Node3D.new()
 	root.position = pos
 	add_child(root)
@@ -280,11 +293,11 @@ func _make_bin(pos: Vector3, color: Color, points: int, label: String) -> Node3D
 	var segments := 14
 	for i in segments:
 		var a := TAU * float(i) / float(segments)
-		var seg_pos := Vector3(cos(a) * BIN_RADIUS, BIN_HEIGHT * 0.5, sin(a) * BIN_RADIUS)
-		var seg_w := (TAU * BIN_RADIUS / segments) * 1.15
+		var seg_pos := Vector3(cos(a) * radius, height * 0.5, sin(a) * radius)
+		var seg_w := (TAU * radius / segments) * 1.15
 		var mi := MeshInstance3D.new()
 		var bm := BoxMesh.new()
-		bm.size = Vector3(seg_w, BIN_HEIGHT, 0.05)
+		bm.size = Vector3(seg_w, height, 0.05)
 		bm.material = mat
 		mi.mesh = bm
 		mi.position = seg_pos
@@ -303,8 +316,8 @@ func _make_bin(pos: Vector3, color: Color, points: int, label: String) -> Node3D
 	# Base of the bin.
 	var base := MeshInstance3D.new()
 	var base_mesh := CylinderMesh.new()
-	base_mesh.top_radius = BIN_RADIUS
-	base_mesh.bottom_radius = BIN_RADIUS
+	base_mesh.top_radius = radius
+	base_mesh.bottom_radius = radius
 	base_mesh.height = 0.06
 	base_mesh.radial_segments = segments
 	base_mesh.material = mat
@@ -313,7 +326,7 @@ func _make_bin(pos: Vector3, color: Color, points: int, label: String) -> Node3D
 	bin.add_child(base)
 	var base_cs := CollisionShape3D.new()
 	var base_shape := CylinderShape3D.new()
-	base_shape.radius = BIN_RADIUS
+	base_shape.radius = radius
 	base_shape.height = 0.06
 	base_cs.shape = base_shape
 	base_cs.position = Vector3(0, 0.03, 0)
@@ -323,10 +336,10 @@ func _make_bin(pos: Vector3, color: Color, points: int, label: String) -> Node3D
 	var goal := Area3D.new()
 	goal.collision_layer = 0
 	goal.collision_mask = 2  # detect balls
-	goal.position = Vector3(0, BIN_HEIGHT * 0.55, 0)
+	goal.position = Vector3(0, height * 0.55, 0)
 	var goal_cs := CollisionShape3D.new()
 	var goal_shape := CylinderShape3D.new()
-	goal_shape.radius = BIN_RADIUS * 0.8
+	goal_shape.radius = radius * 0.8
 	goal_shape.height = 0.1
 	goal_cs.shape = goal_shape
 	goal.add_child(goal_cs)
@@ -359,9 +372,9 @@ func _make_box_target(pos: Vector3, size: Vector3, color: Color, points: int, la
 ## A wall-mounted mini basketball hoop: backboard + orange rim with a
 ## scoring trigger through the ring.
 func _make_hoop(ring_pos: Vector3, points: int, label: String) -> void:
-	# Backboard against the wall behind the ring.
-	Decor.box(self, Vector3(ring_pos.x, ring_pos.y + 0.25, -9.84), Vector3(0.95, 0.7, 0.05), Color(0.94, 0.94, 0.92))
-	Decor.box(self, Vector3(ring_pos.x, ring_pos.y + 0.18, -9.80), Vector3(0.45, 0.35, 0.04), Color(0.8, 0.3, 0.2))
+	# Backboard just behind the ring (wall- or pole-mounted).
+	Decor.box(self, Vector3(ring_pos.x, ring_pos.y + 0.25, ring_pos.z - 0.29), Vector3(0.95, 0.7, 0.05), Color(0.94, 0.94, 0.92))
+	Decor.box(self, Vector3(ring_pos.x, ring_pos.y + 0.18, ring_pos.z - 0.25), Vector3(0.45, 0.35, 0.04), Color(0.8, 0.3, 0.2))
 	# Rim (visual) + a short "net" hint below it.
 	var rim := MeshInstance3D.new()
 	var tm := TorusMesh.new()
