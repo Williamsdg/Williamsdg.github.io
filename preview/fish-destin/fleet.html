@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fleet Explorer — Fish Destin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0a1f33; --navy-2:#0f2b45; --deep:#06182a;
+  --emerald:#1fb286; --emerald-2:#14a07a; --aqua:#3fd0c9;
+  --sand:#e9d8a6; --gold:#e0b449; --foam:#f4f8f8;
+  --ink:#0a1f33; --muted:#5d7387; --line:rgba(10,31,51,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--foam);line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.display{font-family:'Bebas Neue',sans-serif;font-weight:400;letter-spacing:.5px;line-height:.95}
+a{text-decoration:none;color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:700;font-size:.78rem;letter-spacing:1.4px;text-transform:uppercase;padding:13px 26px;border-radius:6px;cursor:pointer;border:none;transition:.22s;font-family:'Inter',sans-serif}
+.btn-primary{background:var(--emerald);color:#fff;box-shadow:0 10px 26px -8px rgba(31,178,134,.6)}
+.btn-primary:hover{background:var(--emerald-2);transform:translateY(-2px)}
+.btn-dark{background:var(--navy);color:#fff}.btn-dark:hover{background:var(--navy-2)}
+.btn-out{background:transparent;color:var(--navy);border:1.5px solid var(--line)}.btn-out:hover{border-color:var(--emerald);color:var(--emerald-2)}
+.ph{position:relative;background:linear-gradient(135deg,#0b3d5c 0%,#13657a 45%,#1f9e8f 100%);overflow:hidden}
+.ph::after{content:attr(data-label);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:.66rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;text-align:center;padding:10px}
+.ph-water{background:linear-gradient(160deg,#0a3a52 0%,#137a86 40%,#27b3a0 75%,#5fe0c9 100%)}
+.ph-sun{background:linear-gradient(160deg,#0a3a52 0%,#1a7d80 40%,#e0b449 120%)}
+
+/* nav */
+.nav{background:rgba(8,24,42,.96);backdrop-filter:blur(14px);position:sticky;top:0;z-index:50;padding:14px 0;box-shadow:0 8px 30px -12px rgba(0,0,0,.5)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:11px;color:#fff}
+.brand .logo{width:40px;height:40px;border-radius:9px;background:linear-gradient(135deg,var(--emerald),var(--aqua));display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.brand .name{font-family:'Bebas Neue';font-size:1.45rem;letter-spacing:1px;line-height:1}
+.brand .name span{color:var(--aqua)}
+.brand .tag{font-size:.54rem;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.6);font-weight:600}
+.navlinks{display:flex;align-items:center;gap:26px}
+.navlinks a{color:rgba(255,255,255,.85);font-size:.8rem;font-weight:600;transition:.2s}
+.navlinks a:hover,.navlinks a.active{color:var(--aqua)}
+.nav-cta{background:var(--emerald);color:#fff!important;padding:9px 18px;border-radius:6px;font-size:.72rem!important;letter-spacing:1.2px;text-transform:uppercase}
+
+/* page head */
+.phead{background:linear-gradient(155deg,#06182a 0%,#0a3a52 55%,#137a86 120%);color:#fff;padding:54px 0 40px;position:relative;overflow:hidden}
+.phead::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 80% 10%,rgba(63,208,201,.25),transparent 50%)}
+.phead .wrap{position:relative;z-index:2}
+.crumb{font-size:.74rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--aqua);font-weight:600;margin-bottom:14px}
+.crumb a{color:rgba(255,255,255,.6)}.crumb a:hover{color:#fff}
+.phead h1{font-size:clamp(2.8rem,6vw,4.6rem);margin-bottom:10px}
+.phead p{color:rgba(255,255,255,.85);max-width:54ch;font-size:1.05rem}
+
+/* layout */
+.fleet-wrap{display:grid;grid-template-columns:262px 1fr;gap:30px;padding:38px 0 80px;align-items:start}
+.filters{background:#fff;border:1px solid var(--line);border-radius:14px;padding:24px;position:sticky;top:84px;box-shadow:0 16px 40px -28px rgba(6,24,42,.4)}
+.filters h3{font-size:1.3rem;color:var(--navy);margin-bottom:6px}
+.filters .sub{font-size:.78rem;color:var(--muted);margin-bottom:20px}
+.fgroup{margin-bottom:22px}
+.fgroup .lbl{font-size:.66rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:11px}
+.chip{display:flex;align-items:center;gap:10px;font-size:.86rem;font-weight:500;padding:9px 12px;border-radius:8px;cursor:pointer;transition:.18s;color:var(--navy);margin-bottom:4px}
+.chip:hover{background:var(--foam)}
+.chip.on{background:rgba(31,178,134,.12);color:var(--emerald-2);font-weight:700}
+.chip .box{width:16px;height:16px;border-radius:5px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#fff}
+.chip.on .box{background:var(--emerald);border-color:var(--emerald)}
+.chip .ct{margin-left:auto;font-size:.74rem;color:var(--muted)}
+.filters .reset{font-size:.76rem;color:var(--emerald-2);font-weight:600;cursor:pointer;border:none;background:none;padding:0}
+
+/* toolbar */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:14px}
+.toolbar .count{font-size:.92rem;color:var(--muted)}
+.toolbar .count b{color:var(--navy);font-weight:700}
+.view-toggle{display:flex;gap:4px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px}
+.view-toggle button{border:none;background:none;padding:8px 14px;border-radius:6px;font-size:.76rem;font-weight:600;cursor:pointer;color:var(--muted);font-family:inherit}
+.view-toggle button.on{background:var(--navy);color:#fff}
+
+/* table view */
+.fleet-table{width:100%;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 16px 40px -28px rgba(6,24,42,.4)}
+.fleet-table table{width:100%;border-collapse:collapse}
+.fleet-table thead th{text-align:left;font-size:.66rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:16px 18px;background:var(--foam);border-bottom:1px solid var(--line)}
+.fleet-table tbody td{padding:16px 18px;border-bottom:1px solid var(--line);font-size:.9rem;vertical-align:middle}
+.fleet-table tbody tr:last-child td{border-bottom:none}
+.fleet-table tbody tr{transition:.15s}
+.fleet-table tbody tr:hover{background:rgba(31,178,134,.04)}
+.bname{display:flex;align-items:center;gap:12px}
+.bname .thumb{width:54px;height:40px;border-radius:7px;flex:0 0 auto}
+.bname .n{font-family:'Bebas Neue';font-size:1.3rem;color:var(--navy);line-height:1}
+.bname .cap{font-size:.72rem;color:var(--muted)}
+.typetag{font-size:.6rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:4px 10px;border-radius:50px;background:rgba(31,178,134,.12);color:var(--emerald-2);white-space:nowrap}
+.typetag.deep{background:rgba(63,208,201,.14);color:#138a91}
+.typetag.fam{background:rgba(224,180,73,.16);color:#a9801f}
+.typetag.shark{background:rgba(120,90,200,.14);color:#6b52b8}
+.avt{font-size:.84rem;font-weight:600;display:flex;align-items:center;gap:7px}
+.avt .dot{width:8px;height:8px;border-radius:50%}
+.avt.today{color:var(--emerald-2)}.avt.today .dot{background:var(--emerald)}
+.avt.soon{color:#a9801f}.avt.soon .dot{background:var(--gold)}
+.price{font-family:'Bebas Neue';font-size:1.5rem;color:var(--navy)}
+.price small{font-size:.7rem;color:var(--muted);font-family:'Inter';font-weight:500}
+.fleet-table .btn{padding:9px 18px;font-size:.7rem}
+
+/* card view */
+.fleet-cards{display:none;grid-template-columns:repeat(3,1fr);gap:22px}
+.fleet-cards.on{display:grid}
+.fleet-table.off{display:none}
+.bcard{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 16px 40px -26px rgba(6,24,42,.4);border:1px solid var(--line);transition:.25s}
+.bcard:hover{transform:translateY(-5px)}
+.bcard .img{height:170px}
+.bcard .body{padding:20px}
+.bcard .top{display:flex;justify-content:space-between;align-items:start;margin-bottom:12px}
+.bcard h3{font-size:1.6rem;color:var(--navy);line-height:1}
+.bcard .cap{font-size:.74rem;color:var(--muted);margin-top:3px}
+.bcard .meta{display:flex;gap:14px;margin:13px 0;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.bcard .meta b{color:var(--navy)}
+.bcard .foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+
+footer{background:var(--deep);color:rgba(255,255,255,.6);padding:34px 0;text-align:center;font-size:.82rem}
+footer a{color:var(--aqua)}
+
+@media(max-width:980px){
+  .fleet-wrap{grid-template-columns:1fr}
+  .filters{position:static}
+  .fleet-cards{grid-template-columns:repeat(2,1fr)}
+  .fleet-table{overflow-x:auto}
+  .fleet-table table{min-width:760px}
+}
+@media(max-width:680px){
+  .navlinks{display:none}
+  .fleet-cards{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a href="index.html" class="brand"><div class="logo">🎣</div><div><div class="name">FISH<span>DESTIN</span></div><div class="tag">Charter Fishing Fleet</div></div></a>
+    <div class="navlinks">
+      <a href="fleet.html" class="active">Fleet</a>
+      <a href="index.html#species">Fish Species</a>
+      <a href="index.html#report">Live Reports</a>
+      <a href="index.html#captains">Captains</a>
+      <a href="dashboard.html">Operator Demo</a>
+      <a href="fleet.html" class="nav-cta">Book a Charter</a>
+    </div>
+  </div>
+</nav>
+
+<div class="phead">
+  <div class="wrap">
+    <div class="crumb"><a href="index.html">Home</a> / Fleet Explorer</div>
+    <h1>The Fleet Explorer</h1>
+    <p>Every boat in the Fish Destin fleet, side by side. Filter by trip type and crew size, see real availability, and book in two clicks.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="fleet-wrap">
+
+    <!-- FILTERS -->
+    <aside class="filters">
+      <h3>Filter Fleet</h3>
+      <div class="sub">Tap to narrow the list</div>
+      <div class="fgroup">
+        <div class="lbl">Trip Type</div>
+        <div class="chip on" data-f="all"><span class="box">✓</span>All Trips<span class="ct">22</span></div>
+        <div class="chip" data-f="family"><span class="box"></span>Family Friendly<span class="ct">8</span></div>
+        <div class="chip" data-f="deep"><span class="box"></span>Deep Sea<span class="ct">9</span></div>
+        <div class="chip" data-f="offshore"><span class="box"></span>Offshore<span class="ct">7</span></div>
+        <div class="chip" data-f="shark"><span class="box"></span>Shark<span class="ct">3</span></div>
+        <div class="chip" data-f="kids"><span class="box"></span>Kids Trips<span class="ct">5</span></div>
+        <div class="chip" data-f="private"><span class="box"></span>Private Charter<span class="ct">11</span></div>
+      </div>
+      <div class="fgroup">
+        <div class="lbl">Crew Size</div>
+        <div class="chip"><span class="box"></span>1–6 Anglers</div>
+        <div class="chip"><span class="box"></span>7–12 Anglers</div>
+        <div class="chip"><span class="box"></span>13+ (Multi-boat)</div>
+      </div>
+      <div class="fgroup">
+        <div class="lbl">Availability</div>
+        <div class="chip"><span class="box"></span>Available Today</div>
+        <div class="chip"><span class="box"></span>This Week</div>
+      </div>
+      <button class="reset" onclick="resetF()">↺ Reset all filters</button>
+    </aside>
+
+    <!-- RESULTS -->
+    <div>
+      <div class="toolbar">
+        <div class="count"><b id="cnt">22</b> boats match — sorted by next availability</div>
+        <div class="view-toggle">
+          <button id="vTable" class="on" onclick="setView('table')">▤ Table</button>
+          <button id="vCard" onclick="setView('card')">▦ Cards</button>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="fleet-table" id="tableView">
+        <table>
+          <thead><tr><th>Boat</th><th>Type</th><th>Capacity</th><th>Duration</th><th>Next Available</th><th>From</th><th></th></tr></thead>
+          <tbody id="rows">
+            <tr data-type="family kids private">
+              <td><div class="bname"><div class="thumb ph"></div><div><div class="n">Sweet Jody</div><div class="cap">Capt. Tony Beck</div></div></div></td>
+              <td><span class="typetag fam">Family</span></td><td>6</td><td>4 Hr</td>
+              <td><div class="avt today"><span class="dot"></span>Today · 2 left</div></td>
+              <td><div class="price">$650<small>/trip</small></div></td>
+              <td><a href="bookings.html" class="btn btn-primary">Book</a></td>
+            </tr>
+            <tr data-type="deep offshore private">
+              <td><div class="bname"><div class="thumb ph ph-water"></div><div><div class="n">Destiny</div><div class="cap">Capt. Mike Graham</div></div></div></td>
+              <td><span class="typetag">Offshore</span></td><td>6</td><td>6 Hr</td>
+              <td><div class="avt soon"><span class="dot"></span>Tomorrow 6 AM</div></td>
+              <td><div class="price">$1,150<small>/trip</small></div></td>
+              <td><a href="bookings.html" class="btn btn-primary">Book</a></td>
+            </tr>
+            <tr data-type="deep private">
+              <td><div class="bname"><div class="thumb ph ph-sun"></div><div><div class="n">Back Down 2</div><div class="cap">Capt. Dale Rivers</div></div></div></td>
+              <td><span class="typetag deep">Deep Sea</span></td><td>12</td><td>8 Hr</td>
+              <td><div class="avt soon"><span class="dot"></span>Friday 5 AM</div></td>
+              <td><div class="price">$1,950<small>/trip</small></div></td>
+              <td><a href="bookings.html" class="btn btn-primary">Book</a></td>
+            </tr>
+            <tr data-type="family kids private">
+              <td><div class="bname"><div class="thumb ph ph-water"></div><div><div class="n">Reel Time</div><div class="cap">Capt. Sara Pace</div></div></div></td>
+              <td><span class="typetag fam">Family</span></td><td>6</td><td>4 Hr</td>
+              <td><div class="avt today"><span class="dot"></span>Today · 1 left</div></td>
+              <td><div class="price">$625<small>/trip</small></div></td>
+              <td><a href="bookings.html" class="btn btn-primary">Book</a></td>
+            </tr>
+            <tr data-type="offshore deep private">
+              <td><div class="bname"><div class="thumb ph"></div><div><div class="n">Gulf Pride</div><div class="cap">Capt. Will Hardy</div></div></div></td>
+              <td><span class="typetag">Offshore</span></td><td>8</td><td>10 Hr</td>
+              <td><div class="avt soon"><span class="dot"></span>Saturday 4 AM</div></td>
+              <td><div class="price">$2,400<small>/trip</small></div></td>
+              <td><a href="bookings.html" class="btn btn-primary">Book</a></td>
+            </tr>
+            <tr data-type="shark offshore private">
+              <td><div class="bname"><div class="thumb ph ph-sun"></div><div><div class="n">Big Bite</div><div class="cap">Capt. Roy Allen</div></div></div></td>
+              <td><span class="typetag shark">Shark</span></td><td>8</td><td>6 Hr</td>
+              <td><div class="avt today"><span class="dot"></span>Today · 3 left</div></td>
+              <td><div class="price">$1,300<small>/trip</small></div></td>
+              <td><a href="bookings.html" class="btn btn-primary">Book</a></td>
+            </tr>
+            <tr data-type="deep family kids">
+              <td><div class="bname"><div class="thumb ph ph-water"></div><div><div class="n">Sea Hawk</div><div class="cap">Capt. Ben Cole</div></div></div></td>
+              <td><span class="typetag deep">Deep Sea</span></td><td>10</td><td>6 Hr</td>
+              <td><div class="avt soon"><span class="dot"></span>Thursday 6 AM</div></td>
+              <td><div class="price">$1,500<small>/trip</small></div></td>
+              <td><a href="bookings.html" class="btn btn-primary">Book</a></td>
+            </tr>
+            <tr data-type="offshore private">
+              <td><div class="bname"><div class="thumb ph"></div><div><div class="n">Emerald Lady</div><div class="cap">Capt. Joe Hahn</div></div></div></td>
+              <td><span class="typetag">Offshore</span></td><td>6</td><td>8 Hr</td>
+              <td><div class="avt soon"><span class="dot"></span>Sunday 5 AM</div></td>
+              <td><div class="price">$1,800<small>/trip</small></div></td>
+              <td><a href="bookings.html" class="btn btn-primary">Book</a></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="padding:18px;text-align:center;border-top:1px solid var(--line)"><a class="btn btn-out">Load 14 more boats ↓</a></div>
+      </div>
+
+      <!-- CARDS -->
+      <div class="fleet-cards" id="cardView">
+        <div class="bcard"><div class="img ph" data-label="Sweet Jody"></div><div class="body"><div class="top"><div><h3>Sweet Jody</h3><div class="cap">Capt. Tony Beck</div></div><span class="typetag fam">Family</span></div><div class="meta"><span>👥 <b>6</b></span><span>⏱ <b>4 Hr</b></span><span>📏 32 ft</span></div><div class="avt today"><span class="dot"></span>Today · 2 left</div><div class="foot"><div class="price">$650</div><a href="bookings.html" class="btn btn-primary">Book</a></div></div></div>
+        <div class="bcard"><div class="img ph ph-water" data-label="Destiny"></div><div class="body"><div class="top"><div><h3>Destiny</h3><div class="cap">Capt. Mike Graham</div></div><span class="typetag">Offshore</span></div><div class="meta"><span>👥 <b>6</b></span><span>⏱ <b>6 Hr</b></span><span>📏 38 ft</span></div><div class="avt soon"><span class="dot"></span>Tomorrow 6 AM</div><div class="foot"><div class="price">$1,150</div><a href="bookings.html" class="btn btn-primary">Book</a></div></div></div>
+        <div class="bcard"><div class="img ph ph-sun" data-label="Back Down 2"></div><div class="body"><div class="top"><div><h3>Back Down 2</h3><div class="cap">Capt. Dale Rivers</div></div><span class="typetag deep">Deep Sea</span></div><div class="meta"><span>👥 <b>12</b></span><span>⏱ <b>8 Hr</b></span><span>📏 48 ft</span></div><div class="avt soon"><span class="dot"></span>Friday 5 AM</div><div class="foot"><div class="price">$1,950</div><a href="bookings.html" class="btn btn-primary">Book</a></div></div></div>
+        <div class="bcard"><div class="img ph ph-water" data-label="Big Bite"></div><div class="body"><div class="top"><div><h3>Big Bite</h3><div class="cap">Capt. Roy Allen</div></div><span class="typetag shark">Shark</span></div><div class="meta"><span>👥 <b>8</b></span><span>⏱ <b>6 Hr</b></span><span>📏 40 ft</span></div><div class="avt today"><span class="dot"></span>Today · 3 left</div><div class="foot"><div class="price">$1,300</div><a href="bookings.html" class="btn btn-primary">Book</a></div></div></div>
+        <div class="bcard"><div class="img ph" data-label="Gulf Pride"></div><div class="body"><div class="top"><div><h3>Gulf Pride</h3><div class="cap">Capt. Will Hardy</div></div><span class="typetag">Offshore</span></div><div class="meta"><span>👥 <b>8</b></span><span>⏱ <b>10 Hr</b></span><span>📏 46 ft</span></div><div class="avt soon"><span class="dot"></span>Saturday 4 AM</div><div class="foot"><div class="price">$2,400</div><a href="bookings.html" class="btn btn-primary">Book</a></div></div></div>
+        <div class="bcard"><div class="img ph ph-sun" data-label="Sea Hawk"></div><div class="body"><div class="top"><div><h3>Sea Hawk</h3><div class="cap">Capt. Ben Cole</div></div><span class="typetag deep">Deep Sea</span></div><div class="meta"><span>👥 <b>10</b></span><span>⏱ <b>6 Hr</b></span><span>📏 44 ft</span></div><div class="avt soon"><span class="dot"></span>Thursday 6 AM</div><div class="foot"><div class="price">$1,500</div><a href="bookings.html" class="btn btn-primary">Book</a></div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer><div class="wrap">© 2026 Fish Destin — Concept by <a href="index.html">Williams Digital</a> · <a href="dashboard.html">See the Operator Dashboard →</a></div></footer>
+
+<script>
+const rows=[...document.querySelectorAll('#rows tr')];
+const chips=document.querySelectorAll('.fgroup .chip[data-f]');
+chips.forEach(c=>c.onclick=()=>{
+  if(c.dataset.f==='all'){chips.forEach(x=>x.classList.remove('on'));c.classList.add('on');}
+  else{document.querySelector('.chip[data-f="all"]').classList.remove('on');c.classList.toggle('on');
+    if(![...chips].some(x=>x.classList.contains('on')))document.querySelector('.chip[data-f="all"]').classList.add('on');}
+  apply();
+});
+function apply(){
+  const active=[...chips].filter(c=>c.classList.contains('on')&&c.dataset.f!=='all').map(c=>c.dataset.f);
+  let n=0;
+  rows.forEach(r=>{
+    const show=active.length===0||active.some(f=>r.dataset.type.includes(f));
+    r.style.display=show?'':'none';if(show)n++;
+  });
+  document.getElementById('cnt').textContent=active.length?n:22;
+}
+function resetF(){chips.forEach(x=>x.classList.remove('on'));document.querySelector('.chip[data-f="all"]').classList.add('on');apply();}
+function setView(v){
+  const t=document.getElementById('tableView'),c=document.getElementById('cardView');
+  document.getElementById('vTable').classList.toggle('on',v==='table');
+  document.getElementById('vCard').classList.toggle('on',v==='card');
+  t.classList.toggle('off',v!=='table');c.classList.toggle('on',v==='card');
+}
+</script>
+</body>
+</html>
