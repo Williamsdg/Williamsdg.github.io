@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>The Counter — Faculty Coffee Operator Console (Concept)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --espresso:#231a14;--espresso-2:#2c2119;--cream:#f4ece0;--paper:#faf6ef;
+  --copper:#b06a3d;--copper-deep:#8f5430;--sage:#7a8268;--sage-deep:#5c6450;
+  --line:rgba(35,26,20,0.1);--muted:#7d7166;--good:#5c7a4e;--warn:#c08a2e;--bad:#b04a3d;
+  --serif:'Fraunces',Georgia,serif;--sans:'Inter',system-ui,sans-serif;
+}
+body{font-family:var(--sans);background:#efe7db;color:var(--espresso);font-weight:400;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--serif);font-weight:600;letter-spacing:-.01em}
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+/* sidebar */
+.side{background:var(--espresso);color:var(--cream);padding:22px 16px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
+.side .logo{font-family:var(--serif);font-size:1.35rem;font-weight:600;padding:6px 10px 4px;line-height:1}
+.side .logo small{display:block;font-family:var(--sans);font-size:.54rem;letter-spacing:.32em;text-transform:uppercase;opacity:.6;margin-top:4px}
+.side .grp{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(244,236,224,.4);margin:18px 10px 6px}
+.nav-i{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;color:rgba(244,236,224,.78);font-size:.88rem;font-weight:500;cursor:pointer;transition:.18s;border:none;background:none;width:100%;text-align:left}
+.nav-i:hover{background:rgba(244,236,224,.07);color:#fff}
+.nav-i.active{background:var(--copper);color:#fff}
+.nav-i svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0}
+.nav-i .badge{margin-left:auto;background:rgba(244,236,224,.16);font-size:.64rem;padding:2px 7px;border-radius:100px;font-weight:600}
+.nav-i.active .badge{background:rgba(0,0,0,.2)}
+.side .foot{margin-top:auto;padding:12px 10px 0;border-top:1px solid rgba(244,236,224,.12);font-size:.72rem;color:rgba(244,236,224,.5)}
+.side .foot a{color:var(--copper);text-decoration:none}
+
+/* main */
+.main{padding:0;overflow-x:hidden}
+.topbar{background:var(--paper);border-bottom:1px solid var(--line);padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.topbar h1{font-size:1.5rem}
+.topbar .sub{font-size:.8rem;color:var(--muted);margin-top:2px}
+.top-right{display:flex;align-items:center;gap:14px}
+.open-pill{display:flex;align-items:center;gap:8px;background:rgba(92,122,78,.12);border:1px solid rgba(92,122,78,.35);color:var(--sage-deep);padding:7px 14px;border-radius:100px;font-size:.76rem;font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--good);animation:p 2s infinite}
+@keyframes p{0%{box-shadow:0 0 0 0 rgba(92,122,78,.5)}70%{box-shadow:0 0 0 7px rgba(92,122,78,0)}100%{box-shadow:0 0 0 0 rgba(92,122,78,0)}}
+.av{width:36px;height:36px;border-radius:50%;background:linear-gradient(150deg,var(--copper),var(--copper-deep));display:grid;place-items:center;color:#fff;font-weight:600;font-size:.82rem}
+.view{padding:28px 32px 60px;max-width:1180px}
+.panel{display:none}.panel.active{display:block;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* stat cards */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:26px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px}
+.stat .lab{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.stat .num{font-family:var(--serif);font-size:2.1rem;margin:8px 0 4px;line-height:1}
+.stat .delta{font-size:.78rem;font-weight:600}
+.delta.up{color:var(--good)}.delta.down{color:var(--bad)}
+.stat .spark{margin-top:12px;height:34px;display:flex;align-items:flex-end;gap:3px}
+.spark i{flex:1;background:var(--copper);border-radius:2px 2px 0 0;opacity:.85}
+
+/* grid + cards */
+.grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:22px}
+.grid2b{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.box{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:22px}
+.box-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.box-h h3{font-size:1.1rem}
+.box-h a,.box-h button{font-size:.78rem;color:var(--copper-deep);font-weight:600;cursor:pointer;background:none;border:none;text-decoration:none}
+
+/* live orders */
+.order-q{display:flex;flex-direction:column;gap:10px}
+.oq{display:flex;align-items:center;gap:14px;padding:14px;border:1px solid var(--line);border-radius:11px;background:#fff}
+.oq .tkt{font-family:var(--serif);font-weight:600;font-size:1.1rem;width:42px;color:var(--copper-deep)}
+.oq .who{font-weight:600;font-size:.9rem}
+.oq .what{font-size:.8rem;color:var(--muted)}
+.oq .st{margin-left:auto;font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:5px 11px;border-radius:100px}
+.st.new{background:rgba(176,106,61,.14);color:var(--copper-deep)}
+.st.making{background:rgba(192,138,46,.16);color:var(--warn)}
+.st.ready{background:rgba(92,122,78,.16);color:var(--good)}
+.oq .go{background:var(--espresso);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:.74rem;font-weight:600;cursor:pointer;transition:.2s}
+.oq .go:hover{background:var(--copper)}
+
+/* lists */
+.li{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.li:last-child{border:none}
+.li .sw{width:36px;height:36px;border-radius:9px;flex-shrink:0;background:linear-gradient(150deg,#5b4029,#2c1d12)}
+.li .sw.g{background:linear-gradient(150deg,#8a9a5b,#5c6a36)}
+.li .sw.c{background:linear-gradient(150deg,#7a5a3c,#3a2719)}
+.li h5{font-size:.88rem;font-weight:600}
+.li small{font-size:.76rem;color:var(--muted)}
+.li .r{margin-left:auto;text-align:right}
+.li .r b{font-family:var(--serif);font-size:1rem}
+.li .r small{display:block}
+
+/* inventory bars */
+.inv{display:flex;flex-direction:column;gap:15px}
+.inv-row .t{display:flex;justify-content:space-between;font-size:.86rem;font-weight:500;margin-bottom:6px}
+.inv-row .t .v{color:var(--muted);font-weight:600}
+.bar{height:8px;border-radius:100px;background:rgba(35,26,20,.08);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:100px;background:var(--sage)}
+.bar i.low{background:var(--warn)}.bar i.crit{background:var(--bad)}
+.alert{display:flex;align-items:center;gap:10px;background:rgba(176,74,61,.08);border:1px solid rgba(176,74,61,.25);border-radius:10px;padding:12px 14px;font-size:.84rem;color:var(--bad);font-weight:500;margin-top:8px}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th{text-align:left;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:2px solid var(--line)}
+td{padding:13px 12px;border-bottom:1px solid var(--line)}
+tr:hover td{background:rgba(176,106,61,.04)}
+.tag{display:inline-block;font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:100px;letter-spacing:.03em}
+.tag.gold{background:rgba(176,106,61,.15);color:var(--copper-deep)}
+.tag.green{background:rgba(92,122,78,.15);color:var(--good)}
+.tag.grey{background:rgba(35,26,20,.08);color:var(--muted)}
+
+/* loyalty / member */
+.mem-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px}
+.tier{background:linear-gradient(150deg,var(--espresso),#15100b);color:var(--cream);border-radius:14px;padding:20px}
+.tier h4{color:var(--copper);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.tier .big{font-family:var(--serif);font-size:2rem;margin:6px 0 2px}
+.tier small{opacity:.6;font-size:.74rem}
+
+/* composer */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:.78rem;font-weight:600;margin-bottom:7px;color:var(--espresso-2)}
+.field input,.field textarea,.field select{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-family:var(--sans);font-size:.9rem;background:#fff;color:var(--espresso)}
+.field textarea{min-height:84px;resize:vertical}
+.btn-primary{background:var(--copper);color:#fff;border:none;border-radius:10px;padding:13px 24px;font-family:var(--sans);font-weight:600;font-size:.88rem;cursor:pointer;transition:.2s}
+.btn-primary:hover{background:var(--copper-deep)}
+.btn-soft{background:rgba(35,26,20,.06);color:var(--espresso);border:none;border-radius:10px;padding:13px 20px;font-weight:600;font-size:.86rem;cursor:pointer}
+.preview-push{background:var(--espresso);color:var(--cream);border-radius:14px;padding:18px;display:flex;gap:13px;align-items:flex-start}
+.preview-push .ic{width:38px;height:38px;border-radius:9px;background:var(--copper);flex-shrink:0;display:grid;place-items:center;font-weight:700;color:#fff}
+.preview-push h5{font-size:.9rem;color:#fff}
+.preview-push p{font-size:.82rem;opacity:.8;margin-top:3px}
+.preview-push .tm{font-size:.68rem;opacity:.5;margin-top:8px}
+
+/* events admin */
+.ev-card{border:1px solid var(--line);border-radius:12px;padding:16px;background:#fff;margin-bottom:12px}
+.ev-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ev-card h4{font-size:1rem}
+.ev-card .meta{font-size:.78rem;color:var(--muted);margin-top:3px}
+.ev-prog{margin-top:12px}
+.ev-prog .t{display:flex;justify-content:space-between;font-size:.76rem;margin-bottom:5px;font-weight:600}
+
+/* gift cards */
+.gc{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.gc-card{border-radius:14px;padding:20px;color:#fff;position:relative;overflow:hidden;min-height:130px;display:flex;flex-direction:column;justify-content:space-between}
+.gc-card.a{background:linear-gradient(140deg,#b06a3d,#8f5430)}
+.gc-card.b{background:linear-gradient(140deg,#5c6450,#3a4030)}
+.gc-card.c{background:linear-gradient(140deg,#3a2a1d,#1c130d)}
+.gc-card .no{font-size:.72rem;letter-spacing:.14em;opacity:.7}
+.gc-card .bal{font-family:var(--serif);font-size:1.8rem}
+.gc-card .st{font-size:.72rem;opacity:.85}
+
+.help{font-size:.8rem;color:var(--muted);margin-top:6px}
+.demo-note{background:rgba(176,106,61,.08);border:1px dashed rgba(176,106,61,.4);border-radius:10px;padding:12px 16px;font-size:.8rem;color:var(--copper-deep);margin-bottom:22px}
+
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;left:0;top:0;bottom:0;width:236px;transform:translateX(-100%);transition:.3s;z-index:60}
+  .side.open{transform:none}
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:none}
+  .scrim.show{display:block}
+  .menu-btn{display:grid!important}
+  .stat-row,.mem-hero{grid-template-columns:1fr 1fr}
+  .grid2,.grid2b,.gc{grid-template-columns:1fr}
+  .view{padding:20px 18px 80px}
+  .topbar{padding:14px 18px}
+}
+.menu-btn{display:none;width:38px;height:38px;border-radius:9px;background:var(--espresso);place-items:center;border:none;cursor:pointer}
+.menu-btn span,.menu-btn span::before,.menu-btn span::after{content:'';display:block;width:18px;height:2px;background:var(--cream);position:relative}
+.menu-btn span::before{position:absolute;top:-6px}.menu-btn span::after{position:absolute;top:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side" id="side">
+    <div class="logo">Faculty<small>The Counter</small></div>
+    <div class="grp">Front of House</div>
+    <button class="nav-i active" data-v="dash"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Today</button>
+    <button class="nav-i" data-v="orders"><svg viewBox="0 0 24 24"><path d="M5 7h14l-1 13H6L5 7z"/><path d="M9 7V5a3 3 0 016 0v2"/></svg>Live Orders<span class="badge">5</span></button>
+    <button class="nav-i" data-v="inv"><svg viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4 8 4 8-4z"/><path d="M4 7v10l8 4 8-4V7"/></svg>Inventory<span class="badge">2</span></button>
+    <div class="grp">Growth</div>
+    <button class="nav-i" data-v="loyalty"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/></svg>Loyalty</button>
+    <button class="nav-i" data-v="events"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>Events</button>
+    <button class="nav-i" data-v="gift"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18M12 8V5a2 2 0 10-4 0M12 8V5a2 2 0 114 0"/></svg>Gift Cards</button>
+    <div class="grp">Admin</div>
+    <button class="nav-i" data-v="comms"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H7l-3 3V4z"/></svg>Push &amp; Updates</button>
+    <button class="nav-i" data-v="analytics"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-9"/></svg>Analytics</button>
+    <div class="foot">Concept by <a href="mailto:Dylan@williamsdigital.io">Williams Digital</a><br><a href="index.html">← Back to site</a></div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="menu-btn" id="menuBtn"><span></span></button>
+        <div>
+          <h1 id="vTitle">Today</h1>
+          <div class="sub" id="vSub">Sunday · 19 June · 11:42</div>
+        </div>
+      </div>
+      <div class="top-right">
+        <div class="open-pill"><span class="dot"></span> Open · til 16:00</div>
+        <div class="av">SM</div>
+      </div>
+    </div>
+
+    <div class="view">
+      <div class="demo-note">⚡ Interactive concept — every figure is sample data. On launch this connects to your POS (Square), loyalty, and email/push provider in real time.</div>
+
+      <!-- TODAY -->
+      <section class="panel active" id="dash">
+        <div class="stat-row">
+          <div class="stat"><div class="lab">Today's Sales</div><div class="num">£1,284</div><div class="delta up">▲ 12% vs last Sun</div><div class="spark"><i style="height:40%"></i><i style="height:55%"></i><i style="height:45%"></i><i style="height:70%"></i><i style="height:60%"></i><i style="height:85%"></i><i style="height:100%"></i></div></div>
+          <div class="stat"><div class="lab">Orders</div><div class="num">163</div><div class="delta up">▲ 9 ahead of pace</div><div class="spark"><i style="height:30%"></i><i style="height:50%"></i><i style="height:65%"></i><i style="height:55%"></i><i style="height:80%"></i><i style="height:70%"></i><i style="height:95%"></i></div></div>
+          <div class="stat"><div class="lab">Avg Order</div><div class="num">£7.88</div><div class="delta up">▲ £0.42</div><div class="spark"><i style="height:60%"></i><i style="height:62%"></i><i style="height:58%"></i><i style="height:70%"></i><i style="height:66%"></i><i style="height:72%"></i><i style="height:78%"></i></div></div>
+          <div class="stat"><div class="lab">New Members</div><div class="num">8</div><div class="delta up">▲ via Order Ahead</div><div class="spark"><i style="height:20%"></i><i style="height:40%"></i><i style="height:30%"></i><i style="height:60%"></i><i style="height:50%"></i><i style="height:70%"></i><i style="height:90%"></i></div></div>
+        </div>
+        <div class="grid2">
+          <div class="box">
+            <div class="box-h"><h3>Live Order Queue</h3><button onclick="go('orders')">Open board →</button></div>
+            <div class="order-q">
+              <div class="oq"><span class="tkt">#84</span><div><div class="who">Amara K.</div><div class="what">Flat White · Almond croissant</div></div><span class="st making">Making</span></div>
+              <div class="oq"><span class="tkt">#85</span><div><div class="who">Tom R.</div><div class="what">2× Cold Brew · Banana bread</div></div><span class="st new">New</span></div>
+              <div class="oq"><span class="tkt">#86</span><div><div class="who">Priya S.</div><div class="what">Iced Matcha · Long Black</div></div><span class="st new">New</span></div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-h"><h3>Top Sellers Today</h3></div>
+            <div class="li"><span class="sw"></span><div><h5>Flat White</h5><small>48 sold</small></div><div class="r"><b>£163</b></div></div>
+            <div class="li"><span class="sw c"></span><div><h5>House Cold Brew</h5><small>29 sold</small></div><div class="r"><b>£113</b></div></div>
+            <div class="li"><span class="sw g"></span><div><h5>Iced Matcha Latte</h5><small>21 sold</small></div><div class="r"><b>£86</b></div></div>
+            <div class="li"><span class="sw"></span><div><h5>Brunch · Avo &amp; Eggs</h5><small>17 sold</small></div><div class="r"><b>£153</b></div></div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-h"><h3>Today's Announcement <span style="font-weight:400;color:var(--muted);font-size:.8rem">— shows on the website hero</span></h3><button onclick="go('comms')">Edit →</button></div>
+          <p style="font-size:.95rem;color:var(--espresso-2)">☀️ <b>Sunday special:</b> any filter + a slice from the bakery kitchen for £6 until 2pm. Live music from 1pm under the arcade.</p>
+        </div>
+      </section>
+
+      <!-- LIVE ORDERS -->
+      <section class="panel" id="orders">
+        <div class="grid2b">
+          <div class="box">
+            <div class="box-h"><h3>New &amp; In Progress</h3><span class="tag gold">5 active</span></div>
+            <div class="order-q">
+              <div class="oq"><span class="tkt">#84</span><div><div class="who">Amara K.</div><div class="what">Flat White (oat) · Almond croissant</div></div><span class="st making">Making</span><button class="go" onclick="bump(this,'Ready')">Mark Ready</button></div>
+              <div class="oq"><span class="tkt">#85</span><div><div class="who">Tom R.</div><div class="what">2× Cold Brew · Banana bread</div></div><span class="st new">New</span><button class="go" onclick="bump(this,'Making')">Start</button></div>
+              <div class="oq"><span class="tkt">#86</span><div><div class="who">Priya S.</div><div class="what">Iced Matcha · Long Black</div></div><span class="st new">New</span><button class="go" onclick="bump(this,'Making')">Start</button></div>
+              <div class="oq"><span class="tkt">#87</span><div><div class="who">Jordan M.</div><div class="what">Cappuccino · Piccolo</div></div><span class="st new">New</span><button class="go" onclick="bump(this,'Making')">Start</button></div>
+              <div class="oq"><span class="tkt">#88</span><div><div class="who">Lena B.</div><div class="what">Pour-Over (Ethiopia)</div></div><span class="st new">New</span><button class="go" onclick="bump(this,'Making')">Start</button></div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-h"><h3>Ready for Pickup</h3><span class="tag green">2 waiting</span></div>
+            <div class="order-q">
+              <div class="oq"><span class="tkt">#82</span><div><div class="who">Sara D.</div><div class="what">Flat White · ready 1 min ago</div></div><span class="st ready">Ready</span><button class="go" onclick="bump(this,'Collected')">Collected</button></div>
+              <div class="oq"><span class="tkt">#83</span><div><div class="who">Marcus W.</div><div class="what">Long Black · Croissant</div></div><span class="st ready">Ready</span><button class="go" onclick="bump(this,'Collected')">Collected</button></div>
+            </div>
+            <div class="box-h" style="margin-top:22px"><h3>Avg prep time</h3></div>
+            <div class="stat" style="border:none;padding:0"><div class="num" style="font-size:1.8rem">5m 40s</div><div class="delta up">▲ 20s faster than usual</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INVENTORY -->
+      <section class="panel" id="inv">
+        <div class="alert">⚠️ Oat milk running low — projected to run out by ~3pm at current pace.</div>
+        <div class="grid2b">
+          <div class="box">
+            <div class="box-h"><h3>Stock Levels</h3><button onclick="toast('🛒 Reorder list drafted — sends to your supplier on launch.')">Auto-reorder →</button></div>
+            <div class="inv">
+              <div class="inv-row"><div class="t"><span>House Espresso Blend</span><span class="v">6.2 kg</span></div><div class="bar"><i style="width:72%"></i></div></div>
+              <div class="inv-row"><div class="t"><span>Ethiopia · Filter (single origin)</span><span class="v">2.1 kg</span></div><div class="bar"><i style="width:48%"></i></div></div>
+              <div class="inv-row"><div class="t"><span>Oat Milk</span><span class="v">3 cartons</span></div><div class="bar"><i class="crit" style="width:14%"></i></div></div>
+              <div class="inv-row"><div class="t"><span>Whole Milk</span><span class="v">11 litres</span></div><div class="bar"><i style="width:64%"></i></div></div>
+              <div class="inv-row"><div class="t"><span>Ceremonial Matcha</span><span class="v">340 g</span></div><div class="bar"><i class="low" style="width:33%"></i></div></div>
+              <div class="inv-row"><div class="t"><span>Pastry / Bakery flour</span><span class="v">14 kg</span></div><div class="bar"><i style="width:80%"></i></div></div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-h"><h3>86'd Today <span style="font-weight:400;color:var(--muted);font-size:.8rem">— hidden from online menu</span></h3></div>
+            <div class="li"><span class="sw g"></span><div><h5>Matcha — running short</h5><small>Auto-hides at 0 · or toggle now</small></div><button class="btn-soft r" onclick="toast('Item hidden from online ordering.')" style="padding:7px 14px;font-size:.78rem">86 it</button></div>
+            <div class="li"><span class="sw"></span><div><h5>Banana Bread</h5><small>4 slices left</small></div><span class="tag grey r">Low</span></div>
+            <p class="help" style="margin-top:14px">When an item hits zero, it's automatically removed from Order Ahead so customers can't buy what you can't make.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- LOYALTY -->
+      <section class="panel" id="loyalty">
+        <div class="mem-hero">
+          <div class="tier"><h4>Members</h4><div class="big">1,847</div><small>+8 today</small></div>
+          <div class="tier"><h4>Points Issued</h4><div class="big">214k</div><small>this quarter</small></div>
+          <div class="tier"><h4>Redemption Rate</h4><div class="big">31%</div><small>healthy engagement</small></div>
+          <div class="tier"><h4>Repeat Rate</h4><div class="big">58%</div><small>members vs walk-ins</small></div>
+        </div>
+        <div class="grid2">
+          <div class="box">
+            <div class="box-h"><h3>Members</h3><button onclick="toast('📤 Member export — CSV download on launch.')">Export →</button></div>
+            <table>
+              <thead><tr><th>Member</th><th>Points</th><th>Visits</th><th>Favourite</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Amara Kone</td><td>1,240</td><td>96</td><td>Flat White</td><td><span class="tag gold">Regular</span></td></tr>
+                <tr><td>Tom Reilly</td><td>880</td><td>61</td><td>Cold Brew</td><td><span class="tag gold">Regular</span></td></tr>
+                <tr><td>Priya Sharma</td><td>410</td><td>27</td><td>Iced Matcha</td><td><span class="tag green">Active</span></td></tr>
+                <tr><td>Jordan Mills</td><td>120</td><td>9</td><td>Cappuccino</td><td><span class="tag green">New</span></td></tr>
+                <tr><td>Lena Brandt</td><td>40</td><td>3</td><td>Pour-Over</td><td><span class="tag grey">Lapsing</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="box">
+            <div class="box-h"><h3>Rewards Engine</h3></div>
+            <div class="li"><div><h5>Earn</h5><small>1 point per £1 spent</small></div><span class="tag green r">On</span></div>
+            <div class="li"><div><h5>Free drink</h5><small>at 100 points</small></div><span class="tag green r">On</span></div>
+            <div class="li"><div><h5>Birthday treat</h5><small>free pastry that week</small></div><span class="tag green r">On</span></div>
+            <div class="li"><div><h5>Referral bonus</h5><small>+50 points each, both ways</small></div><span class="tag green r">On</span></div>
+            <div class="li"><div><h5>QR check-in</h5><small>scan at the bar</small></div><span class="tag green r">On</span></div>
+            <button class="btn-soft" style="margin-top:16px;width:100%" onclick="toast('⚙️ Reward rules editor — fully configurable on launch.')">Edit reward rules</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- EVENTS -->
+      <section class="panel" id="events">
+        <div class="grid2">
+          <div class="box">
+            <div class="box-h"><h3>Upcoming Events</h3><button class="btn-primary" style="padding:9px 16px;font-size:.8rem" onclick="toast('➕ Event builder — create, price & publish in one place on launch.')">+ New Event</button></div>
+            <div class="ev-card">
+              <div class="top"><div><h4>Coffee Cupping Class</h4><div class="meta">Wed 25 Jun · 6:30pm · £25</div></div><span class="tag green">Selling</span></div>
+              <div class="ev-prog"><div class="t"><span>14 / 16 sold</span><span>£350</span></div><div class="bar"><i style="width:88%"></i></div></div>
+            </div>
+            <div class="ev-card">
+              <div class="top"><div><h4>Arcade Live Session</h4><div class="meta">Fri 27 Jun · 7pm · Free · RSVP</div></div><span class="tag gold">RSVP</span></div>
+              <div class="ev-prog"><div class="t"><span>62 RSVPs</span><span>cap 80</span></div><div class="bar"><i style="width:78%"></i></div></div>
+            </div>
+            <div class="ev-card">
+              <div class="top"><div><h4>Slow Sunday Book Club</h4><div class="meta">Sun 6 Jul · 10am · Free</div></div><span class="tag grey">Draft</span></div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="box-h"><h3>Email Attendees</h3></div>
+            <div class="field"><label>Event</label><select><option>Coffee Cupping Class — 14 attendees</option><option>Arcade Live Session — 62 RSVPs</option></select></div>
+            <div class="field"><label>Message</label><textarea>Hi! Looking forward to seeing you Wednesday. We start at 6:30 sharp — arrive a few minutes early and we'll have a filter waiting. — Faculty</textarea></div>
+            <button class="btn-primary" onclick="toast('✉️ Email queued to 14 attendees — sends via your email provider on launch.')">Send to Attendees</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- GIFT CARDS -->
+      <section class="panel" id="gift">
+        <div class="stat-row">
+          <div class="stat"><div class="lab">Outstanding Balance</div><div class="num">£2,140</div><div class="delta up">87 active cards</div></div>
+          <div class="stat"><div class="lab">Sold This Month</div><div class="num">£640</div><div class="delta up">▲ 18%</div></div>
+          <div class="stat"><div class="lab">Redeemed</div><div class="num">£410</div><div class="delta">this month</div></div>
+          <div class="stat"><div class="lab">Reloads</div><div class="num">12</div><div class="delta up">online top-ups</div></div>
+        </div>
+        <div class="box">
+          <div class="box-h"><h3>Recently Issued</h3><button class="btn-primary" style="padding:9px 16px;font-size:.8rem" onclick="toast('🎁 Issue a digital or physical card — emails the recipient on launch.')">+ Issue Card</button></div>
+          <div class="gc">
+            <div class="gc-card a"><div class="no">•••• 4821 · Digital</div><div><div class="bal">£25.00</div><div class="st">Active · gifted to Holly</div></div></div>
+            <div class="gc-card b"><div class="no">•••• 7702 · Physical</div><div><div class="bal">£15.40</div><div class="st">Active · reloaded online</div></div></div>
+            <div class="gc-card c"><div class="no">•••• 1190 · Digital</div><div><div class="bal">£0.00</div><div class="st">Redeemed in full</div></div></div>
+          </div>
+          <p class="help" style="margin-top:16px">Cards work in-store and through Order Ahead. Customers can check balances and reload online — every transaction reconciles here.</p>
+        </div>
+      </section>
+
+      <!-- COMMS -->
+      <section class="panel" id="comms">
+        <div class="grid2">
+          <div class="box">
+            <div class="box-h"><h3>Compose Push / Update</h3></div>
+            <div class="field"><label>Send to</label><select id="audSel" onchange="syncPush()"><option>All app members (1,847)</option><option>Regulars only (412)</option><option>Lapsing members (96)</option></select></div>
+            <div class="field"><label>Headline</label><input id="pHead" value="Sunday special is live ☀️" oninput="syncPush()"></div>
+            <div class="field"><label>Message</label><textarea id="pBody" oninput="syncPush()">Any filter + a bakery slice for £6 until 2pm. Live music from 1pm under the arcade.</textarea></div>
+            <div class="field"><label>Also update</label>
+              <label style="font-weight:400;display:inline-flex;gap:8px;align-items:center;margin-right:16px"><input type="checkbox" checked style="width:auto"> Homepage banner</label>
+              <label style="font-weight:400;display:inline-flex;gap:8px;align-items:center"><input type="checkbox" style="width:auto"> Instagram caption draft</label>
+            </div>
+            <button class="btn-primary" onclick="toast('📣 Push sent to 1,847 members + homepage banner updated — live on launch.')">Send Now</button>
+            <button class="btn-soft" onclick="toast('🕑 Scheduled — sends at your chosen time on launch.')">Schedule</button>
+          </div>
+          <div class="box">
+            <div class="box-h"><h3>Preview</h3></div>
+            <div class="preview-push"><div class="ic">F</div><div><h5 id="ppHead">Sunday special is live ☀️</h5><p id="ppBody">Any filter + a bakery slice for £6 until 2pm. Live music from 1pm under the arcade.</p><div class="tm">Faculty Coffee · now</div></div></div>
+            <div class="box-h" style="margin-top:22px"><h3>Quick Site Updates</h3></div>
+            <div class="li"><div><h5>New drink on menu</h5><small>Push it live to the website</small></div><button class="btn-soft r" style="padding:7px 14px;font-size:.78rem" onclick="toast('🆕 New drink published to the menu.')">Add</button></div>
+            <div class="li"><div><h5>Today's special</h5><small>Hero banner + push</small></div><button class="btn-soft r" style="padding:7px 14px;font-size:.78rem" onclick="toast('☀️ Special published.')">Set</button></div>
+            <div class="li"><div><h5>Coupon code</h5><small>Generate &amp; share</small></div><button class="btn-soft r" style="padding:7px 14px;font-size:.78rem" onclick="toast('🎟️ Code FACULTY10 created.')">Create</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANALYTICS -->
+      <section class="panel" id="analytics">
+        <div class="stat-row">
+          <div class="stat"><div class="lab">Revenue · 30 days</div><div class="num">£34.2k</div><div class="delta up">▲ 14% MoM</div></div>
+          <div class="stat"><div class="lab">Busiest Hour</div><div class="num">8–9am</div><div class="delta">weekday peak</div></div>
+          <div class="stat"><div class="lab">Avg Order</div><div class="num">£7.88</div><div class="delta up">▲ £0.42</div></div>
+          <div class="stat"><div class="lab">Repeat Customers</div><div class="num">58%</div><div class="delta up">▲ 6pts</div></div>
+        </div>
+        <div class="grid2">
+          <div class="box">
+            <div class="box-h"><h3>Revenue Trend · 12 weeks</h3></div>
+            <div class="spark" style="height:140px;gap:7px;align-items:flex-end">
+              <i style="height:42%"></i><i style="height:50%"></i><i style="height:46%"></i><i style="height:58%"></i><i style="height:54%"></i><i style="height:66%"></i><i style="height:62%"></i><i style="height:74%"></i><i style="height:70%"></i><i style="height:82%"></i><i style="height:88%"></i><i style="height:100%"></i>
+            </div>
+            <p class="help" style="margin-top:14px">Steady climb since Order Ahead launched — members spend ~22% more per month than walk-in-only customers.</p>
+          </div>
+          <div class="box">
+            <div class="box-h"><h3>Most Popular Drinks</h3></div>
+            <div class="inv">
+              <div class="inv-row"><div class="t"><span>Flat White</span><span class="v">28%</span></div><div class="bar"><i style="width:88%"></i></div></div>
+              <div class="inv-row"><div class="t"><span>Cold Brew</span><span class="v">17%</span></div><div class="bar"><i style="width:54%"></i></div></div>
+              <div class="inv-row"><div class="t"><span>Cappuccino</span><span class="v">14%</span></div><div class="bar"><i style="width:44%"></i></div></div>
+              <div class="inv-row"><div class="t"><span>Iced Matcha</span><span class="v">12%</span></div><div class="bar"><i style="width:38%"></i></div></div>
+              <div class="inv-row"><div class="t"><span>Pour-Over Filter</span><span class="v">9%</span></div><div class="bar"><i style="width:28%"></i></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-h"><h3>Busy Hours Heat · this week</h3></div>
+          <div class="spark" style="height:80px;gap:4px;align-items:flex-end">
+            <i style="height:25%"></i><i style="height:55%"></i><i style="height:95%"></i><i style="height:88%"></i><i style="height:60%"></i><i style="height:48%"></i><i style="height:52%"></i><i style="height:70%"></i><i style="height:66%"></i><i style="height:44%"></i><i style="height:38%"></i><i style="height:30%"></i>
+          </div>
+          <p class="help" style="margin-top:10px">7am — 7pm · staff your bar to the morning rush and the lunchtime brunch wave.</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const titles={dash:['Today',"Sunday · 19 June · 11:42"],orders:['Live Orders','Real-time pickup queue'],inv:['Inventory','Stock levels & 86 board'],loyalty:['Loyalty','Members, points & rewards'],events:['Events','Tickets, RSVPs & attendees'],gift:['Gift Cards','Balances & reloads'],comms:['Push & Updates','Reach members & update the site'],analytics:['Analytics','Trends & insights']};
+function go(v){
+  document.querySelectorAll('.nav-i').forEach(n=>n.classList.toggle('active',n.dataset.v===v));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===v));
+  document.getElementById('vTitle').textContent=titles[v][0];
+  document.getElementById('vSub').textContent=titles[v][1];
+  document.getElementById('side').classList.remove('open');
+  document.getElementById('scrim').classList.remove('show');
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.nav-i').forEach(n=>n.addEventListener('click',()=>go(n.dataset.v)));
+// mobile sidebar
+const mb=document.getElementById('menuBtn'),side=document.getElementById('side'),scrim=document.getElementById('scrim');
+mb.addEventListener('click',()=>{side.classList.toggle('open');scrim.classList.toggle('show')});
+scrim.addEventListener('click',()=>{side.classList.remove('open');scrim.classList.remove('show')});
+// order bump
+function bump(btn,to){
+  const row=btn.closest('.oq'),st=row.querySelector('.st');
+  if(to==='Collected'){row.style.opacity=.4;btn.disabled=true;btn.textContent='✓ Done';return}
+  st.textContent=to;st.className='st '+(to==='Making'?'making':'ready');
+  btn.textContent=to==='Making'?'Mark Ready':'Collected';
+  btn.setAttribute('onclick',to==='Making'?"bump(this,'Ready')":"bump(this,'Collected')");
+}
+// push live preview
+function syncPush(){
+  document.getElementById('ppHead').textContent=document.getElementById('pHead').value||'Headline';
+  document.getElementById('ppBody').textContent=document.getElementById('pBody').value||'Message';
+}
+// toast
+function toast(msg){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#181410;color:#f4ece0;border:1px solid rgba(176,106,61,.55);padding:14px 24px;border-radius:12px;font-family:Inter,sans-serif;font-size:.84rem;z-index:999;box-shadow:0 16px 40px -10px rgba(0,0,0,.6);max-width:90%;text-align:center';
+  document.body.appendChild(t);setTimeout(()=>t.remove(),3200);
+}
+</script>
+</body>
+</html>
