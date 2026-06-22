@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strickland OS — Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --charcoal:#15181d;--charcoal-2:#1d2128;--charcoal-3:#262b33;--charcoal-4:#2f353e;--ink:#0e1014;
+  --paper:#10141a;--card:#1a1f27;--card-2:#20262f;
+  --muted:#8b94a0;--muted-2:#6b7280;--line:rgba(255,255,255,.08);--line-2:rgba(255,255,255,.13);
+  --red:#e8362d;--teal:#16b8a6;--teal-dark:#0e9a8a;--amber:#f6a821;--green:#22c55e;--blue:#4f8ff7;--purple:#a78bfa;
+  --radius:15px;--shadow:0 16px 40px -20px rgba(0,0,0,.6);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:#e7ebf0;-webkit-font-smoothing:antialiased;font-size:14px}
+h1,h2,h3,h4{font-family:'Archivo';letter-spacing:-.02em;color:#fff}
+a{text-decoration:none;color:inherit}
+.layout{display:flex;min-height:100vh}
+
+/* sidebar */
+.side{width:248px;background:var(--charcoal);flex:none;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;border-right:1px solid var(--line)}
+.side .brand{display:flex;align-items:center;gap:10px;padding:20px 20px 18px;border-bottom:1px solid var(--line)}
+.side .brand svg{width:38px;height:38px}
+.side .brand b{font-family:'Archivo';font-weight:900;color:#fff;font-size:1rem;line-height:1}
+.side .brand span{color:var(--teal);font-size:.55rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase}
+.side nav{padding:14px 12px;display:flex;flex-direction:column;gap:3px;flex:1;overflow-y:auto}
+.navsec{font-size:.64rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-2);padding:14px 14px 6px}
+.side nav a{display:flex;align-items:center;gap:11px;padding:10px 14px;border-radius:10px;font-weight:600;font-size:.88rem;color:#c4cbd4;cursor:pointer;transition:.15s}
+.side nav a:hover{background:var(--charcoal-3);color:#fff}
+.side nav a.active{background:linear-gradient(100deg,var(--teal),var(--teal-dark));color:#06241f}
+.side nav a .ic{width:18px;text-align:center}
+.side nav a .badge{margin-left:auto;background:var(--red);color:#fff;font-size:.66rem;font-weight:800;padding:2px 7px;border-radius:10px}
+.side nav a.active .badge{background:rgba(0,0,0,.25);color:#06241f}
+
+/* main */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{background:var(--charcoal-2);border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30;gap:16px}
+.topbar h1{font-size:1.25rem}
+.topbar .sub{color:var(--muted);font-size:.8rem}
+.topbar .right{display:flex;align-items:center;gap:14px}
+.search{background:var(--charcoal-3);border:1px solid var(--line);border-radius:10px;padding:9px 14px;color:#e7ebf0;width:240px;font-size:.86rem}
+.search::placeholder{color:var(--muted-2)}
+.icon-btn{position:relative;width:38px;height:38px;border-radius:10px;background:var(--charcoal-3);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem}
+.icon-btn .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--charcoal-2)}
+.uchip{display:flex;align-items:center;gap:10px;cursor:pointer}
+.uchip .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(140deg,var(--red),var(--amber));display:flex;align-items:center;justify-content:center;font-family:Archivo;font-weight:800;color:#fff}
+.uchip b{font-size:.84rem;display:block}.uchip span{font-size:.74rem;color:var(--muted)}
+.back{font-size:.8rem;color:var(--teal);font-weight:700}
+.menu-toggle{display:none;background:none;border:0;color:#fff;font-size:1.4rem;cursor:pointer}
+
+.content{padding:24px 26px}
+.page{display:none}.page.show{display:block;animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* cards / kpis */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.kpi .top{display:flex;justify-content:space-between;align-items:flex-start}
+.kpi .ic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.kpi .v{font-family:Archivo;font-weight:900;font-size:1.9rem;margin-top:12px;color:#fff}
+.kpi .l{color:var(--muted);font-size:.82rem}
+.kpi .delta{font-size:.74rem;font-weight:700;padding:3px 8px;border-radius:8px}
+.up{background:rgba(34,197,94,.15);color:var(--green)}.down{background:rgba(232,54,45,.15);color:var(--red)}
+.i-teal{background:rgba(22,184,166,.15);color:var(--teal)}.i-red{background:rgba(232,54,45,.15);color:var(--red)}
+.i-amber{background:rgba(246,168,33,.16);color:var(--amber)}.i-blue{background:rgba(79,143,247,.16);color:var(--blue)}
+.i-green{background:rgba(34,197,94,.15);color:var(--green)}.i-purple{background:rgba(167,139,250,.16);color:var(--purple)}
+
+.grid2{display:grid;grid-template-columns:1.6fr 1fr;gap:18px}
+.grid2b{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:1000px){.grid2,.grid2b,.kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.kpis,.grid2,.grid2b{grid-template-columns:1fr}}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius)}
+.panel-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.panel-head h3{font-size:1rem}
+.panel-head .link{font-size:.78rem;color:var(--teal);font-weight:700;cursor:pointer}
+.panel-body{padding:8px 0}
+.panel-body.pad{padding:18px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:Archivo;font-weight:800;font-size:.8rem;padding:9px 15px;border-radius:10px;cursor:pointer;border:0;transition:.15s}
+.btn:active{transform:translateY(1px)}
+.btn-teal{background:var(--teal);color:#06241f}.btn-teal:hover{background:var(--teal-dark)}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:#c1271f}
+.btn-out{background:var(--charcoal-3);color:#e7ebf0;border:1px solid var(--line-2)}.btn-out:hover{background:var(--charcoal-4)}
+.btn-sm{padding:6px 11px;font-size:.74rem}
+
+/* job rows / dispatch */
+.job{display:flex;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);align-items:center}
+.job:last-child{border-bottom:0}
+.job .time{font-family:Archivo;font-weight:800;font-size:.84rem;color:#fff;width:62px;flex:none;text-align:center;line-height:1.2}
+.job .time small{display:block;color:var(--muted);font-weight:600;font-size:.66rem}
+.job .bar{width:4px;align-self:stretch;border-radius:4px;flex:none}
+.job .jd{flex:1;min-width:0}
+.job .jd b{font-size:.9rem;color:#fff}
+.job .jd .c{color:var(--muted);font-size:.8rem}
+.job .jd .addr{color:var(--muted-2);font-size:.76rem;margin-top:2px}
+.job .tech{display:flex;align-items:center;gap:8px;flex:none}
+.job .tech .pic{width:30px;height:30px;border-radius:50%;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;border:1px solid var(--line-2)}
+.status{font-family:Archivo;font-weight:800;font-size:.66rem;letter-spacing:.04em;text-transform:uppercase;padding:5px 10px;border-radius:20px;white-space:nowrap}
+.s-route{background:rgba(246,168,33,.18);color:var(--amber)}
+.s-site{background:rgba(79,143,247,.18);color:var(--blue)}
+.s-done{background:rgba(34,197,94,.16);color:var(--green)}
+.s-sched{background:rgba(139,148,160,.16);color:var(--muted)}
+.s-urgent{background:rgba(232,54,45,.18);color:var(--red)}
+
+/* tech status list */
+.tstat{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.tstat:last-child{border-bottom:0}
+.tstat .pic{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Archivo;font-weight:800;color:#fff;flex:none}
+.tstat .info{flex:1}.tstat .info b{font-size:.86rem;color:#fff}.tstat .info span{font-size:.76rem;color:var(--muted);display:block}
+.led{width:9px;height:9px;border-radius:50%;flex:none}
+.led-on{background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.2)}
+.led-busy{background:var(--amber);box-shadow:0 0 0 3px rgba(246,168,33,.2)}
+.led-off{background:var(--muted-2)}
+
+/* map */
+.map{position:relative;height:300px;border-radius:var(--radius);overflow:hidden;background:#0c2c2a;border:1px solid var(--line);margin:0}
+.map .grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(22,184,166,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(22,184,166,.08) 1px,transparent 1px);background-size:32px 32px}
+.map .route{position:absolute;height:3px;background:repeating-linear-gradient(90deg,var(--teal) 0 8px,transparent 8px 14px);opacity:.7}
+.map .pin{position:absolute;transform:translate(-50%,-100%);text-align:center;cursor:pointer}
+.map .pin .mk{font-size:1.5rem;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.map .pin .tag{font-size:.64rem;background:rgba(0,0,0,.6);color:#fff;padding:2px 6px;border-radius:6px;white-space:nowrap;margin-top:-4px}
+.map .legend{position:absolute;bottom:10px;left:10px;background:rgba(14,16,20,.8);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:.72rem;display:flex;gap:14px}
+.map .legend span{display:flex;align-items:center;gap:6px;color:#cfd5de}
+
+/* tables */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:12px 18px;border-bottom:1px solid var(--line)}
+td{padding:13px 18px;border-bottom:1px solid var(--line);font-size:.86rem}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--card-2)}
+td b{color:#fff;font-weight:600}
+td .sub{color:var(--muted);font-size:.76rem}
+.av-sm{width:30px;height:30px;border-radius:50%;background:linear-gradient(140deg,var(--teal),var(--blue));display:inline-flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:#06241f;margin-right:8px;vertical-align:middle}
+
+/* kanban */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kcol{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;min-height:200px}
+.kcol h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:12px;padding:2px 4px}
+.kcol h4 .ct{background:var(--charcoal-3);color:#cfd5de;border-radius:20px;padding:1px 8px;font-size:.68rem}
+.kcard{background:var(--card-2);border:1px solid var(--line-2);border-radius:11px;padding:12px;margin-bottom:10px;cursor:grab}
+.kcard:hover{border-color:var(--teal)}
+.kcard b{font-size:.84rem;color:#fff;display:block}
+.kcard .meta{color:var(--muted);font-size:.74rem;margin-top:4px}
+.kcard .val{font-family:Archivo;font-weight:800;color:var(--teal);font-size:.9rem;margin-top:6px}
+.kcard .tags{display:flex;gap:5px;margin-top:8px}
+.ktag{font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--charcoal-3);color:#cfd5de}
+@media(max-width:900px){.kanban{grid-template-columns:1fr 1fr}}
+
+/* inventory bars */
+.inv-row{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.inv-row:last-child{border-bottom:0}
+.inv-row .nm{flex:1}.inv-row .nm b{color:#fff;font-size:.86rem}.inv-row .nm span{color:var(--muted);font-size:.76rem}
+.inv-bar{width:130px;height:8px;border-radius:8px;background:var(--charcoal-3);overflow:hidden;flex:none}
+.inv-bar i{display:block;height:100%;border-radius:8px}
+.inv-qty{font-family:Archivo;font-weight:800;font-size:.86rem;width:54px;text-align:right;flex:none}
+.low{color:var(--red)}.ok{color:var(--green)}.mid{color:var(--amber)}
+
+/* reviews */
+.rev{padding:14px 18px;border-bottom:1px solid var(--line)}
+.rev:last-child{border-bottom:0}
+.rev .h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.rev .h .who{display:flex;align-items:center;gap:10px}
+.rev .h .who .av{width:30px;height:30px;border-radius:50%;background:var(--charcoal-3);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;color:#fff}
+.rev .stars{color:var(--amber);font-size:.8rem;letter-spacing:1px}
+.rev p{color:#c4cbd4;font-size:.84rem;margin:4px 0 8px}
+.rev .src{font-size:.72rem;color:var(--muted)}
+
+/* messages / leads feed */
+.feed{display:flex;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.feed:last-child{border-bottom:0}
+.feed .fi{width:36px;height:36px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.feed .fd{flex:1}.feed .fd b{font-size:.85rem;color:#fff}.feed .fd p{font-size:.8rem;color:var(--muted);margin-top:2px}
+.feed .ft{font-size:.72rem;color:var(--muted-2);white-space:nowrap}
+
+/* job notes drawer style */
+.note-item{padding:13px 18px;border-bottom:1px solid var(--line)}
+.note-item:last-child{border-bottom:0}
+.note-item .nh{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:4px}
+.note-item .nh b{color:var(--teal)}
+.note-item p{font-size:.85rem;color:#dfe4ea}
+
+@media(max-width:820px){
+  .side{position:fixed;left:-260px;z-index:200;transition:left .25s}.side.open{left:0}
+  .menu-toggle{display:block}.search{display:none}
+  .content{padding:18px 14px}
+}
+.placeholder-note{background:#3a2e00;color:#f6cf4f;font-size:.72rem;text-align:center;padding:6px;font-weight:600;border-bottom:1px solid #6b5400}
+</style>
+</head>
+<body>
+<div class="placeholder-note">DEMO ADMIN CONSOLE — sample operating data. Fully clickable navigation; not connected to a live backend.</div>
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="side" id="side">
+    <div class="brand">
+      <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#262b33" stroke="#16b8a6" stroke-width="2"/><path d="M32 12 L46 19 V32 C46 42 40 49 32 52 C24 49 18 42 18 32 V19 Z" fill="#16b8a6"/><path d="M27 31 l4 4 8-9" stroke="#06241f" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><b>STRICKLAND&nbsp;OS</b><br><span>Operations Console</span></div>
+    </div>
+    <nav>
+      <a class="active" data-page="dispatch"><span class="ic">🚐</span> Dispatch <span class="badge">7</span></a>
+      <div class="navsec">CRM</div>
+      <a data-page="customers"><span class="ic">👥</span> Customers</a>
+      <a data-page="quotes"><span class="ic">📝</span> Quotes & Invoices</a>
+      <a data-page="agreements"><span class="ic">📋</span> Maintenance Agreements</a>
+      <a data-page="leads"><span class="ic">🎯</span> Lead Tracking <span class="badge">5</span></a>
+      <div class="navsec">Operations</div>
+      <a data-page="inventory"><span class="ic">📦</span> Inventory</a>
+      <a data-page="warranty"><span class="ic">🛡️</span> Warranty Registration</a>
+      <div class="navsec">Growth</div>
+      <a data-page="marketing"><span class="ic">📣</span> Marketing</a>
+      <a data-page="reviews"><span class="ic">⭐</span> Reviews & Inbox <span class="badge">3</span></a>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="menu-toggle" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+        <div><h1 id="ptitle">Dispatch Board</h1><div class="sub" id="psub">Tuesday, June 24 · 7 jobs scheduled today</div></div>
+      </div>
+      <div class="right">
+        <input class="search" placeholder="🔍 Search customers, jobs, invoices…">
+        <div class="icon-btn" onclick="alert('Notifications (demo)')">🔔<span class="dot"></span></div>
+        <a class="back" href="index.html">← Site</a>
+        <div class="uchip">
+          <div class="av">JS</div>
+          <div><b>Jordan S.</b><span>Owner</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ===================== DISPATCH ===================== -->
+      <div class="page show" id="dispatch">
+        <div class="kpis">
+          <div class="kpi"><div class="top"><div class="ic i-teal">🚐</div><span class="delta up">+2</span></div><div class="v">7</div><div class="l">Jobs today</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-green">✅</div><span class="delta up">on track</span></div><div class="v">3</div><div class="l">Completed</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-amber">⏱️</div></div><div class="v">22m</div><div class="l">Avg. response</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-red">💰</div><span class="delta up">+18%</span></div><div class="v">$4,280</div><div class="l">Today's revenue</div></div>
+        </div>
+
+        <div class="grid2">
+          <!-- jobs list -->
+          <div class="panel">
+            <div class="panel-head"><h3>Today's Jobs</h3><span class="link" onclick="alert('New job (demo)')">+ New Job</span></div>
+            <div class="panel-body">
+              <div class="job"><div class="time">8:00<small>AM</small></div><div class="bar" style="background:var(--green)"></div><div class="jd"><b>AC Tune-Up · Comfort Club</b><div class="c">Linda Carter · Homewood</div><div class="addr">📍 412 Oak Grove Rd</div></div><div class="tech"><div class="pic">DC</div></div><span class="status s-done">Done</span></div>
+              <div class="job"><div class="time">9:30<small>AM</small></div><div class="bar" style="background:var(--green)"></div><div class="jd"><b>No Cooling — Diagnostic</b><div class="c">Mike Reyes · Vestavia</div><div class="addr">📍 88 Crest Line Dr</div></div><div class="tech"><div class="pic">MR</div></div><span class="status s-done">Done</span></div>
+              <div class="job"><div class="time">11:00<small>AM</small></div><div class="bar" style="background:var(--green)"></div><div class="jd"><b>Furnace Inspection</b><div class="c">James Office Park · Pelham</div><div class="addr">📍 2200 Commerce Blvd</div></div><div class="tech"><div class="pic">TW</div></div><span class="status s-done">Done</span></div>
+              <div class="job"><div class="time">1:00<small>PM</small></div><div class="bar" style="background:var(--amber)"></div><div class="jd"><b>Spring AC Tune-Up · Gold</b><div class="c">Sarah Bennett · Hoover</div><div class="addr">📍 305 Riverchase Pkwy</div></div><div class="tech"><div class="pic">MR</div></div><span class="status s-route">En Route</span></div>
+              <div class="job"><div class="time">2:00<small>PM</small></div><div class="bar" style="background:var(--blue)"></div><div class="jd"><b>UV Purifier Install</b><div class="c">Dana Whitfield · Helena</div><div class="addr">📍 17 Maple Trace</div></div><div class="tech"><div class="pic">TW</div></div><span class="status s-site">On Site</span></div>
+              <div class="job"><div class="time">3:30<small>PM</small></div><div class="bar" style="background:var(--red)"></div><div class="jd"><b>🚨 No A/C — Emergency</b><div class="c">Greg Holloway · Birmingham</div><div class="addr">📍 1140 5th Ave S</div></div><div class="tech"><div class="pic">DC</div></div><span class="status s-urgent">Urgent</span></div>
+              <div class="job"><div class="time">4:30<small>PM</small></div><div class="bar" style="background:var(--muted-2)"></div><div class="jd"><b>Estimate — New System</b><div class="c">Tara Nguyen · Alabaster</div><div class="addr">📍 56 Kent Dairy Rd</div></div><div class="tech"><div class="pic">JS</div></div><span class="status s-sched">Scheduled</span></div>
+            </div>
+          </div>
+
+          <!-- tech status + notes -->
+          <div>
+            <div class="panel" style="margin-bottom:18px">
+              <div class="panel-head"><h3>Technician Status</h3><span class="link">Live</span></div>
+              <div class="panel-body">
+                <div class="tstat"><div class="pic" style="background:linear-gradient(140deg,#e8362d,#16b8a6)">MR</div><div class="info"><b>Marcus Reed</b><span>En route → Hoover · ETA 18m</span></div><div class="led led-busy"></div></div>
+                <div class="tstat"><div class="pic" style="background:linear-gradient(140deg,#4f8ff7,#16b8a6)">TW</div><div class="info"><b>Tyler West</b><span>On site → Helena · UV install</span></div><div class="led led-busy"></div></div>
+                <div class="tstat"><div class="pic" style="background:linear-gradient(140deg,#f6a821,#e8362d)">DC</div><div class="info"><b>Dana Cole</b><span>Available · returning to shop</span></div><div class="led led-on"></div></div>
+                <div class="tstat"><div class="pic" style="background:linear-gradient(140deg,#a78bfa,#4f8ff7)">JS</div><div class="info"><b>Jordan Strickland</b><span>Office · estimate at 4:30</span></div><div class="led led-on"></div></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>Job Notes</h3><span class="link" onclick="alert('Add note (demo)')">+ Add</span></div>
+              <div class="panel-body">
+                <div class="note-item"><div class="nh"><b>Marcus R.</b><span>10:42 AM</span></div><p>Reyes job — bad dual-run capacitor, replaced under warranty. Recommended surge protector, customer interested. Quote sent.</p></div>
+                <div class="note-item"><div class="nh"><b>Dispatch</b><span>9:15 AM</span></div><p>Holloway 3:30 is a Gold member w/ newborn — flagged priority. Bumped ahead of routine calls.</p></div>
+                <div class="note-item"><div class="nh"><b>Tyler W.</b><span>8:05 AM</span></div><p>Pelham office park gate code is 4471. Park in rear lot.</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GPS map -->
+        <div class="panel" style="margin-top:18px">
+          <div class="panel-head"><h3>GPS Routes & Live Locations</h3><span class="link" onclick="alert('Optimize routes (demo)')">⚡ Optimize Routes</span></div>
+          <div class="panel-body pad">
+            <div class="map">
+              <div class="grid-bg"></div>
+              <div class="route" style="top:42%;left:18%;width:30%;transform:rotate(-8deg)"></div>
+              <div class="route" style="top:60%;left:40%;width:26%;transform:rotate(12deg)"></div>
+              <div class="pin" style="top:28%;left:18%"><div class="mk">🏢</div><div class="tag">Shop · HQ</div></div>
+              <div class="pin" style="top:46%;left:46%"><div class="mk">🚐</div><div class="tag">Marcus → Hoover</div></div>
+              <div class="pin" style="top:66%;left:66%"><div class="mk">🚐</div><div class="tag">Tyler · Helena</div></div>
+              <div class="pin" style="top:34%;left:74%"><div class="mk">📍</div><div class="tag">3:30 Emergency</div></div>
+              <div class="pin" style="top:72%;left:30%"><div class="mk">🏠</div><div class="tag">4:30 Estimate</div></div>
+              <div class="legend"><span>🚐 Technicians (2)</span><span>📍 Pending</span><span>🏢 Shop</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== CUSTOMERS ===================== -->
+      <div class="page" id="customers">
+        <div class="kpis">
+          <div class="kpi"><div class="top"><div class="ic i-blue">👥</div><span class="delta up">+34</span></div><div class="v">1,284</div><div class="l">Total customers</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-amber">🥇</div></div><div class="v">412</div><div class="l">Club members</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-green">💵</div><span class="delta up">+12%</span></div><div class="v">$2,340</div><div class="l">Avg. lifetime value</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-teal">🔁</div></div><div class="v">68%</div><div class="l">Repeat rate</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Customer Directory</h3><button class="btn btn-teal btn-sm" onclick="alert('Add customer (demo)')">+ Add Customer</button></div>
+          <table>
+            <thead><tr><th>Customer</th><th>Location</th><th>Plan</th><th>Last Service</th><th>Lifetime</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span class="av-sm">SB</span><b>Sarah Bennett</b><div class="sub">(205) 555-0142</div></td><td>Hoover</td><td><span class="status s-done">Gold</span></td><td>Apr 12, 2026</td><td><b>$8,418</b></td><td><span class="status s-done">Active</span></td></tr>
+              <tr><td><span class="av-sm">LC</span><b>Linda Carter</b><div class="sub">(205) 555-0188</div></td><td>Homewood</td><td><span class="status s-route">Silver</span></td><td>Jun 24, 2026</td><td><b>$3,210</b></td><td><span class="status s-done">Active</span></td></tr>
+              <tr><td><span class="av-sm">MR</span><b>Mike Reyes</b><div class="sub">(205) 555-0291</div></td><td>Vestavia</td><td><span class="status s-sched">None</span></td><td>Jun 24, 2026</td><td><b>$640</b></td><td><span class="status s-done">Active</span></td></tr>
+              <tr><td><span class="av-sm">GH</span><b>Greg Holloway</b><div class="sub">(205) 555-0377</div></td><td>Birmingham</td><td><span class="status s-done">Gold</span></td><td>Today</td><td><b>$11,920</b></td><td><span class="status s-urgent">Emergency</span></td></tr>
+              <tr><td><span class="av-sm">TN</span><b>Tara Nguyen</b><div class="sub">(205) 555-0420</div></td><td>Alabaster</td><td><span class="status s-sched">Prospect</span></td><td>—</td><td><b>$0</b></td><td><span class="status s-sched">Lead</span></td></tr>
+              <tr><td><span class="av-sm">DW</span><b>Dana Whitfield</b><div class="sub">(205) 555-0512</div></td><td>Helena</td><td><span class="status s-route">Silver</span></td><td>Today</td><td><b>$2,840</b></td><td><span class="status s-done">Active</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== QUOTES & INVOICES ===================== -->
+      <div class="page" id="quotes">
+        <div class="kpis">
+          <div class="kpi"><div class="top"><div class="ic i-amber">📝</div></div><div class="v">14</div><div class="l">Open quotes</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-teal">📤</div><span class="delta up">42%</span></div><div class="v">$48.2k</div><div class="l">Quoted (30d)</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-red">⏳</div></div><div class="v">$3,290</div><div class="l">Unpaid invoices</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-green">💰</div><span class="delta up">+18%</span></div><div class="v">$112k</div><div class="l">Collected (30d)</div></div>
+        </div>
+        <div class="grid2b">
+          <div class="panel">
+            <div class="panel-head"><h3>Open Quotes</h3><button class="btn btn-teal btn-sm" onclick="alert('New quote (demo)')">+ New Quote</button></div>
+            <table>
+              <thead><tr><th>Customer</th><th>Job</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><b>Tara Nguyen</b></td><td>New 3-ton system <div class="sub">Est #2231</div></td><td><b>$9,400</b></td><td><span class="status s-route">Sent</span></td></tr>
+                <tr><td><b>Sarah Bennett</b></td><td>Duct sealing <div class="sub">Est #2221</div></td><td><b>$1,180</b></td><td><span class="status s-route">Sent</span></td></tr>
+                <tr><td><b>Mike Reyes</b></td><td>Surge protector <div class="sub">Est #2233</div></td><td><b>$280</b></td><td><span class="status s-sched">Draft</span></td></tr>
+                <tr><td><b>Greg Holloway</b></td><td>Compressor replace <div class="sub">Est #2235</div></td><td><b>$2,150</b></td><td><span class="status s-done">Approved</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Invoices</h3><span class="link">Export</span></div>
+            <table>
+              <thead><tr><th>#</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><b>1058</b></td><td>Linda Carter</td><td><b>$0</b><div class="sub">Plan covered</div></td><td><span class="status s-done">Paid</span></td></tr>
+                <tr><td><b>1057</b></td><td>Mike Reyes</td><td><b>$640</b></td><td><span class="status s-done">Paid</span></td></tr>
+                <tr><td><b>1055</b></td><td>Office Park LLC</td><td><b>$1,890</b></td><td><span class="status s-route">Sent</span></td></tr>
+                <tr><td><b>1052</b></td><td>R. Patterson</td><td><b>$1,400</b></td><td><span class="status s-urgent">Overdue</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== AGREEMENTS ===================== -->
+      <div class="page" id="agreements">
+        <div class="kpis">
+          <div class="kpi"><div class="top"><div class="ic i-amber">🥇</div><span class="delta up">+9</span></div><div class="v">412</div><div class="l">Active agreements</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-teal">💵</div></div><div class="v">$11.4k</div><div class="l">Monthly recurring</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-red">⏰</div></div><div class="v">18</div><div class="l">Renewing this month</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-green">📈</div><span class="delta up">94%</span></div><div class="v">94%</div><div class="l">Renewal rate</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Maintenance Agreements</h3><button class="btn btn-teal btn-sm" onclick="alert('Enroll customer (demo)')">+ Enroll</button></div>
+          <table>
+            <thead><tr><th>Customer</th><th>Tier</th><th>Monthly</th><th>Next Visit</th><th>Renews</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><b>Sarah Bennett</b></td><td><span class="status s-done">Gold</span></td><td><b>$39</b></td><td>Jun 24 (today)</td><td>Jan 1, 2027</td><td><span class="status s-done">Active</span></td></tr>
+              <tr><td><b>Linda Carter</b></td><td><span class="status s-route">Silver</span></td><td><b>$24</b></td><td>Oct 2026</td><td>Mar 1, 2027</td><td><span class="status s-done">Active</span></td></tr>
+              <tr><td><b>Dana Whitfield</b></td><td><span class="status s-route">Silver</span></td><td><b>$24</b></td><td>Sep 2026</td><td>Jul 1, 2026</td><td><span class="status s-route">Renewing</span></td></tr>
+              <tr><td><b>R. Patterson</b></td><td><span class="status s-sched">Bronze</span></td><td><b>$14</b></td><td>—</td><td>Jun 30, 2026</td><td><span class="status s-urgent">Lapsing</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== LEADS ===================== -->
+      <div class="page" id="leads">
+        <div class="kpis">
+          <div class="kpi"><div class="top"><div class="ic i-red">🎯</div><span class="delta up">+5</span></div><div class="v">23</div><div class="l">Open leads</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-amber">🔥</div></div><div class="v">8</div><div class="l">Hot (this week)</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-teal">📈</div><span class="delta up">+6%</span></div><div class="v">34%</div><div class="l">Close rate</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-green">💰</div></div><div class="v">$62k</div><div class="l">Pipeline value</div></div>
+        </div>
+        <div class="kanban">
+          <div class="kcol"><h4>New <span class="ct">3</span></h4>
+            <div class="kcard"><b>Tara Nguyen</b><div class="meta">Website form · Alabaster</div><div class="val">$9,400</div><div class="tags"><span class="ktag">New System</span><span class="ktag">🌐 Web</span></div></div>
+            <div class="kcard"><b>R. Calhoun</b><div class="meta">Missed call · Pelham</div><div class="val">~$6,000</div><div class="tags"><span class="ktag">📞 Call</span></div></div>
+            <div class="kcard"><b>M. Dawson</b><div class="meta">Facebook msg · Hoover</div><div class="val">~$400</div><div class="tags"><span class="ktag">Repair</span><span class="ktag">📘 FB</span></div></div>
+          </div>
+          <div class="kcol"><h4>Contacted <span class="ct">2</span></h4>
+            <div class="kcard"><b>J. Whitfield</b><div class="meta">Called back · Helena</div><div class="val">$1,200</div><div class="tags"><span class="ktag">IAQ</span></div></div>
+            <div class="kcard"><b>Office Park LLC</b><div class="meta">Email thread · Pelham</div><div class="val">$8,800</div><div class="tags"><span class="ktag">Commercial</span></div></div>
+          </div>
+          <div class="kcol"><h4>Quoted <span class="ct">2</span></h4>
+            <div class="kcard"><b>Sarah Bennett</b><div class="meta">Duct sealing</div><div class="val">$1,180</div><div class="tags"><span class="ktag">Upsell</span><span class="ktag">🥇 Gold</span></div></div>
+            <div class="kcard"><b>Greg Holloway</b><div class="meta">Compressor</div><div class="val">$2,150</div><div class="tags"><span class="ktag">🔥 Hot</span></div></div>
+          </div>
+          <div class="kcol"><h4>Won <span class="ct">2</span></h4>
+            <div class="kcard"><b>D. Whitfield</b><div class="meta">UV install · today</div><div class="val">$640</div><div class="tags"><span class="ktag">✅ Closed</span></div></div>
+            <div class="kcard"><b>Mike Reyes</b><div class="meta">Repair · paid</div><div class="val">$640</div><div class="tags"><span class="ktag">✅ Closed</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== INVENTORY ===================== -->
+      <div class="page" id="inventory">
+        <div class="kpis">
+          <div class="kpi"><div class="top"><div class="ic i-blue">📦</div></div><div class="v">$84k</div><div class="l">Inventory value</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-red">⚠️</div></div><div class="v">6</div><div class="l">Low-stock items</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-teal">❄️</div></div><div class="v">12</div><div class="l">Systems in stock</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-amber">🚚</div></div><div class="v">3</div><div class="l">POs incoming</div></div>
+        </div>
+        <div class="grid2b">
+          <div class="panel">
+            <div class="panel-head"><h3>Units & Systems</h3><button class="btn btn-out btn-sm" onclick="alert('Create PO (demo)')">+ Purchase Order</button></div>
+            <div class="panel-body">
+              <div class="inv-row"><div class="nm"><b>Trane XR16 · 3-Ton AC</b><span>Outdoor condenser</span></div><div class="inv-bar"><i style="width:70%;background:var(--green)"></i></div><div class="inv-qty ok">5</div></div>
+              <div class="inv-row"><div class="nm"><b>Trane S9V2 · Gas Furnace</b><span>96% AFUE</span></div><div class="inv-bar"><i style="width:45%;background:var(--amber)"></i></div><div class="inv-qty mid">3</div></div>
+              <div class="inv-row"><div class="nm"><b>Carrier Comfort 24 Heat Pump</b><span>2.5-ton</span></div><div class="inv-bar"><i style="width:80%;background:var(--green)"></i></div><div class="inv-qty ok">4</div></div>
+              <div class="inv-row"><div class="nm"><b>Mitsubishi Mini-Split</b><span>Ductless 12k BTU</span></div><div class="inv-bar"><i style="width:15%;background:var(--red)"></i></div><div class="inv-qty low">1</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Parts & Filters</h3><span class="link" onclick="alert('Reorder low stock (demo)')">⚡ Reorder Low</span></div>
+            <div class="panel-body">
+              <div class="inv-row"><div class="nm"><b>Dual-Run Capacitors</b><span>45/5 µF</span></div><div class="inv-bar"><i style="width:60%;background:var(--green)"></i></div><div class="inv-qty ok">24</div></div>
+              <div class="inv-row"><div class="nm"><b>MERV 11 Filters · 16×25×1</b><span>Member program</span></div><div class="inv-bar"><i style="width:20%;background:var(--red)"></i></div><div class="inv-qty low">8</div></div>
+              <div class="inv-row"><div class="nm"><b>Contactors · 2-pole</b><span>30A</span></div><div class="inv-bar"><i style="width:50%;background:var(--amber)"></i></div><div class="inv-qty mid">11</div></div>
+              <div class="inv-row"><div class="nm"><b>UV Bulbs · germicidal</b><span>Replacement</span></div><div class="inv-bar"><i style="width:10%;background:var(--red)"></i></div><div class="inv-qty low">2</div></div>
+              <div class="inv-row"><div class="nm"><b>R-410A Refrigerant</b><span>25 lb cylinder</span></div><div class="inv-bar"><i style="width:75%;background:var(--green)"></i></div><div class="inv-qty ok">9</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== WARRANTY REGISTRATION ===================== -->
+      <div class="page" id="warranty">
+        <div class="kpis">
+          <div class="kpi"><div class="top"><div class="ic i-green">🛡️</div><span class="delta up">+14</span></div><div class="v">1,042</div><div class="l">Registered units</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-amber">⏰</div></div><div class="v">7</div><div class="l">Pending registration</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-red">📅</div></div><div class="v">23</div><div class="l">Expiring (90d)</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-teal">🔧</div></div><div class="v">4</div><div class="l">Open claims</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Warranty Registration Queue</h3><button class="btn btn-teal btn-sm" onclick="alert('Register with manufacturer (demo)')">+ Register Unit</button></div>
+          <table>
+            <thead><tr><th>Customer</th><th>Equipment</th><th>Serial</th><th>Installed</th><th>Coverage</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><b>D. Whitfield</b></td><td>Trane UV Purifier</td><td>TR-UV-90213</td><td>Today</td><td>5-yr parts</td><td><span class="status s-route">Pending</span></td></tr>
+              <tr><td><b>Greg Holloway</b></td><td>Trane Compressor</td><td>TR-CP-44120</td><td>Today</td><td>10-yr</td><td><span class="status s-route">Pending</span></td></tr>
+              <tr><td><b>Sarah Bennett</b></td><td>Trane XR16 AC</td><td>TR-2021-88241</td><td>Jun 2021</td><td>10-yr to 2031</td><td><span class="status s-done">Registered</span></td></tr>
+              <tr><td><b>Office Park LLC</b></td><td>Carrier RTU</td><td>CR-RTU-7781</td><td>May 2026</td><td>10-yr</td><td><span class="status s-done">Registered</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== MARKETING ===================== -->
+      <div class="page" id="marketing">
+        <div class="kpis">
+          <div class="kpi"><div class="top"><div class="ic i-teal">🌐</div><span class="delta up">+22%</span></div><div class="v">47</div><div class="l">Website leads (30d)</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-red">📞</div><span class="delta down">3 today</span></div><div class="v">3</div><div class="l">Missed calls</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-amber">⭐</div></div><div class="v">4.9</div><div class="l">Google rating (512)</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-blue">📧</div><span class="delta up">38%</span></div><div class="v">38%</div><div class="l">Email open rate</div></div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-head"><h3>Lead Sources & Channels</h3><span class="link">Last 30 days</span></div>
+            <div class="panel-body">
+              <div class="inv-row"><div class="nm"><b>🌐 Website forms</b><span>Schedule + estimate requests</span></div><div class="inv-bar"><i style="width:88%;background:var(--teal)"></i></div><div class="inv-qty ok">47</div></div>
+              <div class="inv-row"><div class="nm"><b>📞 Phone / missed calls</b><span>Tracked & texted back</span></div><div class="inv-bar"><i style="width:62%;background:var(--blue)"></i></div><div class="inv-qty">31</div></div>
+              <div class="inv-row"><div class="nm"><b>⭐ Google Business</b><span>Profile clicks</span></div><div class="inv-bar"><i style="width:55%;background:var(--amber)"></i></div><div class="inv-qty">28</div></div>
+              <div class="inv-row"><div class="nm"><b>📘 Facebook messages</b><span>Auto-routed to inbox</span></div><div class="inv-bar"><i style="width:30%;background:var(--purple)"></i></div><div class="inv-qty">14</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Email Campaigns</h3><button class="btn btn-teal btn-sm" onclick="alert('New campaign (demo)')">+ New</button></div>
+            <div class="panel-body">
+              <div class="feed"><div class="fi i-amber">🍂</div><div class="fd"><b>Fall Tune-Up Reminder</b><p>Sent to 412 members · 38% open · 11 booked</p></div><div class="ft">Scheduled</div></div>
+              <div class="feed"><div class="fi i-teal">💳</div><div class="fd"><b>0% Financing — Summer</b><p>Sent to 1,284 · 31% open · 7 leads</p></div><div class="ft">2d ago</div></div>
+              <div class="feed"><div class="fi i-red">🚨</div><div class="fd"><b>Heat Wave Prep</b><p>Draft · targeting non-members</p></div><div class="ft">Draft</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:18px">
+          <div class="panel-head"><h3>📞 Missed Calls — Auto Text-Back</h3><span class="link">Today</span></div>
+          <div class="panel-body">
+            <div class="feed"><div class="fi i-red">📞</div><div class="fd"><b>(205) 555-0631 · R. Calhoun</b><p>Missed 9:12 AM → auto-text sent → replied "need new AC quote"</p></div><div class="ft"><button class="btn btn-teal btn-sm" onclick="alert('Convert to lead (demo)')">→ Lead</button></div></div>
+            <div class="feed"><div class="fi i-red">📞</div><div class="fd"><b>(205) 555-0744 · Unknown</b><p>Missed 11:48 AM → auto-text sent → awaiting reply</p></div><div class="ft">Pending</div></div>
+            <div class="feed"><div class="fi i-red">📞</div><div class="fd"><b>(205) 555-0810 · M. Dawson</b><p>Missed 1:30 PM → auto-text sent → booked online ✅</p></div><div class="ft"><span class="status s-done">Booked</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== REVIEWS & INBOX ===================== -->
+      <div class="page" id="reviews">
+        <div class="kpis">
+          <div class="kpi"><div class="top"><div class="ic i-amber">⭐</div></div><div class="v">4.9</div><div class="l">Avg rating · 512 reviews</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-red">💬</div><span class="delta down">3 new</span></div><div class="v">3</div><div class="l">Unread messages</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-green">📈</div><span class="delta up">+18</span></div><div class="v">+18</div><div class="l">New reviews (30d)</div></div>
+          <div class="kpi"><div class="top"><div class="ic i-teal">↩️</div></div><div class="v">100%</div><div class="l">Response rate</div></div>
+        </div>
+        <div class="grid2">
+          <div class="panel">
+            <div class="panel-head"><h3>Recent Reviews</h3><span class="link" onclick="alert('Request reviews (demo)')">✉️ Request Reviews</span></div>
+            <div class="panel-body">
+              <div class="rev"><div class="h"><div class="who"><div class="av">SB</div><b>Sarah B.</b></div><div class="stars">★★★★★</div></div><p>"Marcus was on time, professional, and explained everything. Cool air same day!"</p><div class="h"><span class="src">⭐ Google · 2 days ago</span><button class="btn btn-out btn-sm" onclick="alert('Reply posted (demo)')">Reply</button></div></div>
+              <div class="rev"><div class="h"><div class="who"><div class="av">MR</div><b>Mike R.</b></div><div class="stars">★★★★★</div></div><p>"Fair price, no upsell. The mascot magnet is a fun touch. Highly recommend."</p><div class="h"><span class="src">⭐ Google · 4 days ago</span><span class="status s-done">Replied</span></div></div>
+              <div class="rev"><div class="h"><div class="who"><div class="av">JT</div><b>James T.</b></div><div class="stars">★★★★☆</div></div><p>"Great work, slight wait on parts. Would use again."</p><div class="h"><span class="src">📘 Facebook · 6 days ago</span><button class="btn btn-out btn-sm" onclick="alert('Reply posted (demo)')">Reply</button></div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Unified Inbox</h3><span class="link">FB · Google · SMS</span></div>
+            <div class="panel-body">
+              <div class="feed"><div class="fi i-purple">📘</div><div class="fd"><b>M. Dawson · Facebook</b><p>"Do you service Hoover? AC making noise…"</p></div><div class="ft">5m</div></div>
+              <div class="feed"><div class="fi i-amber">⭐</div><div class="fd"><b>Google Q&A</b><p>"Are you open weekends?"</p></div><div class="ft">22m</div></div>
+              <div class="feed"><div class="fi i-teal">💬</div><div class="fd"><b>R. Calhoun · SMS</b><p>"Yes please send the quote, thanks!"</p></div><div class="ft">1h</div></div>
+              <div class="feed"><div class="fi i-blue">✉️</div><div class="fd"><b>Office Park LLC · Email</b><p>"Following up on the commercial bid…"</p></div><div class="ft">3h</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+var titles={
+  dispatch:['Dispatch Board','Tuesday, June 24 · 7 jobs scheduled today'],
+  customers:['Customers','1,284 customers · 412 Comfort Club members'],
+  quotes:['Quotes & Invoices','Track estimates, approvals & billing'],
+  agreements:['Maintenance Agreements','412 active plans · $11.4k MRR'],
+  leads:['Lead Tracking','Pipeline across every channel'],
+  inventory:['Inventory','Units, parts & filters'],
+  warranty:['Warranty Registration','Manufacturer registration & claims'],
+  marketing:['Marketing','Leads, reviews, campaigns & missed calls'],
+  reviews:['Reviews & Inbox','Reputation & unified messaging']
+};
+function go(id){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('show')});
+  document.getElementById(id).classList.add('show');
+  document.querySelectorAll('.side nav a').forEach(function(a){a.classList.toggle('active',a.dataset.page===id)});
+  document.getElementById('ptitle').textContent=titles[id][0];
+  document.getElementById('psub').textContent=titles[id][1];
+  document.getElementById('side').classList.remove('open');
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.side nav a').forEach(function(a){a.onclick=function(){go(a.dataset.page)}});
+</script>
+</body>
+</html>
