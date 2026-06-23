@@ -349,8 +349,8 @@ footer a{color:var(--soft)}
       <!-- hidden field for estimate -->
       <input type="hidden" name="Estimated Range" id="estimateHidden" value="">
       <input type="hidden" name="_subject" value="New project request — Williams Digital">
-      <!-- After a successful (non-AJAX) submit, Formspree redirects here so users still see the polished thank-you screen. -->
-      <input type="hidden" name="_next" value="https://williamsdigital.io/start-success.html">
+      <!-- Honeypot: hidden from people, auto-filled by bots. Formspree drops any submission where _gotcha is set. -->
+      <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none">
 
       <div class="actions">
         <button type="button" class="btn btn-ghost hidden" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
@@ -495,14 +495,15 @@ footer a{color:var(--soft)}
     ).join('');
   }
 
-  // ---- native form POST (reCAPTCHA-compatible) ----
-  // Formspree blocks AJAX when reCAPTCHA is on, so we let the browser submit the form normally.
-  // The "Needs" checkboxes live in step 2, so before the real submit we collapse them into a single
-  // readable hidden field (Formspree emails a clean "New Website, Dashboard" instead of repeated keys).
-  form.addEventListener('submit', e => {
-    if (!validateStep(cur)){ e.preventDefault(); return; }
+  // ---- in-page AJAX submit ----
+  // Submits without leaving the site (no full-screen Formspree captcha page). Spam is caught by the
+  // _gotcha honeypot above. Requires reCAPTCHA to be OFF in the Formspree form settings, since
+  // Formspree blocks AJAX while reCAPTCHA is on.
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!validateStep(cur)) return;
 
-    // Write a combined "Needs" summary field for the email.
+    // Collapse the step-2 "Needs" checkboxes into one readable field for the email.
     const needs = [...document.querySelectorAll('#needGrid input:checked')].map(c=>c.value).join(', ');
     let summary = form.querySelector('input[name="Project Needs"]');
     if (!summary){
@@ -513,14 +514,54 @@ footer a{color:var(--soft)}
     }
     summary.value = needs;
 
-    // Drop the empty file input so we don't send an empty multipart part.
-    if (!fileInput.files.length) fileInput.disabled = true;
-
-    // Show the sending state — the browser now navigates to Formspree, which redirects to _next.
     submitBtn.disabled = true;
+    const orig = submitBtn.innerHTML;
     submitBtn.innerHTML = '<span class="spinner"></span> Sending…';
-    // (no preventDefault → the form posts natively)
+
+    // Build payload; drop the empty file input so we send a clean request.
+    const fd = new FormData(form);
+    if (!fileInput.files.length) fd.delete('Attachments');
+
+    try {
+      const res = await fetch(form.action, { method:'POST', body:fd, headers:{ 'Accept':'application/json' } });
+      if (res.ok){
+        window.location.href = '/start-success.html';
+        return;
+      }
+      // Formspree replied but rejected it — surface why, then offer the mailto backup.
+      let msg = 'The form service returned an error (HTTP ' + res.status + ').';
+      try {
+        const data = await res.json();
+        if (data && data.errors && data.errors.length) msg = data.errors.map(x => x.message || x.code).join('\n');
+        else if (data && data.error) msg = data.error;
+      } catch(_){}
+      submitBtn.disabled = false; submitBtn.innerHTML = orig;
+      if (/recaptcha/i.test(msg)){
+        alert('Almost there — reCAPTCHA is still enabled on the Formspree form, which blocks in-page submit.\n\nTurn it off in Formspree → your form → Settings, then this will send instantly.');
+      } else {
+        alert('Couldn’t submit:\n\n' + msg + '\n\nI’ll open a pre-filled email as a backup.');
+        mailtoFallback();
+      }
+    } catch(networkErr){
+      submitBtn.disabled = false; submitBtn.innerHTML = orig;
+      mailtoFallback();
+      alert('I couldn’t reach the form service, so I opened a pre-filled email instead — just hit send and it’ll reach me.');
+    }
   });
+
+  // Pre-filled email backup so a request is never lost if the service is unreachable.
+  function mailtoFallback(){
+    const get = n => { const el = form.querySelector('[name="'+n+'"]'); return el ? el.value.trim() : ''; };
+    const needs = [...document.querySelectorAll('#needGrid input:checked')].map(c=>c.value).join(', ');
+    const lines = [
+      'Name: '+get('Full Name'), 'Company: '+get('Company'), 'Email: '+get('Email'), 'Phone: '+get('Phone'),
+      'Needs: '+needs, 'Est. range: '+estimateHidden.value, '', 'Project: '+get('Project Details'), '',
+      'Has website: '+get('Has Website'), 'URL: '+get('Website URL'),
+      'Budget: '+get('Budget'), 'Timeline: '+get('Timeline'), '',
+      'Inspiration: '+get('Inspiration'), 'Notes: '+get('Notes')
+    ];
+    location.href = 'mailto:Dylan@williamsdigital.io?subject='+encodeURIComponent('New project request — Williams Digital')+'&body='+encodeURIComponent(lines.join('\n'));
+  }
 
   showStep(1);
 })();
