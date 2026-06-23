@@ -349,6 +349,8 @@ footer a{color:var(--soft)}
       <!-- hidden field for estimate -->
       <input type="hidden" name="Estimated Range" id="estimateHidden" value="">
       <input type="hidden" name="_subject" value="New project request — Williams Digital">
+      <!-- After a successful (non-AJAX) submit, Formspree redirects here so users still see the polished thank-you screen. -->
+      <input type="hidden" name="_next" value="https://williamsdigital.io/start-success.html">
 
       <div class="actions">
         <button type="button" class="btn btn-ghost hidden" id="backBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back</button>
@@ -356,23 +358,6 @@ footer a{color:var(--soft)}
         <button type="submit" class="btn btn-primary" id="submitBtn" style="display:none">Start my project<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
       </div>
     </form>
-
-    <!-- SUCCESS -->
-    <div class="success" id="success" style="display:none">
-      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
-      <h2>🎉 Thanks for reaching out!</h2>
-      <p>I've received your project details and will review everything personally. Here's what happens next:</p>
-      <div class="next">
-        <div class="next-item"><span class="n">1</span><p>I'll review your project request in detail.</p></div>
-        <div class="next-item"><span class="n">2</span><p>I'll reach out within <b>1–2 business days</b>.</p></div>
-        <div class="next-item"><span class="n">3</span><p>We'll talk through your goals and next steps.</p></div>
-        <div class="next-item"><span class="n">4</span><p>If we're a good fit, I'll prepare a custom proposal.</p></div>
-      </div>
-      <div class="success-cta">
-        <a href="/" class="btn btn-ghost">Back to homepage</a>
-        <a href="/#work" class="btn btn-primary">See recent work</a>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -510,77 +495,32 @@ footer a{color:var(--soft)}
     ).join('');
   }
 
-  // ---- submit via fetch (AJAX) so we can show the in-page success screen ----
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    if (!validateStep(cur)) return;
-    const action = form.getAttribute('action');
-    submitBtn.disabled = true;
-    const orig = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<span class="spinner"></span> Sending…';
+  // ---- native form POST (reCAPTCHA-compatible) ----
+  // Formspree blocks AJAX when reCAPTCHA is on, so we let the browser submit the form normally.
+  // The "Needs" checkboxes live in step 2, so before the real submit we collapse them into a single
+  // readable hidden field (Formspree emails a clean "New Website, Dashboard" instead of repeated keys).
+  form.addEventListener('submit', e => {
+    if (!validateStep(cur)){ e.preventDefault(); return; }
 
-    // If Formspree isn't configured yet, fall back to a structured mailto so nothing is lost.
-    if (action.includes('YOUR_FORM_ID')){
-      mailtoFallback();
-      showSuccess();
-      return;
-    }
-
-    // Build the payload. Drop the file input if nothing was attached so we send a clean request.
-    const fd = new FormData(form);
-    if (!fileInput.files.length) fd.delete('Attachments');
-
-    try {
-      const res = await fetch(action, {
-        method:'POST',
-        body: fd,
-        headers:{ 'Accept':'application/json' }
-      });
-
-      if (res.ok){ showSuccess(); return; }
-
-      // Formspree replied but rejected the submission — read why instead of guessing.
-      let msg = 'Submission was rejected (HTTP '+res.status+').';
-      try {
-        const data = await res.json();
-        if (data && data.errors && data.errors.length){
-          msg = data.errors.map(e => e.message || (e.field+': '+e.code)).join('\n');
-        } else if (data && data.error){
-          msg = data.error;
-        }
-      } catch(_){}
-      submitBtn.disabled = false; submitBtn.innerHTML = orig;
-      alert('Couldn’t submit:\n\n'+msg+'\n\nI’ll open a pre-filled email as a backup.');
-      mailtoFallback();
-
-    } catch(networkErr){
-      // True network failure (offline, blocked, CORS) — fall back to mailto.
-      submitBtn.disabled = false; submitBtn.innerHTML = orig;
-      mailtoFallback();
-      alert('I couldn’t reach the form service, so I opened a pre-filled email instead — just hit send and it’ll reach me.');
-    }
-  });
-
-  function mailtoFallback(){
-    const get = n => { const el = form.querySelector('[name="'+n+'"]'); return el ? el.value.trim() : ''; };
+    // Write a combined "Needs" summary field for the email.
     const needs = [...document.querySelectorAll('#needGrid input:checked')].map(c=>c.value).join(', ');
-    const lines = [
-      'Name: '+get('Full Name'), 'Company: '+get('Company'), 'Email: '+get('Email'), 'Phone: '+get('Phone'),
-      'Needs: '+needs, 'Est. range: '+estimateHidden.value, '', 'Project: '+get('Project Details'), '',
-      'Has website: '+get('Has Website'), 'URL: '+get('Website URL'),
-      'Budget: '+get('Budget'), 'Timeline: '+get('Timeline'), '',
-      'Inspiration: '+get('Inspiration'), 'Notes: '+get('Notes')
-    ];
-    location.href = 'mailto:Dylan@williamsdigital.io?subject='+encodeURIComponent('New project request — Williams Digital')+'&body='+encodeURIComponent(lines.join('\n'));
-  }
+    let summary = form.querySelector('input[name="Project Needs"]');
+    if (!summary){
+      summary = document.createElement('input');
+      summary.type = 'hidden';
+      summary.name = 'Project Needs';
+      form.appendChild(summary);
+    }
+    summary.value = needs;
 
-  function showSuccess(){
-    form.style.display = 'none';
-    document.getElementById('progress').style.display = 'none';
-    document.getElementById('head').style.display = 'none';
-    document.getElementById('success').style.display = 'block';
-    window.scrollTo({top:0, behavior:'smooth'});
-  }
+    // Drop the empty file input so we don't send an empty multipart part.
+    if (!fileInput.files.length) fileInput.disabled = true;
+
+    // Show the sending state — the browser now navigates to Formspree, which redirects to _next.
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Sending…';
+    // (no preventDefault → the form posts natively)
+  });
 
   showStep(1);
 })();
