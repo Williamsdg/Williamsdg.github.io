@@ -525,11 +525,36 @@ footer a{color:var(--soft)}
       showSuccess();
       return;
     }
+
+    // Build the payload. Drop the file input if nothing was attached so we send a clean request.
+    const fd = new FormData(form);
+    if (!fileInput.files.length) fd.delete('Attachments');
+
     try {
-      const res = await fetch(action, { method:'POST', body:new FormData(form), headers:{ 'Accept':'application/json' } });
-      if (res.ok){ showSuccess(); }
-      else { throw new Error('Bad response'); }
-    } catch(err){
+      const res = await fetch(action, {
+        method:'POST',
+        body: fd,
+        headers:{ 'Accept':'application/json' }
+      });
+
+      if (res.ok){ showSuccess(); return; }
+
+      // Formspree replied but rejected the submission — read why instead of guessing.
+      let msg = 'Submission was rejected (HTTP '+res.status+').';
+      try {
+        const data = await res.json();
+        if (data && data.errors && data.errors.length){
+          msg = data.errors.map(e => e.message || (e.field+': '+e.code)).join('\n');
+        } else if (data && data.error){
+          msg = data.error;
+        }
+      } catch(_){}
+      submitBtn.disabled = false; submitBtn.innerHTML = orig;
+      alert('Couldn’t submit:\n\n'+msg+'\n\nI’ll open a pre-filled email as a backup.');
+      mailtoFallback();
+
+    } catch(networkErr){
+      // True network failure (offline, blocked, CORS) — fall back to mailto.
       submitBtn.disabled = false; submitBtn.innerHTML = orig;
       mailtoFallback();
       alert('I couldn’t reach the form service, so I opened a pre-filled email instead — just hit send and it’ll reach me.');
