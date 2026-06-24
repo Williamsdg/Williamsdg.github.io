@@ -45,6 +45,14 @@
   .tag.fw{background:#fbf3e2;color:#9a7420}
   .tag.motion{background:#eaf3ee;color:#2f6b46}
   .tag.unc{background:#fdeaea;color:#9a3b3b}
+  #phraseResults{max-width:920px;margin:0 auto;padding:0 16px}
+  .phwrap{background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:12px;overflow:hidden}
+  .phhead{background:var(--navy);color:#fff;padding:9px 14px;font-size:13px;font-weight:700}
+  .phcard{padding:11px 14px;border-top:1px solid var(--line)}
+  .phtitle{font-weight:600;font-size:14px}
+  .phmeta{font-weight:400;color:var(--muted);font-size:12px}
+  .phsnip{font-size:13px;color:#333;margin-top:3px;line-height:1.5}
+  .phsnip mark{background:#fbefce;color:#6a5200;padding:0 2px;border-radius:3px;font-weight:600}
   .done .title{text-decoration:line-through;color:var(--muted)}
   footer{max-width:920px;margin:0 auto;padding:0 16px 50px;color:var(--muted);font-size:12px}
   @media print{
@@ -76,6 +84,13 @@
   <button class="btn" onclick="window.print()">Print</button>
   <span class="stat" id="stat">Loading…</span>
 </div>
+
+<div class="bar" style="border-top:none;gap:8px">
+  <input type="search" id="phrase" placeholder="🔎 Search inside sermons — find a phrase actually said…">
+  <button class="btn" id="phraseBtn">Search transcripts</button>
+  <button class="btn" id="phraseClear" style="display:none">✕ Clear</button>
+</div>
+<div id="phraseResults"></div>
 
 <main id="list"><div class="msg">Loading messages…</div></main>
 <footer>
@@ -239,7 +254,41 @@ function subscribe(){
     .subscribe(status=>{ setLive(status==='SUBSCRIBED'); });
 }
 
-load().then(subscribe);
+// ---- transcript phrase search ----
+const SERMON_BY_ID = {};
+function indexSermons(){ for(const s of SERMONS) SERMON_BY_ID[s.id]=s; }
+const phEl=document.getElementById('phrase');
+const phResults=document.getElementById('phraseResults');
+const phClear=document.getElementById('phraseClear');
+
+async function phraseSearch(){
+  const q=phEl.value.trim();
+  if(!q){ clearPhrase(); return; }
+  phResults.innerHTML='<div class="msg">Searching transcripts…</div>';
+  phClear.style.display='';
+  const {data,error}=await sb.rpc('highlands_search_transcripts',{q});
+  if(error){ phResults.innerHTML='<div class="msg">Transcript search isn’t available yet.</div>'; return; }
+  if(!data||!data.length){ phResults.innerHTML=`<div class="msg">No sermons found saying “${esc(q)}”.<br><small>Note: only a few sermons are transcribed so far.</small></div>`; return; }
+  let html=`<div class="phwrap"><div class="phhead">${data.length} sermon${data.length>1?'s':''} mention “${esc(q)}”</div>`;
+  for(const r of data){
+    const s=SERMON_BY_ID[r.sermon_id]||{title:r.sermon_id,speaker:'',kind:'',year:'',month:''};
+    const snip=(r.snippet||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/&lt;&lt;/g,'<mark>').replace(/&gt;&gt;/g,'</mark>');
+    html+=`<div class="phcard">
+      <div class="phtitle">${esc(s.title)} <span class="tag ${s.kind}">${KIND_LABEL[s.kind]||''}</span>
+        <span class="phmeta">${MONTHS[s.month]||''} ${s.year||''}${s.speaker&&s.speaker!=='(unconfirmed)'?' · '+esc(s.speaker):''}</span></div>
+      <div class="phsnip">…${snip}…</div>
+    </div>`;
+  }
+  html+='</div>';
+  phResults.innerHTML=html;
+}
+function clearPhrase(){ phEl.value=''; phResults.innerHTML=''; phClear.style.display='none'; }
+document.getElementById('phraseBtn').addEventListener('click',phraseSearch);
+phClear.addEventListener('click',clearPhrase);
+phEl.addEventListener('keydown',e=>{ if(e.key==='Enter') phraseSearch(); });
+
+load().then(()=>{ indexSermons(); subscribe(); });
 </script>
 </body>
 </html>
