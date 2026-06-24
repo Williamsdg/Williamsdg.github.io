@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Church of the Highlands — Speakers Checklist</title>
+<meta name="description" content="Shared, auto-updating checklist of Church of the Highlands speakers by year and month.">
+<style>
+  :root{
+    --navy:#13294b; --gold:#c9a14a; --bg:#f6f5f2; --card:#fff;
+    --line:#e3e0d8; --ink:#222; --muted:#6b6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.45}
+  header{background:var(--navy);color:#fff;padding:26px 24px 20px}
+  header h1{margin:0 0 4px;font-size:23px;letter-spacing:.3px}
+  header p{margin:0;color:#cdd6e6;font-size:13.5px}
+  .live{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+    background:rgba(255,255,255,.12);color:#9fe0a8;border-radius:20px;padding:2px 9px;margin-left:8px}
+  .live.off{color:#e6a; }
+  .bar{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);
+    padding:11px 16px;display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+  .bar input[type=search],.bar select{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff}
+  .bar input[type=search]{flex:1;min-width:160px}
+  .stat{font-size:13px;color:var(--muted);margin-left:auto;white-space:nowrap}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer}
+  .btn:hover{background:#f0eee8}
+  main{max-width:920px;margin:0 auto;padding:18px 14px 70px}
+  .msg{padding:40px 12px;text-align:center;color:var(--muted)}
+  .year{font-size:20px;font-weight:700;color:var(--navy);margin:24px 4px 8px;
+    border-bottom:2px solid var(--gold);padding-bottom:6px}
+  .month{font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;
+    letter-spacing:.6px;margin:15px 6px 6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:6px}
+  .row{display:flex;gap:12px;align-items:flex-start;padding:11px 14px;border-top:1px solid var(--line);cursor:pointer}
+  .row:first-child{border-top:none}
+  .row input[type=checkbox]{width:18px;height:18px;margin-top:2px;accent-color:var(--gold);cursor:pointer;flex:0 0 auto}
+  .meta{flex:1;min-width:0}
+  .title{font-weight:600}
+  .who{font-size:13px;color:var(--muted);margin-top:1px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+    padding:2px 7px;border-radius:20px;margin-left:8px;vertical-align:middle}
+  .tag.sun{background:#eef3fb;color:#2b4a7a}
+  .tag.fw{background:#fbf3e2;color:#9a7420}
+  .done .title{text-decoration:line-through;color:var(--muted)}
+  footer{max-width:920px;margin:0 auto;padding:0 16px 50px;color:var(--muted);font-size:12px}
+  @media print{
+    .bar,footer{display:none} header{background:#fff;color:#000;border-bottom:2px solid #000}
+    header p{color:#444} .card{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Church of the Highlands — Speakers Checklist <span class="live off" id="live">connecting…</span></h1>
+  <p>Shared &amp; auto-updating. Sunday messages &amp; First Wednesday services by year and month. Check a box and everyone with the link sees it instantly.</p>
+</header>
+
+<div class="bar">
+  <input type="search" id="q" placeholder="Search title or speaker…">
+  <select id="speaker"><option value="">All speakers</option></select>
+  <select id="kind">
+    <option value="all">All services</option>
+    <option value="sun">Sunday only</option>
+    <option value="fw">First Wednesday only</option>
+  </select>
+  <select id="status">
+    <option value="all">All</option>
+    <option value="todo">Unwatched only</option>
+    <option value="done">Watched only</option>
+  </select>
+  <button class="btn" onclick="window.print()">Print</button>
+  <span class="stat" id="stat">Loading…</span>
+</div>
+
+<main id="list"><div class="msg">Loading messages…</div></main>
+<footer>
+  Shared list — checks sync for everyone via Supabase Realtime. New sermons are added automatically each week from the church’s media feeds.
+  Source: churchofthehighlands.com.
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://tkkhvbkocumyxpgsrpxv.supabase.co";
+const SUPABASE_KEY = "sb_publishable_4_xgRNDnzXimaykbC6YBwg_E2aYxgzz";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const MONTHS=["","January","February","March","April","May","June","July","August","September","October","November","December"];
+let SERMONS=[];                 // full list
+let CHECKED=new Set();          // sermon_ids that are checked
+
+const listEl=document.getElementById('list');
+const liveEl=document.getElementById('live');
+
+function setLive(on){
+  liveEl.textContent = on ? "live • synced" : "offline";
+  liveEl.classList.toggle('off', !on);
+}
+
+function populateSpeakers(){
+  const sel=document.getElementById('speaker');
+  const names=[...new Set(SERMONS.map(s=>s.speaker))].sort((a,b)=>a.localeCompare(b));
+  for(const n of names){
+    const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);
+  }
+}
+
+function render(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const speaker=document.getElementById('speaker').value;
+  const kind=document.getElementById('kind').value;
+  const status=document.getElementById('status').value;
+
+  const rows=SERMONS.filter(s=>{
+    if(speaker && s.speaker!==speaker) return false;
+    if(kind!=="all" && s.kind!==kind) return false;
+    const done=CHECKED.has(s.id);
+    if(status==="done" && !done) return false;
+    if(status==="todo" && done) return false;
+    if(q && !(s.title.toLowerCase().includes(q)||s.speaker.toLowerCase().includes(q))) return false;
+    return true;
+  });
+
+  if(!rows.length){ listEl.innerHTML='<div class="msg">No messages match those filters.</div>'; updateStat(rows); return; }
+
+  // group year -> month, both descending
+  const years=[...new Set(rows.map(r=>r.year))].sort((a,b)=>b-a);
+  let html="";
+  for(const y of years){
+    const yItems=rows.filter(r=>r.year===y);
+    const months=[...new Set(yItems.map(r=>r.month))].sort((a,b)=>b-a);
+    html+=`<div class="year">${y}</div>`;
+    for(const m of months){
+      const items=yItems.filter(r=>r.month===m).sort((a,b)=>b.sort_key.localeCompare(a.sort_key));
+      let inner="";
+      for(const s of items){
+        const done=CHECKED.has(s.id);
+        inner+=`<label class="row ${done?'done':''}">
+          <input type="checkbox" data-id="${s.id.replace(/"/g,'&quot;')}" ${done?'checked':''}>
+          <span class="meta">
+            <span class="title">${esc(s.title)}<span class="tag ${s.kind}">${s.kind==='sun'?'Sunday':'1st Wed'}</span></span>
+            <span class="who">${esc(s.speaker)}</span>
+          </span></label>`;
+      }
+      html+=`<div class="month">${MONTHS[m]}</div><div class="card">${inner}</div>`;
+    }
+  }
+  listEl.innerHTML=html;
+  updateStat(rows);
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function updateStat(rows){
+  document.getElementById('stat').textContent =
+    `${CHECKED.size} watched · ${rows.length} shown · ${SERMONS.length} total`;
+}
+
+// ---- toggle a check (shared) ----
+async function toggle(id, want){
+  if(want){
+    CHECKED.add(id);
+    const {error}=await sb.from('highlands_checks').upsert({sermon_id:id,checked:true,updated_at:new Date().toISOString()});
+    if(error){CHECKED.delete(id);alert('Could not save — check your connection.');render();}
+  }else{
+    CHECKED.delete(id);
+    const {error}=await sb.from('highlands_checks').delete().eq('sermon_id',id);
+    if(error){CHECKED.add(id);alert('Could not save — check your connection.');render();}
+  }
+}
+listEl.addEventListener('change',e=>{
+  const cb=e.target;
+  if(cb.matches('input[type=checkbox]')){
+    cb.closest('.row').classList.toggle('done',cb.checked);
+    toggle(cb.dataset.id, cb.checked);
+  }
+});
+
+['q','speaker','kind','status'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',render);
+  document.getElementById(id).addEventListener('change',render);
+});
+
+// ---- initial load ----
+async function load(){
+  const [{data:sermons,error:e1},{data:checks,error:e2}] = await Promise.all([
+    sb.from('highlands_sermons').select('id,year,month,title,speaker,kind,sort_key').order('sort_key',{ascending:false}),
+    sb.from('highlands_checks').select('sermon_id').eq('checked',true)
+  ]);
+  if(e1){listEl.innerHTML='<div class="msg">Could not load the list. Please refresh.</div>';return;}
+  SERMONS = sermons||[];
+  CHECKED = new Set((checks||[]).map(c=>c.sermon_id));
+  populateSpeakers();
+  render();
+}
+
+// ---- realtime: keep checks AND the sermon list in sync ----
+function subscribe(){
+  sb.channel('highlands-sync')
+    .on('postgres_changes',{event:'*',schema:'public',table:'highlands_checks'},payload=>{
+      const {eventType,new:n,old:o}=payload;
+      if(eventType==='DELETE'){ CHECKED.delete(o.sermon_id); }
+      else { if(n.checked) CHECKED.add(n.sermon_id); else CHECKED.delete(n.sermon_id); }
+      render();
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'highlands_sermons'},payload=>{
+      // a new sermon got added by the weekly auto-update — splice it in
+      SERMONS.push(payload.new);
+      // refresh speaker dropdown if it's a new speaker
+      const sel=document.getElementById('speaker');
+      if(![...sel.options].some(o=>o.value===payload.new.speaker)){
+        const o=document.createElement('option');o.value=o.textContent=payload.new.speaker;sel.appendChild(o);
+      }
+      render();
+    })
+    .subscribe(status=>{ setLive(status==='SUBSCRIBED'); });
+}
+
+load().then(subscribe);
+</script>
+</body>
+</html>
