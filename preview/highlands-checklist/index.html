@@ -43,6 +43,7 @@
     padding:2px 7px;border-radius:20px;margin-left:8px;vertical-align:middle}
   .tag.sun{background:#eef3fb;color:#2b4a7a}
   .tag.fw{background:#fbf3e2;color:#9a7420}
+  .tag.unc{background:#fdeaea;color:#9a3b3b}
   .done .title{text-decoration:line-through;color:var(--muted)}
   footer{max-width:920px;margin:0 auto;padding:0 16px 50px;color:var(--muted);font-size:12px}
   @media print{
@@ -54,7 +55,7 @@
 <body>
 <header>
   <h1>Church of the Highlands — Speakers Checklist <span class="live off" id="live">connecting…</span></h1>
-  <p>Shared &amp; auto-updating. Sunday messages &amp; First Wednesday services by year and month. Check a box and everyone with the link sees it instantly.</p>
+  <p>Shared &amp; auto-updating. Every Sunday message &amp; First Wednesday service, 2013–present, by year and month. Check a box and everyone with the link sees it instantly.</p>
 </header>
 
 <div class="bar">
@@ -77,6 +78,8 @@
 <main id="list"><div class="msg">Loading messages…</div></main>
 <footer>
   Shared list — checks sync for everyone via Supabase Realtime. New sermons are added automatically each week from the church’s media feeds.
+  Archive covers 2013–present. Titles &amp; dates come from churchofthehighlands.com; items marked
+  <span class="tag unc" style="vertical-align:baseline">⚠ unverified</span> have a confirmed date but a speaker we haven’t individually verified yet.
   Source: churchofthehighlands.com.
 </footer>
 
@@ -100,10 +103,23 @@ function setLive(on){
 
 function populateSpeakers(){
   const sel=document.getElementById('speaker');
-  const names=[...new Set(SERMONS.map(s=>s.speaker))].sort((a,b)=>a.localeCompare(b));
+  // keep the already-selected value across re-populations
+  const cur=sel.value;
+  sel.innerHTML='<option value="">All speakers</option>';
+  // real speakers first (alphabetical), then the "(unconfirmed)" bucket last
+  const names=[...new Set(SERMONS.map(s=>s.speaker))]
+    .sort((a,b)=>{
+      const au=a==='(unconfirmed)', bu=b==='(unconfirmed)';
+      if(au!==bu) return au?1:-1;
+      return a.localeCompare(b);
+    });
   for(const n of names){
-    const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);
+    const o=document.createElement('option');
+    o.value=n;
+    o.textContent = n==='(unconfirmed)' ? 'Speaker not confirmed' : n;
+    sel.appendChild(o);
   }
+  if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
 }
 
 function render(){
@@ -136,11 +152,16 @@ function render(){
       let inner="";
       for(const s of items){
         const done=CHECKED.has(s.id);
+        const uncertain = s.confidence==='uncertain';
+        const who = (s.speaker && s.speaker!=='(unconfirmed)')
+          ? esc(s.speaker)
+          : '<em>speaker not confirmed</em>';
+        const flag = uncertain ? '<span class="tag unc" title="Date confirmed from the church site; speaker not yet verified">⚠ unverified</span>' : '';
         inner+=`<label class="row ${done?'done':''}">
           <input type="checkbox" data-id="${s.id.replace(/"/g,'&quot;')}" ${done?'checked':''}>
           <span class="meta">
-            <span class="title">${esc(s.title)}<span class="tag ${s.kind}">${s.kind==='sun'?'Sunday':'1st Wed'}</span></span>
-            <span class="who">${esc(s.speaker)}</span>
+            <span class="title">${esc(s.title)}<span class="tag ${s.kind}">${s.kind==='sun'?'Sunday':'1st Wed'}</span>${flag}</span>
+            <span class="who">${who}</span>
           </span></label>`;
       }
       html+=`<div class="month">${MONTHS[m]}</div><div class="card">${inner}</div>`;
@@ -183,7 +204,7 @@ listEl.addEventListener('change',e=>{
 // ---- initial load ----
 async function load(){
   const [{data:sermons,error:e1},{data:checks,error:e2}] = await Promise.all([
-    sb.from('highlands_sermons').select('id,year,month,title,speaker,kind,sort_key').order('sort_key',{ascending:false}),
+    sb.from('highlands_sermons').select('id,year,month,title,speaker,kind,sort_key,confidence').order('sort_key',{ascending:false}),
     sb.from('highlands_checks').select('sermon_id').eq('checked',true)
   ]);
   if(e1){listEl.innerHTML='<div class="msg">Could not load the list. Please refresh.</div>';return;}
