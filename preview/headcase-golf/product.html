@@ -173,7 +173,33 @@
   footer .fl a:hover{color:var(--gold-2)}
   footer small{color:rgba(244,239,227,.5);font-size:.8rem}
 
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(150%);background:var(--green);color:var(--cream);padding:14px 24px;border-radius:99px;font-size:.9rem;font-weight:500;z-index:120;transition:transform .4s var(--ease);box-shadow:var(--shadow)}
+  /* Cart drawer (shared with index, injected by cart.js) */
+  .scrim{position:fixed;inset:0;background:rgba(10,36,21,.5);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:.35s;z-index:90}
+  .scrim.open{opacity:1;pointer-events:auto}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:400px;max-width:90vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .42s var(--ease);display:flex;flex-direction:column;box-shadow:-20px 0 60px -20px rgba(0,0,0,.4)}
+  .drawer.open{transform:none}
+  .drawer-head{padding:24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(22,29,24,.1)}
+  .drawer-head h3{color:var(--green);font-size:1.3rem}
+  .drawer-head button{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--green)}
+  .drawer-body{flex:1;overflow-y:auto;padding:20px 24px}
+  .cart-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid rgba(22,29,24,.08)}
+  .cart-thumb{width:62px;height:62px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .cart-item h4{font-size:.95rem;color:var(--green);margin-bottom:3px}
+  .cart-item .ci-price{font-weight:700;font-family:'Bricolage Grotesque';color:var(--ink)}
+  .cart-item small{color:#8a958c;font-size:.78rem;display:block;margin-bottom:8px}
+  .ci-qty{display:flex;align-items:center;gap:6px}
+  .ci-qty button{width:26px;height:26px;border:1px solid #d8d2c2;background:#fff;border-radius:7px;cursor:pointer;color:var(--green);font-size:1rem;line-height:1;display:flex;align-items:center;justify-content:center}
+  .ci-qty button:hover{border-color:var(--green)}
+  .ci-qty span{min-width:22px;text-align:center;font-weight:600;font-size:.9rem}
+  .ci-qty .ci-rm{width:auto;padding:0 8px;font-size:.72rem;color:#a4732a;border:none;margin-left:auto;text-decoration:underline}
+  .ci-qty .ci-rm:hover{color:#c0392b}
+  .cart-empty{text-align:center;color:#8a958c;padding:50px 20px}
+  .cart-empty .ce-ic{font-size:3rem;opacity:.4;margin-bottom:14px}
+  .drawer-foot{padding:22px 24px;border-top:1px solid rgba(22,29,24,.1)}
+  .drawer-foot .row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:.92rem}
+  .drawer-foot .ship-note{font-size:.78rem;color:#7a8780;margin:10px 0 16px;text-align:center}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(150%);background:var(--green);color:var(--cream);padding:14px 24px;border-radius:99px;font-size:.9rem;font-weight:500;z-index:120;transition:transform .4s var(--ease);box-shadow:var(--shadow);display:flex;align-items:center;gap:10px}
   .toast.show{transform:translateX(-50%) translateY(0)}
 
   @media(max-width:900px){
@@ -204,7 +230,7 @@
     <div class="nav-right">
       <button class="icon-btn" aria-label="Search">🔍</button>
       <button class="icon-btn" aria-label="Account">👤</button>
-      <button class="icon-btn" aria-label="Cart" onclick="toast('Your bag is on the home page 🛒')">🛒<span class="cart-count">1</span></button>
+      <button class="icon-btn" aria-label="Cart" onclick="openCart()">🛒<span class="cart-count" id="cartCount">0</span></button>
     </div>
   </div>
 </header>
@@ -263,9 +289,9 @@
 
       <div class="qty-add reveal">
         <div class="qty"><button onclick="qty(-1)">−</button><span id="qtyVal">1</span><button onclick="qty(1)">+</button></div>
-        <button class="btn btn-gold" onclick="toast('Added to bag — Single Head Case ♥')">Add to Bag — $48.30</button>
+        <button class="btn btn-gold" onclick="pdpAdd(this)">Add to Bag — $48.30</button>
       </div>
-      <button class="btn btn-dark buy-now" onclick="toast('Heading to checkout…')">Buy It Now</button>
+      <button class="btn btn-dark buy-now" onclick="pdpAdd();HCCart.open();toast('Heading to checkout…')">Buy It Now</button>
 
       <div class="assur">
         <span><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"/></svg>Lifetime-tough shell</span>
@@ -332,19 +358,19 @@
     <div class="ctl-grid">
       <div class="mini-prod reveal">
         <div class="mini-media t1"><div class="case"><div class="plate">HC</div></div></div>
-        <div class="mini-body"><h4>Double Head Case</h4><div class="rate"><span class="stars">★★★★★</span> 5.0</div><div class="mini-price">$62.30</div><button class="mini-add" onclick="toast('Added — Double Head Case')">Add to Bag</button></div>
+        <div class="mini-body"><h4>Double Head Case</h4><div class="rate"><span class="stars">★★★★★</span> 5.0</div><div class="mini-price">$62.30</div><button class="mini-add" onclick="HCCart.add({name:'Double Head Case',color:'#2a6a44',price:62.30},this)">Add to Bag</button></div>
       </div>
       <div class="mini-prod reveal d1">
         <div class="mini-media t2"><div class="mini-tee2">DON'T BE A<br>HEAD CASE</div></div>
-        <div class="mini-body"><h4>"Head Case" Tee</h4><div class="rate"><span class="stars">★★★★★</span> 4.8</div><div class="mini-price">$27.30</div><button class="mini-add" onclick="toast('Added — Head Case Tee')">Add to Bag</button></div>
+        <div class="mini-body"><h4>"Head Case" Tee</h4><div class="rate"><span class="stars">★★★★★</span> 4.8</div><div class="mini-price">$27.30</div><button class="mini-add" onclick="HCCart.add({name:&quot;'Head Case' Tee&quot;,color:'#13402a',price:27.30},this)">Add to Bag</button></div>
       </div>
       <div class="mini-prod reveal d2">
         <div class="mini-media t4"><div class="case" style="background:linear-gradient(145deg,#5a4012,#8a6a2e)"><div class="plate">HC</div></div></div>
-        <div class="mini-body"><h4>Custom Center Plate</h4><div class="rate"><span class="stars">★★★★★</span> 4.9</div><div class="mini-price">$12.00</div><button class="mini-add" onclick="toast('Added — Custom Plate')">Add to Bag</button></div>
+        <div class="mini-body"><h4>Custom Center Plate</h4><div class="rate"><span class="stars">★★★★★</span> 4.9</div><div class="mini-price">$12.00</div><button class="mini-add" onclick="HCCart.add({name:'Custom Center Plate',color:'#8a6a2e',price:12.00},this)">Add to Bag</button></div>
       </div>
       <div class="mini-prod reveal d2">
         <div class="mini-media t3"><div class="case"><div class="plate">🎁</div></div></div>
-        <div class="mini-body"><h4>Gift Card</h4><div class="rate"><span class="stars">★★★★★</span> 5.0</div><div class="mini-price">From $25</div><button class="mini-add" onclick="toast('Added — Gift Card')">Add to Bag</button></div>
+        <div class="mini-body"><h4>Gift Card</h4><div class="rate"><span class="stars">★★★★★</span> 5.0</div><div class="mini-price">From $25</div><button class="mini-add" onclick="HCCart.add({name:'Gift Card',color:'#1f5e3c',price:25.00},this)">Add to Bag</button></div>
       </div>
     </div>
   </div>
@@ -367,7 +393,7 @@
     </div>
     <div class="bundle-cta reveal">
       <p style="margin-bottom:16px"><span class="old">$122.60</span> <span class="new">$99 — Save 19%</span></p>
-      <button class="btn btn-gold" onclick="toast('Bundle added to bag 🎉')">Add Bundle to Bag →</button>
+      <button class="btn btn-gold" onclick="HCCart.add({name:'The Full Bag Kit (Bundle)',color:'#c69a4b',price:99.00},this)">Add Bundle to Bag →</button>
     </div>
   </div>
 </section>
@@ -403,7 +429,7 @@
 <!-- Sticky mobile buy bar -->
 <div class="sticky-buy" id="stickyBuy">
   <div><div class="sp">$48.30</div><small style="color:#7a8780">Single Head Case</small></div>
-  <button class="btn btn-gold" onclick="toast('Added to bag ♥')">Add to Bag</button>
+  <button class="btn btn-gold" onclick="pdpAdd(this)">Add to Bag</button>
 </div>
 
 <div class="toast" id="toast">Added to bag</div>
@@ -412,7 +438,7 @@
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 
-  function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200)}
+  // toast() is provided globally by cart.js
 
   // Gallery thumbs -> recolor main
   const galScenes={
@@ -441,6 +467,20 @@
   let q=1;
   function qty(d){q=Math.max(1,q+d);document.getElementById('qtyVal').textContent=q}
 
+  // Add the configured product to the shared cart
+  function pdpAdd(btn){
+    const colorName=document.getElementById('colorName').textContent;
+    const swatch=document.querySelector('.buy .swatch.active');
+    const color=swatch?swatch.style.background:'#10341f';
+    const fitEl=document.querySelector('.fit-chip.active');
+    const fit=fitEl?fitEl.textContent.trim():'Driver';
+    const plate=document.querySelector('.plate-input').value.trim().toUpperCase();
+    let variant=colorName+' · '+fit;
+    let price=48.30;
+    if(plate){variant+=' · Plate "'+plate+'"';price+=12;}
+    HCCart.add({name:'Single Head Case',color:color,price:price,variant:variant,qty:q},btn);
+  }
+
   // Accordions
   function toggleAcc(btn){
     const item=btn.parentElement;
@@ -457,5 +497,6 @@
   const sticky=document.getElementById('stickyBuy');
   if(addBtn){new IntersectionObserver(es=>{es.forEach(e=>{sticky.classList.toggle('show',!e.isIntersecting&&e.boundingClientRect.top<0)})},{threshold:0}).observe(addBtn)}
 </script>
+<script src="cart.js"></script>
 </body>
 </html>
