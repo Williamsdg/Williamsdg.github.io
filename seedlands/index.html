@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Seedlands — A Map Roguelike</title>
+<meta name="description" content="Every map is generated from a seed. Explore the fog, grab the gems, reach the portal. Share your seed and challenge anyone." />
+<meta name="theme-color" content="#0d1117" />
+<!-- Open Graph -->
+<meta property="og:title" content="Seedlands — A Map Roguelike" />
+<meta property="og:description" content="Infinite procedurally-generated maps from a single seed. Explore, collect, escape." />
+<meta property="og:type" content="website" />
+<style>
+  :root{
+    --bg:#0b0f17; --panel:#121826; --panel2:#1b2436;
+    --ink:#e6edf6; --muted:#8b97ad; --line:#26314a;
+    --accent:#5eead4; --accent2:#7c8cff; --gold:#ffcf5e; --danger:#ff6b6b;
+    --good:#7ee787;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    background:radial-gradient(1200px 800px at 50% -10%, #16203a 0%, var(--bg) 60%);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100%;
+    overscroll-behavior:none; touch-action:manipulation;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .wrap{width:100%; max-width:480px; padding:14px; display:flex; flex-direction:column; gap:12px;}
+  header{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .logo{display:flex; align-items:center; gap:10px;}
+  .logo .mark{
+    width:34px; height:34px; border-radius:9px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    display:grid; place-items:center; font-weight:800; color:#0a0e16; font-size:18px;
+    box-shadow:0 6px 18px rgba(124,140,255,.35);
+  }
+  h1{font-size:18px; margin:0; letter-spacing:.3px;}
+  h1 small{display:block; font-size:11px; color:var(--muted); font-weight:500; letter-spacing:.4px;}
+
+  .hud{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:8px;
+  }
+  .stat{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:8px 10px; text-align:center;
+  }
+  .stat .k{font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.8px;}
+  .stat .v{font-size:20px; font-weight:800; margin-top:2px;}
+  .v.gold{color:var(--gold);} .v.cyan{color:var(--accent);} .v.violet{color:var(--accent2);}
+
+  .stage{
+    position:relative; background:var(--panel); border:1px solid var(--line);
+    border-radius:16px; padding:10px; overflow:hidden;
+  }
+  canvas{width:100%; height:auto; display:block; border-radius:10px; image-rendering:pixelated;}
+
+  .overlay{
+    position:absolute; inset:0; background:rgba(8,11,18,.86); backdrop-filter:blur(3px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; text-align:center; padding:22px; border-radius:16px; z-index:5;
+  }
+  .overlay.hidden{display:none;}
+  .overlay h2{margin:0; font-size:24px;}
+  .overlay p{margin:0; color:var(--muted); font-size:13px; line-height:1.5; max-width:300px;}
+  .badge{font-size:40px;}
+
+  .controls{display:flex; flex-direction:column; gap:10px;}
+  .seedrow{display:flex; gap:8px;}
+  input[type=text]{
+    flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--ink);
+    border-radius:10px; padding:11px 12px; font-size:14px; font-family:ui-monospace,Menlo,monospace;
+  }
+  input::placeholder{color:#5d6a82;}
+  button{
+    border:none; border-radius:10px; padding:11px 14px; font-size:14px; font-weight:700;
+    color:#0a0e16; background:var(--accent); cursor:pointer; transition:transform .05s, filter .15s;
+  }
+  button:active{transform:translateY(1px) scale(.99);}
+  button.ghost{background:var(--panel2); color:var(--ink); border:1px solid var(--line);}
+  button.alt{background:var(--accent2); color:#0a0e16;}
+  button.wide{width:100%;}
+  .btnrow{display:flex; gap:8px;}
+  .btnrow button{flex:1;}
+
+  /* D-pad */
+  .pad{display:grid; grid-template-columns:repeat(3,64px); grid-template-rows:repeat(3,64px);
+    gap:8px; justify-content:center; margin-top:2px;}
+  .pad button{
+    background:var(--panel2); color:var(--ink); border:1px solid var(--line);
+    border-radius:14px; font-size:24px; padding:0; display:grid; place-items:center;
+  }
+  .pad .spacer{visibility:hidden;}
+  .pad button:active{background:var(--accent); color:#0a0e16;}
+
+  .hint{font-size:11px; color:var(--muted); text-align:center; line-height:1.5;}
+  .legend{display:flex; flex-wrap:wrap; gap:8px 14px; justify-content:center; font-size:11px; color:var(--muted);}
+  .legend span{display:flex; align-items:center; gap:5px;}
+  .dot{width:11px; height:11px; border-radius:3px; display:inline-block;}
+  footer{font-size:10px; color:#566179; text-align:center; padding:4px 0 14px;}
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+    background:var(--panel2); border:1px solid var(--line); color:var(--ink);
+    padding:10px 16px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none;
+    transition:opacity .2s, transform .2s; z-index:50;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <div class="mark">◆</div>
+      <h1>SEEDLANDS<small>procedural map roguelike · prototype</small></h1>
+    </div>
+    <button class="ghost" id="howBtn" style="padding:8px 12px;font-size:12px;">How?</button>
+  </header>
+
+  <div class="hud">
+    <div class="stat"><div class="k">Gems</div><div class="v gold" id="gemStat">0 / 0</div></div>
+    <div class="stat"><div class="k">Energy</div><div class="v cyan" id="energyStat">0</div></div>
+    <div class="stat"><div class="k">Score</div><div class="v violet" id="scoreStat">0</div></div>
+  </div>
+
+  <div class="stage">
+    <canvas id="game" width="384" height="384"></canvas>
+    <div class="overlay" id="overlay">
+      <div class="badge" id="ovBadge">🗺️</div>
+      <h2 id="ovTitle">Seedlands</h2>
+      <p id="ovText">Every seed grows a different world. Explore the fog, grab the gems, and reach the portal before your energy runs out.</p>
+      <button id="ovBtn" class="wide" style="max-width:220px;">Start Run</button>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:#2f7d4f"></i>Land</span>
+    <span><i class="dot" style="background:#2a4a7a"></i>Water</span>
+    <span><i class="dot" style="background:#1d6b4a"></i>Forest</span>
+    <span><i class="dot" style="background:#6b7280"></i>Mountain</span>
+    <span><i class="dot" style="background:#ffcf5e"></i>Gem</span>
+    <span><i class="dot" style="background:#ff6b6b"></i>Hazard</span>
+    <span><i class="dot" style="background:#7c8cff"></i>Portal</span>
+  </div>
+
+  <div class="controls">
+    <div class="seedrow">
+      <input type="text" id="seedInput" placeholder="enter a seed…" autocomplete="off" autocapitalize="off" spellcheck="false" />
+      <button class="alt" id="genBtn">Generate</button>
+    </div>
+    <div class="btnrow">
+      <button class="ghost" id="randomBtn">🎲 Random</button>
+      <button class="ghost" id="dailyBtn">📅 Daily</button>
+      <button class="ghost" id="shareBtn">🔗 Share</button>
+    </div>
+
+    <div class="pad">
+      <div class="spacer"></div>
+      <button data-dir="up">▲</button>
+      <div class="spacer"></div>
+      <button data-dir="left">◀</button>
+      <button data-dir="down">▼</button>
+      <button data-dir="right">▶</button>
+    </div>
+    <div class="hint">Swipe the map, use arrow keys, or tap the pad. Each step costs 1 energy.</div>
+  </div>
+
+  <footer>Seedlands prototype · built for the App Store concept · williamsdg.github.io</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---------- Seedable PRNG (mulberry32 + string hash) ----------
+  function hashStr(str){
+    let h = 1779033703 ^ str.length;
+    for (let i=0;i<str.length;i++){
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return (h ^ (h >>> 16)) >>> 0;
+  }
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // ---------- Value-noise for biomes ----------
+  function makeNoise(rng){
+    const grid = 6; // control points per axis
+    const pts = [];
+    for(let i=0;i<(grid+1)*(grid+1);i++) pts.push(rng());
+    const lerp=(a,b,t)=>a+(b-a)*t;
+    const smooth=t=>t*t*(3-2*t);
+    return (x,y)=>{ // x,y in 0..1
+      const gx=x*grid, gy=y*grid;
+      const x0=Math.floor(gx), y0=Math.floor(gy);
+      const x1=Math.min(x0+1,grid), y1=Math.min(y0+1,grid);
+      const tx=smooth(gx-x0), ty=smooth(gy-y0);
+      const v=(ix,iy)=>pts[iy*(grid+1)+ix];
+      return lerp(lerp(v(x0,y0),v(x1,y0),tx), lerp(v(x0,y1),v(x1,y1),tx), ty);
+    };
+  }
+
+  // ---------- Tile types ----------
+  const T = { WATER:0, LAND:1, FOREST:2, MOUNTAIN:3, GEM:4, HAZARD:5, PORTAL:6, START:7 };
+  const SIZE = 16;          // grid cells per side
+  const CELL = 24;          // px per cell (canvas = 384)
+  const COLORS = {
+    [T.WATER]:"#2a4a7a", [T.LAND]:"#2f7d4f", [T.FOREST]:"#1d6b4a",
+    [T.MOUNTAIN]:"#6b7280", [T.GEM]:"#2f7d4f", [T.HAZARD]:"#2f7d4f",
+    [T.PORTAL]:"#2f7d4f", [T.START]:"#2f7d4f"
+  };
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  let state = null;
+
+  function generate(seed){
+    const rng = mulberry32(hashStr(seed));
+    const elev = makeNoise(rng);
+    const moist = makeNoise(rng);
+    const map = [];
+    for(let y=0;y<SIZE;y++){
+      const row=[];
+      for(let x=0;x<SIZE;x++){
+        const nx=x/(SIZE-1), ny=y/(SIZE-1);
+        const e=elev(nx,ny), m=moist(nx,ny);
+        let t;
+        if(e<0.32) t=T.WATER;
+        else if(e>0.74) t=T.MOUNTAIN;
+        else if(m>0.6) t=T.FOREST;
+        else t=T.LAND;
+        row.push(t);
+      }
+      map.push(row);
+    }
+
+    // helper: list of walkable land-ish tiles
+    const walkable=(t)=> t===T.LAND||t===T.FOREST;
+    const open=[];
+    for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++) if(walkable(map[y][x])) open.push([x,y]);
+
+    // fallback: if too little land, flatten some water
+    if(open.length<40){
+      for(let y=0;y<SIZE;y++)for(let x=0;x<SIZE;x++){
+        if(map[y][x]===T.WATER && rng()<0.5){ map[y][x]=T.LAND; open.push([x,y]); }
+      }
+    }
+
+    const pick=()=>{ return open[Math.floor(rng()*open.length)]; };
+
+    // start (top-left-ish) and portal (far corner-ish), pick by distance
+    let start=open[0], portal=open[0], bestD=-1;
+    const corner=pick();
+    for(const [x,y] of open){
+      const d=Math.hypot(x-corner[0], y-corner[1]);
+      if(d>bestD){bestD=d; portal=[x,y]; start=corner;}
+    }
+    map[start[1]][start[0]]=T.START;
+    map[portal[1]][portal[0]]=T.PORTAL;
+
+    // scatter gems & hazards on remaining land
+    const free=open.filter(([x,y])=> map[y][x]===T.LAND||map[y][x]===T.FOREST);
+    shuffle(free,rng);
+    const gemCount=6+Math.floor(rng()*4);   // 6..9
+    const hazCount=5+Math.floor(rng()*5);   // 5..9
+    let gi=0;
+    const gems=[];
+    for(let i=0;i<gemCount && gi<free.length;i++,gi++){
+      const [x,y]=free[gi]; map[y][x]=T.GEM; gems.push(x+","+y);
+    }
+    for(let i=0;i<hazCount && gi<free.length;i++,gi++){
+      const [x,y]=free[gi]; map[y][x]=T.HAZARD;
+    }
+
+    // energy budget scales to map distance + gems
+    const energy = Math.round(bestD*2.4) + gemCount*4 + 14;
+
+    const fog = Array.from({length:SIZE},()=>Array(SIZE).fill(true));
+
+    return {
+      seed, map, gems:new Set(gems), totalGems:gemCount,
+      px:start[0], py:start[1], portal, energy, maxEnergy:energy,
+      collected:0, fog, over:false, won:false, score:0, moves:0
+    };
+  }
+
+  function shuffle(a,rng){ for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} }
+
+  function reveal(s){
+    const r=2;
+    for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+      const x=s.px+dx, y=s.py+dy;
+      if(x>=0&&y>=0&&x<SIZE&&y<SIZE && (dx*dx+dy*dy)<=r*r+1) s.fog[y][x]=false;
+    }
+  }
+
+  function draw(){
+    if(!state) return;
+    const s=state;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let y=0;y<SIZE;y++){
+      for(let x=0;x<SIZE;x++){
+        const t=s.map[y][x];
+        const px=x*CELL, py=y*CELL;
+        // base ground color (under markers)
+        ctx.fillStyle = (t===T.WATER)?COLORS[T.WATER]:(t===T.MOUNTAIN)?COLORS[T.MOUNTAIN]:(t===T.FOREST)?COLORS[T.FOREST]:COLORS[T.LAND];
+        ctx.fillRect(px,py,CELL,CELL);
+
+        // subtle texture grid
+        ctx.fillStyle="rgba(0,0,0,.08)";
+        if((x+y)%2===0) ctx.fillRect(px,py,CELL,CELL);
+
+        // markers
+        if(t===T.GEM){ drawDiamond(px+CELL/2,py+CELL/2,7,"#ffcf5e"); }
+        else if(t===T.HAZARD){ drawSpike(px+CELL/2,py+CELL/2,"#ff6b6b"); }
+        else if(t===T.PORTAL){ drawPortal(px+CELL/2,py+CELL/2); }
+
+        // fog
+        if(s.fog[y][x]){
+          ctx.fillStyle="rgba(7,10,18,.92)";
+          ctx.fillRect(px,py,CELL,CELL);
+        }
+      }
+    }
+    // player
+    const cx=s.px*CELL+CELL/2, cy=s.py*CELL+CELL/2;
+    ctx.beginPath(); ctx.arc(cx,cy,8,0,Math.PI*2);
+    ctx.fillStyle="#e6edf6"; ctx.fill();
+    ctx.lineWidth=3; ctx.strokeStyle="#5eead4"; ctx.stroke();
+
+    // hud
+    document.getElementById('gemStat').textContent = s.collected+" / "+s.totalGems;
+    document.getElementById('energyStat').textContent = Math.max(0,s.energy);
+    document.getElementById('scoreStat').textContent = s.score;
+  }
+  function drawDiamond(cx,cy,r,c){ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.PI/4);ctx.fillStyle=c;ctx.fillRect(-r,-r,r*2,r*2);ctx.restore();}
+  function drawSpike(cx,cy,c){ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(cx,cy-8);ctx.lineTo(cx+7,cy+7);ctx.lineTo(cx-7,cy+7);ctx.closePath();ctx.fill();}
+  function drawPortal(cx,cy){const g=ctx.createRadialGradient(cx,cy,1,cx,cy,11);g.addColorStop(0,"#cfd6ff");g.addColorStop(1,"#7c8cff");ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,10,0,Math.PI*2);ctx.fill();}
+
+  function move(dx,dy){
+    if(!state || state.over) return;
+    const s=state;
+    const nx=s.px+dx, ny=s.py+dy;
+    if(nx<0||ny<0||nx>=SIZE||ny>=SIZE) return;
+    const t=s.map[ny][nx];
+    if(t===T.WATER||t===T.MOUNTAIN){ toast("Blocked terrain"); return; }
+
+    s.px=nx; s.py=ny; s.energy--; s.moves++;
+    reveal(s);
+
+    if(t===T.GEM){
+      s.map[ny][nx]=T.LAND; s.gems.delete(nx+","+ny);
+      s.collected++; s.score+=100; toast("💎 +100");
+    } else if(t===T.HAZARD){
+      s.map[ny][nx]=T.LAND; s.energy-=6; toast("⚠️ Hazard! −6 energy");
+    } else if(t===T.PORTAL){
+      win(); return;
+    }
+
+    if(s.energy<=0){ s.energy=0; lose(); return; }
+    draw();
+  }
+
+  function win(){
+    const s=state; s.over=true; s.won=true;
+    const bonus = s.energy*10 + s.collected*50;
+    s.score += 1000 + bonus;
+    reveal(s); draw();
+    showOverlay("🏆","Escaped!",
+      `Collected ${s.collected}/${s.totalGems} gems with ${s.energy} energy to spare.<br><b>Score: ${s.score}</b><br>Seed: <code>${s.seed}</code>`,
+      "Next Run", ()=>newRun());
+  }
+  function lose(){
+    const s=state; s.over=true;
+    reveal(s); draw();
+    showOverlay("💀","Out of Energy",
+      `You gathered ${s.collected}/${s.totalGems} gems before stranding.<br><b>Score: ${s.score}</b><br>Try the same seed again, or a new world.`,
+      "Retry Seed", ()=>startSeed(s.seed));
+  }
+
+  // ---------- Overlay ----------
+  const overlay=document.getElementById('overlay');
+  function showOverlay(badge,title,text,btnLabel,onClick){
+    document.getElementById('ovBadge').textContent=badge;
+    document.getElementById('ovTitle').textContent=title;
+    document.getElementById('ovText').innerHTML=text;
+    const b=document.getElementById('ovBtn');
+    b.textContent=btnLabel;
+    b.onclick=()=>{ overlay.classList.add('hidden'); onClick&&onClick(); };
+    overlay.classList.remove('hidden');
+  }
+  function hideOverlay(){ overlay.classList.add('hidden'); }
+
+  // ---------- Run control ----------
+  function startSeed(seed){
+    seed = (seed||"").trim() || randomSeed();
+    document.getElementById('seedInput').value = seed;
+    state = generate(seed);
+    reveal(state);
+    hideOverlay();
+    draw();
+    try{ history.replaceState(null,"", "?seed="+encodeURIComponent(seed)); }catch(e){}
+  }
+  function newRun(){ startSeed(randomSeed()); }
+  function randomSeed(){
+    const words=["amber","fjord","echo","nova","lumen","drift","onyx","verdant","quartz","zephyr","sable","cobalt","marsh","vesper","cinder","halo"];
+    const w=words[Math.floor(Math.random()*words.length)];
+    const n=Math.floor(Math.random()*9000+1000);
+    return w+"-"+n;
+  }
+  function dailySeed(){
+    const d=new Date();
+    return "daily-"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+  }
+  function pad(n){return (n<10?"0":"")+n;}
+
+  // ---------- Input ----------
+  document.querySelectorAll('.pad button[data-dir]').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const d=b.dataset.dir;
+      if(d==='up')move(0,-1); else if(d==='down')move(0,1);
+      else if(d==='left')move(-1,0); else move(1,0);
+    });
+  });
+  window.addEventListener('keydown',e=>{
+    const k=e.key;
+    if(k==='ArrowUp'||k==='w'){move(0,-1);e.preventDefault();}
+    else if(k==='ArrowDown'||k==='s'){move(0,1);e.preventDefault();}
+    else if(k==='ArrowLeft'||k==='a'){move(-1,0);e.preventDefault();}
+    else if(k==='ArrowRight'||k==='d'){move(1,0);e.preventDefault();}
+  });
+  // swipe
+  let sx=0,sy=0,sw=false;
+  canvas.addEventListener('touchstart',e=>{const t=e.touches[0];sx=t.clientX;sy=t.clientY;sw=true;},{passive:true});
+  canvas.addEventListener('touchend',e=>{
+    if(!sw)return; sw=false;
+    const t=e.changedTouches[0]; const dx=t.clientX-sx, dy=t.clientY-sy;
+    if(Math.abs(dx)<18&&Math.abs(dy)<18)return;
+    if(Math.abs(dx)>Math.abs(dy)) move(dx>0?1:-1,0); else move(0,dy>0?1:-1);
+  },{passive:true});
+
+  document.getElementById('genBtn').onclick=()=>startSeed(document.getElementById('seedInput').value);
+  document.getElementById('seedInput').addEventListener('keydown',e=>{ if(e.key==='Enter')startSeed(e.target.value); });
+  document.getElementById('randomBtn').onclick=()=>newRun();
+  document.getElementById('dailyBtn').onclick=()=>startSeed(dailySeed());
+  document.getElementById('shareBtn').onclick=async()=>{
+    const seed=state?state.seed:document.getElementById('seedInput').value;
+    const url=location.origin+location.pathname+"?seed="+encodeURIComponent(seed);
+    const data={title:"Seedlands",text:`Can you beat my Seedlands map? Seed: ${seed}`,url};
+    try{ if(navigator.share){await navigator.share(data);} else {await navigator.clipboard.writeText(url); toast("Link copied!");} }
+    catch(e){ try{await navigator.clipboard.writeText(url); toast("Link copied!");}catch(_){toast(url);} }
+  };
+  document.getElementById('howBtn').onclick=()=>{
+    showOverlay("🧭","How to play",
+      "• Move with swipes, arrow keys, or the pad.<br>• Each step costs <b>1 energy</b>.<br>• 💎 gems = +100 · ⚠️ hazards = −6 energy.<br>• Water & mountains block you.<br>• Reach the <b>portal</b> before energy hits 0.<br>• Same seed = same map — share &amp; compete.",
+      "Got it", ()=>{ if(!state) startSeed(""); });
+  };
+
+  // ---------- Boot ----------
+  const params=new URLSearchParams(location.search);
+  const initSeed=params.get('seed');
+  if(initSeed){
+    document.getElementById('seedInput').value=initSeed;
+    showOverlay("🗺️","Shared World",`You were challenged to seed:<br><code>${initSeed}</code>`,"Play This Map",()=>startSeed(initSeed));
+  } else {
+    document.getElementById('seedInput').value=randomSeed();
+    document.getElementById('ovBtn').onclick=()=>{ hideOverlay(); startSeed(document.getElementById('seedInput').value); };
+  }
+
+  // ---------- Toast ----------
+  let toastTimer=null;
+  function toast(msg){
+    const el=document.getElementById('toast');
+    el.textContent=msg; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),1400);
+  }
+})();
+</script>
+</body>
+</html>
