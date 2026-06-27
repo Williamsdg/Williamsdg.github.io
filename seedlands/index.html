@@ -10,6 +10,13 @@
 <meta property="og:title" content="Seedlands — A Map Roguelike" />
 <meta property="og:description" content="Infinite procedurally-generated maps from a single seed. Explore, collect, escape." />
 <meta property="og:type" content="website" />
+<!-- PWA / iOS install -->
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon-1024.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Seedlands" />
 <style>
   :root{
     --bg:#0b0f17; --panel:#121826; --panel2:#1b2436;
@@ -349,24 +356,55 @@
   function drawSpike(cx,cy,c){ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(cx,cy-8);ctx.lineTo(cx+7,cy+7);ctx.lineTo(cx-7,cy+7);ctx.closePath();ctx.fill();}
   function drawPortal(cx,cy){const g=ctx.createRadialGradient(cx,cy,1,cx,cy,11);g.addColorStop(0,"#cfd6ff");g.addColorStop(1,"#7c8cff");ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,10,0,Math.PI*2);ctx.fill();}
 
+  // ---------- Audio + haptics ----------
+  let actx=null;
+  function beep(freq,dur,type,vol){
+    try{
+      if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+      if(actx.state==='suspended') actx.resume();
+      const o=actx.createOscillator(), g=actx.createGain();
+      o.type=type||'sine'; o.frequency.value=freq;
+      g.gain.setValueAtTime(vol||0.06, actx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+(dur||0.12));
+      o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime+(dur||0.12));
+    }catch(e){}
+  }
+  function haptic(ms){ try{ navigator.vibrate && navigator.vibrate(ms); }catch(e){} }
+  const sfx={
+    step:()=>beep(220,0.05,'square',0.025),
+    gem:()=>{beep(880,0.09,'triangle',0.07); setTimeout(()=>beep(1320,0.09,'triangle',0.06),60); haptic(15);},
+    hazard:()=>{beep(120,0.2,'sawtooth',0.08); haptic([40,30,40]);},
+    win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'triangle',0.07),i*110)); haptic([20,40,20,40,60]);},
+    lose:()=>{[330,247,165].forEach((f,i)=>setTimeout(()=>beep(f,0.25,'sawtooth',0.07),i*130)); haptic(120);},
+    block:()=>beep(90,0.08,'square',0.05)
+  };
+
+  // ---------- Best-score persistence ----------
+  function bestKey(seed){ return 'seedlands.best.'+seed; }
+  function getBest(seed){ try{ return parseInt(localStorage.getItem(bestKey(seed))||'0',10)||0; }catch(e){ return 0; } }
+  function setBest(seed,score){ try{ if(score>getBest(seed)) localStorage.setItem(bestKey(seed),String(score)); }catch(e){} }
+
   function move(dx,dy){
     if(!state || state.over) return;
     const s=state;
     const nx=s.px+dx, ny=s.py+dy;
     if(nx<0||ny<0||nx>=SIZE||ny>=SIZE) return;
     const t=s.map[ny][nx];
-    if(t===T.WATER||t===T.MOUNTAIN){ toast("Blocked terrain"); return; }
+    if(t===T.WATER||t===T.MOUNTAIN){ sfx.block(); toast("Blocked terrain"); return; }
 
     s.px=nx; s.py=ny; s.energy--; s.moves++;
     reveal(s);
 
     if(t===T.GEM){
       s.map[ny][nx]=T.LAND; s.gems.delete(nx+","+ny);
-      s.collected++; s.score+=100; toast("💎 +100");
+      s.collected++; s.score+=100; sfx.gem(); toast("💎 +100");
     } else if(t===T.HAZARD){
-      s.map[ny][nx]=T.LAND; s.energy-=6; toast("⚠️ Hazard! −6 energy");
+      s.map[ny][nx]=T.LAND; s.energy-=6; sfx.hazard(); toast("⚠️ Hazard! −6 energy");
     } else if(t===T.PORTAL){
       win(); return;
+    } else {
+      sfx.step();
     }
 
     if(s.energy<=0){ s.energy=0; lose(); return; }
@@ -377,14 +415,17 @@
     const s=state; s.over=true; s.won=true;
     const bonus = s.energy*10 + s.collected*50;
     s.score += 1000 + bonus;
-    reveal(s); draw();
+    const prevBest=getBest(s.seed); setBest(s.seed,s.score);
+    const pb = s.score>prevBest ? `<br>🎉 New best for this seed!` : (prevBest?`<br>Best on this seed: <b>${prevBest}</b>`:'');
+    sfx.win(); reveal(s); draw();
     showOverlay("🏆","Escaped!",
-      `Collected ${s.collected}/${s.totalGems} gems with ${s.energy} energy to spare.<br><b>Score: ${s.score}</b><br>Seed: <code>${s.seed}</code>`,
+      `Collected ${s.collected}/${s.totalGems} gems with ${s.energy} energy to spare.<br><b>Score: ${s.score}</b>${pb}<br>Seed: <code>${s.seed}</code>`,
       "Next Run", ()=>newRun());
   }
   function lose(){
     const s=state; s.over=true;
-    reveal(s); draw();
+    setBest(s.seed,s.score);
+    sfx.lose(); reveal(s); draw();
     showOverlay("💀","Out of Energy",
       `You gathered ${s.collected}/${s.totalGems} gems before stranding.<br><b>Score: ${s.score}</b><br>Try the same seed again, or a new world.`,
       "Retry Seed", ()=>startSeed(s.seed));
@@ -485,6 +526,11 @@
     const el=document.getElementById('toast');
     el.textContent=msg; el.classList.add('show');
     clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),1400);
+  }
+
+  // ---------- Service worker (offline / installable) ----------
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
   }
 })();
 </script>
