@@ -31,9 +31,9 @@ input[type=search]:focus{outline:none;border-color:var(--lime)}
 .chk{display:flex;align-items:center;gap:6px;color:var(--mut);font-size:.8rem;cursor:pointer;user-select:none}
 .chk input{accent-color:var(--lime);width:15px;height:15px}
 .count{color:var(--mut);font-size:.8rem;margin-left:auto}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px;margin-top:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;margin-top:18px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:9px;transition:.15s}
-.card:hover{border-color:rgba(201,214,46,.5);transform:translateY(-2px)}
+.card:hover{border-color:rgba(201,214,46,.5)}
 .card.drafted{border-left:3px solid var(--lime)}
 .cn{font-size:1.02rem;font-weight:700;line-height:1.25}
 .meta{display:flex;flex-wrap:wrap;gap:6px}
@@ -52,6 +52,14 @@ input[type=search]:focus{outline:none;border-color:var(--lime)}
 .who{color:var(--txt);font-size:.82rem;font-weight:600}
 .notes{font-size:.76rem;color:var(--mut);font-style:italic}
 .draft-tag{display:inline-block;font-size:.64rem;font-weight:800;color:#0a0f1f;background:var(--lime);padding:2px 7px;border-radius:5px;text-transform:uppercase}
+.msgbox{margin-top:6px;border-top:1px solid var(--line);padding-top:10px}
+.msghead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.msgtype{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.msgtype b{color:var(--lime)}
+.copybtn{background:var(--lime);color:#0a0f1f;border:none;padding:5px 12px;border-radius:6px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:inherit}
+.copybtn:hover{filter:brightness(1.08)}
+.copybtn.done{background:#34d399}
+.msg{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:.78rem;color:#cdd6f0;white-space:pre-wrap;max-height:150px;overflow:auto;line-height:1.45}
 .empty{text-align:center;color:var(--mut);padding:60px 20px}
 @media(max-width:640px){.grid{grid-template-columns:1fr}}
 </style>
@@ -59,7 +67,7 @@ input[type=search]:focus{outline:none;border-color:var(--lime)}
 <body>
 <header><div class="wrap">
 <h1>Prospect <span>Pipeline</span></h1>
-<div class="sub">Williams Digital outreach list &middot; 133 prospects across the Southeast</div>
+<div class="sub">Williams Digital outreach list &middot; 133 prospects &middot; tailored message + copy button on each card</div>
 <div class="priv">Private &middot; Internal use only</div>
 </div></header>
 
@@ -81,18 +89,70 @@ const DATA = [{"cat": "Construction", "name": "Garcia Construction", "loc": "Ral
 const CATS = ["All","Construction","Landscaping","Coffee","Farm","Museum"];
 let activeCat = "All";
 const $ = s => document.querySelector(s);
+const SIG = "\n\nBest,\nDylan Williams\nWilliams Digital\nDylan@williamsdigital.io";
 
 function webClass(w){const l=(w||"").toLowerCase();if(l.includes("no site"))return"p-web-nosite";if(l.includes("weak")||l.includes("outdated")||l.includes("basic")||l.includes("moderate")||l.includes("needs"))return"p-web-weak";return"p-web-has";}
 function isDrafted(r){return (r.notes||"").toLowerCase().includes("drafted");}
+function firstName(r){
+  if(!r.contact) return "";
+  // strip role in parens, take first token, handle "A & B" / "A / B"
+  let c=r.contact.replace(/\(.*?\)/g,"").trim();
+  if(/[&/]/.test(c)){return c.split(/\s*[&/]\s*/).map(p=>p.trim().split(/\s+/)[0]).join(" and ");}
+  return c.split(/\s+/)[0];
+}
+function greeting(r){const fn=firstName(r);return fn?("Hi "+fn+","):("Hi "+r.name+" team,");}
+
+// pick channel: email if email present, else text/DM
+function channel(r){ if(r.email) return "email"; if((r.web||"").toLowerCase().includes("ig")||(r.notes||"").toLowerCase().includes("ig:")) return "dm"; return "text"; }
+
+function buildMessage(r){
+  const g=greeting(r);
+  const cat=r.cat, noSite=(r.web||"").toLowerCase().includes("no site");
+  const ch=channel(r);
+
+  // EMAIL (longer)
+  if(ch==="email"){
+    if(cat==="Construction"){
+      const disp=(r.pitch||"").toLowerCase().includes("displacement");
+      if(disp) return g+"\n\nI came across "+r.name+" and your work in "+r.loc+" — clearly a serious operation with a lot of moving parts. I noticed you're already on an off-the-shelf project tool, which is exactly why I wanted to reach out: those charge you every month forever and still make you bend your process to fit them. I'm Dylan with Williams Digital, and I build custom operations dashboards for builders — job tracking, crew and sub scheduling, budgets, and a client portal — designed around how your team already works. The difference is ownership: a one-time build plus a much lower flat monthly for a system that's yours. I'd love to send a quick mockup of what it could look like — no obligation."+SIG;
+      return g+"\n\nI came across "+r.name+" and your "+r.type.toLowerCase()+" work in "+r.loc+" — that kind of operation usually means several jobs, crews, and subs going at once. That's exactly why I wanted to reach out: the hardest part isn't the building, it's keeping every project, schedule, and budget organized in one place. I'm Dylan with Williams Digital, and I build custom operations dashboards for contractors — job tracking, crew and sub scheduling, budgets, and a client portal, all built around how your team actually works. Most builders pay monthly forever for tools like Procore or Buildertrend that never quite fit; I build a custom system you own, for a one-time build fee plus a much lower flat monthly. I'd love to put together a quick mockup of what a "+r.name+" dashboard could look like — no obligation. Just reply here or let me know the best number to reach you."+SIG;
+    }
+    if(cat==="Landscaping"){
+      if(noSite) return g+"\n\nI came across "+r.name+" running ads but couldn't find a website to go with them — which means you're likely losing the jobs from people who want to see your work before they reach out. I'm Dylan with Williams Digital, and I build fast, modern websites for landscaping companies that turn ad clicks into quote requests: a clean site with your past jobs, reviews, and a simple \"get a quote\" form that works on a phone. It's an easy, affordable add that makes the ad money you're already spending work harder. I'd love to send a quick mockup — no obligation. Just reply here or let me know the best number to reach you."+SIG;
+      return g+"\n\nI came across "+r.name+" in "+r.loc+" and wanted to reach out — a sharper, faster website can mean the difference between a booked job and a lost lead. I'm Dylan with Williams Digital, and I build modern websites for landscaping companies designed to turn visitors into quote requests: your best work front and center, real reviews, and a simple quote form. It's an affordable, one-time upgrade. I'd love to send a quick mockup — no obligation. Just reply here or let me know the best number to reach you."+SIG;
+    }
+    if(cat==="Coffee"){
+      return g+"\n\nI came across "+r.name+" in "+r.loc+" and wanted to reach out. I'm Dylan with Williams Digital, and I build fast, modern websites and simple online-ordering tools for independent coffee shops — menu, hours, location, and a tap-to-order flow that works on a phone, where most of your customers find you. It's an affordable way to turn the people discovering you online into walk-ins and orders. I'd love to send a quick mockup of what it could look like — no obligation. Just reply here or let me know the best way to reach you."+SIG;
+    }
+    if(cat==="Farm"){
+      if(noSite) return g+"\n\nI came across "+r.name+" in "+r.loc+" but couldn't find a website — which means visitors have nowhere to check your hours, what's in season, or book a visit. I'm Dylan with Williams Digital, and I build simple, affordable websites and booking/ticketing tools for farms and u-picks — perfect for managing the rush during your busy season. A clean site with your offerings, hours, and an online booking or ticket option can save you a ton of phone calls. I'd love to send a quick mockup — no obligation. Just reply here or let me know the best number to reach you."+SIG;
+      return g+"\n\nI came across "+r.name+" in "+r.loc+" and wanted to reach out. I'm Dylan with Williams Digital, and I build modern websites and online booking/ticketing tools for farms and agritourism spots. A refreshed site with easy online tickets or reservations can cut down the phone chaos during your busy season and capture visitors who are ready to book. I'd love to send a quick mockup of what it could look like — no obligation. Just reply here or let me know the best number to reach you."+SIG;
+    }
+    if(cat==="Museum"){
+      return g+"\n\nI came across "+r.name+" in "+r.loc+" and wanted to reach out. I'm Dylan with Williams Digital, and I build modern websites and online ticketing tools for small museums and cultural venues. A refreshed, mobile-friendly site with online tickets (and an easy donate button) can boost visits and free your staff from manual admissions — a clear win for a small team. I'd love to send a quick mockup of what it could look like — no obligation. Just reply here or let me know the best way to reach you."+SIG;
+    }
+  }
+
+  // TEXT / DM (short)
+  const opener = ch==="dm" ? ("Hi! Is this "+r.name+"? ") : ("Hi "+(firstName(r)|| "")+(firstName(r)?" — ":"")+"is this "+r.name+"? ");
+  if(cat==="Landscaping") return opener+"I'm Dylan with Williams Digital. I saw your ads but couldn't find a website behind them — I build affordable sites for landscapers that turn ad clicks into quote requests. Mind if I send a quick free mockup? No obligation.";
+  if(cat==="Coffee") return "Hi! Is this "+r.name+"? I'm Dylan, a local web designer with Williams Digital. Love what you're doing — I build simple sites + online ordering for indie coffee shops and noticed you're Instagram-only right now. Mind if I send a quick free mockup of a site for you? No pressure!";
+  if(cat==="Farm") return opener+"I'm Dylan with Williams Digital. I build affordable websites + online booking for farms and u-picks — great for handling your busy season. Mind if I send a quick free mockup? No obligation.";
+  if(cat==="Museum") return opener+"I'm Dylan with Williams Digital. I build websites + online ticketing for small museums. Mind if I send a quick free mockup of what an updated site could do for you? No obligation.";
+  if(cat==="Construction") return opener+"I'm Dylan with Williams Digital. I build custom job/crew scheduling dashboards for builders — own it instead of paying Procore/Buildertrend monthly. Mind if I send a quick mockup? No obligation.";
+  return opener+"I'm Dylan with Williams Digital — I build websites and simple tools for small businesses. Mind if I send a quick free mockup? No obligation.";
+}
 
 function tabs(){
   const counts={}; DATA.forEach(r=>counts[r.cat]=(counts[r.cat]||0)+1);
   $("#tabs").innerHTML = CATS.map(c=>{
     const n = c==="All"?DATA.length:(counts[c]||0);
-    return `<button class="tab ${c===activeCat?'on':''}" data-c="${c}">${c}<span class="n">${n}</span></button>`;
+    return '<button class="tab '+(c===activeCat?'on':'')+'" data-c="'+c+'">'+c+'<span class="n">'+n+'</span></button>';
   }).join("");
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{activeCat=t.dataset.c;tabs();render();});
 }
+
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 
 function render(){
   const q=$("#q").value.toLowerCase().trim();
@@ -107,24 +167,36 @@ function render(){
   });
   $("#count").textContent=list.length+" shown";
   $("#empty").style.display=list.length?"none":"block";
-  $("#grid").innerHTML=list.map(r=>{
-    const draftTag=isDrafted(r)?`<span class="draft-tag">Draft ready</span>`:"";
-    const phone=r.phone?`<a href="tel:${r.phone.replace(/[^0-9+]/g,'')}">&#9742; ${r.phone}</a>`:"";
-    const email=r.email?`<a href="mailto:${r.email}">&#9993; ${r.email}</a>`:"";
-    const nc=(!r.phone&&!r.email)?`<span class="nc">No phone/email &mdash; see notes</span>`:"";
-    const who=r.contact?`<span class="who">${r.contact}</span>`:"";
-    return `<div class="card ${isDrafted(r)?'drafted':''}">
-      <div class="cn">${r.name} ${draftTag}</div>
-      <div class="meta">
-        <span class="pill p-cat">${r.cat}</span>
-        <span class="pill ${webClass(r.web)}">${r.web}</span>
-      </div>
-      <div class="loc">&#128205; ${r.loc} &middot; <span class="type">${r.type}</span></div>
-      <div class="pitch">&#127919; ${r.pitch}</div>
-      <div class="contact">${who}${phone}${email}${nc}</div>
-      ${r.notes?`<div class="notes">${r.notes}</div>`:""}
-    </div>`;
+  $("#grid").innerHTML=list.map((r,i)=>{
+    const draftTag=isDrafted(r)?'<span class="draft-tag">Draft ready</span>':"";
+    const phone=r.phone?'<a href="tel:'+r.phone.replace(/[^0-9+]/g,'')+'">&#9742; '+esc(r.phone)+'</a>':"";
+    const email=r.email?'<a href="mailto:'+r.email+'">&#9993; '+esc(r.email)+'</a>':"";
+    const nc=(!r.phone&&!r.email)?'<span class="nc">No phone/email &mdash; see notes</span>':"";
+    const who=r.contact?'<span class="who">'+esc(r.contact)+'</span>':"";
+    const ch=channel(r);
+    const chLabel = ch==="email"?"Email":(ch==="dm"?"Instagram DM":"Text message");
+    const msg=buildMessage(r);
+    return '<div class="card '+(isDrafted(r)?'drafted':'')+'">'+
+      '<div class="cn">'+esc(r.name)+' '+draftTag+'</div>'+
+      '<div class="meta"><span class="pill p-cat">'+r.cat+'</span><span class="pill '+webClass(r.web)+'">'+esc(r.web)+'</span></div>'+
+      '<div class="loc">&#128205; '+esc(r.loc)+' &middot; <span class="type">'+esc(r.type)+'</span></div>'+
+      '<div class="pitch">&#127919; '+esc(r.pitch)+'</div>'+
+      '<div class="contact">'+who+phone+email+nc+'</div>'+
+      (r.notes?'<div class="notes">'+esc(r.notes)+'</div>':"")+
+      '<div class="msgbox">'+
+        '<div class="msghead"><span class="msgtype">Suggested <b>'+chLabel+'</b></span>'+
+        '<button class="copybtn" data-i="'+i+'">Copy</button></div>'+
+        '<div class="msg" id="msg'+i+'">'+esc(msg)+'</div>'+
+      '</div>'+
+    '</div>';
   }).join("");
+  // wire copy buttons
+  document.querySelectorAll(".copybtn").forEach(b=>{
+    b.onclick=()=>{
+      const txt=document.getElementById("msg"+b.dataset.i).textContent;
+      navigator.clipboard.writeText(txt).then(()=>{b.textContent="Copied!";b.classList.add("done");setTimeout(()=>{b.textContent="Copy";b.classList.remove("done");},1600);});
+    };
+  });
 }
 ["#q","#noSite","#hasEmail","#drafted"].forEach(s=>$(s).addEventListener("input",render));
 tabs();render();
