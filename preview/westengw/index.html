@@ -49,7 +49,9 @@ nav{position:sticky;top:0;z-index:50;background:rgba(10,10,10,.92);backdrop-filt
 .hero{position:relative;min-height:90vh;display:flex;align-items:flex-end;overflow:hidden}
 .hero-bg{position:absolute;inset:0;background:radial-gradient(circle at 70% 30%,#2a1505,#0a0a0a 60%),linear-gradient(180deg,#1a1a1a,#0a0a0a)}
 .hero-bg::after{content:"";position:absolute;inset:0;background-image:repeating-linear-gradient(115deg,rgba(255,106,0,.04) 0 2px,transparent 2px 22px);opacity:.6}
-.hero-grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.2),rgba(10,10,10,.85) 70%,#0a0a0a)}
+.hero-video{position:absolute;inset:0;overflow:hidden;z-index:1;pointer-events:none}
+.hero-video iframe{position:absolute;top:50%;left:50%;width:177.78vh;height:56.25vw;min-width:100%;min-height:100%;transform:translate(-50%,-50%);opacity:.55}
+.hero-grad{position:absolute;inset:0;z-index:2;background:linear-gradient(180deg,rgba(10,10,10,.35),rgba(10,10,10,.82) 70%,#0a0a0a)}
 .hero-in{position:relative;z-index:3;padding:60px 0 70px;width:100%}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--orange);margin-bottom:18px}
 .eyebrow::before{content:"";width:30px;height:2px;background:var(--orange)}
@@ -60,8 +62,10 @@ nav{position:sticky;top:0;z-index:50;background:rgba(10,10,10,.92);backdrop-filt
 .stats{display:flex;gap:36px;flex-wrap:wrap;margin-top:46px;padding-top:30px;border-top:1px solid var(--line)}
 .stat .n{font-family:Anton,sans-serif;font-size:2.3rem;color:#fff;line-height:1}
 .stat .l{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);margin-top:5px}
-.play{position:absolute;right:6%;top:42%;z-index:4;width:90px;height:90px;border-radius:50%;background:rgba(255,106,0,.92);display:grid;place-items:center;box-shadow:0 0 0 0 rgba(255,106,0,.5);animation:pulse 2.4s infinite;cursor:pointer}
-.play::after{content:"";border-left:26px solid #0a0a0a;border-top:16px solid transparent;border-bottom:16px solid transparent;margin-left:6px}
+.play{position:absolute;right:6%;top:38%;z-index:5;width:74px;height:74px;border-radius:50%;background:rgba(255,106,0,.92);border:none;display:grid;place-items:center;box-shadow:0 0 0 0 rgba(255,106,0,.5);animation:pulse 2.4s infinite;cursor:pointer}
+.play .mute-ic{position:relative;width:26px;height:26px}
+.play .mute-ic::before{content:"\1F507";font-size:24px;line-height:1}
+.play.on .mute-ic::before{content:"\1F50A"}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,106,0,.5)}70%{box-shadow:0 0 0 26px rgba(255,106,0,0)}100%{box-shadow:0 0 0 0 rgba(255,106,0,0)}}
 @media(max-width:880px){.play{display:none}}
 
@@ -232,8 +236,11 @@ footer{background:#070707;border-top:1px solid var(--line);padding:50px 0 30px}
 <!-- HERO -->
 <header class="hero">
   <div class="hero-bg"></div>
+  <div class="hero-video"><iframe id="heroVid"
+    src="https://www.youtube.com/embed/qG_Ug-spg1E?autoplay=1&mute=1&loop=1&playlist=qG_Ug-spg1E&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&disablekb=1&enablejsapi=1"
+    title="Latest build" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe></div>
   <div class="hero-grad"></div>
-  <a class="play" href="https://www.youtube.com/@WestenChamplin" target="_blank" rel="noopener" aria-label="Watch latest"></a>
+  <button class="play" id="heroToggle" aria-label="Unmute video"><span class="mute-ic"></span></button>
   <div class="wrap hero-in">
     <div class="eyebrow">Redneck Science • Horsepower Labs</div>
     <h1 class="head-display">Born to <span>Build.</span><br>Built to Break.</h1>
@@ -498,12 +505,17 @@ footer{background:#070707;border-top:1px solid var(--line);padding:50px 0 30px}
     c.addEventListener('click',function(){play(c)});
     c.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();play(c)}});
   });
-  // hero play button -> jump to builds and play the latest
-  var hp=document.querySelector('.play');
-  if(hp){hp.addEventListener('click',function(e){
-    e.preventDefault();
-    document.getElementById('builds').scrollIntoView({behavior:'smooth'});
-    setTimeout(function(){var feat=document.querySelector('.vid.feat');if(feat)feat.click();},700);
+  // hero video: toggle mute/unmute via YouTube postMessage API
+  var toggle=document.getElementById('heroToggle');
+  var heroVid=document.getElementById('heroVid');
+  var muted=true;
+  function ytCmd(fn){ if(heroVid&&heroVid.contentWindow){heroVid.contentWindow.postMessage(JSON.stringify({event:'command',func:fn,args:[]}),'*');} }
+  if(toggle){toggle.addEventListener('click',function(){
+    muted=!muted;
+    ytCmd(muted?'mute':'unMute');
+    if(!muted){ytCmd('setVolume');ytCmd('playVideo');}
+    toggle.classList.toggle('on',!muted);
+    toggle.setAttribute('aria-label',muted?'Unmute video':'Mute video');
   });}
 })();
 
