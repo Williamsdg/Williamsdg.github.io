@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AHSAA Officials Hub — Operations Dashboard | Concept by Williams Digital</title>
+<meta name="description" content="Concept operations platform for AHSAA officials — assignments, availability, crew building, conflict detection, pay, training, and statewide live operations.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0B2143;--navy-2:#132E5E;--navy-3:#1B3D7A;
+  --red:#C8102E;--red-dark:#A50D26;--gold:#F5B82E;
+  --paper:#F4F6F9;--white:#FFFFFF;--ink:#131A26;--slate:#5A6678;--line:#E3E7EE;
+  --live:#1B8A3F;--live-bg:#EAF7EE;--warn:#B7791F;--warn-bg:#FEF6E7;--bad:#C8102E;--bad-bg:#FDECEF;
+  --shadow:0 8px 24px rgba(11,33,67,.09);--radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;line-height:1.15}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ===== Demo bar ===== */
+.demo-bar{background:var(--gold);color:#3A2B00;text-align:center;font-size:.78rem;font-weight:600;padding:7px 16px}
+.demo-bar a{text-decoration:underline;font-weight:800}
+
+/* ===== Top bar ===== */
+.topbar{background:var(--navy);color:#fff;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.1)}
+.topbar-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 22px;height:62px}
+.tb-brand{display:flex;align-items:center;gap:11px}
+.tb-mark{width:38px;height:38px;border-radius:9px;background:linear-gradient(135deg,var(--red),var(--red-dark));display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-weight:700;font-size:.62rem;color:#fff;flex-shrink:0}
+.tb-brand .n{font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.06em;font-size:1rem;line-height:1.1}
+.tb-brand .s{font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:#9FB0CC;font-weight:600}
+.role-switch{display:flex;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:4px}
+.role-btn{background:transparent;border:0;color:#9FB0CC;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.07em;font-size:.68rem;font-weight:600;padding:7px 14px;border-radius:99px;transition:.15s;white-space:nowrap}
+.role-btn.active{background:var(--red);color:#fff}
+.tb-user{display:flex;align-items:center;gap:10px}
+.tb-user .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#D99A0B);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.78rem}
+.tb-user .un{font-size:.78rem;font-weight:700;line-height:1.2}
+.tb-user .ur{font-size:.62rem;color:#9FB0CC;text-transform:uppercase;letter-spacing:.1em}
+
+/* ===== Shell ===== */
+.shell{display:grid;grid-template-columns:236px 1fr;min-height:calc(100vh - 62px)}
+.sidebar{background:#0E2750;border-right:1px solid rgba(255,255,255,.06);padding:20px 12px 32px}
+.sb-group{margin-bottom:20px}
+.sb-label{font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:#5E7299;font-weight:600;padding:0 12px;margin-bottom:6px}
+.sb-item{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:0;color:#AEBCD6;font-size:.8rem;font-weight:600;padding:9px 12px;border-radius:9px;text-align:left;transition:.13s}
+.sb-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.sb-item.active{background:var(--red);color:#fff}
+.sb-item .i{width:20px;text-align:center;font-size:.95rem}
+.sb-item .badge{margin-left:auto;background:var(--gold);color:var(--navy);font-size:.6rem;font-weight:800;border-radius:99px;padding:1px 7px}
+
+/* ===== Main ===== */
+.main{padding:28px 30px 60px;min-width:0}
+.panel{display:none}
+.panel.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.page-head h1{font-size:clamp(1.3rem,2.6vw,1.8rem);color:var(--navy)}
+.page-head .sub{font-size:.82rem;color:var(--slate)}
+.eyebrow{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.22em;font-size:.66rem;font-weight:600;color:var(--red)}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-weight:600;font-size:.76rem;padding:10px 18px;border-radius:8px;transition:transform .13s,background .13s;border:0}
+.btn:hover{transform:translateY(-1px)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:var(--red-dark)}
+.btn-line{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+.btn-line:hover{border-color:var(--navy)}
+.btn-green{background:var(--live);color:#fff}
+
+/* Cards */
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 2px 8px rgba(11,33,67,.05)}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line)}
+.card-head h3{font-size:.92rem;color:var(--navy)}
+.card-head .hint{font-size:.68rem;color:var(--slate)}
+.card-body{padding:20px 22px}
+
+/* Stat tiles */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-tile{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:0 2px 8px rgba(11,33,67,.05);position:relative;overflow:hidden}
+.stat-tile::after{content:attr(data-ico);position:absolute;right:8px;bottom:-8px;font-size:2.6rem;opacity:.12}
+.stat-tile .v{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.7rem;color:var(--navy);line-height:1.1}
+.stat-tile .l{font-size:.66rem;text-transform:uppercase;letter-spacing:.14em;color:var(--slate);font-weight:700}
+.stat-tile.hot .v{color:var(--red)}
+
+/* Grid helpers */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.mt{margin-top:16px}
+
+/* Assignment rows */
+.assign-row{display:flex;align-items:center;gap:16px;padding:15px 22px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.assign-row:last-child{border-bottom:0}
+.assign-row .when{flex-shrink:0;width:64px;text-align:center}
+.assign-row .when .d{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.05rem;color:var(--navy)}
+.assign-row .when .m{font-size:.6rem;text-transform:uppercase;letter-spacing:.14em;color:var(--slate);font-weight:700}
+.assign-row .info{flex:1;min-width:170px}
+.assign-row .game{font-weight:800;color:var(--navy);font-size:.9rem}
+.assign-row .meta{font-size:.74rem;color:var(--slate)}
+.pos-chip{font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:var(--paper);border:1px solid var(--line);color:var(--navy);border-radius:99px;padding:3px 10px}
+.status-pill{font-size:.62rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;border-radius:99px;padding:4px 12px}
+.st-ok{background:var(--live-bg);color:var(--live);border:1px solid #CBEBD5}
+.st-pend{background:var(--warn-bg);color:var(--warn);border:1px solid #F3E3BC}
+.st-bad{background:var(--bad-bg);color:var(--bad);border:1px solid #F6CDD5}
+.accept-btns{display:flex;gap:8px}
+.accept-btns .a{background:var(--live);color:#fff;border:0;border-radius:8px;font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;transition:.13s}
+.accept-btns .d{background:#fff;color:var(--bad);border:1.5px solid #F6CDD5;border-radius:8px;font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;transition:.13s}
+.accept-btns .a:hover{background:#146C31}
+.accept-btns .d:hover{background:var(--bad-bg)}
+
+/* Availability calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-dow{text-align:center;font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--slate);font-weight:600;padding:4px 0}
+.cal-day{aspect-ratio:1/.82;border:1.5px solid var(--line);border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:.82rem;font-weight:700;color:var(--navy);transition:.12s;position:relative}
+.cal-day:hover{border-color:var(--navy)}
+.cal-day.blank{border:0;background:transparent;cursor:default}
+.cal-day .st{font-size:.5rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.cal-day.av{background:var(--live-bg);border-color:#CBEBD5}
+.cal-day.av .st{color:var(--live)}
+.cal-day.un{background:var(--bad-bg);border-color:#F6CDD5}
+.cal-day.un .st{color:var(--bad)}
+.cal-day.pf{background:#FFF7E2;border-color:#F3E3BC}
+.cal-day.pf .st{color:var(--warn)}
+.cal-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.72rem;color:var(--slate);margin-top:14px}
+.cal-legend .k{display:inline-flex;align-items:center;gap:6px}
+.cal-legend .sw{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--line)}
+.bulk-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* Crew builder */
+.crew-shell{display:grid;grid-template-columns:1fr 260px;gap:16px}
+.crew-slot{display:flex;align-items:center;gap:12px;padding:11px 16px;border:1.5px dashed var(--line);border-radius:10px;margin-bottom:8px;background:var(--paper);transition:.13s;min-height:52px}
+.crew-slot.filled{border-style:solid;background:#fff;border-color:#CBEBD5}
+.crew-slot.dragover{border-color:var(--red);background:var(--bad-bg)}
+.crew-slot .pos{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-size:.66rem;font-weight:600;color:var(--slate);width:110px;flex-shrink:0}
+.crew-slot .who{font-weight:800;color:var(--navy);font-size:.84rem}
+.crew-slot .empty{color:#98A3B5;font-size:.78rem;font-style:italic}
+.crew-slot .x{margin-left:auto;background:none;border:0;color:var(--bad);font-weight:800;font-size:.85rem;padding:2px 6px}
+.bench .off{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:#fff;cursor:grab;transition:.13s;font-size:.8rem}
+.bench .off:hover{border-color:var(--navy);transform:translateY(-1px)}
+.bench .off.used{opacity:.35;pointer-events:none}
+.bench .off .av2{width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.62rem;flex-shrink:0}
+.bench .off b{color:var(--navy)}
+.bench .off .r{font-size:.64rem;color:var(--slate)}
+.conflict{display:flex;gap:12px;align-items:flex-start;padding:13px 16px;border-radius:10px;margin-bottom:8px;font-size:.8rem}
+.conflict.warn{background:var(--warn-bg);border:1px solid #F3E3BC}
+.conflict.bad{background:var(--bad-bg);border:1px solid #F6CDD5}
+.conflict .ci{font-size:1rem}
+.conflict b{display:block;font-size:.78rem}
+.conflict.warn b{color:var(--warn)}
+.conflict.bad b{color:var(--bad)}
+.conflict p{color:var(--slate);font-size:.74rem}
+
+/* Pay */
+.pay-calc .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--line);font-size:.86rem}
+.pay-calc .row b{color:var(--navy)}
+.pay-calc .total{display:flex;justify-content:space-between;padding:14px 0 2px;font-family:'Oswald',sans-serif;font-weight:700;font-size:1.25rem;color:var(--navy)}
+.pay-table .assign-row .amt{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--navy);font-size:.84rem}
+
+/* Rule book */
+.rule-search{display:flex;gap:10px;margin-bottom:16px}
+.rule-search input{flex:1;border:1.5px solid var(--line);border-radius:10px;padding:12px 16px;font-family:'Inter',sans-serif;font-size:.9rem;outline:none}
+.rule-search input:focus{border-color:var(--navy)}
+.rule-hit{padding:15px 18px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:#fff}
+.rule-hit .ref{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--red);font-size:.78rem}
+.rule-hit b{display:block;color:var(--navy);font-size:.88rem;margin:2px 0}
+.rule-hit p{font-size:.78rem;color:var(--slate)}
+
+/* Training */
+.course{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.course:last-child{border-bottom:0}
+.course .ci2{width:40px;height:40px;border-radius:10px;background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+.course .info{flex:1;min-width:150px}
+.course b{color:var(--navy);font-size:.86rem}
+.course .m2{font-size:.72rem;color:var(--slate)}
+.prog{height:7px;background:var(--paper);border-radius:99px;overflow:hidden;margin-top:6px;max-width:220px}
+.prog i{display:block;height:100%;background:var(--live);border-radius:99px}
+
+/* Rankings table */
+.tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.tbl th{font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:.62rem;color:var(--slate);text-align:left;padding:10px 14px;background:var(--paper);font-weight:600}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--line)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td b{color:var(--navy)}
+.score{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--navy)}
+.score.top{color:var(--live)}
+.rank-badge{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--navy);color:#fff;align-items:center;justify-content:center;font-weight:800;font-size:.66rem}
+.rank-badge.gold{background:var(--gold);color:var(--navy)}
+
+/* Eval bars */
+.eval-row{margin-bottom:14px}
+.eval-row .er-top{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:5px}
+.eval-row .er-top b{color:var(--navy)}
+.eval-row .er-top .score{font-size:.82rem}
+.eval-bar{height:8px;background:var(--paper);border-radius:99px;overflow:hidden}
+.eval-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--navy-3),var(--live));border-radius:99px}
+
+/* State ops */
+.ops-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.ops-tile{background:linear-gradient(150deg,var(--navy-2),var(--navy));border-radius:var(--radius);color:#fff;padding:18px 20px;position:relative;overflow:hidden}
+.ops-tile .v{font-family:'Oswald',sans-serif;font-weight:700;font-size:1.9rem;line-height:1.1}
+.ops-tile .l{font-size:.64rem;text-transform:uppercase;letter-spacing:.14em;color:#9FB0CC;font-weight:700}
+.ops-tile.alert .v{color:var(--gold)}
+.ops-tile .livedot{position:absolute;top:14px;right:14px;width:9px;height:9px;border-radius:50%;background:#3DDC6A;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.ops-shell{display:grid;grid-template-columns:1fr 1.1fr;gap:16px}
+.ops-map{width:100%;max-width:300px;margin:0 auto;display:block}
+.ops-map .state{fill:#EDF1F7;stroke:var(--navy);stroke-width:2.5}
+.ops-map .ev{fill:var(--red);opacity:.85}
+.ops-map .ev.pulse{animation:pulse 1.8s infinite}
+.ops-map .ev.delay{fill:var(--gold)}
+.ops-map .ev.incident{fill:#7B2CBF}
+.feed-item{display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);font-size:.8rem;align-items:flex-start}
+.feed-item:last-child{border-bottom:0}
+.feed-item time{font-family:'JetBrains Mono',monospace;font-size:.66rem;color:var(--slate);flex-shrink:0;padding-top:2px}
+.feed-item b{color:var(--navy)}
+.feed-item .fi{font-size:.95rem}
+
+/* Incident */
+.inc-form label{display:block;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:.62rem;color:var(--slate);font-weight:600;margin:14px 0 6px}
+.inc-form select,.inc-form textarea,.inc-form input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;font-family:'Inter',sans-serif;font-size:.86rem;outline:none;background:#fff}
+.inc-form textarea{min-height:90px;resize:vertical}
+.inc-types{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.inc-type{border:1.5px solid var(--line);border-radius:10px;background:#fff;padding:12px 8px;text-align:center;font-size:.72rem;font-weight:700;color:var(--slate);transition:.13s}
+.inc-type .i{display:block;font-size:1.2rem;margin-bottom:4px}
+.inc-type.sel,.inc-type:hover{border-color:var(--red);color:var(--red);background:var(--bad-bg)}
+.upload-zone{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--slate);font-size:.78rem;margin-top:14px}
+
+/* School dashboard crew */
+.crew-contact{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line)}
+.crew-contact:last-child{border-bottom:0}
+.crew-contact .av2{width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.68rem;flex-shrink:0}
+.crew-contact b{color:var(--navy);font-size:.84rem;display:block}
+.crew-contact .r{font-size:.7rem;color:var(--slate)}
+.crew-contact .c{margin-left:auto;display:flex;gap:8px}
+.crew-contact .c a{font-size:.66rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:6px 12px;border-radius:8px;background:var(--paper);border:1px solid var(--line);color:var(--navy)}
+
+/* GPS check-in */
+.gps-card{background:linear-gradient(150deg,var(--navy-2),var(--navy));border-radius:var(--radius);color:#fff;padding:26px;text-align:center}
+.gps-card .g-meta{font-size:.78rem;color:#9FB0CC;margin-bottom:6px}
+.gps-card h3{font-size:1.1rem;margin-bottom:16px}
+.gps-btn{background:var(--live);color:#fff;border:0;border-radius:99px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-weight:600;font-size:.9rem;padding:16px 38px;transition:.15s}
+.gps-btn:hover{background:#146C31;transform:translateY(-1px)}
+.gps-btn.done{background:rgba(255,255,255,.12);border:1.5px solid #3DDC6A;color:#3DDC6A}
+.gps-note{font-size:.68rem;color:#9FB0CC;margin-top:12px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:#fff;padding:13px 26px;border-radius:99px;font-size:.82rem;font-weight:700;box-shadow:0 12px 30px rgba(11,33,67,.35);transition:.3s;z-index:200;opacity:0;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* Mobile */
+.sb-toggle{display:none}
+@media (max-width:1080px){
+  .stat-grid,.ops-stats{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr}
+  .crew-shell,.ops-shell{grid-template-columns:1fr}
+}
+@media (max-width:880px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:sticky;top:62px;z-index:90;display:flex;gap:6px;overflow-x:auto;padding:10px 14px;border-right:0;border-bottom:1px solid rgba(255,255,255,.06);scrollbar-width:none}
+  .sidebar::-webkit-scrollbar{display:none}
+  .sb-group{display:contents}
+  .sb-label{display:none}
+  .sb-item{white-space:nowrap;width:auto;flex-shrink:0;font-size:.72rem;padding:8px 12px}
+  .role-switch{display:none}
+  .sb-roles{display:flex!important;gap:6px;flex-shrink:0}
+  .main{padding:20px 16px 48px}
+  .g2{grid-template-columns:1fr}
+  .inc-types{grid-template-columns:1fr 1fr}
+  .tbl .hide-m{display:none}
+}
+.sb-roles{display:none}
+.sb-roles .role-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}
+.sb-roles .role-btn.active{background:var(--red);border-color:var(--red);color:#fff}
+</style>
+</head>
+<body>
+
+<div class="demo-bar">AHSAA Officials Hub — interactive concept by Williams Digital. All data is sample data. <a href="pitch.html">View the proposal →</a> · <a href="index.html">Public site concept →</a></div>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="tb-brand" href="index.html">
+      <span class="tb-mark">AHSAA</span>
+      <span><span class="n">Officials Hub</span><br><span class="s">Statewide Operations Platform</span></span>
+    </a>
+    <div class="role-switch" id="roleSwitch">
+      <button class="role-btn active" data-role="official">🦓 Official</button>
+      <button class="role-btn" data-role="assignor">🧩 Assignor</button>
+      <button class="role-btn" data-role="school">🏫 School AD</button>
+      <button class="role-btn" data-role="staff">🏛 AHSAA Staff</button>
+    </div>
+    <div class="tb-user">
+      <span class="avatar" id="userAvatar">JS</span>
+      <span><span class="un" id="userName">J. Sanders</span><br><span class="ur" id="userRole">Football Official · Birmingham</span></span>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-roles" id="sbRoles">
+      <button class="role-btn active" data-role="official">🦓</button>
+      <button class="role-btn" data-role="assignor">🧩</button>
+      <button class="role-btn" data-role="school">🏫</button>
+      <button class="role-btn" data-role="staff">🏛</button>
+    </div>
+    <div class="sb-group" data-role="official">
+      <div class="sb-label">Official</div>
+      <button class="sb-item active" data-panel="home"><span class="i">🏠</span>Home</button>
+      <button class="sb-item" data-panel="assignments"><span class="i">📋</span>My Assignments<span class="badge">2</span></button>
+      <button class="sb-item" data-panel="availability"><span class="i">📅</span>Availability</button>
+      <button class="sb-item" data-panel="pay"><span class="i">💵</span>Mileage &amp; Pay</button>
+      <button class="sb-item" data-panel="training"><span class="i">🎓</span>Training</button>
+      <button class="sb-item" data-panel="rulebook"><span class="i">📖</span>Rule Book</button>
+      <button class="sb-item" data-panel="incidents"><span class="i">🚨</span>Incident Reports</button>
+    </div>
+    <div class="sb-group" data-role="assignor">
+      <div class="sb-label">Assignor</div>
+      <button class="sb-item" data-panel="engine"><span class="i">🧩</span>Assignment Engine</button>
+      <button class="sb-item" data-panel="championship"><span class="i">🏆</span>Championship Center</button>
+      <button class="sb-item" data-panel="video"><span class="i">🎬</span>Video Review</button>
+    </div>
+    <div class="sb-group" data-role="school">
+      <div class="sb-label">School</div>
+      <button class="sb-item" data-panel="school"><span class="i">🏫</span>School Dashboard</button>
+      <button class="sb-item" data-panel="evals"><span class="i">⭐</span>Evaluations</button>
+    </div>
+    <div class="sb-group" data-role="staff">
+      <div class="sb-label">AHSAA Staff</div>
+      <button class="sb-item" data-panel="stateops"><span class="i">🗺</span>State Operations</button>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- ============ OFFICIAL: HOME ============ -->
+    <section class="panel active" id="panel-home">
+      <div class="page-head">
+        <div><span class="eyebrow">Official Dashboard</span><h1>Welcome Back, J. Sanders</h1></div>
+        <span class="sub">Friday, July 3, 2026 · 2026 season · Football (7-man crew)</span>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-tile" data-ico="🏈"><div class="v">8</div><div class="l">Upcoming Games</div></div>
+        <div class="stat-tile hot" data-ico="📨"><div class="v">2</div><div class="l">Pending Requests</div></div>
+        <div class="stat-tile" data-ico="🚗"><div class="v">$425</div><div class="l">Mileage Due</div></div>
+        <div class="stat-tile" data-ico="🎓"><div class="v">1</div><div class="l">Training Course Left</div></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-head"><h3>Next Assignment</h3><span class="status-pill st-ok">Accepted</span></div>
+          <div class="card-body">
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.35rem;color:var(--navy);text-transform:uppercase">Hoover @ Thompson</div>
+            <div style="font-size:.84rem;color:var(--slate);margin:4px 0 14px">Friday, Aug 21 · 7:00 PM · Warrior Stadium, Alabaster · Position: <b style="color:var(--navy)">Referee</b></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <a class="btn btn-line" href="https://maps.google.com/?q=Thompson+High+School+Alabaster+AL" target="_blank" rel="noopener">🧭 Directions · 26 mi</a>
+              <a class="btn btn-line" href="#">☀️ Weather: 91° Clear</a>
+              <button class="btn btn-red" data-goto="assignments">Full Schedule</button>
+            </div>
+          </div>
+        </div>
+        <div class="gps-card">
+          <div class="g-meta">Game-day check-in · GPS verified</div>
+          <h3>Warrior Stadium · Crew of 7</h3>
+          <button class="gps-btn" id="gpsBtn">📍 Check In</button>
+          <div class="gps-note" id="gpsNote">AHSAA sees your crew's arrival status in real time — think Uber for referees.</div>
+        </div>
+      </div>
+      <div class="g3 mt">
+        <div class="card">
+          <div class="card-head"><h3>Weather Alerts</h3></div>
+          <div class="card-body" style="font-size:.8rem;color:var(--slate)">
+            <b style="color:var(--warn)">⚠ Heat Advisory — Fri Aug 21</b>
+            <p style="margin-top:6px">WBGT projected 89.5 at kickoff in Shelby County. Mandatory hydration timeouts per AHSAA heat policy.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Rule Changes</h3></div>
+          <div class="card-body" style="font-size:.8rem;color:var(--slate)">
+            <b style="color:var(--navy)">2026 Points of Emphasis posted</b>
+            <p style="margin:6px 0 10px">Formation legality &amp; game management. Summary + full text in the Rule Book.</p>
+            <button class="btn btn-line" data-goto="rulebook">Open Rule Book</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Certification Status</h3></div>
+          <div class="card-body" style="font-size:.8rem;color:var(--slate)">
+            <b style="color:var(--live)">✓ Registered · Background check clear</b>
+            <p style="margin:6px 0 4px">1 required course remaining before Aug 15:</p>
+            <b style="color:var(--navy)">Heat Illness Prevention (2026)</b>
+            <div class="prog"><i style="width:78%"></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OFFICIAL: ASSIGNMENTS ============ -->
+    <section class="panel" id="panel-assignments">
+      <div class="page-head">
+        <div><span class="eyebrow">Digital Game Acceptance</span><h1>My Assignments</h1></div>
+        <span class="sub">Accept or decline — your assignor is notified instantly</span>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Pending Requests</h3><span class="hint">Respond within 48 hours</span></div>
+        <div class="assign-row" id="pend1">
+          <div class="when"><div class="d">21</div><div class="m">Aug</div></div>
+          <div class="info"><div class="game">Hoover @ Thompson</div><div class="meta">Friday · 7:00 PM · Warrior Stadium · Varsity · 26 mi</div></div>
+          <span class="pos-chip">Referee</span>
+          <div class="accept-btns">
+            <button class="a" data-game="Hoover @ Thompson">✓ Accept</button>
+            <button class="d" data-game="Hoover @ Thompson">✕ Decline</button>
+          </div>
+        </div>
+        <div class="assign-row" id="pend2">
+          <div class="when"><div class="d">28</div><div class="m">Aug</div></div>
+          <div class="info"><div class="game">Vestavia Hills @ Mountain Brook</div><div class="meta">Friday · 7:00 PM · Spartan Stadium · Varsity · 19 mi</div></div>
+          <span class="pos-chip">Referee</span>
+          <div class="accept-btns">
+            <button class="a" data-game="Vestavia Hills @ Mountain Brook">✓ Accept</button>
+            <button class="d" data-game="Vestavia Hills @ Mountain Brook">✕ Decline</button>
+          </div>
+        </div>
+      </div>
+      <div class="card mt">
+        <div class="card-head"><h3>Confirmed Schedule</h3><span class="hint">6 games</span></div>
+        <div class="assign-row">
+          <div class="when"><div class="d">4</div><div class="m">Sep</div></div>
+          <div class="info"><div class="game">Spain Park @ Chelsea</div><div class="meta">Friday · 7:00 PM · Varsity · 22 mi</div></div>
+          <span class="pos-chip">Referee</span><span class="status-pill st-ok">Accepted</span>
+        </div>
+        <div class="assign-row">
+          <div class="when"><div class="d">11</div><div class="m">Sep</div></div>
+          <div class="info"><div class="game">Helena @ Calera</div><div class="meta">Friday · 7:00 PM · Varsity · 31 mi</div></div>
+          <span class="pos-chip">Referee</span><span class="status-pill st-ok">Accepted</span>
+        </div>
+        <div class="assign-row">
+          <div class="when"><div class="d">17</div><div class="m">Sep</div></div>
+          <div class="info"><div class="game">Ramsay @ Parker (JV)</div><div class="meta">Thursday · 6:00 PM · Sub-varsity · 8 mi</div></div>
+          <span class="pos-chip">Umpire</span><span class="status-pill st-ok">Accepted</span>
+        </div>
+        <div class="assign-row">
+          <div class="when"><div class="d">25</div><div class="m">Sep</div></div>
+          <div class="info"><div class="game">Homewood @ Briarwood</div><div class="meta">Friday · 7:00 PM · Varsity · 14 mi</div></div>
+          <span class="pos-chip">Referee</span><span class="status-pill st-pend">Awaiting Crew</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OFFICIAL: AVAILABILITY ============ -->
+    <section class="panel" id="panel-availability">
+      <div class="page-head">
+        <div><span class="eyebrow">No More Spreadsheets</span><h1>Availability Calendar</h1></div>
+        <span class="sub">Click any date to cycle: Available → Preferred → Unavailable</span>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>August 2026</h3><span class="hint">Assignors see this instantly</span></div>
+        <div class="card-body">
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="cal-legend">
+            <span class="k"><span class="sw" style="background:var(--live-bg);border-color:#CBEBD5"></span>Available</span>
+            <span class="k"><span class="sw" style="background:#FFF7E2;border-color:#F3E3BC"></span>Preferred</span>
+            <span class="k"><span class="sw" style="background:var(--bad-bg);border-color:#F6CDD5"></span>Unavailable</span>
+            <span class="k"><span class="sw"></span>Unset</span>
+          </div>
+          <div class="bulk-row">
+            <button class="btn btn-line" id="bulkAvail">Mark Entire Season Available</button>
+            <button class="btn btn-line" id="bulkFri">Prefer All Fridays</button>
+            <button class="btn btn-line" id="bulkClear">Clear Month</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OFFICIAL: PAY ============ -->
+    <section class="panel" id="panel-pay">
+      <div class="page-head">
+        <div><span class="eyebrow">Automatic — Home → School</span><h1>Mileage &amp; Pay</h1></div>
+        <span class="sub">Calculated from your address and the venue. No forms.</span>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-head"><h3>Pay Calculator</h3><span class="hint">Sample rates</span></div>
+          <div class="card-body pay-calc">
+            <label style="font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:.62rem;color:var(--slate);font-weight:600">Assignment</label>
+            <select id="paySelect" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;font-family:'Inter',sans-serif;font-size:.86rem;margin:6px 0 14px;background:#fff">
+              <option value="95|32|26">Hoover @ Thompson · Varsity · 26 mi</option>
+              <option value="95|24|19">Vestavia Hills @ Mountain Brook · Varsity · 19 mi</option>
+              <option value="65|10|8">Ramsay @ Parker · JV · 8 mi</option>
+              <option value="95|39|31">Helena @ Calera · Varsity · 31 mi</option>
+            </select>
+            <div class="row"><span>Game Fee</span><b id="payFee">$95</b></div>
+            <div class="row"><span>Mileage (<span id="payMi">26</span> mi round trip × rate)</span><b id="payMileage">$32</b></div>
+            <div class="total"><span>Total</span><span id="payTotal" style="color:var(--live)">$127</span></div>
+          </div>
+        </div>
+        <div class="card pay-table">
+          <div class="card-head"><h3>Pay History</h3><span class="hint">Season to date: <b class="mono" style="color:var(--navy)">$1,088</b></span></div>
+          <div class="assign-row"><div class="when"><div class="d">12</div><div class="m">Jun</div></div><div class="info"><div class="game">7A Spring Jamboree</div><div class="meta">Paid via direct deposit</div></div><span class="status-pill st-ok">Paid</span><span class="amt">$127</span></div>
+          <div class="assign-row"><div class="when"><div class="d">5</div><div class="m">Jun</div></div><div class="info"><div class="game">Officials Camp Scrimmages</div><div class="meta">Paid via direct deposit</div></div><span class="status-pill st-ok">Paid</span><span class="amt">$190</span></div>
+          <div class="assign-row"><div class="when"><div class="d">29</div><div class="m">May</div></div><div class="info"><div class="game">Spring Game · Chelsea</div><div class="meta">Processing</div></div><span class="status-pill st-pend">Pending</span><span class="amt">$95</span></div>
+          <div class="assign-row"><div class="when"><div class="d">22</div><div class="m">May</div></div><div class="info"><div class="game">Mileage reimbursement batch</div><div class="meta">Q2 travel</div></div><span class="status-pill st-pend">Pending</span><span class="amt">$425</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OFFICIAL: TRAINING ============ -->
+    <section class="panel" id="panel-training">
+      <div class="page-head">
+        <div><span class="eyebrow">Certificates Generated Automatically</span><h1>Training Portal</h1></div>
+        <span class="sub">Clinics, video reviews, and annual certification — tracked for you</span>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>2026 Requirements</h3><span class="hint">3 of 4 complete</span></div>
+        <div class="course">
+          <span class="ci2">📋</span>
+          <div class="info"><b>Annual Rules Certification Exam</b><div class="m2">Completed June 12 · Score 94% · Certificate issued</div></div>
+          <span class="status-pill st-ok">Complete</span>
+        </div>
+        <div class="course">
+          <span class="ci2">🎥</span>
+          <div class="info"><b>Football Rules Clinic — Session 1</b><div class="m2">Attended live July 1 · Recording available</div></div>
+          <span class="status-pill st-ok">Complete</span>
+        </div>
+        <div class="course">
+          <span class="ci2">🧠</span>
+          <div class="info"><b>Concussion Recognition (NFHS)</b><div class="m2">Completed May 30 · Valid through 2028</div></div>
+          <span class="status-pill st-ok">Complete</span>
+        </div>
+        <div class="course">
+          <span class="ci2">🌡</span>
+          <div class="info"><b>Heat Illness Prevention (2026)</b><div class="m2">Due Aug 15 · 22 min remaining<div class="prog"><i style="width:78%"></i></div></div></div>
+          <button class="btn btn-red">Resume Course</button>
+        </div>
+      </div>
+      <div class="card mt">
+        <div class="card-head"><h3>Video Review Library</h3><span class="hint">Built from the Video Review Center</span></div>
+        <div class="course"><span class="ci2">🎬</span><div class="info"><b>Targeting — 12 plays, called &amp; no-called</b><div class="m2">From 2025 championship film · 14 min</div></div><button class="btn btn-line">Watch</button></div>
+        <div class="course"><span class="ci2">🎬</span><div class="info"><b>Sideline Management Situations</b><div class="m2">Crew communication series · 9 min</div></div><button class="btn btn-line">Watch</button></div>
+      </div>
+    </section>
+
+    <!-- ============ OFFICIAL: RULE BOOK ============ -->
+    <section class="panel" id="panel-rulebook">
+      <div class="page-head">
+        <div><span class="eyebrow">No PDF Hunting</span><h1>Digital Rule Book</h1></div>
+        <span class="sub">Search the NFHS rules &amp; AHSAA points of emphasis</span>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="rule-search">
+            <input type="text" id="ruleInput" placeholder='Search the rule book — try "targeting"' autocomplete="off">
+            <button class="btn btn-red" id="ruleGo">Search</button>
+          </div>
+          <div id="ruleResults">
+            <div class="rule-hit"><span class="ref">Try a search ↑</span><b>Instant answers on the field</b><p>Type "targeting", "horse collar", "fair catch", or "overtime" — results are summarized with the exact rule reference, and the full text is one tap away.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ OFFICIAL: INCIDENTS ============ -->
+    <section class="panel" id="panel-incidents">
+      <div class="page-head">
+        <div><span class="eyebrow">Straight to the State Office</span><h1>Incident Reports</h1></div>
+        <span class="sub">File from the field — photos, video, and notes attached</span>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-head"><h3>New Report</h3><span class="hint">Demo form — not submitted</span></div>
+          <div class="card-body inc-form">
+            <label>Incident Type</label>
+            <div class="inc-types" id="incTypes">
+              <button class="inc-type sel"><span class="i">🟥</span>Ejection</button>
+              <button class="inc-type"><span class="i">📣</span>Fan Incident</button>
+              <button class="inc-type"><span class="i">🏟</span>Field Issue</button>
+              <button class="inc-type"><span class="i">🩹</span>Injury</button>
+            </div>
+            <label>Game</label>
+            <select><option>Hoover @ Thompson · Aug 21</option><option>Vestavia Hills @ Mountain Brook · Aug 28</option></select>
+            <label>What Happened</label>
+            <textarea placeholder="Player #34 ejected at 8:22 Q3 for targeting (Rule 9-1-3). Head coach notified. No further incident."></textarea>
+            <div class="upload-zone">📎 Drop photos or video here — or tap to upload from your phone</div>
+            <button class="btn btn-red mt" id="incSubmit" style="margin-top:16px">Submit to AHSAA</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>My Reports</h3><span class="hint">Status tracked end-to-end</span></div>
+          <div class="assign-row"><div class="when"><div class="d">12</div><div class="m">Jun</div></div><div class="info"><div class="game">🟥 Ejection — Spring Jamboree</div><div class="meta">Reviewed by state office · ruling issued</div></div><span class="status-pill st-ok">Closed</span></div>
+          <div class="assign-row"><div class="when"><div class="d">29</div><div class="m">May</div></div><div class="info"><div class="game">🏟 Field Issue — Chelsea</div><div class="meta">Visiting sideline fencing · forwarded to school</div></div><span class="status-pill st-pend">In Review</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ASSIGNOR: ENGINE ============ -->
+    <section class="panel" id="panel-engine">
+      <div class="page-head">
+        <div><span class="eyebrow">Assignor View · Region 3 Football</span><h1>Assignment Engine</h1></div>
+        <span class="sub">Drag officials onto the crew — conflicts are flagged automatically</span>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head"><h3>Football Crew Builder — Crew A</h3><span class="hint">Hoover @ Thompson · Fri Aug 21 · 7:00 PM</span></div>
+        <div class="card-body crew-shell">
+          <div id="crewSlots">
+            <div class="crew-slot" data-pos="Referee"><span class="pos">Referee</span><span class="empty">Drag an official here</span></div>
+            <div class="crew-slot" data-pos="Umpire"><span class="pos">Umpire</span><span class="empty">Drag an official here</span></div>
+            <div class="crew-slot" data-pos="Head Linesman"><span class="pos">Head Linesman</span><span class="empty">Drag an official here</span></div>
+            <div class="crew-slot" data-pos="Line Judge"><span class="pos">Line Judge</span><span class="empty">Drag an official here</span></div>
+            <div class="crew-slot" data-pos="Back Judge"><span class="pos">Back Judge</span><span class="empty">Drag an official here</span></div>
+            <div class="crew-slot" data-pos="Side Judge"><span class="pos">Side Judge</span><span class="empty">Drag an official here</span></div>
+            <div class="crew-slot" data-pos="Field Judge"><span class="pos">Field Judge</span><span class="empty">Drag an official here</span></div>
+          </div>
+          <div class="bench" id="bench">
+            <div class="sb-label" style="color:var(--slate);padding:0 0 8px">Available Officials (click or drag)</div>
+            <div class="off" draggable="true" data-name="J. Sanders" data-flag=""><span class="av2">JS</span><span><b>J. Sanders</b><br><span class="r">Birmingham · 4.8 ★ · 12 yrs</span></span></div>
+            <div class="off" draggable="true" data-name="M. Jones" data-flag=""><span class="av2">MJ</span><span><b>M. Jones</b><br><span class="r">Hoover · 4.9 ★ · 15 yrs</span></span></div>
+            <div class="off" draggable="true" data-name="T. Rivers" data-flag="distance"><span class="av2">TR</span><span><b>T. Rivers</b><br><span class="r">Mobile · 4.7 ★ · 9 yrs</span></span></div>
+            <div class="off" draggable="true" data-name="D. Carver" data-flag="double"><span class="av2">DC</span><span><b>D. Carver</b><br><span class="r">Vestavia · 4.6 ★ · 7 yrs</span></span></div>
+            <div class="off" draggable="true" data-name="R. Whitfield" data-flag="school"><span class="av2">RW</span><span><b>R. Whitfield</b><br><span class="r">Auburn · 4.8 ★ · 11 yrs</span></span></div>
+            <div class="off" draggable="true" data-name="K. Boone" data-flag=""><span class="av2">KB</span><span><b>K. Boone</b><br><span class="r">Pelham · 4.5 ★ · 5 yrs</span></span></div>
+            <div class="off" draggable="true" data-name="L. Hastings" data-flag=""><span class="av2">LH</span><span><b>L. Hastings</b><br><span class="r">Homewood · 4.7 ★ · 8 yrs</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-head"><h3>Conflict Detection</h3><span class="hint" id="conflictHint">Live as you build</span></div>
+          <div class="card-body" id="conflictList">
+            <div class="conflict warn" style="opacity:.55"><span class="ci">🚗</span><span><b>Distance check — armed</b><p>Officials are checked against venue distance. T. Rivers (Mobile) would trigger a 420-mile warning for this Birmingham-area game.</p></span></div>
+            <div class="conflict bad" style="opacity:.55"><span class="ci">⛔</span><span><b>Double-booking check — armed</b><p>D. Carver is already assigned to Vestavia @ Hoover this Friday.</p></span></div>
+            <div class="conflict warn" style="opacity:.55"><span class="ci">🎓</span><span><b>School restriction check — armed</b><p>R. Whitfield graduated from Auburn High — flagged for Auburn assignments.</p></span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Basketball Assignment</h3><span class="hint">Tuesday doubleheader · Legacy Arena prep</span></div>
+          <div class="card-body" style="font-size:.84rem">
+            <b style="color:var(--navy);font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:.78rem">Varsity Boys · 7:30 PM</b>
+            <div class="crew-slot filled" style="margin-top:8px"><span class="pos">Official A</span><span class="who">C. Maddox</span><span class="status-pill st-ok" style="margin-left:auto">Accepted</span></div>
+            <div class="crew-slot filled"><span class="pos">Official B</span><span class="who">P. Grimes</span><span class="status-pill st-ok" style="margin-left:auto">Accepted</span></div>
+            <div class="crew-slot filled"><span class="pos">Official C</span><span class="who">A. Foster</span><span class="status-pill st-pend" style="margin-left:auto">Pending</span></div>
+            <b style="color:var(--navy);font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.06em;font-size:.78rem;display:block;margin-top:14px">JV · 6:00 PM</b>
+            <div class="crew-slot filled" style="margin-top:8px"><span class="pos">Official D</span><span class="who">S. Nguyen</span><span class="status-pill st-ok" style="margin-left:auto">Accepted</span></div>
+            <div class="crew-slot filled"><span class="pos">Official E</span><span class="who">B. Tolbert</span><span class="status-pill st-pend" style="margin-left:auto">Pending</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ASSIGNOR: CHAMPIONSHIP ============ -->
+    <section class="panel" id="panel-championship">
+      <div class="page-head">
+        <div><span class="eyebrow">Playoffs &amp; Super 7</span><h1>Championship Assignment Center</h1></div>
+        <span class="sub">Rank by experience, ratings, certification, and evaluations — pick the best crews fast</span>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Top-Rated Football Officials · 2026</h3><span class="hint">Weighted composite — sample data</span></div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>Rank</th><th>Official</th><th class="hide-m">Years</th><th class="hide-m">Games</th><th>Eval Score</th><th class="hide-m">Playoff Exp</th><th>Composite</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><span class="rank-badge gold">1</span></td><td><b>M. Jones</b> · Hoover</td><td class="hide-m">15</td><td class="hide-m">142</td><td><span class="score top">4.9</span></td><td class="hide-m">3× Super 7</td><td><span class="score top">97.2</span></td><td><button class="btn btn-line">Select</button></td></tr>
+              <tr><td><span class="rank-badge gold">2</span></td><td><b>J. Sanders</b> · Birmingham</td><td class="hide-m">12</td><td class="hide-m">118</td><td><span class="score top">4.8</span></td><td class="hide-m">2× Super 7</td><td><span class="score top">95.8</span></td><td><button class="btn btn-line">Select</button></td></tr>
+              <tr><td><span class="rank-badge">3</span></td><td><b>R. Whitfield</b> · Auburn</td><td class="hide-m">11</td><td class="hide-m">104</td><td><span class="score">4.8</span></td><td class="hide-m">Semifinals</td><td><span class="score">93.4</span></td><td><button class="btn btn-line">Select</button></td></tr>
+              <tr><td><span class="rank-badge">4</span></td><td><b>L. Hastings</b> · Homewood</td><td class="hide-m">8</td><td class="hide-m">76</td><td><span class="score">4.7</span></td><td class="hide-m">Quarterfinals</td><td><span class="score">90.1</span></td><td><button class="btn btn-line">Select</button></td></tr>
+              <tr><td><span class="rank-badge">5</span></td><td><b>T. Rivers</b> · Mobile</td><td class="hide-m">9</td><td class="hide-m">88</td><td><span class="score">4.7</span></td><td class="hide-m">Rounds 1–3</td><td><span class="score">89.6</span></td><td><button class="btn btn-line">Select</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="g3 mt">
+        <div class="card"><div class="card-body" style="font-size:.8rem;color:var(--slate)"><b style="color:var(--navy)">🎖 Experience</b><p style="margin-top:4px">Years certified, varsity games worked, and playoff rounds — pulled automatically from assignment history.</p></div></div>
+        <div class="card"><div class="card-body" style="font-size:.8rem;color:var(--slate)"><b style="color:var(--navy)">⭐ Ratings</b><p style="margin-top:4px">Coach, school, and assignor evaluations with weighted scoring — recency-weighted so this season counts most.</p></div></div>
+        <div class="card"><div class="card-body" style="font-size:.8rem;color:var(--slate)"><b style="color:var(--navy)">🎬 Film</b><p style="margin-top:4px">Evaluation clips from the Video Review Center attached directly to each official's profile.</p></div></div>
+      </div>
+    </section>
+
+    <!-- ============ ASSIGNOR: VIDEO ============ -->
+    <section class="panel" id="panel-video">
+      <div class="page-head">
+        <div><span class="eyebrow">Schools Upload · Everyone Learns</span><h1>Video Review Center</h1></div>
+        <span class="sub">Clips flow from schools → officials → assignors → AHSAA → training content</span>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Review Queue</h3><span class="hint">4 clips awaiting review</span></div>
+        <div class="assign-row"><div class="when" style="width:auto"><span style="font-size:1.6rem">🎬</span></div><div class="info"><div class="game">Targeting review — Hoover @ Thompson, Q3 8:22</div><div class="meta">Uploaded by Thompson HS · 2 angles · flagged Rule 9-1-3</div></div><span class="status-pill st-pend">Assignor Review</span><button class="btn btn-red">Review</button></div>
+        <div class="assign-row"><div class="when" style="width:auto"><span style="font-size:1.6rem">🎬</span></div><div class="info"><div class="game">Sideline interference — Saraland @ Theodore</div><div class="meta">Uploaded by crew chief · 1 angle</div></div><span class="status-pill st-pend">AHSAA Review</span><button class="btn btn-line">Watch</button></div>
+        <div class="assign-row"><div class="when" style="width:auto"><span style="font-size:1.6rem">✅</span></div><div class="info"><div class="game">Fair catch signal — approved as training clip</div><div class="meta">Added to Training Portal library · visible to all officials</div></div><span class="status-pill st-ok">Published</span><button class="btn btn-line">Open</button></div>
+      </div>
+    </section>
+
+    <!-- ============ SCHOOL DASHBOARD ============ -->
+    <section class="panel" id="panel-school">
+      <div class="page-head">
+        <div><span class="eyebrow">Athletic Director View · Thompson HS</span><h1>School Dashboard</h1></div>
+        <span class="sub">Your officials, payments, and evaluations — one login</span>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-head"><h3>Friday's Crew — Hoover @ Thompson</h3><span class="status-pill st-ok">Crew Confirmed</span></div>
+          <div class="crew-contact"><span class="av2">JS</span><span><b>J. Sanders — Crew Chief (Referee)</b><span class="r">Birmingham · 12 years · GPS check-in enabled</span></span><span class="c"><a href="#">Call</a><a href="#">Msg</a></span></div>
+          <div class="crew-contact"><span class="av2">MJ</span><span><b>M. Jones — Umpire</b><span class="r">Hoover · 15 years</span></span><span class="c"><a href="#">Call</a><a href="#">Msg</a></span></div>
+          <div class="crew-contact"><span class="av2">KB</span><span><b>K. Boone — Head Linesman</b><span class="r">Pelham · 5 years</span></span><span class="c"><a href="#">Call</a><a href="#">Msg</a></span></div>
+          <div class="crew-contact"><span class="av2">LH</span><span><b>L. Hastings — Back Judge</b><span class="r">Homewood · 8 years</span></span><span class="c"><a href="#">Call</a><a href="#">Msg</a></span></div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-head"><h3>Payment Status</h3><span class="hint">Officials fees · 2026 season</span></div>
+            <div class="assign-row"><div class="info"><div class="game">Week 0 crew fees</div><div class="meta">5 officials · varsity</div></div><span class="status-pill st-ok">Paid</span><span class="mono" style="font-weight:700;color:var(--navy)">$475</span></div>
+            <div class="assign-row"><div class="info"><div class="game">Week 1 crew fees</div><div class="meta">Invoice generated automatically</div></div><span class="status-pill st-pend">Pending</span><span class="mono" style="font-weight:700;color:var(--navy)">$475</span></div>
+            <div class="assign-row"><div class="info"><div class="game">JV doubleheader — April</div><div class="meta">45 days past due · reminder sent</div></div><span class="status-pill st-bad">Outstanding</span><span class="mono" style="font-weight:700;color:var(--navy)">$220</span></div>
+          </div>
+          <div class="card mt">
+            <div class="card-body" style="font-size:.8rem;color:var(--slate)">
+              <b style="color:var(--navy)">📤 Upload film for review</b>
+              <p style="margin:4px 0 10px">Send a clip straight to the crew, the assignor, and AHSAA — no email chains.</p>
+              <button class="btn btn-line" data-goto="video">Open Video Review Center</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ EVALUATIONS ============ -->
+    <section class="panel" id="panel-evals">
+      <div class="page-head">
+        <div><span class="eyebrow">Three-Way Accountability</span><h1>Evaluation System</h1></div>
+        <span class="sub">Coaches evaluate officials · officials evaluate schools · schools evaluate crews — weighted scoring</span>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-head"><h3>Crew Chief J. Sanders — Season Averages</h3><span class="hint">31 evaluations</span></div>
+          <div class="card-body">
+            <div class="eval-row"><div class="er-top"><b>Communication</b><span class="score top">4.7</span></div><div class="eval-bar"><i style="width:94%"></i></div></div>
+            <div class="eval-row"><div class="er-top"><b>Positioning</b><span class="score top">4.9</span></div><div class="eval-bar"><i style="width:98%"></i></div></div>
+            <div class="eval-row"><div class="er-top"><b>Rule Knowledge</b><span class="score top">4.8</span></div><div class="eval-bar"><i style="width:96%"></i></div></div>
+            <div class="eval-row"><div class="er-top"><b>Game Management</b><span class="score">4.5</span></div><div class="eval-bar"><i style="width:90%"></i></div></div>
+            <p style="font-size:.74rem;color:var(--slate);margin-top:10px">Weighted composite feeds the Championship Assignment Center rankings automatically.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Submit an Evaluation</h3><span class="hint">Demo form</span></div>
+          <div class="card-body inc-form">
+            <label>I am a…</label>
+            <select><option>Head Coach evaluating an official</option><option>Official evaluating a school</option><option>School evaluating a crew</option></select>
+            <label>Game</label>
+            <select><option>Hoover @ Thompson · Aug 21</option></select>
+            <label>Scores (1–5)</label>
+            <div class="g3" style="gap:8px">
+              <input type="number" min="1" max="5" value="5" title="Communication">
+              <input type="number" min="1" max="5" value="5" title="Positioning">
+              <input type="number" min="1" max="5" value="4" title="Rule Knowledge">
+            </div>
+            <label>Notes</label>
+            <textarea placeholder="Clear communication with both sidelines all night."></textarea>
+            <button class="btn btn-red" id="evalSubmit" style="margin-top:16px">Submit Evaluation</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ STATE OPS ============ -->
+    <section class="panel" id="panel-stateops">
+      <div class="page-head">
+        <div><span class="eyebrow">The Long-Term Vision · AHSAA Staff Only</span><h1>Statewide Sports Operations</h1></div>
+        <span class="sub">Every game, every crew, every incident — live, on one map</span>
+      </div>
+      <div class="ops-stats">
+        <div class="ops-tile"><span class="livedot"></span><div class="v">182</div><div class="l">Football Games Tonight</div></div>
+        <div class="ops-tile"><span class="livedot"></span><div class="v">1,274</div><div class="l">Officials Working</div></div>
+        <div class="ops-tile alert"><div class="v">3</div><div class="l">Incidents Reported</div></div>
+        <div class="ops-tile alert"><div class="v">4</div><div class="l">Games Delayed</div></div>
+      </div>
+      <div class="ops-shell">
+        <div class="card">
+          <div class="card-head"><h3>Live Event Map</h3><span class="hint">🔴 live · 🟡 delayed · 🟣 incident</span></div>
+          <div class="card-body">
+            <svg class="ops-map" viewBox="0 0 300 480" aria-label="Live map of Alabama events">
+              <path class="state" d="M32 12 L262 20 L268 96 L276 200 L284 300 L272 330 L258 366 L252 402 L256 416 L150 418 L64 414 L66 442 L58 456 L30 452 L34 414 L26 300 L22 160 Z"/>
+              <circle class="ev pulse" r="6" cx="150" cy="52"/><circle class="ev" r="5" cx="112" cy="66"/><circle class="ev" r="5" cx="58" cy="80"/>
+              <circle class="ev pulse" r="7" cx="130" cy="152"/><circle class="ev" r="5" cx="118" cy="170"/><circle class="ev" r="5" cx="86" cy="190"/>
+              <circle class="ev" r="5" cx="226" cy="112"/><circle class="ev" r="5" cx="214" cy="170"/>
+              <circle class="ev pulse" r="6" cx="218" cy="262"/><circle class="ev" r="5" cx="248" cy="268"/><circle class="ev" r="6" cx="160" cy="278"/>
+              <circle class="ev delay" r="6" cx="182" cy="356"/><circle class="ev delay" r="6" cx="150" cy="360"/>
+              <circle class="ev pulse" r="6" cx="52" cy="424"/><circle class="ev incident" r="6" cx="48" cy="396"/>
+              <circle class="ev incident" r="6" cx="140" cy="120"/><circle class="ev delay" r="5" cx="240" cy="200"/>
+            </svg>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Live Operations Feed</h3><span class="hint">Auto-updating</span></div>
+          <div class="feed-item"><time>19:42</time><span class="fi">🟣</span><span><b>Incident filed — Saraland:</b> fan incident report with video from crew chief. Routed to state office on-call.</span></div>
+          <div class="feed-item"><time>19:38</time><span class="fi">🟡</span><span><b>Delay — Enterprise:</b> lightning within 8 miles. 30-minute clock started per policy. Crews notified.</span></div>
+          <div class="feed-item"><time>19:31</time><span class="fi">✅</span><span><b>All crews checked in — Region 3:</b> 24 of 24 officials GPS-verified on site.</span></div>
+          <div class="feed-item"><time>19:15</time><span class="fi">🔴</span><span><b>Kickoffs underway:</b> 178 of 182 games started on time (97.8%).</span></div>
+          <div class="feed-item"><time>18:52</time><span class="fi">🚗</span><span><b>Late alert — Andalusia:</b> back judge ETA 6:55 PM per GPS. Backup official on standby not needed.</span></div>
+        </div>
+      </div>
+      <div class="card mt">
+        <div class="card-head"><h3>Phase 3 Modules — Roadmap</h3><span class="hint">The statewide operating system</span></div>
+        <div class="card-body g3" style="font-size:.78rem;color:var(--slate)">
+          <div><b style="color:var(--navy)">🎓 Eligibility Tracking</b><p>Transfers, birth certificates, physicals — DragonFly-integrated with status per student.</p></div>
+          <div><b style="color:var(--navy)">🧾 Coach Certifications</b><p>CPR, concussion, heat illness, background checks — expiration alerts to ADs.</p></div>
+          <div><b style="color:var(--navy)">🏟 Championship Management</b><p>Team check-in, credential printing, parking passes, media credentials.</p></div>
+          <div><b style="color:var(--navy)">⚖️ Fines &amp; Violations</b><p>Ejections, appeals, suspensions, and payments with full audit trail.</p></div>
+          <div><b style="color:var(--navy)">📸 Media Portal</b><p>Photo uploads, story submission, logo &amp; championship asset downloads.</p></div>
+          <div><b style="color:var(--navy)">📱 Mobile Apps</b><p>Officials app (assignments, GPS check-in, pay) and AD app (crews, payments).</p></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast">Saved</div>
+
+<script>
+/* ---------- Toast ---------- */
+const toast=document.getElementById('toast');let toastT;
+function showToast(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>toast.classList.remove('show'),2600)}
+
+/* ---------- Panels & roles ---------- */
+const panels=document.querySelectorAll('.panel'),items=document.querySelectorAll('.sb-item');
+function goPanel(id){
+  panels.forEach(p=>p.classList.toggle('active',p.id==='panel-'+id));
+  items.forEach(i=>i.classList.toggle('active',i.dataset.panel===id));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+items.forEach(i=>i.addEventListener('click',()=>goPanel(i.dataset.panel)));
+document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>goPanel(b.dataset.goto)));
+
+const ROLE_HOME={official:'home',assignor:'engine',school:'school',staff:'stateops'};
+const ROLE_USER={
+  official:{av:'JS',n:'J. Sanders',r:'Football Official · Birmingham'},
+  assignor:{av:'RA',n:'R. Abernathy',r:'Region 3 Assignor · Football'},
+  school:{av:'AD',n:'C. Wallace',r:'Athletic Director · Thompson HS'},
+  staff:{av:'HH',n:'State Office',r:'AHSAA Staff · Montgomery'}
+};
+function setRole(role){
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active',b.dataset.role===role));
+  const u=ROLE_USER[role];
+  document.getElementById('userAvatar').textContent=u.av;
+  document.getElementById('userName').textContent=u.n;
+  document.getElementById('userRole').textContent=u.r;
+  goPanel(ROLE_HOME[role]);
+}
+document.querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>setRole(b.dataset.role)));
+
+/* ---------- GPS check-in ---------- */
+const gpsBtn=document.getElementById('gpsBtn');
+gpsBtn.addEventListener('click',()=>{
+  if(gpsBtn.classList.contains('done'))return;
+  gpsBtn.textContent='Verifying GPS…';
+  setTimeout(()=>{
+    gpsBtn.textContent='✓ Checked In · 6:04 PM';
+    gpsBtn.classList.add('done');
+    document.getElementById('gpsNote').textContent='Location verified at Warrior Stadium. Assignor and AHSAA notified — crew status: 1 of 7 on site.';
+    showToast('📍 GPS verified — assignor notified');
+  },900);
+});
+
+/* ---------- Accept / decline ---------- */
+document.querySelectorAll('.accept-btns .a,.accept-btns .d').forEach(btn=>btn.addEventListener('click',()=>{
+  const row=btn.closest('.assign-row');
+  const ok=btn.classList.contains('a');
+  row.querySelector('.accept-btns').outerHTML=`<span class="status-pill ${ok?'st-ok':'st-bad'}">${ok?'Accepted':'Declined'}</span>`;
+  showToast(ok?`✓ Accepted — assignor notified instantly`:`✕ Declined — assignor notified; game returned to pool`);
+}));
+
+/* ---------- Availability calendar (Aug 2026: Sat the 1st) ---------- */
+const calGrid=document.getElementById('calGrid');
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+DOW.forEach(d=>{const e=document.createElement('div');e.className='cal-dow';e.textContent=d;calGrid.appendChild(e)});
+const preset={15:'un',16:'av',17:'av',21:'pf',28:'pf'};
+const CYCLE=['','av','pf','un'];const LABEL={'':'',av:'Avail',pf:'Prefer',un:'Unavail'};
+const dayEls=[];
+for(let i=0;i<6;i++){const b=document.createElement('div');b.className='cal-day blank';calGrid.appendChild(b)}
+for(let d=1;d<=31;d++){
+  const el=document.createElement('button');
+  el.className='cal-day'+(preset[d]?' '+preset[d]:'');
+  el.innerHTML=`${d}<span class="st">${LABEL[preset[d]||'']}</span>`;
+  el.dataset.state=preset[d]||'';
+  el.dataset.day=d;
+  el.addEventListener('click',()=>{
+    const next=CYCLE[(CYCLE.indexOf(el.dataset.state)+1)%CYCLE.length];
+    setDay(el,next);
+    showToast(`Aug ${d}: ${next?({av:'Available',pf:'Preferred',un:'Unavailable'})[next]:'Cleared'} — assignors updated`);
+  });
+  dayEls.push(el);calGrid.appendChild(el);
+}
+function setDay(el,state){
+  el.classList.remove('av','pf','un');
+  if(state)el.classList.add(state);
+  el.dataset.state=state;
+  el.querySelector('.st').textContent=LABEL[state];
+}
+document.getElementById('bulkAvail').addEventListener('click',()=>{dayEls.forEach(e=>setDay(e,'av'));showToast('Season marked available — every assignor can see it')});
+document.getElementById('bulkFri').addEventListener('click',()=>{dayEls.forEach(e=>{if((+e.dataset.day+6)%7===6)setDay(e,'pf')});showToast('All Fridays marked preferred')});
+document.getElementById('bulkClear').addEventListener('click',()=>{dayEls.forEach(e=>setDay(e,''));showToast('Month cleared')});
+
+/* ---------- Pay calculator ---------- */
+const paySelect=document.getElementById('paySelect');
+function calcPay(){
+  const[fee,mi,dist]=paySelect.value.split('|').map(Number);
+  document.getElementById('payFee').textContent='$'+fee;
+  document.getElementById('payMileage').textContent='$'+mi;
+  document.getElementById('payMi').textContent=dist;
+  document.getElementById('payTotal').textContent='$'+(fee+mi);
+}
+paySelect.addEventListener('change',calcPay);calcPay();
+
+/* ---------- Rule book ---------- */
+const RULES=[
+  {k:['targeting','helmet','defenseless'],ref:'Rule 9-1-3',t:'Targeting / Illegal Helmet Contact',p:'No player shall target and initiate contact against an opponent with the crown of the helmet, or target a defenseless player above the shoulders. Penalty: 15 yards; flagrant contact = disqualification.'},
+  {k:['horse collar','horse-collar'],ref:'Rule 9-4-3k',t:'Horse-Collar Tackle',p:'Grabbing the inside back or side collar of the shoulder pads or jersey and immediately pulling the runner to the ground. Penalty: 15 yards.'},
+  {k:['fair catch','signal'],ref:'Rule 6-5',t:'Fair Catch',p:'A valid signal is one arm fully extended above the head, waved side to side. The receiving team may not advance; contact with the signaler is a 15-yard penalty.'},
+  {k:['overtime','tie'],ref:'AHSAA OT Procedure',t:'Overtime Procedure',p:'Each team snaps from the 10-yard line. Alternating possessions until a winner is decided; starting with the 3rd OT, teams must attempt two-point conversions.'},
+  {k:['heat','wbgt','hydration'],ref:'AHSAA Heat Policy',t:'Heat Participation Policy',p:'WBGT readings determine practice/game modifications. Above 92.0: no outdoor activity. Mandatory hydration timeouts at officials’ discretion in high-heat games.'},
+  {k:['ejection','disqualification','fight'],ref:'Rule 9-4 / AHSAA Bylaws',t:'Ejections & Disqualifications',p:'Ejected players are ineligible for the remainder of the game plus the next game. All ejections must be filed through the Incident Report system within 24 hours.'}
+];
+function ruleSearch(){
+  const q=document.getElementById('ruleInput').value.trim().toLowerCase();
+  const box=document.getElementById('ruleResults');
+  if(!q){box.innerHTML='<div class="rule-hit"><span class="ref">Try a search ↑</span><b>Instant answers on the field</b><p>Type "targeting", "horse collar", "fair catch", or "overtime".</p></div>';return}
+  const hits=RULES.filter(r=>r.k.some(k=>k.includes(q)||q.includes(k))||r.t.toLowerCase().includes(q));
+  box.innerHTML=hits.length?hits.map(r=>`<div class="rule-hit"><span class="ref">${r.ref}</span><b>${r.t}</b><p>${r.p}</p></div>`).join(''):`<div class="rule-hit"><span class="ref">No match</span><b>No rules found for "${q}"</b><p>The production build searches the complete NFHS rule set for every sport, plus AHSAA bylaws and points of emphasis.</p></div>`;
+}
+document.getElementById('ruleGo').addEventListener('click',ruleSearch);
+document.getElementById('ruleInput').addEventListener('input',ruleSearch);
+
+/* ---------- Incident form ---------- */
+document.querySelectorAll('.inc-type').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.inc-type').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');
+}));
+document.getElementById('incSubmit').addEventListener('click',()=>showToast('🚨 Demo: report would be routed to the AHSAA state office'));
+document.getElementById('evalSubmit').addEventListener('click',()=>showToast('⭐ Demo: evaluation recorded — composite scores updated'));
+
+/* ---------- Crew builder ---------- */
+const CONFLICTS={
+  distance:{cls:'warn',i:'🚗',b:'Distance warning — T. Rivers',p:'Official lives in Mobile; game is in the Birmingham area. Estimated 420 miles round trip. Confirm before assigning.'},
+  double:{cls:'bad',i:'⛔',b:'Double-booking blocked — D. Carver',p:'Already assigned to Vestavia @ Hoover on Friday, Aug 21. This assignment cannot be saved.'},
+  school:{cls:'warn',i:'🎓',b:'School restriction — R. Whitfield',p:'Graduated from Auburn High School. Not a conflict for this game, but flagged for any Auburn assignment.'}
+};
+const slots=document.querySelectorAll('#crewSlots .crew-slot');
+const bench=document.getElementById('bench');
+let dragName=null,dragFlag=null;
+function fillSlot(slot,name,flag){
+  if(slot.classList.contains('filled'))return;
+  slot.classList.add('filled');
+  slot.querySelector('.empty')?.remove();
+  const who=document.createElement('span');who.className='who';who.textContent=name;
+  const x=document.createElement('button');x.className='x';x.textContent='✕';x.title='Remove';
+  slot.appendChild(who);slot.appendChild(x);
+  const benchEl=[...bench.querySelectorAll('.off')].find(o=>o.dataset.name===name);
+  benchEl?.classList.add('used');
+  x.addEventListener('click',()=>{
+    slot.classList.remove('filled');who.remove();x.remove();
+    const e=document.createElement('span');e.className='empty';e.textContent='Drag an official here';slot.appendChild(e);
+    benchEl?.classList.remove('used');
+    updateConflicts();
+  });
+  if(flag){
+    const c=CONFLICTS[flag];
+    addConflict(flag,c);
+    showToast(c.cls==='bad'?'⛔ Conflict detected — see Conflict Detection':'⚠ Warning flagged — see Conflict Detection');
+  }else{
+    showToast(`✓ ${name} penciled in as ${slot.dataset.pos}`);
+  }
+  updateConflicts();
+}
+const activeConflicts=new Set();
+function addConflict(flag,c){activeConflicts.add(flag);renderConflicts()}
+function updateConflicts(){
+  // drop conflicts whose official was removed
+  activeConflicts.forEach(f=>{
+    const name={distance:'T. Rivers',double:'D. Carver',school:'R. Whitfield'}[f];
+    const still=[...document.querySelectorAll('#crewSlots .who')].some(w=>w.textContent===name);
+    if(!still)activeConflicts.delete(f);
+  });
+  renderConflicts();
+}
+function renderConflicts(){
+  const box=document.getElementById('conflictList');
+  if(!activeConflicts.size){
+    box.innerHTML=`
+    <div class="conflict warn" style="opacity:.55"><span class="ci">🚗</span><span><b>Distance check — armed</b><p>Officials are checked against venue distance. T. Rivers (Mobile) would trigger a 420-mile warning for this Birmingham-area game.</p></span></div>
+    <div class="conflict bad" style="opacity:.55"><span class="ci">⛔</span><span><b>Double-booking check — armed</b><p>D. Carver is already assigned to Vestavia @ Hoover this Friday.</p></span></div>
+    <div class="conflict warn" style="opacity:.55"><span class="ci">🎓</span><span><b>School restriction check — armed</b><p>R. Whitfield graduated from Auburn High — flagged for Auburn assignments.</p></span></div>`;
+    document.getElementById('conflictHint').textContent='Live as you build';
+    return;
+  }
+  box.innerHTML=[...activeConflicts].map(f=>{const c=CONFLICTS[f];return `<div class="conflict ${c.cls}"><span class="ci">${c.i}</span><span><b>${c.b}</b><p>${c.p}</p></span></div>`}).join('');
+  document.getElementById('conflictHint').textContent=activeConflicts.size+' active';
+}
+bench.querySelectorAll('.off').forEach(o=>{
+  o.addEventListener('dragstart',()=>{dragName=o.dataset.name;dragFlag=o.dataset.flag});
+  o.addEventListener('click',()=>{
+    const open=[...slots].find(s=>!s.classList.contains('filled'));
+    if(open)fillSlot(open,o.dataset.name,o.dataset.flag);
+  });
+});
+slots.forEach(s=>{
+  s.addEventListener('dragover',e=>{e.preventDefault();s.classList.add('dragover')});
+  s.addEventListener('dragleave',()=>s.classList.remove('dragover'));
+  s.addEventListener('drop',e=>{e.preventDefault();s.classList.remove('dragover');if(dragName)fillSlot(s,dragName,dragFlag);dragName=null;dragFlag=null});
+});
+</script>
+</body>
+</html>
