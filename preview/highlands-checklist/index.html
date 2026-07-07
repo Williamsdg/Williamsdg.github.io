@@ -44,7 +44,10 @@
   .tag.sun{background:#eef3fb;color:#2b4a7a}
   .tag.fw{background:#fbf3e2;color:#9a7420}
   .tag.motion{background:#eaf3ee;color:#2f6b46}
+  .tag.wed{background:#eef0f5;color:#4a5470}
+  .tag.misc{background:#f4eef8;color:#5d3b7a}
   .tag.unc{background:#fdeaea;color:#9a3b3b}
+  .file{display:block;font-size:11.5px;color:#9a958a;margin-top:2px;word-break:break-all}
   .dlbtn{margin-left:8px;font-size:11px;font-weight:600;border:1px solid var(--line);background:#fff;
     color:var(--navy);border-radius:20px;padding:2px 9px;cursor:pointer;vertical-align:middle}
   .dlbtn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -68,7 +71,7 @@
 <body>
 <header>
   <h1>Church of the Highlands — Speakers Checklist <span class="live off" id="live">connecting…</span></h1>
-  <p>Shared &amp; auto-updating. Every Sunday message, First Wednesday service &amp; Motion Night (Students), 2013–present, by year and month. Check a box and everyone with the link sees it instantly.</p>
+  <p>Shared &amp; auto-updating. Every Sunday message, First Wednesday service &amp; Motion Night (Students), 2013–present — plus early archive files (2002+) from the church media library — by year and month. Check a box and everyone with the link sees it instantly.</p>
 </header>
 
 <div class="bar">
@@ -79,6 +82,8 @@
     <option value="sun">Sunday only</option>
     <option value="fw">First Wednesday only</option>
     <option value="motion">Motion (Students) only</option>
+    <option value="wed">Wednesday (archive) only</option>
+    <option value="misc">Special / misc only</option>
   </select>
   <select id="status">
     <option value="all">All</option>
@@ -99,7 +104,7 @@
 <main id="list"><div class="msg">Loading messages…</div></main>
 <footer>
   Shared list — checks sync for everyone via Supabase Realtime. New sermons are added automatically each week from the church’s media feeds.
-  Archive covers 2013–present. Titles &amp; dates come from churchofthehighlands.com; items marked
+  Archive covers 2013–present, plus early services (2002+) added from the church media file library — those show a 📁 line with the exact source video file. Titles &amp; dates come from churchofthehighlands.com; items marked
   <span class="tag unc" style="vertical-align:baseline">⚠ unverified</span> have a confirmed date but a speaker we haven’t individually verified yet.
   <br>“Search inside sermons” finds phrases actually said in transcribed messages (powered by open-source Whisper; a few messages transcribed so far).
   Source: churchofthehighlands.com.
@@ -112,7 +117,7 @@ const SUPABASE_KEY = "sb_publishable_4_xgRNDnzXimaykbC6YBwg_E2aYxgzz";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const MONTHS=["","January","February","March","April","May","June","July","August","September","October","November","December"];
-const KIND_LABEL={sun:'Sunday',fw:'1st Wed',motion:'Motion'};
+const KIND_LABEL={sun:'Sunday',fw:'1st Wed',motion:'Motion',wed:'Wednesday',misc:'Special'};
 let SERMONS=[];                 // full list
 let CHECKED=new Set();          // sermon_ids that are checked
 let HAS_TRANSCRIPT=new Set();   // sermon_ids that have a transcript available
@@ -158,7 +163,7 @@ function render(){
     const done=CHECKED.has(s.id);
     if(status==="done" && !done) return false;
     if(status==="todo" && done) return false;
-    if(q && !(s.title.toLowerCase().includes(q)||s.speaker.toLowerCase().includes(q))) return false;
+    if(q && !(s.title.toLowerCase().includes(q)||s.speaker.toLowerCase().includes(q)||(s.series||'').toLowerCase().includes(q))) return false;
     return true;
   });
 
@@ -180,6 +185,8 @@ function render(){
         const who = (s.speaker && s.speaker!=='(unconfirmed)')
           ? esc(s.speaker)
           : '<em>speaker not confirmed</em>';
+        const series = s.series ? ' · '+esc(s.series) : '';
+        const file = s.source_file ? `<span class="file">📁 ${esc(s.source_file)}</span>` : '';
         const flag = uncertain ? '<span class="tag unc" title="Date confirmed from the church site; speaker not yet verified">⚠ unverified</span>' : '';
         const dl = HAS_TRANSCRIPT.has(s.id)
           ? `<button type="button" class="dlbtn" data-dl="${s.id.replace(/"/g,'&quot;')}" title="Download the transcript as a text file">⬇ Transcript</button>`
@@ -188,7 +195,7 @@ function render(){
           <input type="checkbox" data-id="${s.id.replace(/"/g,'&quot;')}" ${done?'checked':''}>
           <span class="meta">
             <span class="title">${esc(s.title)}<span class="tag ${s.kind}">${KIND_LABEL[s.kind]||s.kind}</span>${flag}${dl}</span>
-            <span class="who">${who}</span>
+            <span class="who">${who}${series}${file}</span>
           </span></label>`;
       }
       html+=`<div class="month">${MONTHS[m]}</div><div class="card">${inner}</div>`;
@@ -254,7 +261,7 @@ listEl.addEventListener('click',async e=>{
 // ---- initial load ----
 async function load(){
   const [{data:sermons,error:e1},{data:checks,error:e2},{data:trans}] = await Promise.all([
-    sb.from('highlands_sermons').select('id,year,month,title,speaker,kind,sort_key,confidence').order('sort_key',{ascending:false}),
+    sb.from('highlands_sermons').select('id,year,month,title,speaker,kind,series,sort_key,confidence,source_file').order('sort_key',{ascending:false}),
     sb.from('highlands_checks').select('sermon_id').eq('checked',true),
     sb.from('highlands_transcripts').select('sermon_id')   // which sermons have a transcript
   ]);
