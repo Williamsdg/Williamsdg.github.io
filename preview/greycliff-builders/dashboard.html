@@ -4,14 +4,143 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>The Site Office · Greycliff Builders</title>
-<meta name="description" content="The Site Office — Greycliff Builders' superintendent and operations dashboard. Project overview, daily logs, photos, change orders, contractors, scheduling, budget, and warranty in one place." />
+<meta name="description" content="The Site Office — Greycliff Builders' command center. Today's priorities, project health, client communication, change orders, financials, permits, trade partners, and the Site Office assistant in one place." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="_dashboard.css">
 <style>
-/* dashboard.html — page-specific overrides only (currently none) */
-.__placeholder__{display:none}
+/* dashboard.html — command-center components */
+
+/* ---- Today's Priorities strip ---- */
+.prio-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.prio{display:block;background:var(--paper);border:1px solid var(--line-soft);border-radius:6px;padding:16px 16px 14px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;color:inherit}
+.prio::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--sage)}
+.prio.warn::after{background:var(--warn)}
+.prio.alert::after{background:var(--rust)}
+.prio:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(42,38,32,.08)}
+.prio-count{font-family:'Fraunces',serif;font-size:30px;font-weight:300;line-height:1;color:var(--ink)}
+.prio-label{font-size:11px;font-weight:600;color:var(--ink-2);margin-top:8px;line-height:1.35}
+.prio-hint{font-size:10.5px;color:var(--mute);margin-top:4px}
+.prio-go{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--sage-deep);margin-top:10px;display:block}
+.prio.warn .prio-go{color:#7a5a18}
+.prio.alert .prio-go{color:#7a3c25}
+@media (max-width:1200px){.prio-row{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:700px){.prio-row{grid-template-columns:1fr 1fr}}
+
+/* ---- health dots ---- */
+.hdot{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.hdot::before{content:"";width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.hdot.ok::before{background:var(--sage-deep);box-shadow:0 0 0 3px var(--sage-pale)}
+.hdot.warn::before{background:var(--warn);box-shadow:0 0 0 3px var(--warn-pale)}
+.hdot.alert::before{background:var(--rust);box-shadow:0 0 0 3px var(--rust-pale)}
+
+/* ---- weather impact ---- */
+.wx-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:16px 22px 6px}
+.wx-day{background:var(--bone);border:1px solid var(--line-soft);border-radius:6px;padding:10px 6px;text-align:center}
+.wx-day.bad{background:var(--rust-pale);border-color:rgba(168,85,58,.3)}
+.wx-day .d{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.wx-day .i{font-size:18px;margin:4px 0 2px}
+.wx-day .t{font-size:11px;font-weight:600;color:var(--ink-2)}
+.wx-block{padding:12px 22px 6px}
+.wx-block .lbl{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:8px}
+.wx-item{display:flex;gap:10px;font-size:12.5px;color:var(--ink-2);padding:5px 0;line-height:1.45}
+.wx-item::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--rust);margin-top:6px;flex-shrink:0}
+.wx-item.act::before{background:var(--sage-deep)}
+
+/* ---- communication hub ---- */
+.q{display:flex;gap:14px;padding:16px 22px;border-bottom:1px solid var(--line-soft);align-items:flex-start}
+.q:last-child{border-bottom:none}
+.q-avatar{width:36px;height:36px;border-radius:50%;background:var(--sage-pale);color:var(--sage-deep);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.q-avatar.b{background:var(--warn-pale);color:#7a5a18}
+.q-avatar.c{background:var(--rust-pale);color:#7a3c25}
+.q-avatar.d{background:var(--bone);color:var(--ink-2)}
+.q-body{flex:1;min-width:0}
+.q-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.q-name{font-size:12.5px;font-weight:600;color:var(--ink)}
+.q-name small{color:var(--mute);font-weight:400}
+.q-when{font-size:10.5px;color:var(--mute);white-space:nowrap}
+.q-when.late{color:#7a3c25;font-weight:700}
+.q-text{font-size:13px;color:var(--ink-2);margin-top:4px;line-height:1.5;font-style:italic}
+.q-actions{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.mini-btn{padding:5px 12px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:4px;border:1px solid var(--line);background:var(--paper);color:var(--ink-2);cursor:pointer}
+.mini-btn:hover{background:var(--bone)}
+.mini-btn.fill{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.mini-btn.fill:hover{background:var(--sage-deep);border-color:var(--sage-deep)}
+
+/* ---- change order center ---- */
+.co{display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:15px 22px;border-bottom:1px solid var(--line-soft)}
+.co:last-child{border-bottom:none}
+.co-num{font-size:10px;letter-spacing:.14em;font-weight:700;color:var(--mute);background:var(--bone);padding:4px 8px;border-radius:4px}
+.co-desc strong{display:block;font-size:13px;font-weight:600;color:var(--ink)}
+.co-desc small{font-size:11px;color:var(--mute)}
+.co-impact{font-family:'Fraunces',serif;font-size:16px;color:var(--ink);text-align:right}
+.co-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 22px;background:var(--bone);border-top:1px solid var(--line-soft);font-size:11px;color:var(--mute);flex-wrap:wrap}
+.co-actions{display:flex;gap:6px;grid-column:1 / -1;flex-wrap:wrap}
+@media (max-width:900px){.co{grid-template-columns:1fr;gap:8px}.co-impact{text-align:left}}
+
+/* map card fills column height */
+#health .card:last-child{display:flex;flex-direction:column}
+#health .card:last-child .map{flex:1}
+
+/* ---- financial snapshot ---- */
+.fin .kpi{background:var(--bone)}
+
+/* ---- agenda ---- */
+.agenda-row{display:flex;gap:14px;padding:13px 22px;border-bottom:1px solid var(--line-soft);align-items:center;font-size:13px}
+.agenda-row:last-child{border-bottom:none}
+.agenda-row.hide{display:none}
+.agenda-date{width:64px;flex-shrink:0}
+.agenda-date .dow{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.agenda-date .dnum{font-family:'Fraunces',serif;font-size:19px;color:var(--ink)}
+.agenda-what{flex:1;min-width:0}
+.agenda-what strong{font-weight:600;color:var(--ink);font-size:13px}
+.agenda-what small{display:block;font-size:11px;color:var(--mute);margin-top:1px}
+
+/* ---- trade partner status steps ---- */
+.steps{display:flex;gap:4px;align-items:center}
+.step{font-size:9px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--bone);color:var(--mute);border:1px solid var(--line-soft)}
+.step.on{background:var(--sage-pale);color:var(--sage-deep);border-color:transparent}
+.step.now{background:var(--ink);color:var(--paper);border-color:transparent}
+.sub-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:14px 22px;border-bottom:1px solid var(--line-soft);align-items:center}
+.sub-row:last-child{border-bottom:none}
+.sub-row .who strong{display:block;font-size:13px;font-weight:600;color:var(--ink)}
+.sub-row .who small{font-size:11px;color:var(--mute)}
+@media (max-width:700px){.sub-row{grid-template-columns:1fr}.steps{flex-wrap:wrap}}
+
+/* ---- photo stage chips ---- */
+.stage-chips{display:flex;gap:6px;padding:14px 22px 0;flex-wrap:wrap}
+.stage-chip{padding:5px 12px;font-size:10.5px;font-weight:700;letter-spacing:.05em;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink-2);cursor:pointer}
+.stage-chip.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.photo.hide{display:none}
+.photo-note{padding:0 22px 18px;font-size:11px;color:var(--mute)}
+.photo-note strong{color:var(--sage-deep)}
+
+/* ---- assistant ---- */
+.assist{background:var(--ink);border-radius:6px;overflow:hidden;color:rgba(244,241,234,.85)}
+.assist-inner{padding:26px 30px;display:grid;grid-template-columns:1.5fr 1fr;gap:28px}
+@media (max-width:1000px){.assist-inner{grid-template-columns:1fr}}
+.assist-tag{font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--tan);font-weight:700}
+.assist-title{font-family:'Fraunces',serif;font-size:24px;font-weight:300;color:var(--paper);margin-top:6px}
+.assist-title em{font-style:italic;color:var(--tan)}
+.assist-input{display:flex;gap:10px;margin-top:18px}
+.assist-input input{flex:1;padding:12px 16px;background:rgba(244,241,234,.08);border:1px solid rgba(244,241,234,.18);border-radius:6px;font-size:13px;color:var(--paper);font-family:'Inter',sans-serif}
+.assist-input input::placeholder{color:rgba(244,241,234,.4)}
+.assist-input button{padding:12px 20px;background:var(--tan);color:var(--ink);border:none;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.assist-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.assist-chip{padding:7px 14px;font-size:11.5px;border-radius:999px;border:1px solid rgba(244,241,234,.22);background:transparent;color:rgba(244,241,234,.8);cursor:pointer;font-family:'Inter',sans-serif}
+.assist-chip:hover{background:rgba(244,241,234,.1);color:var(--paper)}
+.assist-answer{margin-top:16px;padding:16px 18px;background:rgba(244,241,234,.06);border-left:3px solid var(--tan);border-radius:0 6px 6px 0;font-size:13px;line-height:1.6;display:none}
+.assist-answer.show{display:block}
+.assist-side{background:rgba(244,241,234,.06);border:1px solid rgba(244,241,234,.12);border-radius:6px;padding:20px 22px;align-self:start}
+.assist-side .lbl{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--tan);font-weight:700}
+.assist-side h3{font-family:'Fraunces',serif;font-size:18px;font-weight:400;color:var(--paper);margin:8px 0 6px}
+.assist-side p{font-size:12px;line-height:1.55;color:rgba(244,241,234,.7)}
+.assist-side .bar{height:6px;background:rgba(244,241,234,.12);border-radius:3px;margin:14px 0 6px;overflow:hidden}
+.assist-side .bar span{display:block;height:100%;width:57%;background:var(--tan);border-radius:3px}
+.assist-side .bar-lbl{font-size:10.5px;color:rgba(244,241,234,.55)}
+.assist-side a{display:inline-block;margin-top:14px;padding:10px 18px;background:var(--paper);color:var(--ink);border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.assist-side a:hover{background:var(--tan)}
 </style>
 </head>
 <body>
@@ -30,9 +159,9 @@
       <div class="top-brand-mobile"><span class="mark">G</span>Greycliff <em>Builders</em></div>
       <div class="top-search"><input type="text" placeholder="Search builds, contractors, change orders…"></div>
       <div class="top-actions">
-        <div class="top-pill">All systems on schedule</div>
+        <div class="top-pill">6 of 7 on schedule</div>
         <button class="top-icon" data-desktop>⏱<span class="badge">7</span></button>
-        <button class="top-icon">✉<span class="badge">3</span></button>
+        <button class="top-icon">✉<span class="badge">4</span></button>
         <button class="top-cta">+ New Daily Log</button>
       </div>
     </div>
@@ -43,7 +172,7 @@
       <div class="page-title-row">
         <div>
           <h1 class="page-title">Good morning, <em>Wes.</em></h1>
-          <div class="page-sub">Seven builds active. Three change orders pending owner sign. Friday Letters go out by 5pm — you've drafted four of seven.</div>
+          <div class="page-sub">Six things need your attention today. Work the strip below top-left to bottom-right and you're clear by lunch.</div>
         </div>
         <div class="page-meta">
           <div><strong>$8.42M</strong> active build value</div>
@@ -56,36 +185,47 @@
     <!-- BODY -->
     <div class="page-body">
 
-      <!-- KPI ROW -->
-      <div class="kpi-row">
-        <div class="kpi">
-          <div class="kpi-label">Active Builds</div>
-          <div class="kpi-value">7</div>
-          <div class="kpi-trend"><span class="up">+1</span> from last month · 2 closing in 60 days</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">On Schedule</div>
-          <div class="kpi-value">6<small>/ 7</small></div>
-          <div class="kpi-trend">Old Leeds Way <span class="down">−5d</span> on drywall</div>
-        </div>
-        <div class="kpi warn">
-          <div class="kpi-label">Open Change Orders</div>
-          <div class="kpi-value">3</div>
-          <div class="kpi-trend">$11,840 net · 2 awaiting owner sign</div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-label">Budget Health</div>
-          <div class="kpi-value">98<small>%</small></div>
-          <div class="kpi-trend">$164k aggregate allowance buffer</div>
-        </div>
-        <div class="kpi alert">
-          <div class="kpi-label">Open Punch Items</div>
-          <div class="kpi-value">14</div>
-          <div class="kpi-trend">5 at Sycamore (closing) · 9 at Brook</div>
-        </div>
+      <!-- TODAY'S PRIORITIES — the command strip -->
+      <div class="prio-row">
+        <a class="prio alert" href="#co-center">
+          <div class="prio-count">3</div>
+          <div class="prio-label">Change orders awaiting signature</div>
+          <div class="prio-hint">$11,840 net · CO-014 has 3 days of float</div>
+          <span class="prio-go">Work them →</span>
+        </a>
+        <a class="prio warn" href="selections.html">
+          <div class="prio-count">5</div>
+          <div class="prio-label">Client decisions due this week</div>
+          <div class="prio-hint">Whitlow tile · Agrawal paint · 3 more</div>
+          <span class="prio-go">Selections →</span>
+        </a>
+        <a class="prio alert" href="#finance">
+          <div class="prio-count">2</div>
+          <div class="prio-label">Draws overdue</div>
+          <div class="prio-hint">$184k outstanding · oldest 9 days</div>
+          <span class="prio-go">Collect →</span>
+        </a>
+        <a class="prio warn" href="#health">
+          <div class="prio-count">1</div>
+          <div class="prio-label">Build behind schedule</div>
+          <div class="prio-hint">Old Leeds −5d · recovery plan filed</div>
+          <span class="prio-go">Review →</span>
+        </a>
+        <a class="prio warn" href="#comms">
+          <div class="prio-count">4</div>
+          <div class="prio-label">Unanswered client messages</div>
+          <div class="prio-hint">Oldest: Janie Calhoun · 2 days</div>
+          <span class="prio-go">Reply →</span>
+        </a>
+        <a class="prio" href="#permits">
+          <div class="prio-count">2</div>
+          <div class="prio-label">Permits pending</div>
+          <div class="prio-hint">Russet variance Jun 4 · Cahaba electrical</div>
+          <span class="prio-go">Track →</span>
+        </a>
       </div>
 
-      <!-- AI summary + map -->
+      <!-- AI brief + weather impact -->
       <div class="grid-2">
         <div class="ai">
           <div class="ai-head">
@@ -107,10 +247,116 @@
         <div class="card">
           <div class="card-head">
             <div>
+              <div class="card-title">Weather <em>impact</em></div>
+              <div class="card-sub">Storm system tracking Wed–Thu · 1.4" expected</div>
+            </div>
+            <span class="chip warn">2 builds affected</span>
+          </div>
+          <div class="wx-strip">
+            <div class="wx-day"><div class="d">Fri</div><div class="i">☀</div><div class="t">71°</div></div>
+            <div class="wx-day"><div class="d">Sat</div><div class="i">☀</div><div class="t">74°</div></div>
+            <div class="wx-day"><div class="d">Mon</div><div class="i">⛅</div><div class="t">76°</div></div>
+            <div class="wx-day"><div class="d">Tue</div><div class="i">⛅</div><div class="t">75°</div></div>
+            <div class="wx-day bad"><div class="d">Wed</div><div class="i">🌧</div><div class="t">66°</div></div>
+            <div class="wx-day bad"><div class="d">Thu</div><div class="i">🌧</div><div class="t">64°</div></div>
+          </div>
+          <div class="wx-block">
+            <div class="lbl">Potential impacts</div>
+            <div class="wx-item">Cahaba roof dry-in must button up Tuesday or the deck sits open in rain</div>
+            <div class="wx-item">Old Leeds exterior paint slips ~2 days if Riverside stays outside</div>
+          </div>
+          <div class="wx-block" style="padding-bottom:20px">
+            <div class="lbl">Recommended moves</div>
+            <div class="wx-item act">Pull Cahaba dry-in forward — already noted in today's log ✓</div>
+            <div class="wx-item act">Move Riverside crew inside Old Leeds Wed–Thu (texture + trim)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJECT HEALTH -->
+      <div class="grid-2" id="health">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Project <em>health</em></div>
+              <div class="card-sub">One glance, seven builds · budget, schedule, and how the client feels</div>
+            </div>
+            <a href="builds.html" class="card-action">All builds →</a>
+          </div>
+          <div class="card-body flush">
+            <table class="builds">
+              <thead>
+                <tr><th>Build</th><th>Stage</th><th>Budget</th><th>Schedule</th><th>Client</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><div class="build-name">Cahaba Ridge House</div><div class="build-loc">Whitlows · roofing starts today</div></td>
+                  <td data-label="Stage"><span class="chip ok">Roofing</span></td>
+                  <td data-label="Budget"><span class="hdot ok">98%</span></td>
+                  <td data-label="Schedule"><span class="hdot ok">On date</span></td>
+                  <td data-label="Client"><span class="hdot ok">Happy</span></td>
+                  <td><div class="row-actions"><a class="icon-btn" href="build-cahaba-ridge.html">↗</a></div></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name">Pine Point</div><div class="build-loc">Holloway · owners visit Wed</div></td>
+                  <td data-label="Stage"><span class="chip ok">HVAC</span></td>
+                  <td data-label="Budget"><span class="hdot ok">96%</span></td>
+                  <td data-label="Schedule"><span class="hdot ok">On date</span></td>
+                  <td data-label="Client"><span class="hdot warn">Waiting on plans</span></td>
+                  <td><div class="row-actions"><a class="icon-btn" href="builds.html">↗</a></div></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name">Old Leeds Way</div><div class="build-loc">Agrawal · recovery plan in motion</div></td>
+                  <td data-label="Stage"><span class="chip warn">Drywall</span></td>
+                  <td data-label="Budget"><span class="hdot warn">94%</span></td>
+                  <td data-label="Schedule"><span class="hdot alert">−5 days</span></td>
+                  <td data-label="Client"><span class="hdot ok">Informed</span></td>
+                  <td><div class="row-actions"><a class="icon-btn" href="builds.html">↗</a></div></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name">The Sycamore House</div><div class="build-loc">Pendletons · sign-off Jun 1</div></td>
+                  <td data-label="Stage"><span class="chip dark">Final Punch</span></td>
+                  <td data-label="Budget"><span class="hdot ok">Final</span></td>
+                  <td data-label="Schedule"><span class="hdot ok">On date</span></td>
+                  <td data-label="Client"><span class="hdot warn">Warranty ticket</span></td>
+                  <td><div class="row-actions"><a class="icon-btn" href="punch-lists.html">↗</a></div></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name">Russet Lane Addition</div><div class="build-loc">Calhouns · variance Jun 4</div></td>
+                  <td data-label="Stage"><span class="chip alert">Permits</span></td>
+                  <td data-label="Budget"><span class="hdot ok">Pre</span></td>
+                  <td data-label="Schedule"><span class="hdot warn">Permit hold</span></td>
+                  <td data-label="Client"><span class="hdot warn">Disappointed</span></td>
+                  <td><div class="row-actions"><a class="icon-btn" href="builds.html">↗</a></div></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name">The Brook House</div><div class="build-loc">Agrawal · warranty year 2</div></td>
+                  <td data-label="Stage"><span class="chip ok">Warranty</span></td>
+                  <td data-label="Budget"><span class="hdot ok">—</span></td>
+                  <td data-label="Schedule"><span class="hdot ok">Walk 6/12</span></td>
+                  <td data-label="Client"><span class="hdot ok">Happy</span></td>
+                  <td><div class="row-actions"><a class="icon-btn" href="warranty.html">↗</a></div></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name">Pine Bluff Estate</div><div class="build-loc">Holloway · closed 2024</div></td>
+                  <td data-label="Stage"><span class="chip dark">Complete</span></td>
+                  <td data-label="Budget"><span class="hdot ok">—</span></td>
+                  <td data-label="Schedule"><span class="hdot ok">—</span></td>
+                  <td data-label="Client"><span class="hdot ok">Referring</span></td>
+                  <td><div class="row-actions"><a class="icon-btn" href="warranty.html">↗</a></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
               <div class="card-title">Active builds, <em>on the map</em></div>
               <div class="card-sub">Click a pin to open its job site</div>
             </div>
-            <a href="#" class="card-action">Full map →</a>
+            <a href="builds.html" class="card-action">Full map →</a>
           </div>
           <div class="map">
             <div class="map-pin" style="top:22%;left:18%"><div class="map-pin-dot ok"></div><div class="map-pin-label">Cahaba Ridge</div></div>
@@ -124,675 +370,354 @@
         </div>
       </div>
 
-      <!-- builds table -->
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">All <em>active builds</em></div>
-            <div class="card-sub">Sorted by closing date · click any row to open</div>
-          </div>
-          <a href="#" class="card-action">+ New Build</a>
-        </div>
-        <div class="card-body flush">
-          <table class="builds">
-            <thead>
-              <tr>
-                <th>Build</th>
-                <th>Stage</th>
-                <th>Progress</th>
-                <th>Closing</th>
-                <th>Budget</th>
-                <th>Issues</th>
-                <th>Owner</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <div class="build-name">Cahaba Ridge House</div>
-                  <div class="build-loc">Mountain Brook · Build 24</div>
-                </td>
-                <td><span class="chip ok">Roofing</span></td>
-                <td>
-                  <div class="build-stage-cell">
-                    <div class="progress"><span style="width:52%"></span></div>
-                    <span class="pct">52%</span>
-                  </div>
-                </td>
-                <td>Apr 18, 2026</td>
-                <td>$1.84M · 98%</td>
-                <td><span class="chip warn">1 CO</span></td>
-                <td>The Whitlows</td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="build-name">Pine Point</div>
-                  <div class="build-loc">Lake Martin · Build 23</div>
-                </td>
-                <td><span class="chip ok">HVAC</span></td>
-                <td>
-                  <div class="build-stage-cell">
-                    <div class="progress"><span style="width:68%"></span></div>
-                    <span class="pct">68%</span>
-                  </div>
-                </td>
-                <td>Jun 30, 2026</td>
-                <td>$1.12M · 96%</td>
-                <td><span class="chip muted">Clear</span></td>
-                <td>Margaret Holloway</td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="build-name">Old Leeds Way</div>
-                  <div class="build-loc">Mountain Brook · Build 25</div>
-                </td>
-                <td><span class="chip warn">Drywall</span></td>
-                <td>
-                  <div class="build-stage-cell">
-                    <div class="progress warn"><span style="width:42%"></span></div>
-                    <span class="pct">42%</span>
-                  </div>
-                </td>
-                <td>Aug 22, 2026</td>
-                <td>$685k · 94%</td>
-                <td><span class="chip warn">5d behind</span></td>
-                <td>Drs. Agrawal</td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="build-name">The Sycamore House</div>
-                  <div class="build-loc">English Village · Build 22</div>
-                </td>
-                <td><span class="chip dark">Final Punch</span></td>
-                <td>
-                  <div class="build-stage-cell">
-                    <div class="progress"><span style="width:96%"></span></div>
-                    <span class="pct">96%</span>
-                  </div>
-                </td>
-                <td>Closed Mar 4</td>
-                <td>$1.42M · final</td>
-                <td><span class="chip alert">5 punch</span></td>
-                <td>The Pendletons</td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="build-name">The Brook House</div>
-                  <div class="build-loc">English Village · Build 21</div>
-                </td>
-                <td><span class="chip ok">Warranty Y2</span></td>
-                <td>
-                  <div class="build-stage-cell">
-                    <div class="progress"><span style="width:100%"></span></div>
-                    <span class="pct">100%</span>
-                  </div>
-                </td>
-                <td>Closed 2024</td>
-                <td>—</td>
-                <td><span class="chip muted">Walk 6/12</span></td>
-                <td>Drs. Agrawal</td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="build-name">Russet Lane Addition</div>
-                  <div class="build-loc">Crestline Village · Build 26</div>
-                </td>
-                <td><span class="chip alert">Permits</span></td>
-                <td>
-                  <div class="build-stage-cell">
-                    <div class="progress alert"><span style="width:8%"></span></div>
-                    <span class="pct">8%</span>
-                  </div>
-                </td>
-                <td>Dec 2026</td>
-                <td>$525k · pre</td>
-                <td><span class="chip alert">Permit hold</span></td>
-                <td>The Calhouns</td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="build-name">Pine Bluff Estate</div>
-                  <div class="build-loc">Lake Martin · Build 19</div>
-                </td>
-                <td><span class="chip dark">Completed</span></td>
-                <td>
-                  <div class="build-stage-cell">
-                    <div class="progress"><span style="width:100%"></span></div>
-                    <span class="pct">100%</span>
-                  </div>
-                </td>
-                <td>Closed 2024</td>
-                <td>—</td>
-                <td><span class="chip muted">Warranty</span></td>
-                <td>Margaret Holloway</td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- focused build: Cahaba Ridge -->
-      <div class="grid-1-2">
-        <!-- focused stage timeline -->
-        <div class="card">
+      <!-- COMMUNICATION HUB + CHANGE ORDER CENTER -->
+      <div class="grid-2-even">
+        <div class="card" id="comms">
           <div class="card-head">
             <div>
-              <div class="card-title">Cahaba Ridge · <em>stage timeline</em></div>
-              <div class="card-sub">16-stage build · 147 days in · 138 to go</div>
-            </div>
-            <a href="#" class="card-action">All builds →</a>
-          </div>
-          <div class="gantt">
-            <div class="gantt-row"><div class="gantt-stage">Permits</div><div class="gantt-dates">Jul 18</div><div class="gantt-track"><div class="gantt-bar done" style="left:0%;width:10%">Done</div></div><div class="gantt-marker ok">✓ on time</div></div>
-            <div class="gantt-row"><div class="gantt-stage">Site Prep</div><div class="gantt-dates">Aug 02</div><div class="gantt-track"><div class="gantt-bar done" style="left:10%;width:8%">Done</div></div><div class="gantt-marker ok">✓ −2d</div></div>
-            <div class="gantt-row"><div class="gantt-stage">Foundation</div><div class="gantt-dates">Aug–Sep</div><div class="gantt-track"><div class="gantt-bar done" style="left:18%;width:14%">Done</div></div><div class="gantt-marker ok">✓ on time</div></div>
-            <div class="gantt-row"><div class="gantt-stage">Framing</div><div class="gantt-dates">Sep–Dec</div><div class="gantt-track"><div class="gantt-bar done" style="left:32%;width:24%">Done</div></div><div class="gantt-marker ok">✓ +1d</div></div>
-            <div class="gantt-row"><div class="gantt-stage">Roofing</div><div class="gantt-dates">May 22 → Jun 14</div><div class="gantt-track"><div class="gantt-bar now" style="left:56%;width:10%">In progress</div></div><div class="gantt-marker warn">today</div></div>
-            <div class="gantt-row"><div class="gantt-stage">Electrical &amp; MEP</div><div class="gantt-dates">Jun–Aug</div><div class="gantt-track"><div class="gantt-bar planned" style="left:66%;width:14%">Planned</div></div><div class="gantt-marker">queued</div></div>
-            <div class="gantt-row"><div class="gantt-stage">Insulation &amp; Drywall</div><div class="gantt-dates">Aug–Oct</div><div class="gantt-track"><div class="gantt-bar planned" style="left:80%;width:10%">Planned</div></div><div class="gantt-marker">queued</div></div>
-            <div class="gantt-row"><div class="gantt-stage">Finish &amp; Cabinets</div><div class="gantt-dates">Oct–Feb</div><div class="gantt-track"><div class="gantt-bar planned" style="left:90%;width:10%">Planned</div></div><div class="gantt-marker">queued</div></div>
-          </div>
-        </div>
-
-        <!-- today / due / messages -->
-        <div style="display:flex;flex-direction:column;gap:18px">
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <div class="card-title">Today's <em>list</em></div>
-                <div class="card-sub">Yours, not anyone else's</div>
-              </div>
-              <a href="#" class="card-action">+ Task</a>
-            </div>
-            <div class="task-list">
-              <div class="task done">
-                <div class="task-check"></div>
-                <div class="task-text"><strong>Daily log · Cahaba Ridge</strong><small>Filed at 6:08 a.m. — 14 photos attached</small></div>
-                <div class="task-when">done</div>
-              </div>
-              <div class="task">
-                <div class="task-check"></div>
-                <div class="task-text"><strong>Draft Friday Letters</strong><small>4 of 7 written · target 5p send</small></div>
-                <div class="task-when warn">by 5p</div>
-              </div>
-              <div class="task">
-                <div class="task-check"></div>
-                <div class="task-text"><strong>Sign CO-014 with Whitlows</strong><small>Beadboard porch ceiling · +$4,820</small></div>
-                <div class="task-when warn">today</div>
-              </div>
-              <div class="task">
-                <div class="task-check"></div>
-                <div class="task-text"><strong>Call inspector re: Russet</strong><small>Variance still open — need Tuesday decision</small></div>
-                <div class="task-when alert">overdue</div>
-              </div>
-              <div class="task">
-                <div class="task-check"></div>
-                <div class="task-text"><strong>Approve Diego's punch on Sycamore</strong><small>Threshold settle + 4 paint touch-ups</small></div>
-                <div class="task-when">today</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <div class="card-title">Live <em>activity</em></div>
-                <div class="card-sub">All builds, last 12 hours</div>
-              </div>
-            </div>
-            <div class="feed">
-              <div class="feed-row">
-                <div class="feed-dot"></div>
-                <div class="feed-body">
-                  <div class="feed-msg"><strong>Marcus</strong> filed Old Leeds daily log · 9 photos · noted texture starts Mon.</div>
-                  <div class="feed-meta">Old Leeds Way · daily log</div>
-                </div>
-                <div class="feed-when">42m</div>
-              </div>
-              <div class="feed-row warn">
-                <div class="feed-dot"></div>
-                <div class="feed-body">
-                  <div class="feed-msg"><strong>Caroline Pendleton</strong> opened a warranty request — settling at foyer threshold.</div>
-                  <div class="feed-meta">Sycamore · warranty (Y1)</div>
-                </div>
-                <div class="feed-when">2h</div>
-              </div>
-              <div class="feed-row">
-                <div class="feed-dot"></div>
-                <div class="feed-body">
-                  <div class="feed-msg">Drexel Metals delivered <strong>1,840 lf copper standing seam</strong> to Cahaba.</div>
-                  <div class="feed-meta">Cahaba Ridge · materials</div>
-                </div>
-                <div class="feed-when">5h</div>
-              </div>
-              <div class="feed-row alert">
-                <div class="feed-dot"></div>
-                <div class="feed-body">
-                  <div class="feed-msg">Russet Lane variance hearing rescheduled to <strong>Jun 4</strong> — adds 9 days to permit window.</div>
-                  <div class="feed-meta">Russet Lane · permits</div>
-                </div>
-                <div class="feed-when">y'day</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- daily log + photos -->
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Daily log · <em>Cahaba Ridge</em></div>
-              <div class="card-sub">Filed by Wes Greycliff · 6:08 a.m.</div>
-            </div>
-            <a href="#" class="card-action">Edit log →</a>
-          </div>
-          <div class="log">
-            <div class="log-entry">
-              <div class="log-head">
-                <div class="log-date">Friday, <em>May 22</em></div>
-                <div class="log-meta">Day 147 of 285 · clear, 71°F</div>
-              </div>
-              <div class="log-grid">
-                <div class="log-cell"><div class="lbl">On Site</div><div class="val">Wes G. · Diego R. · Drexel crew (4) · Spectrum framing (2)</div></div>
-                <div class="log-cell"><div class="lbl">Deliveries</div><div class="val">Drexel — 1,840 lf copper standing seam · 8:14a</div></div>
-                <div class="log-cell"><div class="lbl">Inspections</div><div class="val">Pre-roof framing inspection — pass · Inspector Wallace</div></div>
-                <div class="log-cell"><div class="lbl">Safety</div><div class="val">All four roof crew tied off · harnesses checked</div></div>
-                <div class="log-cell"><div class="lbl">Hours</div><div class="val">7a–4p, half day Sat 7a–12</div></div>
-                <div class="log-cell"><div class="lbl">Client</div><div class="val">Will walk Whitlows through roof start at 4:30p</div></div>
-                <div class="log-cell"><div class="lbl">Delays</div><div class="val">None</div></div>
-                <div class="log-cell"><div class="lbl">Photos</div><div class="val">14 added → roof start, framing inspection, copper delivery</div></div>
-              </div>
-              <div class="log-note">Pre-roof inspection passed first time — no notes from Wallace, which is the first time that's happened on a Greycliff job this year. Crew is in a good rhythm. Two-day storm system tracking for Wed–Thu next week; pulling the dry-in forward to button up Tuesday.</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Photo journal · <em>this week</em></div>
-              <div class="card-sub">142 photos · 4 videos · all builds</div>
-            </div>
-            <a href="#" class="card-action">All photos →</a>
-          </div>
-          <div class="photos">
-            <div class="photo p1"><span>Roof start · Cahaba · today</span></div>
-            <div class="photo p2"><span>Copper delivery · Cahaba</span></div>
-            <div class="photo p3"><span>Drywall · Old Leeds · Thu</span></div>
-            <div class="photo p4"><span>Final walk · Sycamore</span></div>
-            <div class="photo p5"><span>Dock framing · Pine Point</span></div>
-            <div class="photo p6"><span>Inspection · Cahaba · 8a</span></div>
-            <div class="photo p7"><span>Drone · Pine Bluff · Wed</span></div>
-            <div class="photo p8"><span>Foyer mill · Sycamore</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- change orders + punch list -->
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Open <em>change orders</em></div>
-              <div class="card-sub">3 awaiting signature · $11,840 net impact</div>
-            </div>
-            <a href="#" class="card-action">+ New CO</a>
-          </div>
-          <div class="co-list">
-            <div class="co">
-              <div class="co-num">CO-014</div>
-              <div class="co-desc"><strong>Beadboard ceiling — screened porch</strong><small>Cahaba Ridge · Whitlows · requested by owner</small></div>
-              <div class="co-impact">+$4,820</div>
-              <div class="co-days"><strong>+3d</strong>schedule</div>
-              <div><span class="chip warn">Awaiting sign</span></div>
-            </div>
-            <div class="co">
-              <div class="co-num">CO-009</div>
-              <div class="co-desc"><strong>Upgrade master bath sconces</strong><small>Cahaba Ridge · Whitlows · Visual Comfort substitution</small></div>
-              <div class="co-impact">+$1,840</div>
-              <div class="co-days">no change</div>
-              <div><span class="chip warn">Awaiting sign</span></div>
-            </div>
-            <div class="co">
-              <div class="co-num">CO-007</div>
-              <div class="co-desc"><strong>Move laundry to butler's pantry wall</strong><small>Old Leeds Way · Agrawal · structural review needed</small></div>
-              <div class="co-impact">+$5,180</div>
-              <div class="co-days"><strong>+5d</strong>schedule</div>
-              <div><span class="chip muted">Estimating</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Punch list · <em>Sycamore (closing)</em></div>
-              <div class="card-sub">5 open · 28 completed · sign-off scheduled Jun 1</div>
-            </div>
-            <a href="#" class="card-action">+ Item</a>
-          </div>
-          <div class="punch">
-            <div class="punch-row">
-              <div class="punch-check"></div>
-              <div class="punch-text"><strong>Foyer threshold settling — 2mm</strong><small>Warranty request from Caroline · 2h ago</small></div>
-              <div class="punch-assignee">Diego R.</div>
-              <div><span class="chip warn">High</span></div>
-            </div>
-            <div class="punch-row">
-              <div class="punch-check"></div>
-              <div class="punch-text"><strong>Touch-up paint — primary closet, 3 spots</strong><small>Identified during 90-day walk</small></div>
-              <div class="punch-assignee">Riverside Paint</div>
-              <div><span class="chip muted">Med</span></div>
-            </div>
-            <div class="punch-row">
-              <div class="punch-check"></div>
-              <div class="punch-text"><strong>Hardware re-tighten — kitchen drawers</strong><small>Cabinets settling per Mason Manufacturing</small></div>
-              <div class="punch-assignee">Mason Cab.</div>
-              <div><span class="chip muted">Low</span></div>
-            </div>
-            <div class="punch-row">
-              <div class="punch-check"></div>
-              <div class="punch-text"><strong>Soft-water resin tank — check pressure</strong><small>Routine 90-day · per manufacturer</small></div>
-              <div class="punch-assignee">Magic City P.</div>
-              <div><span class="chip muted">Low</span></div>
-            </div>
-            <div class="punch-row">
-              <div class="punch-check"></div>
-              <div class="punch-text"><strong>Adjust pool skimmer — east edge</strong><small>Reported by Bill Pendleton via portal</small></div>
-              <div class="punch-assignee">Birmingham Pool</div>
-              <div><span class="chip warn">Med</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- budget + contractors -->
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Cahaba Ridge · <em>budget by category</em></div>
-              <div class="card-sub">$1.84M total · $1.81M committed · $32k allowance buffer</div>
-            </div>
-            <a href="#" class="card-action">Detail →</a>
-          </div>
-          <div class="budget-summary">
-            <div class="budget-stat">
-              <div class="lbl">Contract Value</div>
-              <div class="val">$1,840,000</div>
-              <div class="sub">Whitlows · GMP · executed Jul 2025</div>
-            </div>
-            <div class="budget-stat">
-              <div class="lbl">Committed to Date</div>
-              <div class="val">$1,808,000</div>
-              <div class="sub">98% · $32k buffer remaining</div>
-            </div>
-          </div>
-          <div class="budget-bars">
-            <div class="bbar"><div class="bbar-name">Foundation</div><div class="bbar-track"><div class="bbar-fill" style="width:100%"></div></div><div class="bbar-amt">$184k</div><div class="bbar-pct">100%</div></div>
-            <div class="bbar"><div class="bbar-name">Framing</div><div class="bbar-track"><div class="bbar-fill" style="width:100%"></div></div><div class="bbar-amt">$312k</div><div class="bbar-pct">100%</div></div>
-            <div class="bbar"><div class="bbar-name">Roofing</div><div class="bbar-track"><div class="bbar-fill" style="width:68%"></div></div><div class="bbar-amt">$96k</div><div class="bbar-pct">68%</div></div>
-            <div class="bbar"><div class="bbar-name">Plumbing &amp; HVAC</div><div class="bbar-track"><div class="bbar-fill" style="width:24%"></div></div><div class="bbar-amt">$54k</div><div class="bbar-pct">24%</div></div>
-            <div class="bbar"><div class="bbar-name">Electrical</div><div class="bbar-track"><div class="bbar-fill" style="width:18%"></div></div><div class="bbar-amt">$32k</div><div class="bbar-pct">18%</div></div>
-            <div class="bbar"><div class="bbar-name">Finishes &amp; Cabinets</div><div class="bbar-track"><div class="bbar-fill" style="width:8%"></div></div><div class="bbar-amt">$28k</div><div class="bbar-pct">8%</div></div>
-            <div class="bbar"><div class="bbar-name">Allowances</div><div class="bbar-track"><div class="bbar-fill warn" style="width:74%"></div></div><div class="bbar-amt">$148k</div><div class="bbar-pct">74%</div></div>
-            <div class="bbar"><div class="bbar-name">Overhead</div><div class="bbar-track"><div class="bbar-fill" style="width:52%"></div></div><div class="bbar-amt">$78k</div><div class="bbar-pct">52%</div></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Contractors · <em>this week</em></div>
-              <div class="card-sub">32 subs on payroll across active builds</div>
-            </div>
-            <a href="#" class="card-action">All subs →</a>
-          </div>
-          <div class="contractor-list">
-            <div class="contractor">
-              <div class="contractor-avatar">D</div>
-              <div>
-                <div class="contractor-name">Drexel Metals Co.</div>
-                <div class="contractor-trade">Roofing · Metal — 11 yrs with us</div>
-              </div>
-              <div class="contractor-rating"><span class="stars">★★★★★</span> 4.9</div>
-              <div class="contractor-meta"><strong>2 active</strong>Cahaba · Pine Bluff</div>
-              <div><span class="chip ok">Insured</span></div>
-            </div>
-            <div class="contractor">
-              <div class="contractor-avatar b">S</div>
-              <div>
-                <div class="contractor-name">Spectrum Framing</div>
-                <div class="contractor-trade">Framing — 14 yrs with us</div>
-              </div>
-              <div class="contractor-rating"><span class="stars">★★★★★</span> 4.8</div>
-              <div class="contractor-meta"><strong>3 active</strong>Cahaba · Pine Point · Russet</div>
-              <div><span class="chip ok">Insured</span></div>
-            </div>
-            <div class="contractor">
-              <div class="contractor-avatar c">M</div>
-              <div>
-                <div class="contractor-name">Magic City Plumbing</div>
-                <div class="contractor-trade">Plumbing — 9 yrs with us</div>
-              </div>
-              <div class="contractor-rating"><span class="stars">★★★★☆</span> 4.6</div>
-              <div class="contractor-meta"><strong>4 active</strong>3 builds + warranty</div>
-              <div><span class="chip ok">Insured</span></div>
-            </div>
-            <div class="contractor">
-              <div class="contractor-avatar d">R</div>
-              <div>
-                <div class="contractor-name">Riverside Paint Co.</div>
-                <div class="contractor-trade">Paint &amp; Finish — 6 yrs with us</div>
-              </div>
-              <div class="contractor-rating"><span class="stars">★★★★★</span> 4.9</div>
-              <div class="contractor-meta"><strong>1 active</strong>Sycamore punch</div>
-              <div><span class="chip warn">W-9 due</span></div>
-            </div>
-            <div class="contractor">
-              <div class="contractor-avatar">M</div>
-              <div>
-                <div class="contractor-name">Mason Manufacturing</div>
-                <div class="contractor-trade">Cabinets &amp; Millwork — 18 yrs</div>
-              </div>
-              <div class="contractor-rating"><span class="stars">★★★★★</span> 5.0</div>
-              <div class="contractor-meta"><strong>3 active</strong>shop fab + install</div>
-              <div><span class="chip ok">Insured</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- calendar + messages -->
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Calendar · <em>May 2026</em></div>
-              <div class="card-sub">Inspections · contractor blocks · client walks · closings</div>
-            </div>
-            <a href="#" class="card-action">Open full →</a>
-          </div>
-          <div class="cal">
-            <div class="cal-head">
-              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-            </div>
-            <div class="cal-grid">
-              <div class="cal-day muted"><div class="cal-day-num">26</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">27</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">28</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">29</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">30</div></div>
-              <div class="cal-day"><div class="cal-day-num">1</div></div>
-              <div class="cal-day"><div class="cal-day-num">2</div></div>
-
-              <div class="cal-day"><div class="cal-day-num">3</div></div>
-              <div class="cal-day"><div class="cal-day-num">4</div><div class="cal-event sage">Cabinet review · 10a</div></div>
-              <div class="cal-day"><div class="cal-day-num">5</div></div>
-              <div class="cal-day"><div class="cal-day-num">6</div><div class="cal-event tan">Drywall · Old Leeds</div></div>
-              <div class="cal-day"><div class="cal-day-num">7</div></div>
-              <div class="cal-day"><div class="cal-day-num">8</div><div class="cal-event">Friday Letter</div></div>
-              <div class="cal-day"><div class="cal-day-num">9</div></div>
-
-              <div class="cal-day"><div class="cal-day-num">10</div></div>
-              <div class="cal-day"><div class="cal-day-num">11</div><div class="cal-event sage">Selections · Whitlows</div></div>
-              <div class="cal-day"><div class="cal-day-num">12</div></div>
-              <div class="cal-day"><div class="cal-day-num">13</div><div class="cal-event rust">Variance hrng</div></div>
-              <div class="cal-day"><div class="cal-day-num">14</div></div>
-              <div class="cal-day"><div class="cal-day-num">15</div><div class="cal-event">Friday Letter</div></div>
-              <div class="cal-day"><div class="cal-day-num">16</div></div>
-
-              <div class="cal-day"><div class="cal-day-num">17</div></div>
-              <div class="cal-day"><div class="cal-day-num">18</div><div class="cal-event tan">Pine Point HVAC</div></div>
-              <div class="cal-day"><div class="cal-day-num">19</div><div class="cal-event sage">Sycamore 90d walk</div></div>
-              <div class="cal-day"><div class="cal-day-num">20</div></div>
-              <div class="cal-day"><div class="cal-day-num">21</div><div class="cal-event sage">Inspection · Cahaba</div></div>
-              <div class="cal-day today"><div class="cal-day-num">22</div><div class="cal-event">Roof start</div><div class="cal-event">Friday Letters</div></div>
-              <div class="cal-day"><div class="cal-day-num">23</div><div class="cal-event">Half day · roof</div></div>
-
-              <div class="cal-day"><div class="cal-day-num">24</div></div>
-              <div class="cal-day"><div class="cal-day-num">25</div><div class="cal-event sage">Holloways visit</div></div>
-              <div class="cal-day"><div class="cal-day-num">26</div></div>
-              <div class="cal-day"><div class="cal-day-num">27</div><div class="cal-event rust">Storm window</div></div>
-              <div class="cal-day"><div class="cal-day-num">28</div><div class="cal-event rust">Storm</div></div>
-              <div class="cal-day"><div class="cal-day-num">29</div><div class="cal-event">Friday Letter</div></div>
-              <div class="cal-day"><div class="cal-day-num">30</div></div>
-
-              <div class="cal-day"><div class="cal-day-num">31</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">1</div><div class="cal-event sage">Sycamore signoff</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">2</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">3</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">4</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">5</div></div>
-              <div class="cal-day muted"><div class="cal-day-num">6</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Recent <em>messages</em></div>
-              <div class="card-sub">3 unread · across builds</div>
+              <div class="card-title">Needs a <em>reply</em></div>
+              <div class="card-sub">4 client messages waiting — instead of hunting through email and texts</div>
             </div>
             <a href="#" class="card-action">Inbox →</a>
           </div>
-          <div class="msg-list">
-            <div class="msg">
-              <div class="msg-avatar">CW</div>
-              <div class="msg-body">
-                <div class="msg-head">
-                  <div class="msg-name">Carter Whitlow <small>· Cahaba Ridge · owner</small></div>
-                  <div class="msg-when">28m</div>
-                </div>
-                <div class="msg-text">Beadboard CO looks good — we'll sign tonight. Quick Q: can we walk the roof Saturday morning before crew arrives?</div>
-                <div class="msg-thread">Re: CO-014 · 4 messages</div>
+          <div>
+            <div class="q">
+              <div class="q-avatar">CW</div>
+              <div class="q-body">
+                <div class="q-head"><div class="q-name">Carter Whitlow <small>· Cahaba Ridge</small></div><div class="q-when">28m</div></div>
+                <div class="q-text">"Can we walk the roof Saturday morning before crew arrives?"</div>
+                <div class="q-actions"><button class="mini-btn fill">Reply</button><button class="mini-btn">Draft with AI</button><span class="chip ok">Signing CO tonight</span></div>
               </div>
             </div>
-            <div class="msg">
-              <div class="msg-avatar b">CP</div>
-              <div class="msg-body">
-                <div class="msg-head">
-                  <div class="msg-name">Caroline Pendleton <small>· Sycamore · owner</small></div>
-                  <div class="msg-when">2h</div>
-                </div>
-                <div class="msg-text">Submitted a warranty ticket for the foyer threshold — it's catching the rug. Probably tiny but you said tell you everything year one. So I am 😊</div>
-                <div class="msg-thread">New · warranty thread opened</div>
+            <div class="q">
+              <div class="q-avatar b">MH</div>
+              <div class="q-body">
+                <div class="q-head"><div class="q-name">Margaret Holloway <small>· Pine Point</small></div><div class="q-when">1d</div></div>
+                <div class="q-text">"Can you send the updated dock plans before we fly in Monday?"</div>
+                <div class="q-actions"><button class="mini-btn fill">Reply</button><button class="mini-btn">Attach plans</button></div>
               </div>
             </div>
-            <div class="msg">
-              <div class="msg-avatar c">MM</div>
-              <div class="msg-body">
-                <div class="msg-head">
-                  <div class="msg-name">Marcus Mills <small>· Old Leeds · superintendent</small></div>
-                  <div class="msg-when">y'day</div>
-                </div>
-                <div class="msg-text">Got a recovery plan landed for drywall. Pushed texture to Mon, scheduling Tue–Thu — we hit June 4 if Riverside can give me two crews.</div>
-                <div class="msg-thread">Re: drywall slip · 7 messages</div>
+            <div class="q">
+              <div class="q-avatar c">CP</div>
+              <div class="q-body">
+                <div class="q-head"><div class="q-name">Caroline Pendleton <small>· Sycamore</small></div><div class="q-when">2h</div></div>
+                <div class="q-text">"Submitted a warranty ticket for the foyer threshold — it's catching the rug."</div>
+                <div class="q-actions"><button class="mini-btn fill">Reply</button><button class="mini-btn">Assign to Diego</button></div>
               </div>
             </div>
-            <div class="msg">
-              <div class="msg-avatar">JC</div>
-              <div class="msg-body">
-                <div class="msg-head">
-                  <div class="msg-name">Janie Calhoun <small>· Russet Lane · owner</small></div>
-                  <div class="msg-when">2d</div>
-                </div>
-                <div class="msg-text">Heard variance moved to June. We're disappointed but understand — appreciate the heads up before I had to ask. Tell us what you need from us.</div>
-                <div class="msg-thread">Re: variance hearing</div>
+            <div class="q">
+              <div class="q-avatar d">JC</div>
+              <div class="q-body">
+                <div class="q-head"><div class="q-name">Janie Calhoun <small>· Russet Lane</small></div><div class="q-when late">2d — overdue</div></div>
+                <div class="q-text">"We're disappointed but understand. Tell us what you need from us."</div>
+                <div class="q-actions"><button class="mini-btn fill">Reply</button><button class="mini-btn">Draft with AI</button></div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="co-center">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Change order <em>center</em></div>
+              <div class="card-sub">This is where builders lose money · $11,840 unsigned</div>
+            </div>
+            <a href="change-orders.html" class="card-action">+ New CO</a>
+          </div>
+          <div>
+            <div class="co">
+              <div class="co-num">CO-014</div>
+              <div class="co-desc"><strong>Beadboard ceiling — screened porch</strong><small>Cahaba Ridge · Whitlows · +3d schedule · 3 days of float left</small></div>
+              <div class="co-impact">+$4,820</div>
+              <div><span class="chip warn co-status">Awaiting sign</span></div>
+              <div class="co-actions"><button class="mini-btn">Send reminder</button><button class="mini-btn">PDF</button><button class="mini-btn fill co-approve">Mark signed</button></div>
+            </div>
+            <div class="co">
+              <div class="co-num">CO-009</div>
+              <div class="co-desc"><strong>Upgrade master bath sconces</strong><small>Cahaba Ridge · Whitlows · no schedule change</small></div>
+              <div class="co-impact">+$1,840</div>
+              <div><span class="chip warn co-status">Awaiting sign</span></div>
+              <div class="co-actions"><button class="mini-btn">Send reminder</button><button class="mini-btn">PDF</button><button class="mini-btn fill co-approve">Mark signed</button></div>
+            </div>
+            <div class="co">
+              <div class="co-num">CO-007</div>
+              <div class="co-desc"><strong>Move laundry to butler's pantry wall</strong><small>Old Leeds Way · Agrawal · structural review needed · +5d</small></div>
+              <div class="co-impact">+$5,180</div>
+              <div><span class="chip muted co-status">Estimating</span></div>
+              <div class="co-actions"><button class="mini-btn">PDF</button><button class="mini-btn">Nudge engineer</button></div>
+            </div>
+            <div class="co">
+              <div class="co-num">CO-013</div>
+              <div class="co-desc"><strong>Dock lighting package</strong><small>Pine Point · Holloway · signed May 20</small></div>
+              <div class="co-impact">+$2,100</div>
+              <div><span class="chip ok co-status">Signed</span></div>
+              <div class="co-actions"><button class="mini-btn">PDF</button></div>
+            </div>
+          </div>
+          <div class="co-foot">
+            <span><strong>2 unsigned over 48 hours.</strong> A verbal yes is not an approval — get the signature before the work.</span>
+            <a href="change-orders.html" class="card-action">All change orders →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- FINANCIAL SNAPSHOT -->
+      <div class="card fin" id="finance">
+        <div class="card-head">
+          <div>
+            <div class="card-title">This month · <em>financial snapshot</em></div>
+            <div class="card-sub">May 2026 · across all active contracts</div>
+          </div>
+          <a href="budget.html" class="card-action">Budget &amp; draws →</a>
+        </div>
+        <div class="card-body">
+          <div class="kpi-row">
+            <div class="kpi">
+              <div class="kpi-label">Revenue Drawn</div>
+              <div class="kpi-value">$612<small>k</small></div>
+              <div class="kpi-trend"><span class="up">+9%</span> vs April · 4 draws funded</div>
+            </div>
+            <div class="kpi alert">
+              <div class="kpi-label">Outstanding Draws</div>
+              <div class="kpi-value">$184<small>k</small></div>
+              <div class="kpi-trend">2 overdue · Whitlow #6 is 9 days out</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Profit Margin</div>
+              <div class="kpi-value">18.2<small>%</small></div>
+              <div class="kpi-trend"><span class="up">+0.7</span> vs 17.5% target</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Active Contracts</div>
+              <div class="kpi-value">$8.42<small>M</small></div>
+              <div class="kpi-trend">7 builds · 2 closing in 60 days</div>
+            </div>
+            <div class="kpi warn">
+              <div class="kpi-label">Pending Draws</div>
+              <div class="kpi-value">3</div>
+              <div class="kpi-trend">$241k · submit Cahaba #7 after roof dry-in</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- bottom strip: company pipeline + view links -->
-      <div class="card">
-        <div class="card-head">
-          <div>
-            <div class="card-title">Pipeline · <em>2026–27 builds</em></div>
-            <div class="card-sub">Pre-construction conversations · feasibility · contracted but not started</div>
+      <!-- AGENDA + TRADE PARTNERS -->
+      <div class="grid-2">
+        <div class="card" id="agenda">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Coming <em>up</em></div>
+              <div class="card-sub">Out of your text messages and memory, onto one list</div>
+            </div>
+            <div class="toolbar-tabs">
+              <a href="#agenda" class="ag-tab" data-scope="today">Today</a>
+              <a href="#agenda" class="ag-tab active" data-scope="week">This Week</a>
+              <a href="#agenda" class="ag-tab" data-scope="month">This Month</a>
+            </div>
           </div>
-          <a href="#" class="card-action">All leads →</a>
+          <div>
+            <div class="agenda-row" data-scope="today">
+              <div class="agenda-date"><div class="dow">Fri</div><div class="dnum">22</div></div>
+              <div class="agenda-what"><strong>Roof start · Cahaba Ridge</strong><small>Drexel crew of 4 · copper standing seam · through Saturday</small></div>
+              <span class="chip dark">In progress</span>
+            </div>
+            <div class="agenda-row" data-scope="today">
+              <div class="agenda-date"><div class="dow">Fri</div><div class="dnum">22</div></div>
+              <div class="agenda-what"><strong>Whitlow walk · roof start</strong><small>Cahaba Ridge · 4:30p · Wes leads</small></div>
+              <span class="chip ok">Client</span>
+            </div>
+            <div class="agenda-row" data-scope="today">
+              <div class="agenda-date"><div class="dow">Fri</div><div class="dnum">22</div></div>
+              <div class="agenda-what"><strong>Friday Letters go out</strong><small>4 of 7 drafted · target 5:00p send</small></div>
+              <span class="chip warn">By 5p</span>
+            </div>
+            <div class="agenda-row" data-scope="week">
+              <div class="agenda-date"><div class="dow">Sat</div><div class="dnum">23</div></div>
+              <div class="agenda-what"><strong>Half-day roofing · Cahaba</strong><small>7a–12p · Whitlows may walk at 7a</small></div>
+              <span class="chip muted">Crew</span>
+            </div>
+            <div class="agenda-row" data-scope="week">
+              <div class="agenda-date"><div class="dow">Mon</div><div class="dnum">25</div></div>
+              <div class="agenda-what"><strong>Holloways arrive · Pine Point</strong><small>Dock framing walk · send updated plans first</small></div>
+              <span class="chip ok">Client</span>
+            </div>
+            <div class="agenda-row" data-scope="week">
+              <div class="agenda-date"><div class="dow">Tue</div><div class="dnum">26</div></div>
+              <div class="agenda-what"><strong>Cahaba roof dry-in complete</strong><small>Hard deadline — storm arrives Wednesday</small></div>
+              <span class="chip alert">Weather</span>
+            </div>
+            <div class="agenda-row" data-scope="week">
+              <div class="agenda-date"><div class="dow">Wed</div><div class="dnum">27</div></div>
+              <div class="agenda-what"><strong>Riverside crew moves inside</strong><small>Old Leeds · texture + trim during storm days</small></div>
+              <span class="chip muted">Trade</span>
+            </div>
+            <div class="agenda-row" data-scope="month">
+              <div class="agenda-date"><div class="dow">Jun</div><div class="dnum">1</div></div>
+              <div class="agenda-what"><strong>Sycamore final sign-off</strong><small>Pendletons · 5 punch items to close first</small></div>
+              <span class="chip dark">Closing</span>
+            </div>
+            <div class="agenda-row" data-scope="month">
+              <div class="agenda-date"><div class="dow">Jun</div><div class="dnum">2</div></div>
+              <div class="agenda-what"><strong>Drywall inspection · Old Leeds</strong><small>Recovery plan checkpoint — back on date Jun 4</small></div>
+              <span class="chip warn">Inspection</span>
+            </div>
+            <div class="agenda-row" data-scope="month">
+              <div class="agenda-date"><div class="dow">Jun</div><div class="dnum">4</div></div>
+              <div class="agenda-what"><strong>Russet Lane variance hearing</strong><small>City of Mountain Brook · Calhouns notified</small></div>
+              <span class="chip alert">Permit</span>
+            </div>
+            <div class="agenda-row" data-scope="month">
+              <div class="agenda-date"><div class="dow">Jun</div><div class="dnum">12</div></div>
+              <div class="agenda-what"><strong>Brook House warranty walk</strong><small>Year-2 · Drs. Agrawal</small></div>
+              <span class="chip muted">Warranty</span>
+            </div>
+          </div>
         </div>
-        <div class="card-body flush">
-          <table class="builds">
-            <thead>
-              <tr><th>Lead</th><th>Lane</th><th>Stage</th><th>Architect</th><th>Est. Value</th><th>Target Start</th><th>Status</th><th></th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><div class="build-name">The Caldwell House</div><div class="build-loc">Cahaba Heights · referral from Pendleton</div></td>
-                <td><span class="chip muted">Custom</span></td>
-                <td><span class="chip ok">GMP signed</span></td>
-                <td>Shepard &amp; Marsh</td>
-                <td>$1.65M</td>
-                <td>Aug 2026</td>
-                <td><span class="chip ok">Greenlight</span></td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-              <tr>
-                <td><div class="build-name">The Greene Compound</div><div class="build-loc">Russell Lands · Lake Martin</div></td>
-                <td><span class="chip dark">Estate</span></td>
-                <td><span class="chip warn">Feasibility</span></td>
-                <td>Doster &amp; Co.</td>
-                <td>$4.20M</td>
-                <td>Q1 2027</td>
-                <td><span class="chip warn">Land due-d</span></td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-              <tr>
-                <td><div class="build-name">Highland Avenue Reno</div><div class="build-loc">Highland Park · cold inquiry</div></td>
-                <td><span class="chip muted">Renovation</span></td>
-                <td><span class="chip muted">Site walk</span></td>
-                <td>TBD</td>
-                <td>$485k est.</td>
-                <td>Nov 2026</td>
-                <td><span class="chip muted">Reviewing</span></td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-              <tr>
-                <td><div class="build-name">Mountain Brook Carriage</div><div class="build-loc">Old Leeds adj · existing client</div></td>
-                <td><span class="chip muted">Custom</span></td>
-                <td><span class="chip ok">Design dev</span></td>
-                <td>Studio Brown</td>
-                <td>$840k</td>
-                <td>Oct 2026</td>
-                <td><span class="chip ok">Active</span></td>
-                <td><div class="row-actions"><button class="icon-btn">↗</button></div></td>
-              </tr>
-            </tbody>
-          </table>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Trade partners · <em>this week</em></div>
+              <div class="card-sub">Scheduled → confirmed → invoiced → paid</div>
+            </div>
+            <a href="contractors.html" class="card-action">All subs →</a>
+          </div>
+          <div>
+            <div class="sub-row">
+              <div class="who"><strong>Drexel Metals Co.</strong><small>Roofing · Cahaba Ridge · today–Sat · on site now</small></div>
+              <div class="steps"><span class="step on">Sched</span><span class="step now">Confirmed</span><span class="step">Invoice</span><span class="step">Paid</span></div>
+            </div>
+            <div class="sub-row">
+              <div class="who"><strong>Spectrum Framing</strong><small>Dock framing · Pine Point · Monday</small></div>
+              <div class="steps"><span class="step on">Sched</span><span class="step now">Confirmed</span><span class="step">Invoice</span><span class="step">Paid</span></div>
+            </div>
+            <div class="sub-row">
+              <div class="who"><strong>Riverside Paint Co.</strong><small>Texture · Old Leeds · Tue — 2nd crew unconfirmed</small></div>
+              <div class="steps"><span class="step now">Sched</span><span class="step">Confirmed</span><span class="step">Invoice</span><span class="step">Paid</span></div>
+            </div>
+            <div class="sub-row">
+              <div class="who"><strong>Magic City Plumbing</strong><small>HVAC rough assist · Pine Point · Thursday</small></div>
+              <div class="steps"><span class="step now">Sched</span><span class="step">Confirmed</span><span class="step">Invoice</span><span class="step">Paid</span></div>
+            </div>
+            <div class="sub-row">
+              <div class="who"><strong>Mason Manufacturing</strong><small>Cabinet shop fab · Cahaba · invoice $18,400 received</small></div>
+              <div class="steps"><span class="step on">Sched</span><span class="step on">Confirmed</span><span class="step now">Invoice</span><span class="step">Paid</span></div>
+            </div>
+            <div class="sub-row">
+              <div class="who"><strong>Birmingham Pool</strong><small>Skimmer punch · Sycamore · complete</small></div>
+              <div class="steps"><span class="step on">Sched</span><span class="step on">Confirmed</span><span class="step on">Invoice</span><span class="step now">Paid</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERMITS + PHOTO TIMELINE -->
+      <div class="grid-2-even">
+        <div class="card" id="permits">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Permits &amp; <em>inspections</em></div>
+              <div class="card-sub">Nothing stalls a build faster · 2 pending, 1 blocked</div>
+            </div>
+            <a href="documents.html" class="card-action">Documents →</a>
+          </div>
+          <div class="card-body flush">
+            <table class="builds">
+              <thead>
+                <tr><th>Build</th><th>Permit / Inspection</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><div class="build-name" style="font-size:13px">Cahaba Ridge</div></td>
+                  <td data-label="Permit" style="font-size:12.5px">Pre-roof framing inspection</td>
+                  <td data-label="Status"><span class="chip ok">Passed · today</span></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name" style="font-size:13px">Cahaba Ridge</div></td>
+                  <td data-label="Permit" style="font-size:12.5px">Electrical rough-in</td>
+                  <td data-label="Status"><span class="chip warn">Pending · target Jun 18</span></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name" style="font-size:13px">Old Leeds Way</div></td>
+                  <td data-label="Permit" style="font-size:12.5px">Drywall inspection</td>
+                  <td data-label="Status"><span class="chip muted">Scheduled · Jun 2</span></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name" style="font-size:13px">Russet Lane</div></td>
+                  <td data-label="Permit" style="font-size:12.5px">Zoning variance</td>
+                  <td data-label="Status"><span class="chip alert">Hearing · Jun 4</span></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name" style="font-size:13px">Russet Lane</div></td>
+                  <td data-label="Permit" style="font-size:12.5px">Building permit</td>
+                  <td data-label="Status"><span class="chip alert">Blocked by variance</span></td>
+                </tr>
+                <tr>
+                  <td><div class="build-name" style="font-size:13px">Pine Point</div></td>
+                  <td data-label="Permit" style="font-size:12.5px">Dock &amp; marine permit</td>
+                  <td data-label="Status"><span class="chip ok">Approved</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Photo <em>timeline</em></div>
+              <div class="card-sub">142 photos this week · shot from your phone on site</div>
+            </div>
+            <a href="daily-logs.html" class="card-action">All photos →</a>
+          </div>
+          <div class="stage-chips">
+            <button class="stage-chip on" data-stage="all">All</button>
+            <button class="stage-chip" data-stage="foundation">Foundation</button>
+            <button class="stage-chip" data-stage="framing">Framing</button>
+            <button class="stage-chip" data-stage="roofing">Roofing</button>
+            <button class="stage-chip" data-stage="drywall">Drywall</button>
+            <button class="stage-chip" data-stage="finish">Finish</button>
+          </div>
+          <div class="photos">
+            <div class="photo p1" data-stage="roofing"><span>Roof start · Cahaba · today</span></div>
+            <div class="photo p2" data-stage="roofing"><span>Copper delivery · Cahaba</span></div>
+            <div class="photo p3" data-stage="drywall"><span>Drywall · Old Leeds · Thu</span></div>
+            <div class="photo p4" data-stage="finish"><span>Final walk · Sycamore</span></div>
+            <div class="photo p5" data-stage="framing"><span>Dock framing · Pine Point</span></div>
+            <div class="photo p6" data-stage="roofing"><span>Inspection · Cahaba · 8a</span></div>
+            <div class="photo p7" data-stage="foundation"><span>Drone · Pine Bluff · Wed</span></div>
+            <div class="photo p8" data-stage="finish"><span>Foyer mill · Sycamore</span></div>
+          </div>
+          <div class="photo-note">Every upload lands on the build timeline — and <strong>your homeowner sees it in their portal automatically.</strong> No "can you send pictures?" texts.</div>
+        </div>
+      </div>
+
+      <!-- SITE OFFICE ASSISTANT -->
+      <div class="assist" id="assistant">
+        <div class="assist-inner">
+          <div>
+            <div class="assist-tag">Site Office Assistant</div>
+            <div class="assist-title">Ask it like you'd ask <em>your office manager.</em></div>
+            <div class="assist-input">
+              <input type="text" id="assist-q" placeholder="Which builds need decisions this week?">
+              <button id="assist-go">Ask</button>
+            </div>
+            <div class="assist-chips">
+              <button class="assist-chip" data-a="0">Which builds need decisions this week?</button>
+              <button class="assist-chip" data-a="1">Show jobs behind schedule</button>
+              <button class="assist-chip" data-a="2">Draft the Whitlows' Friday Letter</button>
+              <button class="assist-chip" data-a="3">Create a CO for upgraded countertops</button>
+            </div>
+            <div class="assist-answer" id="assist-answer"></div>
+          </div>
+          <div class="assist-side">
+            <div class="lbl">Friday Letter Generator</div>
+            <h3>4 of 7 drafted — due 5:00p</h3>
+            <p>The assistant pulls this week's progress, photos, upcoming work, and decisions needed for each build, drafts the letter in your voice, and publishes to the homeowner portal when you approve.</p>
+            <div class="bar"><span></span></div>
+            <div class="bar-lbl">Cahaba · Pine Point · Sycamore · Brook ✓ &nbsp;·&nbsp; Old Leeds · Russet · Pine Bluff remaining</div>
+            <a href="friday-letter.html">Generate remaining 3 →</a>
+          </div>
         </div>
       </div>
 
@@ -819,5 +744,67 @@
 </div>
 
 <script src="_sidebar.js" data-active="overview"></script>
+<script>
+(function(){
+  // agenda scope filter — cumulative: week shows today+week, month shows all
+  var rank = {today:0, week:1, month:2};
+  var tabs = document.querySelectorAll('.ag-tab');
+  var rows = document.querySelectorAll('.agenda-row');
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(e){
+      e.preventDefault();
+      tabs.forEach(function(x){ x.classList.remove('active'); });
+      t.classList.add('active');
+      var max = rank[t.dataset.scope];
+      rows.forEach(function(r){
+        r.classList.toggle('hide', rank[r.dataset.scope] > max);
+      });
+    });
+  });
+  tabs[1].click(); // default: This Week
+
+  // change order — mark signed
+  document.querySelectorAll('.co-approve').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var co = btn.closest('.co');
+      var chip = co.querySelector('.co-status');
+      chip.className = 'chip ok co-status';
+      chip.textContent = 'Signed';
+      btn.remove();
+      var rem = co.querySelector('.co-actions .mini-btn');
+      if (rem && /reminder/i.test(rem.textContent)) rem.remove();
+    });
+  });
+
+  // photo stage filter
+  var chips = document.querySelectorAll('.stage-chip');
+  chips.forEach(function(c){
+    c.addEventListener('click', function(){
+      chips.forEach(function(x){ x.classList.remove('on'); });
+      c.classList.add('on');
+      var s = c.dataset.stage;
+      document.querySelectorAll('.photos .photo').forEach(function(p){
+        p.classList.toggle('hide', s !== 'all' && p.dataset.stage !== s);
+      });
+    });
+  });
+
+  // assistant — canned demo answers
+  var answers = [
+    'Two builds need decisions this week: <strong>Cahaba Ridge</strong> — the Whitlows owe you master bath tile and sconce trim color by Wednesday or finish plumbing slips. <strong>Old Leeds Way</strong> — the Agrawals owe interior paint colors before Riverside\'s crew moves inside Wednesday. I can send both a reminder with their selection links.',
+    'One job is behind: <strong>Old Leeds Way, −5 days</strong> on drywall after Tuesday\'s rain. Marcus filed a recovery plan — texture Monday, hang Tue–Thu with two Riverside crews — that lands you back on date by June 4. Risk: Riverside\'s second crew is still unconfirmed. Everything else is on schedule.',
+    'Drafted. <strong>Friday Letter — Cahaba Ridge, May 22:</strong> roof start with the copper crew, first-time-pass framing inspection, 14 photos attached, dry-in wrapping Tuesday ahead of the storm, and a reminder that tile selections are due Wednesday. It\'s in your Friday Letter queue for review before the 5:00p send.',
+    'Started <strong>CO-015 — Countertop upgrade</strong>. Tell me the build and the slab (e.g. "Cahaba, Taj Mahal quartzite, kitchen + butler\'s pantry") and I\'ll price it from Mason\'s book, add schedule impact, and generate the signature-ready PDF.'
+  ];
+  var input = document.getElementById('assist-q');
+  var out = document.getElementById('assist-answer');
+  function show(i){ out.innerHTML = answers[i]; out.classList.add('show'); }
+  document.querySelectorAll('.assist-chip').forEach(function(c){
+    c.addEventListener('click', function(){ input.value = c.textContent; show(+c.dataset.a); });
+  });
+  document.getElementById('assist-go').addEventListener('click', function(){ show(0); });
+  input.addEventListener('keydown', function(e){ if(e.key === 'Enter') show(0); });
+})();
+</script>
 </body>
 </html>

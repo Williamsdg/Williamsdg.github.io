@@ -37,39 +37,48 @@
     return out + '</nav>';
   }
 
-  html += section('Today');
-  html += nav([
-    {key:'overview', href:'dashboard.html', label:'Overview'},
-    {key:'daily-logs', href:'daily-logs.html', label:'Daily Logs', count:'7'},
-    {key:'friday-letter', href:'friday-letter.html', label:'Friday Letter', count:'due', warn:true},
-    {key:'calendar', href:'calendar.html', label:'Calendar'}
-  ]);
-
-  html += section('Builds');
-  html += nav([
-    {key:'builds', href:'builds.html', label:'All Active', count:'7'},
-    {key:'build-cahaba-ridge', href:'build-cahaba-ridge.html', label:'Cahaba Ridge'},
-    {key:'build-pine-point', href:'build-cahaba-ridge.html#pine-point', label:'Pine Point'},
-    {key:'build-old-leeds', href:'build-cahaba-ridge.html#old-leeds', label:'Old Leeds Way', warn:true},
-    {key:'builds', href:'builds.html', label:'+ 4 more'}
-  ]);
-
   html += section('Operations');
   html += nav([
-    {key:'contractors', href:'contractors.html', label:'Contractors'},
-    {key:'change-orders', href:'change-orders.html', label:'Change Orders', count:'3', warn:true},
+    {key:'overview', href:'dashboard.html', label:'Overview'},
+    {key:'builds', href:'builds.html', label:'All Builds', count:'7'},
+    {key:'build-cahaba-ridge', href:'build-cahaba-ridge.html', label:'Cahaba Ridge'},
+    {key:'build-old-leeds', href:'build-cahaba-ridge.html#old-leeds', label:'Old Leeds Way', warn:true},
+    {key:'calendar', href:'calendar.html', label:'Calendar'},
+    {key:'daily-logs', href:'daily-logs.html', label:'Daily Logs', count:'7'}
+  ]);
+
+  html += section('Clients');
+  html += nav([
+    {key:'messages', href:'dashboard.html#comms', label:'Messages', count:'4', warn:true},
+    {key:'client-portal', href:'client.html', label:'Homeowner Portal'},
+    {key:'selections', href:'selections.html', label:'Selections', count:'5'},
+    {key:'change-orders', href:'change-orders.html', label:'Change Orders', count:'3', warn:true}
+  ]);
+
+  html += section('Financial');
+  html += nav([
+    {key:'budget', href:'budget.html', label:'Budget & Draws', count:'2', warn:true},
+    {key:'pipeline', href:'pipeline.html', label:'Pipeline'},
+    {key:'reports', href:'reports.html', label:'Reports'}
+  ]);
+
+  html += section('Field');
+  html += nav([
     {key:'punch-lists', href:'punch-lists.html', label:'Punch Lists'},
-    {key:'selections', href:'selections.html', label:'Selections'},
-    {key:'documents', href:'documents.html', label:'Documents'},
-    {key:'budget', href:'budget.html', label:'Budget & Draws'},
+    {key:'contractors', href:'contractors.html', label:'Trade Partners'},
+    {key:'documents', href:'documents.html', label:'Documents & Permits'},
     {key:'warranty', href:'warranty.html', label:'Warranty'}
+  ]);
+
+  html += section('Automation');
+  html += nav([
+    {key:'friday-letter', href:'friday-letter.html', label:'Friday Letter', count:'due', warn:true},
+    {key:'assistant', href:'dashboard.html#assistant', label:'Site Office Assistant'}
   ]);
 
   html += section('Company');
   html += nav([
     {key:'team', href:'team.html', label:'Team'},
-    {key:'pipeline', href:'pipeline.html', label:'Pipeline'},
-    {key:'reports', href:'reports.html', label:'Reports'},
     {key:'settings', href:'settings.html', label:'Settings'}
   ]);
 
