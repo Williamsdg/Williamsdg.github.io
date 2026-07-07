@@ -75,6 +75,52 @@
   .all-row .amt{font-family:'Fraunces',serif;font-size:13px;font-weight:400;text-align:right}
   .all-row .pct{font-size:10.5px;color:var(--mute);font-weight:600;text-align:right}
   .all-row .over .amt{color:var(--rust)}
+
+  /* tab panes */
+  .pane{display:flex;flex-direction:column;gap:28px}
+  .pane[hidden]{display:none}
+  @media (max-width:900px){.pane{gap:20px}}
+
+  /* milestone list (Timeline) */
+  .mile{display:flex;gap:14px;padding:13px 22px;border-bottom:1px solid var(--line-soft);align-items:flex-start;font-size:13px}
+  .mile:last-child{border-bottom:none}
+  .mile-dot{width:10px;height:10px;border-radius:50%;background:var(--line);margin-top:4px;flex-shrink:0}
+  .mile.done .mile-dot{background:var(--sage-deep);box-shadow:0 0 0 3px var(--sage-pale)}
+  .mile.now .mile-dot{background:var(--warn);box-shadow:0 0 0 3px var(--warn-pale)}
+  .mile-body{flex:1;min-width:0}
+  .mile-body strong{font-weight:600;color:var(--ink);display:block}
+  .mile-body small{font-size:11px;color:var(--mute)}
+  .mile-when{font-size:11px;color:var(--mute);white-space:nowrap;font-weight:600}
+  .mile.done .mile-when{color:var(--sage-deep)}
+  .mile.now .mile-when{color:#7a5a18}
+
+  /* daily log list rows */
+  .logrow{display:flex;gap:14px;padding:14px 22px;border-bottom:1px solid var(--line-soft);align-items:flex-start;font-size:13px}
+  .logrow:last-child{border-bottom:none}
+  .logrow:hover{background:var(--bone)}
+  .logrow-date{width:56px;flex-shrink:0;text-align:left}
+  .logrow-date .dow{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700}
+  .logrow-date .dnum{font-family:'Fraunces',serif;font-size:19px;color:var(--ink)}
+  .logrow-body{flex:1;min-width:0}
+  .logrow-body strong{font-weight:600;color:var(--ink)}
+  .logrow-meta{font-size:11px;color:var(--mute);margin-top:2px}
+  .logrow-note{font-size:12.5px;color:var(--ink-2);margin-top:5px;line-height:1.5}
+
+  /* draw schedule rows */
+  .draw{display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;padding:13px 22px;border-bottom:1px solid var(--line-soft);align-items:center;font-size:13px}
+  .draw:last-child{border-bottom:none}
+  .draw-num{font-size:10px;letter-spacing:.14em;font-weight:700;color:var(--mute);background:var(--bone);padding:4px 8px;border-radius:4px}
+  .draw strong{font-weight:600;color:var(--ink);display:block;font-size:13px}
+  .draw small{font-size:11px;color:var(--mute)}
+  .draw .amt{font-family:'Fraunces',serif;font-size:15px;color:var(--ink);text-align:right}
+  @media (max-width:700px){.draw{grid-template-columns:auto 1fr;row-gap:4px}.draw .amt{text-align:left}}
+
+  /* photo pane filter chips */
+  .pf-chips{display:flex;gap:6px;padding:14px 22px 0;flex-wrap:wrap}
+  .pf-chip{padding:5px 12px;font-size:10.5px;font-weight:700;letter-spacing:.05em;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--ink-2);cursor:pointer;font-family:'Inter',sans-serif}
+  .pf-chip.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  #pane-photos .photo.hide{display:none}
+  .photo-group{padding:16px 22px 0;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);font-weight:700}
 </style>
 </head>
 <body>
@@ -140,21 +186,22 @@
       </div>
 
       <!-- TAB STRIP -->
-      <div class="build-tabs">
-        <a class="active">Overview</a>
-        <a>Timeline</a>
-        <a>Daily Logs <span class="b ok">21</span></a>
-        <a>Photos <span class="b ok">1,847</span></a>
-        <a>Selections <span class="b warn">2</span></a>
-        <a>Change Orders <span class="b">2</span></a>
-        <a>Punch <span class="b ok">0</span></a>
-        <a>Contractors</a>
-        <a>Budget &amp; Draws</a>
-        <a>Documents</a>
-        <a>Messages <span class="b">3</span></a>
-        <a>Owner View ↗</a>
+      <div class="build-tabs" id="btabs">
+        <a class="active" data-tab="overview">Overview</a>
+        <a data-tab="timeline">Timeline</a>
+        <a data-tab="logs">Daily Logs <span class="b ok">21</span></a>
+        <a data-tab="photos">Photos <span class="b ok">1,847</span></a>
+        <a data-tab="selections">Selections <span class="b warn">2</span></a>
+        <a data-tab="cos">Change Orders <span class="b">2</span></a>
+        <a data-tab="punch">Punch <span class="b ok">0</span></a>
+        <a data-tab="subs">Contractors</a>
+        <a data-tab="budget">Budget &amp; Draws</a>
+        <a data-tab="docs">Documents</a>
+        <a data-tab="messages">Messages <span class="b">3</span></a>
+        <a href="client.html">Owner View ↗</a>
       </div>
 
+      <div class="pane" id="pane-overview">
       <!-- KPIs -->
       <div class="kpi-row">
         <div class="kpi"><div class="kpi-label">Stage</div><div class="kpi-value" style="font-size:22px">Roofing</div><div class="kpi-trend">5 of 16 · started today 9:14a</div></div>
@@ -163,7 +210,6 @@
         <div class="kpi"><div class="kpi-label">Selections</div><div class="kpi-value">42<small>/67</small></div><div class="kpi-trend">2 due this week</div></div>
         <div class="kpi"><div class="kpi-label">Photos</div><div class="kpi-value">1,847</div><div class="kpi-trend">14 today · drone Wed</div></div>
       </div>
-
       <!-- AI brief + photo strip -->
       <div class="grid-2">
         <div class="ai">
@@ -189,7 +235,7 @@
               <div class="card-title">Photos · <em>today</em></div>
               <div class="card-sub">14 added this morning</div>
             </div>
-            <a href="#" class="card-action">All 1,847 →</a>
+            <a href="#" class="card-action" data-tab="photos">All 1,847 →</a>
           </div>
           <div class="strip-photos">
             <div class="photo p1"><span>Roof start · 9:14a</span></div>
@@ -205,7 +251,6 @@
           </div>
         </div>
       </div>
-
       <!-- Today's log -->
       <div class="card">
         <div class="card-head">
@@ -213,7 +258,7 @@
             <div class="card-title">Today's daily <em>log</em></div>
             <div class="card-sub">Filed 6:08 a.m. by Wes · 14 photos · 1 video</div>
           </div>
-          <a href="daily-logs.html" class="card-action">All 147 logs →</a>
+          <a href="#" class="card-action" data-tab="logs">All 147 logs →</a>
         </div>
         <div class="log">
           <div class="log-entry" style="border:none">
@@ -235,7 +280,34 @@
           </div>
         </div>
       </div>
+      <!-- Selections + Change Orders side by side -->
+      <div class="grid-2-even">
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Selections · <em>this build</em></div><div class="card-sub">42 of 67 locked · 2 due this week</div></div><a href="#" class="card-action" data-tab="selections">All →</a></div>
+          <div class="sel-list-card">
+            <div class="sel-row"><div class="sw sw-paint"></div><div><strong>SW Alabaster · Whole-house trim</strong><small>Locked Mar 18 · 5gal lots in</small></div><span class="chip ok">Locked</span></div>
+            <div class="sel-row"><div class="sw sw-stone"></div><div><strong>Sloss limestone · Exterior cladding</strong><small>Sawn finish · 4 of 7 pallets received</small></div><span class="chip ok">Locked</span></div>
+            <div class="sel-row"><div class="sw sw-copper"></div><div><strong>Drexel 24ga copper · Standing seam</strong><small>Installing today · 1,840 lf delivered</small></div><span class="chip ok">Locked</span></div>
+            <div class="sel-row"><div class="sw sw-wood"></div><div><strong>R&amp;Q white oak · 7" plank floors</strong><small>Approved Apr 04 · mill cuts May 30</small></div><span class="chip ok">Locked</span></div>
+            <div class="sel-row"><div class="sw sw-tile"></div><div><strong>Master bath sconces · Cabot vs Mira</strong><small>Annie to choose at showroom</small></div><span class="chip warn">Due 5/29</span></div>
+            <div class="sel-row"><div class="sw sw-tile"></div><div><strong>Kitchen backsplash · Pratt &amp; Larson</strong><small>Samples held for owner</small></div><span class="chip warn">Due 6/05</span></div>
+          </div>
+        </div>
 
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Change orders · <em>this build</em></div><div class="card-sub">14 total · 2 unsigned · $6,660 net pending</div></div><a href="#" class="card-action" data-tab="cos">All →</a></div>
+          <div class="co-list">
+            <div class="co"><div class="co-num">CO-014</div><div class="co-desc"><strong>Beadboard ceiling — screened porch</strong><small>Requested by owner · drafted May 21</small></div><div class="co-impact">+$4,820</div><div class="co-days"><strong>+3d</strong>schedule</div><span class="chip warn">Awaiting sign</span></div>
+            <div class="co"><div class="co-num">CO-009</div><div class="co-desc"><strong>Upgrade master bath sconces</strong><small>Visual Comfort substitution · May 14</small></div><div class="co-impact">+$1,840</div><div class="co-days">no change</div><span class="chip warn">Awaiting sign</span></div>
+            <div class="co"><div class="co-num">CO-013</div><div class="co-desc"><strong>Pantry — added 20A outlet for espresso</strong><small>Signed by Whitlows · May 06</small></div><div class="co-impact">+$3,200</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
+            <div class="co"><div class="co-num">CO-012</div><div class="co-desc"><strong>Glass for master shower — upgrade to low-iron</strong><small>Signed Apr 30 · Mason Mfg sourcing</small></div><div class="co-impact">+$2,140</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
+          </div>
+        </div>
+      </div>
+
+      </div>
+
+      <div class="pane" id="pane-timeline" hidden>
       <!-- stage ladder -->
       <div class="card">
         <div class="card-head">
@@ -243,7 +315,7 @@
             <div class="card-title">All 16 <em>stages</em></div>
             <div class="card-sub">Tap any stage for its photos, contractors, notes, and inspections</div>
           </div>
-          <a href="#" class="card-action">Full Gantt →</a>
+          
         </div>
         <div class="ladder">
           <div class="lr done"><div class="lr-bar"></div><div class="lr-name">Planning</div></div>
@@ -273,31 +345,233 @@
         </div>
       </div>
 
-      <!-- Selections + Change Orders side by side -->
-      <div class="grid-2-even">
-        <div class="card">
-          <div class="card-head"><div><div class="card-title">Selections · <em>this build</em></div><div class="card-sub">42 of 67 locked · 2 due this week</div></div><a href="selections.html" class="card-action">All →</a></div>
-          <div class="sel-list-card">
-            <div class="sel-row"><div class="sw sw-paint"></div><div><strong>SW Alabaster · Whole-house trim</strong><small>Locked Mar 18 · 5gal lots in</small></div><span class="chip ok">Locked</span></div>
-            <div class="sel-row"><div class="sw sw-stone"></div><div><strong>Sloss limestone · Exterior cladding</strong><small>Sawn finish · 4 of 7 pallets received</small></div><span class="chip ok">Locked</span></div>
-            <div class="sel-row"><div class="sw sw-copper"></div><div><strong>Drexel 24ga copper · Standing seam</strong><small>Installing today · 1,840 lf delivered</small></div><span class="chip ok">Locked</span></div>
-            <div class="sel-row"><div class="sw sw-wood"></div><div><strong>R&amp;Q white oak · 7" plank floors</strong><small>Approved Apr 04 · mill cuts May 30</small></div><span class="chip ok">Locked</span></div>
-            <div class="sel-row"><div class="sw sw-tile"></div><div><strong>Master bath sconces · Cabot vs Mira</strong><small>Annie to choose at showroom</small></div><span class="chip warn">Due 5/29</span></div>
-            <div class="sel-row"><div class="sw sw-tile"></div><div><strong>Kitchen backsplash · Pratt &amp; Larson</strong><small>Samples held for owner</small></div><span class="chip warn">Due 6/05</span></div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Key <em>dates</em></div>
+            <div class="card-sub">Contract to close · milestones as filed</div>
+          </div>
+          <span class="chip warn">Dry-in due Tue May 26</span>
+        </div>
+        <div>
+          <div class="mile done"><div class="mile-dot"></div><div class="mile-body"><strong>GMP contract signed</strong><small>Whitlow / Greycliff · $1,840,000 · v3 final</small></div><div class="mile-when">Jul 12, 2025</div></div>
+          <div class="mile done"><div class="mile-dot"></div><div class="mile-body"><strong>Building permit issued</strong><small>MB-2025-04817 · City of Mountain Brook</small></div><div class="mile-when">Aug 4, 2025</div></div>
+          <div class="mile done"><div class="mile-dot"></div><div class="mile-body"><strong>Foundation poured</strong><small>Footing inspection passed · on time</small></div><div class="mile-when">Sep 12, 2025</div></div>
+          <div class="mile done"><div class="mile-dot"></div><div class="mile-body"><strong>Framing topped out</strong><small>Spectrum Framing · finished +1 day</small></div><div class="mile-when">Dec 19, 2025</div></div>
+          <div class="mile done"><div class="mile-dot"></div><div class="mile-body"><strong>Exterior limestone complete</strong><small>Sloss sawn-finish cladding · 7 pallets · scaffold down</small></div><div class="mile-when">May 8, 2026</div></div>
+          <div class="mile done"><div class="mile-dot"></div><div class="mile-body"><strong>Pre-roof framing inspection</strong><small>Inspector Wallace · passed first time, no notes</small></div><div class="mile-when">May 22, 2026</div></div>
+          <div class="mile now"><div class="mile-dot"></div><div class="mile-body"><strong>Roof dry-in</strong><small>Hard deadline — storm system arrives Wednesday</small></div><div class="mile-when">Tue May 26</div></div>
+          <div class="mile"><div class="mile-dot"></div><div class="mile-body"><strong>Roofing complete</strong><small>1,840 lf copper standing seam · Drexel</small></div><div class="mile-when">Jun 14, 2026</div></div>
+          <div class="mile"><div class="mile-dot"></div><div class="mile-body"><strong>Electrical &amp; MEP rough-in</strong><small>Birmingham Electric Jun 14 · Magic City Jun 18 · Vulcan Jun 22</small></div><div class="mile-when">Jun–Aug 2026</div></div>
+          <div class="mile"><div class="mile-dot"></div><div class="mile-body"><strong>Insulation &amp; drywall</strong><small>Pre-drywall walk with Whitlows before hang</small></div><div class="mile-when">Aug–Oct 2026</div></div>
+          <div class="mile"><div class="mile-dot"></div><div class="mile-body"><strong>Cabinets, flooring &amp; finish</strong><small>Mason Manufacturing install · white oak plank</small></div><div class="mile-when">Oct 2026 – Feb 2027</div></div>
+          <div class="mile"><div class="mile-dot"></div><div class="mile-body"><strong>Punch, final walk &amp; close</strong><small>Punch opens at stage 15 · keys at close</small></div><div class="mile-when">Apr 18, 2027</div></div>
+        </div>
+      </div>
+
+      </div>
+
+      <div class="pane" id="pane-logs" hidden>
+
+      <div class="kpi-row k3">
+        <div class="kpi"><div class="kpi-label">Logs Filed</div><div class="kpi-value">147</div><div class="kpi-trend">One for every working day · zero missed</div></div>
+        <div class="kpi"><div class="kpi-label">This Month</div><div class="kpi-value">21</div><div class="kpi-trend">18 clear · 2 rain · 1 inspection day</div></div>
+        <div class="kpi"><div class="kpi-label">Photos Attached</div><div class="kpi-value">612</div><div class="kpi-trend">May total · 14 today</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Daily logs · <em>May 2026</em></div>
+            <div class="card-sub">Filed by 7:00 a.m. every working day · tap a row to open the full log</div>
+          </div>
+          <a href="daily-logs.html" class="card-action">All builds' logs →</a>
+        </div>
+        <div>
+          <div class="logrow"><div class="logrow-date"><div class="dow">Fri</div><div class="dnum">22</div></div><div class="logrow-body"><strong>Roof day 1 — clean start</strong><div class="logrow-meta">Clear, 71° · 10 on site · 14 photos · 1 video</div><div class="logrow-note">Pre-roof inspection passed first time — no notes from Wallace. Drexel copper received 8:14a. Pulling dry-in forward to Tuesday ahead of the storm.</div></div><span class="chip ok">Inspection passed</span></div>
+          <div class="logrow"><div class="logrow-date"><div class="dow">Thu</div><div class="dnum">21</div></div><div class="logrow-body"><strong>Framing punch wrapped</strong><div class="logrow-meta">Clear, 68° · 8 on site · 11 photos</div><div class="logrow-note">Spectrum closed their last two punches. Roof deck staged for Friday. CO-014 (beadboard porch) drafted and sent to the Whitlows.</div></div><span class="chip muted">Routine</span></div>
+          <div class="logrow"><div class="logrow-date"><div class="dow">Wed</div><div class="dnum">20</div></div><div class="logrow-body"><strong>Limestone closeout</strong><div class="logrow-meta">Clear, 73° · 6 on site · 9 photos</div><div class="logrow-note">East-face scaffold down, final joint cleanup on the Sloss cladding. Exterior reads exactly like the Shepard &amp; Marsh renderings.</div></div><span class="chip muted">Routine</span></div>
+          <div class="logrow"><div class="logrow-date"><div class="dow">Tue</div><div class="dnum">19</div></div><div class="logrow-body"><strong>Rain day — interior only</strong><div class="logrow-meta">Rain, 61° · 3 on site · 4 photos</div><div class="logrow-note">No exterior work. Mason Manufacturing on site measuring for cabinet fab. No schedule impact — roof buffer absorbs it.</div></div><span class="chip warn">Weather</span></div>
+          <div class="logrow"><div class="logrow-date"><div class="dow">Mon</div><div class="dnum">18</div></div><div class="logrow-body"><strong>Roof deck prep</strong><div class="logrow-meta">Clear, 70° · 7 on site · 12 photos</div><div class="logrow-note">Drip edge on, underlayment staged, fall-protection anchors set and torqued. Ready for copper Friday.</div></div><span class="chip muted">Routine</span></div>
+        </div>
+      </div>
+
+      </div>
+
+      <div class="pane" id="pane-photos" hidden>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Photo <em>journal</em></div>
+            <div class="card-sub">1,847 photos · 23 videos · every one lands in the Whitlows' portal automatically</div>
+          </div>
+          <span class="chip ok">14 added today</span>
+        </div>
+        <div class="pf-chips">
+          <button class="pf-chip on" data-stage="all">All</button>
+          <button class="pf-chip" data-stage="roofing">Roofing</button>
+          <button class="pf-chip" data-stage="limestone">Limestone</button>
+          <button class="pf-chip" data-stage="framing">Framing</button>
+          <button class="pf-chip" data-stage="foundation">Foundation</button>
+          <button class="pf-chip" data-stage="interior">Interior</button>
+        </div>
+        <div class="photo-group">Today · Friday May 22</div>
+        <div class="photos">
+          <div class="photo p1" data-stage="roofing"><span>Roof start · 9:14a</span></div>
+          <div class="photo p2" data-stage="roofing"><span>Copper delivery · 8:14a</span></div>
+          <div class="photo p6" data-stage="roofing"><span>Wallace inspection · 8a</span></div>
+          <div class="photo p5" data-stage="roofing"><span>Tie-off check · crew of 4</span></div>
+          <div class="photo p7" data-stage="roofing"><span>Drone · ridge line · 7:30a</span></div>
+          <div class="photo pA" data-stage="roofing"><span>Copper seam closeup</span></div>
+          <div class="photo pB" data-stage="roofing"><span>Crew · pre-shift</span></div>
+          <div class="photo p4" data-stage="interior"><span>Foyer millwork mockup</span></div>
+        </div>
+        <div class="photo-group">Earlier · this month</div>
+        <div class="photos">
+          <div class="photo p3" data-stage="limestone"><span>Limestone east face · May 20</span></div>
+          <div class="photo p8" data-stage="limestone"><span>Sawn joint detail · May 19</span></div>
+          <div class="photo p2" data-stage="limestone"><span>Scaffold down · May 20</span></div>
+          <div class="photo p5" data-stage="framing"><span>Framing punch · May 21</span></div>
+          <div class="photo p7" data-stage="framing"><span>Topped out · Dec 19</span></div>
+          <div class="photo p1" data-stage="foundation"><span>Pour day · Sep 12</span></div>
+          <div class="photo pB" data-stage="foundation"><span>Footing inspection · Sep 8</span></div>
+          <div class="photo p4" data-stage="interior"><span>Stair stringers · May 14</span></div>
+        </div>
+        <div style="padding:0 22px 18px;font-size:11px;color:var(--mute)">Shot from the site phone → tagged to stage → <strong style="color:var(--sage-deep)">visible to the Whitlows the same hour.</strong> No "can you send pictures?" texts.</div>
+      </div>
+
+      </div>
+
+      <div class="pane" id="pane-selections" hidden>
+
+      <div class="kpi-row k3">
+        <div class="kpi"><div class="kpi-label">Locked</div><div class="kpi-value">42<small>/67</small></div><div class="kpi-trend">On pace · no stage waiting on a selection yet</div></div>
+        <div class="kpi warn"><div class="kpi-label">Due This Week</div><div class="kpi-value">2</div><div class="kpi-trend">Sconces 5/29 · backsplash 6/05</div></div>
+        <div class="kpi"><div class="kpi-label">Allowance Used</div><div class="kpi-value">74<small>%</small></div><div class="kpi-trend">$148k of $200k · $52k remaining</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Due <em>now</em></div>
+            <div class="card-sub">Decisions that hold a stage if they slip</div>
           </div>
         </div>
-
+        <div class="sel-list-card">
+          <div class="sel-row"><div class="sw sw-tile"></div><div><strong>Master bath sconces · Cabot vs Mira</strong><small>Annie choosing at showroom Friday · holds electrical rough if it slips past May 29</small></div><span class="chip warn">Due 5/29</span></div>
+          <div class="sel-row"><div class="sw sw-tile"></div><div><strong>Kitchen backsplash · Pratt &amp; Larson</strong><small>Samples held at showroom · 6-week lead time on handmade tile</small></div><span class="chip warn">Due 6/05</span></div>
+        </div>
+      </div>
+      <div class="grid-2-even">
         <div class="card">
-          <div class="card-head"><div><div class="card-title">Change orders · <em>this build</em></div><div class="card-sub">14 total · 2 unsigned · $6,660 net pending</div></div><a href="change-orders.html" class="card-action">All →</a></div>
-          <div class="co-list">
-            <div class="co"><div class="co-num">CO-014</div><div class="co-desc"><strong>Beadboard ceiling — screened porch</strong><small>Requested by owner · drafted May 21</small></div><div class="co-impact">+$4,820</div><div class="co-days"><strong>+3d</strong>schedule</div><span class="chip warn">Awaiting sign</span></div>
-            <div class="co"><div class="co-num">CO-009</div><div class="co-desc"><strong>Upgrade master bath sconces</strong><small>Visual Comfort substitution · May 14</small></div><div class="co-impact">+$1,840</div><div class="co-days">no change</div><span class="chip warn">Awaiting sign</span></div>
-            <div class="co"><div class="co-num">CO-013</div><div class="co-desc"><strong>Pantry — added 20A outlet for espresso</strong><small>Signed by Whitlows · May 06</small></div><div class="co-impact">+$3,200</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
-            <div class="co"><div class="co-num">CO-012</div><div class="co-desc"><strong>Glass for master shower — upgrade to low-iron</strong><small>Signed Apr 30 · Mason Mfg sourcing</small></div><div class="co-impact">+$2,140</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
+          <div class="card-head"><div><div class="card-title">Recently <em>locked</em></div><div class="card-sub">Last five decisions</div></div></div>
+          <div class="sel-list-card">
+            <div class="sel-row"><div class="sw sw-wood"></div><div><strong>R&amp;Q white oak · 7" plank floors</strong><small>Approved Apr 04 · mill cuts May 30</small></div><span class="chip ok">Locked</span></div>
+            <div class="sel-row"><div class="sw sw-paint"></div><div><strong>SW Alabaster · whole-house trim</strong><small>Locked Mar 18 · 5gal lots received</small></div><span class="chip ok">Locked</span></div>
+            <div class="sel-row"><div class="sw sw-copper"></div><div><strong>Drexel 24ga copper · standing seam</strong><small>Locked Mar 02 · installing today</small></div><span class="chip ok">Locked</span></div>
+            <div class="sel-row"><div class="sw sw-stone"></div><div><strong>Sloss limestone · exterior cladding</strong><small>Locked Feb 10 · installed, complete May 8</small></div><span class="chip ok">Locked</span></div>
+            <div class="sel-row"><div class="sw sw-paint"></div><div><strong>Sub-Zero / Wolf appliance package</strong><small>Locked Jan 22 · warehouse holds until Oct</small></div><span class="chip ok">Locked</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><div class="card-title">Coming <em>up</em></div><div class="card-sub">Next five · dated so nothing sneaks up</div></div></div>
+          <div class="sel-list-card">
+            <div class="sel-row"><div class="sw sw-tile"></div><div><strong>Interior lighting · batch 2 of 3</strong><small>8 fixtures · pairs with electrical rough</small></div><span class="chip muted">By Jun 12</span></div>
+            <div class="sel-row"><div class="sw sw-tile"></div><div><strong>Master bath tile · floor + shower</strong><small>Showroom visit to schedule</small></div><span class="chip muted">By Jun 20</span></div>
+            <div class="sel-row"><div class="sw sw-wood"></div><div><strong>Floor stain · site sample on real planks</strong><small>3 samples on the actual white oak</small></div><span class="chip muted">By Jul 08</span></div>
+            <div class="sel-row"><div class="sw sw-paint"></div><div><strong>Closet systems · primary + kids</strong><small>Mason Mfg shop drawings first</small></div><span class="chip muted">By Aug 01</span></div>
+            <div class="sel-row"><div class="sw sw-stone"></div><div><strong>Landscape &amp; hardscape plan</strong><small>Cahaba Landscape · spring 2027 install</small></div><span class="chip muted">By Sep 15</span></div>
           </div>
         </div>
       </div>
 
+      </div>
+
+      <div class="pane" id="pane-cos" hidden>
+
+      <div class="kpi-row k3">
+        <div class="kpi warn"><div class="kpi-label">Unsigned</div><div class="kpi-value">2</div><div class="kpi-trend">+$6,660 · CO-014 has 3 days of float</div></div>
+        <div class="kpi"><div class="kpi-label">Executed To Date</div><div class="kpi-value">+$38.4<small>k</small></div><div class="kpi-trend">8 signed COs since contract</div></div>
+        <div class="kpi"><div class="kpi-label">Contract Now</div><div class="kpi-value">$1.878<small>M</small></div><div class="kpi-trend">$1.885M if both pending COs sign</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">All change orders · <em>this build</em></div>
+            <div class="card-sub">14 total · 8 executed · 2 awaiting signature · 4 voided or superseded</div>
+          </div>
+          <a href="change-orders.html" class="card-action">Company-wide →</a>
+        </div>
+        <div class="co-list">
+          <div class="co"><div class="co-num">CO-014</div><div class="co-desc"><strong>Beadboard ceiling — screened porch</strong><small>Requested by owner · drafted May 21 · Whitlows signing tonight per Carter</small></div><div class="co-impact">+$4,820</div><div class="co-days"><strong>+3d</strong>schedule</div><span class="chip warn">Awaiting sign</span></div>
+          <div class="co"><div class="co-num">CO-009</div><div class="co-desc"><strong>Upgrade master bath sconces</strong><small>Visual Comfort substitution · waits on Annie's Friday pick</small></div><div class="co-impact">+$1,840</div><div class="co-days">no change</div><span class="chip warn">Awaiting sign</span></div>
+          <div class="co"><div class="co-num">CO-013</div><div class="co-desc"><strong>Pantry — added 20A outlet for espresso</strong><small>Signed May 06</small></div><div class="co-impact">+$3,200</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
+          <div class="co"><div class="co-num">CO-012</div><div class="co-desc"><strong>Master shower glass — upgrade to low-iron</strong><small>Signed Apr 30 · Mason Mfg sourcing</small></div><div class="co-impact">+$2,140</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
+          <div class="co"><div class="co-num">CO-011</div><div class="co-desc"><strong>Outdoor kitchen rough-in — gas, water, 240V</strong><small>Signed Apr 12 · future-proofing the terrace</small></div><div class="co-impact">+$8,400</div><div class="co-days"><strong>+2d</strong>schedule</div><span class="chip dark">Executed</span></div>
+          <div class="co"><div class="co-num">CO-010</div><div class="co-desc"><strong>Whole-home generator — 26kW + transfer switch</strong><small>Signed Mar 20 · pad poured with foundation work</small></div><div class="co-impact">+$12,600</div><div class="co-days"><strong>+1d</strong>schedule</div><span class="chip dark">Executed</span></div>
+          <div class="co"><div class="co-num">CO-008</div><div class="co-desc"><strong>Mudroom built-ins — bench, lockers ×4</strong><small>Signed Feb 14 · Mason Mfg shop fab</small></div><div class="co-impact">+$4,850</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
+          <div class="co"><div class="co-num">CO-006</div><div class="co-desc"><strong>Attic storage decking + pull-down stair</strong><small>Signed Jan 30</small></div><div class="co-impact">+$2,210</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
+          <div class="co"><div class="co-num">CO-005</div><div class="co-desc"><strong>Credit — deleted gas fireplace niche, study</strong><small>Signed Jan 18 · owners went bookshelf wall instead</small></div><div class="co-impact">−$1,800</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
+          <div class="co"><div class="co-num">CO-004</div><div class="co-desc"><strong>Garage — dual EV chargers, 60A circuits</strong><small>Signed Dec 08</small></div><div class="co-impact">+$6,800</div><div class="co-days">no change</div><span class="chip dark">Executed</span></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 22px;background:var(--bone);border-top:1px solid var(--line-soft);font-size:11px;color:var(--mute);flex-wrap:wrap">
+          <span><strong>Every CO is written, priced, and signed before the work happens.</strong> CO-001–003 and 007 were voided or superseded — full history in the vault.</span>
+          <span>Base $1,840,000 + executed $38,400 = <strong>$1,878,400</strong></span>
+        </div>
+      </div>
+
+      </div>
+
+      <div class="pane" id="pane-punch" hidden>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Punch list · <em>not open yet</em></div>
+            <div class="card-sub">Punch opens at stage 15 — quality is tracked continuously until then</div>
+          </div>
+          <span class="chip ok">0 items</span>
+        </div>
+        <div>
+          <div class="mile done"><div class="mile-dot"></div><div class="mile-body"><strong>Footing &amp; foundation inspection</strong><small>City of Mountain Brook · passed</small></div><div class="mile-when">Sep 2025</div></div>
+          <div class="mile done"><div class="mile-dot"></div><div class="mile-body"><strong>Framing inspection</strong><small>Passed first time, zero notes — first on a Greycliff job this year</small></div><div class="mile-when">May 22, 2026</div></div>
+          <div class="mile"><div class="mile-dot"></div><div class="mile-body"><strong>Third-party pre-drywall scan</strong><small>Independent inspector photographs every wall cavity before insulation</small></div><div class="mile-when">Aug 2026</div></div>
+          <div class="mile"><div class="mile-dot"></div><div class="mile-body"><strong>Blower-door &amp; duct-tightness test</strong><small>Target ≤2.5 ACH50 · verified before drywall closes</small></div><div class="mile-when">Oct 2026</div></div>
+          <div class="mile"><div class="mile-dot"></div><div class="mile-body"><strong>Punch list opens · stage 15</strong><small>Wes + Diego walk every room with blue tape before the Whitlows ever see it</small></div><div class="mile-when">Mar 2027</div></div>
+        </div>
+        <div style="padding:14px 22px;border-top:1px solid var(--line-soft);font-size:12px;color:var(--mute)">Compare: <strong style="color:var(--ink)">Sycamore House</strong> closed with 33 punch items — 28 already resolved, 5 open. The system works; it just isn't Cahaba's turn yet.</div>
+      </div>
+
+      </div>
+
+      <div class="pane" id="pane-subs" hidden>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Subs · <em>this build</em></div>
+            <div class="card-sub">12 contracted · 4 on site today · every sub insured and on file</div>
+          </div>
+          <a href="contractors.html" class="card-action">Company roster →</a>
+        </div>
+        <div class="contractor-list">
+          <div class="contractor"><div class="contractor-avatar">D</div><div><div class="contractor-name">Drexel Metals Co.</div><div class="contractor-trade">Roofing · Metal · 11 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.9</div><div class="contractor-meta"><strong>On site</strong>roof crew × 4 · thru Jun 14</div><span class="chip ok">Today</span></div>
+          <div class="contractor"><div class="contractor-avatar b">S</div><div><div class="contractor-name">Spectrum Framing</div><div class="contractor-trade">Framing · 14 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.8</div><div class="contractor-meta"><strong>Wrap day</strong>last 2 punches closed</div><span class="chip ok">Today</span></div>
+          <div class="contractor"><div class="contractor-avatar c">S</div><div><div class="contractor-name">Sloss Stone Masons</div><div class="contractor-trade">Limestone · 8 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.9</div><div class="contractor-meta"><strong>Complete</strong>cladding done May 8</div><span class="chip dark">Done</span></div>
+          <div class="contractor"><div class="contractor-avatar d">B</div><div><div class="contractor-name">Birmingham Electric</div><div class="contractor-trade">Electrical · 7 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.8</div><div class="contractor-meta"><strong>Queued</strong>rough starts Jun 14</div><span class="chip muted">Jun 14</span></div>
+          <div class="contractor"><div class="contractor-avatar c">M</div><div><div class="contractor-name">Magic City Plumbing</div><div class="contractor-trade">Plumbing · 9 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★☆</span> 4.6</div><div class="contractor-meta"><strong>Queued</strong>rough starts Jun 18</div><span class="chip muted">Jun 18</span></div>
+          <div class="contractor"><div class="contractor-avatar">V</div><div><div class="contractor-name">Vulcan Mechanical</div><div class="contractor-trade">HVAC · 12 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.7</div><div class="contractor-meta"><strong>Queued</strong>rough starts Jun 22</div><span class="chip muted">Jun 22</span></div>
+          <div class="contractor"><div class="contractor-avatar b">A</div><div><div class="contractor-name">Alabama Insulation Co.</div><div class="contractor-trade">Insulation · 6 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★☆</span> 4.5</div><div class="contractor-meta"><strong>Queued</strong>after pre-drywall scan</div><span class="chip muted">Aug 3</span></div>
+          <div class="contractor"><div class="contractor-avatar d">I</div><div><div class="contractor-name">Iron City Drywall</div><div class="contractor-trade">Drywall · 10 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.8</div><div class="contractor-meta"><strong>Queued</strong>hang starts Aug 17</div><span class="chip muted">Aug 17</span></div>
+          <div class="contractor"><div class="contractor-avatar">M</div><div><div class="contractor-name">Mason Manufacturing</div><div class="contractor-trade">Cabinets &amp; Millwork · 18 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 5.0</div><div class="contractor-meta"><strong>Shop fab</strong>cabinets in shop now</div><span class="chip ok">Shop</span></div>
+          <div class="contractor"><div class="contractor-avatar c">S</div><div><div class="contractor-name">Shades Valley Flooring</div><div class="contractor-trade">Hardwood · 9 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.9</div><div class="contractor-meta"><strong>Queued</strong>white oak install Oct 12</div><span class="chip muted">Oct 12</span></div>
+          <div class="contractor"><div class="contractor-avatar b">R</div><div><div class="contractor-name">Riverside Paint Co.</div><div class="contractor-trade">Paint &amp; Finish · 6 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.9</div><div class="contractor-meta"><strong>Queued</strong>interior starts Nov 2</div><span class="chip muted">Nov 2</span></div>
+          <div class="contractor"><div class="contractor-avatar d">C</div><div><div class="contractor-name">Cahaba Landscape</div><div class="contractor-trade">Landscape · 5 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★☆</span> 4.6</div><div class="contractor-meta"><strong>Queued</strong>spring install</div><span class="chip muted">Feb 2027</span></div>
+        </div>
+      </div>
+
+      </div>
+
+      <div class="pane" id="pane-budget" hidden>
       <!-- Budget + allowances -->
       <div class="grid-2-even">
         <div class="card">
@@ -329,20 +603,28 @@
         </div>
       </div>
 
-      <!-- Contractors on this build + Documents -->
-      <div class="grid-2-even">
-        <div class="card">
-          <div class="card-head"><div><div class="card-title">Subs · <em>this build</em></div><div class="card-sub">12 subs active · 4 on site today</div></div><a href="contractors.html" class="card-action">All →</a></div>
-          <div class="contractor-list">
-            <div class="contractor"><div class="contractor-avatar">D</div><div><div class="contractor-name">Drexel Metals Co.</div><div class="contractor-trade">Roofing · Metal · 11 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.9</div><div class="contractor-meta"><strong>On site</strong>roof crew × 4</div><span class="chip ok">Today</span></div>
-            <div class="contractor"><div class="contractor-avatar b">S</div><div><div class="contractor-name">Spectrum Framing</div><div class="contractor-trade">Framing · 14 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.8</div><div class="contractor-meta"><strong>Wrap day</strong>last 2 punches</div><span class="chip ok">Today</span></div>
-            <div class="contractor"><div class="contractor-avatar c">M</div><div><div class="contractor-name">Magic City Plumbing</div><div class="contractor-trade">Plumbing · 9 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★☆</span> 4.6</div><div class="contractor-meta"><strong>Queued</strong>starts Jun 18</div><span class="chip muted">Queued</span></div>
-            <div class="contractor"><div class="contractor-avatar d">B</div><div><div class="contractor-name">Birmingham Electric</div><div class="contractor-trade">Electrical · 7 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 4.8</div><div class="contractor-meta"><strong>Queued</strong>starts Jun 14</div><span class="chip muted">Queued</span></div>
-            <div class="contractor"><div class="contractor-avatar">M</div><div><div class="contractor-name">Mason Manufacturing</div><div class="contractor-trade">Cabinets &amp; Millwork · 18 yrs</div></div><div class="contractor-rating"><span class="stars">★★★★★</span> 5.0</div><div class="contractor-meta"><strong>Shop fab</strong>cabinets in shop</div><span class="chip ok">Shop</span></div>
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Draw <em>schedule</em></div>
+            <div class="card-sub">First Horizon · $1,840,000 total · $1.62M funded through Draw 4</div>
           </div>
+          <span class="chip warn">Draw 5 submits after dry-in</span>
         </div>
+        <div>
+          <div class="draw"><div class="draw-num">DRAW 1</div><div><strong>Foundation complete</strong><small>Funded Sep 30, 2025 · 6 days after submit</small></div><div class="amt">$368,000</div><span class="chip ok">Funded</span></div>
+          <div class="draw"><div class="draw-num">DRAW 2</div><div><strong>Framing topped out</strong><small>Funded Dec 23, 2025 · 4 days after submit</small></div><div class="amt">$460,000</div><span class="chip ok">Funded</span></div>
+          <div class="draw"><div class="draw-num">DRAW 3</div><div><strong>Exterior masonry complete</strong><small>Funded Feb 27, 2026</small></div><div class="amt">$404,000</div><span class="chip ok">Funded</span></div>
+          <div class="draw"><div class="draw-num">DRAW 4</div><div><strong>Mechanical pre-work &amp; materials</strong><small>Funded Apr 24, 2026</small></div><div class="amt">$388,000</div><span class="chip ok">Funded</span></div>
+          <div class="draw"><div class="draw-num">DRAW 5</div><div><strong>Roof dry-in</strong><small>Submit Wed May 27 — the day after dry-in completes</small></div><div class="amt">$128,000</div><span class="chip warn">Submit 5/27</span></div>
+          <div class="draw"><div class="draw-num">DRAW 6</div><div><strong>Final — certificate of occupancy</strong><small>At close · Apr 2027</small></div><div class="amt">$92,000</div><span class="chip muted">At close</span></div>
+        </div>
+      </div>
 
-        <div class="card">
+      </div>
+
+      <div class="pane" id="pane-docs" hidden>
+      <div class="card">
           <div class="card-head"><div><div class="card-title">Documents · <em>this build</em></div><div class="card-sub">128 files · drawings, permits, drawschedule, signed COs</div></div><a href="documents.html" class="card-action">Open vault →</a></div>
           <div class="doc-list">
             <div class="doc-row"><div class="doc-ic">PDF</div><div class="doc-name"><strong>GMP Contract — Whitlow / Greycliff</strong><small>Signed Jul 12, 2025 · v3 final · 42pp</small></div><a href="#" class="doc-action">Open →</a></div>
@@ -350,11 +632,16 @@
             <div class="doc-row"><div class="doc-ic">PDF</div><div class="doc-name"><strong>Mountain Brook building permit</strong><small>Aug 04 2025 · valid through Aug 04 2026</small></div><a href="#" class="doc-action">Open →</a></div>
             <div class="doc-row"><div class="doc-ic">XLS</div><div class="doc-name"><strong>Allowance schedule · May update</strong><small>67 categories · $148k of $200k spent</small></div><a href="#" class="doc-action">Open →</a></div>
             <div class="doc-row"><div class="doc-ic">PDF</div><div class="doc-name"><strong>Draws 1–4 (signed)</strong><small>$1.62M disbursed of $1.84M total</small></div><a href="#" class="doc-action">Open →</a></div>
+            <div class="doc-row"><div class="doc-ic">PDF</div><div class="doc-name"><strong>Executed CO packet — CO-004 through CO-013</strong><small>8 signed change orders · +$38,400 net</small></div><a href="#" class="doc-action">Open →</a></div>
+            <div class="doc-row"><div class="doc-ic">PDF</div><div class="doc-name"><strong>Insurance certificates — all 12 subs</strong><small>GL + workers' comp · current through build</small></div><a href="#" class="doc-action">Open →</a></div>
+            <div class="doc-row"><div class="doc-ic">PDF</div><div class="doc-name"><strong>Survey, plat &amp; geotech report</strong><small>Hillside soils report · pier spec basis</small></div><a href="#" class="doc-action">Open →</a></div>
+            <div class="doc-row"><div class="doc-ic">PDF</div><div class="doc-name"><strong>Selections book · v12</strong><small>42 locked selections with photos + SKUs</small></div><a href="#" class="doc-action">Open →</a></div>
           </div>
         </div>
+
       </div>
 
-      <!-- Messages -->
+      <div class="pane" id="pane-messages" hidden>
       <div class="card">
         <div class="card-head"><div><div class="card-title">Messages · <em>this build</em></div><div class="card-sub">3 unread · all parties</div></div><a href="#" class="card-action">Open thread →</a></div>
         <div class="msg-list">
@@ -362,6 +649,12 @@
           <div class="msg"><div class="msg-avatar b">AW</div><div class="msg-body"><div class="msg-head"><div class="msg-name">Annie Whitlow <small>· owner</small></div><div class="msg-when">1h</div></div><div class="msg-text">Headed to showroom Friday afternoon to pick the sconces. Wes — both options ok with you?</div><div class="msg-thread">Re: master bath sconces · 7 messages</div></div></div>
           <div class="msg"><div class="msg-avatar c">SM</div><div class="msg-body"><div class="msg-head"><div class="msg-name">Sarah Marsh <small>· architect</small></div><div class="msg-when">3h</div></div><div class="msg-text">Quick — porch detail on CO-014 needs the rim joist callout updated. Sending revised sheet now.</div><div class="msg-thread">Re: porch ceiling detail · 2 messages</div></div></div>
         </div>
+        <div style="display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--line-soft);background:var(--bone)">
+          <input type="text" placeholder="Message the Whitlows, Sarah, or the crew…" style="flex:1;padding:11px 14px;background:var(--paper);border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;color:var(--ink)">
+          <button class="top-cta" style="display:inline-flex">Send</button>
+        </div>
+      </div>
+
       </div>
 
       <!-- Owner view link -->
@@ -384,5 +677,38 @@
 </div>
 
 <script src="_sidebar.js" data-active="build-cahaba-ridge"></script>
+<script>
+(function(){
+  var tabs = document.querySelectorAll('#btabs a[data-tab]');
+  function show(id){
+    document.querySelectorAll('.pane').forEach(function(p){ p.hidden = (p.id !== 'pane-'+id); });
+    tabs.forEach(function(t){ t.classList.toggle('active', t.dataset.tab === id); });
+    if (history.replaceState) history.replaceState(null, '', '#'+id);
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ show(t.dataset.tab); }); });
+  document.querySelectorAll('.card-action[data-tab]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      e.preventDefault();
+      show(a.dataset.tab);
+      document.getElementById('btabs').scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+  var h = (location.hash || '').replace('#','');
+  if (h && document.getElementById('pane-'+h)) show(h);
+
+  // photo stage filter
+  var chips = document.querySelectorAll('.pf-chip');
+  chips.forEach(function(c){
+    c.addEventListener('click', function(){
+      chips.forEach(function(x){ x.classList.remove('on'); });
+      c.classList.add('on');
+      var st = c.dataset.stage;
+      document.querySelectorAll('#pane-photos .photo').forEach(function(p){
+        p.classList.toggle('hide', st !== 'all' && p.dataset.stage !== st);
+      });
+    });
+  });
+})();
+</script>
 </body>
 </html>
