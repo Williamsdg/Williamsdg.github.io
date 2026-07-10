@@ -1,16 +1,22 @@
 // Mark JS as ready so reveal CSS kicks in
 document.documentElement.classList.add("js-ready");
 
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const FINE_POINTER = matchMedia("(hover: hover) and (pointer: fine)").matches;
+
 const LIVE = "https://williamsdigital.io/preview/";
 const ORG = "https://williams-digital.github.io/preview/";
 
-// The 10 featured slugs — these are shown in the featured section,
-// so we DO NOT duplicate them in the archive grid below.
+// Featured concept slugs — shown as cards above, not repeated in the archive.
 const FEATURED_SLUGS = new Set([
   "andre-balazs", "flynn-hospitality", "jenkins-group", "mercier-orchards",
   "mcbride", "lilly-pad-village", "savannah-day-spa", "birmingham-reporting",
   "case-study-liberty-park", "grace-table-church"
 ]);
+
+// Real client work — featured in section 01, never listed in the concept archive.
+const CLIENT_SLUGS = new Set(["auburn-daily"]);
+const CLIENT_COUNT = 7;
 
 const ITEMS = [
   // Other featured / case studies / utilities
@@ -212,12 +218,58 @@ const ITEMS = [
   { slug: "barkingbee", name: "BarkingBee", cat: "utilities", host: LIVE }
 ];
 
-// ---- Build index grid (skips featured slugs to avoid duplicates) ----
+// ---- Banner title: split lines into words for blur-stagger reveal ----
+(() => {
+  const title = document.getElementById("bannerTitle");
+  if (!title) return;
+  let i = 0;
+  title.querySelectorAll(".line").forEach(line => {
+    const words = line.textContent.trim().split(/\s+/);
+    line.textContent = "";
+    words.forEach(word => {
+      const span = document.createElement("span");
+      span.className = "w";
+      span.style.setProperty("--i", i++);
+      span.textContent = word;
+      line.appendChild(span);
+    });
+  });
+})();
+
+// ---- Animated stat counters ----
+(() => {
+  const archiveCount = ITEMS.filter(it => !FEATURED_SLUGS.has(it.slug) && !CLIENT_SLUGS.has(it.slug)).length;
+  const builds = document.getElementById("statBuilds");
+  if (builds) builds.dataset.count = archiveCount + FEATURED_SLUGS.size + CLIENT_COUNT;
+
+  const counters = document.querySelectorAll(".stat-num");
+  const runCounter = el => {
+    const target = parseInt(el.dataset.count, 10) || 0;
+    if (REDUCED) { el.textContent = target; return; }
+    const dur = 1400;
+    const start = performance.now();
+    const tick = now => {
+      const p = Math.min((now - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+  const counterIO = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { runCounter(e.target); counterIO.unobserve(e.target); }
+    });
+  }, { threshold: 0.5 });
+  counters.forEach(c => counterIO.observe(c));
+})();
+
+// ---- Build index grid (skips featured + client slugs) ----
 const grid = document.getElementById("indexGrid");
 const fragment = document.createDocumentFragment();
 
 ITEMS
-  .filter(item => !FEATURED_SLUGS.has(item.slug))
+  .filter(item => !FEATURED_SLUGS.has(item.slug) && !CLIENT_SLUGS.has(item.slug))
   .sort((a, b) => a.name.localeCompare(b.name))
   .forEach(item => {
     const url = item.host + item.slug + "/";
@@ -264,18 +316,20 @@ const io = new IntersectionObserver((entries) => {
 
 document.querySelectorAll(".reveal, .reveal-up, .card").forEach(el => io.observe(el));
 
-// Stagger banner title words
-document.querySelectorAll(".banner-title .word").forEach((w, i) => w.style.setProperty("--i", i));
-
-// ---- Nav scroll state ----
+// ---- Nav scroll state + scroll progress bar ----
 const nav = document.querySelector(".nav");
+const scrollBar = document.getElementById("scrollBar");
 window.addEventListener("scroll", () => {
   nav.classList.toggle("scrolled", window.scrollY > 40);
+  if (scrollBar) {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    scrollBar.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+  }
 }, { passive: true });
 
 // ---- Magnetic links ----
 // Subtle translate toward cursor on hover. No custom cursor, no trail.
-if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
+if (FINE_POINTER && !REDUCED) {
   const STRENGTH = 0.25;
   const MAX_DIST = 60;
 
@@ -295,6 +349,46 @@ if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
     el.addEventListener("mouseleave", () => {
       el.style.transform = "";
     });
+  });
+}
+
+// ---- 3D tilt + cursor glare on cards ----
+if (FINE_POINTER && !REDUCED) {
+  const MAX_TILT = 4; // degrees
+
+  document.querySelectorAll(".card.tilt").forEach(card => {
+    const glare = card.querySelector(".card-glare");
+
+    card.addEventListener("mousemove", (e) => {
+      if (!card.classList.contains("in-view")) return;
+      const rect = card.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width;   // 0..1
+      const py = (e.clientY - rect.top) / rect.height;   // 0..1
+      const rx = (0.5 - py) * MAX_TILT * 2;
+      const ry = (px - 0.5) * MAX_TILT * 2;
+      card.classList.add("tilting");
+      card.style.transform = `perspective(1000px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateY(-2px)`;
+      if (glare) {
+        glare.style.setProperty("--gx", `${(px * 100).toFixed(1)}%`);
+        glare.style.setProperty("--gy", `${(py * 100).toFixed(1)}%`);
+      }
+    });
+
+    card.addEventListener("mouseleave", () => {
+      card.classList.remove("tilting");
+      card.style.transform = "";
+    });
+  });
+}
+
+// ---- Cursor spotlight on archive tiles ----
+if (FINE_POINTER && !REDUCED) {
+  grid.addEventListener("mousemove", (e) => {
+    const tile = e.target.closest(".tile");
+    if (!tile) return;
+    const rect = tile.getBoundingClientRect();
+    tile.style.setProperty("--sx", `${((e.clientX - rect.left) / rect.width * 100).toFixed(1)}%`);
+    tile.style.setProperty("--sy", `${((e.clientY - rect.top) / rect.height * 100).toFixed(1)}%`);
   });
 }
 
@@ -340,25 +434,3 @@ document.querySelectorAll(".tile").forEach(tile => {
   });
   tile.addEventListener("mouseleave", hidePreview);
 });
-
-// ---- Subtle parallax on card media (featured only) ----
-const cards = document.querySelectorAll(".card-media");
-let ticking = false;
-window.addEventListener("scroll", () => {
-  if (!ticking) {
-    requestAnimationFrame(() => {
-      cards.forEach(c => {
-        const rect = c.getBoundingClientRect();
-        const center = rect.top + rect.height / 2;
-        const distance = center - window.innerHeight / 2;
-        const offset = distance * -0.04;
-        const img = c.querySelector("img");
-        if (img && !img.dataset.hovered) {
-          img.style.transform = `translateY(${offset}px) scale(1.06)`;
-        }
-      });
-      ticking = false;
-    });
-    ticking = true;
-  }
-}, { passive: true });
