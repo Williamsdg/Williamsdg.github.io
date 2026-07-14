@@ -39,53 +39,171 @@
     return out + '</nav>';
   }
 
-  html += section('Build');
-  html += nav([
-    {key:'overview', href:'dashboard.html', label:'Overview'},
-    {key:'builds', href:'builds.html', label:'Builds', count:'7'},
-    {key:'daily-logs', href:'daily-logs.html', label:'Daily Logs'},
-    {key:'punch-lists', href:'punch-lists.html', label:'Punch Lists'},
-    {key:'calendar', href:'calendar.html', label:'Calendar'}
-  ]);
+  // ---- role-based navigation ----
+  // Layer 1 (role) drives the sidebar; the switcher persists via localStorage.
+  var role = 'owner';
+  try { role = localStorage.getItem('gc-role') || 'owner'; } catch(e){}
 
-  html += section('Clients');
-  html += nav([
-    {key:'client-portal', href:'client.html', label:'Homeowner Portal'},
-    {key:'selections', href:'selections.html', label:'Selections', count:'5'},
-    {key:'change-orders', href:'change-orders.html', label:'Change Orders', count:'3', warn:true},
-    {key:'friday-letter', href:'friday-letter.html', label:'Friday Letter', count:'due', warn:true}
-  ]);
+  var ROLES = {
+    owner: {label:'Owner', home:'dashboard.html', user:['W','Wes Greycliff','7 active builds','\u26a0 2 items need attention'], nav:[
+      ['Today', [
+        ['overview','dashboard.html','Overview'],
+        ['inbox','dashboard.html#attention','Inbox','4',1],
+        ['tasks','dashboard.html#today','Tasks','8'],
+        ['calendar','calendar.html','Calendar']]],
+      ['Projects', [
+        ['builds','builds.html','Builds','7'],
+        ['daily-logs','daily-logs.html','Daily Logs'],
+        ['punch-lists','punch-lists.html','Punch Lists'],
+        ['inspections','documents.html','Inspections'],
+        ['photos','daily-logs.html','Photos']]],
+      ['Homeowners', [
+        ['client-portal','client.html','Portal'],
+        ['messages','dashboard.html#attention','Messages','4',1],
+        ['selections','selections.html','Selections','5'],
+        ['change-orders','change-orders.html','Change Orders','3',1],
+        ['friday-letter','friday-letter.html','Friday Letters','due',1]]],
+      ['Financial', [
+        ['budget','budget.html','Draws','2',1],
+        ['pipeline','pipeline.html','Pipeline'],
+        ['reports','reports.html','Intelligence']]],
+      ['Operations', [
+        ['contractors','contractors.html','Trades'],
+        ['permits','documents.html','Permits','2',1],
+        ['documents','documents.html','Documents'],
+        ['warranty','warranty.html','Warranty']]],
+      ['\u2728 Site Office AI', [
+        ['ai-brief','dashboard.html#briefing','Morning Brief'],
+        ['ai-ask','dashboard.html#ask','Ask AI'],
+        ['ai-letter','friday-letter.html','Generate Letter']]]
+    ]},
+    ops: {label:'Operations Director', home:'role-operations.html', user:['M','Mason Greycliff','Director of Construction','7 builds \u00b7 3 supers'], nav:[
+      ['Today', [
+        ['overview','role-operations.html','Operations Overview'],
+        ['calendar','calendar.html','Calendar']]],
+      ['Construction', [
+        ['builds','builds.html','Builds','7'],
+        ['daily-logs','daily-logs.html','Daily Logs','3',1],
+        ['punch-lists','punch-lists.html','Punch Lists'],
+        ['inspections','documents.html','Inspections','2',1],
+        ['photos','daily-logs.html','Photos']]],
+      ['Trades', [
+        ['contractors','contractors.html','Trade Partners'],
+        ['permits','documents.html','Permits','2',1]]],
+      ['Financial \u00b7 limited', [
+        ['budget','budget.html','Draw Status'],
+        ['change-orders','change-orders.html','CO Schedule Impact','3',1]]],
+      ['\u2728 Site Office AI', [
+        ['ai-brief','role-operations.html','Morning Brief'],
+        ['ai-ask','dashboard.html#ask','Ask AI']]]
+    ]},
+    pm: {label:'Project Manager', home:'role-pm.html', user:['M','Marcus Mills','Project Manager','Old Leeds \u00b7 Pine Point'], nav:[
+      ['My Day', [
+        ['overview','role-pm.html','My Day'],
+        ['calendar','calendar.html','Schedule']]],
+      ['My Builds \u00b7 2 assigned', [
+        ['builds','builds.html','Old Leeds Way','\u26a0',1],
+        ['builds2','builds.html','Pine Point']]],
+      ['Clients', [
+        ['client-portal','client.html','Portals'],
+        ['messages','role-pm.html','Messages','2',1],
+        ['selections','selections.html','Selections','3',1],
+        ['change-orders','change-orders.html','Change Orders','2',1],
+        ['friday-letter','friday-letter.html','Friday Letters']]],
+      ['Project Financials', [
+        ['budget','budget.html','Budget & Draws'],
+        ['documents','documents.html','Documents']]]
+    ]},
+    superintendent: {label:'Superintendent', home:'role-super.html', user:['D','Diego Ruiz','Superintendent','3 sites today'], nav:[
+      ['Today', [
+        ['overview','role-super.html','Today'],
+        ['daily-logs','daily-logs.html','Daily Logs','2',1],
+        ['photos','daily-logs.html','Photos'],
+        ['punch-lists','punch-lists.html','Punch Lists'],
+        ['inspections','documents.html','Inspections'],
+        ['calendar','calendar.html','Schedule'],
+        ['messages','role-super.html','Messages']]],
+      ['My Sites', [
+        ['s1','build-cahaba-ridge.html','Cahaba Ridge'],
+        ['s2','builds.html','Sycamore'],
+        ['s3','builds.html','Brook House']]]
+    ]},
+    designer: {label:'Designer', home:'role-designer.html', user:['E','Elena Ortiz','Lead Designer','5 due this week'], nav:[
+      ['Design Studio', [
+        ['overview','role-designer.html','Design Overview'],
+        ['clients','client.html','My Clients'],
+        ['selections','selections.html','Selections','5',1],
+        ['calendar','calendar.html','Appointments','4'],
+        ['moodboards','role-designer.html','Mood Boards'],
+        ['allowances','selections.html','Allowance Tracker','2',1],
+        ['library','role-designer.html','Product Library'],
+        ['approvals','change-orders.html','Approvals']]]
+    ]},
+    accounting: {label:'Accounting', home:'role-accounting.html', user:['R','Ruth Caldwell','Controller','$425k in motion'], nav:[
+      ['Money', [
+        ['overview','role-accounting.html','Money Overview'],
+        ['budget','budget.html','Draws','3',1],
+        ['invoices','role-accounting.html','Invoices','8',1],
+        ['change-orders','change-orders.html','Change Orders','2',1],
+        ['vendors','contractors.html','Vendor Payments','4',1],
+        ['budgets','budget.html','Budgets'],
+        ['reports','reports.html','Reports'],
+        ['documents','documents.html','Documents']]]
+    ]},
+    warranty: {label:'Warranty Manager', home:'warranty.html', user:['D','Diego Ruiz','Warranty Manager','6 open \u00b7 1 critical'], nav:[
+      ['Warranty', [
+        ['warranty','warranty.html','Warranty Overview'],
+        ['escalations','warranty.html','Escalations','2',1],
+        ['tickets','warranty.html','Tickets','6'],
+        ['homes','warranty.html','Homes','23'],
+        ['calendar','calendar.html','Scheduled Walks'],
+        ['contractors','contractors.html','Trades'],
+        ['reports','reports.html','Reports']]]
+    ]},
+  };
+  var R = ROLES[role] || ROLES.owner;
 
-  html += section('Money');
-  html += nav([
-    {key:'budget', href:'budget.html', label:'Budget & Draws', count:'2', warn:true},
-    {key:'pipeline', href:'pipeline.html', label:'Pipeline'},
-    {key:'reports', href:'reports.html', label:'Reports'}
-  ]);
+  // role switcher — the demo's centerpiece
+  html += '<div class="side-switch">'
+       +  '<label>View dashboard as</label>'
+       +  '<select id="roleSwitch">';
+  ['owner','ops','pm','superintendent','designer','accounting','warranty'].forEach(function(k){
+    html += '<option value="' + k + '"' + (k === role ? ' selected' : '') + '>' + ROLES[k].label + '</option>';
+  });
+  html += '</select></div>';
 
-  html += section('Office');
-  html += nav([
-    {key:'contractors', href:'contractors.html', label:'Trade Partners'},
-    {key:'documents', href:'documents.html', label:'Documents & Permits'},
-    {key:'warranty', href:'warranty.html', label:'Warranty'}
-  ]);
+  R.nav.forEach(function(sec){
+    html += section(sec[0]);
+    html += nav(sec[1].map(function(it){
+      return {key: it[0], href: it[1], label: it[2], count: it[3], warn: !!it[4]};
+    }));
+  });
 
-  html += '<div class="side-utility">'
-       +   '<a href="team.html"'+(active==='team'?' class="active"':'')+'>Team</a>'
-       +   '<span class="side-utility-dot">·</span>'
-       +   '<a href="settings.html"'+(active==='settings'?' class="active"':'')+'>Settings</a>'
-       + '</div>';
+  if (role === 'owner') {
+    html += '<div class="side-utility">'
+         +   '<a href="team.html"' + (active === 'team' ? ' class="active"' : '') + '>Team & Permissions</a>'
+         +   '<span class="side-utility-dot">\u00b7</span>'
+         +   '<a href="settings.html"' + (active === 'settings' ? ' class="active"' : '') + '>Settings</a>'
+         + '</div>';
+  }
 
-  html += '<div class="side-user">'
-       +   '<div class="side-avatar">W</div>'
+  html += '<div class="side-user"' + (role === 'owner' ? '' : ' style="margin-top:auto"') + '>'
+       +   '<div class="side-avatar">' + R.user[0] + '</div>'
        +   '<div>'
-       +     '<div class="side-user-name">Wes Greycliff</div>'
-       +     '<div class="side-user-role">President · Superintendent</div>'
+       +     '<div class="side-user-name">' + R.user[1] + '</div>'
+       +     '<div class="side-user-role">' + R.user[2] + '</div>'
+       +     '<div class="side-user-role" style="color:#e0987a;margin-top:1px">' + R.user[3] + '</div>'
        +   '</div>'
        + '</div>';
 
   var el = document.getElementById('side');
   if (el) el.innerHTML = html;
+
+  var sw = document.getElementById('roleSwitch');
+  if (sw) sw.addEventListener('change', function(){
+    try { localStorage.setItem('gc-role', sw.value); } catch(e){}
+    window.location.href = ROLES[sw.value].home;
+  });
 
   // hamburger open / overlay close
   document.addEventListener('click', function(e){
@@ -173,4 +291,80 @@
 
   cards.forEach(function(el){ io.observe(el); });
   [].slice.call(document.querySelectorAll('.kpi-value')).forEach(function(el){ io.observe(el); });
+})();
+
+/* --- sliding-pill segmented controls (.toolbar-tabs) ---
+   Upgrades every toolbar tab group into an interactive segmented control:
+   an indicator pill glides between tabs instead of the background jumping.
+   Adds tablist ARIA roles and arrow-key navigation. */
+(function(){
+  [].slice.call(document.querySelectorAll('.toolbar-tabs')).forEach(function(list){
+    var tabs = [].slice.call(list.querySelectorAll('a'));
+    if (!tabs.length) return;
+    // some pages hard-code the active look inline — class-based styles take over
+    tabs.forEach(function(t){
+      t.style.removeProperty('background');
+      t.style.removeProperty('color');
+    });
+
+    var pill = document.createElement('span');
+    pill.className = 'tt-pill';
+    list.insertBefore(pill, list.firstChild);
+    list.classList.add('tt-enhanced');
+
+    function place(el, instant){
+      if (!el) { pill.style.opacity = '0'; return; }
+      if (instant) pill.style.transition = 'none';
+      pill.style.opacity = '1';
+      pill.style.left = el.offsetLeft + 'px';
+      pill.style.top = el.offsetTop + 'px';
+      pill.style.width = el.offsetWidth + 'px';
+      pill.style.height = el.offsetHeight + 'px';
+      if (instant) requestAnimationFrame(function(){ pill.style.transition = ''; });
+    }
+
+    function activate(a){
+      tabs.forEach(function(t){
+        t.classList.toggle('active', t === a);
+        t.setAttribute('aria-selected', t === a ? 'true' : 'false');
+      });
+      place(a);
+    }
+
+    list.setAttribute('role', 'tablist');
+    tabs.forEach(function(t){
+      t.setAttribute('role', 'tab');
+      t.setAttribute('tabindex', '0');
+      t.setAttribute('aria-selected', t.classList.contains('active') ? 'true' : 'false');
+    });
+
+    place(list.querySelector('a.active'), true);
+    window.addEventListener('resize', function(){ place(list.querySelector('a.active'), true); });
+    // fonts loading late shifts tab widths — re-place once they settle
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function(){ place(list.querySelector('a.active'), true); });
+    }
+
+    list.addEventListener('click', function(e){
+      var a = e.target.closest('a');
+      if (!a || !list.contains(a)) return;
+      var href = a.getAttribute('href');
+      if (href && href !== '#') return; // real link — let it navigate
+      e.preventDefault();
+      activate(a);
+    });
+
+    list.addEventListener('keydown', function(e){
+      var a = e.target.closest('a');
+      if (!a) return;
+      var idx = tabs.indexOf(a), next = null;
+      if (e.key === 'ArrowRight') next = tabs[(idx + 1) % tabs.length];
+      else if (e.key === 'ArrowLeft') next = tabs[(idx - 1 + tabs.length) % tabs.length];
+      else if (e.key === 'Enter' || e.key === ' ') next = a;
+      else return;
+      e.preventDefault();
+      next.focus();
+      activate(next);
+    });
+  });
 })();
