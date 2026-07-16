@@ -43,6 +43,10 @@
   // Layer 1 (role) drives the sidebar; the switcher persists via localStorage.
   var role = 'owner';
   try { role = localStorage.getItem('gc-role') || 'owner'; } catch(e){}
+  try {
+    var qsRole = new URLSearchParams(window.location.search).get('role');
+    if (qsRole) { role = qsRole; localStorage.setItem('gc-role', qsRole); }
+  } catch(e){}
 
   var ROLES = {
     owner: {label:'Owner', home:'dashboard.html', user:['W','Wes Greycliff','7 active builds','\u26a0 2 items need attention'], nav:[
@@ -77,87 +81,114 @@
         ['ai-ask','dashboard.html#ask','Ask AI'],
         ['ai-letter','friday-letter.html','Generate Letter']]]
     ]},
-    ops: {label:'Operations Director', home:'role-operations.html', user:['M','Mason Greycliff','Director of Construction','7 builds \u00b7 3 supers'], nav:[
+    ops: {label:'Operations Director', home:'role-operations.html', user:['M','Mason Greycliff','Director of Construction','7 builds \u00b7 3 supers \u00b7 3 risks'], nav:[
       ['Today', [
         ['overview','role-operations.html','Operations Overview'],
-        ['calendar','calendar.html','Calendar']]],
-      ['Construction', [
-        ['builds','builds.html','Builds','7'],
-        ['daily-logs','daily-logs.html','Daily Logs','3',1],
-        ['punch-lists','punch-lists.html','Punch Lists'],
+        ['brief','role-operations.html#brief','Morning Brief']]],
+      ['Field', [
+        ['builds','builds.html','Build Health','7'],
+        ['field','role-operations.html#field','Field Updates','3',1],
         ['inspections','documents.html','Inspections','2',1],
-        ['photos','daily-logs.html','Photos']]],
-      ['Trades', [
-        ['contractors','contractors.html','Trade Partners'],
         ['permits','documents.html','Permits','2',1]]],
-      ['Financial \u00b7 limited', [
-        ['budget','budget.html','Draw Status'],
-        ['change-orders','change-orders.html','CO Schedule Impact','3',1]]],
-      ['\u2728 Site Office AI', [
-        ['ai-brief','role-operations.html','Morning Brief'],
-        ['ai-ask','dashboard.html#ask','Ask AI']]]
+      ['People', [
+        ['supers','role-operations.html#supers','Superintendents'],
+        ['contractors','contractors.html','Trade Partners'],
+        ['capacity','role-operations.html#capacity','Capacity Planning','1',1]]],
+      ['Risk', [
+        ['risks','role-operations.html#risks','Schedule Risks','3',1],
+        ['warranty','warranty.html#escalations','Warranty Risks','2',1],
+        ['portfolio','builds.html','Portfolio Health']]],
+      ['\u2728 AI Command', [
+        ['ai-ask','role-operations.html#brief','Ask AI'],
+        ['forecast','role-operations.html#forecast','Weekly Forecast']]]
     ]},
-    pm: {label:'Project Manager', home:'role-pm.html', user:['M','Marcus Mills','Project Manager','Old Leeds \u00b7 Pine Point'], nav:[
+    pm: {label:'Project Manager', home:'role-pm.html', user:['M','Marcus Mills','Project Manager \u00b7 2 builds \u00b7 4 approvals','\u26a0 8 open tasks'], nav:[
       ['My Day', [
         ['overview','role-pm.html','My Day'],
+        ['actions','role-pm.html#actions','Action Items','8',1],
         ['calendar','calendar.html','Schedule']]],
-      ['My Builds \u00b7 2 assigned', [
-        ['builds','builds.html','Old Leeds Way','\u26a0',1],
-        ['builds2','builds.html','Pine Point']]],
+      ['Projects', [
+        ['b1','builds.html','Old Leeds Way','\u26a0',1],
+        ['b2','builds.html','Pine Point','\u2713']]],
       ['Clients', [
-        ['client-portal','client.html','Portals'],
-        ['messages','role-pm.html','Messages','2',1],
+        ['inbox','role-pm.html#actions','Inbox','2',1],
         ['selections','selections.html','Selections','3',1],
         ['change-orders','change-orders.html','Change Orders','2',1],
         ['friday-letter','friday-letter.html','Friday Letters']]],
-      ['Project Financials', [
-        ['budget','budget.html','Budget & Draws'],
-        ['documents','documents.html','Documents']]]
+      ['Operations', [
+        ['documents','documents.html','Documents'],
+        ['approvals','role-pm.html#approvals','Approvals','4',1]]],
+      ['Financials', [
+        ['budget','budget.html','Budget'],
+        ['draws','budget.html','Draws']]]
     ]},
-    superintendent: {label:'Superintendent', home:'role-super.html', user:['D','Diego Ruiz','Superintendent','3 sites today'], nav:[
+    superintendent: {label:'Superintendent', home:'role-super.html', user:['D','Diego Ruiz','Superintendent \u00b7 3 active sites','\u26a0 7 open tasks \u00b7 2 inspections this wk'], nav:[
       ['Today', [
         ['overview','role-super.html','Today'],
+        ['actions','role-super.html#actions','Action Items','7',1]]],
+      ['Field Work', [
         ['daily-logs','daily-logs.html','Daily Logs','2',1],
         ['photos','daily-logs.html','Photos'],
         ['punch-lists','punch-lists.html','Punch Lists'],
-        ['inspections','documents.html','Inspections'],
+        ['inspections','documents.html','Inspections']]],
+      ['Planning', [
         ['calendar','calendar.html','Schedule'],
-        ['messages','role-super.html','Messages']]],
+        ['weather','role-super.html#weather','Weather','\u26c8',1],
+        ['deliveries','role-super.html#deliveries','Deliveries','3']]],
+      ['Communication', [
+        ['inbox','role-super.html#actions','Inbox','2',1],
+        ['homeowners','client.html','Homeowners'],
+        ['trades','contractors.html','Trade Partners']]],
       ['My Sites', [
-        ['s1','build-cahaba-ridge.html','Cahaba Ridge'],
-        ['s2','builds.html','Sycamore'],
-        ['s3','builds.html','Brook House']]]
+        ['s1','build-cahaba-ridge.html','Cahaba Ridge','52%'],
+        ['s2','builds.html','Sycamore','96%'],
+        ['s3','builds.html','Brook House','Y2'],
+        ['s4','builds.html','+ 2 more']]]
     ]},
-    designer: {label:'Designer', home:'role-designer.html', user:['E','Elena Ortiz','Lead Designer','5 due this week'], nav:[
+    designer: {label:'Designer', home:'role-designer.html', user:['S','Sarah Mitchell','Lead Designer \u00b7 5 active projects','\u26a0 7 items need attention'], nav:[
       ['Design Studio', [
         ['overview','role-designer.html','Design Overview'],
-        ['clients','client.html','My Clients'],
-        ['selections','selections.html','Selections','5',1],
+        ['attention','role-designer.html#attention','Needs Attention','7',1],
+        ['projects','selections.html','Design Projects'],
         ['calendar','calendar.html','Appointments','4'],
+        ['selections','selections.html','Selections','5',1],
+        ['approvals','change-orders.html','Approvals','3',1],
         ['moodboards','role-designer.html','Mood Boards'],
-        ['allowances','selections.html','Allowance Tracker','2',1],
+        ['specs','documents.html','Specifications'],
         ['library','role-designer.html','Product Library'],
-        ['approvals','change-orders.html','Approvals']]]
+        ['allowances','selections.html','Allowance Tracker','2',1]]]
     ]},
-    accounting: {label:'Accounting', home:'role-accounting.html', user:['R','Ruth Caldwell','Controller','$425k in motion'], nav:[
-      ['Money', [
-        ['overview','role-accounting.html','Money Overview'],
+    accounting: {label:'Accounting', home:'role-accounting.html', user:['M','Megan Cole','Controller \u00b7 $842k outstanding','\u26a0 17 items need attention'], nav:[
+      ['Accounting', [
+        ['overview','role-accounting.html','Accounting Overview'],
+        ['attention','role-accounting.html#attention','Needs Attention','17',1]]],
+      ['Receivables', [
         ['budget','budget.html','Draws','3',1],
-        ['invoices','role-accounting.html','Invoices','8',1],
         ['change-orders','change-orders.html','Change Orders','2',1],
-        ['vendors','contractors.html','Vendor Payments','4',1],
+        ['payments','budget.html','Client Payments']]],
+      ['Payables', [
+        ['invoices','role-accounting.html#attention','Invoices','8',1],
+        ['vendors','contractors.html','Vendor Payments','4',1]]],
+      ['Control', [
         ['budgets','budget.html','Budgets'],
+        ['recon','role-accounting.html#reconciliation','Reconciliation','2',1],
         ['reports','reports.html','Reports'],
-        ['documents','documents.html','Documents']]]
+        ['documents','documents.html','Financial Documents']]]
     ]},
-    warranty: {label:'Warranty Manager', home:'warranty.html', user:['D','Diego Ruiz','Warranty Manager','6 open \u00b7 1 critical'], nav:[
+    warranty: {label:'Warranty Manager', home:'warranty.html', user:['D','Diego Ruiz','Warranty Manager \u00b7 23 homes','\u26a0 8 need action'], nav:[
       ['Warranty', [
         ['warranty','warranty.html','Warranty Overview'],
-        ['escalations','warranty.html','Escalations','2',1],
-        ['tickets','warranty.html','Tickets','6'],
-        ['homes','warranty.html','Homes','23'],
-        ['calendar','calendar.html','Scheduled Walks'],
-        ['contractors','contractors.html','Trades'],
+        ['needs-action','warranty.html#needs-action','Needs Action','8',1],
+        ['escalations','warranty.html#escalations','Escalations','2',1]]],
+      ['Operations', [
+        ['tickets','warranty.html#homes','Tickets','6'],
+        ['walks','warranty.html#walks','Scheduled Walks','4'],
+        ['dispatch','warranty.html#dispatch','Trade Dispatch','3',1]]],
+      ['Homeowners', [
+        ['closings','punch-lists.html','Recent Closings'],
+        ['homes','warranty.html#homes','Active Warranty Homes','23'],
+        ['satisfaction','warranty.html#satisfaction','Customer Satisfaction']]],
+      ['Analytics', [
         ['reports','reports.html','Reports']]]
     ]},
   };
@@ -165,7 +196,7 @@
 
   // role switcher — the demo's centerpiece
   html += '<div class="side-switch">'
-       +  '<label>View dashboard as</label>'
+       +  '<label>View as</label>'
        +  '<select id="roleSwitch">';
   ['owner','ops','pm','superintendent','designer','accounting','warranty'].forEach(function(k){
     html += '<option value="' + k + '"' + (k === role ? ' selected' : '') + '>' + ROLES[k].label + '</option>';
