@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Williams Digital Command Center</title>
+<style>
+  :root {
+    --paper: #F6F5F1;
+    --surface: #FFFFFF;
+    --ink: #22262E;
+    --ink-soft: #565B66;
+    --line: #DEDCD4;
+    --accent: #2A5D57;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #E4ECEA;
+    --side: #1E332F;
+    --side-ink: #C9D6D3;
+    --side-active: #2A5D57;
+    --go: #2E7D32;
+    --go-bg: #E7F1E7;
+    --caution: #A66A12;
+    --caution-bg: #F6EEDD;
+    --stop: #B3382F;
+    --stop-bg: #F6E5E3;
+    --serif: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --shadow: 0 1px 3px rgba(20,25,23,.07), 0 4px 14px rgba(20,25,23,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #191C21; --surface: #22262E; --ink: #E8E7E2; --ink-soft: #A6AAB3;
+      --line: #383D47; --accent: #6FB3A8; --accent-ink: #10201D; --accent-soft: #253833;
+      --side: #14211E; --side-ink: #9FB4B0; --side-active: #2A5D57;
+      --go: #7CC47F; --go-bg: #243224; --caution: #D9A555; --caution-bg: #3a2f1d;
+      --stop: #E08078; --stop-bg: #3d2422;
+      --shadow: 0 1px 3px rgba(0,0,0,.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  button { font: inherit; cursor: pointer; }
+  a { color: var(--accent); }
+
+  .app { display: grid; grid-template-columns: 232px minmax(0,1fr); min-height: 100vh; }
+
+  /* ---------- Sidebar ---------- */
+  aside {
+    background: var(--side);
+    color: var(--side-ink);
+    padding: 22px 14px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .brand { padding: 2px 12px 18px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 14px; }
+  .brand .wd { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; opacity: .75; }
+  .brand h1 { font-family: var(--serif); font-size: 19px; margin: 4px 0 0; color: #fff; font-weight: 700; line-height: 1.25; }
+  .navgroup { margin-bottom: 14px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; text-align: left;
+    background: none; border: 0; color: var(--side-ink);
+    padding: 9px 12px; border-radius: 8px; font-size: 14px; font-weight: 500;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.06); color: #fff; }
+  .nav-item.active { background: var(--side-active); color: #fff; }
+  .nav-item .ico { width: 18px; text-align: center; flex: none; opacity: .9; }
+  .nav-item .badge {
+    margin-left: auto; font-family: var(--mono); font-size: 9.5px; letter-spacing: .08em;
+    background: rgba(255,255,255,.12); color: #fff; border-radius: 999px; padding: 2px 8px;
+  }
+  .nav-sep { border: 0; border-top: 1px solid rgba(255,255,255,.08); margin: 12px 8px; }
+  .side-foot { padding: 14px 12px 4px; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; opacity: .55; }
+
+  /* ---------- Main ---------- */
+  main { padding: 28px 32px 80px; max-width: 1180px; }
+  .view-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .view-head h2 { font-family: var(--serif); font-size: 26px; font-weight: 700; margin: 0; }
+  .view-sub { color: var(--ink-soft); font-size: 14px; margin: 0 0 22px; }
+  .view-head .spacer { flex: 1; }
+
+  .btn {
+    background: var(--accent); color: var(--accent-ink); border: 0;
+    border-radius: 8px; padding: 8px 16px; font-weight: 600; font-size: 14px;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .btn.small { padding: 5px 12px; font-size: 13px; }
+  .btn.danger { background: transparent; color: var(--stop); border: 1px solid var(--stop); }
+
+  /* ---------- Cards / tiles ---------- */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .tile { padding: 16px 18px; }
+  .tile .t-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+  .tile .t-num { font-size: 27px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .tile .t-hint { font-size: 12.5px; color: var(--ink-soft); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 980px) { .grid-2 { grid-template-columns: 1fr; } }
+  .panel { padding: 18px 20px; }
+  .panel h3 { margin: 0 0 12px; font-size: 15.5px; font-weight: 650; }
+
+  .mini-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin: 18px 0 8px; }
+
+  /* ---------- Score ring / bars ---------- */
+  .score-pill {
+    font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px;
+    border-radius: 999px; padding: 3px 11px; white-space: nowrap;
+  }
+  .s-hot { background: var(--go-bg); color: var(--go); }
+  .s-warm { background: var(--caution-bg); color: var(--caution); }
+  .s-cold { background: var(--stop-bg); color: var(--stop); }
+
+  .bars { display: grid; gap: 9px; }
+  .bar-row { display: grid; grid-template-columns: 170px minmax(0,1fr) 52px; gap: 12px; align-items: center; font-size: 13.5px; }
+  .bar-row .val { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; color: var(--ink-soft); }
+  .bar-track { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+  .bar-fill.opp { background: var(--caution); }
+
+  /* ---------- Tables ---------- */
+  .table-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th {
+    text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink-soft); font-weight: 600; padding: 10px 14px; border-bottom: 2px solid var(--line); white-space: nowrap;
+  }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr.rowlink { cursor: pointer; }
+  tr.rowlink:hover td { background: var(--accent-soft); }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .chip {
+    display: inline-block; font-size: 12px; border-radius: 999px; padding: 2px 10px; font-weight: 550;
+    background: var(--accent-soft); color: var(--accent); white-space: nowrap;
+  }
+  .chip.ind-healthcare { background: #E7EEF6; color: #2B5B8F; }
+  .chip.ind-legal { background: #F0EAF6; color: #5D4A8A; }
+  .chip.ind-home { background: #F6EEDD; color: #A66A12; }
+  @media (prefers-color-scheme: dark) {
+    .chip.ind-healthcare { background: #223140; color: #8FB8DD; }
+    .chip.ind-legal { background: #2E2839; color: #B4A3D8; }
+    .chip.ind-home { background: #3a2f1d; color: #D9A555; }
+  }
+  .stage-chip { font-size: 12px; border-radius: 6px; padding: 2px 9px; font-weight: 600; background: var(--paper); border: 1px solid var(--line); white-space: nowrap; }
+  .stage-Won { color: var(--go); border-color: var(--go); }
+  .stage-Lost { color: var(--stop); border-color: var(--stop); }
+
+  /* ---------- Lead feed ---------- */
+  .lead-row { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-top: 1px solid var(--line); }
+  .lead-row:first-of-type { border-top: 0; }
+  .lead-row .l-main { flex: 1; min-width: 0; }
+  .lead-row .l-name { font-weight: 650; }
+  .lead-row .l-meta { font-size: 13px; color: var(--ink-soft); }
+
+  /* ---------- Pipeline ---------- */
+  .board { display: grid; grid-auto-flow: column; grid-auto-columns: 236px; gap: 12px; overflow-x: auto; padding-bottom: 12px; align-items: start; }
+  .col { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .col-head { padding: 10px 14px; border-bottom: 1px solid var(--line); display: flex; align-items: baseline; gap: 8px; }
+  .col-head .c-name { font-weight: 650; font-size: 13.5px; }
+  .col-head .c-count { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); }
+  .col-head .c-val { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 600; }
+  .col-body { min-height: 60px; padding: 10px; display: grid; gap: 8px; }
+  .col.dragover .col-body { background: var(--accent-soft); border-radius: 0 0 10px 10px; }
+  .pcard {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 12px; cursor: grab; font-size: 13.5px;
+  }
+  .pcard:active { cursor: grabbing; }
+  .pcard .p-name { font-weight: 650; margin-bottom: 2px; }
+  .pcard .p-meta { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- Company detail ---------- */
+  .backlink { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 0; margin-bottom: 14px; font-size: 14px; }
+  .co-head { padding: 22px 24px; display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 18px; }
+  .co-head .co-id { flex: 1; min-width: 240px; }
+  .co-head h2 { font-family: var(--serif); font-size: 26px; margin: 0 0 6px; }
+  .co-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 22px; flex-basis: 100%; margin-top: 14px; }
+  .fact .f-label { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
+  .fact .f-val { font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
+  .tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 14px; font-size: 14px; font-weight: 550; color: var(--ink-soft); }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .opps li { margin-bottom: 6px; }
+  .opps { list-style: none; padding: 0; margin: 0; }
+  .opps .ok { color: var(--go); font-weight: 700; margin-right: 8px; }
+
+  .note { border-top: 1px solid var(--line); padding: 12px 2px; }
+  .note:first-of-type { border-top: 0; }
+  .note .n-date { font-family: var(--mono); font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 3px; }
+  .note-form { display: grid; gap: 8px; margin-top: 14px; }
+  textarea, input[type=text], input[type=url], select {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    color: var(--ink); font: inherit; padding: 8px 12px; width: 100%;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+
+  .timeline { list-style: none; margin: 0; padding: 0 0 0 4px; }
+  .timeline li { position: relative; padding: 0 0 16px 22px; border-left: 2px solid var(--line); margin-left: 6px; }
+  .timeline li:last-child { padding-bottom: 2px; }
+  .timeline li::before {
+    content: ""; position: absolute; left: -6px; top: 4px; width: 10px; height: 10px;
+    border-radius: 50%; background: var(--accent); border: 2px solid var(--surface);
+  }
+  .timeline .t-date { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+  .timeline .t-what { font-weight: 550; }
+
+  .demo-asset {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 14px; font-size: 14px; margin-bottom: 8px;
+  }
+  .demo-asset .what { font-weight: 600; min-width: 150px; }
+  .demo-asset a { font-family: var(--mono); font-size: 12.5px; word-break: break-all; text-decoration: none; }
+  .demo-asset a:hover { text-decoration: underline; }
+
+  .reco {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    border-radius: 0 8px 8px 0; padding: 14px 18px; margin-top: 6px;
+  }
+  .reco .r-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .reco ul { margin: 0 0 8px; padding-left: 20px; }
+  .reco .r-val { font-family: var(--mono); font-weight: 700; color: var(--accent); }
+
+  /* ---------- Tasks ---------- */
+  .task { display: flex; gap: 12px; align-items: center; padding: 11px 18px; border-top: 1px solid var(--line); }
+  .task:first-of-type { border-top: 0; }
+  .task input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--accent); flex: none; }
+  .task .t-text { flex: 1; }
+  .task.done .t-text { text-decoration: line-through; color: var(--ink-soft); }
+  .task .t-due { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
+
+  /* ---------- Funnel ---------- */
+  .funnel { display: grid; gap: 10px; }
+  .f-row { display: grid; grid-template-columns: 150px minmax(0,1fr) 110px; gap: 12px; align-items: center; font-size: 14px; }
+  .f-track { height: 26px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .f-fill { height: 100%; background: var(--accent); opacity: .9; }
+  .f-nums { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-soft); }
+
+  /* ---------- Scanner ---------- */
+  .future-note {
+    border: 1px dashed var(--caution); background: var(--caution-bg); color: var(--caution);
+    border-radius: 8px; padding: 10px 14px; font-size: 13.5px; font-weight: 550; margin-bottom: 18px;
+  }
+  .scan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; }
+  .scan-tile { background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; text-align: center; }
+  .scan-tile .g { font-size: 24px; font-weight: 700; font-family: var(--mono); }
+  .scan-tile .l { font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- Proposal overlay ---------- */
+  .overlay { position: fixed; inset: 0; background: rgba(15,20,18,.55); display: flex; align-items: flex-start; justify-content: center; padding: 4vh 16px; overflow-y: auto; z-index: 50; }
+  .proposal { background: var(--surface); border-radius: 12px; max-width: 720px; width: 100%; padding: 40px 46px; }
+  .proposal .p-kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  .proposal h2 { font-family: var(--serif); font-size: 28px; margin: 0 0 4px; }
+  .proposal h3 { font-size: 15.5px; margin: 24px 0 8px; }
+  .proposal ul { margin: 0 0 8px; padding-left: 22px; font-size: 14.5px; }
+  .proposal .price { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--accent); }
+  .proposal .p-actions { display: flex; gap: 10px; margin-top: 28px; }
+  @media print {
+    aside, .view-head .btn, .p-actions { display: none !important; }
+    .overlay { position: static; padding: 0; background: none; }
+    .proposal { box-shadow: none; max-width: none; }
+    body > .app { display: none; }
+  }
+
+  .empty { color: var(--ink-soft); font-size: 14px; padding: 18px; text-align: center; }
+
+  /* ---------- Mobile ---------- */
+  @media (max-width: 820px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; padding: 14px; }
+    .navgroup { display: flex; flex-wrap: wrap; gap: 4px; }
+    .nav-item { width: auto; padding: 7px 12px; }
+    .nav-item .badge { margin-left: 6px; }
+    .nav-sep { display: none; }
+    .side-foot { display: none; }
+    main { padding: 20px 16px 60px; }
+    .bar-row { grid-template-columns: 110px minmax(0,1fr) 48px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand">
+      <div class="wd">Williams Digital</div>
+      <h1>Sales Command Center</h1>
+    </div>
+    <div class="navgroup" id="nav"></div>
+    <hr class="nav-sep">
+    <div class="side-foot">INTERNAL · v1 DEMO</div>
+  </aside>
+  <main id="view"></main>
+</div>
+
+<script>
+'use strict';
+
+/* =============== Data =============== */
+const STAGES = ['Prospect','Contacted','Discovery','Proposal','Negotiation','Won','Lost'];
+const INDUSTRIES = {
+  healthcare: { label: 'Healthcare', demoName: 'Oak Ridge Family Care', portalWord: 'Patient portal', dashWord: 'Practice dashboard',
+    demos: [
+      ['Public website','https://williamsdigital.io/preview/oak-ridge-family-care/'],
+      ['Patient portal','https://williamsdigital.io/preview/oak-ridge-family-care/portal.html'],
+      ['Practice dashboard','https://williamsdigital.io/preview/oak-ridge-family-care/dashboard.html'],
+    ],
+    portalFeatures: ['Upcoming appointments','Billing & payments','Secure messaging','Prescription requests','Online intake forms'],
+    dashFeatures: ['Revenue overview','Patient growth','Communication automation','Provider utilization','No-show tracking'] },
+  legal: { label: 'Legal', demoName: 'Harrison & Cole Law Group', portalWord: 'Client portal', dashWord: 'Firm dashboard',
+    demos: [
+      ['Public website','https://williamsdigital.io/preview/harrison-cole-law/'],
+      ['Client portal','https://williamsdigital.io/preview/harrison-cole-law/portal.html'],
+      ['Firm dashboard','https://williamsdigital.io/preview/harrison-cole-law/dashboard.html'],
+    ],
+    portalFeatures: ['Case progress tracking','Secure messaging','Document upload & sharing','Billing & invoices'],
+    dashFeatures: ['Lead funnel','Revenue','Case management','Team performance','Consultation scheduling'] },
+  home: { label: 'Home Services', demoName: 'Summit Home Services', portalWord: 'Customer portal', dashWord: 'Operations dashboard',
+    demos: [
+      ['Public website','https://williamsdigital.io/preview/summit-home-services/'],
+      ['Operations dashboard','https://williamsdigital.io/preview/summit-home-services/dashboard.html'],
+    ],
+    portalFeatures: ['Online service requests','Estimate approvals','Job status tracking','Invoice payment'],
+    dashFeatures: ['Lead tracking','Scheduling & dispatch','Team management','Revenue'] },
+};
+const SCORE_KEYS = [
+  ['design','Outdated design'],
+  ['mobile','Mobile experience'],
+  ['seo','SEO'],
+  ['portal','Portal opportunity'],
+  ['dashboard','Dashboard opportunity'],
+];
+
+const SEED = {
+  rep: 'Sales Rep',
+  companies: [
+    { id:'abc', name:'ABC Family Dentistry', industry:'healthcare', location:'Birmingham, AL', website:'abcfamilydentistry.com',
+      dm:'Dr. John Smith', stage:'Discovery', value:8000, lastContact:'Jul 15', assigned:'Sales Rep',
+      score:{design:14, mobile:16, seo:17, portal:20, dashboard:20},
+      opportunities:['No online scheduling','No patient portal','No online forms','Weak SEO','Slow website'],
+      competitors:[['Brookside Dental','Modern website'],['Smile Studio 280','Patient portal'],['Vestavia Family Dental','No portal']],
+      notes:[{date:'7/15', text:'Website outdated. Uses Athena. No patient portal visible. Office manager interested. Follow up next Tuesday.'}],
+      outreach:[['7/15','Email sent'],['7/18','Follow up'],['7/21','Discovery call'],['7/23','Proposal sent']] },
+    { id:'vulcan', name:'Vulcan Pediatric Dentistry', industry:'healthcare', location:'Homewood, AL', website:'vulcanpediatricdentistry.com',
+      dm:'Dr. Alicia Grant', stage:'Prospect', value:9500, lastContact:'—', assigned:'Sales Rep',
+      score:{design:17, mobile:18, seo:16, portal:20, dashboard:20},
+      opportunities:['No online scheduling','No patient portal','Site not mobile friendly'],
+      competitors:[], notes:[], outreach:[] },
+    { id:'cahaba', name:'Cahaba Estate Law', industry:'legal', location:'Mountain Brook, AL', website:'cahabaestatelaw.com',
+      dm:'Meredith Cole', stage:'Prospect', value:12000, lastContact:'—', assigned:'Sales Rep',
+      score:{design:16, mobile:16, seo:16, portal:20, dashboard:20},
+      opportunities:['No client portal','No online consultation booking','Weak trust signals'],
+      competitors:[], notes:[], outreach:[] },
+    { id:'ironcity', name:'Iron City Heating & Air', industry:'home', location:'Birmingham, AL', website:'ironcityhvac.com',
+      dm:'Marcus Bell', stage:'Prospect', value:6500, lastContact:'—', assigned:'Sales Rep',
+      score:{design:12, mobile:14, seo:18, portal:20, dashboard:20},
+      opportunities:['No online booking','Website looks old','No CRM','Poor Google visibility'],
+      competitors:[], notes:[], outreach:[] },
+    { id:'smithlaw', name:'Smith Law Firm', industry:'legal', location:'Hoover, AL', website:'smithlawal.com',
+      dm:'Robert Smith', stage:'Negotiation', value:14000, lastContact:'Jul 12', assigned:'Sales Rep',
+      score:{design:12, mobile:14, seo:16, portal:20, dashboard:14},
+      opportunities:['No client portal','Leads not tracked','Consultations booked by phone only'],
+      competitors:[['Harrington & Voss','Modern website'],['Belmont Legal','Client portal'],['Crane Law Group','No portal']],
+      notes:[{date:'7/12', text:'Second call with Robert. Wants portal demo shown to partners. Pricing range accepted; awaiting partner meeting.'}],
+      outreach:[['7/2','Email sent'],['7/5','Discovery call'],['7/9','Proposal sent'],['7/12','Partner follow-up call']] },
+    { id:'greenline', name:'Greenline Landscaping', industry:'home', location:'Trussville, AL', website:'greenlinelandscapes.com',
+      dm:'Dana Whitfield', stage:'Proposal', value:5500, lastContact:'Jul 10', assigned:'Sales Rep',
+      score:{design:10, mobile:15, seo:8, portal:20, dashboard:20},
+      opportunities:['No online estimates','Website looks old','Weak SEO','No customer portal'],
+      competitors:[], notes:[{date:'7/10', text:'Sent proposal after demo. Dana loved the Summit dashboard. Deciding between us and doing nothing this year.'}],
+      outreach:[['7/1','Email sent'],['7/6','Discovery call'],['7/10','Proposal sent']] },
+    { id:'magnolia', name:'Magnolia Roofing Co.', industry:'home', location:'Pelham, AL', website:'magnoliaroofingal.com',
+      dm:'Chris Tanner', stage:'Won', value:7800, lastContact:'Jul 8', assigned:'Sales Rep',
+      score:{design:13, mobile:15, seo:14, portal:20, dashboard:20},
+      opportunities:['No online estimates','No job-status portal'],
+      competitors:[], notes:[{date:'7/8', text:'CLOSED. Website + customer portal. Kickoff scheduled.'}],
+      outreach:[['6/24','Email sent'],['6/27','Discovery call'],['7/1','Proposal sent'],['7/8','Signed']] },
+    { id:'southside', name:'Southside Physical Therapy', industry:'healthcare', location:'Birmingham, AL', website:'southsidept.com',
+      dm:'Karen Ellis', stage:'Lost', value:6000, lastContact:'Jun 30', assigned:'Sales Rep',
+      score:{design:9, mobile:11, seo:12, portal:14, dashboard:12},
+      opportunities:['No online scheduling','Outdated design'],
+      competitors:[], notes:[{date:'6/30', text:'Went with their EMR vendor’s bundled site. Revisit in 12 months.'}],
+      outreach:[['6/18','Email sent'],['6/22','Discovery call'],['6/30','Declined']] },
+  ],
+  tasks: [
+    { id:'t1', text:'Follow up with ABC Family Dentistry (office manager)', due:'Tue 7/21', done:false, co:'abc' },
+    { id:'t2', text:'Prep partner-meeting demo for Smith Law Firm', due:'7/17', done:false, co:'smithlaw' },
+    { id:'t3', text:'Check in on Greenline proposal', due:'7/17', done:false, co:'greenline' },
+    { id:'t4', text:'First outreach: Vulcan Pediatric Dentistry (score 91)', due:'7/16', done:false, co:'vulcan' },
+    { id:'t5', text:'Magnolia Roofing kickoff call', due:'7/20', done:true, co:'magnolia' },
+  ],
+  funnel: [['Prospects added',50],['Contacted',25],['Responses',12],['Meetings',8],['Proposals',3],['Closed',1]],
+};
+
+const LS_KEY = 'wdcc-state-v1';
+let state = load();
+function load() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(SEED));
+}
+function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
+function resetDemo() { state = JSON.parse(JSON.stringify(SEED)); save(); go('dashboard'); }
+
+/* =============== Helpers =============== */
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const total = c => SCORE_KEYS.reduce((n,[k]) => n + (c.score[k]||0), 0);
+const money = n => '$' + n.toLocaleString();
+const scoreClass = n => n >= 80 ? 's-hot' : n >= 60 ? 's-warm' : 's-cold';
+const byId = id => state.companies.find(c => c.id === id);
+function pkg(c) {
+  const ind = INDUSTRIES[c.industry];
+  const parts = ['Website refresh'];
+  if (c.score.portal >= 14) parts.push(ind.portalWord);
+  if (c.score.dashboard >= 14) parts.push(ind.dashWord);
+  let range;
+  if (parts.length >= 3) range = '$7,500 – $10,000';
+  else if (parts.length === 2) range = '$3,500 – $8,000';
+  else range = '$1,500 – $4,000';
+  return { parts, range };
+}
+function today() {
+  const d = new Date();
+  return (d.getMonth()+1) + '/' + d.getDate();
+}
+
+/* =============== Router =============== */
+const VIEWS = [
+  ['dashboard','Dashboard','◧'],
+  ['leads','Lead Feed','◉'],
+  ['companies','Companies','▤'],
+  ['pipeline','Pipeline','⇶'],
+  ['playbooks','Playbooks','✎'],
+  ['outreach','Outreach','✉'],
+  ['tasks','Tasks','☑'],
+  ['reports','Reports','∿'],
+  ['scanner','AI Scanner','✦','SOON'],
+  ['settings','Settings','⚙'],
+];
+let current = 'dashboard';
+let currentCompany = null;
+let companyTab = 'overview';
+
+function go(view, coId) {
+  current = view;
+  currentCompany = coId || null;
+  if (coId) companyTab = 'overview';
+  render();
+  window.scrollTo(0,0);
+}
+
+function render() {
+  $('#nav').innerHTML = VIEWS.map(([id,label,ico,badge]) =>
+    `<button class="nav-item ${current===id?'active':''}" data-nav="${id}">
+      <span class="ico">${ico}</span>${label}${badge?`<span class="badge">${badge}</span>`:''}
+    </button>`).join('');
+  const v = $('#view');
+  if (current === 'companies' && currentCompany) v.innerHTML = viewCompany(byId(currentCompany));
+  else v.innerHTML = ({dashboard:viewDashboard, leads:viewLeads, companies:viewCompanies, pipeline:viewPipeline,
+    playbooks:viewPlaybooks, outreach:viewOutreach, tasks:viewTasks, reports:viewReports,
+    scanner:viewScanner, settings:viewSettings}[current] || viewDashboard)();
+  wire();
+}
+
+/* =============== Views =============== */
+function viewDashboard() {
+  const cos = state.companies;
+  const open = cos.filter(c => !['Won','Lost'].includes(c.stage));
+  const pipelineVal = open.reduce((n,c) => n + c.value, 0);
+  const avg = Math.round(cos.reduce((n,c) => n + total(c), 0) / cos.length);
+  const due = state.tasks.filter(t => !t.done).length;
+  const topLeads = cos.filter(c => c.stage === 'Prospect').sort((a,b) => total(b)-total(a)).slice(0,3);
+  return `
+    <div class="view-head"><h2>Dashboard</h2></div>
+    <p class="view-sub">The day at a glance: pipeline, hottest leads, and what needs doing.</p>
+    <div class="tiles">
+      <div class="card tile"><div class="t-label">Open opportunities</div><div class="t-num">${open.length}</div><div class="t-hint">of ${cos.length} companies</div></div>
+      <div class="card tile"><div class="t-label">Pipeline value</div><div class="t-num">${money(pipelineVal)}</div><div class="t-hint">open stages only</div></div>
+      <div class="card tile"><div class="t-label">Avg prospect score</div><div class="t-num">${avg}<span style="font-size:15px;color:var(--ink-soft)">/100</span></div><div class="t-hint">across all companies</div></div>
+      <div class="card tile"><div class="t-label">Tasks due</div><div class="t-num">${due}</div><div class="t-hint">open follow-ups</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card panel">
+        <h3>Hottest new leads</h3>
+        ${topLeads.map(c => leadRow(c)).join('') || '<div class="empty">No prospects in the feed.</div>'}
+      </div>
+      <div class="card panel">
+        <h3>Open tasks</h3>
+        ${state.tasks.filter(t=>!t.done).slice(0,5).map(taskRow).join('') || '<div class="empty">All caught up.</div>'}
+      </div>
+    </div>`;
+}
+
+function leadRow(c) {
+  const t = total(c);
+  const p = pkg(c);
+  return `<div class="lead-row">
+    <div class="l-main">
+      <div class="l-name">${esc(c.name)}</div>
+      <div class="l-meta"><span class="chip ind-${c.industry}">${INDUSTRIES[c.industry].label}</span> · ${esc(c.location)} · fits: ${esc(p.parts.join(' + '))}</div>
+    </div>
+    <span class="score-pill ${scoreClass(t)}">${t}</span>
+    <button class="btn small ghost" data-open="${c.id}">Open</button>
+  </div>`;
+}
+
+function viewLeads() {
+  const leads = state.companies.filter(c => c.stage === 'Prospect').sort((a,b) => total(b)-total(a));
+  return `
+    <div class="view-head"><h2>Lead Feed</h2></div>
+    <p class="view-sub">Your inbox. Highest scores at the top — work them in order.</p>
+    <div class="card">${leads.map(leadRow).join('') || '<div class="empty">No new leads. Add one from Companies.</div>'}</div>`;
+}
+
+function viewCompanies() {
+  const rows = state.companies.map(c => {
+    const t = total(c);
+    return `<tr class="rowlink" data-open="${c.id}">
+      <td><strong>${esc(c.name)}</strong><div style="font-size:12.5px;color:var(--ink-soft)">${esc(c.website)}</div></td>
+      <td><span class="chip ind-${c.industry}">${INDUSTRIES[c.industry].label}</span></td>
+      <td>${esc(c.location)}</td>
+      <td>${esc(c.dm)}</td>
+      <td><span class="stage-chip stage-${c.stage}">${c.stage}</span></td>
+      <td class="num"><span class="score-pill ${scoreClass(t)}">${t}</span></td>
+      <td class="num">${money(c.value)}</td>
+      <td class="num">${esc(c.lastContact)}</td>
+    </tr>`;
+  }).join('');
+  return `
+    <div class="view-head"><h2>Companies</h2><div class="spacer"></div><button class="btn" id="add-co">+ Add company</button></div>
+    <p class="view-sub">The master database. Every prospect gets a page, a score, and a plan.</p>
+    <div class="card table-scroll">
+      <table>
+        <thead><tr><th>Company</th><th>Industry</th><th>Location</th><th>Decision maker</th><th>Status</th><th>Score</th><th>Value</th><th>Last contact</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function viewCompany(c) {
+  if (!c) return '<div class="empty">Company not found.</div>';
+  const t = total(c);
+  const ind = INDUSTRIES[c.industry];
+  const p = pkg(c);
+  const tabs = [['overview','Overview'],['notes',`Notes (${c.notes.length})`],['opps','Opportunities'],['demos','Playbook & Demos'],['outreach','Outreach'],['competitors','Competitors']];
+  let body = '';
+  if (companyTab === 'overview') {
+    body = `
+      <div class="grid-2">
+        <div class="card panel">
+          <h3>Prospect score — ${t}/100</h3>
+          <div class="bars">
+            ${SCORE_KEYS.map(([k,label]) => `
+              <div class="bar-row"><span>${label}</span>
+                <div class="bar-track"><div class="bar-fill ${k==='portal'||k==='dashboard'?'opp':''}" style="width:${(c.score[k]/20)*100}%"></div></div>
+                <span class="val">${c.score[k]}/20</span></div>`).join('')}
+          </div>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin:12px 0 0;">Green bars = how weak their current web presence is. Gold bars = how big the portal/dashboard upsell is. High total = strong fit.</p>
+        </div>
+        <div class="card panel">
+          <h3>Recommended solution <span style="font-weight:400;color:var(--ink-soft);font-size:12.5px">— auto-generated from score</span></h3>
+          <div class="reco">
+            <div class="r-label">Recommended package</div>
+            <ul>${p.parts.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+            <div>Estimated value: <span class="r-val">${p.range}</span></div>
+          </div>
+          <div class="mini-label">Generate</div>
+          <button class="btn" id="gen-proposal">Generate proposal</button>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin:10px 0 0;">Pulls company name, notes, opportunities, the recommended package, and ${esc(ind.demoName)} demo links into a client-ready proposal.</p>
+        </div>
+      </div>`;
+  } else if (companyTab === 'notes') {
+    body = `<div class="card panel">
+      <h3>Sales notes</h3>
+      ${c.notes.map(n => `<div class="note"><div class="n-date">${esc(n.date)}</div><div>${esc(n.text)}</div></div>`).join('') || '<div class="empty">No notes yet.</div>'}
+      <div class="note-form">
+        <textarea id="note-text" placeholder="Add a note — what did you learn on this call?"></textarea>
+        <div><button class="btn small" id="add-note">Add note</button></div>
+      </div>
+    </div>`;
+  } else if (companyTab === 'opps') {
+    body = `<div class="grid-2">
+      <div class="card panel">
+        <h3>Opportunities found</h3>
+        <ul class="opps">${c.opportunities.map(o => `<li><span class="ok">✓</span>${esc(o)}</li>`).join('') || '<div class="empty">None recorded.</div>'}</ul>
+        <div class="note-form">
+          <input type="text" id="opp-text" placeholder="Add an opportunity (e.g. No online scheduling)">
+          <div><button class="btn small" id="add-opp">Add</button></div>
+        </div>
+      </div>
+      <div class="card panel">
+        <h3>Recommended solution</h3>
+        <div class="reco">
+          <div class="r-label">Recommended package</div>
+          <ul>${p.parts.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+          <div>Estimated value: <span class="r-val">${p.range}</span></div>
+        </div>
+      </div>
+    </div>`;
+  } else if (companyTab === 'demos') {
+    body = `<div class="card panel">
+      <h3>${esc(ind.label)} playbook — show ${esc(ind.demoName)}</h3>
+      <p style="font-size:13.5px;color:var(--ink-soft)">The system loads the relevant demos for this company's industry. Open these on the call, in this order.</p>
+      ${ind.demos.map(([what,url],i) => `<div class="demo-asset"><span class="what">${i+1}. ${esc(what)}</span><a href="${url}" target="_blank" rel="noopener">${url.replace('https://','')}</a></div>`).join('')}
+      <div class="mini-label">Full playbook</div>
+      <a href="https://williamsdigital.io/preview/sales-playbook/#${c.industry === 'home' ? 'home-services' : c.industry}" target="_blank" rel="noopener">Open the ${esc(ind.label)} section of the Sales Playbook →</a>
+    </div>`;
+  } else if (companyTab === 'outreach') {
+    body = `<div class="card panel">
+      <h3>Outreach history</h3>
+      ${c.outreach.length ? `<ul class="timeline">${c.outreach.map(([d,w]) => `<li><div class="t-date">${esc(d)}</div><div class="t-what">${esc(w)}</div></li>`).join('')}</ul>` : '<div class="empty">No outreach yet.</div>'}
+      <div class="note-form">
+        <input type="text" id="outreach-text" placeholder="Log outreach (e.g. Discovery call)">
+        <div><button class="btn small" id="add-outreach">Log for today</button></div>
+      </div>
+    </div>`;
+  } else if (companyTab === 'competitors') {
+    body = `<div class="card panel">
+      <h3>Competitor analysis</h3>
+      <p style="font-size:13.5px;color:var(--ink-soft)">What the prospect's local competitors have. Use gaps as urgency on the call.</p>
+      ${c.competitors.length ? `<div class="table-scroll"><table>
+        <thead><tr><th>Competitor</th><th>Web presence</th></tr></thead>
+        <tbody>${c.competitors.map(([n,w]) => `<tr><td>${esc(n)}</td><td>${esc(w)}</td></tr>`).join('')}</tbody>
+      </table></div>` : '<div class="empty">No competitors logged yet.</div>'}
+    </div>`;
+  }
+  return `
+    <button class="backlink" data-nav="companies">← All companies</button>
+    <div class="card co-head">
+      <div class="co-id">
+        <h2>${esc(c.name)}</h2>
+        <span class="chip ind-${c.industry}">${ind.label}</span>
+        <span class="stage-chip stage-${c.stage}" style="margin-left:6px">${c.stage}</span>
+        <span class="score-pill ${scoreClass(t)}" style="margin-left:6px">${t}/100</span>
+      </div>
+      <div>
+        <label class="mini-label" style="margin:0 0 4px">Status</label>
+        <select id="stage-select">${STAGES.map(s => `<option ${s===c.stage?'selected':''}>${s}</option>`).join('')}</select>
+      </div>
+      <div class="co-facts">
+        <div class="fact"><div class="f-label">Location</div><div class="f-val">${esc(c.location)}</div></div>
+        <div class="fact"><div class="f-label">Website</div><div class="f-val">${esc(c.website)}</div></div>
+        <div class="fact"><div class="f-label">Decision maker</div><div class="f-val">${esc(c.dm)}</div></div>
+        <div class="fact"><div class="f-label">Potential value</div><div class="f-val">${money(c.value)}</div></div>
+        <div class="fact"><div class="f-label">Last contact</div><div class="f-val">${esc(c.lastContact)}</div></div>
+        <div class="fact"><div class="f-label">Assigned to</div><div class="f-val">${esc(c.assigned)}</div></div>
+      </div>
+    </div>
+    <div class="tabs">${tabs.map(([id,label]) => `<button class="tab ${companyTab===id?'active':''}" data-tab="${id}">${label}</button>`).join('')}</div>
+    ${body}`;
+}
+
+function viewPipeline() {
+  const cols = STAGES.map(stage => {
+    const cos = state.companies.filter(c => c.stage === stage);
+    const val = cos.reduce((n,c) => n + c.value, 0);
+    return `<div class="col" data-stage="${stage}">
+      <div class="col-head"><span class="c-name">${stage}</span><span class="c-count">${cos.length}</span>${val?`<span class="c-val">${money(val)}</span>`:''}</div>
+      <div class="col-body">
+        ${cos.map(c => `<div class="pcard" draggable="true" data-drag="${c.id}">
+          <div class="p-name">${esc(c.name)}</div>
+          <div class="p-meta"><span class="score-pill ${scoreClass(total(c))}" style="font-size:11px;padding:1px 8px">${total(c)}</span> ${money(c.value)}</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  return `
+    <div class="view-head"><h2>Pipeline</h2></div>
+    <p class="view-sub">Drag a card to move a deal between stages. Cards open on double-click.</p>
+    <div class="board">${cols}</div>`;
+}
+
+function viewPlaybooks() {
+  return `
+    <div class="view-head"><h2>Playbooks</h2><div class="spacer"></div><a class="btn ghost" style="text-decoration:none" href="https://williamsdigital.io/preview/sales-playbook/" target="_blank" rel="noopener">Open full Sales Playbook ↗</a></div>
+    <p class="view-sub">One vertical, one demo. Open the relevant set before every call.</p>
+    <div class="grid-2" style="grid-template-columns:1fr;gap:16px">
+      ${Object.entries(INDUSTRIES).map(([key,ind]) => `
+        <div class="card panel">
+          <h3><span class="chip ind-${key}">${ind.label}</span> &nbsp;${esc(ind.demoName)}</h3>
+          ${ind.demos.map(([what,url],i) => `<div class="demo-asset"><span class="what">${i+1}. ${esc(what)}</span><a href="${url}" target="_blank" rel="noopener">${url.replace('https://','')}</a></div>`).join('')}
+        </div>`).join('')}
+    </div>`;
+}
+
+function viewOutreach() {
+  const events = [];
+  state.companies.forEach(c => c.outreach.forEach(([d,w]) => events.push({d, w, c})));
+  return `
+    <div class="view-head"><h2>Outreach</h2></div>
+    <p class="view-sub">Every touch across every company. Log new outreach from a company's page.</p>
+    <div class="card panel">
+      ${events.length ? `<ul class="timeline">${events.map(e =>
+        `<li><div class="t-date">${esc(e.d)}</div><div class="t-what">${esc(e.w)} — <a href="#" data-open="${e.c.id}">${esc(e.c.name)}</a></div></li>`).join('')}</ul>`
+      : '<div class="empty">No outreach logged yet.</div>'}
+    </div>`;
+}
+
+function taskRow(t) {
+  const co = t.co ? byId(t.co) : null;
+  return `<div class="task ${t.done?'done':''}">
+    <input type="checkbox" data-task="${t.id}" ${t.done?'checked':''}>
+    <span class="t-text">${esc(t.text)}${co?` — <a href="#" data-open="${co.id}">${esc(co.name)}</a>`:''}</span>
+    <span class="t-due">${esc(t.due)}</span>
+  </div>`;
+}
+
+function viewTasks() {
+  const open = state.tasks.filter(t=>!t.done), done = state.tasks.filter(t=>t.done);
+  return `
+    <div class="view-head"><h2>Tasks</h2></div>
+    <p class="view-sub">Follow-ups and to-dos. Nothing falls through.</p>
+    <div class="card">${open.map(taskRow).join('') || '<div class="empty">All caught up.</div>'}</div>
+    ${done.length ? `<div class="mini-label">Done</div><div class="card">${done.map(taskRow).join('')}</div>` : ''}
+    <div class="note-form" style="max-width:560px">
+      <input type="text" id="task-text" placeholder="New task (e.g. Call Iron City about the demo)">
+      <div style="display:flex;gap:8px"><input type="text" id="task-due" placeholder="Due (e.g. 7/22)" style="max-width:140px"><button class="btn small" id="add-task">Add task</button></div>
+    </div>`;
+}
+
+function viewReports() {
+  const max = state.funnel[0][1];
+  return `
+    <div class="view-head"><h2>Reports</h2></div>
+    <p class="view-sub">The funnel this cycle. Every stage's conversion from the one before it.</p>
+    <div class="card panel">
+      <div class="funnel">
+        ${state.funnel.map(([label,n],i) => {
+          const prev = i ? state.funnel[i-1][1] : n;
+          const conv = i ? Math.round((n/prev)*100) : 100;
+          return `<div class="f-row"><span>${label}</span>
+            <div class="f-track"><div class="f-fill" style="width:${(n/max)*100}%"></div></div>
+            <span class="f-nums">${n}${i?` · ${conv}%`:''}</span></div>`;
+        }).join('')}
+      </div>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:16px 0 0;">Percentages are stage-to-stage conversion. The number to grow first is <strong>responses → meetings</strong>.</p>
+    </div>`;
+}
+
+function viewScanner() {
+  return `
+    <div class="view-head"><h2>AI Website Scanner</h2></div>
+    <p class="view-sub">Enter a prospect's URL, get a score, grades, and the recommended package with demo links.</p>
+    <div class="future-note">Concept preview — scoring below is simulated. The production version will wire into the Lead Finder's Lighthouse + Claude pipeline.</div>
+    <div class="card panel" style="max-width:640px">
+      <div class="note-form">
+        <input type="url" id="scan-url" placeholder="https://prospect-website.com">
+        <div><button class="btn" id="run-scan">Scan website</button></div>
+      </div>
+      <div id="scan-result"></div>
+    </div>`;
+}
+
+function scanResultHTML(url) {
+  let h = 0; for (const ch of url) h = (h * 31 + ch.charCodeAt(0)) % 997;
+  const score = 45 + (h % 40);
+  const grade = n => n >= 80 ? 'A' : n >= 65 ? 'B' : n >= 50 ? 'C' : 'D';
+  const mob = 40 + (h % 45), seo = 30 + ((h*7) % 50), perf = 35 + ((h*13) % 50);
+  const indKeys = Object.keys(INDUSTRIES);
+  const ind = INDUSTRIES[indKeys[h % indKeys.length]];
+  return `
+    <div class="mini-label">Scan result — simulated</div>
+    <div class="scan-grid">
+      <div class="scan-tile"><div class="g">${score}<span style="font-size:13px;color:var(--ink-soft)">/100</span></div><div class="l">Website score</div></div>
+      <div class="scan-tile"><div class="g">${grade(mob)}</div><div class="l">Mobile</div></div>
+      <div class="scan-tile"><div class="g">${grade(seo)}</div><div class="l">SEO</div></div>
+      <div class="scan-tile"><div class="g">${grade(perf)}</div><div class="l">Performance</div></div>
+      <div class="scan-tile"><div class="g" style="color:var(--go)">High</div><div class="l">Portal opportunity</div></div>
+      <div class="scan-tile"><div class="g" style="color:var(--go)">High</div><div class="l">Dashboard opportunity</div></div>
+    </div>
+    <div class="reco" style="margin-top:16px">
+      <div class="r-label">Recommended: ${ind.label} package</div>
+      <ul>
+        <li>Website refresh</li>
+        <li>${ind.portalWord}</li>
+        <li>${ind.dashWord}</li>
+      </ul>
+      <div style="margin-bottom:8px">Show: <strong>${ind.demoName}</strong></div>
+      ${ind.demos.map(([what,u]) => `<div style="font-size:13px">→ <a href="${u}" target="_blank" rel="noopener">${what}</a></div>`).join('')}
+    </div>`;
+}
+
+function viewSettings() {
+  return `
+    <div class="view-head"><h2>Settings</h2></div>
+    <p class="view-sub">Local demo settings. All data lives in this browser's localStorage.</p>
+    <div class="card panel" style="max-width:560px">
+      <h3>Sales rep name</h3>
+      <div class="note-form" style="max-width:340px">
+        <input type="text" id="rep-name" value="${esc(state.rep)}">
+        <div><button class="btn small" id="save-rep">Save</button></div>
+      </div>
+      <div class="mini-label">Danger zone</div>
+      <button class="btn danger small" id="reset-demo">Reset demo data</button>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:10px 0 0;">Restores the seeded companies, tasks, and funnel. Your added notes and stage changes will be lost.</p>
+    </div>`;
+}
+
+/* =============== Proposal =============== */
+function showProposal(c) {
+  const ind = INDUSTRIES[c.industry];
+  const p = pkg(c);
+  const el = document.createElement('div');
+  el.className = 'overlay';
+  el.innerHTML = `
+    <div class="proposal">
+      <div class="p-kicker">Williams Digital · Proposal</div>
+      <h2>Proposal for ${esc(c.name)}</h2>
+      <div style="color:var(--ink-soft);font-size:14px">${esc(c.location)} · Prepared for ${esc(c.dm)}</div>
+
+      <h3>Current website issues</h3>
+      <ul>${c.opportunities.map(o=>`<li>${esc(o)}</li>`).join('') || '<li>Assessment pending</li>'}</ul>
+
+      <h3>Recommended improvements</h3>
+      <ul>${p.parts.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+
+      ${p.parts.length > 1 ? `<h3>${esc(ind.portalWord)} features</h3>
+      <ul>${ind.portalFeatures.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+
+      ${p.parts.length > 2 ? `<h3>${esc(ind.dashWord)} features</h3>
+      <ul>${ind.dashFeatures.map(f=>`<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+
+      <h3>See it working today</h3>
+      <ul>${ind.demos.map(([what,u]) => `<li>${esc(what)}: <a href="${u}" target="_blank" rel="noopener">${u.replace('https://','')}</a></li>`).join('')}</ul>
+
+      <h3>Investment</h3>
+      <div class="price">${p.range}</div>
+
+      <div class="p-actions">
+        <button class="btn" onclick="window.print()">Print / save PDF</button>
+        <button class="btn ghost" data-close>Close</button>
+      </div>
+    </div>`;
+  el.addEventListener('click', e => {
+    if (e.target === el || e.target.closest('[data-close]')) el.remove();
+  });
+  document.body.appendChild(el);
+}
+
+/* =============== Events =============== */
+function wire() {
+  document.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => go(b.dataset.nav));
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = e => { e.preventDefault(); go('companies', b.dataset.open); });
+  document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { companyTab = b.dataset.tab; render(); });
+
+  const c = currentCompany ? byId(currentCompany) : null;
+
+  const stageSel = $('#stage-select');
+  if (stageSel && c) stageSel.onchange = () => { c.stage = stageSel.value; c.lastContact = today(); save(); render(); };
+
+  const addNote = $('#add-note');
+  if (addNote && c) addNote.onclick = () => {
+    const t = $('#note-text').value.trim();
+    if (!t) return;
+    c.notes.unshift({date: today(), text: t});
+    c.lastContact = today(); save(); render();
+  };
+  const addOpp = $('#add-opp');
+  if (addOpp && c) addOpp.onclick = () => {
+    const t = $('#opp-text').value.trim();
+    if (!t) return;
+    c.opportunities.push(t); save(); render();
+  };
+  const addOut = $('#add-outreach');
+  if (addOut && c) addOut.onclick = () => {
+    const t = $('#outreach-text').value.trim();
+    if (!t) return;
+    c.outreach.push([today(), t]); c.lastContact = today(); save(); render();
+  };
+  const gen = $('#gen-proposal');
+  if (gen && c) gen.onclick = () => showProposal(c);
+
+  const addCo = $('#add-co');
+  if (addCo) addCo.onclick = () => {
+    const name = prompt('Company name?');
+    if (!name) return;
+    const industry = (prompt('Industry — healthcare, legal, or home?', 'healthcare') || 'healthcare').toLowerCase();
+    const co = {
+      id: 'c' + Math.random().toString(36).slice(2,8),
+      name, industry: INDUSTRIES[industry] ? industry : 'healthcare',
+      location: prompt('Location?', 'Birmingham, AL') || '—',
+      website: prompt('Website?', '') || '—',
+      dm: prompt('Decision maker?', '') || '—',
+      stage: 'Prospect', value: 5000, lastContact: '—', assigned: state.rep,
+      score: {design:10, mobile:10, seo:10, portal:15, dashboard:15},
+      opportunities: [], competitors: [], notes: [], outreach: [],
+    };
+    state.companies.unshift(co); save(); go('companies', co.id);
+  };
+
+  document.querySelectorAll('[data-task]').forEach(cb => cb.onchange = () => {
+    const t = state.tasks.find(x => x.id === cb.dataset.task);
+    if (t) { t.done = cb.checked; save(); render(); }
+  });
+  const addTask = $('#add-task');
+  if (addTask) addTask.onclick = () => {
+    const text = $('#task-text').value.trim();
+    if (!text) return;
+    state.tasks.push({id: 't' + Math.random().toString(36).slice(2,8), text, due: $('#task-due').value.trim() || '—', done: false});
+    save(); render();
+  };
+
+  const saveRep = $('#save-rep');
+  if (saveRep) saveRep.onclick = () => { state.rep = $('#rep-name').value.trim() || 'Sales Rep'; save(); render(); };
+  const reset = $('#reset-demo');
+  if (reset) reset.onclick = () => { if (confirm('Reset all demo data?')) resetDemo(); };
+
+  const runScan = $('#run-scan');
+  if (runScan) runScan.onclick = () => {
+    const url = $('#scan-url').value.trim();
+    if (!url) return;
+    const out = $('#scan-result');
+    out.innerHTML = '<div class="empty">Scanning…</div>';
+    setTimeout(() => { out.innerHTML = scanResultHTML(url); }, 700);
+  };
+
+  // Pipeline drag & drop
+  document.querySelectorAll('[data-drag]').forEach(card => {
+    card.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', card.dataset.drag));
+    card.addEventListener('dblclick', () => go('companies', card.dataset.drag));
+  });
+  document.querySelectorAll('.col').forEach(col => {
+    col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('dragover'); });
+    col.addEventListener('dragleave', () => col.classList.remove('dragover'));
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('dragover');
+      const id = e.dataTransfer.getData('text/plain');
+      const co = byId(id);
+      if (co && co.stage !== col.dataset.stage) { co.stage = col.dataset.stage; co.lastContact = today(); save(); render(); }
+    });
+  });
+}
+
+render();
+</script>
+</body>
+</html>
