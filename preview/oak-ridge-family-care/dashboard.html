@@ -1,0 +1,826 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="robots" content="noindex,nofollow" />
+<title>Practice Dashboard · Oak Ridge Family Care</title>
+<meta name="description" content="Oak Ridge Family Care practice dashboard — role-based views for administrators, front desk, providers, and billing." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#0f4c44;
+    --pine-deep:#0a3730;
+    --pine-tint:#e7f0ec;
+    --teal:#0e8f66;
+    --series-1:#0e8f66;
+    --series-2:#bd7409;
+    --amber:#bd7409;
+    --amber-tint:#faf1de;
+    --paper:#f7f6f1;
+    --card:#fcfcfa;
+    --ink:#152420;
+    --ink-2:#2a3b36;
+    --mute:#5f6b66;
+    --line:#e3e1d8;
+    --line-soft:#eceade;
+    --good:#0ca30c;
+    --good-tint:#e2f3e2;
+    --warn:#b8860b;
+    --warn-tint:#faf1de;
+    --crit:#c33b3b;
+    --crit-tint:#fbeaea;
+    --blue:#1c5cab;
+    --blue-tint:#e5eefb;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:'Bricolage Grotesque',sans-serif;font-weight:600;letter-spacing:-0.015em}
+  a{color:inherit;text-decoration:none}
+  button{font-family:'Inter',sans-serif;cursor:pointer}
+
+  /* topbar */
+  .top{position:sticky;top:0;z-index:70;background:var(--pine-deep);color:#fff;padding:0 22px;display:flex;align-items:center;gap:20px;height:60px}
+  .top .brand{display:flex;align-items:center;gap:10px;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:15px;white-space:nowrap}
+  .top .brand .mk{width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.14);display:grid;place-items:center;flex:none}
+  .top .brand small{display:block;font-family:'Inter',sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;opacity:.6;font-weight:600;line-height:1.2}
+  .roles{display:flex;gap:4px;background:rgba(255,255,255,.09);border-radius:999px;padding:4px;margin:0 auto}
+  .role-btn{border:none;background:none;color:#cfe0da;font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:999px;transition:all .15s;white-space:nowrap}
+  .role-btn.on{background:#fff;color:var(--pine-deep)}
+  .top .user{display:flex;align-items:center;gap:10px;font-size:12px;white-space:nowrap}
+  .top .user .av{width:32px;height:32px;border-radius:50%;background:var(--amber);display:grid;place-items:center;font-weight:700;font-size:12px}
+  .top .user b{display:block;font-size:12.5px;line-height:1.2}
+  .top .user span{opacity:.65;font-size:10.5px}
+  .site-link{font-size:11.5px;opacity:.7;white-space:nowrap}
+  .site-link:hover{opacity:1}
+  @media(max-width:980px){
+    .top{flex-wrap:wrap;height:auto;padding:10px 14px;gap:10px}
+    .roles{order:3;width:100%;overflow-x:auto;margin:0}
+    .top .user .meta,.site-link{display:none}
+  }
+
+  main{max-width:1280px;margin:0 auto;padding:26px 24px 90px}
+  @media(max-width:700px){main{padding:18px 14px 90px}}
+
+  .role-view{display:none;animation:fade .3s}
+  .role-view.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .view-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+  .view-head h1{font-size:24px}
+  .view-head p{color:var(--mute);font-size:13.5px;margin-top:3px}
+  .view-head .actions{display:flex;gap:9px;flex-wrap:wrap}
+
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:10px;font-weight:600;font-size:13px;border:none;transition:transform .12s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-primary{background:var(--pine);color:#fff}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink-2)}
+  .btn-sm{padding:7px 13px;font-size:12px;border-radius:8px}
+
+  .card{background:var(--card);border:1px solid var(--line-soft);border-radius:14px;padding:20px}
+  .card h3{font-size:14.5px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .card h3 span.sub{font-size:11.5px;color:var(--mute);font-weight:500;font-family:'Inter',sans-serif}
+
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}
+  .kpi{background:var(--card);border:1px solid var(--line-soft);border-radius:14px;padding:17px 18px;position:relative;overflow:hidden}
+  .kpi::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--teal)}
+  .kpi.amber::after{background:var(--amber)}
+  .kpi.blue::after{background:var(--blue)}
+  .kpi .k-label{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--mute)}
+  .kpi .k-val{font-family:'Bricolage Grotesque',sans-serif;font-size:27px;font-weight:700;margin-top:5px;color:var(--ink)}
+  .kpi .k-delta{font-size:11.5px;margin-top:3px;font-weight:600}
+  .kpi .k-delta.up{color:var(--good)}
+  .kpi .k-delta.down{color:var(--crit)}
+  .kpi .k-delta.flat{color:var(--mute)}
+  @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:640px){.kpis{grid-template-columns:1fr 1fr}}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid31{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+  .grid13{display:grid;grid-template-columns:1fr 2fr;gap:16px}
+  @media(max-width:980px){.grid2,.grid31,.grid13{grid-template-columns:1fr}}
+  .stack{display:flex;flex-direction:column;gap:16px}
+
+  /* charts */
+  .chart-wrap{position:relative}
+  .chart-wrap svg{width:100%;height:auto;display:block}
+  .legend{display:flex;gap:16px;font-size:11.5px;color:var(--ink-2);margin-bottom:8px;font-weight:500}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .viz-tip{position:fixed;z-index:99;background:var(--ink);color:#fff;font-size:11.5px;padding:7px 11px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .12s;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+  .viz-tip b{display:block;font-size:12px}
+  .axis-lbl{font-size:10px;fill:var(--mute);font-family:'Inter',sans-serif}
+  .grid-line{stroke:var(--line-soft);stroke-width:1}
+  .bar{transition:opacity .12s}
+  .bar:hover{opacity:.8}
+  .dot-hit{fill:transparent;cursor:pointer}
+
+  /* tables */
+  table.data{width:100%;border-collapse:collapse;font-size:13px}
+  table.data th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);padding:9px 10px;border-bottom:1px solid var(--line)}
+  table.data td{padding:11px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  table.data tr:last-child td{border-bottom:none}
+  table.data tr.row-hl{background:var(--amber-tint)}
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .chip{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:999px;padding:4px 10px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+  .chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .chip.ok{background:var(--good-tint);color:#0a7a0a}
+  .chip.warn{background:var(--warn-tint);color:var(--warn)}
+  .chip.crit{background:var(--crit-tint);color:var(--crit)}
+  .chip.info{background:var(--blue-tint);color:var(--blue)}
+  .chip.mute{background:#eee;color:var(--mute)}
+  .pt{display:flex;align-items:center;gap:10px}
+  .pt .av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;flex:none}
+  .pt b{font-size:13px;display:block;line-height:1.25}
+  .pt span{font-size:11px;color:var(--mute)}
+
+  /* quick actions */
+  .qa-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  .qa{background:var(--card);border:1px solid var(--line-soft);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;font-weight:600;font-size:13px;transition:all .13s;text-align:left}
+  .qa:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(21,36,32,.08);border-color:var(--teal)}
+  .qa .qi{width:36px;height:36px;flex:none;border-radius:10px;background:var(--pine-tint);color:var(--pine);display:grid;place-items:center}
+  .qa .qi svg{width:18px;height:18px}
+  @media(max-width:820px){.qa-row{grid-template-columns:1fr 1fr}}
+
+  /* front desk schedule */
+  .fd-actions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:18px}
+  .waiting-card{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+  .waiting-card:last-child{border:none}
+  .waiting-card .tm{margin-left:auto;font-size:11px;font-weight:700;color:var(--warn);background:var(--warn-tint);border-radius:8px;padding:4px 8px;white-space:nowrap}
+
+  /* provider timeline */
+  .tl{position:relative;padding-left:64px}
+  .tl-slot{position:relative;border-left:2px solid var(--line);padding:0 0 4px 18px;min-height:58px}
+  .tl-time{position:absolute;left:-64px;top:-2px;width:48px;text-align:right;font-size:11px;color:var(--mute);font-weight:600}
+  .tl-ev{background:#fff;border:1px solid var(--line-soft);border-left:4px solid var(--teal);border-radius:10px;padding:10px 13px;margin-bottom:8px;cursor:pointer;transition:all .13s}
+  .tl-ev:hover{transform:translateX(2px);box-shadow:0 8px 18px rgba(21,36,32,.08)}
+  .tl-ev.now{border-left-color:var(--amber);background:var(--amber-tint)}
+  .tl-ev.done{opacity:.55}
+  .tl-ev.sel{box-shadow:0 0 0 2px var(--pine)}
+  .tl-ev b{font-size:13px}
+  .tl-ev span{display:block;font-size:11.5px;color:var(--mute)}
+  .tl-dot{position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--line);border:2px solid var(--paper)}
+  .tl-slot.now .tl-dot{background:var(--amber)}
+
+  /* chart panel (patient chart) */
+  .chartp .sec{margin-bottom:16px}
+  .chartp .sec h4{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--mute);margin-bottom:8px;font-family:'Inter',sans-serif;font-weight:700}
+  .vitals{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+  .vital{background:#fff;border:1px solid var(--line-soft);border-radius:10px;padding:10px;text-align:center}
+  .vital b{font-family:'Bricolage Grotesque',sans-serif;font-size:16.5px;display:block}
+  .vital span{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-weight:700}
+  .tag-row{display:flex;flex-wrap:wrap;gap:7px}
+  .mtag{background:#fff;border:1px solid var(--line);border-radius:999px;font-size:11.5px;font-weight:600;padding:5px 12px}
+  .mtag.alert{border-color:#f2c8c8;background:var(--crit-tint);color:var(--crit)}
+  .hist{font-size:12.5px;padding:9px 0;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:10px}
+  .hist:last-child{border:none}
+  .hist span{color:var(--mute);white-space:nowrap}
+  .task{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px}
+  .task:last-child{border:none}
+  .task input{margin-top:3px;accent-color:var(--pine);width:15px;height:15px}
+  .task.done label{text-decoration:line-through;color:var(--mute)}
+  .task label{cursor:pointer}
+  .task small{display:block;color:var(--mute);font-size:11px}
+
+  /* comms */
+  .auto-row{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+  .auto-row:last-child{border:none}
+  .auto-row .ai-ico{width:38px;height:38px;flex:none;border-radius:10px;display:grid;place-items:center;background:var(--pine-tint);color:var(--pine)}
+  .auto-row .ai-ico svg{width:18px;height:18px}
+  .auto-row b{font-size:13px;display:block}
+  .auto-row span{font-size:11.5px;color:var(--mute)}
+  .switch{margin-left:auto;position:relative;width:40px;height:22px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .switch i{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:.2s;cursor:pointer}
+  .switch i::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .switch input:checked+i{background:var(--teal)}
+  .switch input:checked+i::after{transform:translateX(18px)}
+
+  /* AI band */
+  .ai-band{background:linear-gradient(120deg,var(--pine-deep),#14544a);border-radius:16px;color:#fff;padding:26px 28px;margin-top:16px}
+  .ai-band h3{color:#fff;font-size:17px;margin-bottom:4px}
+  .ai-band p{font-size:12.5px;opacity:.8;margin-bottom:16px}
+  .ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .ai-chip{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:11px 13px;font-size:12px;font-weight:600;display:flex;gap:9px;align-items:center}
+  .ai-chip em{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.08em;background:var(--amber);border-radius:999px;padding:2px 8px;margin-left:auto;white-space:nowrap}
+  @media(max-width:860px){.ai-grid{grid-template-columns:1fr}}
+
+  /* calendar mini */
+  .cal-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .cal-tab{border:1px solid var(--line);background:#fff;border-radius:999px;font-size:11.5px;font-weight:600;padding:6px 14px;color:var(--mute)}
+  .cal-tab.on{background:var(--pine);border-color:var(--pine);color:#fff}
+  .cal{display:grid;grid-template-columns:52px repeat(4,1fr);gap:4px;font-size:11px}
+  .cal .hd{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--mute);padding:6px 4px;text-align:center}
+  .cal .tm{color:var(--mute);font-weight:600;text-align:right;padding:8px 8px 0 0;font-size:10.5px}
+  .cal .cell{background:#fff;border:1px solid var(--line-soft);border-radius:6px;min-height:40px;padding:3px}
+  .cal .ev{border-radius:5px;padding:3px 6px;font-size:10px;font-weight:600;line-height:1.3;margin-bottom:2px}
+  .cal .ev.a{background:var(--pine-tint);color:var(--pine)}
+  .cal .ev.b{background:var(--blue-tint);color:var(--blue)}
+  .cal .ev.c{background:var(--amber-tint);color:var(--amber)}
+  .cal .ev.d{background:var(--good-tint);color:#0a7a0a}
+
+  .toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,20px);background:var(--ink);color:#fff;border-radius:12px;padding:13px 22px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s;z-index:100;box-shadow:0 14px 34px rgba(0,0,0,.3)}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .note{font-size:11px;color:var(--mute);margin-top:10px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <a class="brand" href="index.html">
+    <span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M12 21c-4.5-3.5-8-6.8-8-10.5A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 8 4.5c0 3.7-3.5 7-8 10.5z"/><path d="M9 12h2l1-2 1.5 4 1-2H17"/></svg></span>
+    <span>Oak Ridge<small>Practice OS</small></span>
+  </a>
+  <div class="roles" id="roleBar">
+    <button class="role-btn on" data-r="admin">Administrator</button>
+    <button class="role-btn" data-r="frontdesk">Front Desk</button>
+    <button class="role-btn" data-r="provider">Provider</button>
+    <button class="role-btn" data-r="billing">Billing</button>
+  </div>
+  <a class="site-link" href="portal.html">Patient Portal ↗</a>
+  <div class="user"><div class="meta" style="text-align:right"><b id="userName">Dr. Sarah Johnson</b><span id="userRole">Practice Owner</span></div><div class="av" id="userAv">SJ</div></div>
+</div>
+
+<main>
+
+<!-- ══════════ ADMIN ══════════ -->
+<section class="role-view on" id="r-admin">
+  <div class="view-head">
+    <div><h1>Good morning, Dr. Johnson</h1><p>Tuesday, July 15 · Here's how the practice is running today.</p></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="toast('Demo: report builder opens here')">Run Report</button>
+      <button class="btn btn-primary" onclick="toast('Demo: new appointment modal opens here')">+ Create Appointment</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="k-label">Today's Appointments</div><div class="k-val">38</div><div class="k-delta up">▲ 4 vs. last Tuesday</div></div>
+    <div class="kpi"><div class="k-label">New Patients · July</div><div class="k-val">42</div><div class="k-delta up">▲ 12% month over month</div></div>
+    <div class="kpi amber"><div class="k-label">Revenue · July</div><div class="k-val">$82,450</div><div class="k-delta up">▲ 8% vs. June</div></div>
+    <div class="kpi"><div class="k-label">Patient Satisfaction</div><div class="k-val">96%</div><div class="k-delta flat">— steady 90-day avg</div></div>
+    <div class="kpi blue"><div class="k-label">Open Tasks</div><div class="k-val">12</div><div class="k-delta down">▼ 3 overdue</div></div>
+  </div>
+
+  <div class="qa-row">
+    <button class="qa" onclick="toast('Demo: provider onboarding flow')"><span class="qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10" cy="8" r="4"/><path d="M3 21c0-3.9 3.1-7 7-7M19 8v6M22 11h-6"/></svg></span>Add Provider</button>
+    <button class="qa" onclick="toast('Demo: new appointment modal')"><span class="qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 11h16M12 14v4M10 16h4"/></svg></span>Create Appointment</button>
+    <button class="qa" onclick="document.getElementById('comms').scrollIntoView({behavior:'smooth'})"><span class="qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 21 4l-4 16-6.5-5.5L8 17l-.5-4.5z"/></svg></span>Broadcast Message</button>
+    <button class="qa" onclick="toast('Demo: report builder opens here')"><span class="qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>Run Report</button>
+  </div>
+
+  <div class="grid2" style="margin-bottom:16px">
+    <div class="card">
+      <h3>Appointment Trends <span class="sub">last 8 weeks</span></h3>
+      <div class="legend"><span><i style="background:var(--series-1)"></i>Completed</span><span><i style="background:var(--series-2)"></i>Scheduled</span></div>
+      <div class="chart-wrap" id="chartAppts"></div>
+    </div>
+    <div class="card">
+      <h3>Revenue Trend <span class="sub">last 6 months</span></h3>
+      <div class="chart-wrap" id="chartRev"></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:2px">
+    <div class="card">
+      <h3>Provider Utilization <span class="sub">this week · % of bookable hours</span></h3>
+      <div class="chart-wrap" id="chartUtil"></div>
+    </div>
+    <div class="card">
+      <h3>Patient Growth <span class="sub">active patients</span></h3>
+      <div class="chart-wrap" id="chartGrowth"></div>
+      <div class="note">1,247 active patients · up 168 in the last 12 months</div>
+    </div>
+  </div>
+
+  <!-- Communication Center -->
+  <div class="grid2" id="comms" style="margin-top:16px">
+    <div class="card">
+      <h3>Communication Center <span class="sub">automations</span></h3>
+      <div class="auto-row">
+        <div class="ai-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <div><b>Appointment Reminder</b><span>SMS + email · 24 hours before each visit</span></div>
+        <label class="switch"><input type="checkbox" checked onchange="toast(this.checked?'Appointment reminders ON':'Appointment reminders OFF')"><i></i></label>
+      </div>
+      <div class="auto-row">
+        <div class="ai-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-4-7.5L21 4l-.6 4A9 9 0 0 1 21 12z"/></svg></div>
+        <div><b>Missed Appointment Follow-Up</b><span>Automatic reschedule text within 15 minutes</span></div>
+        <label class="switch"><input type="checkbox" checked onchange="toast(this.checked?'Missed-visit follow-ups ON':'Missed-visit follow-ups OFF')"><i></i></label>
+      </div>
+      <div class="auto-row">
+        <div class="ai-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.3.8-4.6 4.2 1.2 6.1L12 16.8 6.4 19.7l1.2-6.1L3 9.4l6.3-.8z"/></svg></div>
+        <div><b>Review Request</b><span>Google review link · sent 2 hours after visit</span></div>
+        <label class="switch"><input type="checkbox" checked onchange="toast(this.checked?'Review requests ON':'Review requests OFF')"><i></i></label>
+      </div>
+      <div class="auto-row">
+        <div class="ai-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></div>
+        <div><b>Recall Campaign</b><span>Annual wellness reminders · patients not seen in 11 months</span></div>
+        <label class="switch"><input type="checkbox" onchange="toast(this.checked?'Recall campaign ON':'Recall campaign OFF')"><i></i></label>
+      </div>
+      <div style="display:flex;gap:9px;margin-top:16px">
+        <button class="btn btn-primary btn-sm" onclick="toast('Demo: broadcast composer opens (email + SMS)')">+ New Broadcast</button>
+        <button class="btn btn-ghost btn-sm" onclick="toast('Demo: full send history opens')">Send History</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Recent Sends <span class="sub">last 7 days</span></h3>
+      <div class="tbl-scroll">
+        <table class="data">
+          <thead><tr><th>Message</th><th>Channel</th><th>Sent</th><th>Engagement</th></tr></thead>
+          <tbody>
+            <tr><td><b>July 4th holiday hours</b></td><td>Email · 1,180</td><td>Jul 10</td><td><span class="chip ok">62% opened</span></td></tr>
+            <tr><td><b>Appointment reminders</b></td><td>SMS · 41</td><td>Yesterday</td><td><span class="chip ok">97% delivered</span></td></tr>
+            <tr><td><b>Review requests</b></td><td>SMS · 29</td><td>Yesterday</td><td><span class="chip info">9 new reviews</span></td></tr>
+            <tr><td><b>Flu clinic pre-registration</b></td><td>Email · 1,214</td><td>Jul 8</td><td><span class="chip ok">48% opened</span></td></tr>
+            <tr><td><b>Missed-visit follow-ups</b></td><td>SMS · 6</td><td>Jul 9</td><td><span class="chip ok">4 rebooked</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="ai-band">
+    <h3>Oak Ridge AI Suite</h3>
+    <p>Optional intelligence layer — every module below can be added to this platform as the practice grows.</p>
+    <div class="ai-grid">
+      <div class="ai-chip">🗓️ AI Appointment Assistant <em>ROADMAP</em></div>
+      <div class="ai-chip">💬 AI FAQ & After-Hours Bot <em>ROADMAP</em></div>
+      <div class="ai-chip">⭐ AI Review Response Drafts <em>ROADMAP</em></div>
+      <div class="ai-chip">📞 AI Call Summaries <em>ROADMAP</em></div>
+      <div class="ai-chip">📋 AI Intake Analysis <em>ROADMAP</em></div>
+      <div class="ai-chip">⚡ AI Schedule Optimization <em>ROADMAP</em></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FRONT DESK ══════════ -->
+<section class="role-view" id="r-frontdesk">
+  <div class="view-head">
+    <div><h1>Front Desk</h1><p>Tuesday, July 15 · 38 appointments on the books · 3 arrivals waiting.</p></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="toast('Demo: prints today’s intake forms')">Print Forms</button>
+      <button class="btn btn-primary" onclick="toast('Demo: walk-in / new appointment modal')">+ New Appointment</button>
+    </div>
+  </div>
+
+  <div class="fd-actions">
+    <button class="btn btn-primary btn-sm" onclick="toast('Select a patient row, then Check In ✓')">✓ Check In</button>
+    <button class="btn btn-ghost btn-sm" onclick="toast('Demo: reschedule picker opens')">↺ Reschedule</button>
+    <button class="btn btn-ghost btn-sm" onclick="toast('Demo: payment terminal — collect copay')">$ Collect Payment</button>
+    <button class="btn btn-ghost btn-sm" onclick="toast('Demo: prints selected patient’s forms')">⎙ Print Forms</button>
+  </div>
+
+  <div class="grid31">
+    <div class="card">
+      <h3>Today's Schedule <span class="sub">click Check In as patients arrive</span></h3>
+      <div class="tbl-scroll">
+        <table class="data" id="fdTable">
+          <thead><tr><th>Time</th><th>Patient</th><th>Type</th><th>Provider</th><th>Copay</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><b>8:00</b></td><td><div class="pt"><div class="av" style="background:#0f4c44">RB</div><div><b>Robert Bailey</b><span>ins. verified ✓</span></div></div></td><td>Follow-Up</td><td>Dr. Johnson</td><td>$25</td><td><span class="chip mute">Completed</span></td><td></td></tr>
+            <tr><td><b>8:20</b></td><td><div class="pt"><div class="av" style="background:#156353">KP</div><div><b>Karen Phillips</b><span>ins. verified ✓</span></div></div></td><td>Wellness</td><td>Emily Davis, NP</td><td>$0</td><td><span class="chip mute">Completed</span></td><td></td></tr>
+            <tr><td><b>9:00</b></td><td><div class="pt"><div class="av" style="background:#bd7409">LG</div><div><b>Luis Gonzalez</b><span>ins. verified ✓</span></div></div></td><td>Physical</td><td>Dr. Johnson</td><td>$25</td><td><span class="chip info">In Room 2</span></td><td></td></tr>
+            <tr><td><b>9:15</b></td><td><div class="pt"><div class="av" style="background:#1c5cab">MM</div><div><b>Maya Marshall (5)</b><span>with parent</span></div></div></td><td>Well-Child</td><td>Dr. Carter</td><td>$0</td><td><span class="chip info">In Room 4</span></td><td></td></tr>
+            <tr class="row-hl"><td><b>9:30</b></td><td><div class="pt"><div class="av" style="background:#0f4c44">JM</div><div><b>Jessica Miller</b><span>forms pending ⚠</span></div></div></td><td>Wellness</td><td>Dr. Johnson</td><td>$0</td><td><span class="chip warn" id="st1">Waiting · 8 min</span></td><td><button class="btn btn-primary btn-sm" onclick="checkIn(this,'st1','Jessica Miller')">Check In</button></td></tr>
+            <tr class="row-hl"><td><b>9:40</b></td><td><div class="pt"><div class="av" style="background:#156353">DT</div><div><b>Deshawn Turner</b><span>ins. verified ✓</span></div></div></td><td>Sick Visit</td><td>Emily Davis, NP</td><td>$25</td><td><span class="chip warn" id="st2">Waiting · 3 min</span></td><td><button class="btn btn-primary btn-sm" onclick="checkIn(this,'st2','Deshawn Turner')">Check In</button></td></tr>
+            <tr class="row-hl"><td><b>9:45</b></td><td><div class="pt"><div class="av" style="background:#bd7409">AH</div><div><b>Anna Huang (11 mo)</b><span>with parent</span></div></div></td><td>Well-Child</td><td>Dr. Carter</td><td>$0</td><td><span class="chip warn" id="st3">Arriving</span></td><td><button class="btn btn-primary btn-sm" onclick="checkIn(this,'st3','Anna Huang')">Check In</button></td></tr>
+            <tr><td><b>10:00</b></td><td><div class="pt"><div class="av" style="background:#1c5cab">WS</div><div><b>Walter Simmons</b><span>needs ins. verify ⚠</span></div></div></td><td>New Patient</td><td>Dr. Johnson</td><td>$40</td><td><span class="chip mute">Scheduled</span></td><td></td></tr>
+            <tr><td><b>10:15</b></td><td><div class="pt"><div class="av" style="background:#0f4c44">PC</div><div><b>Paula Chen</b><span>telehealth link sent</span></div></div></td><td>Telehealth</td><td>Emily Davis, NP</td><td>$25</td><td><span class="chip info">Video · ready</span></td><td></td></tr>
+            <tr><td><b>10:30</b></td><td><div class="pt"><div class="av" style="background:#c33b3b">GW</div><div><b>George Whitfield</b><span>2 prior no-shows</span></div></div></td><td>Follow-Up</td><td>Dr. Johnson</td><td>$25</td><td><span class="chip crit">Missed 9:00 Jul 8</span></td><td><button class="btn btn-ghost btn-sm" onclick="toast('Follow-up text sent to George ✓')">Text</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <h3>Waiting Room <span class="sub" id="wrCount">3 patients</span></h3>
+        <div id="wrList">
+          <div class="waiting-card"><div class="pt"><div class="av" style="background:#0f4c44">JM</div><div><b>Jessica Miller</b><span>Dr. Johnson · 9:30</span></div></div><span class="tm">8 min</span></div>
+          <div class="waiting-card"><div class="pt"><div class="av" style="background:#156353">DT</div><div><b>Deshawn Turner</b><span>Emily Davis · 9:40</span></div></div><span class="tm">3 min</span></div>
+          <div class="waiting-card"><div class="pt"><div class="av" style="background:#bd7409">AH</div><div><b>Anna Huang</b><span>Dr. Carter · 9:45</span></div></div><span class="tm">just in</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Insurance Verification <span class="sub">queue · 4</span></h3>
+        <div class="hist"><div><b style="font-size:12.5px">Walter Simmons</b><br><span style="white-space:normal">New patient · UnitedHealthcare · visit 10:00 today</span></div><button class="btn btn-primary btn-sm" onclick="this.outerHTML='<span class=&quot;chip ok&quot;>Verified</span>';toast('Eligibility verified ✓ Copay $40')">Verify</button></div>
+        <div class="hist"><div><b style="font-size:12.5px">Brenda Ortiz</b><br><span style="white-space:normal">Plan changed · Cigna → BCBS · visit tomorrow</span></div><button class="btn btn-primary btn-sm" onclick="this.outerHTML='<span class=&quot;chip ok&quot;>Verified</span>';toast('Eligibility verified ✓ Copay $25')">Verify</button></div>
+        <div class="hist"><div><b style="font-size:12.5px">Sam Whitlow</b><br><span style="white-space:normal">Medicare + supplement · annual wellness Thu</span></div><button class="btn btn-primary btn-sm" onclick="this.outerHTML='<span class=&quot;chip ok&quot;>Verified</span>';toast('Eligibility verified ✓ $0 copay')">Verify</button></div>
+        <div class="hist"><div><b style="font-size:12.5px">Erica James</b><br><span style="white-space:normal">Card on file expired · visit Friday</span></div><button class="btn btn-ghost btn-sm" onclick="toast('Update request texted to Erica ✓')">Request</button></div>
+      </div>
+      <div class="card">
+        <h3>Missed Today <span class="sub">auto follow-up on</span></h3>
+        <div class="hist"><div><b style="font-size:12.5px">George Whitfield</b><br><span>9:00 · Dr. Johnson</span></div><span class="chip warn">Text sent</span></div>
+        <div class="hist"><div><b style="font-size:12.5px">Tina Blevins</b><br><span>8:40 · Emily Davis</span></div><span class="chip ok">Rebooked Jul 18</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>Appointment Center <span class="sub">week view · all providers</span></h3>
+    <div class="cal-tabs">
+      <button class="cal-tab" onclick="toast('Demo: day view')">Day</button>
+      <button class="cal-tab on">Week</button>
+      <button class="cal-tab" onclick="toast('Demo: month view')">Month</button>
+      <button class="cal-tab" onclick="toast('Demo: filter by provider')">By Provider</button>
+      <span style="margin-left:auto;font-size:11px;color:var(--mute);align-self:center">■ Johnson · ■ Carter · ■ Davis · ■ Procedures</span>
+    </div>
+    <div class="tbl-scroll">
+      <div class="cal" style="min-width:640px">
+        <div class="hd"></div><div class="hd">Tue 15</div><div class="hd">Wed 16</div><div class="hd">Thu 17</div><div class="hd">Fri 18</div>
+        <div class="tm">8 AM</div>
+        <div class="cell"><div class="ev a">Bailey · F/U</div><div class="ev d">Phillips · AWV</div></div>
+        <div class="cell"><div class="ev a">Nguyen · Phys</div><div class="ev b">Ross (7) · WCC</div></div>
+        <div class="cell"><div class="ev a">Miller · AWV</div><div class="ev c">Chen · Tele</div></div>
+        <div class="cell"><div class="ev c">Diaz · Tele</div></div>
+        <div class="tm">10 AM</div>
+        <div class="cell"><div class="ev a">Simmons · NP</div><div class="ev c">Chen · Tele</div><div class="ev b">Huang · WCC</div></div>
+        <div class="cell"><div class="ev d">Ortiz · Proc</div><div class="ev a">Katz · F/U</div></div>
+        <div class="cell"><div class="ev b">Marsh (4) · WCC</div><div class="ev a">Boyd · F/U</div></div>
+        <div class="cell"><div class="ev a">Ellis · NP</div><div class="ev b">Reid (9) · Sport</div></div>
+        <div class="tm">1 PM</div>
+        <div class="cell"><div class="ev b">Tran (2) · WCC</div><div class="ev a">Wells · Sick</div></div>
+        <div class="cell"><div class="ev c">Grant · Tele</div><div class="ev a">Ford · AWV</div></div>
+        <div class="cell"><div class="ev d">Lane · Proc</div><div class="ev b">Cole (12) · Sport</div></div>
+        <div class="cell"><div class="ev a">Hood · F/U</div><div class="ev c">Pate · Tele</div></div>
+        <div class="tm">3 PM</div>
+        <div class="cell"><div class="ev a">Meyer · F/U</div><div class="ev b">Ivey (6) · Sick</div></div>
+        <div class="cell"><div class="ev a">Byrd · Sick</div></div>
+        <div class="cell"><div class="ev b">Miller T. · Sport</div><div class="ev a">Snow · F/U</div></div>
+        <div class="cell"><div class="ev d">Kemp · Proc</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ PROVIDER ══════════ -->
+<section class="role-view" id="r-provider">
+  <div class="view-head">
+    <div><h1>Dr. Johnson — Today</h1><p>11 patients · next: Jessica Miller, 9:30 Annual Wellness · 2 notes to sign.</p></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="toast('Demo: dictation / note composer opens')">+ New Note</button>
+      <button class="btn btn-primary" onclick="toast('2 notes signed ✓')">Sign Notes (2)</button>
+    </div>
+  </div>
+
+  <div class="grid13">
+    <div class="stack">
+      <div class="card">
+        <h3>Today's Patients <span class="sub">tap to open chart</span></h3>
+        <div class="tl">
+          <div class="tl-slot"><span class="tl-dot"></span><span class="tl-time">8:00</span>
+            <div class="tl-ev done" onclick="loadPt('bailey',this)"><b>Robert Bailey · 61</b><span>Follow-Up · HTN check · note signed ✓</span></div>
+          </div>
+          <div class="tl-slot"><span class="tl-dot"></span><span class="tl-time">9:00</span>
+            <div class="tl-ev now sel" onclick="loadPt('gonzalez',this)"><b>Luis Gonzalez · 47</b><span>Physical · in Room 2 · vitals done</span></div>
+          </div>
+          <div class="tl-slot"><span class="tl-dot"></span><span class="tl-time">9:30</span>
+            <div class="tl-ev" onclick="loadPt('miller',this)"><b>Jessica Miller · 38</b><span>Annual Wellness · waiting room</span></div>
+          </div>
+          <div class="tl-slot"><span class="tl-dot"></span><span class="tl-time">10:00</span>
+            <div class="tl-ev" onclick="loadPt('simmons',this)"><b>Walter Simmons · 66</b><span>New Patient · records received</span></div>
+          </div>
+          <div class="tl-slot"><span class="tl-dot"></span><span class="tl-time">10:30</span>
+            <div class="tl-ev" onclick="toast('Chart demo: try the four patients above')"><b>George Whitfield · 54</b><span>Follow-Up · missed last visit</span></div>
+          </div>
+          <div class="tl-slot"><span class="tl-dot"></span><span class="tl-time">1:00</span>
+            <div class="tl-ev" onclick="toast('Chart demo: try the four patients above')"><b>Afternoon block</b><span>6 more visits · 1 procedure</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Tasks <span class="sub">5 open</span></h3>
+        <div class="task"><input type="checkbox" id="t1" onchange="this.closest('.task').classList.toggle('done',this.checked)"><label for="t1">Review Gonzalez lipid panel<small>Resulted 7:40 AM · flagged LDL</small></label></div>
+        <div class="task"><input type="checkbox" id="t2" onchange="this.closest('.task').classList.toggle('done',this.checked)"><label for="t2">Approve refill — Lisinopril, J. Miller<small>Requested via portal 9:58 AM</small></label></div>
+        <div class="task"><input type="checkbox" id="t3" onchange="this.closest('.task').classList.toggle('done',this.checked)"><label for="t3">Sign visit note — R. Bailey</label></div>
+        <div class="task"><input type="checkbox" id="t4" onchange="this.closest('.task').classList.toggle('done',this.checked)"><label for="t4">Return call — pharmacy clarification<small>Walgreens · Simmons metformin dose</small></label></div>
+        <div class="task"><input type="checkbox" id="t5" onchange="this.closest('.task').classList.toggle('done',this.checked)"><label for="t5">Complete referral — dermatology, K. Phillips</label></div>
+      </div>
+      <div class="card">
+        <h3>Messages <span class="sub">2 unread</span></h3>
+        <div class="hist"><div><b style="font-size:12.5px">Jessica Miller</b><br><span style="white-space:normal">Refill request — Lisinopril 10mg</span></div><button class="btn btn-primary btn-sm" onclick="this.outerHTML='<span class=&quot;chip ok&quot;>Approved</span>';toast('Refill approved → sent to CVS Highland ✓')">Approve</button></div>
+        <div class="hist"><div><b style="font-size:12.5px">Nurse Team</b><br><span style="white-space:normal">Room 2 ready — Gonzalez vitals in chart</span></div><span class="chip info">FYI</span></div>
+      </div>
+    </div>
+
+    <!-- patient chart -->
+    <div class="card chartp">
+      <h3 id="ptName">Luis Gonzalez <span class="sub" id="ptMeta">47 · M · DOB 03/22/1979 · MRN 100-8841 · BCBS PPO</span></h3>
+      <div class="sec">
+        <h4>Vitals — today 8:52 AM</h4>
+        <div class="vitals" id="ptVitals">
+          <div class="vital"><b>128/84</b><span>BP</span></div>
+          <div class="vital"><b>72</b><span>Pulse</span></div>
+          <div class="vital"><b>198 lb</b><span>Weight</span></div>
+          <div class="vital"><b>98.2°</b><span>Temp</span></div>
+        </div>
+      </div>
+      <div class="grid2" style="gap:14px">
+        <div class="sec">
+          <h4>Medications</h4>
+          <div class="tag-row" id="ptMeds"><span class="mtag">Atorvastatin 20mg</span><span class="mtag">Metformin 500mg</span></div>
+        </div>
+        <div class="sec">
+          <h4>Allergies</h4>
+          <div class="tag-row" id="ptAllergy"><span class="mtag alert">Penicillin — hives</span></div>
+        </div>
+      </div>
+      <div class="sec">
+        <h4>Active Conditions</h4>
+        <div class="tag-row" id="ptCond"><span class="mtag">Type 2 Diabetes (controlled)</span><span class="mtag">Hyperlipidemia</span></div>
+      </div>
+      <div class="sec">
+        <h4>Visit History</h4>
+        <div id="ptHist">
+          <div class="hist"><div>Physical — labs ordered, A1c 6.4 stable</div><span>Jan 14, 2026</span></div>
+          <div class="hist"><div>Telehealth — metformin refill, diet review</div><span>Sep 30, 2025</span></div>
+          <div class="hist"><div>Sick visit — sinusitis, resolved</div><span>Jun 12, 2025</span></div>
+        </div>
+      </div>
+      <div class="sec">
+        <h4>Documents</h4>
+        <div id="ptDocs">
+          <div class="hist"><div>📄 Lipid Panel — Jul 15 (new)</div><button class="btn btn-ghost btn-sm" onclick="toast('Demo: result viewer opens')">Open</button></div>
+          <div class="hist"><div>📄 A1c History — trending</div><button class="btn btn-ghost btn-sm" onclick="toast('Demo: result viewer opens')">Open</button></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn btn-primary btn-sm" onclick="toast('Demo: visit note composer opens')">Start Visit Note</button>
+        <button class="btn btn-ghost btn-sm" onclick="toast('Demo: e-prescribe flow opens')">Prescribe</button>
+        <button class="btn btn-ghost btn-sm" onclick="toast('Demo: lab order set opens')">Order Labs</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ BILLING ══════════ -->
+<section class="role-view" id="r-billing">
+  <div class="view-head">
+    <div><h1>Billing & Revenue</h1><p>July 2026 · claims, payments, and balances at a glance.</p></div>
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="toast('Demo: statement run kicks off')">Run Statements</button>
+      <button class="btn btn-primary" onclick="toast('Demo: claim scrubber opens')">+ New Claim</button>
+    </div>
+  </div>
+
+  <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi"><div class="k-label">Collected · July</div><div class="k-val">$68,210</div><div class="k-delta up">▲ 83% of monthly goal</div></div>
+    <div class="kpi amber"><div class="k-label">Pending Claims</div><div class="k-val">$24,380</div><div class="k-delta flat">47 claims in flight</div></div>
+    <div class="kpi" style="--teal:var(--crit)"><div class="k-label">Denied Claims</div><div class="k-val">7</div><div class="k-delta down">$3,912 to work</div></div>
+    <div class="kpi blue"><div class="k-label">Avg. Payment Time</div><div class="k-val">18 days</div><div class="k-delta up">▲ 4 days faster than Q1</div></div>
+  </div>
+
+  <div class="grid31">
+    <div class="card">
+      <h3>Insurance Claims <span class="sub">recent activity</span></h3>
+      <div class="tbl-scroll">
+        <table class="data">
+          <thead><tr><th>Claim</th><th>Patient</th><th>Payer</th><th>Service</th><th>Amount</th><th>Age</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>#20447</td><td>R. Bailey</td><td>Medicare</td><td>99214 · F/U</td><td>$164</td><td>0d</td><td><span class="chip info">Submitted</span></td></tr>
+            <tr><td>#20446</td><td>K. Phillips</td><td>BCBS AL</td><td>AWV G0439</td><td>$188</td><td>0d</td><td><span class="chip info">Submitted</span></td></tr>
+            <tr><td>#20431</td><td>M. Tran</td><td>Aetna</td><td>99392 · WCC</td><td>$142</td><td>4d</td><td><span class="chip warn">Pending payer</span></td></tr>
+            <tr><td>#20419</td><td>D. Wells</td><td>UnitedHealthcare</td><td>99213 · Sick</td><td>$126</td><td>9d</td><td><span class="chip warn">Pending payer</span></td></tr>
+            <tr><td>#20402</td><td>S. Whitlow</td><td>Medicare</td><td>99215 + labs</td><td>$248</td><td>12d</td><td><span class="chip ok">Paid $236.40</span></td></tr>
+            <tr><td>#20388</td><td>E. James</td><td>Cigna</td><td>99204 · NP</td><td>$212</td><td>15d</td><td><span class="chip ok">Paid $187.00</span></td></tr>
+            <tr><td>#20361</td><td>T. Blevins</td><td>BCBS AL</td><td>99214 · F/U</td><td>$164</td><td>19d</td><td><span class="chip crit">Denied · CO-197</span></td></tr>
+            <tr><td>#20344</td><td>P. Chen</td><td>Aetna</td><td>99443 · Tele</td><td>$98</td><td>22d</td><td><span class="chip crit">Denied · mod 95</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <h3>Denials to Work <span class="sub">7 · $3,912</span></h3>
+        <div class="hist"><div><b style="font-size:12.5px">#20361 · T. Blevins · $164</b><br><span style="white-space:normal">CO-197: pre-auth missing — attach referral & resubmit</span></div><button class="btn btn-primary btn-sm" onclick="this.outerHTML='<span class=&quot;chip ok&quot;>Resubmitted</span>';toast('Claim #20361 resubmitted with auth ✓')">Fix</button></div>
+        <div class="hist"><div><b style="font-size:12.5px">#20344 · P. Chen · $98</b><br><span style="white-space:normal">Telehealth modifier 95 missing — corrected claim</span></div><button class="btn btn-primary btn-sm" onclick="this.outerHTML='<span class=&quot;chip ok&quot;>Resubmitted</span>';toast('Claim #20344 resubmitted with modifier 95 ✓')">Fix</button></div>
+        <div class="hist"><div><b style="font-size:12.5px">#20298 · L. Ford · $188</b><br><span style="white-space:normal">Eligibility lapse on DOS — bill secondary</span></div><button class="btn btn-ghost btn-sm" onclick="toast('Demo: secondary claim flow opens')">Review</button></div>
+      </div>
+      <div class="card">
+        <h3>Outstanding Balances <span class="sub">patient responsibility</span></h3>
+        <div class="hist"><div><b style="font-size:12.5px">0–30 days</b></div><span style="color:var(--ink);font-weight:700">$4,215</span></div>
+        <div class="hist"><div><b style="font-size:12.5px">31–60 days</b></div><span style="color:var(--warn);font-weight:700">$1,868</span></div>
+        <div class="hist"><div><b style="font-size:12.5px">61–90 days</b></div><span style="color:var(--crit);font-weight:700">$742</span></div>
+        <div class="hist"><div><b style="font-size:12.5px">90+ days</b></div><span style="color:var(--crit);font-weight:700">$389</span></div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="toast('Payment reminder texts queued for 14 patients ✓')">Send Payment Reminders</button>
+      </div>
+      <div class="card">
+        <h3>Payment Tracking <span class="sub">this week</span></h3>
+        <div class="hist"><div>ERA — Medicare batch</div><span class="chip ok">$6,412 posted</span></div>
+        <div class="hist"><div>ERA — BCBS AL batch</div><span class="chip ok">$9,878 posted</span></div>
+        <div class="hist"><div>Patient portal payments</div><span class="chip ok">$1,240 · 31 txns</span></div>
+        <div class="hist"><div>Front desk collections</div><span class="chip ok">$685 · copays</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="viz-tip" id="vizTip"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ── role switching ── */
+  const roleMeta={
+    admin:['Dr. Sarah Johnson','Practice Owner','SJ'],
+    frontdesk:['Kayla Brooks','Front Desk Lead','KB'],
+    provider:['Dr. Sarah Johnson','Physician','SJ'],
+    billing:['Renee Alvarez','Billing Manager','RA']
+  };
+  document.querySelectorAll('.role-btn').forEach(b=>b.addEventListener('click',()=>{
+    const r=b.dataset.r;
+    document.querySelectorAll('.role-btn').forEach(x=>x.classList.toggle('on',x===b));
+    document.querySelectorAll('.role-view').forEach(v=>v.classList.toggle('on',v.id==='r-'+r));
+    const[n,t,a]=roleMeta[r];
+    document.getElementById('userName').textContent=n;
+    document.getElementById('userRole').textContent=t;
+    document.getElementById('userAv').textContent=a;
+    window.scrollTo({top:0});
+  }));
+
+  function toast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.classList.add('show');
+    clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),3000);
+  }
+
+  /* ── shared chart tooltip ── */
+  const tip=document.getElementById('vizTip');
+  function tipShow(e,html){tip.innerHTML=html;tip.style.opacity=1;tipMove(e)}
+  function tipMove(e){tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-10)+'px'}
+  function tipHide(){tip.style.opacity=0}
+
+  const NS='http://www.w3.org/2000/svg';
+  function el(tag,attrs){const n=document.createElementNS(NS,tag);for(const k in attrs)n.setAttribute(k,attrs[k]);return n}
+
+  /* ── appointment trends: 2-series line ── */
+  (function(){
+    const W=520,H=230,P={l:34,r:14,t:14,b:26};
+    const labels=['May 25','Jun 1','Jun 8','Jun 15','Jun 22','Jun 29','Jul 6','Jul 13'];
+    const completed=[128,134,131,142,138,126,149,155];
+    const scheduled=[141,148,140,155,150,139,161,168];
+    const max=180,min=100;
+    const x=i=>P.l+i*(W-P.l-P.r)/(labels.length-1);
+    const y=v=>P.t+(1-(v-min)/(max-min))*(H-P.t-P.b);
+    const svg=el('svg',{viewBox:`0 0 ${W} ${H}`});
+    [100,120,140,160,180].forEach(v=>{
+      svg.appendChild(el('line',{x1:P.l,x2:W-P.r,y1:y(v),y2:y(v),class:'grid-line'}));
+      const t=el('text',{x:P.l-6,y:y(v)+3,'text-anchor':'end',class:'axis-lbl'});t.textContent=v;svg.appendChild(t);
+    });
+    labels.forEach((l,i)=>{if(i%2===0||i===labels.length-1){const t=el('text',{x:x(i),y:H-8,'text-anchor':'middle',class:'axis-lbl'});t.textContent=l;svg.appendChild(t)}});
+    [[scheduled,'var(--series-2)','Scheduled'],[completed,'var(--series-1)','Completed']].forEach(([data,color,name])=>{
+      const d=data.map((v,i)=>`${i?'L':'M'}${x(i)},${y(v)}`).join('');
+      svg.appendChild(el('path',{d,fill:'none',stroke:color,'stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round'}));
+      data.forEach((v,i)=>{
+        if(i===data.length-1){
+          svg.appendChild(el('circle',{cx:x(i),cy:y(v),r:4,fill:color,stroke:'var(--card)','stroke-width':2}));
+          const t=el('text',{x:x(i)-2,y:y(v)-9,'text-anchor':'end',class:'axis-lbl',style:'font-weight:700;fill:var(--ink)'});t.textContent=v;svg.appendChild(t);
+        }
+        const hit=el('circle',{cx:x(i),cy:y(v),r:11,class:'dot-hit'});
+        hit.addEventListener('mousemove',e=>tipShow(e,`<b>${name}: ${v}</b>week of ${labels[i]}`));
+        hit.addEventListener('mouseleave',tipHide);
+        svg.appendChild(hit);
+      });
+    });
+    document.getElementById('chartAppts').appendChild(svg);
+  })();
+
+  /* ── revenue: single-series bars ── */
+  (function(){
+    const W=520,H=230,P={l:40,r:10,t:16,b:26};
+    const labels=['Feb','Mar','Apr','May','Jun','Jul'];
+    const vals=[64200,71800,69400,74100,76300,82450];
+    const max=90000;
+    const bw=(W-P.l-P.r)/labels.length;
+    const y=v=>P.t+(1-v/max)*(H-P.t-P.b);
+    const svg=el('svg',{viewBox:`0 0 ${W} ${H}`});
+    [0,30000,60000,90000].forEach(v=>{
+      svg.appendChild(el('line',{x1:P.l,x2:W-P.r,y1:y(v),y2:y(v),class:'grid-line'}));
+      const t=el('text',{x:P.l-6,y:y(v)+3,'text-anchor':'end',class:'axis-lbl'});t.textContent=v?('$'+v/1000+'k'):'0';svg.appendChild(t);
+    });
+    vals.forEach((v,i)=>{
+      const bx=P.l+i*bw+bw*0.22,bwid=bw*0.56;
+      const r=el('path',{d:`M${bx},${H-P.b} L${bx},${y(v)+4} Q${bx},${y(v)} ${bx+4},${y(v)} L${bx+bwid-4},${y(v)} Q${bx+bwid},${y(v)} ${bx+bwid},${y(v)+4} L${bx+bwid},${H-P.b} Z`,fill:i===vals.length-1?'var(--series-1)':'#8fcbb4',class:'bar'});
+      r.addEventListener('mousemove',e=>tipShow(e,`<b>$${v.toLocaleString()}</b>${labels[i]} 2026`));
+      r.addEventListener('mouseleave',tipHide);
+      svg.appendChild(r);
+      const t=el('text',{x:P.l+i*bw+bw/2,y:H-8,'text-anchor':'middle',class:'axis-lbl'});t.textContent=labels[i];svg.appendChild(t);
+      if(i===vals.length-1){const lb=el('text',{x:bx+bwid/2,y:y(v)-7,'text-anchor':'middle',class:'axis-lbl',style:'font-weight:700;fill:var(--ink)'});lb.textContent='$82.4k';svg.appendChild(lb)}
+    });
+    document.getElementById('chartRev').appendChild(svg);
+  })();
+
+  /* ── provider utilization: horizontal bars ── */
+  (function(){
+    const W=520,H=190,P={l:150,r:52,t:12,b:8};
+    const rows=[['Dr. Sarah Johnson',92],['Dr. Michael Carter',86],['Emily Davis, NP',78],['James Patel, PA-C',64]];
+    const bh=(H-P.t-P.b)/rows.length;
+    const x=v=>P.l+(v/100)*(W-P.l-P.r);
+    const svg=el('svg',{viewBox:`0 0 ${W} ${H}`});
+    rows.forEach(([name,v],i)=>{
+      const cy=P.t+i*bh+bh/2;
+      const t=el('text',{x:P.l-10,y:cy+4,'text-anchor':'end',class:'axis-lbl',style:'font-size:11.5px;fill:var(--ink-2);font-weight:600'});t.textContent=name;svg.appendChild(t);
+      svg.appendChild(el('rect',{x:P.l,y:cy-9,width:x(100)-P.l,height:18,rx:4,fill:'var(--line-soft)'}));
+      const bar=el('rect',{x:P.l,y:cy-9,width:x(v)-P.l,height:18,rx:4,fill:'var(--series-1)',class:'bar'});
+      bar.addEventListener('mousemove',e=>tipShow(e,`<b>${v}% booked</b>${name} · this week`));
+      bar.addEventListener('mouseleave',tipHide);
+      svg.appendChild(bar);
+      const vl=el('text',{x:x(v)+8,y:cy+4,class:'axis-lbl',style:'font-weight:700;fill:var(--ink)'});vl.textContent=v+'%';svg.appendChild(vl);
+    });
+    document.getElementById('chartUtil').appendChild(svg);
+  })();
+
+  /* ── patient growth: area line ── */
+  (function(){
+    const W=520,H=190,P={l:44,r:14,t:14,b:24};
+    const labels=['Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul'];
+    const vals=[1079,1094,1112,1121,1128,1146,1163,1181,1198,1214,1232,1247];
+    const max=1300,min=1000;
+    const x=i=>P.l+i*(W-P.l-P.r)/(vals.length-1);
+    const y=v=>P.t+(1-(v-min)/(max-min))*(H-P.t-P.b);
+    const svg=el('svg',{viewBox:`0 0 ${W} ${H}`});
+    [1000,1100,1200,1300].forEach(v=>{
+      svg.appendChild(el('line',{x1:P.l,x2:W-P.r,y1:y(v),y2:y(v),class:'grid-line'}));
+      const t=el('text',{x:P.l-6,y:y(v)+3,'text-anchor':'end',class:'axis-lbl'});t.textContent=v.toLocaleString();svg.appendChild(t);
+    });
+    const line=vals.map((v,i)=>`${i?'L':'M'}${x(i)},${y(v)}`).join('');
+    svg.appendChild(el('path',{d:`${line} L${x(vals.length-1)},${H-P.b} L${x(0)},${H-P.b} Z`,fill:'var(--series-1)','fill-opacity':.09}));
+    svg.appendChild(el('path',{d:line,fill:'none',stroke:'var(--series-1)','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round'}));
+    vals.forEach((v,i)=>{
+      if(i%3===0||i===vals.length-1){const t=el('text',{x:x(i),y:H-6,'text-anchor':'middle',class:'axis-lbl'});t.textContent=labels[i];svg.appendChild(t)}
+      const hit=el('circle',{cx:x(i),cy:y(v),r:11,class:'dot-hit'});
+      hit.addEventListener('mousemove',e=>tipShow(e,`<b>${v.toLocaleString()} patients</b>${labels[i]}`));
+      hit.addEventListener('mouseleave',tipHide);
+      svg.appendChild(hit);
+    });
+    svg.appendChild(el('circle',{cx:x(vals.length-1),cy:y(1247),r:4,fill:'var(--series-1)',stroke:'var(--card)','stroke-width':2}));
+    const lb=el('text',{x:x(vals.length-1)-4,y:y(1247)-9,'text-anchor':'end',class:'axis-lbl',style:'font-weight:700;fill:var(--ink)'});lb.textContent='1,247';svg.appendChild(lb);
+    document.getElementById('chartGrowth').appendChild(svg);
+  })();
+
+  /* ── front desk check-in ── */
+  function checkIn(btn,stId,name){
+    document.getElementById(stId).outerHTML='<span class="chip ok">Checked In</span>';
+    btn.closest('tr').classList.remove('row-hl');
+    btn.outerHTML='';
+    // remove from waiting room
+    const wr=document.getElementById('wrList');
+    [...wr.querySelectorAll('.waiting-card')].forEach(c=>{if(c.textContent.includes(name.split(' ')[0]))c.remove()});
+    const n=wr.querySelectorAll('.waiting-card').length;
+    document.getElementById('wrCount').textContent=n+(n===1?' patient':' patients');
+    toast(name+' checked in ✓ Room assignment sent to nurse team.');
+  }
+
+  /* ── provider patient charts ── */
+  const charts={
+    gonzalez:{
+      name:'Luis Gonzalez',meta:'47 · M · DOB 03/22/1979 · MRN 100-8841 · BCBS PPO',
+      vitals:[['128/84','BP'],['72','Pulse'],['198 lb','Weight'],['98.2°','Temp']],
+      meds:['Atorvastatin 20mg','Metformin 500mg'],allergy:['Penicillin — hives'],
+      cond:['Type 2 Diabetes (controlled)','Hyperlipidemia'],
+      hist:[['Physical — labs ordered, A1c 6.4 stable','Jan 14, 2026'],['Telehealth — metformin refill, diet review','Sep 30, 2025'],['Sick visit — sinusitis, resolved','Jun 12, 2025']],
+      docs:['📄 Lipid Panel — Jul 15 (new)','📄 A1c History — trending']
+    },
+    miller:{
+      name:'Jessica Miller',meta:'38 · F · DOB 04/12/1988 · MRN 104-2213 · BCBS PPO',
+      vitals:[['118/76','BP'],['66','Pulse'],['142 lb','Weight'],['98.4°','Temp']],
+      meds:['Lisinopril 10mg'],allergy:['No known allergies'],
+      cond:['Hypertension (mild, controlled)'],
+      hist:[['Sick visit — bronchitis, resolved','Jun 24, 2026'],['Annual labs — all in range','Apr 2, 2026'],['Wellness visit','Jul 20, 2025']],
+      docs:['📄 Annual Panel — Apr 2026','📄 Visit Summary — Jun 24']
+    },
+    bailey:{
+      name:'Robert Bailey',meta:'61 · M · DOB 09/03/1964 · MRN 100-2210 · Medicare + Supp',
+      vitals:[['136/88','BP'],['78','Pulse'],['214 lb','Weight'],['98.1°','Temp']],
+      meds:['Amlodipine 5mg','Aspirin 81mg','Atorvastatin 40mg'],allergy:['Sulfa — rash'],
+      cond:['Hypertension','CAD — stable','Osteoarthritis'],
+      hist:[['Follow-Up — BP improving, continue meds','Today 8:00 AM'],['Follow-Up — dose adjusted','Apr 16, 2026'],['Cardiology co-management note','Feb 3, 2026']],
+      docs:['📄 Visit Note — today (signed)','📄 Cardiology Letter — Feb 2026']
+    },
+    simmons:{
+      name:'Walter Simmons',meta:'66 · M · DOB 11/18/1959 · MRN NEW · UnitedHealthcare',
+      vitals:[['—','BP'],['—','Pulse'],['—','Weight'],['—','Temp']],
+      meds:['Metformin 1000mg (transferring)','Losartan 50mg (transferring)'],allergy:['NKDA — confirm at intake'],
+      cond:['Type 2 Diabetes','Hypertension'],
+      hist:[['Records received from previous PCP (Huntsville)','Jul 11, 2026'],['New patient intake — scheduled','Today 10:00 AM']],
+      docs:['📄 Transferred Records — 42 pages','📄 Intake Questionnaire — completed online']
+    }
+  };
+  function loadPt(key,evEl){
+    const c=charts[key];if(!c)return;
+    document.querySelectorAll('.tl-ev').forEach(x=>x.classList.remove('sel'));
+    evEl.classList.add('sel');
+    document.getElementById('ptName').innerHTML=`${c.name} <span class="sub">${c.meta}</span>`;
+    document.getElementById('ptVitals').innerHTML=c.vitals.map(v=>`<div class="vital"><b>${v[0]}</b><span>${v[1]}</span></div>`).join('');
+    document.getElementById('ptMeds').innerHTML=c.meds.map(m=>`<span class="mtag">${m}</span>`).join('');
+    document.getElementById('ptAllergy').innerHTML=c.allergy.map(a=>`<span class="mtag ${a.startsWith('No')||a.startsWith('NKDA')?'':'alert'}">${a}</span>`).join('');
+    document.getElementById('ptCond').innerHTML=c.cond.map(x=>`<span class="mtag">${x}</span>`).join('');
+    document.getElementById('ptHist').innerHTML=c.hist.map(h=>`<div class="hist"><div>${h[0]}</div><span>${h[1]}</span></div>`).join('');
+    document.getElementById('ptDocs').innerHTML=c.docs.map(d=>`<div class="hist"><div>${d}</div><button class="btn btn-ghost btn-sm" onclick="toast('Demo: result viewer opens')">Open</button></div>`).join('');
+  }
+</script>
+</body>
+</html>
