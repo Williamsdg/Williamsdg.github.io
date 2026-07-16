@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Blue Moon — Guest Experience Portal</title>
+<meta name="description" content="Digital guidebook, check-in instructions, and owner dashboard for Blue Moon Beach House, Flagler Beach FL." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a2540;--ink-soft:#143456;--deep:#06182b;
+    --paper:#f3f0e9;--card:#ffffff;--sand:#e8dec9;
+    --gold:#c9a24b;--gold-soft:#e0c179;--surf:#3f7d92;--surf-soft:#6aa3b6;
+    --line:#e2dac7;--line-soft:#ece5d6;--muted:#5b6675;--muted-2:#8a92a0;
+    --ok:#2f8f6b;--warn:#c98a2b;--bad:#c2543f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--paper);font-weight:400;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4,.serif{font-family:'Fraunces',serif;letter-spacing:-.01em}
+  a{color:inherit;text-decoration:none}
+  .mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+  /* App shell */
+  .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+  .side{background:var(--deep);color:#fff;padding:26px 18px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
+  .side .brand{font-family:'Fraunces';font-size:1.3rem;font-weight:500;display:flex;align-items:center;gap:10px;padding:0 8px 8px;margin-bottom:14px}
+  .brand-mark{width:30px;height:30px;border:1.5px solid var(--gold-soft);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:var(--gold-soft);font-size:.9rem;position:relative;flex:none}
+  .seg{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.38);font-weight:600;padding:14px 10px 6px}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:.88rem;color:rgba(255,255,255,.74);cursor:pointer;transition:.15s;font-weight:500}
+  .nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+  .nav-item.active{background:rgba(201,162,75,.16);color:#fff}
+  .nav-item .ic{width:18px;text-align:center;font-size:.95rem}
+  .nav-item .badge{margin-left:auto;background:var(--gold);color:var(--deep);font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:999px}
+  .side-foot{margin-top:auto;padding:12px 10px;border-top:1px solid rgba(255,255,255,.1);font-size:.74rem;color:rgba(255,255,255,.45)}
+
+  /* Main */
+  .main{padding:0 0 60px}
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(243,240,233,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:18px 36px;display:flex;align-items:center;gap:18px;justify-content:space-between}
+  .topbar .view-title{font-family:'Fraunces';font-size:1.5rem;font-weight:400}
+  .topbar .view-sub{font-size:.82rem;color:var(--muted)}
+  .role-toggle{display:flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px}
+  .role-toggle button{border:none;background:none;cursor:pointer;font-family:inherit;font-size:.76rem;font-weight:600;letter-spacing:.04em;padding:8px 16px;border-radius:999px;color:var(--muted)}
+  .role-toggle button.on{background:var(--ink);color:#fff}
+  .content{padding:30px 36px}
+  .view{display:none}
+  .view.show{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* Cards & primitives */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px}
+  .card-pad{padding:24px}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .eyebrow{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .muted{color:var(--muted)}
+  .hr{height:1px;background:var(--line);margin:20px 0}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:.7rem;font-weight:600;letter-spacing:.04em;padding:5px 11px;border-radius:999px}
+  .pill.ok{background:rgba(47,143,107,.12);color:var(--ok)}
+  .pill.warn{background:rgba(201,138,43,.14);color:var(--warn)}
+  .pill.bad{background:rgba(194,84,63,.12);color:var(--bad)}
+  .pill.neutral{background:var(--line-soft);color:var(--muted)}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-size:.8rem;font-weight:600;letter-spacing:.03em;padding:11px 20px;border-radius:10px;border:none;cursor:pointer;transition:.15s}
+  .btn-gold{background:var(--gold);color:var(--deep)}.btn-gold:hover{background:var(--gold-soft)}
+  .btn-ink{background:var(--ink);color:#fff}.btn-ink:hover{background:var(--ink-soft)}
+  .btn-ghost{background:var(--card);border:1px solid var(--line);color:var(--ink)}.btn-ghost:hover{border-color:var(--gold)}
+
+  /* Guest welcome hero */
+  .gw{background:linear-gradient(200deg,#1c4566 0%,#0e3252 50%,#0a2540 85%);color:#fff;border-radius:18px;padding:34px 36px;position:relative;overflow:hidden}
+  .gw::after{content:'◑';position:absolute;right:-10px;top:-30px;font-size:160px;color:rgba(224,193,121,.12);font-family:'Fraunces'}
+  .gw .eyebrow{color:var(--gold-soft)}
+  .gw h2{color:#fff;font-size:2rem;font-weight:400;margin-top:8px}
+  .gw .stay{display:flex;gap:28px;margin-top:20px;flex-wrap:wrap}
+  .gw .stay div{font-size:.84rem;color:rgba(255,255,255,.72)}
+  .gw .stay b{display:block;font-family:'Fraunces';font-size:1.15rem;color:#fff;font-weight:400;margin-top:3px}
+  .countdown{position:absolute;right:34px;bottom:30px;text-align:right}
+  .countdown b{font-family:'Fraunces';font-size:2.6rem;font-weight:300;color:var(--gold-soft);line-height:1;display:block}
+  .countdown span{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+
+  /* Code tiles */
+  .code-tile{background:var(--ink);color:#fff;border-radius:14px;padding:22px 24px;display:flex;flex-direction:column;gap:6px;position:relative}
+  .code-tile .lbl{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:600}
+  .code-tile .code{font-family:'Fraunces';font-size:2rem;font-weight:400;letter-spacing:.06em;color:var(--gold-soft)}
+  .code-tile .copy{position:absolute;right:16px;top:16px;background:rgba(255,255,255,.1);border:none;color:#fff;cursor:pointer;font-size:.66rem;font-weight:600;padding:6px 10px;border-radius:7px;font-family:inherit}
+  .code-tile .copy:hover{background:rgba(255,255,255,.2)}
+
+  /* Steps */
+  .steps{display:grid;gap:0}
+  .step{display:grid;grid-template-columns:auto 1fr;gap:18px;padding:18px 0;border-bottom:1px solid var(--line-soft)}
+  .step:last-child{border-bottom:none}
+  .step .n{width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.86rem;flex:none}
+  .step h4{font-family:'Fraunces';font-weight:500;font-size:1.05rem;margin-bottom:4px}
+  .step p{font-size:.92rem;color:var(--muted)}
+
+  /* Checklist */
+  .check{display:flex;align-items:flex-start;gap:13px;padding:13px 0;border-bottom:1px solid var(--line-soft);cursor:pointer}
+  .check:last-child{border-bottom:none}
+  .check .box{width:22px;height:22px;border:2px solid var(--line);border-radius:7px;flex:none;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;transition:.15s;margin-top:1px}
+  .check.done .box{background:var(--ok);border-color:var(--ok)}
+  .check.done .txt{text-decoration:line-through;color:var(--muted-2)}
+  .check .txt{font-size:.94rem}
+  .check .txt span{display:block;font-size:.8rem;color:var(--muted);margin-top:2px}
+
+  /* Rec list */
+  .rec{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--line-soft)}
+  .rec:last-child{border-bottom:none}
+  .rec .thumb{width:58px;height:58px;border-radius:12px;flex:none}
+  .rec h4{font-family:'Fraunces';font-weight:500;font-size:1.04rem}
+  .rec .meta{font-size:.76rem;color:var(--gold);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:3px}
+  .rec p{font-size:.88rem;color:var(--muted);margin-top:2px}
+  .rec .dist{margin-left:auto;font-size:.78rem;color:var(--muted-2);white-space:nowrap}
+
+  /* Form */
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:7px}
+  .field input,.field select,.field textarea{width:100%;font-family:inherit;font-size:.94rem;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  .field textarea{min-height:96px;resize:vertical}
+  .seg-opts{display:flex;gap:8px;flex-wrap:wrap}
+  .seg-opt{border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:.82rem;cursor:pointer;background:#fff;font-weight:500}
+  .seg-opt.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* Owner KPIs */
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .kpi .lbl{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .kpi .num{font-family:'Fraunces';font-size:2.3rem;font-weight:300;margin-top:8px;line-height:1}
+  .kpi .delta{font-size:.78rem;font-weight:600;margin-top:8px}
+  .kpi .delta.up{color:var(--ok)}.kpi .delta.down{color:var(--bad)}
+
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
+  td{padding:13px 12px;border-bottom:1px solid var(--line-soft);font-size:.9rem}
+  tr:last-child td{border-bottom:none}
+
+  /* Occupancy bar */
+  .occ{display:flex;gap:3px;margin-top:14px}
+  .occ i{flex:1;height:34px;border-radius:4px;background:var(--line);position:relative}
+  .occ i.booked{background:var(--surf)}
+  .occ i.hold{background:var(--gold-soft)}
+  .occ-legend{display:flex;gap:18px;margin-top:12px;font-size:.76rem;color:var(--muted)}
+  .occ-legend span{display:flex;align-items:center;gap:7px}
+  .occ-legend i{width:11px;height:11px;border-radius:3px}
+
+  .msg{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line-soft)}
+  .msg:last-child{border-bottom:none}
+  .msg .av{width:38px;height:38px;border-radius:50%;background:var(--surf-soft);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.86rem;flex:none}
+  .msg .body{flex:1}
+  .msg .body .top{display:flex;justify-content:space-between;font-size:.82rem}
+  .msg .body .top b{font-weight:600}
+  .msg .body .top span{color:var(--muted-2)}
+  .msg .body p{font-size:.9rem;color:var(--muted);margin-top:3px}
+
+  .pitch-banner{position:fixed;bottom:18px;right:18px;z-index:300;background:var(--gold);color:var(--deep);padding:9px 15px;border-radius:999px;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;box-shadow:0 8px 28px rgba(0,0,0,.22)}
+
+  .only-guest .owner-only{display:none}
+  .only-owner .guest-only{display:none}
+
+  @media(max-width:900px){
+    .app{grid-template-columns:1fr}
+    .side{position:fixed;left:0;top:0;bottom:0;width:248px;transform:translateX(-100%);transition:.25s;z-index:60}
+    .side.open{transform:none}
+    .menu-toggle{display:inline-flex !important}
+    .g4,.g3,.g2{grid-template-columns:1fr}
+    .content{padding:22px 18px}
+    .topbar{padding:14px 18px}
+    .countdown{position:static;text-align:left;margin-top:18px}
+  }
+  .menu-toggle{display:none;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:9px 12px;cursor:pointer;font-size:1rem}
+</style>
+</head>
+<body class="only-guest">
+
+<div class="pitch-banner">Williams Digital — Tier 2 Concept</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side" id="side">
+    <div class="brand"><span class="brand-mark">◑</span> Blue Moon</div>
+
+    <div class="seg guest-only">Your Stay</div>
+    <div class="nav-item active guest-only" data-view="welcome"><span class="ic">🏠</span> Welcome</div>
+    <div class="nav-item guest-only" data-view="checkin"><span class="ic">🔑</span> Check-In &amp; Codes</div>
+    <div class="nav-item guest-only" data-view="guidebook"><span class="ic">📖</span> House Guidebook</div>
+    <div class="nav-item guest-only" data-view="local"><span class="ic">📍</span> Local Recommendations</div>
+    <div class="nav-item guest-only" data-view="checkout"><span class="ic">✅</span> Checkout Checklist</div>
+    <div class="nav-item guest-only" data-view="maintenance"><span class="ic">🛠️</span> Request Help</div>
+
+    <div class="seg owner-only">Owner</div>
+    <div class="nav-item owner-only active" data-view="dashboard"><span class="ic">📊</span> Dashboard</div>
+    <div class="nav-item owner-only" data-view="bookings"><span class="ic">📅</span> Bookings</div>
+    <div class="nav-item owner-only" data-view="requests"><span class="ic">🛠️</span> Maintenance <span class="badge">2</span></div>
+    <div class="nav-item owner-only" data-view="messages"><span class="ic">💬</span> Guest Messages</div>
+
+    <div class="side-foot">
+      <a href="index.html" style="color:var(--gold-soft);font-weight:600">← Back to website</a><br>
+      Blue Moon · Flagler Beach FL
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="menu-toggle" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+        <div>
+          <div class="view-title" id="vTitle">Welcome to Blue Moon</div>
+          <div class="view-sub" id="vSub">Everything you need for a perfect stay</div>
+        </div>
+      </div>
+      <div class="role-toggle">
+        <button class="on" id="rGuest" onclick="setRole('guest')">Guest View</button>
+        <button id="rOwner" onclick="setRole('owner')">Owner View</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ===== GUEST: WELCOME ===== -->
+      <div class="view show guest-only" id="welcome">
+        <div class="gw">
+          <div class="eyebrow">Your Stay · Confirmed</div>
+          <h2>Welcome, Henderson family 🌊</h2>
+          <div class="stay">
+            <div>Check-in<b>Sat, Jul 12 · 4:00 PM</b></div>
+            <div>Check-out<b>Sat, Jul 19 · 10:00 AM</b></div>
+            <div>Guests<b>6 guests · 7 nights</b></div>
+          </div>
+          <div class="countdown"><b>13</b><span>Days to go</span></div>
+        </div>
+
+        <div class="grid g3" style="margin-top:18px">
+          <div class="code-tile">
+            <button class="copy" onclick="this.textContent='Copied'">Copy</button>
+            <span class="lbl">Front Door Code</span>
+            <span class="code mono">7 2 4 9 #</span>
+            <span class="muted" style="color:rgba(255,255,255,.6);font-size:.8rem">Active from 4 PM on arrival day</span>
+          </div>
+          <div class="code-tile">
+            <button class="copy" onclick="this.textContent='Copied'">Copy</button>
+            <span class="lbl">WiFi Network</span>
+            <span class="code mono" style="font-size:1.5rem">BlueMoon_5G</span>
+            <span class="muted" style="color:rgba(255,255,255,.6);font-size:.8rem">Password: atlantic2026</span>
+          </div>
+          <div class="code-tile">
+            <button class="copy" onclick="this.textContent='Copied'">Copy</button>
+            <span class="lbl">Beach Gate</span>
+            <span class="code mono">1 5 0 2</span>
+            <span class="muted" style="color:rgba(255,255,255,.6);font-size:.8rem">Your private path to the sand</span>
+          </div>
+        </div>
+
+        <div class="grid g2" style="margin-top:18px">
+          <div class="card">
+            <div class="eyebrow">Quick Links</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
+              <button class="btn btn-ghost" onclick="go('checkin')">🔑 Check-in steps</button>
+              <button class="btn btn-ghost" onclick="go('guidebook')">📖 How the house works</button>
+              <button class="btn btn-ghost" onclick="go('local')">📍 Where to eat</button>
+              <button class="btn btn-ghost" onclick="go('maintenance')">🛠️ Need something?</button>
+            </div>
+            <div class="hr"></div>
+            <p class="muted" style="font-size:.9rem">Your host is a text away at <b style="color:var(--ink)">407-636-3232</b>. We typically reply within minutes during your stay.</p>
+          </div>
+          <div class="card" style="background:linear-gradient(180deg,#fff,#faf7f0)">
+            <div class="eyebrow">Today in Flagler Beach</div>
+            <h3 style="font-weight:500;font-size:1.3rem;margin:8px 0 4px">First Friday on the Pier 🎶</h3>
+            <p class="muted" style="font-size:.92rem">Live music, food trucks, and local makers tonight from 6–9 PM — a 7-minute walk from your door.</p>
+            <div class="hr"></div>
+            <p style="font-size:.86rem"><b>Sunset tonight:</b> 8:24 PM · <b>High tide:</b> 6:10 PM</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== GUEST: CHECK-IN ===== -->
+      <div class="view guest-only" id="checkin">
+        <div class="grid g2">
+          <div class="card">
+            <div class="eyebrow">Arrival</div>
+            <h3 style="font-weight:500;font-size:1.4rem;margin:6px 0 18px">Getting in is easy</h3>
+            <div class="steps">
+              <div class="step"><div class="n">1</div><div><h4>Park in the garage</h4><p>Two spaces in the covered garage plus the driveway. The garage door code is the same as your door code — 7249.</p></div></div>
+              <div class="step"><div class="n">2</div><div><h4>Enter through the front door</h4><p>Tap <b>7249 #</b> on the keypad. The code goes live at 4:00 PM on your arrival day and turns off at checkout.</p></div></div>
+              <div class="step"><div class="n">3</div><div><h4>Connect to WiFi</h4><p>Network <b>BlueMoon_5G</b>, password <b>atlantic2026</b>. The router is in the hall closet if you ever need to reset it.</p></div></div>
+              <div class="step"><div class="n">4</div><div><h4>Settle in &amp; hit the beach</h4><p>Beach chairs, umbrellas, and toys are in the garage. Your private beach gate code is <b>1502</b>.</p></div></div>
+            </div>
+          </div>
+          <div class="grid" style="align-content:start">
+            <div class="code-tile"><button class="copy" onclick="this.textContent='Copied'">Copy</button><span class="lbl">Front Door &amp; Garage</span><span class="code mono">7 2 4 9 #</span></div>
+            <div class="code-tile"><button class="copy" onclick="this.textContent='Copied'">Copy</button><span class="lbl">WiFi · BlueMoon_5G</span><span class="code mono" style="font-size:1.5rem">atlantic2026</span></div>
+            <div class="card">
+              <div class="eyebrow">Good to Know</div>
+              <ul style="list-style:none;margin-top:12px;display:grid;gap:11px;font-size:.92rem">
+                <li>🕓 <b>Check-in:</b> 4:00 PM &nbsp;·&nbsp; <b>Check-out:</b> 10:00 AM</li>
+                <li>🐾 Pets are not permitted at Blue Moon</li>
+                <li>🚭 The home is strictly non-smoking</li>
+                <li>🅿️ Garage + driveway parking for up to 3 vehicles</li>
+                <li>♻️ Trash &amp; recycling pickup is Tuesday morning</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== GUEST: GUIDEBOOK ===== -->
+      <div class="view guest-only" id="guidebook">
+        <div class="grid g2">
+          <div class="card">
+            <div class="eyebrow">House Guidebook</div>
+            <h3 style="font-weight:500;font-size:1.4rem;margin:6px 0 16px">How everything works</h3>
+            <div class="steps">
+              <div class="step"><div class="n">📺</div><div><h4>Game Room &amp; TVs</h4><p>65-inch TV with PlayStation 4 in the game room, smart TVs in every bedroom. Streaming apps are signed in — please sign out of personal accounts before you leave.</p></div></div>
+              <div class="step"><div class="n">❄️</div><div><h4>Air Conditioning</h4><p>Thermostats on each floor. Please keep doors closed when the A/C is running and don't set below 68°F so the system keeps up with the Florida heat.</p></div></div>
+              <div class="step"><div class="n">🍳</div><div><h4>Kitchen</h4><p>Fully stocked — coffee maker, dishwasher, blender, full cookware. A starter set of coffee, filters, and dish soap is under the sink.</p></div></div>
+              <div class="step"><div class="n">🚿</div><div><h4>Outdoor Shower</h4><p>On the ground level by the beach gate. Rinse the sand off here before coming inside — it keeps the house (and your deposit) happy.</p></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Emergencies &amp; Essentials</div>
+            <h3 style="font-weight:500;font-size:1.4rem;margin:6px 0 16px">If something comes up</h3>
+            <ul style="list-style:none;display:grid;gap:14px;font-size:.94rem">
+              <li>📞 <b>Host (24/7):</b> 407-636-3232 — call or text anytime</li>
+              <li>🚑 <b>Emergencies:</b> 911</li>
+              <li>🧯 <b>Fire extinguisher:</b> under the kitchen sink</li>
+              <li>💡 <b>Breaker panel:</b> garage, left wall</li>
+              <li>💧 <b>Water shutoff:</b> labeled valve in the garage</li>
+              <li>🏥 <b>Nearest urgent care:</b> AdventHealth, 2.4 mi</li>
+              <li>🛒 <b>Closest grocery:</b> Publix, 1.8 mi</li>
+            </ul>
+            <div class="hr"></div>
+            <button class="btn btn-gold" onclick="go('maintenance')">🛠️ Report a maintenance issue</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== GUEST: LOCAL ===== -->
+      <div class="view guest-only" id="local">
+        <div class="card">
+          <div class="eyebrow">Curated by your hosts</div>
+          <h3 style="font-weight:500;font-size:1.4rem;margin:6px 0 4px">Where the locals go</h3>
+          <p class="muted" style="font-size:.92rem;margin-bottom:8px">The owners' personal picks — the spots that made past guests never want to leave.</p>
+          <div class="hr"></div>
+          <div class="rec"><div class="thumb" style="background:linear-gradient(150deg,#e6a06f,#b15f52)"></div><div><div class="meta">Dining · On the Pier</div><h4>The Funky Pelican</h4><p>Seafood and sunsets right over the water. Get the grouper and a table on the deck before 6 PM.</p></div><div class="dist">0.6 mi</div></div>
+          <div class="rec"><div class="thumb" style="background:linear-gradient(150deg,#d8b86a,#9c7b34)"></div><div><div class="meta">Breakfast · Local Favorite</div><h4>Swillerbeers</h4><p>Craft donuts the regulars line up for. Go early — the maple bacon sells out.</p></div><div class="dist">0.4 mi</div></div>
+          <div class="rec"><div class="thumb" style="background:linear-gradient(150deg,#6aa3b6,#27607a)"></div><div><div class="meta">Activity · On the Water</div><h4>Flagler Beach Pier</h4><p>Historic pier for fishing, strolling, and the best sunrise photo on the coast.</p></div><div class="dist">0.6 mi</div></div>
+          <div class="rec"><div class="thumb" style="background:linear-gradient(150deg,#7fb39a,#2f6f5e)"></div><div><div class="meta">Adventure · Intracoastal</div><h4>Kayak &amp; Paddleboard Rentals</h4><p>Calm-water launches minutes away. Sunrise paddles on the Intracoastal are unforgettable.</p></div><div class="dist">1.1 mi</div></div>
+          <div class="rec"><div class="thumb" style="background:linear-gradient(150deg,#5a8fb0,#143456)"></div><div><div class="meta">Day Trip · 35 min north</div><h4>St. Augustine Old Town</h4><p>Cobblestone streets, the oldest fort in the country, and great dinner if you want a night out.</p></div><div class="dist">28 mi</div></div>
+        </div>
+      </div>
+
+      <!-- ===== GUEST: CHECKOUT ===== -->
+      <div class="view guest-only" id="checkout">
+        <div class="grid g2">
+          <div class="card">
+            <div class="eyebrow">Before You Go</div>
+            <h3 style="font-weight:500;font-size:1.4rem;margin:6px 0 6px">Checkout checklist</h3>
+            <p class="muted" style="font-size:.9rem;margin-bottom:8px">Check-out is <b>10:00 AM</b>. A few quick things and you're set — tap each as you go.</p>
+            <div id="colist">
+              <div class="check" onclick="this.classList.toggle('done')"><div class="box">✓</div><div class="txt">Start the dishwasher<span>Load and run it before you leave</span></div></div>
+              <div class="check" onclick="this.classList.toggle('done')"><div class="box">✓</div><div class="txt">Take trash &amp; recycling to the garage bins</div></div>
+              <div class="check" onclick="this.classList.toggle('done')"><div class="box">✓</div><div class="txt">Used towels in the laundry room<span>No need to wash — just gather them</span></div></div>
+              <div class="check" onclick="this.classList.toggle('done')"><div class="box">✓</div><div class="txt">Return beach gear to the garage</div></div>
+              <div class="check" onclick="this.classList.toggle('done')"><div class="box">✓</div><div class="txt">Set thermostats to 76°F</div></div>
+              <div class="check" onclick="this.classList.toggle('done')"><div class="box">✓</div><div class="txt">Close &amp; lock all balcony doors and windows</div></div>
+              <div class="check" onclick="this.classList.toggle('done')"><div class="box">✓</div><div class="txt">Sign out of any streaming accounts</div></div>
+              <div class="check" onclick="this.classList.toggle('done')"><div class="box">✓</div><div class="txt">Pull the front door shut behind you<span>It locks automatically — no key to return</span></div></div>
+            </div>
+            <div class="hr"></div>
+            <button class="btn btn-gold" onclick="alert('Thanks! Your host has been notified that the home is ready for turnover.')">I've checked out — notify host</button>
+          </div>
+          <div class="card" style="background:linear-gradient(190deg,#0e3252,#0a2540);color:#fff;align-self:start">
+            <div class="eyebrow" style="color:var(--gold-soft)">One Last Thing</div>
+            <h3 style="color:#fff;font-weight:400;font-size:1.5rem;margin:8px 0 10px">Loved your stay?</h3>
+            <p style="color:rgba(255,255,255,.78);font-size:.94rem">A quick review helps other families find Blue Moon — and it means the world to us. It takes 60 seconds.</p>
+            <button class="btn btn-gold" style="margin-top:18px">★ Leave a Review</button>
+            <div class="hr" style="background:rgba(255,255,255,.15)"></div>
+            <p style="color:rgba(255,255,255,.7);font-size:.9rem">Want to come back? Returning guests get first pick of dates — just text us.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== GUEST: MAINTENANCE ===== -->
+      <div class="view guest-only" id="maintenance">
+        <div class="grid g2">
+          <div class="card">
+            <div class="eyebrow">We're on it</div>
+            <h3 style="font-weight:500;font-size:1.4rem;margin:6px 0 16px">Request help</h3>
+            <div class="field"><label>What needs attention?</label>
+              <div class="seg-opts" id="issueType">
+                <div class="seg-opt sel" onclick="pick(this)">A/C or heating</div>
+                <div class="seg-opt" onclick="pick(this)">Plumbing</div>
+                <div class="seg-opt" onclick="pick(this)">WiFi / TV</div>
+                <div class="seg-opt" onclick="pick(this)">Appliance</div>
+                <div class="seg-opt" onclick="pick(this)">Supplies needed</div>
+                <div class="seg-opt" onclick="pick(this)">Other</div>
+              </div>
+            </div>
+            <div class="field"><label>Where in the house?</label><input placeholder="e.g. Primary bedroom, ground floor" /></div>
+            <div class="field"><label>Tell us what's going on</label><textarea placeholder="The more detail, the faster we can fix it…"></textarea></div>
+            <div class="field"><label>How urgent?</label>
+              <div class="seg-opts">
+                <div class="seg-opt" onclick="pick(this)">Whenever</div>
+                <div class="seg-opt sel" onclick="pick(this)">Today</div>
+                <div class="seg-opt" onclick="pick(this)">Urgent</div>
+              </div>
+            </div>
+            <button class="btn btn-gold" onclick="alert('Sent! Your host has been notified and will respond shortly. You can track this under your requests.')">Send to host</button>
+          </div>
+          <div class="card" style="align-self:start">
+            <div class="eyebrow">Your Requests</div>
+            <div style="margin-top:14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line-soft)">
+                <div><b style="font-size:.94rem">Extra beach towels</b><div class="muted" style="font-size:.82rem">Submitted yesterday · 4:12 PM</div></div>
+                <span class="pill ok">Delivered</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0">
+                <div><b style="font-size:.94rem">Ice maker slow</b><div class="muted" style="font-size:.82rem">Submitted today · 9:01 AM</div></div>
+                <span class="pill warn">In progress</span>
+              </div>
+            </div>
+            <div class="hr"></div>
+            <p class="muted" style="font-size:.9rem">Prefer to talk? Text your host directly at <b style="color:var(--ink)">407-636-3232</b>.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== OWNER: DASHBOARD ===== -->
+      <div class="view owner-only" id="dashboard">
+        <div class="grid g4">
+          <div class="kpi"><div class="lbl">Occupancy · This Month</div><div class="num mono">84%</div><div class="delta up">▲ 11% vs. last year</div></div>
+          <div class="kpi"><div class="lbl">Revenue · MTD</div><div class="num mono">$22,400</div><div class="delta up">▲ $3,100 vs. plan</div></div>
+          <div class="kpi"><div class="lbl">Upcoming Stays</div><div class="num mono">7</div><div class="delta">Next: Jul 12 · Henderson</div></div>
+          <div class="kpi"><div class="lbl">Open Requests</div><div class="num mono">2</div><div class="delta down">1 marked urgent</div></div>
+        </div>
+
+        <div class="grid g2" style="margin-top:18px">
+          <div class="card">
+            <div class="eyebrow">July Occupancy</div>
+            <h3 style="font-weight:500;font-size:1.2rem;margin:6px 0 0">Calendar at a glance</h3>
+            <div class="occ">
+              <i class="booked"></i><i class="booked"></i><i class="booked"></i><i></i><i></i><i class="hold"></i><i class="hold"></i>
+              <i class="booked"></i><i class="booked"></i><i class="booked"></i><i class="booked"></i><i class="booked"></i><i class="booked"></i><i class="booked"></i>
+              <i></i><i></i><i class="booked"></i><i class="booked"></i><i class="booked"></i><i></i>
+            </div>
+            <div class="occ-legend">
+              <span><i style="background:var(--surf)"></i> Booked</span>
+              <span><i style="background:var(--gold-soft)"></i> On hold</span>
+              <span><i style="background:var(--line)"></i> Open</span>
+            </div>
+            <div class="hr"></div>
+            <div style="display:flex;gap:10px"><button class="btn btn-ink">View full calendar</button><button class="btn btn-ghost">Block dates</button></div>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Needs Your Attention</div>
+            <div style="margin-top:14px">
+              <div style="display:flex;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line-soft)"><span class="pill bad">Urgent</span><div style="flex:1"><b style="font-size:.92rem">Ice maker slow — guest reported</b><div class="muted" style="font-size:.8rem">Henderson stay · 9:01 AM</div></div><button class="btn btn-ghost" style="padding:8px 14px">Assign</button></div>
+              <div style="display:flex;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line-soft)"><span class="pill warn">Today</span><div style="flex:1"><b style="font-size:.92rem">Restock welcome supplies before Jul 12</b><div class="muted" style="font-size:.8rem">Turnover task</div></div><button class="btn btn-ghost" style="padding:8px 14px">Done</button></div>
+              <div style="display:flex;gap:12px;align-items:center;padding:13px 0"><span class="pill neutral">Review</span><div style="flex:1"><b style="font-size:.92rem">New 5★ review awaiting reply</b><div class="muted" style="font-size:.8rem">From the Carter family</div></div><button class="btn btn-ghost" style="padding:8px 14px">Reply</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== OWNER: BOOKINGS ===== -->
+      <div class="view owner-only" id="bookings">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div><div class="eyebrow">Reservations</div><h3 style="font-weight:500;font-size:1.3rem;margin-top:4px">Upcoming &amp; recent stays</h3></div>
+            <button class="btn btn-gold">+ Add booking</button>
+          </div>
+          <table>
+            <thead><tr><th>Guest</th><th>Dates</th><th>Guests</th><th>Source</th><th>Value</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><b>Henderson</b></td><td>Jul 12 – Jul 19</td><td>6</td><td>Hammock Beach</td><td class="mono">$4,830</td><td><span class="pill ok">Confirmed</span></td></tr>
+              <tr><td><b>Alvarez</b></td><td>Jul 21 – Jul 26</td><td>8</td><td>Direct</td><td class="mono">$3,450</td><td><span class="pill ok">Confirmed</span></td></tr>
+              <tr><td><b>(Hold)</b></td><td>Jul 27 – Aug 02</td><td>—</td><td>Inquiry</td><td class="mono">—</td><td><span class="pill warn">On hold</span></td></tr>
+              <tr><td><b>Carter</b></td><td>Jun 28 – Jul 05</td><td>10</td><td>Direct</td><td class="mono">$4,830</td><td><span class="pill neutral">Checked out</span></td></tr>
+              <tr><td><b>Whitfield</b></td><td>Jun 14 – Jun 21</td><td>7</td><td>Hammock Beach</td><td class="mono">$4,830</td><td><span class="pill neutral">Checked out</span></td></tr>
+            </tbody>
+          </table>
+          <div class="hr"></div>
+          <p class="muted" style="font-size:.86rem">Connects to your Hammock Beach Resort booking feed plus any direct reservations — one calendar, no double-bookings.</p>
+        </div>
+      </div>
+
+      <!-- ===== OWNER: REQUESTS ===== -->
+      <div class="view owner-only" id="requests">
+        <div class="card">
+          <div class="eyebrow">Maintenance &amp; Guest Requests</div>
+          <h3 style="font-weight:500;font-size:1.3rem;margin:4px 0 16px">Request queue</h3>
+          <table>
+            <thead><tr><th>Issue</th><th>Guest / Source</th><th>Type</th><th>Submitted</th><th>Priority</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><b>Ice maker slow</b></td><td>Henderson</td><td>Appliance</td><td>Today 9:01 AM</td><td><span class="pill bad">Urgent</span></td><td><span class="pill warn">In progress</span></td></tr>
+              <tr><td><b>Restock welcome supplies</b></td><td>Turnover</td><td>Supplies</td><td>Auto · Jul 11</td><td><span class="pill warn">Today</span></td><td><span class="pill neutral">Open</span></td></tr>
+              <tr><td><b>Extra beach towels</b></td><td>Henderson</td><td>Supplies</td><td>Yesterday</td><td><span class="pill neutral">Normal</span></td><td><span class="pill ok">Delivered</span></td></tr>
+              <tr><td><b>Balcony light out</b></td><td>Carter</td><td>Electrical</td><td>Jul 02</td><td><span class="pill neutral">Normal</span></td><td><span class="pill ok">Resolved</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== OWNER: MESSAGES ===== -->
+      <div class="view owner-only" id="messages">
+        <div class="grid g2">
+          <div class="card">
+            <div class="eyebrow">Guest Messages</div>
+            <h3 style="font-weight:500;font-size:1.3rem;margin:4px 0 12px">Recent conversations</h3>
+            <div class="msg"><div class="av">H</div><div class="body"><div class="top"><b>Henderson family</b><span>9:03 AM</span></div><p>The ice maker seems slow — not urgent but wanted to flag it. House is amazing, kids love the game room!</p></div></div>
+            <div class="msg"><div class="av" style="background:var(--gold-soft);color:var(--deep)">A</div><div class="body"><div class="top"><b>Alvarez</b><span>Yesterday</span></div><p>Hi! Quick Q before our trip — is the beach gear suitable for toddlers? Bringing a 2-year-old.</p></div></div>
+            <div class="msg"><div class="av" style="background:var(--surf);">C</div><div class="body"><div class="top"><b>Carter family</b><span>Jul 05</span></div><p>Just left this 5-star review — the best week of our summer. Thank you for everything! 🌅</p></div></div>
+          </div>
+          <div class="card" style="align-self:start">
+            <div class="eyebrow">Reply to Henderson</div>
+            <div class="field" style="margin-top:12px"><textarea placeholder="Type your reply…">Thanks for letting us know! I've got our tech heading over this afternoon to sort the ice maker. So glad the kids are loving it — enjoy First Friday on the pier tonight! 🌊</textarea></div>
+            <div style="display:flex;gap:10px"><button class="btn btn-gold">Send reply</button><button class="btn btn-ghost">Saved replies</button></div>
+            <div class="hr"></div>
+            <p class="muted" style="font-size:.86rem">Guests message you straight from their portal — no app to download, no phone number to share until you choose to.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const titles={
+    welcome:['Welcome to Blue Moon','Everything you need for a perfect stay'],
+    checkin:['Check-In & Codes','Your door codes, WiFi, and arrival steps'],
+    guidebook:['House Guidebook','How everything in the home works'],
+    local:['Local Recommendations','Your hosts’ personal Flagler Beach picks'],
+    checkout:['Checkout Checklist','A smooth, simple departure'],
+    maintenance:['Request Help','Tell your host what you need'],
+    dashboard:['Owner Dashboard','Your property at a glance'],
+    bookings:['Bookings','Reservations across all channels'],
+    requests:['Maintenance','Guest and turnover request queue'],
+    messages:['Guest Messages','Talk to guests from one inbox']
+  };
+  function go(id){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+    document.getElementById(id).classList.add('show');
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===id));
+    document.getElementById('vTitle').textContent=titles[id][0];
+    document.getElementById('vSub').textContent=titles[id][1];
+    document.getElementById('side').classList.remove('open');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>go(n.dataset.view)));
+  function setRole(r){
+    document.body.className = r==='guest'?'only-guest':'only-owner';
+    document.getElementById('rGuest').classList.toggle('on',r==='guest');
+    document.getElementById('rOwner').classList.toggle('on',r==='owner');
+    go(r==='guest'?'welcome':'dashboard');
+  }
+  function pick(el){[...el.parentElement.children].forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+</script>
+</body>
+</html>
