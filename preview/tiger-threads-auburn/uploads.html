@@ -66,6 +66,8 @@
   .topbar-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
   .pill{display:inline-flex;align-items:center;gap:8px;background:#fff;padding:8px 14px;border-radius:999px;border:1px solid var(--line);font-size:.78rem;font-weight:600;color:var(--navy)}
   .pill .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+  .pill .dot.orange{background:var(--orange)}
+  .pill .dot.red{background:var(--red)}
   .pill.internal{background:var(--navy);color:#fff;border-color:var(--navy)}
   .pill.internal .dot{background:var(--orange)}
   .btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:7px;font-size:.8rem;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--navy);transition:.15s}
@@ -206,6 +208,7 @@
         <div class="sub">How new products get on the store, where site images go, and a running list for website edits</div>
       </div>
       <div class="topbar-actions">
+        <span class="pill" id="syncPill"><span class="dot orange" id="syncDot"></span> <span id="syncText">Connecting…</span></span>
         <span class="pill internal"><span class="dot"></span> Internal page</span>
       </div>
     </div>
@@ -271,7 +274,7 @@
         <button class="btn" id="downloadProds">1 · Download info sheet</button>
         <a class="btn btn-primary" href="https://drive.google.com/drive/folders/1zGpjRFgc_zQUFQNhwx-eZB6I-EFFfSRT?usp=sharing" target="_blank" rel="noopener">2 · Drop it in Product Uploads ↗</a>
       </div>
-      <div class="notes-hint">The list saves automatically in this browser. When you're done: download the info sheet, then upload it to the <strong>Product Uploads</strong> folder along with the photos — everything for the store lives in that one folder.</div>
+      <div class="notes-hint">This list is <strong>shared</strong> — every product you add is visible to Williams Digital the moment you save it. Just remember the photos still go in the <strong>Product Uploads</strong> folder.</div>
     </div>
 
     <!-- procedure -->
@@ -301,7 +304,7 @@
           <div class="num">3</div>
           <div>
             <h5>Fill out the Product Info form above</h5>
-            <p>Name, cost, sizes, inventory count, and a short description for each product. Add every product in the batch to the list, then hit <strong>Download info sheet</strong> and upload that file into the same <strong>Product Uploads</strong> folder as the photos.</p>
+            <p>Name, cost, sizes, inventory count, and a short description for each product. The list is <strong>shared</strong> — every product you save shows up for Williams Digital instantly, so nothing else to send. The Download info sheet button is there if you'd also like a copy in the folder.</p>
           </div>
         </div>
         <div class="step">
@@ -349,7 +352,7 @@
         </div>
       </div>
       <div id="notesList"></div>
-      <div class="notes-hint">Notes save automatically in this browser on this device. Use <strong>Email to Williams Digital</strong> or <strong>Copy all</strong> to send the list over when it's ready.</div>
+      <div class="notes-hint">Notes save to a <strong>shared list</strong> — Williams Digital sees them the moment you hit Save, nothing else to send. Email and Copy are just handy for pulling a summary.</div>
     </div>
 
   </main>
@@ -359,73 +362,137 @@
 
 <script>
 (function(){
-  var KEY = 'tt-site-notes';
-  var list = document.getElementById('notesList');
+  /* ===== shared storage (Supabase) =====
+     Notes and the product list live in a shared database, so anything
+     saved here is visible to everyone who opens this page — instantly. */
+  var SB = 'https://tkkhvbkocumyxpgsrpxv.supabase.co/rest/v1';
+  var SB_KEY = 'sb_publishable_4_xgRNDnzXimaykbC6YBwg_E2aYxgzz';
+
   var toast = document.getElementById('toast');
   var toastTimer;
+  var notesCache = [];
+  var prodsCache = [];
 
-  function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ return []; } }
-  function save(notes){ localStorage.setItem(KEY, JSON.stringify(notes)); }
   function showToast(msg){
     toast.textContent = msg;
     toast.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2200);
+    toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 2400);
   }
-  function esc(s){ var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function esc(s){ var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function setSync(state, msg){
+    document.getElementById('syncDot').className = 'dot ' + (state === 'ok' ? '' : state === 'err' ? 'red' : 'orange');
+    document.getElementById('syncText').textContent = msg;
+  }
+  function offline(){
+    setSync('err', 'Offline — retry in a moment');
+    showToast('Couldn’t reach the shared list — check your connection and try again');
+  }
+
+  function api(path, opts){
+    opts = opts || {};
+    opts.headers = Object.assign({
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    }, opts.headers || {});
+    return fetch(SB + path, opts).then(function(res){
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var ct = res.headers.get('content-type') || '';
+      return ct.indexOf('json') > -1 ? res.json() : null;
+    });
+  }
+
+  function fmtWhen(iso){
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' }) +
+           ' · ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  }
+
+  /* one-time migration: push anything saved by the old localStorage version
+     up to the shared list, so earlier notes/products finally show up */
+  function migrateLocal(){
+    var jobs = [];
+    try {
+      var oldNotes = JSON.parse(localStorage.getItem('tt-site-notes')) || [];
+      if (oldNotes.length){
+        jobs.push(api('/tt_site_notes', {
+          method: 'POST',
+          body: JSON.stringify(oldNotes.map(function(n){ return { tag: n.tag || 'Site edit', body: n.text }; }))
+        }).then(function(){ localStorage.removeItem('tt-site-notes'); }));
+      }
+    } catch(e){}
+    try {
+      var oldProds = JSON.parse(localStorage.getItem('tt-product-queue')) || [];
+      if (oldProds.length){
+        jobs.push(api('/tt_products', {
+          method: 'POST',
+          body: JSON.stringify(oldProds.map(function(p){
+            return { name: p.name, cost: p.cost, sizes: p.sizes || null, qty: p.qty || null, description: p.desc || null };
+          }))
+        }).then(function(){ localStorage.removeItem('tt-product-queue'); }));
+      }
+    } catch(e){}
+    return Promise.all(jobs);
+  }
+
+  /* ===== site edit notes ===== */
+  var list = document.getElementById('notesList');
+
+  function renderNotes(){
+    if (!notesCache.length){
+      list.innerHTML = '<div class="notes-empty">No notes yet — anything you save above shows up here for everyone until it’s handled.</div>';
+      return;
+    }
+    list.innerHTML = notesCache.map(function(n){
+      return '<div class="note">' +
+        '<div class="tag-col"><span class="tag ' + tagClass(n.tag) + '">' + esc(n.tag) + '</span></div>' +
+        '<div class="body"><p>' + esc(n.body) + '</p><small>' + esc(fmtWhen(n.created_at)) + '</small></div>' +
+        '<button class="del" data-id="' + esc(n.id) + '">Remove</button>' +
+        '</div>';
+    }).join('');
+  }
   function tagClass(tag){
     if (tag === 'New photo') return 'green';
     if (tag === 'Product') return 'navy';
     if (tag === 'Idea') return '';
     return 'orange';
   }
-
-  function render(){
-    var notes = load();
-    if (!notes.length){
-      list.innerHTML = '<div class="notes-empty">No notes yet — anything you type above stays saved here until it’s handled.</div>';
-      return;
-    }
-    list.innerHTML = notes.map(function(n, i){
-      return '<div class="note">' +
-        '<div class="tag-col"><span class="tag ' + tagClass(n.tag) + '">' + esc(n.tag) + '</span></div>' +
-        '<div class="body"><p>' + esc(n.text) + '</p><small>' + esc(n.when) + '</small></div>' +
-        '<button class="del" data-i="' + i + '">Remove</button>' +
-        '</div>';
-    }).join('');
+  function refreshNotes(){
+    return api('/tt_site_notes?select=*&order=created_at.desc').then(function(rows){
+      notesCache = rows || [];
+      renderNotes();
+    });
   }
 
   document.getElementById('addNote').addEventListener('click', function(){
     var ta = document.getElementById('noteText');
     var text = ta.value.trim();
     if (!text){ showToast('Type a note first'); return; }
-    var notes = load();
-    notes.unshift({
-      text: text,
-      tag: document.getElementById('noteTag').value,
-      when: new Date().toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' }) +
-            ' · ' + new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' })
-    });
-    save(notes);
-    ta.value = '';
-    render();
-    showToast('Note saved');
+    api('/tt_site_notes', {
+      method: 'POST',
+      body: JSON.stringify({ tag: document.getElementById('noteTag').value, body: text })
+    }).then(function(){
+      ta.value = '';
+      showToast('Saved — Williams Digital can see it now');
+      return refreshNotes();
+    }).catch(offline);
   });
 
   list.addEventListener('click', function(e){
     var btn = e.target.closest('.del');
     if (!btn) return;
-    var notes = load();
-    notes.splice(parseInt(btn.dataset.i, 10), 1);
-    save(notes);
-    render();
-    showToast('Note removed');
+    api('/tt_site_notes?id=eq.' + btn.dataset.id, { method: 'DELETE' })
+      .then(function(){ showToast('Note removed'); return refreshNotes(); })
+      .catch(offline);
   });
 
   function notesAsText(){
-    var notes = load();
-    if (!notes.length) return null;
-    return notes.map(function(n){ return '[' + n.tag + '] ' + n.text + '  (' + n.when + ')'; }).join('\n\n');
+    if (!notesCache.length) return null;
+    return notesCache.map(function(n){
+      return '[' + n.tag + '] ' + n.body + '  (' + fmtWhen(n.created_at) + ')';
+    }).join('\n\n');
   }
 
   document.getElementById('copyNotes').addEventListener('click', function(){
@@ -443,29 +510,23 @@
       '&body=' + encodeURIComponent(text + '\n\n— sent from the Tiger Threads uploads hub');
   });
 
-  render();
-
   /* ===== product info list ===== */
-  var PKEY = 'tt-product-queue';
   var prodList = document.getElementById('prodList');
   var sendStrip = document.getElementById('sendStrip');
   var prodCount = document.getElementById('prodCount');
 
-  function loadProds(){ try { return JSON.parse(localStorage.getItem(PKEY)) || []; } catch(e){ return []; } }
-  function saveProds(p){ localStorage.setItem(PKEY, JSON.stringify(p)); }
   function money(v){
     var n = parseFloat(String(v).replace(/[^0-9.]/g, ''));
     return isNaN(n) ? v : '$' + n.toFixed(2);
   }
 
   function renderProds(){
-    var prods = loadProds();
-    if (!prods.length){
+    if (!prodsCache.length){
       prodList.innerHTML = '<div class="notes-empty">No products in the list yet — fill out the form above and hit “Add product to list”.</div>';
       sendStrip.style.display = 'none';
       return;
     }
-    prodList.innerHTML = prods.map(function(p, i){
+    prodList.innerHTML = prodsCache.map(function(p){
       return '<div class="prod">' +
         '<div class="swatch">' + esc((p.name || '?').trim().charAt(0).toUpperCase()) + '</div>' +
         '<div class="body">' +
@@ -474,15 +535,21 @@
             '<span>Cost <b>' + esc(money(p.cost)) + '</b></span>' +
             (p.sizes ? '<span>Sizes <b>' + esc(p.sizes) + '</b></span>' : '') +
             (p.qty ? '<span>Inventory <b>' + esc(p.qty) + '</b></span>' : '') +
-            '<span>' + esc(p.when) + '</span>' +
+            '<span>' + esc(fmtWhen(p.created_at)) + '</span>' +
           '</div>' +
-          (p.desc ? '<p>' + esc(p.desc) + '</p>' : '') +
+          (p.description ? '<p>' + esc(p.description) + '</p>' : '') +
         '</div>' +
-        '<button class="del" data-i="' + i + '">Remove</button>' +
+        '<button class="del" data-id="' + esc(p.id) + '">Remove</button>' +
         '</div>';
     }).join('');
     sendStrip.style.display = 'flex';
-    prodCount.textContent = prods.length + (prods.length === 1 ? ' product ready' : ' products ready');
+    prodCount.textContent = prodsCache.length + (prodsCache.length === 1 ? ' product ready' : ' products ready');
+  }
+  function refreshProds(){
+    return api('/tt_products?select=*&order=created_at.desc').then(function(rows){
+      prodsCache = rows || [];
+      renderProds();
+    });
   }
 
   document.getElementById('addProd').addEventListener('click', function(){
@@ -490,44 +557,42 @@
     var cost = document.getElementById('pCost').value.trim();
     if (!name){ showToast('Product name is required'); return; }
     if (!cost){ showToast('Product cost is required'); return; }
-    var prods = loadProds();
-    prods.push({
-      name: name,
-      cost: cost,
-      sizes: document.getElementById('pSizes').value.trim(),
-      qty: document.getElementById('pQty').value.trim(),
-      desc: document.getElementById('pDesc').value.trim(),
-      when: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
-    });
-    saveProds(prods);
-    ['pName','pCost','pSizes','pQty','pDesc'].forEach(function(id){ document.getElementById(id).value = ''; });
-    document.getElementById('pName').focus();
-    renderProds();
-    showToast('Added — keep going or download the sheet');
+    api('/tt_products', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: name,
+        cost: cost,
+        sizes: document.getElementById('pSizes').value.trim() || null,
+        qty: document.getElementById('pQty').value.trim() || null,
+        description: document.getElementById('pDesc').value.trim() || null
+      })
+    }).then(function(){
+      ['pName','pCost','pSizes','pQty','pDesc'].forEach(function(id){ document.getElementById(id).value = ''; });
+      document.getElementById('pName').focus();
+      showToast('Added — Williams Digital can see it now');
+      return refreshProds();
+    }).catch(offline);
   });
 
   prodList.addEventListener('click', function(e){
     var btn = e.target.closest('.del');
     if (!btn) return;
-    var prods = loadProds();
-    prods.splice(parseInt(btn.dataset.i, 10), 1);
-    saveProds(prods);
-    renderProds();
-    showToast('Product removed');
+    api('/tt_products?id=eq.' + btn.dataset.id, { method: 'DELETE' })
+      .then(function(){ showToast('Product removed'); return refreshProds(); })
+      .catch(offline);
   });
 
   function prodsAsText(){
-    var prods = loadProds();
-    if (!prods.length) return null;
+    if (!prodsCache.length) return null;
     var today = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-    var out = 'TIGER THREADS AUBURN — PRODUCT INFO SHEET\nPrepared ' + today + ' · ' + prods.length + ' product(s)\n';
-    prods.forEach(function(p, i){
+    var out = 'TIGER THREADS AUBURN — PRODUCT INFO SHEET\nPrepared ' + today + ' · ' + prodsCache.length + ' product(s)\n';
+    prodsCache.forEach(function(p, i){
       out += '\n----------------------------------------\n' +
         (i + 1) + '. ' + p.name + '\n' +
         '   Cost: ' + money(p.cost) + '\n' +
         (p.sizes ? '   Sizes: ' + p.sizes + '\n' : '') +
         (p.qty ? '   Inventory: ' + p.qty + '\n' : '') +
-        (p.desc ? '   Description: ' + p.desc + '\n' : '');
+        (p.description ? '   Description: ' + p.description + '\n' : '');
     });
     out += '\n----------------------------------------\nPhotos for each product are in this same Product Uploads folder.\n';
     return out;
@@ -544,7 +609,7 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
-    showToast('Downloaded — now drop it in the Product Uploads folder');
+    showToast('Downloaded — drop it in the Product Uploads folder if you like');
   });
 
   document.getElementById('copyProds').addEventListener('click', function(){
@@ -555,15 +620,30 @@
   });
 
   document.getElementById('clearProds').addEventListener('click', function(){
-    var prods = loadProds();
-    if (!prods.length){ showToast('List is already empty'); return; }
-    if (!confirm('Clear all ' + prods.length + ' product(s) from the list? Do this after they’ve been uploaded.')) return;
-    saveProds([]);
-    renderProds();
-    showToast('List cleared');
+    if (!prodsCache.length){ showToast('List is already empty'); return; }
+    if (!confirm('Clear all ' + prodsCache.length + ' product(s) from the shared list? Do this after they’ve been added to the store.')) return;
+    api('/tt_products?id=not.is.null', { method: 'DELETE' })
+      .then(function(){ showToast('List cleared'); return refreshProds(); })
+      .catch(offline);
   });
 
-  renderProds();
+  /* ===== boot ===== */
+  setSync('load', 'Connecting…');
+  migrateLocal()
+    .then(function(){ return Promise.all([refreshNotes(), refreshProds()]); })
+    .then(function(){ setSync('ok', 'Shared list · live'); })
+    .catch(function(){
+      offline();
+      renderNotes();
+      renderProds();
+    });
+
+  /* pick up saves from other devices while the page is open */
+  setInterval(function(){
+    Promise.all([refreshNotes(), refreshProds()])
+      .then(function(){ setSync('ok', 'Shared list · live'); })
+      .catch(function(){ setSync('err', 'Offline — retry in a moment'); });
+  }, 30000);
 })();
 </script>
 </body>
