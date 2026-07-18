@@ -15,6 +15,7 @@
     --green:#2e9e6b;--green-bg:#e6f4ec;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html,body{overflow-x:hidden}
   body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--bg);line-height:1.55}
   h1,h2,h3,.serif{font-family:'Cormorant Garamond',serif}
   a{text-decoration:none;color:inherit}
@@ -217,6 +218,14 @@
   .summary-row .k{color:var(--muted)}
   .summary-row .v{font-weight:600;color:var(--navy)}
 
+  /* mobile top bar + drawer (hidden on desktop) */
+  .mtop{display:none;align-items:center;justify-content:space-between;background:var(--navy);color:#fff;padding:12px 16px;position:sticky;top:0;z-index:60}
+  .mtop .brand{display:flex;align-items:center;gap:9px}
+  .mtop .brand .logo{width:30px;height:30px;font-size:.9rem}
+  .mtop .brand small{display:block;color:var(--gold);font-size:.55rem;letter-spacing:.28em;font-weight:600;margin-top:2px}
+  .mtop .ham{background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;line-height:1}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(21,34,56,.5);z-index:70}
+
   @media(max-width:1000px){
     .cards3,.grid2,.stat3,.doc-grid{grid-template-columns:1fr}
     .puppy-top{grid-template-columns:1fr}
@@ -227,10 +236,34 @@
     #login{grid-template-columns:1fr}
     .login-right{display:none}
     .layout{grid-template-columns:1fr}
-    aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;gap:6px}
-    aside .brand{width:100%}
-    .nav-spacer,.nav-user{display:none}
-    main{height:auto}
+    .mtop{display:flex}
+    aside{position:fixed;top:0;left:0;height:100vh;width:250px;z-index:80;transform:translateX(-100%);transition:transform .25s ease;box-shadow:0 0 40px rgba(0,0,0,.35)}
+    aside.open{transform:translateX(0)}
+    .overlay.show{display:block}
+    main{height:auto;padding:22px 18px 48px}
+    .topbar h1,.page-head h1{font-size:1.65rem}
+    .topbar .who{display:none}
+    .page-head.row,.topbar{flex-direction:column;gap:14px}
+    .page-head.row .btn{width:100%;justify-content:center}
+    .tabs{gap:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .tab{white-space:nowrap}
+    table.tbl{font-size:.8rem}
+    table.tbl th,table.tbl td{padding-left:8px;padding-right:8px}
+    .appt{flex-wrap:wrap}
+    .appt .body{flex:1 1 60%}
+    .appt .btn{width:100%;justify-content:center;margin-top:6px}
+    .stat .num{font-size:1.4rem}
+  }
+  @media(max-width:560px){
+    .doc-grid{gap:16px}
+    .row-item{flex-wrap:wrap}
+    .row-item .btn{margin-left:0!important;margin-top:8px;width:100%;justify-content:center}
+    .help-banner{flex-direction:column;gap:12px}
+    .help-banner .btn{width:100%;justify-content:center}
+    .appt .body .meta span{display:block;margin-bottom:4px}
+    .msg-compose{flex-direction:column}
+    .msg-compose .btn{width:100%;justify-content:center}
+    .login-card{max-width:100%}
   }
 </style>
 </head>
@@ -273,6 +306,11 @@
 
 <!-- ===== APP ===== -->
 <section id="dash">
+  <div class="mtop">
+    <div class="brand"><span class="logo">🐾</span><span class="brand-name"><b>NC FRENCHIES</b><small>PORTAL</small></span></div>
+    <button class="ham" onclick="toggleDrawer()" aria-label="Menu">☰</button>
+  </div>
+  <div class="overlay" onclick="toggleDrawer(false)"></div>
   <div class="layout">
     <aside>
       <div class="brand">
@@ -506,6 +544,12 @@
 <script>
   function signIn(e){e.preventDefault();document.getElementById('login').style.display='none';document.getElementById('dash').style.display='block';window.scrollTo(0,0);}
   function signOut(){document.getElementById('dash').style.display='none';document.getElementById('login').style.display='grid';}
+  function toggleDrawer(force){
+    var a=document.querySelector('aside'), o=document.querySelector('.overlay');
+    var open = (typeof force==='boolean') ? force : !a.classList.contains('open');
+    a.classList.toggle('open', open);
+    o.classList.toggle('show', open);
+  }
   function go(view){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('v-'+view).classList.add('active');
@@ -513,6 +557,8 @@
       n.classList.toggle('active', n.dataset.view===view);
     });
     var m=document.querySelector('main'); if(m)m.scrollTop=0;
+    window.scrollTo(0,0);
+    if(window.innerWidth<=900) toggleDrawer(false);
   }
   document.querySelectorAll('.nav-item[data-view]').forEach(function(n){
     n.addEventListener('click',function(){ go(this.dataset.view); });
