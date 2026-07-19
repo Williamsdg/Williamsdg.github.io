@@ -129,6 +129,9 @@
   .prod .body p{font-size:.8rem;color:var(--muted);margin-top:5px;white-space:pre-wrap;word-break:break-word}
   .prod .del{flex-shrink:0;color:var(--muted);font-size:.78rem;font-weight:600;padding:4px 8px;border-radius:5px;transition:.12s}
   .prod .del:hover{color:var(--red);background:rgba(195,70,58,.08)}
+  .prod .edit-btn{flex-shrink:0;color:var(--orange-deep);font-size:.78rem;font-weight:600;padding:4px 8px;border-radius:5px;transition:.12s}
+  .prod .edit-btn:hover{background:var(--orange-soft)}
+  .prod.editing{background:var(--orange-soft);border-left:3px solid var(--orange)}
   .send-strip{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:14px 22px;background:var(--orange-soft);border-top:1px solid var(--line-soft)}
   .send-strip .lead{font-size:.8rem;font-weight:600;color:var(--orange-deep);margin-right:auto}
 
@@ -265,6 +268,7 @@
           </div>
           <div class="prod-actions">
             <button class="btn btn-dark" id="addProd">+ Add product to list</button>
+            <button class="btn" id="cancelEdit" style="display:none">Cancel editing</button>
           </div>
         </div>
       </div>
@@ -527,7 +531,7 @@
       return;
     }
     prodList.innerHTML = prodsCache.map(function(p){
-      return '<div class="prod">' +
+      return '<div class="prod' + (p.id === editingId ? ' editing' : '') + '">' +
         '<div class="swatch">' + esc((p.name || '?').trim().charAt(0).toUpperCase()) + '</div>' +
         '<div class="body">' +
           '<h5>' + esc(p.name) + '</h5>' +
@@ -539,6 +543,7 @@
           '</div>' +
           (p.description ? '<p>' + esc(p.description) + '</p>' : '') +
         '</div>' +
+        '<button class="edit-btn" data-edit="' + esc(p.id) + '">Edit</button>' +
         '<button class="del" data-id="' + esc(p.id) + '">Remove</button>' +
         '</div>';
     }).join('');
@@ -552,31 +557,69 @@
     });
   }
 
-  document.getElementById('addProd').addEventListener('click', function(){
+  var editingId = null;
+  var addBtn = document.getElementById('addProd');
+  var cancelBtn = document.getElementById('cancelEdit');
+
+  function exitEditMode(){
+    editingId = null;
+    addBtn.textContent = '+ Add product to list';
+    cancelBtn.style.display = 'none';
+    ['pName','pCost','pSizes','pQty','pDesc'].forEach(function(id){ document.getElementById(id).value = ''; });
+  }
+
+  addBtn.addEventListener('click', function(){
     var name = document.getElementById('pName').value.trim();
     var cost = document.getElementById('pCost').value.trim();
     if (!name){ showToast('Product name is required'); return; }
     if (!cost){ showToast('Product cost is required'); return; }
-    api('/tt_products', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: name,
-        cost: cost,
-        sizes: document.getElementById('pSizes').value.trim() || null,
-        qty: document.getElementById('pQty').value.trim() || null,
-        description: document.getElementById('pDesc').value.trim() || null
-      })
-    }).then(function(){
-      ['pName','pCost','pSizes','pQty','pDesc'].forEach(function(id){ document.getElementById(id).value = ''; });
+    var payload = {
+      name: name,
+      cost: cost,
+      sizes: document.getElementById('pSizes').value.trim() || null,
+      qty: document.getElementById('pQty').value.trim() || null,
+      description: document.getElementById('pDesc').value.trim() || null
+    };
+    var req = editingId
+      ? api('/tt_products?id=eq.' + editingId, { method: 'PATCH', body: JSON.stringify(payload) })
+      : api('/tt_products', { method: 'POST', body: JSON.stringify(payload) });
+    var wasEditing = !!editingId;
+    req.then(function(){
+      exitEditMode();
       document.getElementById('pName').focus();
-      showToast('Added — Williams Digital can see it now');
+      showToast(wasEditing ? 'Changes saved' : 'Added — Williams Digital can see it now');
       return refreshProds();
     }).catch(offline);
   });
 
+  cancelBtn.addEventListener('click', function(){
+    exitEditMode();
+    renderProds();
+    showToast('Edit cancelled');
+  });
+
   prodList.addEventListener('click', function(e){
+    var editBtn = e.target.closest('.edit-btn');
+    if (editBtn){
+      var p = prodsCache.find(function(x){ return x.id === editBtn.dataset.edit; });
+      if (!p) return;
+      editingId = p.id;
+      document.getElementById('pName').value = p.name || '';
+      document.getElementById('pCost').value = p.cost || '';
+      document.getElementById('pSizes').value = p.sizes || '';
+      document.getElementById('pQty').value = p.qty || '';
+      document.getElementById('pDesc').value = p.description || '';
+      addBtn.textContent = 'Save changes';
+      cancelBtn.style.display = '';
+      renderProds();
+      document.getElementById('pName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.getElementById('pName').focus();
+      showToast('Editing "' + p.name + '" — make changes above, then Save');
+      return;
+    }
     var btn = e.target.closest('.del');
     if (!btn) return;
+    if (btn.dataset.id === editingId) exitEditMode();
     api('/tt_products?id=eq.' + btn.dataset.id, { method: 'DELETE' })
       .then(function(){ showToast('Product removed'); return refreshProds(); })
       .catch(offline);
@@ -623,7 +666,7 @@
     if (!prodsCache.length){ showToast('List is already empty'); return; }
     if (!confirm('Clear all ' + prodsCache.length + ' product(s) from the shared list? Do this after they’ve been added to the store.')) return;
     api('/tt_products?id=not.is.null', { method: 'DELETE' })
-      .then(function(){ showToast('List cleared'); return refreshProds(); })
+      .then(function(){ exitEditMode(); showToast('List cleared'); return refreshProds(); })
       .catch(offline);
   });
 
