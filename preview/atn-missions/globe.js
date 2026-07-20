@@ -386,6 +386,11 @@
      UI: nav scroll, reveal-on-scroll, counters
      ================================================================= */
   function initUI() {
+    // Always open at the top of the page: stop the browser from restoring a
+    // previous scroll position on reload. Honor an explicit #hash deep-link.
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    if (!window.location.hash) window.scrollTo(0, 0);
+
     const header = document.getElementById('header');
     const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 40);
     window.addEventListener('scroll', onScroll); onScroll();
