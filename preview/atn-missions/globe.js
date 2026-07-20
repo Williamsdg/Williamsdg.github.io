@@ -180,6 +180,8 @@
         renderer.setSize(w, h, false);
         camera.aspect = w / h; camera.updateProjectionMatrix();
       }
+      // push globe to the right on desktop; center it when layout stacks
+      globe.position.x = (w > 960) ? R * 0.95 : 0;
     }
 
     let t = 0;
