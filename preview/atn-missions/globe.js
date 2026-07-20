@@ -27,25 +27,29 @@
     );
   }
 
-  /* Sample points that fall on "land" using a low-res land bitmask.
-     We approximate continents procedurally with a noise-ish mask so
-     the globe reads as Earth without loading external textures. */
+  /* Real Earth land mask (incl. ice caps), derived from a NASA Blue Marble
+     equirectangular map at 360x180 (1 deg/cell), packed 1 bit/cell (land=1),
+     base64-encoded. Sampling it gives accurate continent coastlines with no
+     runtime network dependency. */
+  const MASK_W = 360, MASK_H = 180;
+  const MASK_B64 = '////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////wA//////////////////////////////////////////////8PhPj///8AAAAAAAf////////////////////////////////////////////xIAH//wAAAAAAAAB8P/4H////////////////////////////////////////BgAP4ADwAAAAAAAAA/4B///////////////////////////////8///////+H4AAAADgAAAAAAAAAAAAf////////////////////////////+/gA//////+CQAAAACAAAAAAAAAAAAD/5///4P//////////////////////n4AAAP////8AAAAAAAAAAAAAAAAAAAAP////wBH///////////////////P/n4AAAH////BkAAAAAAAAAAAAAAAAAAf////4AAzHH////////7////////+8AAAAAD////gAAAAAAAAAAAAAEAAAAH/8/yIAAAAAAP/////n/7/H//////8eIAAAAB////AAAAAAAAAAAAAAQAAAA///+OYCAAAAAP///wAAAMAf/8fP//OAZ4AAABf//8AAAAAAAAAAAAABgAHAD///////4AEAAAf//wAAAAAAAAAP/5AQN/4AAAH//8AgAAAAAAAAAAABwAPJ9///////4AP/AAOAAAAAPwAAAAAAP/44D+9AAAD//4AAAAAAAAA+AAAAAAfP/////////////4AAAAAB///4A+GA/uAOBgH4AAD//AAAAAAAAA//4AAAAYPP/////////////8wH4gAH///////+AACPxwB4AAH/8AAAAAAAAD///wABO/nm/////////////////8AD////////O//fzwA/AAf/gAAAAAAAAH///+I////H/////////////////+4A//////8f////4ABs4Af/AAAAAAAAAf//88P//////////////////////Dwf//////4/////4AD8AAP+AAAP8AAAA/8f+D///////////////////////AAAf///////////zgB+AAH+AAAPwAAAB/4/+f//////////////////////8AAAf//////////+AAAdgAH8AAAAAAAAH/j/////////////////////////+AAH///////////4AAAAAAB4AAAAAAAAf/H///////////////////////v/wAAH///////8f//wAA/AAAAAAAAAAAAB/+H/O////////////////////DP+AAAD//x////////gAAfwAAAAAAAAAAAB//D5n///////////////////+AeIAAAA/wAB///////gAA/wQAAAAAAAAAAA//g7//////////////////+McBgAAAAADwAAf//////4AA/84AAAAAAAAAAA5+A///////////////////4AAHAAAAAACIAAP//////4AAf/8AAAAAAAAA8AA+C///////////////////gAAfgAAAAAAAAAD///////wAP/8AAAAAAAAA4AMcH///////////////////AAA/gAAAAAAAAAB///////8Af//AAAAAAAAAcANQH//////////////////8AAA/AAAAAAAAAAAP///////x///wAAAAAAAHGAGBv//////////////v///8AAA8AAAAAAAAAAAP////7//x///8AAAAAAAPHA////////////////+f////6AA8AAAAAAAAAAAH////5//5///8AAAAAAAPPx//////////////////////+AAwAAAAAAAAAAAD///////9///0AAAAAAAAPn//////////////////////6AAAAAAAAAAAAAAD///////////EAAAAAAAAAf//////////////////////zAAAAAAAAAAAAAAA/////////+AOAAAAAAAAA///////////////////////zAAAAAAAAAAAAAAAf/////j///gfAAAAAAAAP///////////////////////yAAAAAAAAAAAAAAAP////+B///gDgAAAAAAAH///////////////////////iAAAAAAAAAAAAAAAP/////7///wAAAAAAAAAD//////P/x//////////////AAAAAAAAAAAAAAAAP/////5D//8AAAAAAAAAB/////Gf/D+////////////+AAAAAAAAAAAAAAAAP/////zn/8wAAAAAAAAAB//H/+AP+H+////////////8CAAAAAAAAAAAAAAAP/////zvfwAAAAAAAAADj9jj/8AD/H/////////////4HgAAAAAAAAAAAAAAP/////zz/gAAAAAAAAAH/4Bwf8AA/B////////////+AKAAAAAAAAAAAAAAAP////////gAAAAAAAAAH/wAcf8PB/g////////////8AAAAAAAAAAAAAAAAAP///////8AAAAAAAAAAH/AEGPP///x///////////v4AMAAAAAAAAAAAAAAAP///////8AAAAAAAAAAH/AACOP///g//////////+JwAMAAAAAAAAAAAAAAAH///////4AAAAAAAAAAH/AAAHH///g//////////8BwAIAAAAAAAAAAAAAAAD///////wAAAAAAAAAAH8AAYCH///w//////////+w4AYAAAAAAAAAAAAAAAD///////wAAAAAAAAAAAgP+AABM//////////////g4D4AAAAAAAAAAAAAAAB///////wAAAAAAAAAAAh/+AAAA//////////////A4fwAAAAAAAAAAAAAAAA///////gAAAAAAAAAAA//8AAAA//////////////AA+AAAAAAAAAAAAAAAAAP/////+AAAAAAAAAAAD//+AAAB//////////////gDQAAAAAAAAAAAAAAAAAH/////8AAAAAAAAAAAH///4GAB//////////////gDAAAAAAAAAAAAAAAAAAG/////4AAAAAAAAAAAP///8Pwz//////////////wAAAAAAAAAAAAAAAAAAACf////4AAAAAAAAAAAP////P////////////////wAAAAAAAAAAAAAAAAAAABP//jAYAAAAAAAAAAAP/////////H///////////wAAAAAAAAAAAAAAAAAAAAv//AAYAAAAAAAAAAAf/////////H///////////wAAAAAAAAAAAAAAAAAAAA3/+AAcAAAAAAAAAAB///////8//h///////////gAAAAAAAAAAAAAAAAAAAAT/+AAMAAAAAAAAAAD///////8//wH//////////AAAAAAAAAAAAAAAAAAAAAJ/+AAEAAAAAAAAAAH///////+f/4Ae////////+AAAAAAAAAAAAAAAAAAAAAI/8AAAAAAAAAAAAAH///////+P/84Af///////8QAAAAAAAAAAAAAAAAAAAAAf8AAAAAAAAAAAAAP///////+H//8AP///////4gAAAAAAAAAAAAAAAAAAAAAP8AAuAAAAAAAAAAP////////H//+AH///////AAAAAAAAAAAAAAAAAAAAAAAH8AYBgAAAAAAAAAf////////n//+AD//8P//YAAAAAAAAAAAAAAAAAAAAAAAH+B4A4AAAAAAAAAP////////j//8AAf/4H/+AAAAAAAAAAAAAAAAAAAAAAAAH/BwABwAAAAAAAAP////////h//8AAf/gD/8YAAAAAAAAAAAAAAAAAAAAAAAB/nwAB4AAAAAAAAP////////x//4AAf/AD/8QAAAAAAAAAAAAAAAAAAAAAAAAf/wAAAAAAAAAAAP////////4//gAAf+AB/+AAwAAAAAAAAAAAAAAAAAAAAAAH/wAAAAAAAAAAAP////////4f8AAAf8AD//AAwAAAAAAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAf////////8f8AAAPwAAP/gAwAAAAAAAAAAAAAAAAAAAAAAAD/gAAAAAAAAAAf////////+fgAAAPwAAP/gAQAAAAAAAAAAAAAAAAAAAAAAAAfAAAAAAAAAAAf/////////cAAAAHwAAP/gAAAAAAAAAAAAAAAAAAAAAAAAAAHAAAAAAAAAAAf/////////gAAAAHwAAM/gAAAAAAAAAAAAAAAAAAAAAAAAAADABoAAAAAAAAP/////////gIAAADwAAMfgAIAAAAAAAAAAAAAAAAAAAAAAAADgH/IAAAAAAAH/////////34AAADwAAIOAAEAAAAAAAAAAAAAAAAAAAAAAAAAgP/+AAAAAAAD//////////4AAADgAAIEAAAAAAAAAAAAAAAAAAAAAAAAAAAAd///AAAAAAAB//////////wAAABIAAMAAADAAAAAAAAAAAAAAAAAAAAAAAAAA///gAAAAAAB//////////wAAAAMAAEAAADAAAAAAAAAAAAAAAAAAAAAAAAAAf//4AAAAAAAf/////////gAAAAMAADAAMDAAAAAAAAAAAAAAAAAAAAAAAAAAf///gAAAAAAP/B///////gAAAAAAADgAOAAAAAAAAAAAAAAAAAAAAAAAAAAAf///wAAAAAACAA///////AAAAAAAAxgA8AAAAAAAAAAAAAAAAAAAAAAAAAAAf///4AAAAAAAAAD/////+AAAAAAAAZgB8AAAAAAAAAAAAAAAAAAAAAAAAAAA////4AAAAAAAAAD/////8AAAAAAAAPwH8AAAAAAAAAAAAAAAAAAAAAAAAAAB////8AAAAAAAAAD/////4AAAAAAAAHwf8AAAAAAAAAAAAAAAAAAAAAAAAAAD////8AAAAAAAAAH/////gAAAAAAAAHwf8AAAAAAAAAAAAAAAAAAAAAAAAAAH/////AAAAAAAAAH///z/AAAAAAAAADwf4AAgAAAAAAAAAAAAAAAAAAAAAAAH/////4AAAAAAAAH///z/AAAAAAAAAB4P5wBwAAAAAAAAAAAAAAAAAAAAAAAH/////+AAAAAAAAD////+AAAAAAAAAB8PxwAz4AAAAAAAAAAAAAAAAAAAAAAH//////4AAAAAAAB////8AAAAAAAAAA8AxQAf/AAAAAAAAAAAAAAAAAAAAAAH//////8AAAAAAAA////4AAAAAAAAAAcAAIAD/gAAAAAAAAAAAAAAAAAAAAAH///////gAAAAAAA////4AAAAAAAAAAMAAAAA/wgAAAAAAAAAAAAAAAAAAAAD///////gAAAAAAA////4AAAAAAAAAADgAAAA/4AAAAAAAAAAAAAAAAAAAAAB///////gAAAAAAAf///4AAAAAAAAAAB/AAAA/4AAAAAAAAAAAAAAAAAAAAAB///////gAAAAAAAf///4AAAAAAAAAAAAAAAAPMAAAAAAAAAAAAAAAAAAAAAA///////AAAAAAAAf///8AAAAAAAAAAAAACAAAGAAAAAAAAAAAAAAAAAAAAAA//////+AAAAAAAAP///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////+AAAAAAAAP///+AAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAf/////8AAAAAAAAf///+AAAAAAAAAAAAAAB+CAAAAAAAAAAAAAAAAAAAAAAAP/////4AAAAAAAAf///+AwAAAAAAAAAAAAD8DAAAAAAAAAAAAAAAAAAAAAAAP/////4AAAAAAAA////+AwAAAAAAAAAAAA38HgAAAAAAAAAAAAAAAAAAAAAAH/////4AAAAAAAA////8DwAAAAAAAAAAAB/+HgAAAAAAAAAAAAAAAAAAAAAAB/////4AAAAAAAA////8PwAAAAAAAAAAAD//HwAAAAAAAAAAAAAAAAAAAAAAAf////4AAAAAAAA////wPwAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAP////wAAAAAAAA////gPgAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAP////wAAAAAAAAf//+APgAAAAAAAAAAAf///4AAAAAAAAAAAAAAAAAAAAAAAP////wAAAAAAAAf//+APgAAAAAAAAAAD////+AAAAAAAAAAAAAAAAAAAAAAAP////gAAAAAAAAP//+AfAAAAAAAAAAAf////+AAAAAAAAAAAAAAAAAAAAAAAP////AAAAAAAAAP///AfAAAAAAAAAAA//////gAAAAAAAAAAAAAAAAAAAAAAP///4AAAAAAAAAP//+APAAAAAAAAAAA//////gAAAAAAAAAAAAAAAAAAAAAAP///gAAAAAAAAAH//+AOAAAAAAAAAAA//////wAAAAAAAAAAAAAAAAAAAAAAP///AAAAAAAAAAH//4AAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAf//+AAAAAAAAAAH//4AAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAf//+AAAAAAAAAAD//4AAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAf//+AAAAAAAAAAD//wAAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAf//8AAAAAAAAAAB//gAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAA///4AAAAAAAAAAB//gAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAA///wAAAAAAAAAAA//AAAAAAAAAAAAAAP/////4AAAAAAAAAAAAAAAAAAAAAAf//wAAAAAAAAAAA/+AAAAAAAAAAAAAAP+AP//wAAAAAAAAAAAAAAAAAAAAAA///gAAAAAAAAAAA/4AAAAAAAAAAAAAAf8AH//gAAAAAAAAAAAAAAAAAAAAAA///AAAAAAAAAAAAQAAAAAAAAAAAAAAAOAAA//gAAAAAAAAAAAAAAAAAAAAAB//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/AAAAAAAAAAAAAAAAAAAAAAB//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAB//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAQAAAAAAAAAAAAAAAAAB//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIAAAAcAAAAAAAAAAAAAAAAAB/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAD/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAD/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAADAAAAAAAAAAAAAAAAAAB/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAAGAAAAAAAAAAAAAAAAAAB/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAAD+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAAAAAAAAAAAAAAAAAADwAAAAEB/wDAABwAAAAAAAAAAAAAAAAAAAAAAAAAA+AAAAAAAAAAAAAAAAAAP8AAAD/////m///+AAAAAAAAAAAAAAAAAAAAAAAAA+AAAAAAAAAAAAAAAAAf///4Af//////////4AAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAABAAAAAUD/////4/////////////gAAAAAAAAAAAAAAAAAAAAD/+AAAAAAAAAD///4P//////v//////////////8AAAAAAAAAAAAAAAAAAAAB/+AAAAAAAAf////////////H///////////////eAAAAAAAAAAAAAAA/AAAA/+AAAAAAAH////////////+P///////////////+AAAAAAAAAAAAAAAf/8A//+AAAAAAD/////////////4P///////////////4AAAAAAAAAAD//AAf/////8AAAAAAP//////////////////////////////AAAAAAAAAB////4A//////+AAAAAA///////////////////////////////AAAAAAAAP//////////////4AAAAH//////////////////////////////+AAAAAAAB////////////////4AAB///////////////////////////////8AAAAAA////////////9//////Z/f//////////////////////////////////8/////////////////////8P/////////////////////////////////D///////////////////////////////////////////////////////////H///////////////////////////////////////////////////////////z/////////////////////////+f////////////////////////////////4f///////////////////////////////////////////////////////////8///////////////////////////////////////////////////////////4F/3/j/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////';
+  const MASK_BITS = (function () {
+    const bin = atob(MASK_B64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes; // MSB-first bit order within each byte, row-major
+  })();
+  function maskAt(col, row) {
+    if (row < 0) row = 0; else if (row >= MASK_H) row = MASK_H - 1;
+    col = ((col % MASK_W) + MASK_W) % MASK_W;
+    const idx = row * MASK_W + col;
+    return (MASK_BITS[idx >> 3] >> (7 - (idx & 7))) & 1;
+  }
+  /* lat -90..90, lon -180..180 -> is this point over real land? */
   function isLand(lat, lon) {
-    // crude continental blobs (lon -180..180, lat -90..90)
-    const blobs = [
-      [ 40, -100, 34, 20],  // N America
-      [-15, -60, 22, 30],   // S America
-      [ 50,  15, 30, 22],   // Europe/W Asia
-      [  5,  20, 30, 26],   // Africa
-      [ 45,  90, 40, 30],   // Asia
-      [-25, 133, 16, 16],   // Australia
-    ];
-    for (const [blat, blon, rlat, rlon] of blobs) {
-      const dLat = (lat - blat) / rlat;
-      const dLon = (lon - blon) / rlon;
-      if (dLat * dLat + dLon * dLon < 1) return true;
-    }
-    return false;
+    const col = Math.floor((lon + 180) / 360 * MASK_W);
+    const row = Math.floor((90 - lat) / 180 * MASK_H);
+    return maskAt(col, row) === 1;
   }
 
   /* deterministic pseudo-random so scenes are stable */
@@ -75,14 +79,14 @@
     const colors = [];
     const cGold = new THREE.Color(GOLD_BRIGHT);
     const cBlue = new THREE.Color(0x38598f);
-    for (let lat = -88; lat <= 88; lat += 2.4) {
+    for (let lat = -88; lat <= 88; lat += 1.8) {
       const circ = Math.cos(lat * Math.PI / 180);
-      const step = 2.4 / Math.max(circ, 0.05);
+      const step = 1.8 / Math.max(circ, 0.05);
       for (let lon = -180; lon < 180; lon += step) {
         if (isLand(lat, lon)) {
           const v = llToVec3(lat, lon, R);
           positions.push(v.x, v.y, v.z);
-          const c = (rnd() > 0.86) ? cGold : cBlue;
+          const c = (rnd() > 0.9) ? cGold : cBlue;
           colors.push(c.r, c.g, c.b);
         }
       }
@@ -90,7 +94,7 @@
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    const dotMat = new THREE.PointsMaterial({ size: 1.7, vertexColors: true, transparent: true, opacity: 0.95, sizeAttenuation: true });
+    const dotMat = new THREE.PointsMaterial({ size: 1.5, vertexColors: true, transparent: true, opacity: 0.95, sizeAttenuation: true });
     globe.add(new THREE.Points(geo, dotMat));
 
     // --- faint sphere shell + wire ---
@@ -165,8 +169,10 @@
       pinGroup.add(dot);
     });
 
-    globe.rotation.x = 0.32;
-    globe.rotation.y = -0.7;
+    // open facing the Atlantic — Americas at left, Africa/Europe at right —
+    // so the home base and outgoing gospel arcs read clearly
+    globe.rotation.x = 0.34;
+    globe.rotation.y = -0.62;
 
     let mx = 0, my = 0, tx = 0, ty = 0;
     window.addEventListener('pointermove', (e) => {
@@ -255,14 +261,14 @@
     // land dots
     const positions = [], colors = [];
     const cA = new THREE.Color(GOLD), cB = new THREE.Color(0x4a6fa8);
-    for (let lat = -86; lat <= 86; lat += 3.4) {
+    for (let lat = -86; lat <= 86; lat += 2.3) {
       const circ = Math.cos(lat * Math.PI / 180);
-      const step = 3.4 / Math.max(circ, 0.05);
+      const step = 2.3 / Math.max(circ, 0.05);
       for (let lon = -180; lon < 180; lon += step) {
         if (isLand(lat, lon)) {
           const v = llToVec3(lat, lon, R + 0.4);
           positions.push(v.x, v.y, v.z);
-          const c = rnd() > 0.8 ? cA : cB;
+          const c = rnd() > 0.88 ? cA : cB;
           colors.push(c.r, c.g, c.b);
         }
       }
@@ -270,7 +276,7 @@
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    group.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 1.5, vertexColors: true, transparent: true, opacity: 0.9 })));
+    group.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 1.4, vertexColors: true, transparent: true, opacity: 0.92 })));
 
     // pulsing pins across the map
     const pinSpots = [
