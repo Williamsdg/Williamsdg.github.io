@@ -464,14 +464,83 @@ const LEADS = (window.WDCC_LEADS || []).map(l => ({
   value: l.v, est: true,
 }));
 
+/* =============== Cloud + local persistence =============== */
+const SB_URL = 'https://tkkhvbkocumyxpgsrpxv.supabase.co';
+const SB_KEY = 'sb_publishable_4_xgRNDnzXimaykbC6YBwg_E2aYxgzz';
+const SB_TABLE = 'wdcc_overrides';
 const OV_KEY = 'wdcc-ov-v2';
-let ov = loadOv();
+const META_KEY = '__meta__', TASKS_KEY = '__tasks__';
+
+let ov = loadOv();          // in-memory state, seeded from local cache for instant paint
+let syncState = 'local';    // 'local' | 'syncing' | 'synced' | 'offline'
+
 function loadOv() {
   try { const raw = localStorage.getItem(OV_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
   return { rep: 'Sales Rep', tasks: [], leads: {}, custom: [] };
 }
-function save() { try { localStorage.setItem(OV_KEY, JSON.stringify(ov)); } catch (e) { alert('Could not save — browser storage full or blocked.'); } }
+function saveLocal() { try { localStorage.setItem(OV_KEY, JSON.stringify(ov)); } catch (e) {} }
 function leadOv(id) { return ov.leads[id] || (ov.leads[id] = { stage: 'Prospect', notes: [], outreach: [], opps: [], lastContact: '—' }); }
+
+function setSync(s) { syncState = s; const el = document.getElementById('sync-badge'); if (el) el.outerHTML = syncBadge(); }
+function syncBadge() {
+  const map = { local:['Local only','var(--ink-soft)','◍'], syncing:['Saving…','var(--caution)','◍'],
+    synced:['Synced','var(--go)','●'], offline:['Offline — saved locally','var(--stop)','○'] };
+  const [txt,color,dot] = map[syncState] || map.local;
+  return `<span id="sync-badge" title="Your edits sync to Supabase so they follow you across devices" style="font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:${color};display:inline-flex;align-items:center;gap:5px;"><span style="color:${color}">${dot}</span>${txt}</span>`;
+}
+
+// Fire-and-forget upsert of one logical row to Supabase; always cache locally first.
+async function sbUpsert(key, data) {
+  saveLocal();
+  if (!window.fetch) return;
+  setSync('syncing');
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}`, {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({ key, data }),
+    });
+    setSync(res.ok ? 'synced' : 'offline');
+  } catch (e) { setSync('offline'); }
+}
+function syncLead(id) { sbUpsert(id, ov.leads[id] || {}); }
+function syncMeta() { sbUpsert(META_KEY, { rep: ov.rep, custom: ov.custom }); }
+function syncTasks() { sbUpsert(TASKS_KEY, { tasks: ov.tasks }); }
+
+async function resetAllOverrides() {
+  ov = { rep: 'Sales Rep', tasks: [], leads: {}, custom: [] };
+  saveLocal();
+  go('dashboard');
+  if (!window.fetch) return;
+  setSync('syncing');
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}?key=neq.__never__`, {
+      method: 'DELETE', headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY },
+    });
+    setSync(res.ok ? 'synced' : 'offline');
+  } catch (e) { setSync('offline'); }
+}
+
+// Pull the whole override set from Supabase on startup and merge over the local cache.
+async function cloudLoad() {
+  if (!window.fetch) return;
+  setSync('syncing');
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/${SB_TABLE}?select=key,data`, {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY },
+    });
+    if (!res.ok) { setSync('offline'); return; }
+    const rows = await res.json();
+    const next = { rep: 'Sales Rep', tasks: [], leads: {}, custom: [] };
+    for (const row of rows) {
+      if (row.key === META_KEY) { next.rep = row.data.rep || 'Sales Rep'; next.custom = row.data.custom || []; }
+      else if (row.key === TASKS_KEY) { next.tasks = row.data.tasks || []; }
+      else { next.leads[row.key] = row.data; }
+    }
+    ov = next; saveLocal(); setSync('synced'); render();
+  } catch (e) { setSync('offline'); }
+}
 
 function companies() {
   const merged = LEADS.map(l => {
@@ -491,10 +560,12 @@ function mutate(c, fn) {
   if (c.custom) {
     const target = ov.custom.find(x => x.id === c.id);
     if (target) fn(target, true);
+    syncMeta();
   } else {
     fn(leadOv(c.id), false);
+    syncLead(c.id);
   }
-  save(); render();
+  render();
 }
 
 /* =============== Helpers =============== */
@@ -553,7 +624,7 @@ function render() {
     `<button class="nav-item ${current===id?'active':''}" data-nav="${id}">
       <span class="ico">${ico}</span>${label}${badge?`<span class="badge">${badge}</span>`:''}
     </button>`).join('');
-  $('#side-foot').textContent = `INTERNAL · ${LEADS.length + ov.custom.length} COMPANIES`;
+  $('#side-foot').innerHTML = `INTERNAL · ${LEADS.length + ov.custom.length} COMPANIES<br>${syncBadge()}`;
   const v = $('#view');
   if (current === 'companies' && currentCompany) v.innerHTML = viewCompany(byId(currentCompany));
   else v.innerHTML = ({dashboard:viewDashboard, leads:viewLeads, companies:viewCompanies, pipeline:viewPipeline,
@@ -1162,7 +1233,7 @@ function runAudit() {
 function viewSettings() {
   return `
     <div class="view-head"><h2>Settings</h2></div>
-    <p class="view-sub">Lead data ships with the page; your notes, stages, and tasks live in this browser's localStorage.</p>
+    <p class="view-sub">Lead data ships with the page. Your stage changes, notes, tasks, and added companies sync to the cloud (Supabase) so they follow you across every device — with a local copy kept for offline use.</p>
     <div class="card panel" style="max-width:560px">
       <h3>Sales rep name</h3>
       <div class="note-form" style="max-width:340px">
@@ -1171,9 +1242,12 @@ function viewSettings() {
       </div>
       <div class="mini-label">Data</div>
       <p style="font-size:13.5px;color:var(--ink-soft)">${LEADS.length.toLocaleString()} imported leads (read-only base data) + ${ov.custom.length} added here. Source: the Prospect Pipeline research database.</p>
+      <div class="mini-label">Sync</div>
+      <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 6px">Edits sync to a shared Supabase table (${SB_TABLE}). Any device that opens this page sees the same up-to-date pipeline.</p>
+      ${syncBadge()}
       <div class="mini-label">Danger zone</div>
       <button class="btn danger small" id="reset-demo">Clear my edits</button>
-      <p style="font-size:12.5px;color:var(--ink-soft);margin:10px 0 0;">Removes your notes, stage changes, tasks, and added companies. The ${LEADS.length.toLocaleString()} imported leads are unaffected.</p>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:10px 0 0;">Removes your notes, stage changes, tasks, and added companies <strong>on every device</strong> (clears the cloud too). The ${LEADS.length.toLocaleString()} imported leads are unaffected.</p>
     </div>`;
 }
 
@@ -1277,28 +1351,27 @@ function wire() {
       score: { design: 12, mobile: 12, seo: 10, portal: 15, dashboard: 15 },
       notes: [], outreach: [], opps: [],
     };
-    ov.custom.unshift(co); save(); go('companies', co.id);
+    ov.custom.unshift(co); syncMeta(); go('companies', co.id);
   };
 
   document.querySelectorAll('[data-task]').forEach(cb => cb.onchange = () => {
     const t = ov.tasks.find(x => x.id === cb.dataset.task);
-    if (t) { t.done = cb.checked; save(); render(); }
+    if (t) { t.done = cb.checked; syncTasks(); render(); }
   });
   const addTask = $('#add-task');
   if (addTask) addTask.onclick = () => {
     const text = $('#task-text').value.trim();
     if (!text) return;
     ov.tasks.push({id: 't' + Math.random().toString(36).slice(2,8), text, due: $('#task-due').value.trim() || '—', done: false});
-    save(); render();
+    syncTasks(); render();
   };
 
   const saveRep = $('#save-rep');
-  if (saveRep) saveRep.onclick = () => { ov.rep = $('#rep-name').value.trim() || 'Sales Rep'; save(); render(); };
+  if (saveRep) saveRep.onclick = () => { ov.rep = $('#rep-name').value.trim() || 'Sales Rep'; syncMeta(); render(); };
   const reset = $('#reset-demo');
   if (reset) reset.onclick = () => {
-    if (confirm('Clear all your edits (notes, stages, tasks, added companies)? Imported leads are kept.')) {
-      ov = { rep: 'Sales Rep', tasks: [], leads: {}, custom: [] };
-      save(); go('dashboard');
+    if (confirm('Clear all your edits (notes, stages, tasks, added companies) on ALL your devices? Imported leads are kept.')) {
+      resetAllOverrides();
     }
   };
 
@@ -1335,7 +1408,7 @@ function wire() {
       score: { design: 12, mobile: 12, seo: 10, portal: 16, dashboard: 16 },
       notes: [], outreach: [], opps: [],
     };
-    ov.custom.unshift(co); save(); go('companies', co.id);
+    ov.custom.unshift(co); syncMeta(); go('companies', co.id);
   };
 
   // Pipeline drag & drop
@@ -1357,6 +1430,7 @@ function wire() {
 }
 
 render();
+cloudLoad();
 </script>
 </body>
 </html>
