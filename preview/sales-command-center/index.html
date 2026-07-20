@@ -478,6 +478,13 @@ function loadOv() {
   try { const raw = localStorage.getItem(OV_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
   return { rep: 'Sales Rep', tasks: [], leads: {}, custom: [] };
 }
+
+// Live research config (AI Auditor -> Lead Finder backend). Token is stored per
+// browser (localStorage), never committed to the page, and synced to the shared
+// meta row so it follows you across devices.
+const AUD_ENDPOINT = 'https://leads.williamsdigital.io/api/external';
+function audToken() { return ov.audToken || ''; }
+function audLive() { return !!ov.audToken; }
 function saveLocal() { try { localStorage.setItem(OV_KEY, JSON.stringify(ov)); } catch (e) {} }
 function leadOv(id) { return ov.leads[id] || (ov.leads[id] = { stage: 'Prospect', notes: [], outreach: [], opps: [], lastContact: '—' }); }
 
@@ -505,7 +512,7 @@ async function sbUpsert(key, data) {
   } catch (e) { setSync('offline'); }
 }
 function syncLead(id) { sbUpsert(id, ov.leads[id] || {}); }
-function syncMeta() { sbUpsert(META_KEY, { rep: ov.rep, custom: ov.custom }); }
+function syncMeta() { sbUpsert(META_KEY, { rep: ov.rep, custom: ov.custom, audToken: ov.audToken || '' }); }
 function syncTasks() { sbUpsert(TASKS_KEY, { tasks: ov.tasks }); }
 
 async function resetAllOverrides() {
@@ -534,7 +541,7 @@ async function cloudLoad() {
     const rows = await res.json();
     const next = { rep: 'Sales Rep', tasks: [], leads: {}, custom: [] };
     for (const row of rows) {
-      if (row.key === META_KEY) { next.rep = row.data.rep || 'Sales Rep'; next.custom = row.data.custom || []; }
+      if (row.key === META_KEY) { next.rep = row.data.rep || 'Sales Rep'; next.custom = row.data.custom || []; next.audToken = row.data.audToken || ''; }
       else if (row.key === TASKS_KEY) { next.tasks = row.data.tasks || []; }
       else { next.leads[row.key] = row.data; }
     }
@@ -972,8 +979,9 @@ function viewReports() {
     </div>`;
 }
 
-let audMode = 'url'; // 'url' | 'company'
+let audMode = 'url'; // 'url' | 'search' | 'company'
 let audReport = null;
+let audResults = null; // array of reports from a city search
 
 const AUD_DIMENSIONS = [
   ['performance','Performance','Lighthouse CLI'],
@@ -983,6 +991,7 @@ const AUD_DIMENSIONS = [
   ['conversion','Conversion','Qwen3 analysis'],
   ['design','Design / UX','Qwen2.5-VL vision'],
 ];
+// Demo pipeline (simulated visuals).
 const PIPELINE_STEPS = [
   ['Locate business','Google Maps'],
   ['Scrape website','Firecrawl / Crawl4AI'],
@@ -991,25 +1000,45 @@ const PIPELINE_STEPS = [
   ['Vision analysis of screenshots','Qwen2.5-VL'],
   ['Reason + score + write outreach','Qwen3 32B'],
 ];
+// Live pipeline — matches what the Lead Finder backend actually does.
+const PIPELINE_STEPS_LIVE = [
+  ['Find business on Google','Google Places API'],
+  ['Run Lighthouse audit','PageSpeed Insights'],
+  ['Research + score + write proposal','Claude (Opus)'],
+];
 
 function viewScanner() {
+  const live = audLive();
+  const banner = live
+    ? `<div class="future-note" style="border-color:var(--go);background:var(--go-bg);color:var(--go)">● LIVE — real research is on. Searches hit Google Places, run a real Lighthouse audit, and Claude writes the proposal from what it finds (via your Lead Finder backend). This takes 20–60s per run and uses your Google/Anthropic API credits.</div>`
+    : `<div class="future-note">DEMO mode — scores below are <strong>simulated</strong>. Add your research token in Settings → "Live research" to make searches hit real Google + Lighthouse + Claude.</div>`;
   return `
     <div class="view-head"><h2>AI Website Auditor</h2><div class="spacer"></div>
       ${audReport ? '<button class="btn ghost small" id="aud-reset">New audit</button>' : ''}</div>
-    <p class="view-sub">Point it at a prospect's website (or pick an existing company). It audits UX, SEO, accessibility, performance, and conversion, flags outdated design, scores the redesign opportunity, and drafts the outreach.</p>
-    <div class="future-note">BETA — this runs a <strong>simulated</strong> pipeline for the demo. The architecture mirrors the production stack (Firecrawl + Playwright + Lighthouse CLI + Qwen3/Qwen2.5-VL) so the real backend can drop in behind the same UI. Scores here are estimated, not measured.</div>
+    <p class="view-sub">Point it at a prospect's website, a city search, or an existing company. It researches the business, audits UX, SEO, accessibility, performance, and conversion, scores the redesign opportunity, and drafts the outreach + proposal.</p>
+    ${banner}
 
-    <div class="card panel" style="max-width:680px" id="aud-input">
+    <div class="card panel" style="max-width:720px" id="aud-input">
       <div class="aud-mode">
-        <button data-audmode="url" class="${audMode==='url'?'active':''}">Audit a URL</button>
-        <button data-audmode="company" class="${audMode==='company'?'active':''}">Audit an existing company</button>
+        <button data-audmode="url" class="${audMode==='url'?'active':''}">Audit a business / URL</button>
+        <button data-audmode="search" class="${audMode==='search'?'active':''}">Search a city</button>
+        <button data-audmode="company" class="${audMode==='company'?'active':''}">Existing company</button>
       </div>
       ${audMode==='url' ? `
         <div class="aud-form">
-          <input type="url" id="aud-url" placeholder="roofers in Birmingham  —  or  —  https://prospect.com">
+          <input type="url" id="aud-url" placeholder="https://prospect.com  —  or a business name">
           <button class="btn" id="run-aud">Run audit</button>
         </div>
-        <p style="font-size:12px;color:var(--ink-soft);margin:10px 0 0;">Enter a website URL, or a Google-Maps-style search (e.g. "dog breeders in Alabama") to simulate importing a business.</p>
+        <p style="font-size:12px;color:var(--ink-soft);margin:10px 0 0;">Enter a website URL, or a business name (${live?'we find their real site via web search':'demo'}) and get a full audit + proposal.</p>
+      ` : audMode==='search' ? `
+        <div class="aud-form">
+          <input type="text" id="aud-industry" placeholder="Industry (e.g. roofers, dentists, dog breeders)" style="flex:2">
+          <input type="text" id="aud-city" placeholder="City (e.g. Birmingham, AL)" style="flex:1.4">
+          <button class="btn" id="run-aud">Search</button>
+        </div>
+        <p style="font-size:12px;color:var(--ink-soft);margin:10px 0 0;">${live
+          ? 'Real Google Places pulls actual businesses in that city; each gets a real audit + Claude proposal. Returns up to ~10 per run (keeps it under the 60s limit).'
+          : 'DEMO — turn on Live research in Settings to pull real businesses from Google.'}</p>
       ` : `
         <div class="aud-form">
           <select id="aud-company" style="flex:1">
@@ -1019,17 +1048,34 @@ function viewScanner() {
           </select>
           <button class="btn" id="run-aud">Run audit</button>
         </div>
-        <p style="font-size:12px;color:var(--ink-soft);margin:10px 0 0;">Runs the audit against a company already in your database and can save the result straight to its record.</p>
+        <p style="font-size:12px;color:var(--ink-soft);margin:10px 0 0;">Runs the audit against a company already in your database and saves the result to its record.</p>
       `}
     </div>
 
-    <div id="aud-output">${audReport ? auditReportHTML(audReport) : ''}</div>`;
+    <div id="aud-output">${audResults ? auditListHTML(audResults) : (audReport ? auditReportHTML(audReport) : '')}</div>`;
 }
 
-function pipelineHTML(activeIdx) {
-  return `<div class="card panel"><div class="mini-label" style="margin-top:0">Running pipeline</div>
+function auditListHTML(list) {
+  if (!list.length) return '<div class="card panel"><div class="empty">No businesses found for that search.</div></div>';
+  return `<div style="display:flex;align-items:center;gap:12px;margin:0 0 8px"><div class="mini-label" style="margin:0">Search results — ${list.length} researched</div><div style="flex:1"></div><button class="btn small" id="aud-save-all">Save all ${list.length} to Companies</button></div>
+    <div class="card">${list.map((rep,i) => {
+      const opp = rep.opportunity;
+      const rc = opp >= 75 ? 'var(--go)' : opp >= 55 ? 'var(--caution)' : 'var(--stop)';
+      const name = rep.company ? rep.company.name : (rep.displayName || rep.url);
+      return `<div class="lead-row">
+        <div class="l-main"><div class="l-name">${esc(name)}</div>
+          <div class="l-meta">${esc(rep.url||'')}${rep.cat?` · ${esc(rep.cat)}`:''} · ${rep.live?'<span style="color:var(--go)">live</span>':'est'}</div></div>
+        <span class="score-pill" style="background:transparent;color:${rc};border:1px solid ${rc}">${opp}</span>
+        <button class="btn small ghost" data-aud-view="${i}">View report</button>
+      </div>`;
+    }).join('')}</div>`;
+}
+
+function pipelineHTML(activeIdx, steps, subtitle) {
+  steps = steps || PIPELINE_STEPS;
+  return `<div class="card panel"><div class="mini-label" style="margin-top:0">Running pipeline${subtitle?` — ${esc(subtitle)}`:''}</div>
     <div class="pipeline">
-      ${PIPELINE_STEPS.map(([label,tool],i) => {
+      ${steps.map(([label,tool],i) => {
         const cls = i < activeIdx ? 'done' : i === activeIdx ? 'active' : '';
         return `<div class="pl-step ${cls}"><span class="dot2">${i<activeIdx?'✓':''}</span>${esc(label)}<span class="tool">${esc(tool)}</span></div>`;
       }).join('')}
@@ -1087,13 +1133,21 @@ function auditReportHTML(rep) {
   const name = c ? c.name : (rep.displayName || rep.url);
   const cat = c ? c.cat : (rep.cat || null);
   const cfg = cat ? catCfg(cat) : GENERIC_CAT;
-  const findings = findingsFor(dims, rep.seedStr);
+  // Live reports carry real findings from the backend; demo reports synthesize them.
+  const findings = rep.findings && rep.findings.length ? rep.findings : findingsFor(dims, rep.seedStr);
   const ringColor = opportunity >= 75 ? 'var(--go)' : opportunity >= 55 ? 'var(--caution)' : 'var(--stop)';
   const verdict = opportunity >= 75 ? ['Strong opportunity','var(--go-bg)','var(--go)']
     : opportunity >= 55 ? ['Worth pursuing','var(--caution-bg)','var(--caution)']
     : ['Lower priority','var(--stop-bg)','var(--stop)'];
-  const est = opportunity >= 75 ? '$7,500 – $15,000' : opportunity >= 55 ? '$4,000 – $8,000' : '$1,500 – $4,000';
-  const outreach = generateOutreach(rep, findings, cfg, est);
+  // Prefer Claude's real estimate when we have it.
+  const est = (rep.apiScore && rep.apiScore.estimated_value) ? rep.apiScore.estimated_value
+    : opportunity >= 75 ? '$7,500 – $15,000' : opportunity >= 55 ? '$4,000 – $8,000' : '$1,500 – $4,000';
+  const outreach = (rep.apiScore && (rep.apiScore.email_body || rep.apiScore.ig_dm))
+    ? { email: (rep.apiScore.email_subject ? 'Subject: ' + rep.apiScore.email_subject + '\n\n' : '') + (rep.apiScore.email_body || '') + '\n\nDylan with Williams Digital · Dylan@williamsdigital.io',
+        text: rep.apiScore.ig_dm || '',
+        mockup: generateOutreach(rep, findings, cfg, est).mockup }
+    : generateOutreach(rep, findings, cfg, est);
+  const liveTag = rep.live ? ' <span style="font-family:var(--mono);font-size:10px;color:var(--go)">● LIVE DATA</span>' : '';
 
   return `
     <div class="card report-head" style="--ring:${ringColor}">
@@ -1110,13 +1164,14 @@ function auditReportHTML(rep) {
 
     <div class="grid-2">
       <div class="card panel">
-        <h3>Audit dimensions</h3>
+        <h3>Audit dimensions${liveTag}</h3>
         <div class="dim-grid">
-          ${AUD_DIMENSIONS.map(([k,label,tool]) => `
-            <div class="dim"><div class="dh"><span class="dn">${label}</span><span class="dg" style="color:${dimColor(dims[k])}">${auditGrade(dims[k])}</span></div>
+          ${AUD_DIMENSIONS.map(([k,label,tool]) => {
+            const liveTool = rep.live ? ((k==='conversion'||k==='design') ? 'Claude (inferred)' : 'PageSpeed / Lighthouse') : tool;
+            return `<div class="dim"><div class="dh"><span class="dn">${label}</span><span class="dg" style="color:${dimColor(dims[k])}">${auditGrade(dims[k])}</span></div>
               <div class="dbar"><i style="width:${dims[k]}%;background:${dimColor(dims[k])}"></i></div>
-              <div class="vision-tag" style="margin-top:6px">${tool} · ${dims[k]}/100</div>
-            </div>`).join('')}
+              <div class="vision-tag" style="margin-top:6px">${liveTool} · ${dims[k]}/100</div>
+            </div>`; }).join('')}
         </div>
         <div class="reco" style="margin-top:16px">
           <div class="r-label">Recommended package · show ${esc(cfg.demoName)}</div>
@@ -1134,7 +1189,7 @@ function auditReportHTML(rep) {
     </div>
 
     <div class="card panel" style="margin-top:16px">
-      <h3>Generated outreach <span style="font-weight:400;color:var(--ink-soft);font-size:12.5px">— Qwen3, personalized from the audit</span></h3>
+      <h3>Generated outreach <span style="font-weight:400;color:var(--ink-soft);font-size:12.5px">— ${rep.live?'Claude, written from the real audit':'personalized from the audit'}</span></h3>
       <div class="gen-block">
         <div class="gb-head"><span class="gb-title">Cold email</span><button class="btn ghost small copy-btn" data-copy="aud-email">Copy</button></div>
         <pre id="aud-email">${esc(outreach.email)}</pre>
@@ -1188,43 +1243,180 @@ Requirements: clean mobile-first layout, clear above-the-fold call-to-action, ${
   return { email, text, mockup };
 }
 
+// Convert a Lighthouse (0-100) + Claude score (1-10) API result into the
+// report shape the UI renders. Real numbers where we have them; conversion and
+// design are inferred from Claude's 1-10 score since Lighthouse doesn't measure them.
+function apiToReport(item, catHint) {
+  const a = item.audit || {};
+  const has = n => (n == null ? null : n);
+  const claude = item.score || null;
+  const claude10 = claude ? Number(claude.score) || 0 : null;
+  const noSite = !item.website;
+  // dimensions on 0-100
+  const dims = {
+    performance: noSite ? 5 : (has(a.perf_score) ?? 45),
+    seo: noSite ? 8 : (has(a.seo_score) ?? 45),
+    accessibility: noSite ? 10 : (has(a.a11y_score) ?? 50),
+    mobile: noSite ? 8 : (has(a.perf_score) != null ? Math.max(10, a.perf_score - 8) : 45),
+    conversion: claude10 != null ? Math.max(8, 100 - claude10 * 8) : (noSite ? 20 : 45),
+    design: claude10 != null ? Math.max(8, 100 - claude10 * 7) : (noSite ? 25 : 50),
+  };
+  // opportunity: prefer Claude's 1-10 (x10); else inverse of site quality
+  const avg = (dims.performance + dims.seo + dims.accessibility + dims.mobile + dims.conversion + dims.design) / 6;
+  const opportunity = claude10 != null ? Math.min(99, Math.max(20, claude10 * 10)) : Math.round(100 - avg);
+
+  // findings: real Lighthouse issues + Claude's angle
+  const findings = [];
+  if (noSite) findings.push({ dim: 'Website', sev: 'high', text: 'No website found — needs one built from scratch.', vision: false });
+  (a.issues || []).forEach(iss => findings.push({ dim: 'Lighthouse', sev: 'med', text: iss, vision: false }));
+  if (a.perf_score != null && a.perf_score < 50) findings.push({ dim: 'Performance', sev: 'high', text: `Low Lighthouse performance (${a.perf_score}/100) — slow on mobile.`, vision: false });
+  if (a.seo_score != null && a.seo_score < 70) findings.push({ dim: 'SEO', sev: 'med', text: `Weak SEO score (${a.seo_score}/100).`, vision: false });
+  if (claude && claude.outreach_angle) findings.push({ dim: 'Opportunity', sev: 'high', text: claude.outreach_angle, vision: false });
+  const order = {high:0, med:1, low:2};
+  findings.sort((x,y)=>order[x.sev]-order[y.sev]);
+
+  return {
+    live: true, dims, opportunity, findings,
+    company: null,
+    url: item.website || '',
+    displayName: item.business_name || item.website || '',
+    cat: catHint || null,
+    loc: [item.city, item.state].filter(Boolean).join(', '),
+    apiScore: claude, // Claude's real proposal (email/dm/value)
+    apiItem: item,
+  };
+}
+
+async function callBackend(payload) {
+  const res = await fetch(AUD_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + audToken() },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    let msg = 'HTTP ' + res.status;
+    try { const j = await res.json(); if (j.error) msg = j.error; } catch (e) {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+// Turn an audit report into a saved company, carrying real research data when live.
+function addAuditedCompany(rep, navigate) {
+  if (!rep) return null;
+  const item = rep.apiItem || {};
+  const cvt = { performance:'seo', }; // noop, keep shape
+  const s = rep.dims;
+  const co = {
+    custom: true, id: 'c' + Math.random().toString(36).slice(2, 9),
+    name: (item.business_name || rep.displayName || rep.url || 'New prospect'),
+    cat: rep.cat || 'Other',
+    loc: rep.loc || '—', type: '', web: item.website || rep.url || 'Has site',
+    pitch: rep.apiScore ? (rep.apiScore.best_service || '') : '',
+    phone: item.phone || '', email: '', contact: '',
+    importNote: rep.live
+      ? `Added from AI Auditor (LIVE). Opportunity ${rep.opportunity}/100. ${rep.apiScore ? 'Est. ' + rep.apiScore.estimated_value + '. ' + (rep.apiScore.reasoning||'') : ''}`.trim()
+      : `Added from AI Auditor — opportunity ${rep.opportunity}/100.`,
+    stage: 'Prospect', lastContact: '—',
+    value: rep.apiScore && rep.apiScore.estimated_value ? (parseInt(String(rep.apiScore.estimated_value).replace(/[^\d]/g,'').slice(0,5)) || 4000) : (rep.opportunity >= 75 ? 8000 : 4000),
+    est: true,
+    // real Lighthouse-backed scores (0-20 scale)
+    score: {
+      design: Math.round((100 - (s.design||50))/5),
+      mobile: Math.round((100 - (s.mobile||50))/5),
+      seo: Math.round((100 - (s.seo||50))/5),
+      portal: 16, dashboard: 16,
+    },
+    notes: rep.apiScore && rep.apiScore.email_body ? [{date: today(), text: 'AI-drafted email:\n' + rep.apiScore.email_body}] : [],
+    outreach: [], opps: [],
+  };
+  ov.custom.unshift(co); syncMeta();
+  if (navigate !== false) go('companies', co.id);
+  return co;
+}
+
 function runAudit() {
-  let seedStr, company = null, url = '', displayName = '', cat = null, loc = '', weakWeb = false;
+  const out = $('#aud-output');
+  const inputCard = $('#aud-input');
+  const live = audLive();
+  audResults = null; audReport = null;
+
+  // Gather inputs per mode
+  let payload = null, company = null, seedStr = '', displayName = '', url = '', cat = null, loc = '', weakWeb = false, catHint = null;
   if (audMode === 'company') {
     const id = $('#aud-company') ? $('#aud-company').value : '';
     company = id ? byId(id) : null;
     if (!company) return;
-    seedStr = company.id; url = company.web; cat = company.cat; loc = company.loc;
+    seedStr = company.id; url = company.web; cat = company.cat; loc = company.loc; catHint = company.cat;
     weakWeb = /no site|facebook|outdated|dated|square site/i.test(company.web || '');
-  } else {
+    payload = { mode: 'audit', query: company.web };
+  } else if (audMode === 'search') {
+    const industry = $('#aud-industry') ? $('#aud-industry').value.trim() : '';
+    const city = $('#aud-city') ? $('#aud-city').value.trim() : '';
+    if (!industry || !city) return;
+    seedStr = (industry + city).toLowerCase();
+    payload = { mode: 'search', industry, location: city, maxResults: 10 };
+  } else { // url
     const raw = $('#aud-url') ? $('#aud-url').value.trim() : '';
     if (!raw) return;
-    const isSearch = !/^https?:\/\/|\.[a-z]{2,}/i.test(raw);
-    url = isSearch ? '' : raw;
-    displayName = isSearch ? raw.replace(/^\s*(find\s+)?/i,'').replace(/\bin\b.*/i, m=>m).trim() : raw.replace(/^https?:\/\//,'').replace(/\/.*$/,'');
-    if (isSearch) { displayName = 'Simulated result: ' + raw; }
+    const isUrl = /^https?:\/\/|\.[a-z]{2,}/i.test(raw);
+    url = isUrl ? raw : '';
+    displayName = isUrl ? raw.replace(/^https?:\/\//,'').replace(/\/.*$/,'') : raw;
     seedStr = raw.toLowerCase();
+    payload = { mode: 'audit', query: raw };
   }
 
-  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const out = $('#aud-output');
-  const inputCard = $('#aud-input');
   if (inputCard) inputCard.style.opacity = '.5';
 
+  // ---- LIVE path: hit the real backend ----
+  if (live) {
+    const steps = PIPELINE_STEPS_LIVE;
+    let step = 0;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    out.innerHTML = pipelineHTML(reduce ? steps.length-1 : 0, steps, 'live — this can take 20–60s');
+    let timer = null;
+    if (!reduce) {
+      const advance = () => { if (step < steps.length - 1) { step++; out.innerHTML = pipelineHTML(step, steps, 'live — this can take 20–60s'); timer = setTimeout(advance, 6000); } };
+      timer = setTimeout(advance, 4000);
+    }
+    callBackend(payload).then(data => {
+      if (timer) clearTimeout(timer);
+      const items = data.results || [];
+      if (audMode === 'search') {
+        audResults = items.map(it => apiToReport(it, catHint));
+        if (inputCard) inputCard.style.opacity = '';
+        render();
+      } else {
+        const rep = items[0] ? apiToReport(items[0], catHint) : null;
+        if (!rep) { out.innerHTML = `<div class="card panel"><div class="empty">No result returned.</div></div>`; return; }
+        if (company) { rep.company = company; rep.cat = company.cat; }
+        audReport = rep;
+        if (inputCard) inputCard.style.opacity = '';
+        render();
+      }
+    }).catch(err => {
+      if (timer) clearTimeout(timer);
+      if (inputCard) inputCard.style.opacity = '';
+      out.innerHTML = `<div class="card panel"><div class="future-note" style="margin:0">Live research failed: ${esc(err.message)}. ${/unauthor/i.test(err.message)?'Check your token in Settings.':'The backend may be warming up — try again.'}</div></div>`;
+    });
+    return;
+  }
+
+  // ---- DEMO path: simulated (existing behavior) ----
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const finish = () => {
     audReport = buildAudit(seedStr, { weakWeb });
     audReport.company = company; audReport.url = url; audReport.displayName = displayName; audReport.cat = cat; audReport.loc = loc;
+    if (inputCard) inputCard.style.opacity = '';
     render();
   };
-
-  if (reduce) { out.innerHTML = pipelineHTML(PIPELINE_STEPS.length); finish(); return; }
-
+  if (reduce) { out.innerHTML = pipelineHTML(PIPELINE_STEPS.length, PIPELINE_STEPS); finish(); return; }
   let step = 0;
-  out.innerHTML = pipelineHTML(0);
+  out.innerHTML = pipelineHTML(0, PIPELINE_STEPS);
   const tick = () => {
     step++;
     if (step >= PIPELINE_STEPS.length) { finish(); return; }
-    out.innerHTML = pipelineHTML(step);
+    out.innerHTML = pipelineHTML(step, PIPELINE_STEPS);
     setTimeout(tick, 380 + (seedNum(seedStr+step) % 260));
   };
   setTimeout(tick, 420);
@@ -1239,6 +1431,12 @@ function viewSettings() {
       <div class="note-form" style="max-width:340px">
         <input type="text" id="rep-name" value="${esc(ov.rep)}">
         <div><button class="btn small" id="save-rep">Save</button></div>
+      </div>
+      <div class="mini-label">Live research (AI Auditor)</div>
+      <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 8px">Paste your Lead Finder research token to make the AI Auditor do <strong>real</strong> research — Google Places + Lighthouse + Claude — instead of the demo simulation. ${audLive()?'<span style="color:var(--go)">● Live research is ON.</span>':'Currently in demo mode.'}</p>
+      <div class="note-form" style="max-width:420px">
+        <input type="password" id="aud-token" placeholder="Research token (wdcc_…)" value="${esc(ov.audToken || '')}">
+        <div style="display:flex;gap:8px"><button class="btn small" id="save-token">Save token</button>${ov.audToken?'<button class="btn small danger" id="clear-token">Turn off live</button>':''}</div>
       </div>
       <div class="mini-label">Data</div>
       <p style="font-size:13.5px;color:var(--ink-soft)">${LEADS.length.toLocaleString()} imported leads (read-only base data) + ${ov.custom.length} added here. Source: the Prospect Pipeline research database.</p>
@@ -1368,6 +1566,10 @@ function wire() {
 
   const saveRep = $('#save-rep');
   if (saveRep) saveRep.onclick = () => { ov.rep = $('#rep-name').value.trim() || 'Sales Rep'; syncMeta(); render(); };
+  const saveToken = $('#save-token');
+  if (saveToken) saveToken.onclick = () => { ov.audToken = ($('#aud-token').value || '').trim(); syncMeta(); render(); };
+  const clearToken = $('#clear-token');
+  if (clearToken) clearToken.onclick = () => { ov.audToken = ''; syncMeta(); render(); };
   const reset = $('#reset-demo');
   if (reset) reset.onclick = () => {
     if (confirm('Clear all your edits (notes, stages, tasks, added companies) on ALL your devices? Imported leads are kept.')) {
@@ -1378,10 +1580,21 @@ function wire() {
   // ---- AI Auditor ----
   document.querySelectorAll('[data-audmode]').forEach(b => b.onclick = () => { audMode = b.dataset.audmode; render(); });
   const audReset = $('#aud-reset');
-  if (audReset) audReset.onclick = () => { audReport = null; render(); };
+  if (audReset) audReset.onclick = () => { audReport = null; audResults = null; render(); };
 
   const runAud = $('#run-aud');
   if (runAud) runAud.onclick = () => runAudit();
+  document.querySelectorAll('[data-aud-view]').forEach(b => b.onclick = () => {
+    const rep = audResults && audResults[+b.dataset.audView];
+    if (rep) { audReport = rep; audResults = null; render(); }
+  });
+  const audSaveAll = $('#aud-save-all');
+  if (audSaveAll) audSaveAll.onclick = () => {
+    if (!audResults) return;
+    audResults.forEach(rep => addAuditedCompany(rep, false));
+    const n = audResults.length; audResults = null; audReport = null;
+    go('companies');
+  };
 
   document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => {
     const el = document.getElementById(b.dataset.copy);
@@ -1397,19 +1610,7 @@ function wire() {
     b.textContent = 'Saved ✓'; b.disabled = true;
   });
   const audAdd = $('#aud-add');
-  if (audAdd) audAdd.onclick = () => {
-    if (!audReport) return;
-    const co = {
-      custom: true, id: 'c' + Math.random().toString(36).slice(2, 9),
-      name: audReport.displayName || audReport.url, cat: audReport.cat || 'Other',
-      loc: audReport.loc || '—', type: '', web: audReport.url || 'Has site',
-      pitch: '', phone: '', email: '', contact: '', importNote: `Added from AI Auditor — opportunity ${audReport.opportunity}/100.`,
-      stage: 'Prospect', lastContact: '—', value: audReport.opportunity >= 75 ? 8000 : 4000, est: true,
-      score: { design: 12, mobile: 12, seo: 10, portal: 16, dashboard: 16 },
-      notes: [], outreach: [], opps: [],
-    };
-    ov.custom.unshift(co); syncMeta(); go('companies', co.id);
-  };
+  if (audAdd) audAdd.onclick = () => addAuditedCompany(audReport);
 
   // Pipeline drag & drop
   document.querySelectorAll('[data-drag]').forEach(card => {
