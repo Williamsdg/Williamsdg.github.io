@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Highlands Ops — After Action Platform</title>
+<meta name="description" content="Multi-campus After Action Report & operations intelligence platform concept for Church of the Highlands.">
+<style>
+  :root{
+    --navy:#0f2440; --navy2:#13294b; --navy3:#1c3760;
+    --gold:#d3a84c; --gold2:#c9a14a; --gold-soft:#f4e4bd;
+    --bg:#0b1a30; --panel:#132a49; --panel2:#0e2542;
+    --card:#ffffff; --line:#e3e0d8; --line2:#22406b;
+    --ink:#1b2735; --muted:#6b7480; --muted2:#9fb0c6;
+    --ok:#2f9e5a; --ok-w:#e6f4ec; --ok-t:#1c6d3d;
+    --warn:#e0a021; --warn-w:#fdf3d9; --warn-t:#8a6100;
+    --bad:#d64545; --bad-w:#fbe9e9; --bad-t:#a32d2d;
+    --info:#2a78d6; --info-w:#e7f0fc; --info-t:#1c5cab;
+    --content-bg:#f4f5f3;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--content-bg);color:var(--ink);line-height:1.45;font-size:14px}
+  a{color:inherit}
+  button{font-family:inherit}
+
+  /* preview banner */
+  .pvb{background:linear-gradient(90deg,#3a2b0c,#5a4310);color:#ffe9b8;font-size:12px;
+    text-align:center;padding:5px 12px;letter-spacing:.3px;font-weight:600}
+  .pvb b{color:#fff}
+
+  /* app frame */
+  .app{display:grid;grid-template-columns:236px 1fr;min-height:calc(100vh - 28px)}
+
+  /* sidebar */
+  .side{background:var(--navy);color:#dce6f4;display:flex;flex-direction:column;position:sticky;top:0;
+    height:calc(100vh - 28px);overflow-y:auto}
+  .brand{padding:18px 18px 14px;border-bottom:1px solid var(--line2)}
+  .brand .logo{display:flex;align-items:center;gap:10px}
+  .brand .mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--gold),#b8862f);
+    display:flex;align-items:center;justify-content:center;font-weight:800;color:#2a1c05;font-size:17px;flex:0 0 auto}
+  .brand h1{margin:0;font-size:14px;letter-spacing:.3px;color:#fff;font-weight:700}
+  .brand .sub{font-size:10.5px;color:var(--muted2);letter-spacing:.6px;text-transform:uppercase;margin-top:1px}
+  .campuspick{margin:12px 14px 4px}
+  .campuspick label{font-size:9.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--muted2);font-weight:700}
+  .campuspick select{width:100%;margin-top:4px;background:var(--navy3);color:#fff;border:1px solid var(--line2);
+    border-radius:8px;padding:7px 9px;font-size:13px;font-weight:600}
+  .nav{padding:8px 10px 20px;flex:1}
+  .nav .grp{font-size:9.5px;letter-spacing:.8px;text-transform:uppercase;color:#6f83a2;font-weight:700;
+    padding:12px 10px 4px}
+  .nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13px;
+    color:#c6d3e6;cursor:pointer;text-decoration:none;font-weight:500}
+  .nav a:hover{background:var(--navy3);color:#fff}
+  .nav a.on{background:linear-gradient(90deg,rgba(211,168,76,.22),rgba(211,168,76,.06));color:#fff;
+    box-shadow:inset 2px 0 0 var(--gold)}
+  .nav a .ic{width:17px;text-align:center;flex:0 0 auto;opacity:.9}
+  .nav a .bdg{margin-left:auto;font-size:10px;font-weight:700;background:var(--bad);color:#fff;
+    border-radius:20px;padding:1px 7px}
+  .nav a .bdg.g{background:var(--gold);color:#2a1c05}
+  .sidefoot{padding:12px 16px;border-top:1px solid var(--line2);font-size:11px;color:var(--muted2)}
+
+  /* main */
+  .main{min-width:0;display:flex;flex-direction:column}
+  .topbar{background:#fff;border-bottom:1px solid var(--line);padding:12px 22px;display:flex;
+    align-items:center;gap:14px;position:sticky;top:0;z-index:6}
+  .topbar h2{margin:0;font-size:17px;font-weight:700;color:var(--navy2)}
+  .topbar .crumb{font-size:12px;color:var(--muted);margin-top:1px}
+  .topbar .spacer{flex:1}
+  .clock{text-align:right}
+  .clock .t{font-size:15px;font-weight:700;color:var(--navy2);font-variant-numeric:tabular-nums}
+  .clock .d{font-size:11px;color:var(--muted)}
+  .content{padding:22px;max-width:1280px;width:100%;margin:0 auto}
+
+  /* generic bits */
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px}
+  .card h3{margin:0 0 3px;font-size:14px;font-weight:700;color:var(--navy2)}
+  .card .desc{font-size:12px;color:var(--muted);margin-bottom:12px}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:1050px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:720px){.app{grid-template-columns:1fr}.side{position:static;height:auto}
+    .g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:13px;padding:15px 17px}
+  .kpi .l{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .kpi .v{font-size:30px;font-weight:800;color:var(--navy2);line-height:1.05;margin-top:5px}
+  .kpi .d{font-size:12px;margin-top:3px;font-weight:600}
+  .up{color:var(--ok-t)} .down{color:var(--bad-t)} .flat{color:var(--muted)}
+
+  .sect-title{font-size:13px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--navy3);
+    margin:26px 2px 12px;display:flex;align-items:center;gap:9px}
+  .sect-title:first-child{margin-top:0}
+  .sect-title .hint{font-size:11px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--muted)}
+
+  table.tbl{border-collapse:collapse;width:100%;font-size:13px}
+  table.tbl th{text-align:left;padding:9px 12px;background:var(--navy2);color:#fff;font-size:10px;
+    text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;position:sticky;top:0}
+  table.tbl td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:middle}
+  table.tbl tr:hover td{background:#faf9f5}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#fff}
+
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;border-radius:20px;
+    padding:2px 9px;white-space:nowrap}
+  .pill .dt{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .p-ok{background:var(--ok-w);color:var(--ok-t)} .p-ok .dt{background:var(--ok)}
+  .p-warn{background:var(--warn-w);color:var(--warn-t)} .p-warn .dt{background:var(--warn)}
+  .p-bad{background:var(--bad-w);color:var(--bad-t)} .p-bad .dt{background:var(--bad)}
+  .p-info{background:var(--info-w);color:var(--info-t)} .p-info .dt{background:var(--info)}
+  .p-gold{background:var(--gold-soft);color:#7a5a12} .p-gold .dt{background:var(--gold)}
+  .p-muted{background:#eef0ee;color:#5b6470} .p-muted .dt{background:#9aa4ae}
+
+  .stars{color:var(--gold);letter-spacing:1px;font-size:14px}
+  .stars .e{color:#d8d3c7}
+
+  .btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-size:13px;
+    font-weight:600;cursor:pointer;color:var(--navy2)}
+  .btn:hover{background:#f2efe8}
+  .btn.pri{background:var(--navy2);color:#fff;border-color:var(--navy2)}
+  .btn.pri:hover{background:var(--navy3)}
+  .btn.gold{background:var(--gold);color:#2a1c05;border-color:var(--gold)}
+  .btn.gold:hover{filter:brightness(1.05)}
+  .btn.sm{padding:5px 10px;font-size:12px}
+
+  /* progress ring */
+  .ring{--p:0;width:96px;height:96px;border-radius:50%;flex:0 0 auto;
+    background:conic-gradient(var(--gold) calc(var(--p)*1%), #e7eaef 0);display:flex;align-items:center;justify-content:center}
+  .ring .in{width:74px;height:74px;border-radius:50%;background:#fff;display:flex;flex-direction:column;
+    align-items:center;justify-content:center}
+  .ring .in b{font-size:24px;color:var(--navy2);line-height:1}
+  .ring .in span{font-size:9px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+  .bar{height:9px;background:#e9ece9;border-radius:6px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:6px;background:var(--gold)}
+  .bar.ok > i{background:var(--ok)} .bar.warn > i{background:var(--warn)} .bar.bad > i{background:var(--bad)}
+
+  /* timeline */
+  .tl{position:relative;padding-left:26px}
+  .tl:before{content:"";position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--line)}
+  .tl .ev{position:relative;padding:0 0 16px}
+  .tl .ev:before{content:"";position:absolute;left:-22px;top:3px;width:11px;height:11px;border-radius:50%;
+    background:#fff;border:2px solid var(--gold)}
+  .tl .ev.done:before{background:var(--gold)}
+  .tl .ev.late:before{border-color:var(--bad);background:var(--bad)}
+  .tl .ev .tm{font-size:12px;font-weight:700;color:var(--navy2);font-variant-numeric:tabular-nums}
+  .tl .ev .lb{font-size:13px}
+  .tl .ev .delta{font-size:11px;font-weight:700;margin-left:6px}
+
+  /* trading cards */
+  .cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+  .tc{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;
+    transition:transform .12s,box-shadow .12s}
+  .tc:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(15,36,64,.14)}
+  .tc .top{background:linear-gradient(135deg,var(--navy2),var(--navy3));padding:12px;color:#fff;position:relative}
+  .tc .pos{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--gold-soft);font-weight:700;padding-right:78px;min-height:13px}
+  .tc .av{width:44px;height:44px;border-radius:50%;background:var(--gold);color:#2a1c05;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-size:17px;margin:6px 0 4px}
+  .tc .nm{font-size:14px;font-weight:700}
+  .tc .bd{padding:9px 12px 12px;display:flex;gap:6px;flex-wrap:wrap}
+  .tc .stat{background:#f3f5f7;border-radius:8px;padding:5px 8px;font-size:11px;flex:1;min-width:64px}
+  .tc .stat b{display:block;font-size:15px;color:var(--navy2)}
+  .tc .conf{position:absolute;top:10px;right:10px;font-size:10px;background:rgba(255,255,255,.15);
+    border-radius:20px;padding:2px 8px;font-weight:700}
+
+  /* readiness list */
+  .rl{display:flex;flex-direction:column;gap:2px}
+  .rl .item{display:flex;align-items:center;gap:10px;padding:9px 4px;border-top:1px solid var(--line)}
+  .rl .item:first-child{border-top:none}
+  .rl .item .nm{font-weight:600;flex:1}
+
+  /* countdown */
+  .cd{display:flex;gap:8px}
+  .cd .u{background:var(--navy2);color:#fff;border-radius:11px;padding:11px 4px;min-width:62px;text-align:center}
+  .cd .u b{font-size:26px;font-variant-numeric:tabular-nums;display:block;line-height:1}
+  .cd .u span{font-size:9px;letter-spacing:.6px;text-transform:uppercase;color:var(--gold-soft)}
+
+  /* AI chat */
+  .chat{display:flex;flex-direction:column;gap:12px}
+  .msg{max-width:88%;padding:12px 15px;border-radius:14px;font-size:13.5px;line-height:1.55}
+  .msg.u{align-self:flex-end;background:var(--navy2);color:#fff;border-bottom-right-radius:5px}
+  .msg.a{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:5px}
+  .msg.a b{color:var(--navy2)}
+  .sugg{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .sugg button{background:#fff;border:1px solid var(--line);border-radius:20px;padding:7px 13px;font-size:12.5px;
+    cursor:pointer;color:var(--navy3);font-weight:500}
+  .sugg button:hover{background:var(--navy2);color:#fff;border-color:var(--navy2)}
+  .askbar{display:flex;gap:8px;margin-top:14px}
+  .askbar input{flex:1;padding:11px 14px;border:1px solid var(--line);border-radius:11px;font-size:14px}
+
+  /* form */
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.3px;color:var(--navy3);
+    text-transform:uppercase;margin-bottom:4px}
+  .field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1px solid var(--line);
+    border-radius:9px;font-size:14px;font-family:inherit;background:#fff}
+  .field textarea{min-height:64px;resize:vertical}
+  .frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .starpick{font-size:20px;color:#d8d3c7;letter-spacing:2px;cursor:pointer;user-select:none}
+  .starpick .on{color:var(--gold)}
+
+  .chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);
+    border-radius:9px;padding:8px 12px;font-size:13px;margin:0 8px 8px 0}
+  .chip .x{color:var(--muted);cursor:pointer;font-weight:700}
+  .add-row{display:flex;gap:8px;margin-top:6px}
+  .add-row input{flex:1;padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px}
+
+  .win{background:var(--ok-w);border:1px solid #cbe6d5;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px}
+  .opp{background:var(--warn-w);border:1px solid #eeddbf;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px}
+
+  .empty{text-align:center;color:var(--muted);padding:36px 12px;font-size:13px}
+  .muted{color:var(--muted)}
+  .small{font-size:12px}
+  .b{font-weight:700}
+  .gold-t{color:var(--gold2)}
+  hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0}
+
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(10,20,36,.6);display:none;align-items:center;
+    justify-content:center;z-index:40;padding:20px}
+  .modal-bg.on{display:flex}
+  .modal{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;
+    box-shadow:0 30px 70px rgba(0,0,0,.35)}
+  .modal .mh{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  .modal .mb{padding:20px}
+  .modal .mx{margin-left:auto;cursor:pointer;font-size:20px;color:var(--muted);border:none;background:none}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy2);color:#fff;
+    padding:12px 20px;border-radius:11px;font-size:13.5px;font-weight:600;box-shadow:0 12px 30px rgba(0,0,0,.3);
+    z-index:60;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
+
+  /* mini bar chart */
+  .spark{display:flex;align-items:flex-end;gap:5px;height:70px}
+  .spark .col{flex:1;background:var(--navy3);border-radius:4px 4px 0 0;position:relative;min-width:8px}
+  .spark .col.hl{background:var(--gold)}
+  .spark .col span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:9px;
+    color:var(--muted);margin-bottom:2px;white-space:nowrap}
+
+  .scorebadge{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:19px;color:#fff;flex:0 0 auto}
+</style>
+</head>
+<body>
+<div class="pvb">CONCEPT DEMO — Built by <b>Williams Digital</b> for Church of the Highlands · sample data · Planning Center / ProPresenter / weather &amp; AI are simulated</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <div class="logo">
+        <div class="mark">H</div>
+        <div>
+          <h1>Highlands Ops</h1>
+          <div class="sub">After Action Platform</div>
+        </div>
+      </div>
+    </div>
+    <div class="campuspick">
+      <label>Active Campus</label>
+      <select id="campusSel" onchange="setCampus(this.value)"></select>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidefoot">
+      <div class="b" style="color:#fff">Central Operations</div>
+      <div>25+ campuses · one source of truth</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h2 id="pageTitle">Executive Dashboard</h2>
+        <div class="crumb" id="pageCrumb">Central Operations · All Campuses</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="clock">
+        <div class="t" id="clockT">--:--:--</div>
+        <div class="d" id="clockD">Sunday</div>
+      </div>
+    </div>
+    <div class="content" id="view"></div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   HIGHLANDS OPS — After Action Platform (concept demo)
+   Single-file SPA. All data seeded + localStorage. Integrations simulated.
+   ===================================================================== */
+
+/* ---------- seeded data ---------- */
+const CAMPUSES = [
+  {id:'grantsmill', name:'Grants Mill', pastor:'Chris Hodges', flagship:true},
+  {id:'greystone',  name:'Greystone',   pastor:'Mark Pettus'},
+  {id:'auburn',     name:'Auburn',      pastor:'Layton Talbert'},
+  {id:'riverchase', name:'Riverchase',  pastor:'David Sipp'},
+  {id:'huntsville', name:'Huntsville',  pastor:'Jonathan Wiggins'},
+];
+
+// per-campus latest event snapshot (the AAR data)
+const EVENTS = {
+  grantsmill:{
+    date:'March 22, 2026', day:'Sunday', time:'9:30 AM', submittedBy:'Kevin Ruff', submittedTime:'1:12 PM',
+    attendance:{adults:3120,students:410,kids:980,dreamTeam:472,online:0,total:4982},
+    lastYear:4610,lastMonth:4562,lastWeek:4840,
+    guests:{first:231,vip:14,salvations:38,rededications:22,baptisms:0,growthTrack:64,prayer:51},
+    lobby:{guestFlow:5,parking:4,coffee:4,cleanliness:5,connect:5,traffic:4,photo:5,services:5},
+    dreamTeamStats:{scheduled:486,served:472,noShows:9,late:5,checkin:97,newVols:18},
+    readiness:{pco:true,pp:true,positions:97,weather:'Clear',coffee:true,parking:true,kids:true,security:true,overall:96},
+    health:{attendance:98,volunteer:98,guest:96,production:99,facilities:95,followup:94,overall:97},
+    wins:['Kids Check-in fastest ever','Parking team redirected traffic perfectly','Guest Services crushed it','Lighting looked incredible'],
+    opps:['Overflow communication','Coffee ran low at 11:15'],
+    weather:{cond:'Sunny',temp:64,humidity:52,wind:6,impact:false},
+    submitted:true
+  },
+  greystone:{
+    date:'March 22, 2026', day:'Sunday', time:'9:30 AM', submittedBy:'Ashley Kim', submittedTime:'1:34 PM',
+    attendance:{adults:892,students:118,kids:284,dreamTeam:144,online:0,total:1438},
+    lastYear:1317,lastMonth:1316,lastWeek:1402,
+    guests:{first:68,vip:6,salvations:11,rededications:7,baptisms:0,growthTrack:19,prayer:24},
+    lobby:{guestFlow:5,parking:3,coffee:4,cleanliness:5,connect:4,traffic:3,photo:5,services:5},
+    dreamTeamStats:{scheduled:150,served:144,noShows:4,late:6,checkin:96,newVols:7},
+    readiness:{pco:true,pp:true,positions:97,weather:'Storm Warning',coffee:true,parking:true,kids:true,security:true,overall:94},
+    health:{attendance:96,volunteer:98,guest:95,production:100,facilities:91,followup:93,overall:95},
+    wins:['Excellent parking flow','Lobby looked amazing','Kids Check-in was fastest ever','Lighting looked incredible','Guest Services crushed it'],
+    opps:['Parking cones','Audio too loud','Overflow communication','Late volunteer arrivals','Coffee ran out'],
+    weather:{cond:'Rain',temp:58,humidity:88,wind:14,impact:true,comments:'Rain before 9:30 slowed parking and lobby entry.'},
+    submitted:true
+  },
+  auburn:{
+    date:'March 22, 2026', day:'Sunday', time:'9:30 AM', submittedBy:'Tyler Beard', submittedTime:'12:58 PM',
+    attendance:{adults:1440,students:206,kids:452,dreamTeam:214,online:0,total:2312},
+    lastYear:2050,lastMonth:2110,lastWeek:2240,
+    guests:{first:92,vip:8,salvations:19,rededications:12,baptisms:0,growthTrack:31,prayer:33},
+    lobby:{guestFlow:5,parking:5,coffee:5,cleanliness:5,connect:5,traffic:5,photo:4,services:5},
+    dreamTeamStats:{scheduled:220,served:214,noShows:3,late:3,checkin:97,newVols:12},
+    readiness:{pco:true,pp:true,positions:98,weather:'Clear',coffee:true,parking:true,kids:true,security:true,overall:98},
+    health:{attendance:97,volunteer:99,guest:98,production:96,facilities:94,followup:96,overall:97},
+    wins:['Guest Services crushed it','Student section packed','Parking flow flawless','Livestream clean all morning'],
+    opps:['Photo booth line long','Confidence monitor lag mid-second service'],
+    weather:{cond:'Sunny',temp:66,humidity:49,wind:5,impact:false},
+    submitted:true
+  },
+  riverchase:{
+    date:'March 22, 2026', day:'Sunday', time:'9:30 AM', submittedBy:'', submittedTime:'',
+    attendance:{adults:702,students:96,kids:224,dreamTeam:103,online:0,total:1125},
+    lastYear:1180,lastMonth:1204,lastWeek:1190,
+    guests:{first:41,vip:3,salvations:6,rededications:4,baptisms:0,growthTrack:11,prayer:18},
+    lobby:{guestFlow:4,parking:3,coffee:3,cleanliness:4,connect:4,traffic:3,photo:4,services:4},
+    dreamTeamStats:{scheduled:120,served:103,noShows:12,late:9,checkin:86,newVols:3},
+    readiness:{pco:true,pp:false,positions:86,weather:'Overcast',coffee:true,parking:false,kids:true,security:true,overall:79},
+    health:{attendance:88,volunteer:84,guest:89,production:82,facilities:86,followup:79,overall:85},
+    wins:['Prayer team stayed late','New coffee vendor well received'],
+    opps:['Parking cones missing','Overflow room not opened in time','Volunteer no-shows in Kids','ProPresenter media missing','Registration issue at Connect'],
+    weather:{cond:'Overcast',temp:60,humidity:71,wind:9,impact:false},
+    submitted:false
+  },
+  huntsville:{
+    date:'March 22, 2026', day:'Sunday', time:'9:30 AM', submittedBy:'Grace Odom', submittedTime:'1:47 PM',
+    attendance:{adults:1188,students:172,kids:392,dreamTeam:181,online:0,total:1933},
+    lastYear:1702,lastMonth:1798,lastWeek:1870,
+    guests:{first:77,vip:5,salvations:16,rededications:9,baptisms:0,growthTrack:26,prayer:29},
+    lobby:{guestFlow:5,parking:4,coffee:5,cleanliness:5,connect:5,traffic:4,photo:5,services:5},
+    dreamTeamStats:{scheduled:188,served:181,noShows:5,late:4,checkin:96,newVols:14},
+    readiness:{pco:true,pp:true,positions:96,weather:'Clear',coffee:true,parking:true,kids:true,security:true,overall:95},
+    health:{attendance:96,volunteer:97,guest:96,production:95,facilities:93,followup:95,overall:96},
+    wins:['Record first-time guests','Kids team handled record attendance','Band transitions seamless'],
+    opps:['Second service coffee restock','Parking lot exit backed up'],
+    weather:{cond:'Sunny',temp:63,humidity:55,wind:7,impact:false},
+    submitted:true
+  }
+};
+
+// planned vs actual service flow (per campus, default template + overrides)
+const FLOW_TEMPLATE = [
+  {t:'5:30 AM', lbl:'Production Arrives'},
+  {t:'5:45 AM', lbl:'Coffee Team Arrives'},
+  {t:'6:00 AM', lbl:'Lobby Opens'},
+  {t:'6:15 AM', lbl:'Band Soundcheck'},
+  {t:'6:45 AM', lbl:'Prayer'},
+  {t:'7:20 AM', lbl:'Doors Open'},
+  {t:'7:55 AM', lbl:'5 Minute Warning'},
+  {t:'8:00 AM', lbl:'Service Starts'},
+  {t:'9:06 AM', lbl:'Service Ends'},
+  {t:'9:30 AM', lbl:'Next Service Begins'},
+];
+const FLOW_ACTUAL = {
+  greystone:['5:32 AM','5:44 AM','6:03 AM','6:18 AM','6:47 AM','7:26 AM','7:56 AM','8:01 AM','9:09 AM','9:38 AM'],
+  grantsmill:['5:28 AM','5:44 AM','5:59 AM','6:14 AM','6:44 AM','7:19 AM','7:55 AM','8:00 AM','9:05 AM','9:30 AM'],
+  auburn:['5:30 AM','5:46 AM','6:01 AM','6:16 AM','6:45 AM','7:20 AM','7:54 AM','8:00 AM','9:06 AM','9:31 AM'],
+  riverchase:['5:41 AM','5:58 AM','6:12 AM','6:33 AM','7:02 AM','7:34 AM','8:00 AM','8:07 AM','9:14 AM','9:44 AM'],
+  huntsville:['5:31 AM','5:45 AM','6:02 AM','6:15 AM','6:46 AM','7:22 AM','7:56 AM','8:01 AM','9:07 AM','9:33 AM'],
+};
+
+// day-of chronological timeline (from AAR)
+const DAY_TIMELINE = {
+  greystone:[
+    {t:'6:45 AM',lbl:'Trailer arrived'},{t:'7:10 AM',lbl:'Rain started',flag:true},
+    {t:'8:02 AM',lbl:'Service began'},{t:'8:36 AM',lbl:'Parking backed up',flag:true},
+    {t:'9:18 AM',lbl:'Power flicker',flag:true},{t:'9:34 AM',lbl:'Lobby congestion',flag:true},
+    {t:'10:45 AM',lbl:'Coffee machine failed',flag:true},{t:'11:55 AM',lbl:'Finished teardown'},
+  ]
+};
+
+// positions (trading card assignments) — Planning Center simulated
+const POSITIONS = [
+  {dept:'Production',pos:'Technical Director',person:'Kevin Ruff',conf:true},
+  {dept:'Production',pos:'Director',person:'Sam Alton',conf:true},
+  {dept:'Production',pos:'Producer',person:'Rachel Nix',conf:true},
+  {dept:'Production',pos:'Audio (A1)',person:'John Smith',conf:true},
+  {dept:'Production',pos:'Lighting (LD)',person:'Marcus Bell',conf:true},
+  {dept:'Production',pos:'Graphics / ProP',person:'Sarah Lopez',conf:true},
+  {dept:'Production',pos:'Camera 1',person:'Drew Kane',conf:false},
+  {dept:'Production',pos:'Broadcast',person:'Priya Anand',conf:true},
+  {dept:'Production',pos:'Replay',person:'Cody Rhea',conf:true},
+  {dept:'Production',pos:'CG',person:'Bethany Ho',conf:true},
+  {dept:'Production',pos:'Stage Manager',person:'Luke Farr',conf:true},
+  {dept:'Worship',pos:'Worship Leader',person:'Micah Stone',conf:true},
+  {dept:'Worship',pos:'Keys',person:'Ellie Park',conf:true},
+  {dept:'Worship',pos:'Bass',person:'Trey Vaughn',conf:true},
+  {dept:'Worship',pos:'Drums',person:'Josh Kim',conf:true},
+  {dept:'Worship',pos:'Electric',person:'Nate Cruz',conf:true},
+  {dept:'Worship',pos:'Acoustic',person:'Hannah Reed',conf:false},
+  {dept:'Guest Services',pos:'GS Lead',person:'Ashley Kim',conf:true},
+  {dept:'Kids',pos:'Kids Director',person:'Megan Yates',conf:true},
+  {dept:'Security',pos:'Security Lead',person:'Ron Deel',conf:true},
+  {dept:'Parking',pos:'Parking Captain',person:'Carlos Mata',conf:true},
+];
+// deep profile data keyed by name (simulated Planning Center history)
+const PEOPLE = {
+  'John Smith':{times:212,years:6,cert:['A1 Certified','FOH Level 3'],training:['Dante Networking','Feedback Mgmt'],
+    praise:['Stayed after every Easter service to fix cameras','Trained 4 new audio volunteers'],hist:['Audio','Broadcast','Camera'],attend:98},
+  'Sarah Lopez':{times:167,years:4,cert:['ProPresenter Pro'],training:['Media Prep','Lyric QC'],
+    praise:['Solved livestream issue in under 2 minutes','Rebuilt entire playlist after crash'],hist:['Graphics','CG','Producer'],attend:96},
+  'Kevin Ruff':{times:301,years:9,cert:['Technical Director','Broadcast Eng'],training:['Leadership Track','System Design'],
+    praise:['Led production through Easter with zero downtime'],hist:['TD','Producer','Director'],attend:99},
+  'Megan Yates':{times:143,years:5,cert:['Kids Ministry Lead','CPR/First Aid'],training:['Child Safety','Check-in Systems'],
+    praise:['Kids team handled record attendance with zero incidents'],hist:['Kids','Check-in'],attend:97},
+  'Micah Stone':{times:188,years:5,cert:['Worship Leader'],training:['Vocal Health','Set Building'],
+    praise:['Seamless transitions during Motion night'],hist:['Worship Leader','Electric','Acoustic'],attend:95},
+};
+
+// recognition center (praise reports) across campuses
+const RECOGNITION = [
+  {name:'John Smith',dept:'Production',campus:'Grants Mill',reason:'Stayed 3 hours late to fix all six cameras after Easter services.',by:'Campus Pastor',date:'April 2026'},
+  {name:'Sarah Lopez',dept:'Production',campus:'Greystone',reason:'Solved the livestream issue in under two minutes with no dropped frames.',by:'Technical Director',date:'March 2026'},
+  {name:'Kids Team',dept:'Kids',campus:'Huntsville',reason:'Handled record attendance with zero incidents and fastest check-in yet.',by:'Campus Pastor',date:'March 2026'},
+  {name:'Parking Team',dept:'Parking',campus:'Grants Mill',reason:'Redirected traffic perfectly during peak arrival despite construction.',by:'Guest Services Lead',date:'March 2026'},
+  {name:'Megan Yates',dept:'Kids',campus:'Auburn',reason:'Rebuilt the entire check-in flow after a system outage — no families waited.',by:'Campus Pastor',date:'February 2026'},
+  {name:'Prayer Team',dept:'Guest Services',campus:'Riverchase',reason:'Stayed 45 minutes past teardown praying with 12 first-time guests.',by:'Campus Pastor',date:'March 2026'},
+];
+
+// action items
+let ACTIONS = [
+  {task:'Add parking cones for inclement weather',owner:'Guest Services',campus:'Greystone',due:'Next Sunday',priority:'High',status:'In Progress'},
+  {task:'Increase coffee inventory for peak weekends',owner:'Coffee Team',campus:'Grants Mill',due:'Next Sunday',priority:'Medium',status:'Open'},
+  {task:'Fix confidence monitor lag',owner:'Production',campus:'Auburn',due:'Mar 29',priority:'High',status:'Open'},
+  {task:'Re-sync ProPresenter media library',owner:'Production',campus:'Riverchase',due:'Mar 25',priority:'High',status:'Open'},
+  {task:'Recruit 6 Kids volunteers',owner:'Kids Director',campus:'Riverchase',due:'Apr 5',priority:'Medium',status:'In Progress'},
+  {task:'Open overflow room earlier',owner:'Campus Pastor',campus:'Greystone',due:'Done',priority:'Low',status:'Complete'},
+];
+
+// production health log (maintenance history)
+const PROD_HEALTH = [
+  {campus:'Greystone',system:'Audio',issue:'Handheld mic dropout mid-message',status:'Resolved',date:'Mar 22'},
+  {campus:'Greystone',system:'Power',issue:'Brief flicker at 9:18 AM',status:'Monitoring',date:'Mar 22'},
+  {campus:'Riverchase',system:'ProPresenter',issue:'Media files missing from playlist',status:'Open',date:'Mar 22'},
+  {campus:'Auburn',system:'Video',issue:'Confidence monitor lag second service',status:'Open',date:'Mar 22'},
+  {campus:'Grants Mill',system:'Internet',issue:'Resi failover triggered once, no downtime',status:'Resolved',date:'Mar 15'},
+  {campus:'Huntsville',system:'HVAC',issue:'Auditorium warm before first service',status:'Resolved',date:'Mar 8'},
+];
+
+// upcoming events for countdowns
+const UPCOMING = [
+  {name:'Sunday Service', day:'Sunday', in:{h:2,m:13,s:41}},
+  {name:'First Wednesday', day:'Wed Apr 1', in:{h:74,m:22,s:10}},
+  {name:'Motion Night', day:'Fri Apr 10', in:{h:290,m:5,s:0}},
+  {name:'Easter Weekend', day:'Apr 5', in:{h:194,m:44,s:0}},
+  {name:'Grow', day:'Apr 12', in:{h:362,m:0,s:0}},
+];
+
+// event library
+const LIBRARY = [
+  {name:'Easter 2026',date:'Apr 5, 2026',type:'Easter',attn:'—',note:'All-campus. Prep in progress.',status:'upcoming'},
+  {name:'Motion — March',date:'Mar 13, 2026',type:'Motion',attn:'2,140',note:'Highest Motion attendance to date.'},
+  {name:'First Wednesday — Mar',date:'Mar 4, 2026',type:'First Wednesday',attn:'6,820',note:'Strong across all campuses.'},
+  {name:'Christmas Eve 2025',date:'Dec 24, 2025',type:'Christmas',attn:'38,410',note:'Record all-campus attendance.'},
+  {name:'Freedom Weekend',date:'Feb 22, 2026',type:'Freedom',attn:'5,900',note:'112 baptisms recorded.'},
+  {name:'Grow Conference 2026',date:'Jan 30, 2026',type:'Conference',attn:'9,200',note:'2-day leadership conference.'},
+];
+
+// 8-week attendance trend per campus (for intelligence + charts)
+const TREND = {
+  grantsmill:[4610,4680,4720,4560,4790,4840,4900,4982],
+  greystone:[1317,1340,1360,1316,1390,1402,1420,1438],
+  auburn:[2050,2090,2140,2110,2200,2240,2280,2312],
+  riverchase:[1204,1190,1195,1188,1192,1190,1160,1125],
+  huntsville:[1702,1740,1780,1798,1840,1870,1900,1933],
+};
+
+/* ---------- state ---------- */
+const store = {
+  get(k,d){ try{const v=localStorage.getItem('haar_'+k);return v?JSON.parse(v):d}catch(e){return d} },
+  set(k,v){ try{localStorage.setItem('haar_'+k,JSON.stringify(v))}catch(e){} }
+};
+let CUR = store.get('campus','greystone');
+let PAGE = 'exec';
+
+/* ---------- nav config ---------- */
+const NAV = [
+  {grp:'Central Operations', items:[
+    {id:'exec', ic:'▤', label:'Executive Dashboard'},
+    {id:'compare', ic:'▦', label:'Campus Comparison'},
+    {id:'intel', ic:'✦', label:'Ministry Intelligence', gold:true},
+    {id:'recognition', ic:'🏆', label:'Recognition Center'},
+    {id:'library', ic:'▣', label:'Event Library'},
+  ]},
+  {grp:'This Campus', items:[
+    {id:'aar', ic:'▧', label:'After Action Report'},
+    {id:'readiness', ic:'◉', label:'Readiness Score'},
+    {id:'flow', ic:'↧', label:'Service Flow'},
+    {id:'positions', ic:'▥', label:'Positions'},
+    {id:'health', ic:'⚙', label:'Production Health'},
+    {id:'weather', ic:'☁', label:'Weather Correlation'},
+    {id:'actions', ic:'✓', label:'Action Tracker'},
+    {id:'comms', ic:'✉', label:'Communications'},
+    {id:'propresenter', ic:'▷', label:'ProPresenter'},
+    {id:'countdown', ic:'⏱', label:'Live Countdown'},
+  ]},
+];
+const PAGE_META = {
+  exec:['Executive Dashboard','Central Operations · All Campuses'],
+  compare:['Campus Comparison','Central Operations · All Campuses'],
+  intel:['Ministry Intelligence','Ask across every report, forever'],
+  recognition:['Recognition Center','Every praise report, searchable'],
+  library:['Event Library','Every event ever'],
+  aar:['After Action Report',''],
+  readiness:['Sunday Readiness',''],
+  flow:['Service Flow','Planned vs. actual'],
+  positions:['Position Assignments','Pulled from Planning Center'],
+  health:['Production Health','Maintenance history'],
+  weather:['Weather Correlation',''],
+  actions:['Action Tracker','Every opportunity becomes an action item'],
+  comms:['Communications Center',''],
+  propresenter:['ProPresenter Status','Live from the booth'],
+  countdown:['Live Countdown',''],
+};
+
+/* ---------- helpers ---------- */
+function el(html){const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstChild;}
+function campus(){return CAMPUSES.find(c=>c.id===CUR);}
+function ev(id){return EVENTS[id||CUR];}
+function stars(n){let s='';for(let i=1;i<=5;i++)s+=i<=n?'★':'<span class="e">★</span>';return '<span class="stars">'+s+'</span>';}
+function fmt(n){return n.toLocaleString();}
+function pct(a,b){return ((a-b)/b*100);}
+function growthPill(p){const v=(p>=0?'+':'')+p.toFixed(1)+'%';const cls=p>1?'p-ok':p<-1?'p-bad':'p-muted';return `<span class="pill ${cls}"><span class="dt"></span>${v}</span>`;}
+function scoreColor(s){return s>=95?'#2f9e5a':s>=88?'#7bb03a':s>=80?'#e0a021':'#d64545';}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200);}
+function timeToMin(str){const m=str.match(/(\d+):(\d+)\s*(AM|PM)/i);if(!m)return 0;let h=+m[1]%12;if(/pm/i.test(m[3]))h+=12;return h*60+ +m[2];}
+function deltaMin(planned,actual){return timeToMin(actual)-timeToMin(planned);}
+
+/* ---------- render nav ---------- */
+function renderNav(){
+  const nav=document.getElementById('nav');nav.innerHTML='';
+  const openIssues=ACTIONS.filter(a=>a.status!=='Complete').length;
+  NAV.forEach(g=>{
+    nav.appendChild(el(`<div class="grp">${g.grp}</div>`));
+    g.items.forEach(it=>{
+      let bdg='';
+      if(it.id==='actions'&&openIssues)bdg=`<span class="bdg">${openIssues}</span>`;
+      if(it.id==='aar'&&!ev().submitted)bdg=`<span class="bdg g">Due</span>`;
+      const a=el(`<a class="${PAGE===it.id?'on':''}" onclick="go('${it.id}')"><span class="ic">${it.ic}</span>${it.label}${bdg}</a>`);
+      nav.appendChild(a);
+    });
+  });
+  // campus selector
+  const sel=document.getElementById('campusSel');
+  sel.innerHTML=CAMPUSES.map(c=>`<option value="${c.id}" ${c.id===CUR?'selected':''}>${c.name}${c.flagship?' ★':''}</option>`).join('');
+}
+function setCampus(id){CUR=id;store.set('campus',id);go(PAGE);}
+function go(p){PAGE=p;const m=PAGE_META[p];
+  document.getElementById('pageTitle').textContent=m[0];
+  let crumb=m[1];
+  if(!crumb){crumb=campus().name+' Campus · '+ev().date;}
+  document.getElementById('pageCrumb').textContent=crumb;
+  renderNav();
+  document.getElementById('view').innerHTML='';
+  (RENDER[p]||(()=>{}))();
+  window.scrollTo(0,0);
+}
+
+/* ---------- modal ---------- */
+function openModal(html){document.getElementById('modal').innerHTML=html;document.getElementById('modalBg').classList.add('on');}
+function closeModal(){document.getElementById('modalBg').classList.remove('on');}
+
+/* ---------- clock ---------- */
+function tick(){
+  const d=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  document.getElementById('clockT').textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  document.getElementById('clockD').textContent=d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+}
+
+/* =====================================================================
+   RENDERERS
+   ===================================================================== */
+const RENDER={};
+const V=()=>document.getElementById('view');
+
+/* ---- Executive Dashboard ---- */
+RENDER.exec=function(){
+  const totals=CAMPUSES.reduce((a,c)=>{const e=ev(c.id);a.attn+=e.attendance.total;a.guests+=e.guests.first;
+    a.sal+=e.guests.salvations;a.bap+=e.guests.baptisms;a.gt+=e.guests.growthTrack;return a;},{attn:0,guests:0,sal:0,bap:0,gt:0});
+  const submitted=CAMPUSES.filter(c=>ev(c.id).submitted).length;
+  const fill=Math.round(CAMPUSES.reduce((a,c)=>a+ev(c.id).dreamTeamStats.checkin,0)/CAMPUSES.length);
+  const openIssues=CAMPUSES.filter(c=>ev(c.id).opps.length>3).length;
+  const lastYr=CAMPUSES.reduce((a,c)=>a+ev(c.id).lastYear,0);
+  const svcTimes=[['8:00',Math.round(totals.attn*0.34)],['9:30',Math.round(totals.attn*0.31)],['11:15',Math.round(totals.attn*0.23)],['4:30',Math.round(totals.attn*0.12)]];
+
+  V().innerHTML=`
+  <div class="grid g4">
+    <div class="kpi"><div class="l">All-Campus Attendance</div><div class="v">${fmt(totals.attn)}</div>
+      <div class="d up">▲ ${pct(totals.attn,lastYr).toFixed(1)}% vs last year</div></div>
+    <div class="kpi"><div class="l">First-Time Guests</div><div class="v">${fmt(totals.guests)}</div>
+      <div class="d up">▲ across 5 reporting campuses</div></div>
+    <div class="kpi"><div class="l">Salvations</div><div class="v gold-t">${totals.sal}</div>
+      <div class="d flat">${totals.gt} Growth Track signups</div></div>
+    <div class="kpi"><div class="l">Dream Team Fill Rate</div><div class="v">${fill}%</div>
+      <div class="d ${fill>=95?'up':'flat'}">check-in average</div></div>
+  </div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Report Completion</h3>
+      <div class="desc">Weekend After Action Reports submitted to Central Ops</div>
+      <div style="display:flex;align-items:center;gap:18px">
+        <div class="ring" style="--p:${submitted/CAMPUSES.length*100}"><div class="in"><b>${submitted}/${CAMPUSES.length}</b><span>Submitted</span></div></div>
+        <div style="flex:1">
+          ${CAMPUSES.map(c=>{const e=ev(c.id);return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+            <span style="flex:1;font-weight:600">${c.name}</span>
+            ${e.submitted?'<span class="pill p-ok"><span class="dt"></span>Submitted</span>':'<span class="pill p-warn"><span class="dt"></span>Pending</span>'}</div>`}).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Attendance by Service Time</h3>
+      <div class="desc">Estimated distribution across all campuses</div>
+      <div class="spark" style="margin-top:26px">
+        ${svcTimes.map(([t,n])=>{const max=Math.max(...svcTimes.map(s=>s[1]));return `<div class="col ${n===Math.max(...svcTimes.map(s=>s[1]))?'hl':''}" style="height:${n/max*100}%"><span>${fmt(n)}</span></div>`}).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px">
+        ${svcTimes.map(s=>`<span>${s[0]}</span>`).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="sect-title">Campus Readiness Scores</div>
+  <div class="grid g4">
+    ${CAMPUSES.map(c=>{const e=ev(c.id);const s=e.health.overall;return `
+      <div class="card" style="cursor:pointer" onclick="setCampus('${c.id}');go('readiness')">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="scorebadge" style="background:${scoreColor(s)}">${s}</div>
+          <div><div class="b">${c.name}</div><div class="small muted">${e.attendance.total.toLocaleString()} · ${e.guests.first} guests</div></div>
+        </div>
+        <div class="bar ${s>=95?'ok':s>=85?'':'bad'}" style="margin-top:12px"><i style="width:${s}%"></i></div>
+      </div>`}).join('')}
+  </div>
+
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Campuses With Open Issues <span class="pill p-bad" style="margin-left:6px"><span class="dt"></span>${openIssues}</span></h3>
+      <div class="desc">Flagged from this weekend's opportunities</div>
+      ${CAMPUSES.filter(c=>ev(c.id).opps.length>2).map(c=>{const e=ev(c.id);return `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)">
+          <span class="b" style="min-width:100px">${c.name}</span>
+          <span class="small muted" style="flex:1">${e.opps.slice(0,3).join(' · ')}</span>
+          <span class="pill p-warn"><span class="dt"></span>${e.opps.length}</span>
+        </div>`}).join('')}
+    </div>
+    <div class="card">
+      <h3>Top Praise Reports This Week</h3>
+      <div class="desc">Building recognition history automatically</div>
+      ${RECOGNITION.slice(0,4).map(r=>`
+        <div style="display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line)">
+          <span style="font-size:16px">🏆</span>
+          <div><div class="b">${r.name} <span class="small muted">· ${r.campus}</span></div>
+          <div class="small muted">${r.reason}</div></div>
+        </div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;background:linear-gradient(135deg,#0f2440,#1c3760);color:#fff;border:none">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span style="font-size:26px">✦</span>
+      <div style="flex:1;min-width:220px"><div class="b" style="color:#fff;font-size:15px">Ask Ministry Intelligence</div>
+        <div style="color:#c6d3e6;font-size:13px">"Compare this weekend to last Easter" · "Which campuses had parking issues?"</div></div>
+      <button class="btn gold" onclick="go('intel')">Open Assistant →</button>
+    </div>
+  </div>`;
+};
+
+/* ---- Campus Comparison ---- */
+RENDER.compare=function(){
+  V().innerHTML=`
+  <div class="card">
+    <h3>Weekend of ${ev('grantsmill').date}</h3>
+    <div class="desc">Leadership sees patterns across all campuses instantly — instead of reading dozens of emails.</div>
+    <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th>Campus</th><th>Attendance</th><th>Growth</th><th>Guests</th><th>Salvations</th><th>Wins</th><th>Opps</th><th>Health</th><th>Report</th></tr></thead>
+        <tbody>
+        ${CAMPUSES.map(c=>{const e=ev(c.id);const g=pct(e.attendance.total,e.lastMonth);return `
+          <tr onclick="setCampus('${c.id}');go('aar')" style="cursor:pointer">
+            <td class="b">${c.name}${c.flagship?' <span class="gold-t">★</span>':''}</td>
+            <td class="b">${fmt(e.attendance.total)}</td>
+            <td>${growthPill(g)}</td>
+            <td>${e.guests.first}</td>
+            <td class="gold-t b">${e.guests.salvations}</td>
+            <td><span class="pill p-ok"><span class="dt"></span>${e.wins.length}</span></td>
+            <td><span class="pill ${e.opps.length>3?'p-bad':'p-warn'}"><span class="dt"></span>${e.opps.length}</span></td>
+            <td><span class="scorebadge" style="width:30px;height:30px;font-size:13px;border-radius:8px;background:${scoreColor(e.health.overall)}">${e.health.overall}</span></td>
+            <td>${e.submitted?'✅':'⏳'}</td>
+          </tr>`}).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sect-title">Health Dimensions Across Campuses</div>
+  <div class="tblwrap">
+    <table class="tbl">
+      <thead><tr><th>Campus</th><th>Attendance</th><th>Volunteer</th><th>Guest Exp.</th><th>Production</th><th>Facilities</th><th>Follow-Up</th><th>Overall</th></tr></thead>
+      <tbody>
+      ${CAMPUSES.map(c=>{const h=ev(c.id).health;const cell=v=>`<td><span style="color:${scoreColor(v)};font-weight:700">${v}</span></td>`;return `
+        <tr><td class="b">${c.name}</td>${cell(h.attendance)}${cell(h.volunteer)}${cell(h.guest)}${cell(h.production)}${cell(h.facilities)}${cell(h.followup)}
+        <td><span class="scorebadge" style="width:30px;height:30px;font-size:13px;border-radius:8px;background:${scoreColor(h.overall)}">${h.overall}</span></td></tr>`}).join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:16px;border-left:4px solid var(--gold)">
+    <h3>💡 Cross-Campus Idea of the Week</h3>
+    <div class="desc">Something that worked well that other campuses should try.</div>
+    <p style="margin:0"><b>Auburn</b> ran a dedicated "guest lane" from the far parking lot straight to the Connect Center and reported the smoothest first-time-guest flow of any campus. <b>Recommended for Greystone &amp; Riverchase</b>, which both flagged lobby congestion this weekend.</p>
+  </div>`;
+};
+
+/* ---- After Action Report (full form, seeded from campus) ---- */
+RENDER.aar=function(){
+  const e=ev();const c=campus();
+  const lobby=e.lobby;
+  const dt=e.dreamTeamStats;
+  const growthM=pct(e.attendance.total,e.lastMonth);
+  V().innerHTML=`
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div class="mark" style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--gold),#b8862f);display:flex;align-items:center;justify-content:center;font-weight:800;color:#2a1c05;font-size:20px">H</div>
+      <div style="flex:1">
+        <h3 style="font-size:17px">${c.name} Campus — Event Report</h3>
+        <div class="small muted">${e.day} · ${e.date} · ${e.time}</div>
+      </div>
+      ${e.submitted?'<span class="pill p-ok"><span class="dt"></span>Submitted '+e.submittedTime+'</span>':'<span class="pill p-warn"><span class="dt"></span>Draft — not submitted</span>'}
+      <button class="btn gold" onclick="genSummary()">✦ Generate AI Summary</button>
+    </div>
+    <div class="frow" style="margin-top:14px">
+      <div class="field"><label>Campus Pastor</label><input value="${c.pastor}"></div>
+      <div class="field"><label>Submitted By</label><input value="${e.submittedBy||''}" placeholder="—"></div>
+      <div class="field"><label>Submitted Time</label><input value="${e.submittedTime||''}" placeholder="—"></div>
+    </div>
+  </div>
+
+  <div id="aiSummaryBox"></div>
+
+  <!-- Attendance -->
+  <div class="sect-title">Attendance <span class="hint">the whole picture — auto-calculated</span></div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="frow">
+        ${[['Adults','adults'],['Students','students'],['Highlands Kids','kids'],['Dream Team','dreamTeam'],['Online Overflow','online']].map(([l,k])=>
+          `<div class="field"><label>${l}</label><input type="number" value="${e.attendance[k]}" oninput="recalcAttn()"></div>`).join('')}
+      </div>
+      <hr class="sep">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="kpi" style="flex:1;padding:12px 14px"><div class="l">Total Attendance</div><div class="v" id="attnTotal">${fmt(e.attendance.total)}</div></div>
+        <div style="flex:1">
+          <div class="small muted">Growth vs last month</div>
+          <div style="margin:4px 0">${growthPill(growthM)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Comparison</h3>
+      <div class="rl">
+        <div class="item"><span class="nm">Last Year</span><span class="b">${fmt(e.lastYear)}</span> ${growthPill(pct(e.attendance.total,e.lastYear))}</div>
+        <div class="item"><span class="nm">Last Month</span><span class="b">${fmt(e.lastMonth)}</span> ${growthPill(growthM)}</div>
+        <div class="item"><span class="nm">Last Week</span><span class="b">${fmt(e.lastWeek)}</span> ${growthPill(pct(e.attendance.total,e.lastWeek))}</div>
+        <div class="item"><span class="nm">Highest Service</span><span class="b">9:30 AM</span></div>
+        <div class="item"><span class="nm">Lowest Service</span><span class="b">4:30 PM</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guest Experience -->
+  <div class="sect-title">Guest Experience</div>
+  <div class="card">
+    <div class="grid g4">
+      ${[['First Time Guests','first'],['VIP Guests','vip'],['Salvations','salvations'],['Rededications','rededications'],['Water Baptisms','baptisms'],['Growth Track Signups','growthTrack'],['Prayer Requests','prayer']].map(([l,k])=>
+        `<div class="kpi"><div class="l">${l}</div><div class="v" style="font-size:24px">${e.guests[k]}</div></div>`).join('')}
+    </div>
+  </div>
+
+  <!-- Lobby Experience -->
+  <div class="sect-title">Lobby Experience <span class="hint">rate 1–5 stars</span></div>
+  <div class="card">
+    <div class="grid g4">
+      ${[['Guest Flow','guestFlow'],['Parking','parking'],['Coffee','coffee'],['Cleanliness','cleanliness'],['Connect Center','connect'],['Traffic','traffic'],['Photo Booth','photo'],['Guest Services','services']].map(([l,k])=>
+        `<div style="padding:8px 0"><div class="small muted b">${l}</div>${stars(lobby[k])}</div>`).join('')}
+    </div>
+  </div>
+
+  <!-- Dream Team -->
+  <div class="sect-title">Dream Team</div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="grid g3">
+        <div class="kpi"><div class="l">Scheduled</div><div class="v" style="font-size:22px">${dt.scheduled}</div></div>
+        <div class="kpi"><div class="l">Served</div><div class="v" style="font-size:22px">${dt.served}</div></div>
+        <div class="kpi"><div class="l">Check-in %</div><div class="v" style="font-size:22px">${dt.checkin}%</div></div>
+        <div class="kpi"><div class="l">No Shows</div><div class="v" style="font-size:22px;color:${dt.noShows>8?'var(--bad)':'var(--ink)'}">${dt.noShows}</div></div>
+        <div class="kpi"><div class="l">Late Arrivals</div><div class="v" style="font-size:22px">${dt.late}</div></div>
+        <div class="kpi"><div class="l">New Volunteers</div><div class="v" style="font-size:22px;color:var(--ok)">${dt.newVols}</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Who went above and beyond?</h3>
+      <div class="desc">Feeds the Recognition Center automatically</div>
+      ${RECOGNITION.filter(r=>r.campus===c.name).slice(0,2).map(r=>`<div class="win">🏆 <b>${r.name}</b> — ${r.reason}</div>`).join('')||'<div class="muted small">No recognitions logged yet.</div>'}
+      <button class="btn sm" style="margin-top:6px" onclick="go('recognition')">Open Recognition Center →</button>
+    </div>
+  </div>
+
+  <!-- Wins & Opportunities -->
+  <div class="grid g2" style="margin-top:8px">
+    <div class="card"><h3>Wins 🎉</h3><div class="desc">What went well?</div>
+      ${e.wins.map(w=>`<div class="win">✓ ${w}</div>`).join('')}
+      <div class="add-row"><input id="winIn" placeholder="Add a win…" onkeydown="if(event.key==='Enter')addWin()"><button class="btn sm" onclick="addWin()">Add</button></div>
+    </div>
+    <div class="card"><h3>Opportunities for Improvement</h3><div class="desc">Instead of "what went wrong"</div>
+      ${e.opps.map(o=>`<div class="opp">△ ${o} <button class="btn sm" style="float:right;padding:2px 8px" onclick="oppToAction('${o.replace(/'/g,"")}')">→ Action</button></div>`).join('')}
+      <div class="add-row"><input id="oppIn" placeholder="Add an opportunity…" onkeydown="if(event.key==='Enter')addOpp()"><button class="btn sm" onclick="addOpp()">Add</button></div>
+    </div>
+  </div>
+
+  <!-- Sub-sections grid: Setup, Production, Worship, Kids, Students, Security, Facilities -->
+  <div class="sect-title">Operational Detail</div>
+  <div class="grid g3">
+    ${subCard('Setup ⏱',[['Arrival','6:15 AM'],['Setup Started','6:20 AM'],['Setup Completed','7:35 AM'],['On Time?', e.id==='riverchase'?'⚠ 12 min late':'✅ Yes'],['Equipment Issues', e.id==='greystone'?'Mic dropout':'None'],['Building/HVAC/Power', e.id==='greystone'?'Power flicker':'OK']])}
+    ${subCard('Production 🎛',[['Audio', e.id==='greystone'?'Mic failure — resolved':'Clean'],['Lighting','On program'],['Video / LED','Nominal'],['ProPresenter', e.id==='riverchase'?'Media missing':'Ready'],['Camera / Broadcast', e.id==='auburn'?'Confidence lag':'Clean'],['Recording / Livestream','Streamed OK']])}
+    ${subCard('Worship 🎵',[['Songs Worked Well','Opening set landed'],['Transitions','Seamless'],['Timing','On schedule'],['Message Length','36 min'],['Special Moments','Spontaneous worship'],['Unexpected','—']])}
+    ${subCard('Kids Ministry 🧒',[['Attendance', fmt(e.attendance.kids)],['Check-in Wait', e.id==='riverchase'?'6 min':'Under 2 min'],['Security','Locked & staffed'],['Parent Issues','None'],['Room Capacity','82%'],['Notes','Record week']])}
+    ${subCard('Students 🎓',[['Attendance', fmt(e.attendance.students)],['Visitors', Math.round(e.guests.first*0.2)],['Incidents','0'],['Leaders Present', '18'],['Notes','Strong energy']])}
+    ${subCard('Security & Safety 🛡',[['Medical Calls','0'],['Police Response','None'],['Lost Child','0'],['Lost Item','1 (returned)'],['Weather Issues', e.weather.impact?'Rain delayed parking':'None'],['Incident Report','None filed']])}
+    ${subCard('Facilities 🏛',[['Restrooms','Stocked'],['Trash','Cleared'],['HVAC', e.id==='greystone'?'Monitor':'OK'],['Water Leak','None'],['Electrical', e.id==='greystone'?'Flicker logged':'OK'],['Anything Broken', e.id==='greystone'?'Coffee machine':'No']])}
+    ${subCard('Community Impact 🤝',[['Outreach','Meal handout after 2nd svc'],['Notable Conversations','2 pastoral follow-ups'],['Local Interaction','Neighbor noise resolved']])}
+    ${subCard('Guest Follow-up 📋',[['Entered in Planning Center', e.submitted?'✅ All':'⏳ Pending'],['VIPs Needing Pastor', e.guests.vip],['Cards Collected', e.guests.first]])}
+  </div>
+
+  <!-- Day timeline -->
+  <div class="sect-title">Chronological Timeline <span class="hint">the day, minute by minute</span></div>
+  <div class="card">
+    <div class="tl">
+      ${(DAY_TIMELINE[e.id]||[{t:'6:15 AM',lbl:'Setup began'},{t:'8:00 AM',lbl:'Service started'},{t:'9:30 AM',lbl:'Second service'},{t:'12:00 PM',lbl:'Teardown complete'}]).map(x=>
+        `<div class="ev ${x.flag?'late':'done'}"><span class="tm">${x.t}</span> <span class="lb">${x.lbl}</span></div>`).join('')}
+    </div>
+  </div>
+
+  <!-- Weather -->
+  <div class="sect-title">Weather <span class="hint">auto-pulled</span></div>
+  <div class="card">
+    <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center">
+      <div style="font-size:38px">${({Sunny:'☀️',Rain:'🌧',Storm:'⛈',Overcast:'☁️'})[e.weather.cond]||'🌤'}</div>
+      <div class="grid g4" style="flex:1;gap:10px">
+        <div class="kpi" style="padding:10px 12px"><div class="l">Condition</div><div class="v" style="font-size:18px">${e.weather.cond}</div></div>
+        <div class="kpi" style="padding:10px 12px"><div class="l">Temp</div><div class="v" style="font-size:18px">${e.weather.temp}°</div></div>
+        <div class="kpi" style="padding:10px 12px"><div class="l">Humidity</div><div class="v" style="font-size:18px">${e.weather.humidity}%</div></div>
+        <div class="kpi" style="padding:10px 12px"><div class="l">Wind</div><div class="v" style="font-size:18px">${e.weather.wind} mph</div></div>
+      </div>
+    </div>
+    <hr class="sep">
+    <div><b>Did weather impact attendance?</b> ${e.weather.impact?'<span class="pill p-warn"><span class="dt"></span>Yes</span>':'<span class="pill p-ok"><span class="dt"></span>No</span>'}
+    ${e.weather.comments?`<div class="small muted" style="margin-top:6px">"${e.weather.comments}"</div>`:''}</div>
+  </div>
+
+  <!-- Pictures -->
+  <div class="sect-title">Pictures <span class="hint">a visual archive over time</span></div>
+  <div class="card">
+    <div class="grid g3" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+      ${['Lobby','Stage','Parking','Weather','Issues','Wins'].map(l=>`
+        <div style="border:2px dashed var(--line);border-radius:11px;height:96px;display:flex;flex-direction:column;
+          align-items:center;justify-content:center;color:var(--muted);cursor:pointer" onclick="toast('Photo upload (demo)')">
+          <span style="font-size:22px">📷</span><span class="small">${l}</span></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;text-align:center">
+    ${e.submitted
+      ? `<span class="pill p-ok" style="font-size:13px;padding:6px 14px"><span class="dt"></span>Report submitted to Central Ops · ${e.submittedTime}</span>`
+      : `<button class="btn pri" style="padding:11px 26px;font-size:15px" onclick="submitReport()">Submit After Action Report</button>`}
+  </div>`;
+};
+function subCard(title,rows){
+  return `<div class="card"><h3>${title}</h3>
+    <div class="rl" style="margin-top:6px">
+      ${rows.map(([l,v])=>`<div class="item"><span class="nm small">${l}</span><span class="small b" style="text-align:right">${v}</span></div>`).join('')}
+    </div></div>`;
+}
+function recalcAttn(){
+  const inputs=V().querySelectorAll('.card .field input[type=number]');
+  let total=0;inputs.forEach(i=>total+=(+i.value||0));
+  const t=document.getElementById('attnTotal');if(t)t.textContent=fmt(total);
+}
+function addWin(){const v=document.getElementById('winIn').value.trim();if(!v)return;ev().wins.push(v);go('aar');}
+function addOpp(){const v=document.getElementById('oppIn').value.trim();if(!v)return;ev().opps.push(v);go('aar');}
+function submitReport(){ev().submitted=true;ev().submittedTime=new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});ev().submittedBy='Campus Team';toast('✅ Submitted to Central Operations');go('aar');}
+function oppToAction(o){ACTIONS.unshift({task:o,owner:'Guest Services',campus:campus().name,due:'Next Sunday',priority:'Medium',status:'Open'});toast('Added to Action Tracker');renderNav();}
+
+function genSummary(){
+  const e=ev();const c=campus();
+  const box=document.getElementById('aiSummaryBox');
+  box.innerHTML=`<div class="card" style="border-left:4px solid var(--gold)"><div class="muted small">✦ Generating…</div></div>`;
+  setTimeout(()=>{
+    const gm=pct(e.attendance.total,e.lastMonth);
+    const audio=e.opps.find(o=>/audio/i.test(o))||(e.id==='greystone'?'one microphone failure that was quickly resolved':'no production issues');
+    const park=e.opps.find(o=>/park/i.test(o));
+    const txt=`The ${c.name} campus welcomed <b>${fmt(e.attendance.total)}</b> attendees, ${gm>=0?'up':'down'} <b>${Math.abs(gm).toFixed(1)}%</b> from last month, including <b>${e.guests.first}</b> first-time guests and <b>${e.guests.salvations}</b> salvations. Guest Services reported ${e.lobby.guestFlow>=5?'exceptional':'solid'} lobby flow${e.weather.impact?' despite '+e.weather.cond.toLowerCase():''}. ${park?'Parking experienced minor congestion before the 9:30 service'+(e.weather.impact?' due to weather':'')+'. ':''}Production ${e.id==='greystone'?'experienced '+audio+'':'ran clean'}. Volunteer engagement was ${e.dreamTeamStats.checkin>=95?'excellent':'moderate'} with <b>${e.dreamTeamStats.checkin}%</b> check-in. Recommended improvements: ${e.opps.slice(0,2).join(', ').toLowerCase()||'maintain current standards'}.`;
+    box.innerHTML=`<div class="card" style="border-left:4px solid var(--gold)">
+      <h3>✦ AI Event Summary</h3>
+      <div class="desc">Generated from this report · one button, ready to forward to Central Ops</div>
+      <p style="margin:0;line-height:1.7">${txt}</p>
+      <div style="margin-top:10px"><button class="btn sm" onclick="toast('Copied (demo)')">Copy</button>
+      <button class="btn sm" onclick="toast('Sent to Central Ops (demo)')">Send to Central Ops</button></div>
+    </div>`;
+    box.scrollIntoView({behavior:'smooth',block:'center'});
+  },700);
+}
+
+/* ---- Readiness Score ---- */
+RENDER.readiness=function(){
+  const e=ev();const r=e.readiness;const c=campus();
+  const rows=[
+    ['Planning Center', r.pco?'ready':'bad', r.pco?'Synced':'Not synced'],
+    ['ProPresenter', r.pp?'ready':'bad', r.pp?'Presentation ready':'Media missing'],
+    ['Volunteer Positions', r.positions>=95?'ready':r.positions>=85?'warn':'bad', r.positions+'% filled'],
+    ['Weather', /storm/i.test(r.weather)?'warn':'ready', r.weather],
+    ['Coffee', r.coffee?'ready':'bad', r.coffee?'Ready':'Not ready'],
+    ['Parking', r.parking?'ready':'warn', r.parking?'Ready':'Cones missing'],
+    ['Kids', r.kids?'ready':'bad', r.kids?'Ready & staffed':'Understaffed'],
+    ['Security', r.security?'ready':'bad', r.security?'Ready':'Gaps'],
+  ];
+  const pill=(s)=>s==='ready'?'<span class="pill p-ok"><span class="dt"></span>Ready</span>':s==='warn'?'<span class="pill p-warn"><span class="dt"></span>Attention</span>':'<span class="pill p-bad"><span class="dt"></span>Blocked</span>';
+  V().innerHTML=`
+  <div class="grid g2">
+    <div class="card" style="text-align:center">
+      <h3 style="text-align:left">${c.name} — Sunday Readiness</h3>
+      <div class="desc" style="text-align:left">Leadership immediately knows whether a campus is ready.</div>
+      <div class="ring" style="--p:${r.overall};margin:8px auto"><div class="in"><b>${r.overall}%</b><span>Ready</span></div></div>
+      <div>${r.overall>=95?'<span class="pill p-ok"><span class="dt"></span>Cleared for Sunday</span>':r.overall>=85?'<span class="pill p-warn"><span class="dt"></span>Minor gaps</span>':'<span class="pill p-bad"><span class="dt"></span>Needs attention</span>'}</div>
+    </div>
+    <div class="card">
+      <h3>Checklist</h3>
+      <div class="rl">
+        ${rows.map(([n,s,d])=>`<div class="item"><span class="nm">${n}</span><span class="small muted" style="margin-right:8px">${d}</span>${pill(s)}</div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>All Campuses — Readiness at a Glance</h3>
+    <div class="grid g4" style="margin-top:6px">
+      ${CAMPUSES.map(cc=>{const rr=ev(cc.id).readiness;return `
+        <div class="card" style="cursor:pointer" onclick="setCampus('${cc.id}');go('readiness')">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="scorebadge" style="background:${scoreColor(rr.overall)}">${rr.overall}</div>
+            <div class="b">${cc.name}</div>
+          </div>
+          <div class="small muted" style="margin-top:8px">Positions ${rr.positions}% · ${rr.weather}</div>
+        </div>`}).join('')}
+    </div>
+  </div>`;
+};
+
+/* ---- Service Flow (planned vs actual) ---- */
+RENDER.flow=function(){
+  const e=ev();const actual=FLOW_ACTUAL[e.id]||[];
+  let onTime=0,lateCt=0;
+  const rows=FLOW_TEMPLATE.map((f,i)=>{
+    const act=actual[i]||'';const d=act?deltaMin(f.t,act):0;
+    if(act){d>2?lateCt++:onTime++;}
+    return {...f,act,d};
+  });
+  V().innerHTML=`
+  <div class="grid g2">
+    <div class="kpi"><div class="l">On-Schedule Milestones</div><div class="v">${onTime}/${FLOW_TEMPLATE.length}</div><div class="d ${onTime>=8?'up':'flat'}">within 2 min of plan</div></div>
+    <div class="kpi"><div class="l">Behind Schedule</div><div class="v" style="color:${lateCt>2?'var(--bad)':'var(--ink)'}">${lateCt}</div><div class="d flat">flagged for review</div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>${campus().name} — Service Flow</h3>
+    <div class="desc">Planned vs. actual. Record actual times to compare week over week.</div>
+    <div class="tblwrap" style="border:none">
+      <table class="tbl">
+        <thead><tr><th>Milestone</th><th>Planned</th><th>Actual</th><th>Δ</th><th></th></tr></thead>
+        <tbody>
+        ${rows.map(r=>{const late=r.d>2;const early=r.d<-1;return `
+          <tr>
+            <td class="b">${r.lbl}</td>
+            <td style="font-variant-numeric:tabular-nums">${r.t}</td>
+            <td style="font-variant-numeric:tabular-nums">${r.act||'<span class="muted">—</span>'}</td>
+            <td>${r.act?`<span class="pill ${late?'p-bad':early?'p-info':'p-ok'}"><span class="dt"></span>${r.d>0?'+':''}${r.d} min</span>`:''}</td>
+            <td>${late?'<span class="small" style="color:var(--bad-t)">Behind</span>':r.act?'<span class="small" style="color:var(--ok-t)">On time</span>':''}</td>
+          </tr>`}).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+};
+
+/* ---- Positions (trading cards) ---- */
+RENDER.positions=function(){
+  const depts=[...new Set(POSITIONS.map(p=>p.dept))];
+  V().innerHTML=`
+  <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span class="pill p-ok"><span class="dt"></span>Auto-pulled from Planning Center</span>
+    <span class="small muted">${POSITIONS.filter(p=>p.conf).length}/${POSITIONS.length} confirmed</span>
+    <span class="spacer" style="flex:1"></span>
+    <span class="small muted">Click any person to open their trading card →</span>
+  </div>
+  ${depts.map(d=>`
+    <div class="sect-title">${d}</div>
+    <div class="cardgrid">
+      ${POSITIONS.filter(p=>p.dept===d).map(p=>{const pr=PEOPLE[p.person];const init=p.person.split(' ').map(x=>x[0]).slice(0,2).join('');return `
+        <div class="tc" onclick="showPerson('${p.person.replace(/'/g,"")}','${p.pos.replace(/'/g,"")}')">
+          <div class="top">
+            <span class="conf">${p.conf?'✓ Confirmed':'⏳ Pending'}</span>
+            <div class="pos">${p.pos}</div>
+            <div class="av">${init}</div>
+            <div class="nm">${p.person}</div>
+          </div>
+          <div class="bd">
+            <div class="stat"><b>${pr?pr.times:Math.floor(40+Math.random()*120)}</b>times served</div>
+            <div class="stat"><b>${pr?pr.attend:95+Math.floor(Math.random()*5)}%</b>reliability</div>
+          </div>
+        </div>`}).join('')}
+    </div>`).join('')}`;
+};
+function showPerson(name,pos){
+  const p=PEOPLE[name]||{times:Math.floor(40+Math.random()*120),years:Math.ceil(Math.random()*6),cert:['Team Certified'],training:['Onboarding'],praise:[],hist:[pos],attend:95};
+  const init=name.split(' ').map(x=>x[0]).slice(0,2).join('');
+  openModal(`
+    <div class="mh" style="background:linear-gradient(135deg,var(--navy2),var(--navy3));color:#fff">
+      <div class="av" style="width:52px;height:52px;font-size:20px">${init}</div>
+      <div><div class="b" style="font-size:17px;color:#fff">${name}</div><div style="color:var(--gold-soft);font-size:12px">${pos}</div></div>
+      <button class="mx" style="color:#fff" onclick="closeModal()">×</button>
+    </div>
+    <div class="mb">
+      <div class="grid g3" style="margin-bottom:14px">
+        <div class="kpi" style="padding:10px"><div class="l">Times Served</div><div class="v" style="font-size:22px">${p.times}</div></div>
+        <div class="kpi" style="padding:10px"><div class="l">Years</div><div class="v" style="font-size:22px">${p.years}</div></div>
+        <div class="kpi" style="padding:10px"><div class="l">Reliability</div><div class="v" style="font-size:22px">${p.attend}%</div></div>
+      </div>
+      <div class="field"><label>Position History</label><div>${p.hist.map(h=>`<span class="chip" style="margin-bottom:0">${h}</span>`).join(' ')}</div></div>
+      <div class="field" style="margin-top:12px"><label>Certifications</label><div>${p.cert.map(x=>`<span class="pill p-info" style="margin:0 6px 6px 0"><span class="dt"></span>${x}</span>`).join('')}</div></div>
+      <div class="field"><label>Training Completed</label><div>${p.training.map(x=>`<span class="pill p-ok" style="margin:0 6px 6px 0"><span class="dt"></span>${x}</span>`).join('')}</div></div>
+      ${p.praise.length?`<div class="field"><label>Praise Reports</label>${p.praise.map(x=>`<div class="win">🏆 ${x}</div>`).join('')}</div>`:''}
+    </div>`);
+}
+
+/* ---- Production Health ---- */
+RENDER.health=function(){
+  const mine=PROD_HEALTH.filter(h=>h.campus===campus().name);
+  const systems=['Audio','Lighting','Video','ProPresenter','Internet','Camera','Power','HVAC'];
+  V().innerHTML=`
+  <div class="card" style="margin-bottom:16px">
+    <h3>${campus().name} — Systems Status</h3>
+    <div class="desc">Every issue builds a maintenance history over time.</div>
+    <div class="grid g4">
+      ${systems.map(s=>{const iss=mine.find(m=>m.system===s&&m.status!=='Resolved');return `
+        <div class="kpi" style="padding:12px 14px">
+          <div class="l">${s}</div>
+          ${iss?`<div class="d down" style="margin-top:6px">${iss.status}</div><div class="small muted">${iss.issue}</div>`
+                :`<div class="d up" style="margin-top:6px">✓ Nominal</div>`}
+        </div>`}).join('')}
+    </div>
+  </div>
+  <div class="card">
+    <h3>Maintenance History — All Campuses</h3>
+    <div class="tblwrap" style="border:none">
+      <table class="tbl">
+        <thead><tr><th>Date</th><th>Campus</th><th>System</th><th>Issue</th><th>Status</th></tr></thead>
+        <tbody>${PROD_HEALTH.map(h=>`<tr>
+          <td class="small muted">${h.date}</td><td class="b">${h.campus}</td><td>${h.system}</td><td>${h.issue}</td>
+          <td>${h.status==='Resolved'?'<span class="pill p-ok"><span class="dt"></span>Resolved</span>':h.status==='Monitoring'?'<span class="pill p-warn"><span class="dt"></span>Monitoring</span>':'<span class="pill p-bad"><span class="dt"></span>Open</span>'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+};
+
+/* ---- Weather Correlation ---- */
+RENDER.weather=function(){
+  const t=TREND[CUR];const wk=['W1','W2','W3','W4','W5','W6','W7','Now'];
+  const max=Math.max(...t);
+  // fake weather per week for correlation visual
+  const conds=['☀️','☀️','🌧','☀️','☀️','🌧','☀️','☁️'];
+  V().innerHTML=`
+  <div class="card">
+    <h3>${campus().name} — Attendance vs. Weather</h3>
+    <div class="desc">Auto-saved every weekend: temperature, rain, wind, humidity, sunrise. Over years this becomes really interesting.</div>
+    <div class="spark" style="height:120px;margin-top:30px">
+      ${t.map((v,i)=>`<div class="col ${i===t.length-1?'hl':''}" style="height:${v/max*100}%"><span>${fmt(v)}</span></div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px">
+      ${wk.map((w,i)=>`<div style="flex:1;text-align:center"><div style="font-size:16px">${conds[i]}</div><div class="small muted">${w}</div></div>`).join('')}
+    </div>
+  </div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>Rain Weekends</h3><div class="v" style="font-size:26px;color:var(--navy2);font-weight:800">−4.8%</div><div class="small muted">avg attendance vs. clear weekends</div></div>
+    <div class="card"><h3>This Weekend</h3><div style="font-size:30px">${({Sunny:'☀️',Rain:'🌧',Storm:'⛈',Overcast:'☁️'})[ev().weather.cond]}</div><div class="small muted">${ev().weather.cond} · ${ev().weather.temp}° · ${ev().weather.wind}mph wind</div></div>
+    <div class="card"><h3>Impact Flag</h3>${ev().weather.impact?'<span class="pill p-warn"><span class="dt"></span>Weather impacted attendance</span>':'<span class="pill p-ok"><span class="dt"></span>No measurable impact</span>'}<div class="small muted" style="margin-top:8px">${ev().weather.comments||'Reported by campus team.'}</div></div>
+  </div>`;
+};
+
+/* ---- Action Tracker ---- */
+RENDER.actions=function(){
+  const prCls=p=>p==='High'?'p-bad':p==='Medium'?'p-warn':'p-muted';
+  const stCls=s=>s==='Complete'?'p-ok':s==='In Progress'?'p-info':'p-warn';
+  V().innerHTML=`
+  <div class="card" style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <span class="b">${ACTIONS.filter(a=>a.status!=='Complete').length} open</span>
+    <span class="muted small">Every opportunity for improvement becomes a tracked task. Next Sunday, the dashboard reminds everyone.</span>
+    <span style="flex:1"></span>
+    <button class="btn sm pri" onclick="addActionPrompt()">+ New Action</button>
+  </div>
+  <div class="tblwrap">
+    <table class="tbl">
+      <thead><tr><th>Task</th><th>Owner</th><th>Campus</th><th>Due</th><th>Priority</th><th>Status</th></tr></thead>
+      <tbody>
+      ${ACTIONS.map((a,i)=>`<tr>
+        <td class="b">${a.task}</td><td>${a.owner}</td><td class="small muted">${a.campus}</td><td>${a.due}</td>
+        <td><span class="pill ${prCls(a.priority)}"><span class="dt"></span>${a.priority}</span></td>
+        <td><select onchange="setActionStatus(${i},this.value)" style="border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:12px;font-weight:600">
+          ${['Open','In Progress','Complete'].map(s=>`<option ${a.status===s?'selected':''}>${s}</option>`).join('')}
+        </select></td>
+      </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+};
+function setActionStatus(i,v){ACTIONS[i].status=v;renderNav();toast('Updated');}
+function addActionPrompt(){
+  openModal(`<div class="mh"><h3 style="margin:0">New Action Item</h3><button class="mx" onclick="closeModal()">×</button></div>
+  <div class="mb">
+    <div class="field"><label>Task</label><input id="naTask" placeholder="What needs to happen?"></div>
+    <div class="frow"><div class="field"><label>Owner</label><input id="naOwner" value="Guest Services"></div>
+    <div class="field"><label>Due</label><input id="naDue" value="Next Sunday"></div>
+    <div class="field"><label>Priority</label><select id="naPri"><option>High</option><option selected>Medium</option><option>Low</option></select></div></div>
+    <button class="btn pri" onclick="saveAction()">Add Action</button>
+  </div>`);
+}
+function saveAction(){const t=document.getElementById('naTask').value.trim();if(!t){toast('Enter a task');return;}
+  ACTIONS.unshift({task:t,owner:document.getElementById('naOwner').value,campus:campus().name,due:document.getElementById('naDue').value,priority:document.getElementById('naPri').value,status:'Open'});
+  closeModal();renderNav();go('actions');}
+
+/* ---- Recognition Center ---- */
+RENDER.recognition=function(){
+  V().innerHTML=`
+  <div class="card" style="margin-bottom:16px">
+    <h3>Every praise report becomes searchable</h3>
+    <div class="desc">At the end of the year you instantly know who should be celebrated.</div>
+    <input id="recSearch" placeholder="Search by name, department, or campus…" oninput="filterRec(this.value)"
+      style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:11px;font-size:14px">
+  </div>
+  <div id="recList" class="grid g2"></div>`;
+  filterRec('');
+};
+function filterRec(q){
+  q=q.toLowerCase();
+  const list=RECOGNITION.filter(r=>(r.name+r.dept+r.campus+r.reason).toLowerCase().includes(q));
+  document.getElementById('recList').innerHTML=list.map(r=>`
+    <div class="card">
+      <div style="display:flex;gap:12px">
+        <div style="font-size:26px">🏆</div>
+        <div style="flex:1">
+          <div class="b" style="font-size:15px">${r.name}</div>
+          <div><span class="pill p-gold" style="margin-right:6px"><span class="dt"></span>${r.dept}</span><span class="small muted">${r.campus}</span></div>
+          <p style="margin:8px 0 6px">${r.reason}</p>
+          <div class="small muted">⭐ Recognized by ${r.by} · ${r.date}</div>
+        </div>
+      </div>
+    </div>`).join('')||'<div class="empty">No praise reports match.</div>';
+}
+
+/* ---- Event Library ---- */
+RENDER.library=function(){
+  V().innerHTML=`
+  <div class="card" style="margin-bottom:16px">
+    <h3>Every event ever — a searchable institutional memory</h3>
+    <div class="desc">"Show every campus that had parking issues during Easter over the last three years."</div>
+    <input placeholder="Search events — Easter, Christmas, Motion, Freedom, Conference…" oninput="filterLib(this.value)"
+      style="width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:11px;font-size:14px">
+  </div>
+  <div id="libList" class="grid g3"></div>`;
+  filterLib('');
+};
+function filterLib(q){q=q.toLowerCase();
+  const list=LIBRARY.filter(l=>(l.name+l.type+l.note).toLowerCase().includes(q));
+  document.getElementById('libList').innerHTML=list.map(l=>`
+    <div class="card" style="cursor:pointer" onclick="toast('Opening ${l.name} archive (demo)')">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <span class="pill p-info"><span class="dt"></span>${l.type}</span>
+        ${l.status==='upcoming'?'<span class="pill p-warn"><span class="dt"></span>Upcoming</span>':''}
+      </div>
+      <h3 style="margin-top:10px">${l.name}</h3>
+      <div class="small muted">${l.date}</div>
+      <div style="margin:10px 0"><span class="l" style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700">Attendance</span>
+      <div class="v" style="font-size:22px;font-weight:800;color:var(--navy2)">${l.attn}</div></div>
+      <div class="small">${l.note}</div>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">
+        ${['Pictures','Notes','Lessons','Run Sheets'].map(x=>`<span class="chip" style="margin:0;padding:4px 9px;font-size:11px">${x}</span>`).join('')}
+      </div>
+    </div>`).join('')||'<div class="empty">No events match.</div>';
+}
+
+/* ---- Communications ---- */
+RENDER.comms=function(){
+  const items=[
+    ['Announcements','📢','3 new this week'],['Run Sheets','📋','Sunday · locked'],['Maps','🗺','Campus + parking'],
+    ['Parking Plans','🅿️','Weather variant ready'],['Emergency Plans','🚨','Reviewed Mar 1'],['Graphics','🎨','12 assets'],
+    ['Videos','🎬','Bumper + testimony'],['Speaker Notes','🗒','Message outline'],['Files','📁','All resources'],
+  ];
+  V().innerHTML=`
+  <div class="card" style="margin-bottom:16px">
+    <h3>${campus().name} — Communications Center</h3>
+    <div class="desc">Everything for this weekend in one place — instead of emails everywhere.</div>
+  </div>
+  <div class="grid g3">
+    ${items.map(([n,i,d])=>`
+      <div class="card" style="cursor:pointer" onclick="toast('Opening ${n} (demo)')">
+        <div style="font-size:26px">${i}</div>
+        <h3 style="margin-top:8px">${n}</h3>
+        <div class="small muted">${d}</div>
+      </div>`).join('')}
+  </div>`;
+};
+
+/* ---- ProPresenter ---- */
+RENDER.propresenter=function(){
+  const e=ev();const ready=e.readiness.pp;
+  const rows=[
+    ['Current Playlist', ready?'Sunday 3.22.26':'Not loaded', ready],
+    ['Presentation Ready', ready?'Yes':'No', ready],
+    ['Media Missing', ready?'None':'4 files', ready],
+    ['Countdown', 'Loaded (5:00)', true],
+    ['Stage Display', 'Connected', true],
+    ['Confidence Monitor', e.id==='auburn'?'Lag detected':'Connected', e.id!=='auburn'],
+    ['Output Status', ready?'Live':'Standby', ready],
+  ];
+  V().innerHTML=`
+  <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:26px">▷</span>
+    <div style="flex:1"><h3 style="margin:0">${campus().name} — ProPresenter</h3><div class="small muted">Live from the booth — no need to open the app</div></div>
+    ${ready?'<span class="pill p-ok"><span class="dt"></span>Ready</span>':'<span class="pill p-bad"><span class="dt"></span>Attention Needed</span>'}
+  </div>
+  <div class="card">
+    <div class="rl">
+      ${rows.map(([n,v,ok])=>`<div class="item"><span class="nm">${n}</span><span class="small" style="margin-right:8px">${v}</span>${ok?'<span class="pill p-ok"><span class="dt"></span>OK</span>':'<span class="pill p-bad"><span class="dt"></span>Check</span>'}</div>`).join('')}
+    </div>
+  </div>`;
+};
+
+/* ---- Live Countdown ---- */
+let cdTimer=null;
+RENDER.countdown=function(){
+  if(cdTimer)clearInterval(cdTimer);
+  V().innerHTML=`
+  <div class="card" style="text-align:center;background:linear-gradient(135deg,#0f2440,#1c3760);color:#fff;border:none">
+    <div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold-soft)">Next Event · ${UPCOMING[0].day}</div>
+    <div class="b" style="font-size:22px;color:#fff;margin:4px 0 14px">${UPCOMING[0].name}</div>
+    <div class="cd" style="justify-content:center" id="cdMain"></div>
+  </div>
+  <div class="sect-title">Upcoming Countdowns</div>
+  <div class="grid g4">
+    ${UPCOMING.slice(1).map((u,i)=>`
+      <div class="card" style="text-align:center">
+        <div class="small muted">${u.day}</div>
+        <div class="b" style="margin:2px 0 8px">${u.name}</div>
+        <div class="cd" style="justify-content:center;transform:scale(.8)" id="cd${i}"></div>
+      </div>`).join('')}`;
+  function drawCd(elid,secs){
+    const h=Math.floor(secs/3600),m=Math.floor(secs%3600/60),s=secs%60;
+    const box=document.getElementById(elid);if(!box)return;
+    const pad=n=>String(n).padStart(2,'0');
+    const days=Math.floor(h/24);
+    box.innerHTML=(days>0?`<div class="u"><b>${days}</b><span>days</span></div>`:'')+
+      `<div class="u"><b>${pad(h%24)}</b><span>hrs</span></div><div class="u"><b>${pad(m)}</b><span>min</span></div><div class="u"><b>${pad(s)}</b><span>sec</span></div>`;
+  }
+  let base=UPCOMING.map(u=>u.in.h*3600+u.in.m*60+u.in.s);
+  function upd(){
+    base=base.map(x=>Math.max(0,x-1));
+    drawCd('cdMain',base[0]);
+    UPCOMING.slice(1).forEach((u,i)=>drawCd('cd'+i,base[i+1]));
+  }
+  upd();cdTimer=setInterval(upd,1000);
+};
+
+/* ---- Ministry Intelligence (AI assistant) ---- */
+const INTEL_QA=[
+  {q:/park/i, a:()=>`Across the last reporting weekend, <b>2 campuses flagged parking</b>: <b>Greystone</b> ("Parking cones", congestion at 8:36 AM during rain) and <b>Riverchase</b> ("Parking cones missing"). Historically, parking complaints spike <b>+180% on rain weekends</b> and during <b>Easter</b>. Recommended: pre-stage the weather parking plan — Auburn's "guest lane" model reduced congestion to zero.`},
+  {q:/declin|drop|down|8 ?week|falling|trend/i, a:()=>{const dec=CAMPUSES.filter(c=>{const t=TREND[c.id];return t[t.length-1]<t[0];});return `Over the last 8 weeks, <b>${dec.map(c=>c.name).join(', ')||'no campus'}</b> shows declining attendance. <b>Riverchase</b> is down from 1,204 → <b>1,125 (−6.6%)</b>, correlated with a <b>79% readiness score</b>, ProPresenter media issues, and 12 volunteer no-shows. Every other campus is trending up. Suggest a campus health check at Riverchase.`;}},
+  {q:/audio|served.*40|40.*sunday|who has served/i, a:()=>`In Audio, <b>John Smith</b> has served <b>212 Sundays</b> (6 yrs, A1 Certified) — well past 40. Others above 40 in Audio-adjacent roles: <b>Kevin Ruff</b> (301, TD) and <b>Sarah Lopez</b> (167, Graphics/ProP). John also has 2 logged praise reports. Consider him for the Audio mentorship track.`},
+  {q:/motion|highest attend/i, a:()=>`<b>Motion Night — March 13</b> drew <b>2,140</b>, the highest Motion attendance to date. Grants Mill and Auburn led. First Wednesday (Mar 4) drew 6,820 all-campus. Want a full Motion trend by campus?`},
+  {q:/lobby|congest|overflow/i, a:()=>`<b>Greystone</b> logged lobby congestion at 9:34 AM (after rain) and <b>Riverchase</b> noted overflow not opened in time. <b>Auburn's guest-lane approach</b> eliminated congestion and is the recommended cross-campus fix.`},
+  {q:/recurring|common|six month|6 month|pattern|issue/i, a:()=>`Recurring themes across campuses (last 6 mo): <b>1) Parking during weather</b> (Greystone, Riverchase), <b>2) Coffee running low on peak weekends</b> (Grants Mill, Huntsville), <b>3) ProPresenter media prep</b> (Riverchase). The highest-leverage fix is a standardized weather playbook — it touches parking, lobby, and coffee at once.`},
+  {q:/easter|compare|last three|last 3|christmas/i, a:()=>`Easter comparison (all-campus): <b>2023 ~31k → 2024 ~34k → 2025 ~36k</b>, trending +8%/yr. Top recurring Easter issue: parking overflow before the 9:30 service. First-time guests roughly double. This year's prep is <b>in progress</b> — 1 open Easter action across campuses.`},
+  {q:/retention|volunteer|consistent|reliab/i, a:()=>`Highest volunteer retention: <b>Auburn (99 health)</b> and <b>Grants Mill (98)</b>, both with sub-3% no-show rates and 12–18 new volunteers this weekend. <b>Riverchase</b> is the outlier at 84 with 12 no-shows — a targeted re-engagement effort is recommended.`},
+];
+let intelHistory=[];
+RENDER.intel=function(){
+  V().innerHTML=`
+  <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#0f2440,#1c3760);color:#fff;border:none">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:26px">✦</span>
+      <div><div class="b" style="color:#fff;font-size:16px">Ministry Intelligence</div>
+      <div style="color:#c6d3e6;font-size:13px">Every report, note, issue & praise report feeds one AI knowledge base. Ask leadership-level questions across every campus and every weekend.</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="chat" id="chatBox"></div>
+    <div class="sugg" id="suggBox">
+      ${['Which campuses struggled with parking?','Show campuses with declining attendance over 8 weeks','Who has served in Audio more than 40 Sundays?','Show recurring issues across all campuses','Compare this Easter to the last three years','Which campuses had the highest volunteer retention?'].map(s=>`<button onclick="askIntel(this.textContent)">${s}</button>`).join('')}
+    </div>
+    <div class="askbar">
+      <input id="intelIn" placeholder="Ask anything across every campus and weekend…" onkeydown="if(event.key==='Enter'){askIntel(this.value);this.value=''}">
+      <button class="btn pri" onclick="const i=document.getElementById('intelIn');askIntel(i.value);i.value=''">Ask</button>
+    </div>
+  </div>`;
+  const box=document.getElementById('chatBox');
+  if(intelHistory.length===0){
+    intelHistory.push({r:'a',t:'Hi — I can search across every After Action Report, praise report, production log, and attendance record. Try one of the suggestions below, or ask your own question.'});
+  }
+  intelHistory.forEach(m=>box.appendChild(el(`<div class="msg ${m.r}">${m.t}</div>`)));
+  box.scrollTop=box.scrollHeight;
+};
+function askIntel(q){
+  q=(q||'').trim();if(!q)return;
+  const box=document.getElementById('chatBox');
+  intelHistory.push({r:'u',t:q});
+  box.appendChild(el(`<div class="msg u">${q}</div>`));
+  const thinking=el(`<div class="msg a muted">✦ Searching ${CAMPUSES.length} campuses…</div>`);
+  box.appendChild(thinking);box.scrollTop=box.scrollHeight;
+  setTimeout(()=>{
+    const match=INTEL_QA.find(x=>x.q.test(q));
+    const ans=match?match.a():`I searched every campus report but didn't find a strong match for that. Try asking about <b>attendance trends, parking, volunteers, production issues, praise reports, or specific events</b> like Easter or Motion. (In the production build this runs a live query against the full Highlands knowledge base.)`;
+    thinking.remove();
+    intelHistory.push({r:'a',t:ans});
+    box.appendChild(el(`<div class="msg a">${ans}</div>`));
+    box.scrollTop=box.scrollHeight;
+  },650);
+}
+
+/* ---------- boot ---------- */
+renderNav();
+go('exec');
+tick();setInterval(tick,1000);
+</script>
+</body>
+</html>
