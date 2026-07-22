@@ -144,8 +144,9 @@
 
   .campcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;transition:transform .1s,box-shadow .1s}
   .campcard:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,36,64,.12)}
-  .campcard .top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .campcard .top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
   .campcard .nm{font-weight:700}
+  .campcard .top .pill{flex:0 0 auto}
   .campcard .mini{display:flex;gap:14px;margin-top:10px;font-size:12px}
   .campcard .mini b{display:block;font-size:16px;color:var(--navy2)}
   .campcard .mini .l{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
@@ -326,16 +327,19 @@ const EVTYPE = {
   conf:{icon:'🎉',cls:'ev-conf',color:'#c25a34'},
   other:{icon:'📍',cls:'ev-other',color:'#4a5470'},
 };
-/* per-type workspace tab sets */
-const TAB_SETS = {
-  sun:['Overview','Attendance','Campus Notes','Production','Lobby','Dream Team','Facilities','Recognition','Action Items','History'],
-  fw:['Overview','Attendance','Campus Notes','Dream Team','Production','Recognition','History'],
-  motion:['Overview','Attendance','Students','Lobby','Production','Security','Notes','Recognition','History'],
-  gt:['Overview','Attendance','Campus Reports','Recognition','Action Items','History'],
-  prayer:['Overview','Daily Attendance','Campus Reports','Prayer Notes','Recognition','History'],
-  conf:['Overview','Attendance','Operations','Campus Notes','Recognition','Action Items','History'],
-  other:['Overview','Attendance','Operations','Campus Notes','Recognition','Action Items','Files','History'],
-};
+/* workspace tabs — Campuses is the default landing tab (the 90% action) */
+const WS_TABS = ['Campuses','Overview','Visual Operations','Playbook','Analytics','Files'];
+function tabsFor(){return WS_TABS;}
+
+/* Visual Operations layout assets (per event type — mock) */
+const VISOPS_ASSETS = [
+  {key:'exterior',icon:'🛰',name:'Exterior Layout',sub:'Satellite view · draw parking, tents, routes',markers:[['🟨','Guest Parking'],['🟥','Overflow'],['🟦','Shuttle Pickup'],['🟩','Kids Entrance'],['⭕','Security'],['⭐','VIP Parking']]},
+  {key:'lobby',icon:'🏢',name:'Lobby Layout',sub:'Floor plan · drag coffee, Connect, photo booth',markers:[['☕','Coffee'],['📖','Connect Center'],['📸','Photo Booth'],['🙏','Prayer'],['🎁','Merch'],['🎈','Balloons']]},
+  {key:'seating',icon:'💺',name:'Seating Layout',sub:'Reserved, VIP, overflow, wheelchair, cameras',markers:[['🟦','Reserved'],['⭐','VIP'],['🟥','Overflow'],['♿','Wheelchair'],['📷','Cameras'],['🙏','Prayer Team']]},
+  {key:'stage',icon:'🎤',name:'Stage Layout',sub:'Stage plot · band, cameras, lighting notes',markers:[['🎸','Band'],['🥁','Drums'],['🎹','Keys'],['📷','Cameras'],['💡','Lighting'],['🎙','Speaker']]},
+  {key:'parking',icon:'🚗',name:'Parking Plan',sub:'Entrance, exit, overflow, shuttle, police, first aid',markers:[['➡','Entrance'],['⬅','Exit'],['🟨','Guest'],['🟥','Overflow'],['🚓','Police'],['➕','First Aid']]},
+];
+const SETUP_GALLERIES = ['Exterior','Lobby','Auditorium','Kids','Parking','Backstage','Signage'];
 
 /* today's Sunday service times */
 const SERVICES = [
@@ -384,7 +388,7 @@ let ROUTE={page:'dashboard'};   // {page} or {page:'event',evId,campus,tab}
 const NAV=[
   {id:'dashboard',ic:'🏠',label:'Dashboard'},
   {id:'calendar',ic:'📅',label:'Calendar'},
-  {id:'events',ic:'📍',label:'Events'},
+  {id:'events',ic:'📋',label:'Reports'},
   {id:'actions',ic:'✅',label:'Action Items'},
   {id:'recognition',ic:'🏆',label:'Recognition'},
 ];
@@ -420,7 +424,7 @@ function setCampus(id){CUR=id;store.set('campus',id);render();}
 function go(page){ROUTE={page};render();}
 function openEvent(evId,campus,tab){
   const ev=EVENTS.find(e=>e.id===evId);
-  ROUTE={page:'event',evId,campus:campus||null,tab:tab||TAB_SETS[ev.type][0]};
+  ROUTE={page:'event',evId,campus:campus||null,tab:tab||WS_TABS[0]};
   render();
 }
 
@@ -428,7 +432,7 @@ function render(){
   renderNav();
   const v=document.getElementById('view');v.innerHTML='';
   if(ROUTE.page==='event'){renderEvent();return;}
-  const meta={dashboard:['Dashboard',''],calendar:['Calendar','Every event, one grid'],events:['Events','Every event workspace'],
+  const meta={dashboard:['Dashboard',''],calendar:['Calendar','Every event, one grid'],events:['Reports','Every event that collects campus reports'],
     actions:['Action Items','Every follow-up in one place'],recognition:['Recognition','Every recognition submitted'],intel:['Ministry Intelligence','Ask across every report']}[ROUTE.page]||['',''];
   document.getElementById('pageTitle').textContent=meta[0];
   document.getElementById('pageCrumb').innerHTML=meta[1];
@@ -474,10 +478,20 @@ PAGES.dashboard=function(){
     <div class="kpi"><div class="l">Total Attendance</div><div class="v">${fmt(SERVICES.reduce((a,s)=>a+s.attn,0))}</div><div class="d flat">all-campus, all services</div></div>
   </div>
 
+  <div class="sect-title">Upcoming Events <span class="hint">jump straight in — no browsing</span></div>
+  <div class="grid g4">
+    ${EVENTS.filter(e=>['fw-0805','motion-0710','gt-0726','prayer-0801'].includes(e.id)).map(e=>{const t=EVTYPE[e.type];const done=e.type==='fw'?14:e.type==='motion'?9:e.type==='gt'?22:16;return `
+      <div class="svc" onclick="openEvent('${e.id}')" style="cursor:pointer">
+        <div class="h"><span style="font-size:22px">${t.icon}</span><span class="pill p-info"><span class="dt"></span>${done}/26</span></div>
+        <div class="b" style="font-size:15px;margin-top:6px">${e.name}</div>
+        <div class="small muted">${e.label}, 2026 · ${done} reports in</div>
+      </div>`}).join('')}
+  </div>
+
   <div class="grid g2" style="margin-top:16px">
     <div class="card">
       <h3>Pending Reports</h3>
-      <div class="desc">Campuses that still owe a Sunday report</div>
+      <div class="desc">Campuses that still owe this Sunday's report</div>
       ${CAMPUSES.filter(c=>STATUS_ORDER[c.id]!=='submitted').slice(0,6).map(c=>`
         <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)">
           <span class="b" style="flex:1">${c.name}</span>${statusPill(STATUS_ORDER[c.id])}
@@ -559,10 +573,10 @@ PAGES.events=function(){
 /* ===================== EVENT WORKSPACE ===================== */
 function renderEvent(){
   const ev=EVENTS.find(e=>e.id===ROUTE.evId);const t=EVTYPE[ev.type];
-  const tabs=TAB_SETS[ev.type];
-  document.getElementById('pageTitle').textContent=`${t.icon} ${ev.name}`;
+  const tabs=tabsFor(ev);
+  document.getElementById('pageTitle').textContent=`${t.icon} ${ev.name} · ${ev.label}`;
   const cName=ROUTE.campus?CAMPUSES.find(c=>c.id===ROUTE.campus).name:'All Campuses';
-  document.getElementById('pageCrumb').innerHTML=`<a onclick="go('calendar')">Calendar</a> › <a onclick="openEvent('${ev.id}')">${ev.name} · ${ev.label}</a>${ROUTE.campus?` › ${cName}`:''}`;
+  document.getElementById('pageCrumb').innerHTML=`<a onclick="go('events')">Reports</a> › <a onclick="openEvent('${ev.id}')">${ev.name} · ${ev.label}</a>${ROUTE.campus?` › ${cName}`:''}`;
 
   // If a campus is selected → show the Campus Report (the heart)
   if(ROUTE.campus){renderCampusReport(ev);return;}
@@ -616,8 +630,55 @@ function campusCardsBlock(ev){
       </div>`}).join('')}
   </div>`;
 }
+/* compact status strip that sits ABOVE the campus list (not its own page) */
+function statusStrip(ev){
+  const s=reportsSummary();const tot=26;
+  return `<div class="card" style="padding:14px 16px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div class="track" style="flex:1;min-width:240px"><div class="seg">
+        <div class="stackbar" style="margin-top:0">
+          <i style="width:${s.submitted/tot*100}%;background:var(--ok)"></i>
+          <i style="width:${s.progress/tot*100}%;background:var(--warn)"></i>
+          <i style="width:${s.notstarted/tot*100}%;background:var(--bad)"></i>
+        </div>
+      </div></div>
+      <div class="leg" style="margin-top:0;gap:16px">
+        <span><span class="dt" style="background:var(--ok)"></span>🟢 ${s.submitted}</span>
+        <span><span class="dt" style="background:var(--warn)"></span>🟡 ${s.progress}</span>
+        <span><span class="dt" style="background:var(--bad)"></span>🔴 ${s.notstarted}</span>
+      </div>
+    </div>
+  </div>`;
+}
+/* the CAMPUSES tab — the default landing view. compact rows, click straight to report */
+function campusListView(ev){
+  return statusStrip(ev)+`
+    <input id="campSearch" placeholder="Search campuses…" oninput="filterCampList('${ev.id}')"
+      style="width:100%;padding:9px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:12px">
+    <div id="campList" class="grid g4"></div>`;
+}
+function filterCampList(evId){
+  const ev=EVENTS.find(e=>e.id===evId);
+  const q=((document.getElementById('campSearch')||{}).value||'').toLowerCase();
+  const list=CAMPUSES.filter(c=>c.name.toLowerCase().includes(q));
+  document.getElementById('campList').innerHTML=list.map(c=>{const r=campusReport(c.id);const st=r.status;
+    const stripe=st==='submitted'?'stripe-ok':st==='progress'?'stripe-prog':'stripe-not';
+    return `<div class="campcard ${stripe}" onclick="openEvent('${ev.id}','${c.id}')">
+      <div class="top"><span class="nm">${c.name}${c.flagship?' <span class="gold-t">★</span>':''}</span>${statusPill(st)}</div>
+      ${st!=='notstarted'?`<div class="mini">
+        <div><span class="l">Attendance</span><b>${fmt(r.attendance.total)}</b></div>
+        <div><span class="l">Recognition</span><b>${r.recognitionCount}</b></div>
+        <div><span class="l">Actions</span><b>${r.actionCount}</b></div>
+      </div>`:`<div class="small muted" style="margin-top:10px">Tap to start report →</div>`}
+    </div>`}).join('')||'<div class="empty">No campuses match.</div>';
+}
 function renderEventTab(ev){
   const body=document.getElementById('tabBody');const tab=ROUTE.tab;
+  if(tab==='Campuses'){
+    body.innerHTML=campusListView(ev);
+    filterCampList(ev.id);
+    return;
+  }
   if(tab==='Overview'){
     const totalAttn=CAMPUSES.reduce((a,c)=>a+campusReport(c.id).attendance.total,0);
     const guests=CAMPUSES.reduce((a,c)=>a+campusReport(c.id).attendance.guests,0);
@@ -633,58 +694,146 @@ function renderEventTab(ev){
       ${ev.type==='sun'?`<div class="sect-title">Service Cards</div><div class="grid g4">${SERVICES.map(s=>`
         <div class="svc"><div class="h"><div class="time">${s.time}</div>${s.issues?`<span class="pill p-warn"><span class="dt"></span>${s.issues}</span>`:'<span class="pill p-ok"><span class="dt"></span>OK</span>'}</div>
         <div class="attn">${fmt(s.attn)}</div><div class="small muted">${s.notes} reports · ${s.weather}</div></div>`).join('')}</div>`:''}
-      <div class="sect-title">Every Campus <span class="hint">click any card to open its report</span></div>
-      ${campusCardsBlock(ev)}`;
+      <div class="sect-title">Recognition This Event</div>
+      <div class="grid g2">${(RECOGNITION.filter(r=>r.event===ev.name).length?RECOGNITION.filter(r=>r.event===ev.name):RECOGNITION.slice(0,4)).slice(0,4).map(r=>recCard(r)).join('')}</div>`;
     return;
   }
-  if(tab==='Reports'||tab==='Campus Reports'||tab==='Campus Notes'){
-    body.innerHTML=statusTrackerBlock(ev)+campusCardsBlock(ev)+
-      `<div class="card" style="margin-top:16px"><div class="small muted">Tip: each campus card opens the full <b>Campus Report</b> — the page every campus team fills out (Attendance, Lobby, Notes, Production, Facilities, Recognition, Action Items, Photos, AI Summary).</div></div>`;
-    return;
-  }
-  if(tab==='Attendance'){
-    body.innerHTML=`<div class="tblwrap"><table class="tbl">
-      <thead><tr><th>Campus</th><th>Adults</th><th>Kids</th><th>Students</th><th>Dream Team</th><th>Guests</th><th>Salvations</th><th>Total</th><th>Status</th></tr></thead>
-      <tbody>${CAMPUSES.map(c=>{const r=campusReport(c.id);const a=r.attendance;return `<tr onclick="openEvent('${ev.id}','${c.id}')" style="cursor:pointer">
-        <td class="b">${c.name}</td><td>${fmt(a.adults)}</td><td>${fmt(a.kids)}</td><td>${fmt(a.students)}</td><td>${fmt(a.dreamTeam)}</td><td>${a.guests}</td><td class="gold-t b">${a.salvations}</td><td class="b">${fmt(a.total)}</td><td>${statusPill(r.status)}</td></tr>`}).join('')}</tbody>
-    </table></div>`;
-    return;
-  }
-  if(tab==='Recognition'){
-    const rel=RECOGNITION.filter(r=>r.event===ev.name).length?RECOGNITION.filter(r=>r.event===ev.name):RECOGNITION.slice(0,5);
-    body.innerHTML=`<div class="grid g2">${rel.map(r=>recCard(r)).join('')}</div>`;
-    return;
-  }
-  if(tab==='Action Items'){
-    const rel=ACTIONS.filter(a=>a.event===ev.name);
-    body.innerHTML=actionTable(rel.length?rel:ACTIONS.slice(0,6));
-    return;
-  }
-  if(tab==='History'){
-    body.innerHTML=`<div class="card"><h3>Event History</h3><div class="desc">Every past instance — searchable institutional memory</div>
+  if(tab==='Analytics'){
+    body.innerHTML=`
+      <div class="tblwrap" style="margin-bottom:16px"><table class="tbl">
+        <thead><tr><th>Campus</th><th>Adults</th><th>Kids</th><th>Students</th><th>Dream Team</th><th>Guests</th><th>Salvations</th><th>Total</th></tr></thead>
+        <tbody>${CAMPUSES.map(c=>{const r=campusReport(c.id);const a=r.attendance;return `<tr onclick="openEvent('${ev.id}','${c.id}')" style="cursor:pointer">
+          <td class="b">${c.name}</td><td>${fmt(a.adults)}</td><td>${fmt(a.kids)}</td><td>${fmt(a.students)}</td><td>${fmt(a.dreamTeam)}</td><td>${a.guests}</td><td class="gold-t b">${a.salvations}</td><td class="b">${fmt(a.total)}</td></tr>`}).join('')}</tbody>
+      </table></div>
+      <div class="card"><h3>${ev.name} History</h3><div class="desc">Every past instance — searchable institutional memory</div>
       <div class="tblwrap" style="border:none"><table class="tbl"><thead><tr><th>Date</th><th>Attendance</th><th>Guests</th><th>Salvations</th><th>Notes</th></tr></thead>
       <tbody>${['Jul 12','Jul 5','Jun 28','Jun 21','Jun 14'].map((d,i)=>`<tr><td class="b">${d}, 2026</td><td>${fmt(27400+i*380)}</td><td>${420-i*12}</td><td>${88-i*4}</td><td class="small muted">${['Strong week','Rain in north region','Steady','Baptism weekend','Guest push'][i]}</td></tr>`).join('')}</tbody></table></div></div>`;
     return;
   }
-  // aggregate ops-style tabs (Production, Lobby, Dream Team, Facilities, Students, Security, Operations, Notes, etc.)
-  body.innerHTML=aggregateTab(ev,tab);
+  if(tab==='Visual Operations'){
+    body.innerHTML=visualOpsView(ev);
+    return;
+  }
+  if(tab==='Playbook'){
+    body.innerHTML=playbookView(ev);
+    return;
+  }
+  if(tab==='Files'){
+    const items=[['Run Sheet','📋'],['Parking Plan','🅿️'],['Maps','🗺'],['Graphics','🎨'],['Speaker Notes','🗒'],['Emergency Plan','🚨']];
+    body.innerHTML=`<div class="grid g3">${items.map(([n,i])=>`<div class="card" style="cursor:pointer" onclick="toast('Opening ${n} (demo)')"><div style="font-size:26px">${i}</div><h3 style="margin-top:8px">${n}</h3><div class="small muted">${ev.name} · ${ev.label}</div></div>`).join('')}</div>`;
+    return;
+  }
+  body.innerHTML=campusListView(ev);filterCampList(ev.id);
 }
-function aggregateTab(ev,tab){
-  // show a per-campus roll-up appropriate to the tab
-  const rows=CAMPUSES.slice(0,12).map(c=>{const r=campusReport(c.id);return {c,r};});
-  const cell=(r,tab)=>{
-    if(tab==='Production')return r.status==='notstarted'?'<span class="muted">—</span>':(r.campus.id==='greystone'?'<span class="pill p-warn"><span class="dt"></span>Mic dropout</span>':'<span class="pill p-ok"><span class="dt"></span>Clean</span>');
-    if(tab==='Lobby')return stars(r.lobby.guest);
-    if(tab==='Dream Team')return `${fmt(r.attendance.dreamTeam)} served`;
-    if(tab==='Facilities')return r.campus.id==='greystone'?'<span class="pill p-warn"><span class="dt"></span>HVAC monitor</span>':'<span class="pill p-ok"><span class="dt"></span>OK</span>';
-    if(tab==='Students')return `${fmt(r.attendance.students)} students`;
-    if(tab==='Security')return '<span class="pill p-ok"><span class="dt"></span>No incidents</span>';
-    if(tab==='Daily Attendance')return `${fmt(r.attendance.total)} · Day ${rint(r.campus.id+'d',1,21)}`;
-    return r.status==='notstarted'?'<span class="muted">Pending</span>':'<span class="pill p-ok"><span class="dt"></span>Logged</span>';
-  };
-  return `<div class="card" style="margin-bottom:12px"><div class="small muted">${tab} roll-up across campuses for <b>${ev.name}</b>. Click a row to open that campus report.</div></div>
-  <div class="tblwrap"><table class="tbl"><thead><tr><th>Campus</th><th>${tab}</th><th>Status</th></tr></thead>
-  <tbody>${rows.map(({c,r})=>`<tr onclick="openEvent('${ev.id}','${c.id}')" style="cursor:pointer"><td class="b">${c.name}</td><td>${cell(r,tab)}</td><td>${statusPill(r.status)}</td></tr>`).join('')}</tbody></table></div>`;
+
+/* ---- Visual Operations: the "how the campus was physically executed" blueprint ---- */
+function visualOpsView(ev){
+  return `
+  <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:24px">🛰</span>
+    <div style="flex:1;min-width:220px"><h3 style="margin:0">Visual Operations <span class="small muted" style="font-weight:500">· the visual memory of how this event was executed</span></h3>
+      <div class="small muted">Every layout is versioned — nothing gets overwritten. Open a past event and see exactly where every tent, cone, camera & station was placed.</div></div>
+    <button class="btn sm" onclick="visAiCompare()">✦ AI Compare to Last Year</button>
+  </div>
+  <div id="visAiBox"></div>
+
+  <div class="sect-title">Layouts <span class="hint">click to open the drawable canvas</span></div>
+  <div class="grid g3">
+    ${VISOPS_ASSETS.map(a=>`
+      <div class="card" style="cursor:pointer;padding:0;overflow:hidden" onclick="openLayout('${a.key}')">
+        <div style="height:120px;background:linear-gradient(135deg,#20344f,#12233c);position:relative;display:flex;align-items:center;justify-content:center">
+          <span style="font-size:38px;opacity:.9">${a.icon}</span>
+          <span class="pill p-gold" style="position:absolute;top:8px;right:8px"><span class="dt"></span>v3 · ${ev.label}</span>
+        </div>
+        <div style="padding:13px 15px">
+          <div class="b">${a.name}</div>
+          <div class="small muted">${a.sub}</div>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${a.markers.slice(0,4).map(m=>`<span class="chip" style="margin:0;padding:3px 8px;font-size:11px">${m[0]} ${m[1]}</span>`).join('')}</div>
+        </div>
+      </div>`).join('')}
+  </div>
+
+  <div class="sect-title">Setup / Service / Teardown Photos <span class="hint">time-stamped before &amp; after</span></div>
+  <div class="card">
+    <div class="tabs" style="margin-bottom:12px">${['Setup','Service','Teardown'].map((p,i)=>`<button class="${i===0?'on':''}" onclick="toast('${p} gallery (demo)')">${p}</button>`).join('')}</div>
+    <div class="grid g4" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+      ${SETUP_GALLERIES.map(g=>`<div style="border:2px dashed var(--line);border-radius:11px;height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);cursor:pointer" onclick="toast('${g} photos (demo)')"><span style="font-size:22px">📷</span><span class="small">${g}</span></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;border-left:4px solid var(--gold)">
+    <h3>📐 Campus Blueprint</h3>
+    <div class="desc">This event references each campus's permanent profile — no need to recreate floor plans, utility shutoffs, AED locations, etc. every time.</div>
+    <button class="btn" onclick="openBlueprint('grantsmill')">Open Grants Mill Blueprint →</button>
+  </div>`;
+}
+function openLayout(key){
+  const a=VISOPS_ASSETS.find(x=>x.key===key);
+  openModal(`
+    <div class="mh"><span style="font-size:22px">${a.icon}</span><div><div class="b" style="font-size:16px">${a.name}</div><div class="small muted">Drawable canvas · version history</div></div><button class="mx" onclick="closeModal()">×</button></div>
+    <div class="mb">
+      <div style="height:220px;border-radius:12px;background:linear-gradient(135deg,#20344f,#12233c);position:relative;overflow:hidden;margin-bottom:14px">
+        <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:26px 26px"></div>
+        ${a.markers.map((m,i)=>`<span style="position:absolute;top:${20+((i*37)%160)}px;left:${30+((i*90)%360)}px;font-size:22px">${m[0]}</span>`).join('')}
+        <span class="pill p-gold" style="position:absolute;bottom:10px;left:10px"><span class="dt"></span>${key==='exterior'?'Satellite loaded':'Floor plan loaded'}</span>
+      </div>
+      <div class="field"><label>Drawing Tools</label><div>${a.markers.map(m=>`<span class="chip">${m[0]} ${m[1]}</span>`).join('')}</div></div>
+      <div class="field"><label>Version History</label><div>${['Christmas 2025','Easter 2026','Motion 2026','This Event'].map((v,i)=>`<span class="pill ${i===3?'p-info':'p-muted'}" style="margin:0 6px 6px 0"><span class="dt"></span>${v}</span>`).join('')}</div></div>
+      <button class="btn gold" onclick="toast('Version saved (demo)')">Save Version</button>
+    </div>`);
+}
+function visAiCompare(){
+  const box=document.getElementById('visAiBox');
+  box.innerHTML=`<div class="card" style="border-left:4px solid var(--gold)"><div class="muted small">✦ Comparing layouts…</div></div>`;
+  setTimeout(()=>{
+    box.innerHTML=`<div class="card" style="border-left:4px solid var(--gold)">
+      <h3>✦ AI Layout Comparison</h3><div class="desc">Compared to last year's event</div>
+      <ul style="margin:0;padding-left:18px;line-height:1.8">
+        <li>Coffee moved from the <b>west</b> to the <b>east lobby</b></li>
+        <li>Parking switched to <b>one-way traffic flow</b></li>
+        <li>Overflow seating increased by <b>214 seats</b></li>
+        <li>Kids check-in moved <b>closer to the entrance</b></li>
+        <li>Security added <b>two additional officers</b> at the north drop-off</li>
+      </ul>
+      <div class="small muted" style="margin-top:10px">This kind of side-by-side would save planners hours every season.</div>
+    </div>`;
+    box.scrollIntoView({behavior:'smooth',block:'center'});
+  },700);
+}
+function playbookView(ev){
+  const entries=[
+    ['Lobby','☕','We moved coffee to the west entrance because the east doors bottlenecked during the 9:30 rush.'],
+    ['Kids','🧒','Added 3 extra check-in stations near door 4 — wait time dropped from 6 min to under 2.'],
+    ['Parking','🚗','Closed the north entrance until 8:15, then opened it one-way to clear the backup.'],
+    ['Overflow','🪑','Opened room 204 at 9:25 when the auditorium hit 92% — communicated via radio channel 3.'],
+    ['Security','🛡','Stationed two officers at the north drop-off; coordinate with local PD one week out.'],
+  ];
+  return `
+  <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:24px">📖</span>
+    <div style="flex:1;min-width:220px"><h3 style="margin:0">Playbook — "How We Did It"</h3>
+      <div class="small muted">Not notes — <b>instructions</b>. Next year, the team already knows. Captured per department for ${ev.name}.</div></div>
+    <button class="btn sm pri" onclick="toast('Add playbook entry (demo)')">+ Add Entry</button>
+  </div>
+  ${entries.map(([dept,ic,txt])=>`
+    <div class="card" style="margin-bottom:10px"><div style="display:flex;gap:12px">
+      <div style="font-size:22px">${ic}</div>
+      <div style="flex:1"><div class="b">${dept}</div><p style="margin:4px 0 0">${txt}</p></div>
+      <span class="pill p-gold" style="align-self:flex-start"><span class="dt"></span>Replicate</span>
+    </div></div>`).join('')}`;
+}
+function openBlueprint(cid){
+  const c=CAMPUSES.find(x=>x.id===cid)||CAMPUSES[0];
+  const items=[['Building Floor Plans','🏢'],['Auditorium Layout','💺'],['Kids Ministry Layout','🧒'],['Lobby Diagrams','🚪'],
+    ['Parking Maps','🅿️'],['Utility Shutoffs','🔧'],['Storage Locations','📦'],['Loading Docks','🚚'],['Camera Positions','📷'],
+    ['Audio Rack Locations','🎛'],['Network Closets','🌐'],['First Aid & AED','➕'],['Emergency Exits','🚨'],['Weather Shelters','⛈'],
+    ['Volunteer Check-in','✅'],['Security Coverage','🛡'],['Campus Contacts','📇']];
+  openModal(`
+    <div class="mh"><span style="font-size:22px">📐</span><div><div class="b" style="font-size:16px">${c.name} — Campus Blueprint</div><div class="small muted">Permanent profile · referenced by every event</div></div><button class="mx" onclick="closeModal()">×</button></div>
+    <div class="mb">
+      <div class="small muted" style="margin-bottom:12px">Every event references this instead of recreating layouts. Update once, applies everywhere.</div>
+      <div class="grid g2">${items.map(([n,i])=>`<div class="card" style="padding:11px 13px;cursor:pointer" onclick="toast('${n} (demo)')"><div style="display:flex;align-items:center;gap:9px"><span style="font-size:18px">${i}</span><span class="b small">${n}</span></div></div>`).join('')}</div>
+    </div>`);
 }
 
 /* ---------- CAMPUS REPORT (the heart) ---------- */
@@ -698,6 +847,7 @@ function renderCampusReport(ev){
     <div style="flex:1"><h3 style="font-size:17px">${c.name} Campus Report</h3><div class="small muted">${EVTYPE[ev.type].icon} ${ev.name} · ${ev.label}, 2026 · 9:30 AM</div></div>
     ${r.status==='submitted'?`<span class="pill p-ok"><span class="dt"></span>Submitted ${r.submittedTime} by ${r.submittedBy}</span>`
       :r.status==='progress'?'<span class="pill p-warn"><span class="dt"></span>In Progress</span>':'<span class="pill p-bad"><span class="dt"></span>Not Started</span>'}
+    <button class="btn" onclick="openBlueprint('${c.id}')">📐 Blueprint</button>
     <button class="btn gold" onclick="genSummary('${c.id}')">✦ AI Summary</button>
     <button class="btn" onclick="openEvent('${ev.id}')">← All campuses</button>
   </div>
