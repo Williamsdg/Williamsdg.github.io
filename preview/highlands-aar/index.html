@@ -329,10 +329,10 @@
    All mock data. Integrations simulated.
    ===================================================================== */
 
-/* ---- 26 campuses ---- */
-const CAMPUS_NAMES = ['Grants Mill','Greystone','Auburn','Riverchase','Huntsville','Shoals','Montgomery','Tuscaloosa',
-  'Opelika','Mobile','Cullman','Oxford','Gadsden','Alexander City','Columbiana','Fultondale','Grandview','McCalla',
-  'Trussville','Chelsea','Pell City','Scottsboro','Albertville','Guntersville','Woodlawn','Tuscumbia'];
+/* ---- 26 campuses (Church of the Highlands' actual locations, July 2026) ---- */
+const CAMPUS_NAMES = ['Grants Mill','Greystone','Riverchase','Grandview','Woodlawn','Fultondale','Alabaster','Auburn',
+  'Opelika','Huntsville','Madison','Montgomery','Prattville','Tuscaloosa','Shoals','Gadsden','Oxford','Sylacauga',
+  'Demopolis','Troy','Daphne','Columbus','Peachtree City','Highlands en Español','Southwest','Southeast'];
 const CAMPUSES = CAMPUS_NAMES.map((n,i)=>({id:n.toLowerCase().replace(/[^a-z]/g,''),name:n,flagship:i===0}));
 const CENTRAL = {id:'central',name:'Central Operations'};
 
@@ -347,6 +347,20 @@ CAMPUSES.forEach((c,i)=>{ STATUS_ORDER[c.id] = i<18?'submitted':i<22?'progress':
 STATUS_ORDER['grantsmill']='submitted'; STATUS_ORDER['greystone']='progress';
 STATUS_ORDER['auburn']='submitted'; STATUS_ORDER['riverchase']='notstarted'; STATUS_ORDER['huntsville']='submitted';
 
+/* deterministic mock campus notes (What went well / didn't / additional) */
+const WELL_POOL=['Guest Services crushed the lobby','Kids check-in was the fastest yet','Parking flowed smoothly all morning','Worship transitions were seamless','Prayer team stayed late with guests','New volunteers onboarded well','Coffee line moved fast','Livestream was clean all services'];
+const DIDNT_POOL=['Coffee ran low before 11:15','Overflow room opened a few minutes late','A handful of volunteers arrived late','Parking cones were short-staffed','Signage at the north entrance was unclear','Confidence monitor lagged briefly'];
+const ADDL_POOL=['Two families joined a small group after the 11:15.','Recommend one more parking attendant for weather days.','Great energy in the student section this week.','Consider moving the Connect Center closer to the doors.','Record first-time guest count for this campus.',''];
+function campusNotes(cid){
+  const w1=rint(cid+'w1',0,WELL_POOL.length-1);
+  let w2=rint(cid+'w2',0,WELL_POOL.length-1);
+  if(w2===w1)w2=(w2+1)%WELL_POOL.length; // ensure two distinct wins
+  return {
+    well:[WELL_POOL[w1],WELL_POOL[w2]],
+    didnt:[DIDNT_POOL[rint(cid+'d1',0,DIDNT_POOL.length-1)]],
+    addl:ADDL_POOL[rint(cid+'ad',0,ADDL_POOL.length-1)]
+  };
+}
 /* build a campus report snapshot on demand (mock) */
 function campusReport(cid){
   const c=CAMPUSES.find(x=>x.id===cid);
@@ -391,7 +405,7 @@ const EVTYPE = {
   other:{icon:'📍',cls:'ev-other',color:'#4a5470'},
 };
 /* workspace tabs — Campuses is the default landing tab (the 90% action) */
-const WS_TABS = ['Campuses','Overview','Visual Operations','Playbook','Analytics','Files'];
+const WS_TABS = ['Campuses','Overview','Notes','Visual Operations','Playbook','Analytics','Files'];
 function tabsFor(){return WS_TABS;}
 
 /* Visual Operations layout assets (per event type — mock) */
@@ -438,8 +452,8 @@ let ACTIONS = [
   {task:'Replace lobby TV in east wing',owner:'Facilities',campus:'Tuscaloosa',due:'Jul 15',priority:'Medium',status:'Overdue',event:'Sunday'},
   {task:'Update run sheet template',owner:'Production',campus:'Grants Mill',due:'Jul 10',priority:'Low',status:'Complete',event:'Sunday'},
   {task:'Debrief Motion Night security plan',owner:'Security',campus:'Opelika',due:'Jul 20',priority:'Medium',status:'Open',event:'Motion Night'},
-  {task:'Restock Kids supplies',owner:'Kids Director',campus:'Mobile',due:'Jul 27',priority:'Low',status:'Open',event:'Sunday'},
-  {task:'Coordinate parking overflow lot',owner:'Guest Services',campus:'Cullman',due:'Aug 1',priority:'Medium',status:'In Progress',event:'Sunday'},
+  {task:'Restock Kids supplies',owner:'Kids Director',campus:'Madison',due:'Jul 27',priority:'Low',status:'Open',event:'Sunday'},
+  {task:'Coordinate parking overflow lot',owner:'Guest Services',campus:'Prattville',due:'Aug 1',priority:'Medium',status:'In Progress',event:'Sunday'},
   {task:'Test livestream backup encoder',owner:'Production',campus:'Oxford',due:'Jul 25',priority:'High',status:'Open',event:'Sunday'},
 ];
 
@@ -754,6 +768,37 @@ function filterCampList(evId){
       </div>`:`<div class="small muted" style="margin-top:10px">Tap to start report →</div>`}
     </div>`}).join('')||'<div class="empty">No campuses match.</div>';
 }
+/* the NOTES tab — every campus's notes rolled up in one feed for Central Ops,
+   each still opens the full campus report to edit. */
+function notesRollupView(ev){
+  return `
+  <div class="card" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:22px">📝</span>
+    <div style="flex:1;min-width:220px"><h3 style="margin:0">Campus Notes <span class="small muted" style="font-weight:500">· every campus's notes in one place</span></h3>
+      <div class="small muted">Skim what every campus wrote for ${ev.name} without opening 26 reports. Click any card to edit that campus's notes.</div></div>
+    <input id="notesSearch" placeholder="Search notes…" oninput="filterNotes('${ev.id}')"
+      style="flex:1;min-width:180px;padding:9px 13px;border:1px solid var(--line);border-radius:10px;font-size:14px">
+  </div>
+  <div id="notesList" class="grid g2"></div>`;
+}
+function filterNotes(evId){
+  const ev=EVENTS.find(e=>e.id===evId);
+  const q=((document.getElementById('notesSearch')||{}).value||'').toLowerCase();
+  // only campuses that have started/submitted a report have notes
+  const list=CAMPUSES.filter(c=>campusReport(c.id).status!=='notstarted');
+  const cards=list.map(c=>{const n=campusNotes(c.id);const r=campusReport(c.id);
+    const blob=(c.name+n.well.join(' ')+n.didnt.join(' ')+n.addl).toLowerCase();
+    if(q&&!blob.includes(q))return '';
+    return `<div class="card" style="cursor:pointer" onclick="openEvent('${ev.id}','${c.id}')">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="b" style="flex:1">${c.name}${c.flagship?' <span class="gold-t">★</span>':''}</span>${statusPill(r.status)}
+      </div>
+      ${n.well.map(w=>`<div class="win" style="margin-bottom:6px">✓ ${w}</div>`).join('')}
+      ${n.didnt.map(d=>`<div class="opp" style="margin-bottom:6px">△ ${d}</div>`).join('')}
+      ${n.addl?`<div class="small muted" style="margin-top:6px;font-style:italic">"${n.addl}"</div>`:''}
+    </div>`;}).filter(Boolean).join('');
+  document.getElementById('notesList').innerHTML=cards||'<div class="empty">No notes match.</div>';
+}
 function renderEventTab(ev){
   const body=document.getElementById('tabBody');const tab=ROUTE.tab;
   if(tab==='Campuses'){
@@ -778,6 +823,11 @@ function renderEventTab(ev){
         <div class="attn">${fmt(s.attn)}</div><div class="small muted">${s.notes} reports · ${s.weather}</div></div>`).join('')}</div>`:''}
       <div class="sect-title">Recognition This Event</div>
       <div class="grid g2">${(RECOGNITION.filter(r=>r.event===ev.name).length?RECOGNITION.filter(r=>r.event===ev.name):RECOGNITION.slice(0,4)).slice(0,4).map(r=>recCard(r)).join('')}</div>`;
+    return;
+  }
+  if(tab==='Notes'){
+    body.innerHTML=notesRollupView(ev);
+    filterNotes(ev.id);
     return;
   }
   if(tab==='Analytics'){
@@ -920,7 +970,7 @@ function openBlueprint(cid){
 
 /* ---------- CAMPUS REPORT (the heart) ---------- */
 function renderCampusReport(ev){
-  const c=CAMPUSES.find(x=>x.id===ROUTE.campus);const r=campusReport(c.id);const a=r.attendance;
+  const c=CAMPUSES.find(x=>x.id===ROUTE.campus);const r=campusReport(c.id);const a=r.attendance;const notes=campusNotes(c.id);
   setTitles(`${c.name} — ${ev.name}`);
   const v=V();
   v.innerHTML=`
@@ -960,14 +1010,14 @@ function renderCampusReport(ev){
     <div class="field"><label>Issues</label><input value="${c.id==='greystone'?'Power flicker 9:18':'None'}"></div>
   </div></div>
 
-  <div class="sect-title">Service Notes</div>
+  <div class="sect-title">Service Notes <span class="hint">feeds the event's Notes roll-up</span></div>
   <div class="grid g2">
     <div class="card"><h3>What went well? 🎉</h3>
-      <div class="win">✓ Guest Services crushed the lobby</div><div class="win">✓ Kids check-in fastest yet</div>
+      ${notes.well.map(w=>`<div class="win">✓ ${w}</div>`).join('')}
       <div class="add-row"><input id="crWin" placeholder="Add a win…" onkeydown="if(event.key==='Enter')toast('Added (demo)')"><button class="btn sm" onclick="toast('Added (demo)')">Add</button></div>
     </div>
     <div class="card"><h3>What didn't? / Unexpected</h3>
-      <div class="opp">△ Coffee ran low at 11:15</div><div class="opp">△ Overflow communication</div>
+      ${notes.didnt.map(d=>`<div class="opp">△ ${d}</div>`).join('')}
       <div class="add-row"><input id="crOpp" placeholder="Add an opportunity…" onkeydown="if(event.key==='Enter')toast('Added (demo)')"><button class="btn sm" onclick="toast('Added (demo)')">Add</button></div>
     </div>
   </div>
@@ -1009,7 +1059,7 @@ function renderCampusReport(ev){
   </div><button class="btn pri" onclick="toast('Added to Action Tracker (demo)')">+ Add Action Item</button></div>
 
   <div class="sect-title">Additional Notes</div>
-  <div class="card"><textarea style="min-height:120px" placeholder="Free-form notes for the weekend…">${c.id==='huntsville'?'Record first-time guests. Second service coffee needs earlier restock. Two families joined a small group after the 11:15.':''}</textarea></div>
+  <div class="card"><textarea style="min-height:120px" placeholder="Free-form notes for the weekend…">${notes.addl||''}</textarea></div>
 
   <div class="sect-title">Uploads</div>
   <div class="card"><div class="grid g3" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
