@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>ATN Change Requests — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --charcoal:#1D1E1C;--charcoal-2:#26261F;--charcoal-3:#2f2f27;--forest:#2F4633;--sage:#7E8A6B;
+  --sand:#C5B79A;--bronze:#B08A4F;--bronze-lite:#C9A24B;--paper:#F5F3EE;--muted:#B7B3A8;
+  --muted-d:#807c70;--line:rgba(197,183,154,.2);--err:#a3543f;
+  --new:#C9A24B;--prog:#6f9bd1;--done:#5C6B4C;--wont:#7a6f60;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Montserrat',system-ui,sans-serif;background:var(--charcoal);color:var(--paper);line-height:1.55;-webkit-font-smoothing:antialiased;min-height:100vh}
+h1,h2,h3{font-weight:800;letter-spacing:-.01em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+header{border-bottom:1px solid var(--line);background:var(--charcoal);position:sticky;top:0;z-index:10}
+.head-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;height:70px;flex-wrap:wrap}
+.head-inner h1{font-size:1.1rem;text-transform:uppercase;letter-spacing:.04em}
+.head-inner .sub{font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted-d)}
+.pill-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.count-pill{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--charcoal-2);border:1px solid var(--line);padding:6px 12px;border-radius:20px}
+.btn{font-weight:600;text-transform:uppercase;letter-spacing:.1em;font-size:.72rem;padding:9px 16px;border-radius:2px;cursor:pointer;border:none;background:var(--bronze);color:var(--paper);transition:background .2s}
+.btn:hover{background:var(--bronze-lite)}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--paper)}
+
+/* gate */
+.gate{max-width:400px;margin:80px auto;background:var(--charcoal-2);border:1px solid var(--line);border-radius:6px;padding:34px;text-align:center}
+.gate h2{font-size:1.2rem;margin-bottom:8px}
+.gate p{color:var(--muted);font-size:.88rem;margin-bottom:20px}
+.gate input{width:100%;background:var(--charcoal);border:1px solid var(--line);border-radius:3px;padding:13px 15px;color:var(--paper);font-size:1rem;text-align:center;outline:none;letter-spacing:.08em}
+.gate input:focus{border-color:var(--bronze)}
+.gate .err{color:var(--err);font-size:.82rem;margin-top:10px;min-height:1.2em}
+
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:24px 0 18px}
+.toolbar select,.toolbar input{background:var(--charcoal-2);border:1px solid var(--line);border-radius:3px;padding:9px 12px;color:var(--paper);font-size:.85rem;font-family:inherit;outline:none}
+.toolbar input{min-width:220px}
+.toolbar .spacer{flex:1}
+
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.mini{background:var(--charcoal-2);border:1px solid var(--line);border-radius:6px;padding:16px 18px}
+.mini .n{font-size:1.6rem;font-weight:800}
+.mini .l{font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-d);margin-top:2px}
+
+.card{background:var(--charcoal-2);border:1px solid var(--line);border-radius:6px;padding:20px 22px;margin-bottom:14px}
+.card.urgent{border-left:3px solid var(--err)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.badges{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.badge{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:4px 9px;border-radius:20px;font-weight:600}
+.badge.status-new{background:rgba(201,162,75,.18);color:var(--new)}
+.badge.status-in-progress{background:rgba(111,155,209,.18);color:var(--prog)}
+.badge.status-done{background:rgba(92,107,76,.24);color:#9db487}
+.badge.status-wont-do{background:rgba(122,111,96,.22);color:var(--muted)}
+.badge.type{background:var(--charcoal-3);color:var(--sand)}
+.badge.pri-urgent{background:rgba(163,84,63,.2);color:#d38066}
+.badge.pri-low{background:var(--charcoal-3);color:var(--muted-d)}
+.meta-line{font-size:.74rem;color:var(--muted-d);margin-top:2px}
+.card h3{font-size:1.02rem;margin:12px 0 4px;font-weight:700}
+.where{font-size:.74rem;color:var(--sand);letter-spacing:.04em;margin-bottom:10px}
+.details{color:#DCD8CD;font-size:.92rem;white-space:pre-wrap;margin-bottom:12px}
+.drive-row a{display:inline-flex;align-items:center;gap:7px;font-size:.78rem;color:var(--bronze-lite);word-break:break-all}
+.drive-row svg{width:14px;height:14px;stroke:var(--bronze-lite);fill:none;stroke-width:1.6;flex:none}
+.card-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.card-actions select{background:var(--charcoal);border:1px solid var(--line);border-radius:3px;padding:8px 11px;color:var(--paper);font-size:.8rem;font-family:inherit;outline:none}
+.card-actions .note-in{flex:1;min-width:180px;background:var(--charcoal);border:1px solid var(--line);border-radius:3px;padding:8px 11px;color:var(--paper);font-size:.82rem;font-family:inherit;outline:none}
+.card-actions .save{font-size:.68rem;padding:8px 14px}
+.card-actions .del{background:transparent;border:1px solid rgba(163,84,63,.5);color:#d38066;font-size:.68rem;padding:8px 12px;border-radius:2px;cursor:pointer}
+.saved-tick{font-size:.72rem;color:var(--sand);opacity:0;transition:opacity .2s}
+.saved-tick.show{opacity:1}
+.empty{text-align:center;color:var(--muted-d);padding:60px 20px}
+.loading{text-align:center;color:var(--muted);padding:50px}
+.hidden{display:none!important}
+@media(max-width:720px){.stat-row{grid-template-columns:1fr 1fr}.toolbar input{min-width:0;width:100%}}
+</style>
+</head>
+<body>
+
+<!-- gate -->
+<div id="gate" class="gate">
+  <h2>Admin Access</h2>
+  <p>Enter the ATN admin passphrase to view change requests.</p>
+  <input id="gate-input" type="password" placeholder="Admin passphrase" autocomplete="off">
+  <div class="err" id="gate-err"></div>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <div class="wrap head-inner">
+      <div>
+        <h1>ATN Change Requests</h1>
+        <div class="sub">Among the Nations · Admin</div>
+      </div>
+      <div class="pill-row">
+        <span class="count-pill" id="count-pill">— requests</span>
+        <button class="btn btn-ghost" id="refresh">Refresh</button>
+        <button class="btn btn-ghost" id="export">Export CSV</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="stat-row" id="stat-row"></div>
+
+    <div class="toolbar">
+      <select id="f-status">
+        <option value="">All statuses</option>
+        <option value="new">New</option>
+        <option value="in-progress">In progress</option>
+        <option value="done">Done</option>
+        <option value="wont-do">Won't do</option>
+      </select>
+      <select id="f-priority">
+        <option value="">All priorities</option>
+        <option value="urgent">Urgent</option>
+        <option value="normal">Normal</option>
+        <option value="low">Low</option>
+      </select>
+      <input id="f-search" type="text" placeholder="Search text, name, page…">
+      <div class="spacer"></div>
+    </div>
+
+    <div id="list"></div>
+    <div id="loading" class="loading">Loading requests…</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var FN='https://tkkhvbkocumyxpgsrpxv.supabase.co/functions/v1/atn-admin';
+  var PASS_KEY='atn-admin-pass';
+  var gate=document.getElementById('gate'), app=document.getElementById('app');
+  var gInput=document.getElementById('gate-input'), gErr=document.getElementById('gate-err');
+  var pass='';
+  var ALL=[];
+
+  async function call(body){
+    var res=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','x-atn-pass':pass},body:JSON.stringify(body||{})});
+    if(res.status===401){ throw new Error('unauthorized'); }
+    return res.json();
+  }
+
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmtDate(iso){ var d=new Date(iso); return d.toLocaleString(undefined,{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}); }
+  function statusLabel(s){ return {'new':'New','in-progress':'In progress','done':'Done','wont-do':"Won't do"}[s]||s; }
+  function typeLabel(t){ return {'text-edit':'Text edit','new-photo':'New photo','new-video':'New video','new-page':'New page','bug':'Bug','other':'Other'}[t]||t||'—'; }
+
+  function renderStats(){
+    var by={'new':0,'in-progress':0,'done':0,'wont-do':0}, urgent=0;
+    ALL.forEach(function(r){ by[r.status]=(by[r.status]||0)+1; if(r.priority==='urgent'&&r.status!=='done'&&r.status!=='wont-do')urgent++; });
+    var el=document.getElementById('stat-row');
+    el.innerHTML=
+      mini(by['new'],'New')+
+      mini(by['in-progress'],'In Progress')+
+      mini(urgent,'Urgent Open')+
+      mini(by['done'],'Completed');
+  }
+  function mini(n,l){ return '<div class="mini"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
+
+  function render(){
+    var fs=document.getElementById('f-status').value;
+    var fp=document.getElementById('f-priority').value;
+    var q=document.getElementById('f-search').value.trim().toLowerCase();
+    var rows=ALL.filter(function(r){
+      if(fs && r.status!==fs) return false;
+      if(fp && r.priority!==fp) return false;
+      if(q){
+        var hay=[r.details,r.submitter_name,r.submitter_email,r.page,r.section,r.drive_link].join(' ').toLowerCase();
+        if(hay.indexOf(q)<0) return false;
+      }
+      return true;
+    });
+    document.getElementById('count-pill').textContent=rows.length+' of '+ALL.length+' requests';
+    var list=document.getElementById('list');
+    if(!rows.length){ list.innerHTML='<div class="empty">No requests match.</div>'; return; }
+    list.innerHTML=rows.map(card).join('');
+    rows.forEach(function(r){ wire(r.id); });
+  }
+
+  function card(r){
+    var where=[r.page,r.section].filter(Boolean).join(' · ')||'Location not specified';
+    var drive=r.drive_link ? '<div class="drive-row"><a href="'+(/^https?:/.test(r.drive_link)?esc(r.drive_link):'#')+'" '+(/^https?:/.test(r.drive_link)?'target="_blank" rel="noopener"':'')+'><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>'+esc(r.drive_link)+'</a></div>' : '';
+    var priBadge = r.priority==='urgent' ? '<span class="badge pri-urgent">Urgent</span>' : (r.priority==='low'?'<span class="badge pri-low">Low</span>':'');
+    return '<div class="card '+(r.priority==='urgent'&&r.status==='new'?'urgent':'')+'" data-id="'+r.id+'">'+
+      '<div class="card-top"><div class="badges">'+
+        '<span class="badge status-'+r.status+'">'+statusLabel(r.status)+'</span>'+
+        '<span class="badge type">'+typeLabel(r.change_type)+'</span>'+ priBadge +
+      '</div><div class="meta-line">'+fmtDate(r.created_at)+'</div></div>'+
+      '<div class="meta-line" style="margin-top:8px">'+esc(r.submitter_name||'—')+' · <a href="mailto:'+esc(r.submitter_email)+'" style="color:var(--sand)">'+esc(r.submitter_email||'')+'</a></div>'+
+      '<div class="where">'+esc(where)+'</div>'+
+      '<div class="details">'+esc(r.details)+'</div>'+ drive +
+      '<div class="card-actions">'+
+        '<select class="st">'+
+          ['new','in-progress','done','wont-do'].map(function(s){return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+statusLabel(s)+'</option>';}).join('')+
+        '</select>'+
+        '<input class="note-in" placeholder="Internal note…" value="'+esc(r.admin_note||'')+'">'+
+        '<button class="btn save">Save</button>'+
+        '<span class="saved-tick">Saved ✓</span>'+
+        '<button class="del">Delete</button>'+
+      '</div></div>';
+  }
+
+  function wire(id){
+    var card=document.querySelector('.card[data-id="'+id+'"]'); if(!card) return;
+    var st=card.querySelector('.st'), note=card.querySelector('.note-in');
+    var save=card.querySelector('.save'), tick=card.querySelector('.saved-tick'), del=card.querySelector('.del');
+    save.addEventListener('click', async function(){
+      save.disabled=true; save.textContent='…';
+      try{
+        var res=await call({action:'update',id:id,status:st.value,admin_note:note.value});
+        if(res && res.request){ var i=ALL.findIndex(function(x){return x.id===id;}); if(i>=0) ALL[i]=res.request; renderStats(); tick.classList.add('show'); setTimeout(function(){tick.classList.remove('show');},1400); }
+      }catch(e){ alert('Save failed: '+e.message); }
+      save.disabled=false; save.textContent='Save';
+    });
+    del.addEventListener('click', async function(){
+      if(!confirm('Delete this request permanently?')) return;
+      try{ await call({action:'delete',id:id}); ALL=ALL.filter(function(x){return x.id!==id;}); renderStats(); render(); }
+      catch(e){ alert('Delete failed: '+e.message); }
+    });
+  }
+
+  async function load(){
+    document.getElementById('loading').classList.remove('hidden');
+    try{
+      var res=await call({action:'list'});
+      ALL=(res && res.requests)||[];
+      renderStats(); render();
+    }catch(e){
+      document.getElementById('list').innerHTML='<div class="empty">Could not load requests: '+esc(e.message)+'</div>';
+    }
+    document.getElementById('loading').classList.add('hidden');
+  }
+
+  function exportCSV(){
+    var cols=['created_at','status','priority','change_type','page','section','submitter_name','submitter_email','details','drive_link','admin_note'];
+    var lines=[cols.join(',')];
+    ALL.forEach(function(r){ lines.push(cols.map(function(c){ var v=r[c]==null?'':String(r[c]); return '"'+v.replace(/"/g,'""')+'"'; }).join(',')); });
+    var blob=new Blob([lines.join('\n')],{type:'text/csv'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='atn-change-requests.csv'; a.click();
+  }
+
+  async function unlock(p){
+    pass=p;
+    // test with a list call
+    try{
+      var res=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','x-atn-pass':pass},body:JSON.stringify({action:'list'})});
+      if(res.status===401){ gErr.textContent='Incorrect passphrase.'; return false; }
+      var data=await res.json();
+      ALL=(data&&data.requests)||[];
+      sessionStorage.setItem(PASS_KEY,pass);
+      gate.classList.add('hidden'); app.classList.remove('hidden');
+      document.getElementById('loading').classList.add('hidden');
+      renderStats(); render();
+      return true;
+    }catch(e){ gErr.textContent='Connection error. Try again.'; return false; }
+  }
+
+  var saved=sessionStorage.getItem(PASS_KEY);
+  if(saved) unlock(saved);
+  gInput.addEventListener('keydown',function(e){ if(e.key==='Enter'&&gInput.value.trim()){ unlock(gInput.value.trim()); } });
+
+  document.getElementById('refresh').addEventListener('click',load);
+  document.getElementById('export').addEventListener('click',exportCSV);
+  document.getElementById('f-status').addEventListener('change',render);
+  document.getElementById('f-priority').addEventListener('change',render);
+  document.getElementById('f-search').addEventListener('input',render);
+})();
+</script>
+</body>
+</html>
