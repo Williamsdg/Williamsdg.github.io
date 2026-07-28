@@ -57,6 +57,10 @@ header{border-bottom:1px solid var(--line);background:var(--charcoal);position:s
 .badge.type{background:var(--charcoal-3);color:var(--sand)}
 .badge.pri-urgent{background:rgba(163,84,63,.2);color:#d38066}
 .badge.pri-low{background:var(--charcoal-3);color:var(--muted-d)}
+.badge.edited{background:rgba(176,138,79,.16);color:var(--bronze-lite);border:1px dashed rgba(176,138,79,.55)}
+.badge.withdrawn{background:rgba(163,84,63,.18);color:#d38066}
+.card.withdrawn-card{opacity:.6}
+.card.edited-flag{border-left:3px solid var(--bronze-lite)}
 .meta-line{font-size:.74rem;color:var(--muted-d);margin-top:2px}
 .card h3{font-size:1.02rem;margin:12px 0 4px;font-weight:700}
 .where{font-size:.74rem;color:var(--sand);letter-spacing:.04em;margin-bottom:10px}
@@ -184,11 +188,14 @@ header{border-bottom:1px solid var(--line);background:var(--charcoal);position:s
     var where=[r.page,r.section].filter(Boolean).join(' · ')||'Location not specified';
     var drive=r.drive_link ? '<div class="drive-row"><a href="'+(/^https?:/.test(r.drive_link)?esc(r.drive_link):'#')+'" '+(/^https?:/.test(r.drive_link)?'target="_blank" rel="noopener"':'')+'><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>'+esc(r.drive_link)+'</a></div>' : '';
     var priBadge = r.priority==='urgent' ? '<span class="badge pri-urgent">Urgent</span>' : (r.priority==='low'?'<span class="badge pri-low">Low</span>':'');
-    return '<div class="card '+(r.priority==='urgent'&&r.status==='new'?'urgent':'')+'" data-id="'+r.id+'">'+
+    var editedBadge = r.client_edited ? '<span class="badge edited">Client edited</span>' : '';
+    var wdBadge = r.withdrawn ? '<span class="badge withdrawn">Withdrawn</span>' : '';
+    var editedLine = r.client_edited && r.last_client_edit_at ? '<div class="meta-line" style="color:var(--bronze-lite);margin-top:4px">✎ Client updated '+fmtDate(r.last_client_edit_at)+'</div>' : '';
+    return '<div class="card '+(r.withdrawn?'withdrawn-card ':'')+(r.priority==='urgent'&&r.status==='new'&&!r.withdrawn?'urgent':'')+'" data-id="'+r.id+'">'+
       '<div class="card-top"><div class="badges">'+
         '<span class="badge status-'+r.status+'">'+statusLabel(r.status)+'</span>'+
-        '<span class="badge type">'+typeLabel(r.change_type)+'</span>'+ priBadge +
-      '</div><div class="meta-line">'+fmtDate(r.created_at)+'</div></div>'+
+        '<span class="badge type">'+typeLabel(r.change_type)+'</span>'+ priBadge + editedBadge + wdBadge +
+      '</div><div class="meta-line">'+fmtDate(r.created_at)+'</div></div>'+ editedLine +
       '<div class="meta-line" style="margin-top:8px">'+esc(r.submitter_name||'—')+' · <a href="mailto:'+esc(r.submitter_email)+'" style="color:var(--sand)">'+esc(r.submitter_email||'')+'</a></div>'+
       '<div class="where">'+esc(where)+'</div>'+
       '<div class="details">'+esc(r.details)+'</div>'+ drive +
