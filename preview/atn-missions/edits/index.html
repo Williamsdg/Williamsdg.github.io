@@ -70,6 +70,37 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .success h2{font-size:1.5rem;margin-bottom:10px}
 .success p{color:var(--muted);margin-bottom:24px}
 .success .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--paper)}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--paper)}
+.btn-ghost:hover{border-color:var(--bronze);background:transparent}
+
+/* who block */
+.who{background:var(--charcoal-2);border:1px solid var(--line);border-radius:6px;padding:24px 30px 6px;margin-bottom:20px}
+
+/* added-edits list */
+.edit-list{margin-bottom:20px;display:flex;flex-direction:column;gap:10px}
+.edit-item{background:var(--charcoal-2);border:1px solid var(--line);border-left:3px solid var(--bronze);border-radius:6px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start}
+.edit-item .ei-num{font-weight:800;color:var(--bronze-lite);font-size:1.05rem;flex:none;min-width:22px}
+.edit-item .ei-body{flex:1;min-width:0}
+.edit-item .ei-badges{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+.edit-item .eb{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:20px;font-weight:600;background:var(--charcoal-3,#2f2f27);color:var(--sand)}
+.edit-item .eb.urgent{background:rgba(163,84,63,.2);color:#d38066}
+.edit-item .ei-where{font-size:.74rem;color:var(--sand);margin-bottom:4px}
+.edit-item .ei-details{font-size:.9rem;color:#DCD8CD;white-space:pre-wrap;word-break:break-word}
+.edit-item .ei-drive{font-size:.74rem;color:var(--bronze-lite);margin-top:6px;word-break:break-all}
+.edit-item .ei-remove{flex:none;background:transparent;border:none;color:var(--muted-d);font-size:1.2rem;cursor:pointer;line-height:1;padding:2px 6px;border-radius:3px;transition:color .2s,background .2s}
+.edit-item .ei-remove:hover{color:#d38066;background:rgba(163,84,63,.12)}
+
+/* add-an-edit form */
+.form-title{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--bronze-lite);font-weight:700;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.add-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:4px}
+.add-hint{font-size:.76rem;color:var(--muted-d)}
+
+/* submit-all bar */
+.submit-bar{display:flex;align-items:center;gap:18px;margin-top:22px;flex-wrap:wrap}
+.submit-bar .btn{padding:15px 32px}
+.submit-count{font-size:.84rem;color:var(--muted)}
+.submit-count strong{color:var(--sand)}
+
 .hidden{display:none!important}
 footer{border-top:1px solid var(--line);padding:26px 0;text-align:center;color:var(--muted-d);font-size:.78rem}
 footer a{color:var(--muted-d)}
@@ -98,7 +129,7 @@ footer a{color:var(--muted-d)}
     <div class="wrap">
       <div class="eyebrow">Among the Nations</div>
       <h1>Request a Website Change</h1>
-      <p>Use this page to log any edits you'd like made to the website — text changes, new photos or videos, new pages, or anything that looks off. Upload your photos and videos to the Drive folders below, then note the link in your request so we can match content to the change.</p>
+      <p>Use this page to log any edits you'd like made to the website — text changes, new photos or videos, new pages, or anything that looks off. Add as many edits as you like to the list, then submit them all at once. Upload your photos and videos to the Drive folders below, and note the link on each edit so we can match content to the change.</p>
     </div>
   </section>
 
@@ -115,18 +146,26 @@ footer a{color:var(--muted-d)}
       </a>
     </div>
 
-    <!-- Form -->
-    <form id="cr-form" autocomplete="off">
+    <!-- Who's submitting (applies to the whole batch) -->
+    <div class="who">
       <div class="grid2">
         <div class="field">
           <label>Your Name <span class="req">*</span></label>
-          <input type="text" name="submitter_name" required>
+          <input type="text" id="submitter_name" required>
         </div>
         <div class="field">
           <label>Your Email <span class="req">*</span></label>
-          <input type="email" name="submitter_email" required>
+          <input type="email" id="submitter_email" required>
         </div>
       </div>
+    </div>
+
+    <!-- Added edits list -->
+    <div id="edit-list" class="edit-list hidden"></div>
+
+    <!-- Add-an-edit form -->
+    <form id="cr-form" autocomplete="off">
+      <div class="form-title"><span id="form-title-text">Add an edit</span></div>
 
       <div class="grid2">
         <div class="field">
@@ -183,16 +222,25 @@ footer a{color:var(--muted-d)}
         <div class="hint">Upload the content to the Photos or Videos folder above first, then paste the link or filename here so we can match it to this request.</div>
       </div>
 
-      <button class="btn" type="submit" id="submit-btn">Submit Request</button>
-      <div class="form-msg" id="form-msg"></div>
+      <div class="add-row">
+        <button class="btn btn-ghost" type="submit" id="add-btn">+ Add this edit</button>
+        <span class="add-hint">Add as many edits as you like, then submit them all at once.</span>
+      </div>
     </form>
+
+    <!-- Submit-all bar -->
+    <div class="submit-bar">
+      <button class="btn" id="submit-all-btn" disabled>Submit All Edits</button>
+      <span id="submit-count" class="submit-count">No edits added yet</span>
+    </div>
+    <div class="form-msg" id="form-msg"></div>
 
     <!-- Success -->
     <div id="success" class="success hidden">
       <div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6"/></svg></div>
-      <h2>Request Received</h2>
-      <p>Thank you — your change request has been logged and Williams Digital has been notified.</p>
-      <button class="btn btn-ghost" id="another">Submit Another →</button>
+      <h2 id="success-title">Requests Received</h2>
+      <p id="success-msg">Thank you — your change requests have been logged and Williams Digital has been notified.</p>
+      <button class="btn btn-ghost" id="another">Submit More Edits →</button>
     </div>
   </div>
 </main>
@@ -225,40 +273,121 @@ footer a{color:var(--muted-d)}
 
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
   var form=document.getElementById('cr-form'), msg=document.getElementById('form-msg');
-  var btn=document.getElementById('submit-btn'), success=document.getElementById('success');
+  var success=document.getElementById('success');
+  var nameEl=document.getElementById('submitter_name'), emailEl=document.getElementById('submitter_email');
+  var listEl=document.getElementById('edit-list');
+  var submitAll=document.getElementById('submit-all-btn'), countEl=document.getElementById('submit-count');
 
-  form && form.addEventListener('submit', async function(e){
+  var edits=[];  // the batch cart
+
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  var TYPE_LBL={'text-edit':'Text edit','new-photo':'New photo','new-video':'New video','new-page':'New page','bug':'Bug','other':'Other'};
+
+  function renderList(){
+    if(!edits.length){
+      listEl.classList.add('hidden'); listEl.innerHTML='';
+      submitAll.disabled=true; countEl.innerHTML='No edits added yet';
+      return;
+    }
+    listEl.classList.remove('hidden');
+    listEl.innerHTML=edits.map(function(e,i){
+      var where=[e.page,e.section].filter(Boolean).join(' · ')||'Location not specified';
+      var badges='<span class="eb">'+esc(TYPE_LBL[e.change_type]||'Edit')+'</span>'+(e.priority==='urgent'?'<span class="eb urgent">Urgent</span>':'');
+      var drive=e.drive_link?'<div class="ei-drive">🔗 '+esc(e.drive_link)+'</div>':'';
+      return '<div class="edit-item"><div class="ei-num">'+(i+1)+'.</div><div class="ei-body">'+
+        '<div class="ei-badges">'+badges+'</div>'+
+        '<div class="ei-where">'+esc(where)+'</div>'+
+        '<div class="ei-details">'+esc(e.details)+'</div>'+drive+
+        '</div><button class="ei-remove" data-i="'+i+'" title="Remove">&times;</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(listEl.querySelectorAll('.ei-remove'),function(b){
+      b.addEventListener('click',function(){ edits.splice(+b.dataset.i,1); renderList(); });
+    });
+    submitAll.disabled=false;
+    countEl.innerHTML='<strong>'+edits.length+'</strong> edit'+(edits.length>1?'s':'')+' ready to submit';
+  }
+
+  // "Add this edit" — validate the edit fields, push to cart, reset edit fields
+  form && form.addEventListener('submit', function(e){
     e.preventDefault();
     msg.textContent=''; msg.className='form-msg';
     var fd=new FormData(form);
-    var row={
-      submitter_name: (fd.get('submitter_name')||'').trim(),
-      submitter_email: (fd.get('submitter_email')||'').trim(),
+    var details=(fd.get('details')||'').trim();
+    if(!details){ msg.className='form-msg err'; msg.textContent='Please describe the change before adding it.'; return; }
+    edits.push({
       page: fd.get('page')||null,
       section: (fd.get('section')||'').trim()||null,
       change_type: fd.get('change_type')||null,
       priority: fd.get('priority')||'normal',
-      details: (fd.get('details')||'').trim(),
+      details: details,
       drive_link: (fd.get('drive_link')||'').trim()||null
-    };
-    if(!row.details || !row.submitter_name || !row.submitter_email){
-      msg.className='form-msg err'; msg.textContent='Please fill in your name, email, and the change details.'; return;
+    });
+    form.reset();
+    renderList();
+    // focus back to page select for the next edit
+    var pageSel=form.querySelector('select[name=page]'); if(pageSel) pageSel.focus();
+    window.scrollTo({top:listEl.offsetTop-80,behavior:'smooth'});
+  });
+
+  // "Submit All Edits" — include any in-progress edit, then batch-insert
+  submitAll.addEventListener('click', async function(){
+    msg.textContent=''; msg.className='form-msg';
+    var name=(nameEl.value||'').trim(), email=(emailEl.value||'').trim();
+    if(!name || !email){ msg.className='form-msg err'; msg.textContent='Please fill in your name and email at the top.'; window.scrollTo({top:0,behavior:'smooth'}); return; }
+
+    // auto-include a filled-but-not-yet-added edit
+    var fd=new FormData(form);
+    var pendingDetails=(fd.get('details')||'').trim();
+    var batch=edits.slice();
+    if(pendingDetails){
+      batch.push({
+        page: fd.get('page')||null,
+        section: (fd.get('section')||'').trim()||null,
+        change_type: fd.get('change_type')||null,
+        priority: fd.get('priority')||'normal',
+        details: pendingDetails,
+        drive_link: (fd.get('drive_link')||'').trim()||null
+      });
     }
-    btn.disabled=true; btn.textContent='Submitting…';
-    var res = await sb.from('atn_change_requests').insert(row);
-    btn.disabled=false; btn.textContent='Submit Request';
+    if(!batch.length){ msg.className='form-msg err'; msg.textContent='Add at least one edit before submitting.'; return; }
+
+    var rows=batch.map(function(e){ return {
+      submitter_name:name, submitter_email:email,
+      page:e.page, section:e.section, change_type:e.change_type,
+      priority:e.priority, details:e.details, drive_link:e.drive_link
+    };});
+
+    submitAll.disabled=true; submitAll.textContent='Submitting…';
+    var res = await sb.from('atn_change_requests').insert(rows);
+    submitAll.disabled=false; submitAll.textContent='Submit All Edits';
     if(res.error){
       msg.className='form-msg err';
       msg.textContent='Something went wrong: '+res.error.message+'. Please try again or email Dylan@williamsdigital.io.';
       return;
     }
-    form.classList.add('hidden'); success.classList.remove('hidden');
+    // success
+    document.getElementById('success-title').textContent = rows.length>1 ? 'Requests Received' : 'Request Received';
+    document.getElementById('success-msg').textContent =
+      (rows.length>1 ? (rows.length+' change requests have') : 'Your change request has') +
+      ' been logged and Williams Digital has been notified.';
+    document.querySelector('.who').classList.add('hidden');
+    listEl.classList.add('hidden');
+    form.classList.add('hidden');
+    document.querySelector('.submit-bar').classList.add('hidden');
+    success.classList.remove('hidden');
+    edits=[];
     window.scrollTo({top:0,behavior:'smooth'});
   });
 
   document.getElementById('another') && document.getElementById('another').addEventListener('click', function(){
-    form.reset(); form.classList.remove('hidden'); success.classList.add('hidden');
+    form.reset(); renderList();
+    document.querySelector('.who').classList.remove('hidden');
+    form.classList.remove('hidden');
+    document.querySelector('.submit-bar').classList.remove('hidden');
+    success.classList.add('hidden');
   });
+
+  renderList();
 })();
 </script>
 </body>
