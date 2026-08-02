@@ -127,7 +127,6 @@ const ITEMS = [
   // Contracts / utilities
   { slug: "estimate-view", name: "Estimate view", cat: "utilities", host: LIVE },
   { slug: "hero", name: "Hero", cat: "utilities", host: LIVE },
-  { slug: "jeh-contract", name: "JEH contract", cat: "utilities", host: LIVE },
   { slug: "jeh-green-cream", name: "JEH — green/cream", cat: "utilities", host: LIVE },
   { slug: "jeh-navy-gold", name: "JEH — navy/gold", cat: "utilities", host: LIVE },
   { slug: "pco-plan-viewer", name: "PCO plan viewer", cat: "utilities", host: LIVE },
