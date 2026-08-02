@@ -51,13 +51,6 @@ const ITEMS = [
 
   // Legal
   { slug: "aldridge-vance", name: "Aldridge Vance", cat: "legal", host: LIVE },
-  { slug: "birmingham-dui-defense", name: "Birmingham DUI Defense", cat: "legal", host: LIVE },
-  { slug: "cahaba-heights-legal", name: "Cahaba Heights Legal", cat: "legal", host: LIVE },
-  { slug: "harris-robinson", name: "Harris Robinson", cat: "legal", host: LIVE },
-  { slug: "homewood-law-associates", name: "Homewood Law Associates", cat: "legal", host: LIVE },
-  { slug: "hoover-family-law", name: "Hoover Family Law", cat: "legal", host: LIVE },
-  { slug: "mountain-brook-legal", name: "Mountain Brook Legal", cat: "legal", host: LIVE },
-  { slug: "vestavia-estate-planning", name: "Vestavia Estate Planning", cat: "legal", host: LIVE },
 
   // Home services & trades
   { slug: "apex-auto-repair", name: "Apex Auto Repair", cat: "home", host: LIVE },
@@ -215,6 +208,8 @@ document.querySelectorAll(".filter").forEach(btn => {
     document.querySelectorAll(".tile").forEach(t => {
       t.style.display = (f === "all" || t.dataset.cat === f) ? "" : "none";
     });
+    const legalNote = document.getElementById("legalNote");
+    if (legalNote) legalNote.hidden = (f !== "legal");
   });
 });
 
