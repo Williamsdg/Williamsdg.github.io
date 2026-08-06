@@ -81,19 +81,22 @@
     commonLights(scene);
 
     const group = new THREE.Group();
+    group.visible = false;          // stay hidden until the earth texture is ready (no yellow-glow flash)
     scene.add(group);
     const R = 100;
 
-    let earth = null, clouds = null;
+    let earth = null, clouds = null, ready = false, fadeIn = 0;
     loader.load(TEX, (tex) => {
       tex.encoding = THREE.sRGBEncoding;
       earth = makeEarth(R, tex);
       group.add(earth);
+      ready = true;                 // reveal + fade the globe in only now
     }, undefined, () => {
       // fallback: plain earthy sphere if texture fails
       earth = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 64),
         new THREE.MeshStandardMaterial({ color: 0x2f4633, roughness: 1 }));
       group.add(earth);
+      ready = true;
     });
 
     // subtle cloud shell (procedural soft noise via additive white sphere w/ low opacity fresnel)
@@ -149,6 +152,15 @@
       requestAnimationFrame(animate);
       resize();
       t += 0.016;
+      // reveal + smooth fade/scale-in once the earth texture is ready
+      if (ready) {
+        group.visible = true;
+        if (fadeIn < 1) {
+          fadeIn = Math.min(1, fadeIn + 0.03);
+          const e = 1 - Math.pow(1 - fadeIn, 3);
+          group.scale.setScalar(0.94 + 0.06 * e);
+        }
+      }
       if (!prefersReduced) {
         group.rotation.y += 0.00055;            // slow, cinematic
         if (clouds) { clouds.rotation.y += 0.0002; clouds.material.uniforms.t.value = t; }
