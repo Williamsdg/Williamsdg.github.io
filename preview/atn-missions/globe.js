@@ -164,14 +164,15 @@
   /* =================================================================
      SCENE 2 — INTERACTIVE REACH GLOBE (clickable partner pins)
      ================================================================= */
+  // Real ATN Global Partners (from atnmissions.org/global-partnerships)
   const PARTNERS = [
-    { lat: 27.7, lon: 85.3, country: 'Nepal',        name: 'The Sherpa Church Plant', role: 'Church Planting', story: 'A gathering of believers now meets in a remote Himalayan village where there was no church a year ago.' },
-    { lat: -1.3, lon: 36.8, country: 'Kenya',        name: 'Jordan & Amani',          role: 'Discipleship',    story: 'Training local pastors and equipping the next generation of Kenyan church leaders.' },
-    { lat: 14.6, lon: 121.0,country: 'Philippines',  name: 'Manila Outreach',         role: 'Mercy & Relief',  story: 'Serving families in the city while sharing the hope of the Gospel door to door.' },
-    { lat: 9.0,  lon: 38.7, country: 'Ethiopia',     name: 'Highlands Fellowship',    role: 'Bible Translation', story: 'Bringing Scripture into the heart language of communities in the Ethiopian highlands.' },
-    { lat: 23.6, lon: 85.3, country: 'India',        name: 'North India Team',        role: 'Church Planting', story: 'Planting churches and making disciples across unreached districts of North India.' },
-    { lat: -6.2, lon: 106.8,country: 'Indonesia',    name: 'Java Church Network',     role: 'Leader Training', story: 'Strengthening a growing network of local churches across the islands of Indonesia.' },
-    { lat: 33.5, lon: -86.8,country: 'United States', name: 'Home Base',              role: 'Sending',         story: 'Where it begins — mobilizing believers and resources to the ends of the earth.' },
+    { lat: 39.47, lon: -0.38, country: 'Spain',       name: 'Ryan & Christy Thomas',   role: 'Church Planting', photo: 'img/partners/thomas-spain.jpg',           story: 'Planting a church in Valencia, discipling leaders, and reaching secular Europeans with the hope of Jesus.' },
+    { lat: -12.05, lon: -75.2, country: 'Peru',        name: 'Thomas & Jamie Harger',   role: 'Leadership Training', photo: 'img/partners/harger-peru.jpg',        story: 'Training indigenous pastors in the Amazon, planting churches, and developing leaders across Peru.' },
+    { lat: 27.7, lon: 85.3,   country: 'Nepal & India', name: 'Raj & Shova Kumar',      role: 'Church Planting', photo: 'img/partners/kumar-nepal.jpg',            story: 'Gospel outreach to unreached villages — 75 house churches now planted across 180+ villages.' },
+    { lat: -1.83, lon: -78.18, country: 'Ecuador',     name: 'Geovanny & Kayla Valverde', role: 'Church Building', photo: 'img/partners/valverde-ecuador.jpg',    story: 'Kingdom Acts — gospel outreach to rural communities, church building, and pastor training.' },
+    { lat: -16.5, lon: -64.0, country: 'Bolivia',      name: 'Andy & Andrea Baker',     role: 'Mercy & Relief',  photo: 'img/partners/baker-bolivia.jpg',          story: 'Project Suma — crisis care, discipleship, and economic empowerment for exploited women.' },
+    { lat: 14.6, lon: 121.0,  country: 'Philippines',  name: 'John & Kelli Williford',  role: 'Childcare',       photo: 'img/partners/williford-philippines.jpg',  story: 'Happy Horizons Ranch — Christ-centered care, education, and healthcare for 50 children.' },
+    { lat: -0.02, lon: 37.9,  country: 'Kenya',        name: 'Mike & Tammy McRae',      role: 'Water & Gospel',  photo: 'img/partners/mcrae-kenya.jpg',            story: 'Palm Ministries — 50+ water wells drilled, gospel shared, and young mothers supported.' },
   ];
 
   function initReachGlobe() {
@@ -371,11 +372,14 @@
       if (!cardWrap || !window.__ATN_PARTNERS) return;
       const p = window.__ATN_PARTNERS[i]; if (!p) return;
       cardWrap.innerHTML =
-        '<span class="pc-country">' + p.country + '</span>' +
-        '<h4>' + p.name + '</h4>' +
-        '<span class="pc-role">' + p.role + '</span>' +
-        '<p>' + p.story + '</p>' +
-        '<a href="#" class="pc-link">Read the full story &rarr;</a>';
+        (p.photo ? '<div class="pc-photo" style="background-image:url(\'' + p.photo + '\')"></div>' : '') +
+        '<div class="pc-body">' +
+          '<span class="pc-country">' + p.country + '</span>' +
+          '<h4>' + p.name + '</h4>' +
+          '<span class="pc-role">' + p.role + '</span>' +
+          '<p>' + p.story + '</p>' +
+          '<a href="#" class="pc-link">Read the full story &rarr;</a>' +
+        '</div>';
       cardWrap.classList.add('show');
       items.forEach((it) => it.classList.toggle('active', +it.dataset.i === i));
     }
