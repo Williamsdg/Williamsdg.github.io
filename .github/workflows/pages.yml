@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -23,6 +23,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Prune heavy non-published folders from the artifact
+        # Removes only scratch/asset folders from the EPHEMERAL CI checkout
+        # (not the repo) so the Pages artifact is small enough to deploy
+        # reliably. These are working files, not live site pages.
+        run: |
+          rm -rf shannon-image-fix logo-exports || true
+          du -sh . || true
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
