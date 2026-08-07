@@ -184,7 +184,7 @@
     { lat: -1.83, lon: -78.18, country: 'Ecuador',     name: 'Geovanny & Kayla Valverde', role: 'Church Building', photo: 'img/partners/valverde-ecuador.jpg',    story: 'Kingdom Acts — gospel outreach to rural communities, church building, and pastor training.' },
     { lat: -16.5, lon: -64.0, country: 'Bolivia',      name: 'Andy & Andrea Baker',     role: 'Mercy & Relief',  photo: 'img/partners/baker-bolivia.jpg',          story: 'Project Suma — crisis care, discipleship, and economic empowerment for exploited women.' },
     { lat: 14.6, lon: 121.0,  country: 'Philippines',  name: 'John & Kelli Williford',  role: 'Childcare',       photo: 'img/partners/williford-philippines.jpg',  story: 'Happy Horizons Ranch — Christ-centered care, education, and healthcare for 50 children.' },
-    { lat: -0.02, lon: 37.9,  country: 'Kenya',        name: 'Mike & Tammy McRae',      role: 'Water & Gospel',  photo: 'img/partners/mcrae-kenya.jpg',            story: 'Palm Ministries — 50+ water wells drilled, gospel shared, and young mothers supported.' },
+    { lat: -0.02, lon: 37.9,  country: 'Kenya',        name: 'Mike & Tammy McRae',      role: 'Water for Nations',  photo: 'img/partners/mcrae-kenya.jpg',         story: 'Water for Nations — community development and clean water bringing the hope of the Gospel to communities in need.' },
   ];
 
   function initReachGlobe() {
