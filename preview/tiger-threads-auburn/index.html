@@ -613,20 +613,23 @@
 <script src="shop-data.js"></script>
 <script>
 (function(){
-  var items = (window.TT_PRODUCTS || []).filter(function(p){ return p.img; });
+  var items = (window.TT_PRODUCTS || []).filter(function(p){ return p.img && p.available !== false; });
   if (items.length < 4) return;   // keep static placeholder cards until real data exists
   var picks = ['Millie Sweatshirt Bodda Getta','Sarah Sweatshirt Aubie','Tina Top War Eagle','Charlotte Pajama Set Toile']
     .map(function(n){ return items.find(function(p){ return p.name === n; }); })
     .filter(Boolean);
   items.forEach(function(p){ if (picks.length < 4 && picks.indexOf(p) === -1) picks.push(p); });
-  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML.replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   document.getElementById('featGrid').innerHTML = picks.slice(0,4).map(function(p){
-    return '<a class="feat-card" href="shop.html" style="display:block">' +
+    var orderable = p.url && p.available !== false;
+    var href = orderable ? p.url : 'shop.html';
+    var label = orderable ? 'Order Online →' : 'View in shop →';
+    return '<a class="feat-card" href="' + esc(href) + '" style="display:block"' + (orderable ? ' target="_blank" rel="noopener"' : '') + '>' +
       '<div class="feat-img"><span class="ribbon">In the Trailer</span><img src="' + esc(p.img) + '" alt="' + esc(p.name) + '" loading="lazy"></div>' +
       '<div class="feat-body">' +
         '<div class="feat-cat">' + esc(p.cat) + '</div>' +
         '<h4>' + esc(p.name) + '</h4>' +
-        '<div class="feat-price"><span class="price">$' + esc(p.price) + '</span><span class="add">View in shop →</span></div>' +
+        '<div class="feat-price"><span class="price">$' + esc(p.price) + '</span><span class="add">' + label + '</span></div>' +
       '</div></a>';
   }).join('');
 })();

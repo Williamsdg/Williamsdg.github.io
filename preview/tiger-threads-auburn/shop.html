@@ -73,6 +73,10 @@
   .desc{font-size:.82rem;color:var(--muted);line-height:1.55;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   .claim{margin-top:auto;padding-top:10px;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--orange)}
   .claim:hover{color:var(--orange-deep)}
+  .order{margin-top:auto;text-align:center;background:var(--orange);color:#fff;padding:11px 16px;border-radius:999px;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;transition:.15s;white-space:nowrap}
+  .order:hover{background:var(--orange-deep)}
+  .soldout{margin-top:auto;text-align:center;background:var(--line-soft);color:var(--muted);padding:11px 16px;border-radius:999px;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;white-space:nowrap}
+  .card.is-out .ph img{filter:grayscale(.55);opacity:.75}
 
   .shop-cta{background:var(--navy);color:#fff;padding:88px 0;text-align:center;position:relative;overflow:hidden}
   .shop-cta::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 60% 70% at 50% 100%, rgba(232,119,34,.2), transparent 65%)}
@@ -95,6 +99,7 @@
     .nav-links{display:none}
     .cat-nav{top:64px}
     .wrap,.buy-inner,.cat-inner,.nav-inner{padding-left:20px;padding-right:20px}
+    .order,.soldout{letter-spacing:.1em;padding:11px 10px}
   }
   @media(max-width:430px){.grid{grid-template-columns:1fr}}
 </style>
@@ -161,7 +166,7 @@
   var ORDER = ['Sweatshirts & Sweaters','Tops','Dresses','Sets & Pajamas','Earrings','More'];
   var items = (window.TT_PRODUCTS || []);
   if (!items.length) return;
-  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML; }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':String(s); return d.innerHTML.replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
   var groups = {};
   items.forEach(function(p){ (groups[p.cat] = groups[p.cat] || []).push(p); });
@@ -181,7 +186,13 @@
         var photo = p.img
           ? '<img src="' + esc(p.img) + '" alt="' + esc(p.name) + '" loading="lazy">'
           : '<span class="mono">' + esc((p.name||'?').trim().charAt(0).toUpperCase()) + '</span><span class="soon">Photo coming soon</span>';
-        return '<div class="card">' +
+        var soldOut = p.url && p.available === false;
+        var cta = soldOut
+          ? '<span class="soldout">Sold Out</span>'
+          : p.url
+            ? '<a class="order" href="' + esc(p.url) + '" target="_blank" rel="noopener">Order Online →</a>'
+            : '<a class="claim" href="https://www.instagram.com/tigerthreadsauburn" target="_blank" rel="noopener">Message to claim →</a>';
+        return '<div class="card' + (soldOut ? ' is-out' : '') + '">' +
           '<div class="ph">' + photo + '</div>' +
           '<div class="card-body">' +
             '<h3>' + esc(p.name) + '</h3>' +
@@ -189,7 +200,7 @@
               (p.style ? '<span class="style-no">Style ' + esc(p.style) + '</span>' : '') + '</div>' +
             (p.sizes ? '<div class="sizes">Sizes · <b>' + esc(p.sizes) + '</b></div>' : '') +
             (p.desc ? '<div class="desc" title="' + esc(p.desc) + '">' + esc(p.desc) + '</div>' : '') +
-            '<a class="claim" href="https://www.instagram.com/tigerthreadsauburn" target="_blank" rel="noopener">Message to claim →</a>' +
+            cta +
           '</div></div>';
       }).join('') + '</div></div></section>';
   }).join('');

@@ -2,7 +2,6 @@
 window.TT_PRODUCTS = [
  {
   "name": "Millie Sweatshirt Bodda Getta",
-  "style": null,
   "price": "49",
   "sizes": "S, M, L, XL",
   "desc": "Sequins on Sleeves, Fuzzy sparkly lettering (Bodda Getta)\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); Generously sized",
@@ -11,7 +10,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Celia Sweater Vest",
-  "style": null,
   "price": "62",
   "sizes": "XS, S, M, L, XL",
   "desc": "50% Viscose, 28% Poly, 22% Nylon\nMachine Wash Cold\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); True To Size",
@@ -20,7 +18,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Tina Top WDE",
-  "style": null,
   "price": "63",
   "sizes": "XS, S, M, L, XL",
   "desc": "Sequin/Rhinestone Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); Generously sized",
@@ -29,7 +26,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Sarah Sweatshirt Power Stripe",
-  "style": null,
   "price": "79",
   "sizes": "S, M, L, XL, 1X, 2X",
   "desc": "Beaded Power Stripe/Embroidered Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
@@ -38,7 +34,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Sarah Sweatshirt Fearless & True",
-  "style": null,
   "price": "79",
   "sizes": "S, M, L, XL, 1X, 2X",
   "desc": "Sequin/Rhinestone on Sleeves, Sequin Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
@@ -47,7 +42,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Sarah Sweatshirt Basketball",
-  "style": null,
   "price": "68",
   "sizes": "S, M, L, XL, 1X",
   "desc": "Sequin Designs\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14);  1X (16-18) Generously sized",
@@ -56,7 +50,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Hannah Sweater",
-  "style": null,
   "price": "55",
   "sizes": "S, M, L",
   "desc": "50% Viscose, 28% Poly, 22% Nylon\nMachine Wash Cold\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); True To Size",
@@ -65,7 +58,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Anna Dress",
-  "style": null,
   "price": "45",
   "sizes": "XS, S, M, L, XL, XXL",
   "desc": "Sequin Designs\n87% Poly, 10% Rayon, 3% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 2XL (16) True To Size",
@@ -74,7 +66,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Alli Pajama Set",
-  "style": null,
   "price": "65",
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "94% Poly, 6% Spandex\nMachine Wash \nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18)",
@@ -83,7 +74,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Ginny Top & Shorts Set",
-  "style": null,
   "price": "40",
   "sizes": "S, M, L, XL, XXL",
   "desc": "Sequin Designs/Draw String Elastic Shorts\n87% Poly, 10% Rayon, 3% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); XXL (16) True To Size",
@@ -92,7 +82,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Lauren Top & Shorts Set",
-  "style": null,
   "price": "40",
   "sizes": "S, M, L, XL",
   "desc": "Sequin Designs/Draw String Elastic Shorts\n87% Poly, 10% Rayon, 3% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nS (4-6); M (8-10); L (10-12); XL (14) True To Size",
@@ -101,7 +90,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Faith V-Neck Sweater",
-  "style": null,
   "price": "109",
   "sizes": "XS, S, M, L, XL",
   "desc": "Beaded and Logo Design\n52% Viscose, 20% Poly, 28% Nylon\nMachine Wash Cold\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); Runs Small",
@@ -110,7 +98,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Sarah Sweatshirt Aubie",
-  "style": null,
   "price": "99",
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Embroidered/Beaded Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
@@ -119,7 +106,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Millie Sweatshirt WDE",
-  "style": null,
   "price": "99",
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Rhinestone/Sequin Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
@@ -128,7 +114,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Sarah Sweatshirt Varsity",
-  "style": null,
   "price": "74",
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Chenille/Beaded Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
@@ -137,7 +122,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Millie Sweatshirt Script",
-  "style": null,
   "price": "104",
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Chenille Script Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
@@ -146,7 +130,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Tina Top War Eagle",
-  "style": null,
   "price": "74",
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Embroidered Rope Script Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) True To Size",
@@ -155,7 +138,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Tracey Dress Tiger",
-  "style": null,
   "price": "92",
   "sizes": "XS, S, M, L, XL",
   "desc": "Gathered Waist with Pockets\n100% Poly\nMachine Wash Cold\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); True To Size",
@@ -164,7 +146,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Emily Top Icons",
-  "style": null,
   "price": "89",
   "sizes": "XS, S, M, L, XL",
   "desc": "Embroidered Beaded Sequin Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14) Generously sized",
@@ -173,7 +154,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Charlotte Pajama Set Toile",
-  "style": null,
   "price": "92",
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "95% Viscose, 5% Spandex\nMachine Wash \nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18)",
@@ -182,7 +162,6 @@ window.TT_PRODUCTS = [
  },
  {
   "name": "Emily Top Mascot",
-  "style": null,
   "price": "79",
   "sizes": "XS, S, M, L, XL",
   "desc": "Embroidered Beaded Sequin Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14) Generously sized",
@@ -222,8 +201,7 @@ window.TT_PRODUCTS = [
   "price": "31",
   "sizes": "One Size",
   "desc": "Aubie Pendant On Navy/Gold Hoop",
-  "cat": "Earrings",
-  "img": null
+  "cat": "Earrings"
  },
  {
   "name": "Earrings War Eagle Dangle",
