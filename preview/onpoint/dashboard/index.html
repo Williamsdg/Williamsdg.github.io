@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>OnPoint Command Center — Internal Dashboard Demo</title>
+<meta name="description" content="Internal operations dashboard concept for OnPoint Heating & Air by Williams Digital.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,600;0,700;0,800;0,900;1,800;1,900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* All customers, jobs, revenue figures and locations in this demo are FICTIONAL SEED DATA. */
+:root{
+  --blue:#1c82e0; --blue-deep:#1266b8; --blue-ice:#e8f3fd;
+  --red:#d92b25; --red-soft:#fdecec;
+  --orange:#f59e1b; --orange-soft:#fdf3e2;
+  --green:#1f9d5b; --green-soft:#e7f6ee;
+  --purple:#6d4fd6; --purple-soft:#efeafc;
+  --navy:#0b1220; --ink:#131a26; --body:#3d4757; --muted:#7b8697;
+  --bg:#f2f4f8; --card:#ffffff; --line:#e4e8ef;
+  --radius:14px;
+  --shadow:0 10px 28px -14px rgba(15,23,40,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,.wm{font-family:'Archivo',sans-serif}
+button{font-family:inherit;cursor:pointer}
+.layout{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+
+/* ---- sidebar ---- */
+aside{background:var(--navy);color:#aeb9cb;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side-brand{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.wm{display:inline-flex;flex-direction:column;line-height:1}
+.wm-top{background:var(--blue);color:#fff;font-weight:900;font-style:italic;letter-spacing:.4px;padding:5px 10px 4px;font-size:15px;transform:skewX(-6deg);border-radius:3px 3px 0 0}
+.wm-sub{background:var(--red);color:#fff;font-weight:700;font-style:italic;font-size:7.5px;letter-spacing:2.4px;text-align:center;padding:3px 8px 2px;transform:skewX(-6deg);border-radius:0 0 3px 3px}
+.side-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#5c6a80;padding:18px 18px 8px}
+.side-nav{display:flex;flex-direction:column;padding:0 10px 20px;gap:2px}
+.side-nav button{display:flex;align-items:center;gap:11px;background:none;border:none;color:#aeb9cb;font-size:13.5px;font-weight:500;padding:9px 12px;border-radius:9px;text-align:left;transition:background .15s,color .15s;width:100%}
+.side-nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+.side-nav button.active{background:var(--blue);color:#fff;font-weight:600}
+.side-nav svg{flex:none;opacity:.85}
+.side-foot{margin-top:auto;padding:16px 18px;border-top:1px solid rgba(255,255,255,.08);font-size:11.5px;color:#5c6a80}
+.side-foot a{color:#6db6f5;text-decoration:none}
+
+/* ---- main ---- */
+main{padding:0 28px 48px;min-width:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);margin-bottom:24px;flex-wrap:wrap}
+.topbar h1{font-size:21px;font-weight:800;letter-spacing:-.3px}
+.topbar .crumb{font-size:12px;color:var(--muted);margin-top:2px}
+.top-actions{display:flex;gap:10px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:13px;padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--body);transition:all .15s;text-decoration:none}
+.btn:hover{border-color:#c9d2df}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-deep);border-color:var(--blue-deep)}
+.btn-danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn-green{background:var(--green);border-color:var(--green);color:#fff}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+
+/* ---- panels/cards ---- */
+.panel{display:none}
+.panel.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.stat .s-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.stat .s-value{font-family:'Archivo';font-size:30px;font-weight:900;letter-spacing:-.8px;margin:6px 0 4px}
+.stat .s-delta{font-size:12px;font-weight:600}
+.up{color:var(--green)}.down{color:var(--red)}.flat{color:var(--muted)}
+.grid-2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.card-head h3{font-size:15px;font-weight:800}
+.card-head .hint{font-size:12px;color:var(--muted)}
+.card-body{padding:18px 20px}
+
+/* ---- tables ---- */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:700;text-align:left;padding:12px 20px;border-bottom:1px solid var(--line);background:#fafbfd}
+td{padding:13px 20px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:#f7f9fc}
+tr.clickable{cursor:pointer}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-sched{background:var(--blue-ice);color:var(--blue-deep)}
+.b-route{background:var(--orange-soft);color:#b06a08}
+.b-site{background:var(--purple-soft);color:var(--purple)}
+.b-done{background:var(--green-soft);color:var(--green)}
+.b-urgent{background:var(--red-soft);color:var(--red)}
+.b-new{background:var(--red-soft);color:var(--red)}
+.b-open{background:var(--orange-soft);color:#b06a08}
+.b-sent{background:var(--blue-ice);color:var(--blue-deep)}
+.b-approved{background:var(--green-soft);color:var(--green)}
+.b-paid{background:var(--green-soft);color:var(--green)}
+.b-overdue{background:var(--red-soft);color:var(--red)}
+.tech-chip{display:inline-flex;align-items:center;gap:7px;font-weight:600}
+.tech-dot{width:22px;height:22px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:10px;font-weight:800}
+.t-mike{background:var(--blue)}.t-chris{background:var(--orange)}.t-david{background:var(--purple)}
+
+/* ---- map ---- */
+.map-card svg{width:100%;height:auto;display:block}
+.map-legend{display:flex;gap:16px;flex-wrap:wrap;padding:12px 20px;border-top:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--body)}
+.map-legend span{display:inline-flex;align-items:center;gap:7px}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%{opacity:1}50%{opacity:.35}100%{opacity:1}}
+
+/* ---- customer detail ---- */
+.cust-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.cust-head h2{font-size:22px;font-weight:900;letter-spacing:-.4px}
+.cust-head .sub{color:var(--muted);font-size:13px;margin-top:3px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.kv:last-child{border-bottom:none}
+.kv b{font-weight:600;color:var(--muted);font-weight:600}
+.kv span{font-weight:600;text-align:right}
+.timeline{list-style:none}
+.timeline li{position:relative;padding:0 0 16px 22px;font-size:13px}
+.timeline li::before{content:"";position:absolute;left:5px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--blue)}
+.timeline li::after{content:"";position:absolute;left:8.5px;top:16px;bottom:-2px;width:1.5px;background:var(--line)}
+.timeline li:last-child::after{display:none}
+.timeline b{display:block;font-weight:700}
+.timeline span{color:var(--muted);font-size:12px}
+.note-box{background:#fffbeb;border:1px solid #f3e3ad;border-radius:10px;padding:12px 14px;font-size:13px;color:#7a5d0d}
+@media(max-width:1100px){.detail-grid{grid-template-columns:1fr}}
+
+/* ---- tech phone mock ---- */
+.tech-wrap{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start}
+.phone{background:var(--navy);border-radius:36px;padding:14px;box-shadow:0 30px 60px -24px rgba(11,18,32,.5);max-width:340px;margin:0 auto}
+.phone-screen{background:var(--bg);border-radius:26px;overflow:hidden}
+.phone-top{background:var(--navy);color:#fff;padding:18px 18px 16px;text-align:center}
+.phone-top .pt-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#7d8aa0}
+.phone-top h4{font-size:16px;font-weight:800;margin-top:2px}
+.phone-body{padding:16px}
+.pjob{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.pjob .pj-time{font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:1px}
+.pjob h5{font-family:'Archivo';font-size:16px;font-weight:800;margin:4px 0 2px}
+.pjob p{font-size:12.5px;color:var(--muted)}
+.pbtn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.pbtn{border:none;border-radius:9px;padding:10px;font-size:12px;font-weight:700;background:#eef1f6;color:var(--body)}
+.pbtn.full{grid-column:span 2;background:var(--blue);color:#fff}
+.pcheck{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.pcheck button{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:600;color:var(--body);text-align:left}
+.pcheck button.done{border-color:var(--green);color:var(--green);background:var(--green-soft)}
+
+/* ---- estimate builder ---- */
+.est-wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start}
+.est-lines .kv span{font-family:'Archivo';font-weight:800}
+.est-total{display:flex;justify-content:space-between;align-items:center;padding:16px 0 4px;font-family:'Archivo';font-weight:900;font-size:20px}
+.approve-view{text-align:center;padding:10px 6px}
+.approve-view .ok{width:58px;height:58px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;margin:0 auto 12px}
+progress-hidden{display:none}
+
+/* ---- leads ---- */
+.lead-new{border-left:4px solid var(--red)}
+.lead-meta{font-size:12px;color:var(--muted)}
+.src-tag{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;background:#eef1f6;color:var(--body);padding:3px 8px;border-radius:5px}
+
+/* ---- reports ---- */
+.bar-row{display:grid;grid-template-columns:110px 1fr 70px;align-items:center;gap:12px;margin-bottom:12px;font-size:12.5px;font-weight:600}
+.bar-track{background:#edf0f5;border-radius:6px;height:12px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px}
+
+.placeholder-tip{background:var(--blue-ice);border:1px solid #c9e2f8;border-radius:10px;padding:12px 16px;font-size:12.5px;color:#155d9c;margin-bottom:20px}
+.toast{position:fixed;bottom:22px;right:22px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 16px 40px -12px rgba(0,0,0,.4);opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:99}
+.toast.show{opacity:1;transform:none}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}aside{position:relative;height:auto}.stat-grid{grid-template-columns:repeat(2,1fr)}.grid-2,.tech-wrap,.est-wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside>
+  <div class="side-brand">
+    <span class="wm"><span class="wm-top">ONPOINT</span><span class="wm-sub">COMMAND CENTER</span></span>
+  </div>
+  <div class="side-label">Operations</div>
+  <nav class="side-nav" id="sideNav">
+    <button data-panel="overview" class="active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</button>
+    <button data-panel="schedule"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18"/></svg>Schedule</button>
+    <button data-panel="customers"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-4 3.2-6 6.5-6s5.7 2 6.5 6M16 4.5a3.5 3.5 0 0 1 0 7M17.5 14c2.4.6 3.8 2.4 4.2 6"/></svg>Customers</button>
+    <button data-panel="calls"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Service Calls</button>
+    <button data-panel="techs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-2.4 2-2.2z"/></svg>Technicians</button>
+    <button data-panel="estimates"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>Estimates</button>
+    <button data-panel="invoices"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 1.8 2.7 5 3.3 5 1.5 5 3.4-2.2 3.1-5 3.1-5-1.2-5-3.1"/></svg>Invoices</button>
+    <button data-panel="equipment"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M7 10h10M7 13.5h10M12 17h5"/></svg>Equipment</button>
+    <button data-panel="plans"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg>Maintenance Plans</button>
+    <button data-panel="leads"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18l-7 8v5l-4 3v-8L3 5z"/></svg>Leads <span id="leadCount" style="margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:800;border-radius:999px;padding:2px 7px">3</span></button>
+    <button data-panel="reports"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Reports</button>
+    <button data-panel="settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Settings</button>
+  </nav>
+  <div class="side-foot">
+    Demo by <a href="https://williamsdigital.io">Williams Digital</a><br>
+    <a href="../">← View customer website</a>
+  </div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div>
+      <h1 id="pageTitle">Overview</h1>
+      <div class="crumb">Sunday, August 10 · Dispatch view</div>
+    </div>
+    <div class="top-actions">
+      <button class="btn" onclick="toast('New job form would open here')">+ New Job</button>
+      <button class="btn btn-primary" onclick="toast('New estimate form would open here')">+ New Estimate</button>
+      <div class="avatar">OP</div>
+    </div>
+  </div>
+
+  <!-- ================= OVERVIEW ================= -->
+  <section class="panel active" id="panel-overview">
+    <div class="placeholder-tip">👋 <b>Demo note:</b> every customer, job, and dollar figure below is fictional seed data. In production this dashboard is fed live by the OnPoint website, scheduling, and invoicing.</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="s-label">Today's Jobs</div><div class="s-value">8</div><div class="s-delta up">▲ 2 vs. last Monday</div></div>
+      <div class="stat"><div class="s-label">Open Service Calls</div><div class="s-value">4</div><div class="s-delta flat">1 urgent</div></div>
+      <div class="stat"><div class="s-label">Revenue This Month</div><div class="s-value">$42,840</div><div class="s-delta up">▲ 18% vs. July</div></div>
+      <div class="stat"><div class="s-label">Outstanding Estimates</div><div class="s-value">$18,250</div><div class="s-delta flat">5 awaiting approval</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h3>Today's Schedule</h3><span class="hint">4 of 8 shown</span></div>
+        <table>
+          <thead><tr><th>Time</th><th>Customer</th><th>Service</th><th>Technician</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr class="clickable" onclick="openCustomer()"><td><b>8:00 AM</b></td><td>Smith Residence</td><td>AC Repair</td><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike</span></td><td><span class="badge b-route">En Route</span></td></tr>
+            <tr><td><b>10:30 AM</b></td><td>Johnson Residence</td><td>Tune-Up</td><td><span class="tech-chip"><span class="tech-dot t-chris">C</span>Chris</span></td><td><span class="badge b-sched">Scheduled</span></td></tr>
+            <tr><td><b>1:00 PM</b></td><td>Walker Dental</td><td>Commercial HVAC</td><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike</span></td><td><span class="badge b-sched">Scheduled</span></td></tr>
+            <tr><td><b>3:30 PM</b></td><td>Davis Residence</td><td>No Cooling</td><td><span class="tech-chip"><span class="tech-dot t-chris">C</span>Chris</span></td><td><span class="badge b-urgent">Urgent</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div>
+        <div class="card map-card" style="margin-bottom:16px">
+          <div class="card-head"><h3>Field Map — Live</h3><span class="hint">placeholder locations</span></div>
+          <svg viewBox="0 0 360 230" aria-hidden="true">
+            <rect width="360" height="230" fill="#f2f6fb"/>
+            <g stroke="#dbe4f0" stroke-width="2" fill="none">
+              <path d="M0 60 C70 45 130 80 210 66 290 54 330 72 360 62"/>
+              <path d="M0 130 C60 115 150 150 230 136 300 124 335 140 360 132"/>
+              <path d="M0 195 C80 180 140 210 220 196 300 182 335 200 360 190"/>
+              <path d="M85 0 C95 70 70 140 88 230"/>
+              <path d="M185 0 C172 80 200 160 188 230"/>
+              <path d="M275 0 C288 85 262 165 280 230"/>
+            </g>
+            <g font-family="Inter,sans-serif" font-size="10" font-weight="700">
+              <circle cx="120" cy="90" r="9" fill="#1c82e0" class="pulse"/><circle cx="120" cy="90" r="4" fill="#fff"/><text x="134" y="94" fill="#1266b8">Mike — On Site</text>
+              <circle cx="228" cy="152" r="9" fill="#f59e1b" class="pulse"/><circle cx="228" cy="152" r="4" fill="#fff"/><text x="242" y="156" fill="#b06a08">Chris — En Route</text>
+              <circle cx="92" cy="184" r="9" fill="#6d4fd6"/><circle cx="92" cy="184" r="4" fill="#fff"/><text x="106" y="188" fill="#6d4fd6">David — Available</text>
+            </g>
+          </svg>
+          <div class="map-legend">
+            <span><span class="tech-dot t-mike" style="width:12px;height:12px"></span> On Site</span>
+            <span><span class="tech-dot t-chris" style="width:12px;height:12px"></span> En Route</span>
+            <span><span class="tech-dot t-david" style="width:12px;height:12px"></span> Available</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Newest Lead</h3><span class="badge b-new">New</span></div>
+          <div class="card-body">
+            <b>"My AC isn't cooling."</b>
+            <div class="lead-meta" style="margin:6px 0 12px">Sarah Mitchell · (205) 555-0132 · submitted 12 min ago via <span class="src-tag">Website</span></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="toast('Dialing lead… (demo)')">Call Lead</button>
+              <button class="btn" onclick="showPanel('leads')">View All Leads</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SCHEDULE ================= -->
+  <section class="panel" id="panel-schedule">
+    <div class="card">
+      <div class="card-head"><h3>This Week</h3><div><button class="btn" onclick="toast('Previous week (demo)')">←</button> <button class="btn" onclick="toast('Next week (demo)')">→</button></div></div>
+      <table>
+        <thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Service</th><th>Technician</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="4"><b>Mon 8/10</b></td><td>8:00 AM</td><td>Smith Residence</td><td>AC Repair</td><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike</span></td><td><span class="badge b-route">En Route</span></td></tr>
+          <tr><td>10:30 AM</td><td>Johnson Residence</td><td>Tune-Up</td><td><span class="tech-chip"><span class="tech-dot t-chris">C</span>Chris</span></td><td><span class="badge b-sched">Scheduled</span></td></tr>
+          <tr><td>1:00 PM</td><td>Walker Dental</td><td>Commercial HVAC</td><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike</span></td><td><span class="badge b-sched">Scheduled</span></td></tr>
+          <tr><td>3:30 PM</td><td>Davis Residence</td><td>No Cooling</td><td><span class="tech-chip"><span class="tech-dot t-chris">C</span>Chris</span></td><td><span class="badge b-urgent">Urgent</span></td></tr>
+          <tr><td rowspan="3"><b>Tue 8/11</b></td><td>8:30 AM</td><td>Hilltop Church</td><td>Maintenance Visit</td><td><span class="tech-chip"><span class="tech-dot t-david">D</span>David</span></td><td><span class="badge b-sched">Scheduled</span></td></tr>
+          <tr><td>11:00 AM</td><td>Ramirez Residence</td><td>IAQ Consultation</td><td><span class="tech-chip"><span class="tech-dot t-chris">C</span>Chris</span></td><td><span class="badge b-sched">Scheduled</span></td></tr>
+          <tr><td>2:00 PM</td><td>Nguyen Residence</td><td>System Replacement (Day 1)</td><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike</span></td><td><span class="badge b-sched">Scheduled</span></td></tr>
+          <tr><td rowspan="2"><b>Wed 8/12</b></td><td>8:00 AM</td><td>Nguyen Residence</td><td>System Replacement (Day 2)</td><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike</span></td><td><span class="badge b-sched">Scheduled</span></td></tr>
+          <tr><td>1:30 PM</td><td>Brookline Apartments</td><td>Unit 4B — No Cooling</td><td><span class="tech-chip"><span class="tech-dot t-david">D</span>David</span></td><td><span class="badge b-sched">Scheduled</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= CUSTOMERS ================= -->
+  <section class="panel" id="panel-customers">
+    <div class="card" id="custList">
+      <div class="card-head"><h3>Customers</h3><span class="hint">click a row for full profile</span></div>
+      <table>
+        <thead><tr><th>Name</th><th>Address</th><th>Equipment</th><th>Plan</th><th>Last Service</th></tr></thead>
+        <tbody>
+          <tr class="clickable" onclick="openCustomer()"><td><b>John Smith</b></td><td>123 Main Street, Birmingham</td><td>Carrier 3.5T Heat Pump</td><td><span class="badge b-approved">Comfort Plan</span></td><td>Aug 10, 2026</td></tr>
+          <tr class="clickable" onclick="toast('Customer profiles all drill in like John Smith (demo)')"><td><b>Angela Johnson</b></td><td>48 Ridgeview Ln, Hoover</td><td>Trane XR14</td><td><span class="badge b-approved">Comfort Plan</span></td><td>Jul 28, 2026</td></tr>
+          <tr class="clickable" onclick="toast('Customer profiles all drill in like John Smith (demo)')"><td><b>Walker Dental</b></td><td>2200 Commerce Pkwy</td><td>2× Rooftop Units</td><td><span class="badge b-sent">Commercial</span></td><td>Jul 15, 2026</td></tr>
+          <tr class="clickable" onclick="toast('Customer profiles all drill in like John Smith (demo)')"><td><b>Maria Ramirez</b></td><td>15 Oakmont Cir, Vestavia</td><td>Goodman GSX16</td><td><span class="badge" style="background:#eef1f6;color:#5b6675">None</span></td><td>Jun 2, 2026</td></tr>
+          <tr class="clickable" onclick="toast('Customer profiles all drill in like John Smith (demo)')"><td><b>Tom Nguyen</b></td><td>77 Falls Creek Dr, Pelham</td><td>Replacement in progress</td><td><span class="badge" style="background:#eef1f6;color:#5b6675">None</span></td><td>Aug 4, 2026</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="custDetail" style="display:none">
+      <div class="cust-head">
+        <div>
+          <h2>John Smith</h2>
+          <div class="sub">123 Main Street, Birmingham, AL · (205) 555-0117 · john.smith@example.com</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="closeCustomer()">← All Customers</button>
+          <button class="btn btn-primary" onclick="toast('Scheduling form would open (demo)')">Schedule Service</button>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div class="card"><div class="card-head"><h3>Equipment</h3></div>
+          <div class="card-body">
+            <div class="kv"><b>System</b><span>Carrier 3.5 Ton Heat Pump</span></div>
+            <div class="kv"><b>Installed</b><span>May 2021</span></div>
+            <div class="kv"><b>Serial #</b><span>CAR-38MURA-XXXXX</span></div>
+            <div class="kv"><b>Filter Size</b><span>20×25×1</span></div>
+            <div class="kv"><b>Warranty</b><span class="badge b-approved">Parts thru 2031</span></div>
+          </div>
+        </div>
+        <div class="card"><div class="card-head"><h3>Service History</h3></div>
+          <div class="card-body">
+            <ul class="timeline">
+              <li><b>AC Repair — capacitor replaced</b><span>Aug 10, 2026 · Mike</span></li>
+              <li><b>Spring Tune-Up</b><span>May 2, 2026 · Chris</span></li>
+              <li><b>Heating Inspection</b><span>Oct 18, 2025 · Mike</span></li>
+              <li><b>Comfort Plan enrollment</b><span>Oct 18, 2025</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="card"><div class="card-head"><h3>Notes</h3></div>
+          <div class="card-body">
+            <div class="note-box">Customer reported upstairs cooling inconsistently. Recommend duct inspection at next seasonal visit.</div>
+            <div style="margin-top:14px" class="kv"><b>Membership</b><span class="badge b-approved">Comfort Plan — renews Oct 2026</span></div>
+            <div class="kv"><b>Preferred contact</b><span>Text first, then call</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SERVICE CALLS ================= -->
+  <section class="panel" id="panel-calls">
+    <div class="card">
+      <div class="card-head"><h3>Open Service Calls</h3><span class="hint">4 open · 1 urgent</span></div>
+      <table>
+        <thead><tr><th>Opened</th><th>Customer</th><th>Issue</th><th>Priority</th><th>Assigned</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Today 7:42 AM</td><td>Davis Residence</td><td>No cooling — house at 84°</td><td><span class="badge b-urgent">Urgent</span></td><td><span class="tech-chip"><span class="tech-dot t-chris">C</span>Chris</span></td><td><span class="badge b-sched">Today 3:30 PM</span></td></tr>
+          <tr><td>Today 6:15 AM</td><td>Smith Residence</td><td>AC not cooling upstairs</td><td><span class="badge b-open">High</span></td><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike</span></td><td><span class="badge b-route">En Route</span></td></tr>
+          <tr><td>Yesterday</td><td>Brookline Apartments</td><td>Unit 4B — compressor noise</td><td><span class="badge b-open">Medium</span></td><td><span class="tech-chip"><span class="tech-dot t-david">D</span>David</span></td><td><span class="badge b-sched">Wed 1:30 PM</span></td></tr>
+          <tr><td>Aug 8</td><td>Hilltop Church</td><td>Thermostat fault, sanctuary zone</td><td><span class="badge b-open">Medium</span></td><td><span class="tech-chip"><span class="tech-dot t-david">D</span>David</span></td><td><span class="badge b-sched">Tue 8:30 AM</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= TECHNICIANS ================= -->
+  <section class="panel" id="panel-techs">
+    <div class="tech-wrap">
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-head"><h3>Crew Status</h3></div>
+          <table>
+            <thead><tr><th>Technician</th><th>Status</th><th>Current / Next Job</th><th>Jobs Today</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike Torres</span></td><td><span class="badge b-site">On Site</span></td><td>Smith Residence — AC Repair</td><td>3</td></tr>
+              <tr><td><span class="tech-chip"><span class="tech-dot t-chris">C</span>Chris Bell</span></td><td><span class="badge b-route">En Route</span></td><td>Johnson Residence — Tune-Up</td><td>3</td></tr>
+              <tr><td><span class="tech-chip"><span class="tech-dot t-david">D</span>David Okafor</span></td><td><span class="badge b-done">Available</span></td><td>Next: Hilltop Church (Tue)</td><td>2</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-body" style="font-size:13px;color:var(--body)">
+            <b style="font-family:'Archivo'">Technician mobile app →</b><br>
+            Each tech gets this phone view in the field: today's route, one-tap navigation and customer calls, job checklists, photo uploads, parts used, on-site estimates, and customer signatures. Everything they enter flows straight back into this dashboard — no paper tickets, no end-of-day data entry.
+          </div>
+        </div>
+      </div>
+
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-top">
+            <div class="pt-label">OnPoint Tech</div>
+            <h4>Good morning, Mike</h4>
+          </div>
+          <div class="phone-body">
+            <div class="pjob">
+              <div class="pj-time">Next Job · 2:30 PM</div>
+              <h5>John Smith</h5>
+              <p>AC Not Cooling · 123 Main Street</p>
+              <div class="pbtn-row">
+                <button class="pbtn" onclick="toast('Opens turn-by-turn navigation (demo)')">🧭 Navigate</button>
+                <button class="pbtn" onclick="toast('Calls customer (demo)')">📞 Call Customer</button>
+                <button class="pbtn full" id="startJobBtn" onclick="startJob()">▶ Start Job</button>
+              </div>
+            </div>
+            <div class="pjob" id="jobFlow" style="display:none">
+              <div class="pj-time" style="color:var(--green)">Job In Progress</div>
+              <div class="pcheck">
+                <button onclick="stepDone(this)">🔍 Diagnosis</button>
+                <button onclick="stepDone(this)">📷 Upload Photos</button>
+                <button onclick="stepDone(this)">🔩 Parts Used</button>
+                <button onclick="stepDone(this)">📝 Customer Notes</button>
+                <button onclick="stepDone(this)">💲 Create Estimate</button>
+                <button onclick="stepDone(this)">✍️ Collect Signature</button>
+              </div>
+              <div class="pbtn-row" style="margin-top:10px">
+                <button class="pbtn full" style="background:var(--green)" onclick="toast('Job completed — invoice & review request sent automatically (demo)')">✔ Complete Job</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ESTIMATES ================= -->
+  <section class="panel" id="panel-estimates">
+    <div class="est-wrap">
+      <div class="card">
+        <div class="card-head"><h3>Estimate #1042 — Nguyen Residence</h3><span class="badge b-sent" id="estStatus">Sent to Customer</span></div>
+        <div class="card-body est-lines">
+          <b style="font-family:'Archivo';font-size:16px">Replace 3.5 Ton HVAC System</b>
+          <div style="height:12px"></div>
+          <div class="kv"><b>Equipment</b><span>$6,450</span></div>
+          <div class="kv"><b>Labor</b><span>$1,250</span></div>
+          <div class="kv"><b>Additional Materials</b><span>$450</span></div>
+          <div class="est-total"><span>Total</span><span>$8,150</span></div>
+          <p style="font-size:12.5px;color:var(--muted);margin-top:8px">The customer receives a branded link by text &amp; email. One tap to approve — approval automatically converts this estimate into a scheduled installation.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Customer's View</h3><span class="hint">what Tom sees on his phone</span></div>
+        <div class="card-body approve-view" id="approveView">
+          <p style="font-size:13px;color:var(--body);margin-bottom:14px">Hi Tom — your OnPoint estimate is ready. Review the details and approve when you're ready.</p>
+          <button class="btn btn-green" style="width:100%;justify-content:center;padding:13px" onclick="approveEstimate()">Approve Estimate — $8,150</button>
+          <p style="font-size:11.5px;color:var(--muted);margin-top:10px">Questions? Reply to this text or call (205) 555-0148.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-head"><h3>All Open Estimates</h3><span class="hint">$18,250 outstanding</span></div>
+      <table>
+        <thead><tr><th>#</th><th>Customer</th><th>Scope</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>1042</td><td>Nguyen Residence</td><td>Full system replacement</td><td><b>$8,150</b></td><td><span class="badge b-sent" id="estRow">Sent</span></td></tr>
+          <tr><td>1041</td><td>Walker Dental</td><td>RTU-2 compressor</td><td><b>$4,900</b></td><td><span class="badge b-sent">Sent</span></td></tr>
+          <tr><td>1040</td><td>Ramirez Residence</td><td>Whole-home air purifier</td><td><b>$2,300</b></td><td><span class="badge b-open">Viewed</span></td></tr>
+          <tr><td>1039</td><td>Brookline Apartments</td><td>Unit 4B coil replacement</td><td><b>$1,850</b></td><td><span class="badge b-sent">Sent</span></td></tr>
+          <tr><td>1038</td><td>Hilltop Church</td><td>Zone thermostat upgrade</td><td><b>$1,050</b></td><td><span class="badge b-open">Viewed</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= INVOICES ================= -->
+  <section class="panel" id="panel-invoices">
+    <div class="card">
+      <div class="card-head"><h3>Invoices</h3><span class="hint">August</span></div>
+      <table>
+        <thead><tr><th>#</th><th>Customer</th><th>Job</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>2088</td><td>Smith Residence</td><td>AC Repair — capacitor</td><td><b>$385</b></td><td><span class="badge b-paid">Paid</span></td></tr>
+          <tr><td>2087</td><td>Johnson Residence</td><td>Comfort Plan renewal</td><td><b>$189</b></td><td><span class="badge b-paid">Paid</span></td></tr>
+          <tr><td>2086</td><td>Walker Dental</td><td>Quarterly maintenance</td><td><b>$720</b></td><td><span class="badge b-sent">Sent</span></td></tr>
+          <tr><td>2085</td><td>Chandler Residence</td><td>Blower motor replacement</td><td><b>$640</b></td><td><span class="badge b-overdue">Overdue 6d</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= EQUIPMENT ================= -->
+  <section class="panel" id="panel-equipment">
+    <div class="card">
+      <div class="card-head"><h3>Tracked Equipment</h3><span class="hint">every install & serviced unit on file</span></div>
+      <table>
+        <thead><tr><th>Customer</th><th>Unit</th><th>Installed</th><th>Warranty</th><th>Next Maintenance</th></tr></thead>
+        <tbody>
+          <tr><td>Smith Residence</td><td>Carrier 3.5T Heat Pump</td><td>May 2021</td><td><span class="badge b-approved">Thru 2031</span></td><td>Oct 2026</td></tr>
+          <tr><td>Johnson Residence</td><td>Trane XR14</td><td>Mar 2019</td><td><span class="badge b-approved">Thru 2029</span></td><td>Oct 2026</td></tr>
+          <tr><td>Walker Dental</td><td>2× Lennox Rooftop Units</td><td>2017 / 2020</td><td><span class="badge b-open">RTU-1 expired</span></td><td>Sep 2026 (quarterly)</td></tr>
+          <tr><td>Ramirez Residence</td><td>Goodman GSX16</td><td>Jun 2022</td><td><span class="badge b-approved">Thru 2032</span></td><td>Not enrolled</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= PLANS ================= -->
+  <section class="panel" id="panel-plans">
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat"><div class="s-label">Active Members</div><div class="s-value">64</div><div class="s-delta up">▲ 6 this quarter</div></div>
+      <div class="stat"><div class="s-label">Monthly Recurring</div><div class="s-value">$1,152</div><div class="s-delta up">Comfort Plan revenue</div></div>
+      <div class="stat"><div class="s-label">Renewals — next 30d</div><div class="s-value">9</div><div class="s-delta flat">Auto-reminders on</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Comfort Plan Members</h3><span class="hint">sample of 64</span></div>
+      <table>
+        <thead><tr><th>Member</th><th>Since</th><th>Spring Visit</th><th>Fall Visit</th><th>Renewal</th></tr></thead>
+        <tbody>
+          <tr><td><b>John Smith</b></td><td>Oct 2025</td><td><span class="badge b-done">Done — May 2</span></td><td><span class="badge b-sched">Oct 2026</span></td><td>Oct 2026</td></tr>
+          <tr><td><b>Angela Johnson</b></td><td>Feb 2024</td><td><span class="badge b-done">Done — Apr 18</span></td><td><span class="badge b-sched">Nov 2026</span></td><td>Feb 2027</td></tr>
+          <tr><td><b>Hilltop Church</b></td><td>Aug 2023</td><td><span class="badge b-done">Done — Mar 30</span></td><td><span class="badge b-sched">Sep 2026</span></td><td>Aug 2026 ⚠</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= LEADS ================= -->
+  <section class="panel" id="panel-leads">
+    <div class="placeholder-tip">Website → Command Center: when someone submits the "Describe My Problem" or scheduling form on onpointheatingandair.com, it lands here instantly — with source tracking.</div>
+    <div class="card lead-new" style="margin-bottom:16px">
+      <div class="card-head"><h3>New Website Lead</h3><span class="badge b-new">New — 12 min ago</span></div>
+      <div class="card-body">
+        <b style="font-size:16px">"My AC isn't cooling."</b>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;margin:14px 0;max-width:560px">
+          <div class="kv"><b>Name</b><span>Sarah Mitchell</span></div>
+          <div class="kv"><b>Phone</b><span>(205) 555-0132</span></div>
+          <div class="kv"><b>Address</b><span>310 Cahaba Heights Rd</span></div>
+          <div class="kv"><b>Preferred Time</b><span>Tomorrow morning</span></div>
+        </div>
+        <span class="src-tag">Source: Website</span>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn btn-primary" onclick="toast('Dialing (205) 555-0132… (demo)')">📞 Call Lead</button>
+          <button class="btn btn-green" onclick="toast('Lead converted to a scheduled service call (demo)')">Convert to Service Call →</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Recent Leads</h3><span class="hint">last 7 days</span></div>
+      <table>
+        <thead><tr><th>Received</th><th>Name</th><th>Issue</th><th>Source</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Today</td><td>Sarah Mitchell</td><td>AC not cooling</td><td><span class="src-tag">Website</span></td><td><span class="badge b-new">New</span></td></tr>
+          <tr><td>Today</td><td>Greg Palmer</td><td>Replace aging furnace</td><td><span class="src-tag">Google</span></td><td><span class="badge b-new">New</span></td></tr>
+          <tr><td>Yesterday</td><td>Dana Whitfield</td><td>Comfort Plan signup</td><td><span class="src-tag">Website</span></td><td><span class="badge b-new">New</span></td></tr>
+          <tr><td>Aug 8</td><td>Tom Nguyen</td><td>System replacement quote</td><td><span class="src-tag">Referral</span></td><td><span class="badge b-approved">Converted</span></td></tr>
+          <tr><td>Aug 7</td><td>Brookline Apartments</td><td>Unit 4B no cooling</td><td><span class="src-tag">Facebook</span></td><td><span class="badge b-approved">Converted</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= REPORTS ================= -->
+  <section class="panel" id="panel-reports">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h3>Revenue by Service — August</h3></div>
+        <div class="card-body">
+          <div class="bar-row"><span>Installations</span><div class="bar-track"><div class="bar-fill" style="width:82%;background:var(--blue)"></div></div><b>$19,400</b></div>
+          <div class="bar-row"><span>AC Repair</span><div class="bar-track"><div class="bar-fill" style="width:48%;background:var(--orange)"></div></div><b>$11,250</b></div>
+          <div class="bar-row"><span>Commercial</span><div class="bar-track"><div class="bar-fill" style="width:31%;background:var(--purple)"></div></div><b>$7,300</b></div>
+          <div class="bar-row"><span>Maintenance</span><div class="bar-track"><div class="bar-fill" style="width:15%;background:var(--green)"></div></div><b>$3,560</b></div>
+          <div class="bar-row"><span>IAQ</span><div class="bar-track"><div class="bar-fill" style="width:6%;background:var(--red)"></div></div><b>$1,330</b></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Lead Sources — 30 days</h3></div>
+        <div class="card-body">
+          <div class="bar-row"><span>Website</span><div class="bar-track"><div class="bar-fill" style="width:76%;background:var(--blue)"></div></div><b>19</b></div>
+          <div class="bar-row"><span>Google</span><div class="bar-track"><div class="bar-fill" style="width:56%;background:var(--orange)"></div></div><b>14</b></div>
+          <div class="bar-row"><span>Referral</span><div class="bar-track"><div class="bar-fill" style="width:32%;background:var(--green)"></div></div><b>8</b></div>
+          <div class="bar-row"><span>Facebook</span><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--purple)"></div></div><b>5</b></div>
+          <div style="margin-top:14px;font-size:12.5px;color:var(--muted)">Conversion rate: <b style="color:var(--green)">61%</b> of leads became booked jobs.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section class="panel" id="panel-settings">
+    <div class="card" style="max-width:640px">
+      <div class="card-head"><h3>Settings</h3></div>
+      <div class="card-body">
+        <div class="kv"><b>Company</b><span>OnPoint Heating &amp; Air</span></div>
+        <div class="kv"><b>Users</b><span>Owner · Office · 3 Technicians</span></div>
+        <div class="kv"><b>Review requests</b><span class="badge b-approved">Auto-send after job completion</span></div>
+        <div class="kv"><b>Filter reminders</b><span class="badge b-approved">On — 90 day cycle</span></div>
+        <div class="kv"><b>Payments</b><span>Card &amp; ACH via Stripe (build phase)</span></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const titles={overview:'Overview',schedule:'Schedule',customers:'Customers',calls:'Service Calls',techs:'Technicians',estimates:'Estimates',invoices:'Invoices',equipment:'Equipment',plans:'Maintenance Plans',leads:'Leads',reports:'Reports',settings:'Settings'};
+const navBtns=document.querySelectorAll('#sideNav button');
+function showPanel(key){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+key).classList.add('active');
+  navBtns.forEach(b=>b.classList.toggle('active',b.dataset.panel===key));
+  document.getElementById('pageTitle').textContent=titles[key];
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+navBtns.forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));
+
+function openCustomer(){
+  showPanel('customers');
+  document.getElementById('custList').style.display='none';
+  document.getElementById('custDetail').style.display='block';
+}
+function closeCustomer(){
+  document.getElementById('custList').style.display='';
+  document.getElementById('custDetail').style.display='none';
+}
+function startJob(){
+  document.getElementById('jobFlow').style.display='block';
+  document.getElementById('startJobBtn').textContent='Job Started ✔';
+  document.getElementById('startJobBtn').style.background='var(--green)';
+}
+function stepDone(btn){btn.classList.toggle('done');}
+function approveEstimate(){
+  document.getElementById('approveView').innerHTML='<div class="ok"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></div><b style="font-family:Archivo;font-size:17px">Estimate Approved!</b><p style="font-size:13px;color:var(--body);margin-top:8px">Installation automatically scheduled for <b>Tue, Aug 11 at 2:00 PM</b>. Tom just got a confirmation text — and the job appeared on the Schedule.</p>';
+  document.getElementById('estStatus').textContent='Approved';
+  document.getElementById('estStatus').className='badge b-approved';
+  document.getElementById('estRow').textContent='Approved';
+  document.getElementById('estRow').className='badge b-approved';
+  toast('Estimate approved → installation scheduled (demo)');
+}
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+</script>
+</body>
+</html>
