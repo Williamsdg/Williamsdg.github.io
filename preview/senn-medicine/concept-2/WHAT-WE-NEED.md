@@ -95,6 +95,28 @@ from patients who have given you written permission, and we'll drop them in.
 
 ---
 
+## 4b. "Not a waiting room. A relationship." — needs your approval
+
+We added a short section between your bio and the pricing that describes what
+being a member actually feels like. The three descriptions under it are pulled
+from promises already on your site, so nothing here overstates what you offer:
+
+> **Text your doctor.** — Direct communication by phone, text, or telemedicine.
+>
+> **Be seen when you need to be.** — Same-day or next-day appointments whenever possible.
+>
+> **Unhurried time together.** — A comprehensive, unhurried appointment reviewing your history, concerns, goals.
+
+We could say something sharper here — for example, naming how long a typical
+visit actually runs, or contrasting it with a rushed seven-minute appointment
+elsewhere. **We didn't write that, because it's a claim about how you practice
+and it should be yours, not ours.** If you're comfortable with a stronger
+version, send the wording.
+
+- [ ] Approve as written   - [ ] Approve with edits   - [ ] I'll send stronger wording
+
+---
+
 ## 5. Brand assets
 
 You mentioned you have logos, backgrounds and other brand materials. Send
@@ -109,6 +131,19 @@ whatever exists and we'll replace our placeholder treatment:
 Right now the page sets the wordmark in type and uses a warm ivory / sage /
 clay / champagne palette. That's our proposal, not a decision — your real brand
 takes priority the moment we have it.
+
+### Two "brand moments"
+
+Rather than tiling your background art everywhere, we marked **two** places
+where your own branding should become visually dominant — they're labeled on the
+page in gold dashed boxes:
+
+1. **"A different relationship with your doctor."** — the emotional statement
+   right below the hero.
+2. **"Ready for healthcare that feels personal?"** — the closing call to action.
+
+Those two moments are where you'll recognize your own brand inside the design.
+Send the background/pattern files and we'll drop them in.
 
 ---
 
