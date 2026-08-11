@@ -38,7 +38,9 @@
 <section class="band">
   <div class="wrap narrow">
     <p class="intro">The design is deliberately built with <b>visible labeled placeholders</b>, so you can see exactly where your words and photos go. Every soft grey box on the page is a slot waiting for something specific.</p>
-    <p class="intro">You can <b>type your answers directly on this page</b> &mdash; everything saves automatically as you go, on your own device. When you're ready, one button gathers it all into an email to send back. Nothing is submitted until you choose to send it.</p>
+    <p class="intro">You can <b>type your answers directly on this page</b> &mdash; everything saves automatically as you go, so you can stop and come back whenever suits you.</p>
+
+    <p class="privacy"><b>How this works:</b> your answers save to this device and to Williams Digital's private project workspace, so we can pick up where you left off without you having to send anything. Only Dylan can read them. Please don't enter any patient information here &mdash; this is for your website copy only.</p>
   </div>
 </section>
 
@@ -369,8 +371,8 @@
 
     <div class="send">
       <div class="send-copy">
-        <p class="send-h">Send your answers to Dylan</p>
-        <p>Everything you've typed above is saved on this device as you go. When you're ready, this gathers it into one email &mdash; you can review it before sending.</p>
+        <p class="send-h">Let Dylan know you're done</p>
+        <p>Your answers are already saved as you type, so nothing gets lost. This just sends a note that you've finished a round &mdash; useful if you'd like a reply, or want to add something in your own words.</p>
       </div>
       <div class="send-actions">
         <button class="btn btn-fill" id="sendBtn" type="button">Email my answers <span aria-hidden="true">&rarr;</span></button>
@@ -507,9 +509,64 @@
       saved[b.dataset.k]=b.checked;
       try{ localStorage.setItem(KEY,JSON.stringify(saved)); }catch(e){}
       paint();
+      queueSync();
     });
   });
   paint();
+
+  /* ---- cloud sync (so Dylan can see progress without waiting on an email) ---- */
+  var SB_URL='https://tkkhvbkocumyxpgsrpxv.supabase.co';
+  var SB_KEY='sb_publishable_4_xgRNDnzXimaykbC6YBwg_E2aYxgzz';
+  var SB_TABLE='senn_checklist_responses';
+  var TOKKEY='senn-checklist-token-v1';
+
+  var token=null;
+  try{
+    token=localStorage.getItem(TOKKEY);
+    if(!token){
+      token=(crypto && crypto.randomUUID) ? crypto.randomUUID()
+           : 'sc-'+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
+      localStorage.setItem(TOKKEY,token);
+    }
+  }catch(e){ token=null; }
+
+  var rowExists=false, syncTimer=null;
+
+  function sbHeaders(extra){
+    var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'};
+    if(extra) Object.keys(extra).forEach(function(k){ h[k]=extra[k]; });
+    return h;
+  }
+
+  function cloudSync(){
+    if(!token) return;                       // storage blocked; local-only
+    var payload={
+      session_token:token,
+      philosophy:texts.philosophy||null, why:texts.why||null,
+      students:texts.students||null, eligibility:texts.eligibility||null,
+      hsa:texts.hsa||null, hours:texts.hours||null,
+      phone:texts.phone||null, email:texts.email||null,
+      notes:texts.notes||null,
+      checks:saved
+    };
+    var url, opts;
+    if(rowExists){
+      url=SB_URL+'/rest/v1/'+SB_TABLE+'?session_token=eq.'+encodeURIComponent(token);
+      opts={method:'PATCH',headers:sbHeaders({'Prefer':'return=minimal'}),body:JSON.stringify(payload)};
+    } else {
+      payload.user_agent=(navigator.userAgent||'').slice(0,300);
+      url=SB_URL+'/rest/v1/'+SB_TABLE;
+      opts={method:'POST',headers:sbHeaders({'Prefer':'return=minimal,resolution=merge-duplicates'}),body:JSON.stringify(payload)};
+    }
+    fetch(url,opts).then(function(r){
+      if(r.ok){ rowExists=true; }
+    }).catch(function(){ /* offline — localStorage still holds everything */ });
+  }
+
+  function queueSync(){
+    clearTimeout(syncTimer);
+    syncTimer=setTimeout(cloudSync,1400);
+  }
 
   /* ---- written answers: save as you type ---- */
   var TKEY='senn-checklist-text-v1';
@@ -541,6 +598,7 @@
         // contact inputs share one status line
         var s = statusFor(k) || statusFor('contact');
         flash(s, f.value.trim() ? 'Saved' : '');
+        queueSync();
       },500);
     });
   });
