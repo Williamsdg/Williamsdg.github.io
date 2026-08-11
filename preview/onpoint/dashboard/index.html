@@ -61,13 +61,16 @@ main{padding:0 28px 48px;min-width:0}
 .panel{display:none}
 .panel.active{display:block;animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:16px;margin-bottom:24px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.stat.stat-click{cursor:pointer;border:1.5px solid var(--blue);background:linear-gradient(160deg,#fff,var(--blue-ice));transition:transform .15s}
+.stat.stat-click:hover{transform:translateY(-3px)}
 .stat .s-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
 .stat .s-value{font-family:'Archivo';font-size:30px;font-weight:900;letter-spacing:-.8px;margin:6px 0 4px}
 .stat .s-delta{font-size:12px;font-weight:600}
 .up{color:var(--green)}.down{color:var(--red)}.flat{color:var(--muted)}
 .grid-2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start}
+.grid-half{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 .card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
 .card-head h3{font-size:15px;font-weight:800}
@@ -150,6 +153,20 @@ tr.clickable{cursor:pointer}
 .est-total{display:flex;justify-content:space-between;align-items:center;padding:16px 0 4px;font-family:'Archivo';font-weight:900;font-size:20px}
 .approve-view{text-align:center;padding:10px 6px}
 .approve-view .ok{width:58px;height:58px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;margin:0 auto 12px}
+.tier{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:2px 12px;align-items:center;width:100%;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px 16px;transition:all .15s}
+.tier:hover{border-color:#b9c5d6}
+.tier.selected{border-color:var(--green);background:var(--green-soft)}
+.tier-tag{grid-column:1/-1;font-size:10px;font-weight:800;letter-spacing:1.2px;color:var(--muted)}
+.tier-tag.rec{color:var(--green)}
+.tier-name{font-weight:700;font-size:14px;text-align:left}
+.tier-price{font-family:'Archivo';font-weight:900;font-size:16px}
+/* website-lead notification */
+.notif{position:fixed;top:20px;right:20px;z-index:120;width:300px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:12px;box-shadow:0 20px 50px -18px rgba(15,23,40,.35);padding:16px 18px;transform:translateX(340px);transition:transform .45s cubic-bezier(.2,.9,.3,1.1)}
+.notif.show{transform:none}
+.notif .n-title{font-size:11px;font-weight:800;letter-spacing:1px;color:var(--blue-deep)}
+.notif h4{font-family:'Archivo';font-size:16px;font-weight:800;margin:4px 0 1px}
+.notif p{font-size:12.5px;color:var(--muted)}
+.notif .n-close{position:absolute;top:8px;right:12px;border:none;background:none;color:var(--muted);font-size:16px}
 progress-hidden{display:none}
 
 /* ---- leads ---- */
@@ -165,7 +182,7 @@ progress-hidden{display:none}
 .placeholder-tip{background:var(--blue-ice);border:1px solid #c9e2f8;border-radius:10px;padding:12px 16px;font-size:12.5px;color:#155d9c;margin-bottom:20px}
 .toast{position:fixed;bottom:22px;right:22px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 16px 40px -12px rgba(0,0,0,.4);opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:99}
 .toast.show{opacity:1;transform:none}
-@media(max-width:1000px){.layout{grid-template-columns:1fr}aside{position:relative;height:auto}.stat-grid{grid-template-columns:repeat(2,1fr)}.grid-2,.tech-wrap,.est-wrap{grid-template-columns:1fr}}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}aside{position:relative;height:auto}.stat-grid{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-half,.tech-wrap,.est-wrap{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -187,6 +204,7 @@ progress-hidden{display:none}
     <button data-panel="equipment"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M7 10h10M7 13.5h10M12 17h5"/></svg>Equipment</button>
     <button data-panel="plans"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg>Maintenance Plans</button>
     <button data-panel="leads"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18l-7 8v5l-4 3v-8L3 5z"/></svg>Leads <span id="leadCount" style="margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:800;border-radius:999px;padding:2px 7px">3</span></button>
+    <button data-panel="replacements"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 1-15.4 6.4M3 12a9 9 0 0 1 15.4-6.4M3 12l2.5-3M3 12l3.5.5M21 12l-2.5 3m2.5-3-3.5-.5"/></svg>Replacements <span style="margin-left:auto;background:var(--orange);color:#fff;font-size:10px;font-weight:800;border-radius:999px;padding:2px 7px">7</span></button>
     <button data-panel="reports"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Reports</button>
     <button data-panel="settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Settings</button>
   </nav>
@@ -200,7 +218,7 @@ progress-hidden{display:none}
   <div class="topbar">
     <div>
       <h1 id="pageTitle">Overview</h1>
-      <div class="crumb">Sunday, August 10 · Dispatch view</div>
+      <div class="crumb">Monday, August 10 · Dispatch view</div>
     </div>
     <div class="top-actions">
       <button class="btn" onclick="toast('New job form would open here')">+ New Job</button>
@@ -217,6 +235,7 @@ progress-hidden{display:none}
       <div class="stat"><div class="s-label">Open Service Calls</div><div class="s-value">4</div><div class="s-delta flat">1 urgent</div></div>
       <div class="stat"><div class="s-label">Revenue This Month</div><div class="s-value">$42,840</div><div class="s-delta up">▲ 18% vs. July</div></div>
       <div class="stat"><div class="s-label">Outstanding Estimates</div><div class="s-value">$18,250</div><div class="s-delta flat">5 awaiting approval</div></div>
+      <div class="stat stat-click" onclick="showPanel('replacements')"><div class="s-label" style="color:var(--blue-deep)">Replacement Opportunities</div><div class="s-value">7</div><div class="s-delta up">$58,400 est. pipeline →</div></div>
     </div>
 
     <div class="grid-2">
@@ -235,7 +254,7 @@ progress-hidden{display:none}
 
       <div>
         <div class="card map-card" style="margin-bottom:16px">
-          <div class="card-head"><h3>Field Map — Live</h3><span class="hint">placeholder locations</span></div>
+          <div class="card-head"><h3>Technician Field Status</h3><span class="hint">concept — live GPS in production</span></div>
           <svg viewBox="0 0 360 230" aria-hidden="true">
             <rect width="360" height="230" fill="#f2f6fb"/>
             <g stroke="#dbe4f0" stroke-width="2" fill="none">
@@ -262,13 +281,37 @@ progress-hidden{display:none}
         <div class="card">
           <div class="card-head"><h3>Newest Lead</h3><span class="badge b-new">New</span></div>
           <div class="card-body">
-            <b>"My AC isn't cooling."</b>
-            <div class="lead-meta" style="margin:6px 0 12px">Sarah Mitchell · (205) 555-0132 · submitted 12 min ago via <span class="src-tag">Website</span></div>
+            <b>"Upstairs AC is running but isn't getting cold."</b>
+            <div class="lead-meta" style="margin:6px 0 12px">Sarah Johnson · (205) 555-0123 · 2 min ago via <span class="src-tag">OnPointHeating.com</span></div>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-primary" onclick="toast('Dialing lead… (demo)')">Call Lead</button>
-              <button class="btn" onclick="showPanel('leads')">View All Leads</button>
+              <button class="btn btn-primary" onclick="openLead()">View Lead →</button>
+              <button class="btn" onclick="showPanel('leads')">All Leads</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-half" style="margin-top:16px">
+      <div class="card">
+        <div class="card-head"><h3>⭐ Reputation</h3><span class="hint">automated — last 30 days</span></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;margin-bottom:16px">
+            <div><div style="font-family:'Archivo';font-size:26px;font-weight:900">21</div><div style="font-size:11.5px;color:var(--muted);font-weight:600">Requests Sent</div></div>
+            <div><div style="font-family:'Archivo';font-size:26px;font-weight:900;color:var(--green)">12</div><div style="font-size:11.5px;color:var(--muted);font-weight:600">New Reviews</div></div>
+            <div><div style="font-family:'Archivo';font-size:26px;font-weight:900;color:var(--blue-deep)">57%</div><div style="font-size:11.5px;color:var(--muted);font-weight:600">Conversion</div></div>
+          </div>
+          <div style="font-size:12.5px;color:var(--muted);background:#fafbfd;border:1px solid var(--line);border-radius:9px;padding:10px 14px;text-align:center;font-weight:600">Job Completed → Customer receives text → Google Review Link</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Website Integration</h3><span class="badge b-approved">Connected ✓</span></div>
+        <div class="card-body">
+          <div class="kv"><b>Leads this month</b><span>34</span></div>
+          <div class="kv"><b>Converted to service calls</b><span>27</span></div>
+          <div class="kv"><b>Replacement opportunities</b><span>8</span></div>
+          <div class="kv"><b>Attributed revenue</b><span style="color:var(--green)">$21,300*</span></div>
+          <p style="font-size:11.5px;color:var(--muted);margin-top:10px">*Demo figures. Every form on onpointheatingandair.com feeds this dashboard with full source tracking.</p>
         </div>
       </div>
     </div>
@@ -378,9 +421,9 @@ progress-hidden{display:none}
           <table>
             <thead><tr><th>Technician</th><th>Status</th><th>Current / Next Job</th><th>Jobs Today</th></tr></thead>
             <tbody>
-              <tr><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike Torres</span></td><td><span class="badge b-site">On Site</span></td><td>Smith Residence — AC Repair</td><td>3</td></tr>
-              <tr><td><span class="tech-chip"><span class="tech-dot t-chris">C</span>Chris Bell</span></td><td><span class="badge b-route">En Route</span></td><td>Johnson Residence — Tune-Up</td><td>3</td></tr>
-              <tr><td><span class="tech-chip"><span class="tech-dot t-david">D</span>David Okafor</span></td><td><span class="badge b-done">Available</span></td><td>Next: Hilltop Church (Tue)</td><td>2</td></tr>
+              <tr><td><span class="tech-chip"><span class="tech-dot t-mike">M</span>Mike Reynolds</span></td><td><span class="badge b-site">On Site</span></td><td>Smith Residence — AC Repair</td><td>3</td></tr>
+              <tr><td><span class="tech-chip"><span class="tech-dot t-chris">C</span>Chris Turner</span></td><td><span class="badge b-route">En Route</span></td><td>Johnson Residence — Tune-Up</td><td>3</td></tr>
+              <tr><td><span class="tech-chip"><span class="tech-dot t-david">D</span>David Brooks</span></td><td><span class="badge b-done">Available</span></td><td>Next: Hilltop Church (Tue)</td><td>2</td></tr>
             </tbody>
           </table>
         </div>
@@ -401,8 +444,8 @@ progress-hidden{display:none}
           <div class="phone-body">
             <div class="pjob">
               <div class="pj-time">Next Job · 2:30 PM</div>
-              <h5>John Smith</h5>
-              <p>AC Not Cooling · 123 Main Street</p>
+              <h5>Sarah Johnson</h5>
+              <p>AC Not Cooling · 4127 Cahaba Heights Rd, Birmingham</p>
               <div class="pbtn-row">
                 <button class="pbtn" onclick="toast('Opens turn-by-turn navigation (demo)')">🧭 Navigate</button>
                 <button class="pbtn" onclick="toast('Calls customer (demo)')">📞 Call Customer</button>
@@ -412,16 +455,28 @@ progress-hidden{display:none}
             <div class="pjob" id="jobFlow" style="display:none">
               <div class="pj-time" style="color:var(--green)">Job In Progress</div>
               <div class="pcheck">
+                <button onclick="stepDone(this)">🗣 Customer Complaint</button>
+                <button onclick="stepDone(this)">📋 Equipment History</button>
+                <button onclick="stepDone(this)">🔧 Previous Repairs</button>
                 <button onclick="stepDone(this)">🔍 Diagnosis</button>
-                <button onclick="stepDone(this)">📷 Upload Photos</button>
+                <button onclick="stepDone(this)">📷 Photos</button>
                 <button onclick="stepDone(this)">🔩 Parts Used</button>
-                <button onclick="stepDone(this)">📝 Customer Notes</button>
+                <button onclick="stepDone(this)">💡 Recommendations</button>
                 <button onclick="stepDone(this)">💲 Create Estimate</button>
-                <button onclick="stepDone(this)">✍️ Collect Signature</button>
               </div>
               <div class="pbtn-row" style="margin-top:10px">
-                <button class="pbtn full" style="background:var(--green)" onclick="toast('Job completed — invoice & review request sent automatically (demo)')">✔ Complete Job</button>
+                <button class="pbtn full" style="background:var(--green)" onclick="completeJob()">✔ Complete Job</button>
               </div>
+            </div>
+            <div class="pjob" id="jobDone" style="display:none;border-color:var(--green)">
+              <div class="pj-time" style="color:var(--green)">Job Completed — Automations Fired</div>
+              <div style="display:grid;gap:8px;margin-top:8px;font-size:12.5px;font-weight:600;color:var(--green)">
+                <span>✓ Invoice Created</span>
+                <span>✓ Equipment History Updated</span>
+                <span>✓ Customer Notified</span>
+                <span>✓ Review Request Scheduled</span>
+              </div>
+              <p style="font-size:11.5px;color:var(--muted);margin-top:10px">No paperwork, no end-of-day data entry — it all happened when Mike tapped one button.</p>
             </div>
           </div>
         </div>
@@ -447,9 +502,27 @@ progress-hidden{display:none}
       <div class="card">
         <div class="card-head"><h3>Customer's View</h3><span class="hint">what Tom sees on his phone</span></div>
         <div class="card-body approve-view" id="approveView">
-          <p style="font-size:13px;color:var(--body);margin-bottom:14px">Hi Tom — your OnPoint estimate is ready. Review the details and approve when you're ready.</p>
-          <button class="btn btn-green" style="width:100%;justify-content:center;padding:13px" onclick="approveEstimate()">Approve Estimate — $8,150</button>
-          <p style="font-size:11.5px;color:var(--muted);margin-top:10px">Questions? Reply to this text or call (205) 555-0148.</p>
+          <p style="font-size:13px;color:var(--body);margin-bottom:14px;text-align:left"><b>Your HVAC Replacement Options</b> — pick the system that fits your home and budget, Tom.</p>
+          <div style="display:grid;gap:10px;text-align:left">
+            <button class="tier" data-price="$7,250" onclick="pickTier(this)">
+              <span class="tier-tag">GOOD</span>
+              <span class="tier-name">14 SEER2 System</span>
+              <span class="tier-price">$7,250</span>
+            </button>
+            <button class="tier selected" data-price="$8,150" onclick="pickTier(this)">
+              <span class="tier-tag rec">BETTER — RECOMMENDED</span>
+              <span class="tier-name">16 SEER2 System</span>
+              <span class="tier-price">$8,150</span>
+            </button>
+            <button class="tier" data-price="$10,450" onclick="pickTier(this)">
+              <span class="tier-tag">BEST</span>
+              <span class="tier-name">High-Efficiency System</span>
+              <span class="tier-price">$10,450</span>
+            </button>
+          </div>
+          <button class="btn btn-green" style="width:100%;justify-content:center;padding:13px;margin-top:14px" id="approveBtn" onclick="approveEstimate()">Approve Selected Option — $8,150</button>
+          <p style="font-size:12px;color:var(--blue-deep);font-weight:600;margin-top:10px">Financing Available — As Low As $135/mo*</p>
+          <p style="font-size:10.5px;color:var(--muted);margin-top:4px">*Demo pricing for concept purposes. Questions? Reply to this text or call (205) 555-0148.</p>
         </div>
       </div>
     </div>
@@ -524,19 +597,15 @@ progress-hidden{display:none}
   <section class="panel" id="panel-leads">
     <div class="placeholder-tip">Website → Command Center: when someone submits the "Describe My Problem" or scheduling form on onpointheatingandair.com, it lands here instantly — with source tracking.</div>
     <div class="card lead-new" style="margin-bottom:16px">
-      <div class="card-head"><h3>New Website Lead</h3><span class="badge b-new">New — 12 min ago</span></div>
-      <div class="card-body">
-        <b style="font-size:16px">"My AC isn't cooling."</b>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px 24px;margin:14px 0;max-width:560px">
-          <div class="kv"><b>Name</b><span>Sarah Mitchell</span></div>
-          <div class="kv"><b>Phone</b><span>(205) 555-0132</span></div>
-          <div class="kv"><b>Address</b><span>310 Cahaba Heights Rd</span></div>
-          <div class="kv"><b>Preferred Time</b><span>Tomorrow morning</span></div>
-        </div>
-        <span class="src-tag">Source: Website</span>
+      <div class="card-head"><h3>🔵 New Website Lead</h3><span class="badge b-new" id="leadBadge">New — 2 min ago</span></div>
+      <div class="card-body" id="leadFlow">
+        <b style="font-size:17px">Sarah Johnson</b>
+        <div class="lead-meta" style="margin:2px 0 12px">(205) 555-0123 · Birmingham, AL · <span class="src-tag">Source: OnPointHeating.com</span></div>
+        <div style="background:#fafbfd;border-left:3px solid var(--blue);border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:14px"><b>Issue:</b> "Upstairs AC is running but isn't getting cold."</div>
+        <div class="kv" style="max-width:340px"><b>Preferred time</b><span>Today Afternoon</span></div>
         <div style="display:flex;gap:8px;margin-top:16px">
-          <button class="btn btn-primary" onclick="toast('Dialing (205) 555-0132… (demo)')">📞 Call Lead</button>
-          <button class="btn btn-green" onclick="toast('Lead converted to a scheduled service call (demo)')">Convert to Service Call →</button>
+          <button class="btn" onclick="toast('Dialing (205) 555-0123… (demo)')">📞 Call Lead</button>
+          <button class="btn btn-green" onclick="createServiceCall()">Create Service Call →</button>
         </div>
       </div>
     </div>
@@ -545,11 +614,34 @@ progress-hidden{display:none}
       <table>
         <thead><tr><th>Received</th><th>Name</th><th>Issue</th><th>Source</th><th>Status</th></tr></thead>
         <tbody>
-          <tr><td>Today</td><td>Sarah Mitchell</td><td>AC not cooling</td><td><span class="src-tag">Website</span></td><td><span class="badge b-new">New</span></td></tr>
+          <tr><td>Today</td><td>Sarah Johnson</td><td>AC not cooling — upstairs</td><td><span class="src-tag">Website</span></td><td><span class="badge b-new" id="leadRowStatus">New</span></td></tr>
           <tr><td>Today</td><td>Greg Palmer</td><td>Replace aging furnace</td><td><span class="src-tag">Google</span></td><td><span class="badge b-new">New</span></td></tr>
           <tr><td>Yesterday</td><td>Dana Whitfield</td><td>Comfort Plan signup</td><td><span class="src-tag">Website</span></td><td><span class="badge b-new">New</span></td></tr>
           <tr><td>Aug 8</td><td>Tom Nguyen</td><td>System replacement quote</td><td><span class="src-tag">Referral</span></td><td><span class="badge b-approved">Converted</span></td></tr>
           <tr><td>Aug 7</td><td>Brookline Apartments</td><td>Unit 4B no cooling</td><td><span class="src-tag">Facebook</span></td><td><span class="badge b-approved">Converted</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= REPLACEMENTS ================= -->
+  <section class="panel" id="panel-replacements">
+    <div class="placeholder-tip">💡 The Command Center watches system age, repair frequency, and repair spend across the customer database — and surfaces the customers most likely to need a replacement. That's revenue already sitting in OnPoint's records.</div>
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat"><div class="s-label">Opportunities</div><div class="s-value">7</div><div class="s-delta flat">systems 10+ yrs old w/ repeat repairs</div></div>
+      <div class="stat"><div class="s-label">Estimated Pipeline</div><div class="s-value">$58,400</div><div class="s-delta up">at avg. replacement value</div></div>
+      <div class="stat"><div class="s-label">Contacted</div><div class="s-value">2 of 7</div><div class="s-delta flat">outreach in progress</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Potential Replacement Customers</h3><span class="hint">ranked by opportunity</span></div>
+      <table>
+        <thead><tr><th>Customer</th><th>System</th><th>Age</th><th>Repairs (24 mo)</th><th>Opportunity</th><th></th></tr></thead>
+        <tbody>
+          <tr><td><b>Robert Miller</b></td><td>Carrier 3.5 Ton</td><td>13 yrs</td><td>3</td><td><span class="badge b-urgent">High</span></td><td><button class="btn" onclick="toast('Replacement estimate started for Robert Miller (demo)')">Start Estimate</button></td></tr>
+          <tr><td><b>Susan Parker</b></td><td>Trane 4 Ton</td><td>11 yrs</td><td>2</td><td><span class="badge b-urgent">High</span></td><td><button class="btn" onclick="toast('Replacement estimate started for Susan Parker (demo)')">Start Estimate</button></td></tr>
+          <tr><td><b>James Davis</b></td><td>Goodman 3 Ton</td><td>10 yrs</td><td>2</td><td><span class="badge b-open">Medium</span></td><td><button class="btn" onclick="toast('Replacement estimate started for James Davis (demo)')">Start Estimate</button></td></tr>
+          <tr><td><b>Linda Hayes</b></td><td>Rheem 2.5 Ton</td><td>12 yrs</td><td>1</td><td><span class="badge b-open">Medium</span></td><td><button class="btn" onclick="toast('Replacement estimate started for Linda Hayes (demo)')">Start Estimate</button></td></tr>
+          <tr><td><b>Walker Dental (RTU-1)</b></td><td>Lennox Rooftop</td><td>9 yrs</td><td>2</td><td><span class="badge b-open">Medium</span></td><td><button class="btn" onclick="toast('Replacement estimate started for Walker Dental (demo)')">Start Estimate</button></td></tr>
         </tbody>
       </table>
     </div>
@@ -598,10 +690,18 @@ progress-hidden{display:none}
 </main>
 </div>
 
+<div class="notif" id="notif">
+  <button class="n-close" onclick="document.getElementById('notif').classList.remove('show')">×</button>
+  <div class="n-title">🔵 NEW WEBSITE LEAD</div>
+  <h4>Sarah Johnson</h4>
+  <p>AC Not Cooling · submitted 2 minutes ago<br>Source: OnPointHeating.com</p>
+  <button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center" onclick="openLead()">View Lead →</button>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-const titles={overview:'Overview',schedule:'Schedule',customers:'Customers',calls:'Service Calls',techs:'Technicians',estimates:'Estimates',invoices:'Invoices',equipment:'Equipment',plans:'Maintenance Plans',leads:'Leads',reports:'Reports',settings:'Settings'};
+const titles={overview:'Overview',schedule:'Schedule',customers:'Customers',calls:'Service Calls',techs:'Technicians',estimates:'Estimates',invoices:'Invoices',equipment:'Equipment',plans:'Maintenance Plans',leads:'Leads',replacements:'Replacement Opportunities',reports:'Reports',settings:'Settings'};
 const navBtns=document.querySelectorAll('#sideNav button');
 function showPanel(key){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -627,14 +727,52 @@ function startJob(){
   document.getElementById('startJobBtn').style.background='var(--green)';
 }
 function stepDone(btn){btn.classList.toggle('done');}
+function completeJob(){
+  document.getElementById('jobFlow').style.display='none';
+  document.getElementById('jobDone').style.display='block';
+  toast('Job completed — invoice, history, notification & review request all fired (demo)');
+}
+function pickTier(el){
+  document.querySelectorAll('.tier').forEach(t=>t.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('approveBtn').textContent='Approve Selected Option — '+el.dataset.price;
+}
 function approveEstimate(){
-  document.getElementById('approveView').innerHTML='<div class="ok"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></div><b style="font-family:Archivo;font-size:17px">Estimate Approved!</b><p style="font-size:13px;color:var(--body);margin-top:8px">Installation automatically scheduled for <b>Tue, Aug 11 at 2:00 PM</b>. Tom just got a confirmation text — and the job appeared on the Schedule.</p>';
+  const price=document.querySelector('.tier.selected').dataset.price;
+  document.getElementById('approveView').innerHTML='<div class="ok"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></div><b style="font-family:Archivo;font-size:17px">Estimate Approved — '+price+'</b><p style="font-size:13px;color:var(--body);margin-top:8px">Installation automatically scheduled for <b>Tue, Aug 11 at 2:00 PM</b>. Tom just got a confirmation text — and the job appeared on the Schedule.</p>';
   document.getElementById('estStatus').textContent='Approved';
   document.getElementById('estStatus').className='badge b-approved';
   document.getElementById('estRow').textContent='Approved';
   document.getElementById('estRow').className='badge b-approved';
   toast('Estimate approved → installation scheduled (demo)');
 }
+function openLead(){
+  document.getElementById('notif').classList.remove('show');
+  showPanel('leads');
+}
+function createServiceCall(){
+  document.getElementById('leadFlow').innerHTML=
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span class="badge b-approved">✓ Service Call Created</span><span class="lead-meta">Sarah Johnson · AC Not Cooling · Today Afternoon</span></div>'+
+    '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+
+    '<label style="font-size:13px;font-weight:600">Assign Technician</label>'+
+    '<select id="assignTech" style="font-family:inherit;font-size:13px;font-weight:600;padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:#fff"><option>Mike R.</option><option>Chris T.</option><option>David B.</option></select>'+
+    '<button class="btn btn-primary" onclick="scheduleCall()">Schedule →</button></div>';
+  toast('Lead converted to a service call (demo)');
+}
+function scheduleCall(){
+  const tech=document.getElementById('assignTech').value;
+  document.getElementById('leadFlow').innerHTML=
+    '<div style="text-align:center;padding:6px 0"><div class="ok" style="width:52px;height:52px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;margin:0 auto 10px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></div>'+
+    '<b style="font-family:Archivo;font-size:16px">Scheduled — Today 2:30 PM with '+tech+'</b>'+
+    '<p style="font-size:12.5px;color:var(--muted);margin-top:6px">Sarah just received a confirmation text. The job is on the Schedule and in '+tech.split(' ')[0]+'\'s mobile app — 30 seconds from website form to dispatched technician.</p></div>';
+  document.getElementById('leadBadge').textContent='Converted';
+  document.getElementById('leadBadge').className='badge b-approved';
+  const row=document.getElementById('leadRowStatus');
+  if(row){row.textContent='Converted';row.className='badge b-approved';}
+  toast('Service call scheduled — website lead fully converted (demo)');
+}
+setTimeout(()=>document.getElementById('notif').classList.add('show'),1600);
+setTimeout(()=>document.getElementById('notif').classList.remove('show'),14000);
 let toastTimer;
 function toast(msg){
   const t=document.getElementById('toast');
