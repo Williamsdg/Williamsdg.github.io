@@ -516,7 +516,9 @@
 
   /* ---- cloud sync (so Dylan can see progress without waiting on an email) ---- */
   var SB_URL='https://tkkhvbkocumyxpgsrpxv.supabase.co';
-  var SB_KEY='sb_publishable_4_xgRNDnzXimaykbC6YBwg_E2aYxgzz';
+  // legacy anon JWT: the sb_publishable_ key is rejected (401) when the
+  // request carries an Origin header, i.e. from any real browser.
+  var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRra2h2YmtvY3VteXhwZ3NycHh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NjYyNDAsImV4cCI6MjA5NzI0MjI0MH0.piSMSUJ427thN_sjCfgOp9lbnUsWGmYqQPRMlglfd6E';
   var SB_TABLE='senn_checklist_responses';
   var TOKKEY='senn-checklist-token-v1';
 
@@ -556,10 +558,21 @@
     } else {
       payload.user_agent=(navigator.userAgent||'').slice(0,300);
       url=SB_URL+'/rest/v1/'+SB_TABLE;
-      opts={method:'POST',headers:sbHeaders({'Prefer':'return=minimal,resolution=merge-duplicates'}),body:JSON.stringify(payload)};
+      // NB: no resolution=merge-duplicates — upsert needs an implicit UPDATE
+      // grant the anon role doesn't have, and returns 401 from a browser.
+      opts={method:'POST',headers:sbHeaders({'Prefer':'return=minimal'}),body:JSON.stringify(payload)};
     }
     fetch(url,opts).then(function(r){
-      if(r.ok){ rowExists=true; }
+      if(r.ok){ rowExists=true; return; }
+      // 409 = the row already exists (e.g. a retry after a flaky first POST).
+      // Flip to PATCH and try once more so a hiccup can't strand the session.
+      if(!rowExists && r.status===409){
+        rowExists=true;
+        return fetch(
+          SB_URL+'/rest/v1/'+SB_TABLE+'?session_token=eq.'+encodeURIComponent(token),
+          {method:'PATCH',headers:sbHeaders({'Prefer':'return=minimal'}),body:JSON.stringify(payload)}
+        );
+      }
     }).catch(function(){ /* offline — localStorage still holds everything */ });
   }
 
