@@ -491,6 +491,7 @@ footer{border-top:1px solid rgba(245,241,234,.1);padding:56px 0;font-size:13px;c
 <div class="concept-badge"><span>●</span>&nbsp;Concept by Williams Digital</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="globe-dots.js"></script>
 <script>
 // ---------- shared helpers ----------
 const nav=document.getElementById('nav');
@@ -502,28 +503,8 @@ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
 
-// land approximation: [lonMin,lonMax,latMin,latMax]
-const LAND=[
-  [-168,-140,55,70],[-140,-55,48,70],[-128,-70,25,48],[-115,-88,12,25],[-90,-77,7,15],
-  [-55,-20,60,82],
-  [-80,-50,0,10],[-80,-35,-20,0],[-75,-53,-40,-20],[-73,-64,-55,-40],
-  [-9,2,50,59],[-10,25,36,55],[5,30,55,70],[25,45,45,60],
-  [-17,32,10,35],[8,42,-5,10],[12,40,-25,-5],[16,32,-35,-25],[43,50,-25,-12],
-  [35,60,12,40],[45,90,35,55],[60,90,25,35],[68,88,8,28],[92,109,8,28],[95,125,20,45],[100,142,45,70],[40,100,50,72],
-  [95,120,-8,6],[125,140,-8,2],
-  [113,153,-38,-11],[166,178,-46,-34],[130,142,31,45]
-];
+// Real land dot field (Natural Earth 110m, precomputed) — window.ARC_DOTS from globe-dots.js
 function hash(x,y){let h=(x*374761393+y*668265263)^0x5bf03635;h=(h^(h>>13))*1274126177;return((h^(h>>16))>>>0)/4294967295}
-function onLand(lon,lat){
-  for(const[a,b,c,d]of LAND){
-    if(lon>=a&&lon<=b&&lat>=c&&lat<=d){
-      const ex=Math.min(lon-a,b-lon)/(b-a),ey=Math.min(lat-c,d-lat)/(d-c);
-      return hash(Math.round(lon*2),Math.round(lat*2))<.35+Math.min(ex,ey)*2;
-    }
-  }
-  return false;
-}
-const isUS=(lon,lat)=>lon>=-130&&lon<=-65&&lat>=24&&lat<=50;
 
 const LAUNCH_DATA=[
   {name:'WIP Church',city:'Medellín, Colombia',date:'Launched Aug 2, 2026',lon:-75.6,lat:6.2},
@@ -557,7 +538,7 @@ const HOME=[-86.8,33.5]; // Birmingham, AL — where ARC launches from
     return new THREE.Vector3(-r*Math.sin(phi)*Math.cos(theta),r*Math.cos(phi),r*Math.sin(phi)*Math.sin(theta));
   };
 
-  // dot texture
+  // dot texture (used for launch markers)
   function dotTexture(color,glow){
     const c=document.createElement('canvas');c.width=c.height=64;
     const x=c.getContext('2d');
@@ -567,25 +548,36 @@ const HOME=[-86.8,33.5]; // Birmingham, AL — where ARC launches from
     return new THREE.CanvasTexture(c);
   }
 
-  // land dots: US first (so drawRange reveals US → world)
-  const us=[],world=[];
-  for(let lat=-60;lat<=80;lat+=1.9){
-    for(let lon=-180;lon<180;lon+=1.9){
-      const jlon=lon+(hash(lon*7,lat*3)-.5)*1.2,jlat=lat+(hash(lat*11,lon*5)-.5)*1.2;
-      if(!onLand(jlon,jlat))continue;
-      (isUS(jlon,jlat)?us:world).push(toV3(jlon,jlat,R*1.002));
-    }
+  // land dots from real coastlines, US block first (drawRange reveals US → world)
+  const D=window.ARC_DOTS||{us:[],world:[]};
+  const usCount=D.us.length/2,total=usCount+D.world.length/2;
+  const pos=new Float32Array(total*3),sizes=new Float32Array(total),shades=new Float32Array(total);
+  const flat=D.us.concat(D.world);
+  for(let i=0;i<total;i++){
+    const lon=flat[i*2],lat=flat[i*2+1];
+    const v=toV3(lon,lat,R*1.002);
+    pos[i*3]=v.x;pos[i*3+1]=v.y;pos[i*3+2]=v.z;
+    sizes[i]=0.9+hash(i,3)*0.9;          // per-dot size variance
+    shades[i]=0.72+hash(i,11)*0.28;      // per-dot brightness variance
   }
-  // shuffle world dots deterministically so they fill evenly
-  for(let i=world.length-1;i>0;i--){const j=Math.floor(hash(i,7)* (i+1));[world[i],world[j]]=[world[j],world[i]]}
-  const all=us.concat(world);
-  const pos=new Float32Array(all.length*3);
-  all.forEach((v,i)=>{pos[i*3]=v.x;pos[i*3+1]=v.y;pos[i*3+2]=v.z});
   const dotGeo=new THREE.BufferGeometry();
   dotGeo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  const dots=new THREE.Points(dotGeo,new THREE.PointsMaterial({
-    size:0.016,map:dotTexture('rgba(201,150,59,1)',false),color:0xC9963B,
-    transparent:true,opacity:0.85,depthWrite:false,sizeAttenuation:true}));
+  dotGeo.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
+  dotGeo.setAttribute('aShade',new THREE.BufferAttribute(shades,1));
+  const dots=new THREE.Points(dotGeo,new THREE.ShaderMaterial({
+    transparent:true,depthWrite:false,
+    uniforms:{uColor:{value:new THREE.Color(0xC9963B)},uScale:{value:1}},
+    vertexShader:
+      'attribute float aSize;attribute float aShade;varying float vShade;'+
+      'uniform float uScale;'+
+      'void main(){vShade=aShade;vec4 mv=modelViewMatrix*vec4(position,1.0);'+
+      'gl_PointSize=aSize*0.016*uScale/(-mv.z);gl_Position=projectionMatrix*mv;}',
+    fragmentShader:
+      'uniform vec3 uColor;varying float vShade;'+
+      'void main(){vec2 c=gl_PointCoord-0.5;float d=length(c);'+
+      'float a=smoothstep(0.5,0.18,d);'+
+      'gl_FragColor=vec4(uColor*vShade,a*0.95);}'
+  }));
   globe.add(dots);
   dotGeo.setDrawRange(0,0);
 
@@ -614,9 +606,13 @@ const HOME=[-86.8,33.5]; // Birmingham, AL — where ARC launches from
     globe.add(new THREE.Line(geo,mat));
   });
 
-  // atmosphere ring
-  const atm=new THREE.Mesh(new THREE.SphereGeometry(R*1.05,64,64),
-    new THREE.MeshBasicMaterial({color:0xAB751D,transparent:true,opacity:0.045,side:THREE.BackSide}));
+  // fresnel atmosphere rim
+  const atm=new THREE.Mesh(new THREE.SphereGeometry(R*1.12,64,64),new THREE.ShaderMaterial({
+    transparent:true,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending,
+    uniforms:{uColor:{value:new THREE.Color(0xAB751D)}},
+    vertexShader:'varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:'uniform vec3 uColor;varying vec3 vN;void main(){float i=pow(0.68-dot(vN,vec3(0.,0.,1.)),3.5);gl_FragColor=vec4(uColor,1.0)*i;}'
+  }));
   globe.add(atm);
 
   camera.position.set(0,0,3);
@@ -624,6 +620,8 @@ const HOME=[-86.8,33.5]; // Birmingham, AL — where ARC launches from
   function size(){
     const w=canvas.clientWidth||innerWidth,h=canvas.clientHeight||innerHeight;
     renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+    // px-per-world-unit at unit distance, in device pixels (for gl_PointSize)
+    dots.material.uniforms.uScale.value=(h*renderer.getPixelRatio())/(2*Math.tan(camera.fov*Math.PI/360));
   }
   size();addEventListener('resize',size);
 
@@ -660,26 +658,37 @@ const HOME=[-86.8,33.5]; // Birmingham, AL — where ARC launches from
     return {y:(-90-lon)*Math.PI/180, x:lat*Math.PI/180};
   }
   const usView=faceRotation(-97,38);
-  let spin=0,t0=performance.now();
+  let spin=0,manual=0,dragVel=0,dragging=false,lastX=0,t0=performance.now();
+
+  // drag to rotate
+  canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;dragVel=0;canvas.setPointerCapture(e.pointerId)});
+  canvas.addEventListener('pointermove',e=>{
+    if(!dragging)return;
+    const dx=e.clientX-lastX;lastX=e.clientX;
+    manual-=dx*0.0045;dragVel=-dx*0.0045;
+  });
+  const endDrag=()=>{dragging=false};
+  canvas.addEventListener('pointerup',endDrag);
+  canvas.addEventListener('pointercancel',endDrag);
 
   function frame(now){
-    const dt=(now-t0)/1000;t0=now;
+    const dt=Math.min(0.05,(now-t0)/1000);t0=now;
     const p=prog;
 
     // dot reveal: US dots over p 0→0.14, world over p 0.14→0.75
     let count;
-    if(p<0.14)count=Math.floor(ease(p/0.14)*us.length);
-    else count=us.length+Math.floor(ease(clamp((p-0.14)/0.61,0,1))*world.length);
+    if(p<0.14)count=Math.floor(ease(p/0.14)*usCount);
+    else count=usCount+Math.floor(ease(clamp((p-0.14)/0.61,0,1))*(total-usCount));
     dotGeo.setDrawRange(0,count);
 
     // camera distance: close on US → full planet
     const zoom=ease(clamp((p-0.05)/0.6,0,1));
     camera.position.z=lerp(1.7,3.4,zoom);
 
-    // globe orientation: US-facing → atlantic view, then free spin at the end
-    const spinIn=clamp((p-0.78)/0.22,0,1);
-    if(spinIn>0)spin+=dt*0.07*spinIn;
-    globe.rotation.y=lerp(usView.y,usView.y-0.75,ease(clamp(p/0.75,0,1)))-spin;
+    // always rotating: speed ramps in with the story so the US intro stays framed
+    spin+=dt*0.12*ease(clamp(p*1.5,0,1));
+    if(!dragging){manual+=dragVel;dragVel*=0.94}
+    globe.rotation.y=lerp(usView.y,usView.y-0.75,ease(clamp(p/0.75,0,1)))-spin+manual;
     globe.rotation.x=lerp(usView.x*0.9,0.12,ease(clamp(p/0.7,0,1)));
 
     // markers + arcs fade in near the end
@@ -710,8 +719,8 @@ const HOME=[-86.8,33.5]; // Birmingham, AL — where ARC launches from
         tip.style.top=((-v.y+1)/2*b.height)+'px';
         tip.style.opacity=1;
         canvas.style.cursor='pointer';
-      }else{tip.style.opacity=0;canvas.style.cursor='default'}
-    }else{tip.style.opacity=0}
+      }else{tip.style.opacity=0;canvas.style.cursor=dragging?'grabbing':'grab'}
+    }else{tip.style.opacity=0;canvas.style.cursor=dragging?'grabbing':'grab'}
 
     renderer.render(scene,camera);
     requestAnimationFrame(frame);

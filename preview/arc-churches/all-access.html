@@ -351,6 +351,7 @@ td b{color:#fff}
   </main>
 </div>
 
+<script src="globe-dots.js"></script>
 <script>
 // view switching
 const items=document.querySelectorAll('.nav-item');
@@ -385,35 +386,16 @@ DATA.forEach((n,i)=>{
   const l=document.createElement('span');l.textContent=MONTHS[i];labels.appendChild(l);
 });
 
-// dotted world map (same land approximation as homepage)
-const LAND=[
-  [-168,-140,55,70],[-140,-55,48,70],[-128,-70,25,48],[-115,-88,12,25],[-90,-77,7,15],
-  [-55,-20,60,82],
-  [-80,-50,0,10],[-80,-35,-20,0],[-75,-53,-40,-20],[-73,-64,-55,-40],
-  [-9,2,50,59],[-10,25,36,55],[5,30,55,70],[25,45,45,60],
-  [-17,32,10,35],[8,42,-5,10],[12,40,-25,-5],[16,32,-35,-25],[43,50,-25,-12],
-  [35,60,12,40],[45,90,35,55],[60,90,25,35],[68,88,8,28],[92,109,8,28],[95,125,20,45],[100,142,45,70],[40,100,50,72],
-  [95,120,-8,6],[125,140,-8,2],
-  [113,153,-38,-11],[166,178,-46,-34],[130,142,31,45]
-];
-function hash(x,y){let h=(x*374761393+y*668265263)^0x5bf03635;h=(h^(h>>13))*1274126177;return((h^(h>>16))>>>0)/4294967295}
-function onLand(lon,lat){
-  for(const[a,b,c,d]of LAND){
-    if(lon>=a&&lon<=b&&lat>=c&&lat<=d){
-      const ex=Math.min(lon-a,b-lon)/(b-a),ey=Math.min(lat-c,d-lat)/(d-c);
-      return hash(Math.round(lon*2),Math.round(lat*2))<.35+Math.min(ex,ey)*2;
-    }
-  }
-  return false;
-}
+// dotted world map — real coastlines (Natural Earth dots shared with homepage globe)
 const LAUNCHES=[[-75.6,6.2],[30.3,0.7],[153,-27.5],[-4.3,51.9],[-74,40.7],[-2.6,51.5],[-79.7,40.4]];
 (function(){
   const canvas=document.getElementById('netMap'),ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,step=10;
   const base=document.createElement('canvas');base.width=W;base.height=H;
   const bctx=base.getContext('2d');bctx.fillStyle='rgba(245,241,234,.3)';
-  for(let x=step/2;x<W;x+=step)for(let y=step/2;y<H;y+=step){
-    const lon=x/W*360-180,lat=90-y/H*180;
-    if(onLand(lon,lat)){bctx.beginPath();bctx.arc(x,y,step*.17,0,7);bctx.fill()}
+  const D=window.ARC_DOTS||{us:[],world:[]},flat=D.us.concat(D.world);
+  for(let i=0;i<flat.length;i+=2){
+    const x=(flat[i]+180)/360*W,y=(90-flat[i+1])/180*H;
+    bctx.beginPath();bctx.arc(x,y,1.9,0,7);bctx.fill();
   }
   let t=0;
   (function anim(){
