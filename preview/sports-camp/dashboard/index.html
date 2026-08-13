@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Camp Command Center — Next Level Soccer Camp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;1,800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#0b5e2b; --green-soft:#e8f4ec; --volt:#c8f04d;
+  --ink:#101418; --muted:#69707c; --line:#e7e9ee;
+  --bg:#f4f5f7; --card:#fff;
+  --red:#d64533; --red-soft:#fceceb;
+  --amber:#b97a08; --amber-soft:#fdf3e0;
+  --ok:#1c7c3d; --ok-soft:#e6f5ea;
+  --r:16px;
+  --display:'Barlow Condensed',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px}
+
+.demo-strip{background:var(--ink);color:#fff;text-align:center;font-size:11.5px;padding:7px 14px;letter-spacing:.03em}
+.demo-strip b{color:var(--volt)}
+.demo-strip a{color:#fff}
+
+.app{display:flex;min-height:calc(100vh - 30px)}
+
+/* ---------- sidebar ---------- */
+.side{width:232px;background:#fff;border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:calc(100vh - 30px)}
+.side .logo{display:flex;gap:10px;align-items:center;padding:2px 10px 20px}
+.side .logo .mk{width:38px;height:38px;border-radius:10px;background:var(--green);color:var(--volt);display:grid;place-items:center;font-size:19px}
+.side .logo b{font-family:var(--display);font-size:19px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.side .logo small{display:block;font-size:10px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-top:2px}
+.nav-btn{display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;padding:11px 12px;border-radius:11px;font-size:13.5px;font-weight:600;color:var(--muted);text-align:left;transition:.15s}
+.nav-btn:hover{background:var(--bg);color:var(--ink)}
+.nav-btn.active{background:var(--green);color:#fff}
+.nav-btn .ic{width:20px;text-align:center;font-size:15px}
+.side .foot{margin-top:auto;padding:14px 12px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);line-height:1.5}
+.side .foot b{color:var(--ink)}
+.side .foot a{color:var(--green);font-weight:600;text-decoration:none}
+
+/* ---------- main ---------- */
+.main{flex:1;padding:26px clamp(18px,3vw,38px) 60px;min-width:0}
+.pagehead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.pagehead h1{font-family:var(--display);font-weight:800;font-style:italic;text-transform:uppercase;font-size:34px;line-height:.95}
+.pagehead .sub{color:var(--muted);font-size:13px;margin-top:5px;font-weight:500}
+.pagehead .sub b{color:var(--ink)}
+.live-chip{display:inline-flex;align-items:center;gap:7px;background:var(--ok-soft);color:var(--ok);font-size:12px;font-weight:700;border-radius:999px;padding:8px 15px}
+.live-chip .d{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.page{display:none}
+.page.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;position:relative;overflow:hidden}
+.stat .v{font-family:var(--display);font-weight:800;font-size:38px;line-height:1;letter-spacing:.01em}
+.stat .v small{font-size:20px;color:var(--muted);font-weight:700}
+.stat .k{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:7px}
+.stat .trend{position:absolute;top:16px;right:16px;font-size:11px;font-weight:700;border-radius:999px;padding:4px 9px}
+.stat .trend.up{background:var(--ok-soft);color:var(--ok)}
+.stat .trend.warn{background:var(--amber-soft);color:var(--amber)}
+.stat.hero-stat{background:var(--green);border-color:var(--green);color:#fff}
+.stat.hero-stat .k{color:rgba(255,255,255,.65)}
+.stat.hero-stat .v small{color:rgba(255,255,255,.6)}
+.stat.hero-stat .mini-bar{height:6px;border-radius:99px;background:rgba(255,255,255,.2);margin-top:12px;overflow:hidden}
+.stat.hero-stat .mini-bar i{display:block;height:100%;width:69%;background:var(--volt);border-radius:99px}
+@media(max-width:1080px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+.grid2{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin-bottom:18px}
+@media(max-width:1080px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.card h3{font-family:var(--display);font-size:20px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.card .ch-sub{font-size:12px;color:var(--muted);margin-bottom:18px}
+
+/* chart */
+.chart{display:flex;align-items:flex-end;gap:18px;height:180px;padding-top:10px}
+.chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+.chart .bar{width:100%;max-width:70px;border-radius:10px 10px 4px 4px;background:linear-gradient(180deg,var(--green),#0e7c39);position:relative;transition:height 1s cubic-bezier(.2,.7,.2,1)}
+.chart .bar .num{position:absolute;top:-24px;left:50%;transform:translateX(-50%);font-weight:800;font-size:13px}
+.chart .lab{font-size:11px;color:var(--muted);font-weight:600}
+.chart .col:last-child .bar{background:linear-gradient(180deg,#9db512,var(--volt));}
+.chart .col:last-child .bar .num{color:#7a8c12}
+
+/* action list */
+.todo{display:flex;flex-direction:column;gap:10px}
+.todo-item{display:flex;align-items:center;gap:13px;padding:13px 15px;border:1px solid var(--line);border-radius:12px;background:#fbfcfd}
+.todo-item .em{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:16px;flex:0 0 36px}
+.todo-item .em.warn{background:var(--amber-soft)}
+.todo-item .em.ok{background:var(--ok-soft)}
+.todo-item .em.info{background:var(--green-soft)}
+.todo-item b{font-size:13.5px;display:block}
+.todo-item span{font-size:12px;color:var(--muted)}
+.todo-item button{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 13px;font-size:12px;font-weight:700;white-space:nowrap}
+.todo-item button:hover{border-color:var(--green);color:var(--green)}
+
+/* table */
+table{width:100%;border-collapse:collapse}
+th{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:13px 12px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:middle}
+tr.rowlink{cursor:pointer;transition:background .12s}
+tr.rowlink:hover{background:#f7f9f6}
+tr:last-child td{border-bottom:0}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--green-soft);color:var(--green);display:inline-grid;place-items:center;font-weight:800;font-size:11.5px;margin-right:10px;vertical-align:middle}
+.pname{font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;border-radius:999px;padding:4px 11px}
+.chip.paid{background:var(--ok-soft);color:var(--ok)}
+.chip.due{background:var(--red-soft);color:var(--red)}
+.chip.complete{background:var(--green-soft);color:var(--green)}
+.chip.missing{background:var(--amber-soft);color:var(--amber)}
+.tbl-scroll{overflow-x:auto}
+
+/* campers toolbar */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.search{flex:1;min-width:220px;position:relative}
+.search input{width:100%;padding:12px 14px 12px 40px;border:1px solid var(--line);border-radius:12px;background:#fff;outline:0}
+.search input:focus{border-color:var(--green)}
+.search .mg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px}
+.fchip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font-size:12.5px;font-weight:700;color:var(--muted)}
+.fchip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.count-note{font-size:12px;color:var(--muted);margin-bottom:10px}
+
+/* drawer */
+.drawer-ov{position:fixed;inset:0;background:rgba(12,16,12,.4);backdrop-filter:blur(3px);z-index:80;opacity:0;pointer-events:none;transition:.25s}
+.drawer-ov.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);background:#fff;z-index:90;transform:translateX(103%);transition:transform .35s cubic-bezier(.3,.9,.3,1);display:flex;flex-direction:column;box-shadow:-24px 0 60px -24px rgba(0,0,0,.35)}
+.drawer.open{transform:none}
+.drawer-head{background:var(--green);color:#fff;padding:24px;display:flex;gap:14px;align-items:center}
+.drawer-head .av{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.16);display:grid;place-items:center;font-weight:800;font-size:17px;color:var(--volt)}
+.drawer-head b{font-family:var(--display);font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;display:block;line-height:1}
+.drawer-head span{font-size:12px;opacity:.75}
+.drawer-head .x{margin-left:auto;background:rgba(255,255,255,.15);border:0;color:#fff;width:34px;height:34px;border-radius:50%;font-size:15px}
+.drawer-body{flex:1;overflow-y:auto;padding:22px 24px}
+.dsec{margin-bottom:22px}
+.dsec h5{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:800;margin-bottom:10px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.kv .cellk{font-size:11px;color:var(--muted);font-weight:600}
+.kv .cellv{font-size:13.5px;font-weight:600}
+.kv .pair{background:#f8f9fa;border-radius:10px;padding:10px 13px}
+.formline{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;font-size:13px;font-weight:600}
+.formline .fi{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800}
+.formline.done .fi{background:var(--ok-soft);color:var(--ok)}
+.formline.miss .fi{background:var(--amber-soft);color:var(--amber)}
+.formline.miss{border-style:dashed}
+.formline .act{margin-left:auto;font-size:11px;font-weight:700;color:var(--green);background:none;border:0}
+.payline{display:flex;align-items:center;justify-content:space-between;background:var(--ok-soft);border-radius:12px;padding:14px 16px}
+.payline b{color:var(--ok)}
+.payline small{color:var(--muted);display:block;font-size:11px;margin-top:2px}
+.drawer-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:16px 24px;border-top:1px solid var(--line)}
+.drawer-actions button{padding:12px;border-radius:11px;font-weight:700;font-size:12.5px;border:1px solid var(--line);background:#fff}
+.drawer-actions button.primary{background:var(--green);border-color:var(--green);color:#fff}
+
+/* email */
+.email-grid{display:grid;grid-template-columns:1fr 300px;gap:14px}
+@media(max-width:980px){.email-grid{grid-template-columns:1fr}}
+.radio-row{display:grid;gap:9px;margin-bottom:18px}
+.radio-opt{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:12px;padding:13px 15px;cursor:pointer;transition:.15s;background:#fff}
+.radio-opt input{accent-color:var(--green);width:16px;height:16px}
+.radio-opt.sel{border-color:var(--green);background:var(--green-soft)}
+.radio-opt b{font-size:13.5px}
+.radio-opt span{font-size:11.5px;color:var(--muted);display:block}
+.radio-opt .n{margin-left:auto;font-weight:800;font-size:13px;color:var(--green)}
+.efield{margin-bottom:14px}
+.efield label{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.efield input,.efield textarea{width:100%;border:1.5px solid var(--line);border-radius:11px;padding:12px 14px;outline:0;background:#fff}
+.efield input:focus,.efield textarea:focus{border-color:var(--green)}
+.efield textarea{min-height:170px;resize:vertical;line-height:1.6}
+.send-btn{width:100%;background:var(--green);color:#fff;border:0;border-radius:12px;padding:15px;font-family:var(--display);font-size:18px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.send-btn:hover{background:#0a5226}
+.tpl{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:11px;padding:12px 14px;margin-bottom:8px;font-weight:600;font-size:13px;transition:.15s}
+.tpl:hover{border-color:var(--green);background:var(--green-soft)}
+.tpl .em{font-size:15px}
+.tpl small{display:block;font-weight:500;font-size:11px;color:var(--muted)}
+
+/* forms */
+.forms-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+@media(max-width:980px){.forms-grid{grid-template-columns:1fr}}
+.form-card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.form-card .fh{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.form-card .fh .em{width:38px;height:38px;border-radius:11px;background:var(--green-soft);display:grid;place-items:center;font-size:17px}
+.form-card .fh b{font-size:14.5px;display:block}
+.form-card .fh span{font-size:11.5px;color:var(--muted)}
+.pbar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-bottom:9px}
+.pbar i{display:block;height:100%;border-radius:99px;background:var(--green);transition:width 1s ease}
+.pbar i.full{background:var(--volt)}
+.form-card .pnum{font-size:12.5px;font-weight:700;margin-bottom:14px}
+.form-card .pnum span{color:var(--muted);font-weight:500}
+.form-card button{width:100%;border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px;font-weight:700;font-size:12.5px}
+.form-card button:hover{border-color:var(--green);color:var(--green)}
+.form-card button.done{background:var(--ok-soft);color:var(--ok);border-color:transparent;cursor:default}
+.newform-btn{width:100%;border:1.5px dashed #c8ccd4;background:transparent;border-radius:var(--r);padding:20px;font-weight:700;color:var(--muted);font-size:13.5px}
+.newform-btn:hover{border-color:var(--green);color:var(--green)}
+
+/* builder modal */
+.modal-ov{position:fixed;inset:0;background:rgba(12,16,12,.45);backdrop-filter:blur(4px);z-index:95;display:none;place-items:center;padding:20px}
+.modal-ov.open{display:grid}
+.modal{background:#fff;border-radius:20px;width:min(680px,100%);max-height:88vh;overflow-y:auto;padding:28px}
+.modal h3{font-family:var(--display);font-size:26px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.modal .msub{font-size:12.5px;color:var(--muted);margin-bottom:20px}
+.builder{display:grid;grid-template-columns:180px 1fr;gap:16px}
+@media(max-width:640px){.builder{grid-template-columns:1fr}}
+.fieldtypes button{display:flex;gap:9px;align-items:center;width:100%;border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px 13px;font-weight:600;font-size:12.5px;margin-bottom:8px}
+.fieldtypes button:hover{border-color:var(--green);color:var(--green)}
+.canvas{border:1.5px dashed #c8ccd4;border-radius:14px;padding:16px;min-height:260px;background:#fafbfc}
+.canvas .empty{color:var(--muted);font-size:12.5px;text-align:center;padding:60px 10px}
+.cfield{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;animation:fade .2s}
+.cfield .t{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--green);background:var(--green-soft);border-radius:6px;padding:3px 8px}
+.cfield .rm{margin-left:auto;border:0;background:none;color:var(--muted);font-size:13px}
+.modal .mfoot{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.modal .mfoot button{padding:12px 20px;border-radius:11px;font-weight:700;font-size:13px;border:1px solid var(--line);background:#fff}
+.modal .mfoot .primary{background:var(--green);color:#fff;border-color:var(--green)}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,80px);background:var(--ink);color:#fff;border-radius:12px;padding:14px 22px;font-size:13.5px;font-weight:600;z-index:120;transition:transform .35s cubic-bezier(.2,.9,.3,1.2);display:flex;gap:10px;align-items:center;box-shadow:0 18px 44px -12px rgba(0,0,0,.45);max-width:92vw}
+.toast.show{transform:translate(-50%,0)}
+.toast .tk{color:var(--volt)}
+
+/* mobile nav */
+.mobilebar{display:none}
+@media(max-width:860px){
+  .side{display:none}
+  .mobilebar{display:flex;position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);padding:10px 12px;gap:6px;overflow-x:auto}
+  .mobilebar button{border:0;background:transparent;padding:9px 14px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--muted);white-space:nowrap}
+  .mobilebar button.active{background:var(--green);color:#fff}
+  .main{padding:18px 14px 60px}
+  .pagehead h1{font-size:28px}
+}
+</style>
+</head>
+<body>
+
+<div class="demo-strip">🏕️ <b>Williams Digital Camp System</b> — demo dashboard with sample data · <a href="../">view the parent-facing camp site</a></div>
+
+<div class="mobilebar" id="mobilebar"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="logo">
+      <div class="mk">⚽</div>
+      <div><b>Camp Command</b><small>Next Level Soccer</small></div>
+    </div>
+    <nav id="sidenav"></nav>
+    <div class="foot">
+      Logged in as<br><b>Coach Marcus Reed</b> · Director<br><br>
+      <a href="../">← Parent site</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ===== OVERVIEW ===== -->
+    <div class="page on" id="page-overview">
+      <div class="pagehead">
+        <div>
+          <h1>Camp Command Center</h1>
+          <div class="sub"><b>Next Level Soccer Camp</b> · June 8–11, 2027 · Birmingham, AL</div>
+        </div>
+        <div class="live-chip"><span class="d"></span>Registration Open · Camp starts June 8</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat hero-stat">
+          <div class="v">52 <small>/ 75</small></div>
+          <div class="k">Registered</div>
+          <div class="mini-bar"><i></i></div>
+        </div>
+        <div class="stat"><span class="trend up">↑ 11 this week</span><div class="v">$10,348</div><div class="k">Collected</div></div>
+        <div class="stat"><div class="v">23</div><div class="k">Spots Remaining</div></div>
+        <div class="stat"><span class="trend warn">Action needed</span><div class="v">3</div><div class="k">Forms Missing</div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Camp Registrations</h3>
+          <div class="ch-sub">Sign-ups by week since registration opened</div>
+          <div class="chart" id="chart"></div>
+        </div>
+        <div class="card">
+          <h3>Needs Your Attention</h3>
+          <div class="ch-sub">Everything the system is tracking for you</div>
+          <div class="todo">
+            <div class="todo-item"><div class="em warn">📋</div><div><b>3 campers missing forms</b><span>Waiver ×3 · Medical ×1</span></div><button onclick="go('email');pickSeg('missing')">Send Reminder</button></div>
+            <div class="todo-item"><div class="em info">📣</div><div><b>23 spots still open</b><span>Last summer sold out by May 20</span></div><button onclick="go('email');pickSeg('all')">Email Families</button></div>
+            <div class="todo-item"><div class="em ok">✅</div><div><b>Payments are 100% collected</b><span>$0 outstanding across 52 registrations</span></div><button onclick="go('payments')">View</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Recent Registrations</h3>
+        <div class="ch-sub">Newest sign-ups — click any camper to open their full record</div>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th>Athlete</th><th>Age</th><th>Parent</th><th>Registered</th><th>Payment</th><th>Forms</th></tr></thead>
+            <tbody id="recentBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CAMPERS ===== -->
+    <div class="page" id="page-campers">
+      <div class="pagehead">
+        <div><h1>Campers</h1><div class="sub">Every registered athlete, their family and their paperwork — in one place</div></div>
+      </div>
+      <div class="toolbar">
+        <div class="search"><span class="mg">🔍</span><input id="q" placeholder="Search athlete or parent…" oninput="renderCampers()"></div>
+        <button class="fchip active" data-f="all" onclick="setFilter('all')">All</button>
+        <button class="fchip" data-f="paid" onclick="setFilter('paid')">Paid</button>
+        <button class="fchip" data-f="unpaid" onclick="setFilter('unpaid')">Unpaid</button>
+        <button class="fchip" data-f="missing" onclick="setFilter('missing')">Missing Forms</button>
+        <button class="fchip" data-f="complete" onclick="setFilter('complete')">Complete</button>
+      </div>
+      <div class="count-note" id="countNote"></div>
+      <div class="card" style="padding:8px 16px">
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th>Athlete</th><th>Age</th><th>Position</th><th>Shirt</th><th>Parent</th><th>Payment</th><th>Forms</th></tr></thead>
+            <tbody id="campersBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PAYMENTS ===== -->
+    <div class="page" id="page-payments">
+      <div class="pagehead">
+        <div><h1>Payments</h1><div class="sub">Collected through Stripe — payouts land in the camp bank account automatically</div></div>
+      </div>
+      <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat hero-stat"><div class="v">$10,348</div><div class="k">Collected</div></div>
+        <div class="stat"><div class="v">$0</div><div class="k">Outstanding</div></div>
+        <div class="stat"><div class="v">52</div><div class="k">Transactions</div></div>
+      </div>
+      <div class="card" style="padding:8px 16px">
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th>Camper</th><th>Date</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody id="payBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== EMAIL ===== -->
+    <div class="page" id="page-email">
+      <div class="pagehead">
+        <div><h1>Send Camp Email</h1><div class="sub">One message to every family — no BCC lists, no spreadsheets</div></div>
+      </div>
+      <div class="email-grid">
+        <div class="card">
+          <div class="efield"><label>Recipients</label>
+            <div class="radio-row" id="segRow">
+              <label class="radio-opt sel" data-seg="all"><input type="radio" name="seg" checked><span><b>All Campers</b><span>Every registered family</span></span><span class="n">52</span></label>
+              <label class="radio-opt" data-seg="missing"><input type="radio" name="seg"><span><b>Missing Forms</b><span>Families with incomplete paperwork</span></span><span class="n">3</span></label>
+              <label class="radio-opt" data-seg="custom"><input type="radio" name="seg"><span><b>Custom Selection</b><span>Pick individual campers</span></span><span class="n">—</span></label>
+            </div>
+          </div>
+          <div class="efield"><label>Subject</label><input id="emSubject" placeholder="Camp starts Monday!"></div>
+          <div class="efield"><label>Message</label><textarea id="emBody" placeholder="Hi camp families —&#10;&#10;We can't wait to see everyone Monday morning…"></textarea></div>
+          <button class="send-btn" onclick="sendEmail()">Send Email</button>
+          <div style="text-align:center;font-size:11.5px;color:var(--muted);margin-top:10px">Demo — no email is actually sent. The live system delivers from your camp's address.</div>
+        </div>
+        <div class="card">
+          <h3>Templates</h3>
+          <div class="ch-sub">One click fills the message — edit and send</div>
+          <div id="tplList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== FORMS ===== -->
+    <div class="page" id="page-forms">
+      <div class="pagehead">
+        <div><h1>Forms &amp; Documents</h1><div class="sub">Parents sign everything online during registration — the system chases the stragglers</div></div>
+      </div>
+      <div class="forms-grid">
+        <div class="form-card">
+          <div class="fh"><div class="em">✍️</div><div><b>Camp Waiver</b><span>Required · signed at registration</span></div></div>
+          <div class="pbar"><i style="width:0" data-w="94%"></i></div>
+          <div class="pnum">49 / 52 <span>complete</span></div>
+          <button onclick="toast('Reminder sent to 3 families missing the waiver ✉️')">Send Reminder</button>
+        </div>
+        <div class="form-card">
+          <div class="fh"><div class="em">🩺</div><div><b>Medical Information</b><span>Required · allergies &amp; conditions</span></div></div>
+          <div class="pbar"><i style="width:0" data-w="98%"></i></div>
+          <div class="pnum">51 / 52 <span>complete</span></div>
+          <button onclick="toast('Reminder sent to 1 family missing medical info ✉️')">Send Reminder</button>
+        </div>
+        <div class="form-card">
+          <div class="fh"><div class="em">📞</div><div><b>Emergency Contact</b><span>Required · collected at registration</span></div></div>
+          <div class="pbar"><i style="width:0" data-w="100%" class="full"></i></div>
+          <div class="pnum">52 / 52 <span>complete ✓</span></div>
+          <button class="done">All Complete</button>
+        </div>
+      </div>
+      <button class="newform-btn" onclick="document.getElementById('builderModal').classList.add('open')">＋ Create Form</button>
+    </div>
+
+  </main>
+</div>
+
+<!-- CAMPER DRAWER -->
+<div class="drawer-ov" id="drawerOv" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="av" id="dAv">JS</div>
+    <div><b id="dName">Jordan Smith</b><span id="dMeta">Age 12 · Midfielder</span></div>
+    <button class="x" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="dsec"><h5>Athlete</h5>
+      <div class="kv" id="dAthlete"></div>
+    </div>
+    <div class="dsec"><h5>Parent / Guardian</h5>
+      <div class="kv" id="dParent"></div>
+    </div>
+    <div class="dsec"><h5>Payment</h5>
+      <div class="payline"><div><b id="dPay">✓ $199 Paid</b><small id="dPayDate">Stripe · May 12, 2027</small></div><button style="border:0;background:none;font-weight:700;font-size:12px;color:var(--green)" onclick="toast('Demo — opens this charge in Stripe')">Receipt →</button></div>
+    </div>
+    <div class="dsec"><h5>Forms</h5><div id="dForms"></div></div>
+  </div>
+  <div class="drawer-actions">
+    <button onclick="toast('Demo — opens an email to this family ✉️')">Email Parent</button>
+    <button class="primary" onclick="toast('Demo — camper record updated ✓')">Edit Camper</button>
+  </div>
+</div>
+
+<!-- FORM BUILDER MODAL -->
+<div class="modal-ov" id="builderModal">
+  <div class="modal">
+    <h3>Create Form</h3>
+    <div class="msub">Build a custom form — parents complete it online and the dashboard tracks who's done.</div>
+    <div class="efield"><label>Form Name</label><input id="nfName" placeholder="Photo Release"></div>
+    <div class="builder">
+      <div class="fieldtypes">
+        <button onclick="addField('Text Field','✏️')">✏️ Text Field</button>
+        <button onclick="addField('Multiple Choice','🔘')">🔘 Multiple Choice</button>
+        <button onclick="addField('Checkbox','☑️')">☑️ Checkbox</button>
+        <button onclick="addField('Signature','✍️')">✍️ Signature</button>
+        <button onclick="addField('Date','📅')">📅 Date</button>
+      </div>
+      <div class="canvas" id="canvas"><div class="empty">Click a field type to add it to your form</div></div>
+    </div>
+    <div class="mfoot">
+      <button onclick="document.getElementById('builderModal').classList.remove('open')">Cancel</button>
+      <button class="primary" onclick="saveForm()">Save &amp; Send to Families</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="tk">✓</span><span id="toastMsg"></span></div>
+
+<script>
+/* ---------------- data ---------------- */
+const POS=["Goalkeeper","Defender","Midfielder","Forward"];
+const SHIRTS=["Youth S","Youth M","Youth L","Adult S","Adult M"];
+const FIRST=["Jordan","Mason","Carter","Ava","Liam","Sophia","Noah","Emma","Elijah","Olivia","Lucas","Harper","Levi","Mia","Owen","Riley","Ethan","Zoe","Caleb","Nora","Isaac","Lily","Gavin","Ruby","Miles","Sadie","Wyatt","Ivy","Jonah","Elle","Asher","Maya","Silas","Tessa","Beckett","June","Hudson","Willa","Bennett","Margot","Rhett","Daisy","Knox","Wren","Ford","Hazel","Reid","Opal","Shepherd","Pearl","Callum","Iris"];
+const LAST=["Smith","Lee","Jones","Bennett","Carter","Diaz","Ellis","Foster","Grant","Hayes","Ingram","Jennings","Keller","Lawson","Meyer","Nolan","Ortega","Pratt","Quinn","Ramsey","Sutton","Turner","Underwood","Vance","Walsh","Xu","Yates","Zimmerman","Abbott","Boone","Chandler","Dawson","Emerson","Fleming","Garrison","Holloway","Irwin","Jacobs","Kirkland","Lambert","McRae","Nash","Overton","Pierce","Ridley","Sloan","Thatcher","Upton","Vaughn","Whitfield","Yoder","Zane"];
+const PARENT_FIRST=["Ashley","Tyler","Megan","Brandon","Katie","Chris","Lauren","Derek","Amanda","Josh","Rachel","Kevin","Sarah","Matt","Emily","Jason","Nicole","Brian","Jessica","Aaron","Melissa","Justin","Heather","Nathan","Amber","Zach","Christina","Cody","Brittany","Sean","Kayla","Trevor","Danielle","Marcus","Whitney","Grant","Erica","Blake","Tara","Colin","Paige","Drew","Monica","Reid","Holly","Wade","Dana","Trent","Gina","Lance","Faith","Neil"];
+/* week buckets: 8 / 14 / 19 / 11 = 52 */
+const WEEK_OF = i => i<8 ? 0 : i<22 ? 1 : i<41 ? 2 : 3;
+const WEEK_DATES=[["May 3","May 4","May 5","May 6","May 7","May 8","May 9"],["May 10","May 11","May 12","May 13","May 14","May 15","May 16"],["May 17","May 18","May 19","May 20","May 21","May 22","May 23"],["May 24","May 25","May 26","May 27","May 28","May 29","May 30"]];
+/* 3 campers with paperwork gaps: waiver ×3, medical ×1 */
+const MISSING = {1:["Camp Waiver"], 17:["Camp Waiver"], 33:["Camp Waiver","Medical Information"]};
+
+const CAMPERS = FIRST.map((f,i)=>{
+  const w = WEEK_OF(i);
+  return {
+    id:i,
+    name:`${f} ${LAST[i]}`,
+    age: 8 + (i*5)%9,
+    pos: POS[i%4],
+    shirt: SHIRTS[i%5],
+    parent: `${PARENT_FIRST[i]} ${LAST[i]}`,
+    phone: `(205) 555-0${String(100+i*7).slice(-3)}`,
+    email: `${PARENT_FIRST[i].toLowerCase()}.${LAST[i].toLowerCase()}@email.com`,
+    paid: true,
+    date: `${WEEK_DATES[w][i%7]}, 2027`,
+    week: w,
+    missing: MISSING[i] || []
+  };
+});
+/* pin the three named examples from the pitch */
+Object.assign(CAMPERS[0],{name:"Jordan Smith",age:12,pos:"Midfielder",parent:"Ashley Smith",shirt:"Youth L"});
+Object.assign(CAMPERS[1],{name:"Mason Lee",age:10,pos:"Forward",parent:"Tyler Lee"});
+Object.assign(CAMPERS[2],{name:"Carter Jones",age:14,pos:"Defender",parent:"Megan Jones"});
+
+/* ---------------- nav ---------------- */
+const NAV=[["overview","📊","Overview"],["campers","🧒","Campers"],["payments","💳","Payments"],["email","✉️","Email"],["forms","📋","Forms"]];
+sidenav.innerHTML = NAV.map(n=>`<button class="nav-btn${n[0]==='overview'?' active':''}" data-p="${n[0]}" onclick="go('${n[0]}')"><span class="ic">${n[1]}</span>${n[2]}</button>`).join("");
+mobilebar.innerHTML = NAV.map(n=>`<button class="${n[0]==='overview'?'active':''}" data-p="${n[0]}" onclick="go('${n[0]}')">${n[1]} ${n[2]}</button>`).join("");
+function go(p){
+  document.querySelectorAll(".page").forEach(el=>el.classList.toggle("on", el.id==="page-"+p));
+  document.querySelectorAll("[data-p]").forEach(b=>b.classList.toggle("active", b.dataset.p===p));
+  if(p==="forms") animateBars();
+  window.scrollTo({top:0});
+}
+
+/* ---------------- helpers ---------------- */
+const initials = n => n.split(" ").map(x=>x[0]).join("");
+const formsChip = c => c.missing.length
+  ? `<span class="chip missing">Missing</span>`
+  : `<span class="chip complete">Complete</span>`;
+const payChip = c => c.paid ? `<span class="chip paid">Paid</span>` : `<span class="chip due">Unpaid</span>`;
+
+/* ---------------- overview ---------------- */
+const WEEKS=[["Week 1",8],["Week 2",14],["Week 3",19],["Week 4",11]];
+chart.innerHTML = WEEKS.map(w=>`<div class="col"><div class="bar" style="height:0" data-h="${w[1]/19*100}%"><span class="num">${w[1]}</span></div><div class="lab">${w[0]}</div></div>`).join("");
+setTimeout(()=>document.querySelectorAll(".chart .bar").forEach(b=>b.style.height=b.dataset.h),150);
+
+const recent=[...CAMPERS].sort((a,b)=>b.week-a.week).slice(0,7);
+recentBody.innerHTML = recent.map(c=>`
+  <tr class="rowlink" onclick="openDrawer(${c.id})">
+    <td><span class="avatar">${initials(c.name)}</span><span class="pname">${c.name}</span></td>
+    <td>${c.age}</td><td>${c.parent}</td><td style="color:var(--muted)">${c.date}</td>
+    <td>${payChip(c)}</td><td>${formsChip(c)}</td>
+  </tr>`).join("");
+
+/* ---------------- campers ---------------- */
+let filter="all";
+function setFilter(f){filter=f;document.querySelectorAll(".fchip").forEach(b=>b.classList.toggle("active",b.dataset.f===f));renderCampers()}
+function renderCampers(){
+  const q=(document.getElementById("q").value||"").toLowerCase();
+  let list=CAMPERS.filter(c=>c.name.toLowerCase().includes(q)||c.parent.toLowerCase().includes(q));
+  if(filter==="paid")list=list.filter(c=>c.paid);
+  if(filter==="unpaid")list=list.filter(c=>!c.paid);
+  if(filter==="missing")list=list.filter(c=>c.missing.length);
+  if(filter==="complete")list=list.filter(c=>!c.missing.length&&c.paid);
+  countNote.textContent=`${list.length} camper${list.length===1?"":"s"}`;
+  campersBody.innerHTML=list.length?list.map(c=>`
+    <tr class="rowlink" onclick="openDrawer(${c.id})">
+      <td><span class="avatar">${initials(c.name)}</span><span class="pname">${c.name}</span></td>
+      <td>${c.age}</td><td>${c.pos}</td><td>${c.shirt}</td><td>${c.parent}</td>
+      <td>${payChip(c)}</td><td>${formsChip(c)}</td>
+    </tr>`).join("")
+    :`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:34px">No campers match — every payment is collected 🎉</td></tr>`;
+}
+renderCampers();
+
+/* ---------------- payments ---------------- */
+payBody.innerHTML=[...CAMPERS].sort((a,b)=>b.week-a.week).map(c=>`
+  <tr>
+    <td><span class="avatar">${initials(c.name)}</span><span class="pname">${c.name}</span></td>
+    <td style="color:var(--muted)">${c.date}</td><td style="font-weight:700">$199.00</td>
+    <td>${payChip(c)}</td>
+    <td style="text-align:right"><button style="border:0;background:none;color:var(--green);font-weight:700;font-size:12px;cursor:pointer" onclick="toast('Demo — opens this charge in your Stripe dashboard')">View in Stripe →</button></td>
+  </tr>`).join("");
+
+/* ---------------- drawer ---------------- */
+function openDrawer(id){
+  const c=CAMPERS[id];
+  dAv.textContent=initials(c.name);
+  dName.textContent=c.name;
+  dMeta.textContent=`Age ${c.age} · ${c.pos}`;
+  dAthlete.innerHTML=[["Age",c.age],["Position",c.pos],["Shirt Size",c.shirt],["Registered",c.date]].map(k=>`<div class="pair"><div class="cellk">${k[0]}</div><div class="cellv">${k[1]}</div></div>`).join("");
+  dParent.innerHTML=[["Parent",c.parent],["Phone",c.phone],["Email",c.email],["Emergency",c.parent+" · "+c.phone]].map(k=>`<div class="pair"><div class="cellk">${k[0]}</div><div class="cellv" style="word-break:break-word">${k[1]}</div></div>`).join("");
+  dPayDate.textContent=`Stripe · ${c.date}`;
+  const allForms=["Camp Waiver","Emergency Contact","Medical Information"];
+  dForms.innerHTML=allForms.map(f=>{
+    const miss=c.missing.includes(f);
+    return `<div class="formline ${miss?"miss":"done"}"><span class="fi">${miss?"!":"✓"}</span>${f}${miss?`<button class="act" onclick="toast('Reminder sent to ${c.parent.split(" ")[0]} ✉️')">Remind</button>`:""}</div>`;
+  }).join("");
+  drawerOv.classList.add("open");drawer.classList.add("open");
+}
+function closeDrawer(){drawerOv.classList.remove("open");drawer.classList.remove("open")}
+addEventListener("keydown",e=>{if(e.key==="Escape"){closeDrawer();document.getElementById('builderModal').classList.remove('open')}});
+
+/* ---------------- email ---------------- */
+document.querySelectorAll(".radio-opt").forEach(o=>o.addEventListener("click",()=>{
+  document.querySelectorAll(".radio-opt").forEach(x=>x.classList.remove("sel"));
+  o.classList.add("sel");o.querySelector("input").checked=true;
+}));
+function pickSeg(seg){
+  document.querySelectorAll(".radio-opt").forEach(x=>{
+    const on=x.dataset.seg===seg;
+    x.classList.toggle("sel",on);
+    if(on)x.querySelector("input").checked=true;
+  });
+}
+const TPLS=[
+  ["📨","Registration Confirmation","Sent automatically after payment","You're in! Here's your confirmation and what happens next…"],
+  ["⏰","Camp Reminder","Camp starts Monday!","Hi camp families —\n\nCamp starts Monday, June 8! Check-in opens at 8:45 AM at the main field. Please arrive 15 minutes early on day one.\n\nSee you there,\nCoach Reed"],
+  ["🎒","What To Bring","Packing list for camp week","Hi camp families —\n\nHere's the packing list for camp week:\n• Cleats & shin guards\n• Water bottle (large!)\n• Packed lunch\n• Sunscreen\n\nCamp shirts are handed out at Monday check-in.\n\nCoach Reed"],
+  ["⛈️","Weather Update","Weather update for tomorrow","Hi camp families —\n\nWe're watching tomorrow's forecast closely. As of now camp is ON — if anything changes you'll get an update here by 7:00 AM.\n\nCoach Reed"],
+  ["🙌","Thank You","Thank you for an amazing week","Camp families —\n\nWhat a week! Thank you for sharing your athletes with us. Player evaluations go out by email Friday, and the camp photo is attached.\n\nSee you next summer,\nCoach Reed"]
+];
+tplList.innerHTML=TPLS.map((t,i)=>`<button class="tpl" onclick="useTpl(${i})"><span class="em">${t[0]}</span><span>${t[1]}<small>${t[2]}</small></span></button>`).join("");
+function useTpl(i){
+  emSubject.value=TPLS[i][2];
+  emBody.value=TPLS[i][3];
+  toast(`Template loaded: ${TPLS[i][1]}`);
+}
+function sendEmail(){
+  const seg=document.querySelector(".radio-opt.sel").dataset.seg;
+  const n=seg==="all"?52:seg==="missing"?3:12;
+  if(!emSubject.value){toast("Add a subject line first ✏️");return}
+  toast(`Email sent to ${n} famil${n===1?"y":"ies"} ✉️ (demo)`);
+  emSubject.value="";emBody.value="";
+}
+
+/* ---------------- forms ---------------- */
+function animateBars(){setTimeout(()=>document.querySelectorAll(".pbar i").forEach(b=>b.style.width=b.dataset.w),120)}
+let fields=[];
+function addField(name){
+  fields.push(name);
+  renderCanvas();
+}
+function renderCanvas(){
+  canvas.innerHTML=fields.length?fields.map((f,i)=>`<div class="cfield"><span class="t">${f}</span> Untitled ${f.toLowerCase()} <button class="rm" onclick="fields.splice(${i},1);renderCanvas()">✕</button></div>`).join("")
+    :`<div class="empty">Click a field type to add it to your form</div>`;
+}
+function saveForm(){
+  const nm=document.getElementById("nfName").value||"New Form";
+  document.getElementById("builderModal").classList.remove("open");
+  toast(`"${nm}" created and sent to all 52 families ✓ (demo)`);
+  fields=[];renderCanvas();document.getElementById("nfName").value="";
+}
+
+/* ---------------- toast ---------------- */
+let toastTimer;
+function toast(msg){
+  toastMsg.textContent=msg;
+  const t=document.getElementById("toast");
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("show"),2800);
+}
+</script>
+</body>
+</html>
