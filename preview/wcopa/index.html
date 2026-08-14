@@ -469,6 +469,7 @@ footer{border-top:1px solid var(--line-d);padding:60px 0 44px;background:#050D1A
   </div>
 </footer>
 
+<script src="land-dots.js"></script>
 <script>
 /* ---------- reveal ---------- */
 const io = new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
@@ -488,15 +489,8 @@ function size(){
 }
 size(); addEventListener('resize', size);
 
-const BASE = [];
-const N = 900;
-const GA = Math.PI*(3-Math.sqrt(5));
-for(let i=0;i<N;i++){
-  const y = 1 - (i/(N-1))*2;
-  const r = Math.sqrt(1-y*y);
-  const th = GA*i;
-  BASE.push([Math.cos(th)*r, y, Math.sin(th)*r]);
-}
+/* real landmasses: LAND_DOTS from land-dots.js (lat*10, lon*10 pairs sampled from world geodata) */
+const LAND = LAND_DOTS.map(d=>ll2xyz(d[0]/10, d[1]/10));
 const TEAMS = [
   {flag:"🇵🇭",name:"Team Philippines",meta:"National Director Program · Asia-Pacific",comp:87,events:214,ll:[14.6,121.0]},
   {flag:"🇺🇸",name:"Team USA",meta:"National Director Program · North America",comp:126,events:341,ll:[38.9,-98.5]},
@@ -514,7 +508,7 @@ function ll2xyz(lat,lon){
 }
 const GOLD_PTS = TEAMS.map(t=>({p:ll2xyz(...t.ll),team:t}));
 const DIM_PTS = EXTRA_LL.map(ll=>ll2xyz(...ll));
-let rot = 0, activeTeam = 0;
+let rot = -TEAMS[0].ll[1]*Math.PI/180, targetRot = rot, activeTeam = 0;
 function project(p, rotY){
   const [x,y,z] = p;
   const cx = Math.cos(rotY), sx = Math.sin(rotY);
@@ -533,14 +527,17 @@ function draw(){
   g.addColorStop(0,"rgba(214,168,75,.08)");
   g.addColorStop(1,"rgba(214,168,75,0)");
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  /* ocean disc + limb */
   ctx.beginPath(); ctx.arc(W/2,H/2,R,0,7);
+  ctx.fillStyle="rgba(16,42,76,.035)"; ctx.fill();
   ctx.strokeStyle="rgba(16,42,76,.16)"; ctx.lineWidth=1; ctx.stroke();
-  for(const p of BASE){
+  /* continents */
+  for(const p of LAND){
     const [x,y,z] = project(p, rot);
     if(z<0) continue;
-    const a = 0.08 + z*0.2;
+    const a = 0.14 + z*0.42;
     ctx.fillStyle=`rgba(16,42,76,${a})`;
-    ctx.beginPath(); ctx.arc(x,y,1.1+z*0.6,0,7); ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,1.2+z*0.75,0,7); ctx.fill();
   }
   for(const p of DIM_PTS){
     const [x,y,z] = project(p, rot);
@@ -560,7 +557,10 @@ function draw(){
     ctx.fillStyle = on? "#A87F2F" : `rgba(214,168,75,${0.6+z*0.4})`;
     ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
   });
-  rot += 0.0028;
+  /* ease toward the active team's longitude (shortest path) */
+  let dr = targetRot - rot;
+  dr = Math.atan2(Math.sin(dr), Math.cos(dr));
+  rot += dr*0.045 + 0.0004;
   requestAnimationFrame(draw);
 }
 draw();
@@ -577,6 +577,7 @@ let teamTimer;
 function setTeam(i,manual){
   activeTeam = i;
   const t = TEAMS[i];
+  targetRot = -t.ll[1]*Math.PI/180;
   document.getElementById('tFlag').textContent = t.flag;
   document.getElementById('tName').textContent = t.name;
   document.getElementById('tMeta').textContent = t.meta;
