@@ -508,13 +508,13 @@ function ll2xyz(lat,lon){
 }
 const GOLD_PTS = TEAMS.map(t=>({p:ll2xyz(...t.ll),team:t}));
 const DIM_PTS = EXTRA_LL.map(ll=>ll2xyz(...ll));
-let rot = -TEAMS[0].ll[1]*Math.PI/180, targetRot = rot, activeTeam = 0;
+let rot = -TEAMS[0].ll[1]*Math.PI/180, activeTeam = 0;
 function project(p, rotY){
   const [x,y,z] = p;
   const cx = Math.cos(rotY), sx = Math.sin(rotY);
   const X = x*cx + z*sx;
   const Z = -x*sx + z*cx;
-  const tilt = -0.35;
+  const tilt = 0.45; /* favor the northern hemisphere — where the delegations live */
   const ct=Math.cos(tilt), st=Math.sin(tilt);
   const Y = y*ct - Z*st;
   const Z2 = y*st + Z*ct;
@@ -557,10 +557,7 @@ function draw(){
     ctx.fillStyle = on? "#A87F2F" : `rgba(214,168,75,${0.6+z*0.4})`;
     ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
   });
-  /* ease toward the active team's longitude (shortest path) */
-  let dr = targetRot - rot;
-  dr = Math.atan2(Math.sin(dr), Math.cos(dr));
-  rot += dr*0.045 + 0.0004;
+  rot += 0.0022;
   requestAnimationFrame(draw);
 }
 draw();
@@ -577,7 +574,6 @@ let teamTimer;
 function setTeam(i,manual){
   activeTeam = i;
   const t = TEAMS[i];
-  targetRot = -t.ll[1]*Math.PI/180;
   document.getElementById('tFlag').textContent = t.flag;
   document.getElementById('tName').textContent = t.name;
   document.getElementById('tMeta').textContent = t.meta;
