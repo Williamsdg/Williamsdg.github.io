@@ -440,7 +440,7 @@ footer .wrap{position:relative;z-index:2}
       <span class="eyebrow">Stories of Impact</span>
       <h2>God Is Moving</h2>
     </div>
-    <div class="story-row reveal">
+    <div class="story-row reveal" id="story-row">
       <article class="story"><div class="ph ph-1"></div><span class="region">Nepal · Asia</span><h3>A Church in the Mountains</h3><span class="read">Read Story →</span></article>
       <article class="story"><div class="ph ph-2"></div><span class="region">United States</span><h3>Lives Changed in the Cities</h3><span class="read">Read Story →</span></article>
       <article class="story"><div class="ph ph-3"></div><span class="region">Global</span><h3>Communities Transformed</h3><span class="read">Read Story →</span></article>
@@ -492,5 +492,31 @@ footer .wrap{position:relative;z-index:2}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="globe.js"></script>
+<script>
+/* God Is Moving + Where We Serve are driven by the ATN Command Center.
+   Fetch published content; fall back silently to the built-in cards. */
+(function(){
+  var API='https://tkkhvbkocumyxpgsrpxv.supabase.co/functions/v1/atn-public';
+  function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  fetch(API).then(function(r){return r.json();}).then(function(d){
+    // ----- God Is Moving (3 featured, in order) -----
+    var row=document.getElementById('story-row');
+    if(row && d.godIsMoving && d.godIsMoving.length){
+      row.innerHTML=d.godIsMoving.map(function(s){
+        var region=[s.location,s.region].filter(Boolean).join(' · ');
+        var img=s.featured_image||'img/story-community.jpg';
+        return '<article class="story"><div class="ph" style="background-image:url(\''+esc(img)+'\')"></div>'+
+          '<span class="region">'+esc(region)+'</span><h3>'+esc(s.title)+'</h3>'+
+          '<span class="read">Read Story &rarr;</span></article>';
+      }).join('');
+    }
+    // ----- Where We Serve partner list (rebuild from published partners) -----
+    var list=document.querySelector('.partner-list');
+    if(list && d.partners && d.partners.length && window.__ATN_setPartners){
+      window.__ATN_setPartners(d.partners);
+    }
+  }).catch(function(){/* keep built-in fallback content */});
+})();
+</script>
 </body>
 </html>
