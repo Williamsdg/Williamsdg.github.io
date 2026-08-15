@@ -510,10 +510,23 @@ footer .wrap{position:relative;z-index:2}
           '<span class="read">Read Story &rarr;</span></article>';
       }).join('');
     }
-    // ----- Where We Serve partner list (rebuild from published partners) -----
+    // ----- Where We Serve: rebuild partner list + globe pins from published partners -----
     var list=document.querySelector('.partner-list');
-    if(list && d.partners && d.partners.length && window.__ATN_setPartners){
-      window.__ATN_setPartners(d.partners);
+    if(list && d.partners && d.partners.length){
+      // normalize public shape -> what the globe/cards expect
+      var parts=d.partners.map(function(p){
+        return { lat:p.lat, lon:p.lon, country:p.country, name:p.name,
+                 role:p.category||'', photo:p.photo, story:p.description||'' };
+      });
+      // rebuild the country list
+      list.innerHTML=parts.map(function(p,i){
+        return '<div class="partner-item" data-i="'+i+'"><span class="dot"></span>'+
+          '<span class="pi-country">'+esc(p.country||'')+'</span>'+
+          '<span class="pi-role">'+esc(p.role||'')+'</span></div>';
+      }).join('');
+      // push into the globe (rebuilds 3D pins live) + card data, then re-wire
+      if(window.__ATN_setGlobePartners) window.__ATN_setGlobePartners(parts);
+      if(window.__ATN_rewirePartners) window.__ATN_rewirePartners();
     }
   }).catch(function(){/* keep built-in fallback content */});
 })();

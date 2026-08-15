@@ -214,31 +214,44 @@
     });
     group.add(makeAtmosphere(R * 1.15, 0xE9CBA0, 0.45));
 
-    // pins
+    // pins — rebuildable so the Command Center can add/move countries live
     const BRONZE = 0xC9A24B, SAND = 0xF5F3EE;
     const pinGroup = new THREE.Group();
     group.add(pinGroup);
-    const pins = [];
-    PARTNERS.forEach((p, i) => {
-      const v = llToVec3(p.lat, p.lon, R + 1);
-      const isHome = p.role === 'Sending';
-      const core = new THREE.Mesh(
-        new THREE.SphereGeometry(isHome ? 2.4 : 1.7, 12, 12),
-        new THREE.MeshBasicMaterial({ color: isHome ? SAND : BRONZE })
-      );
-      core.position.copy(v);
-      core.userData = { i };
-      pinGroup.add(core);
-      // pulse ring
-      const ring = new THREE.Mesh(
-        new THREE.RingGeometry(2.4, 3.0, 24),
-        new THREE.MeshBasicMaterial({ color: BRONZE, transparent: true, opacity: 0.7, side: THREE.DoubleSide })
-      );
-      ring.position.copy(v);
-      ring.lookAt(v.clone().multiplyScalar(2));
-      group.add(ring);
-      pins.push({ core, ring, phase: i * 0.9, v });
-    });
+    const ringGroup = new THREE.Group();
+    group.add(ringGroup);
+    let pins = [];
+    let ACTIVE = PARTNERS;   // whichever partner set the globe is currently showing
+
+    function buildPins(list) {
+      // clear existing pins/rings
+      pins.forEach((p) => {
+        pinGroup.remove(p.core); p.core.geometry.dispose(); p.core.material.dispose();
+        ringGroup.remove(p.ring); p.ring.geometry.dispose(); p.ring.material.dispose();
+      });
+      pins = [];
+      list.forEach((p, i) => {
+        if (p.lat == null || p.lon == null) return;
+        const v = llToVec3(p.lat, p.lon, R + 1);
+        const isHome = p.role === 'Sending';
+        const core = new THREE.Mesh(
+          new THREE.SphereGeometry(isHome ? 2.4 : 1.7, 12, 12),
+          new THREE.MeshBasicMaterial({ color: isHome ? SAND : BRONZE })
+        );
+        core.position.copy(v);
+        core.userData = { i };
+        pinGroup.add(core);
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(2.4, 3.0, 24),
+          new THREE.MeshBasicMaterial({ color: BRONZE, transparent: true, opacity: 0.7, side: THREE.DoubleSide })
+        );
+        ring.position.copy(v);
+        ring.lookAt(v.clone().multiplyScalar(2));
+        ringGroup.add(ring);
+        pins.push({ core, ring, phase: i * 0.9, v });
+      });
+    }
+    buildPins(ACTIVE);
 
     group.rotation.x = 0.35;
     group.rotation.y = -1.2;
@@ -282,10 +295,18 @@
 
     // expose: rotate globe to a given partner (called when a list item is clicked)
     window.__atnFocusPartner = (i) => {
-      const p = PARTNERS[i]; if (!p) return;
+      const p = ACTIVE[i]; if (!p || p.lat == null) return;
       // rotate so the pin faces the camera
       group.rotation.y = -(p.lon + 180) * Math.PI / 180 + Math.PI / 2 - 0.2;
       group.rotation.x = Math.max(-0.7, Math.min(0.7, p.lat * Math.PI / 180 * 0.9));
+    };
+
+    // expose: swap in live partners from the Command Center (rebuilds pins live)
+    window.__ATN_setGlobePartners = (list) => {
+      if (!list || !list.length) return;
+      ACTIVE = list;
+      window.__ATN_PARTNERS = list;
+      buildPins(ACTIVE);
     };
 
     function resize() {
@@ -377,33 +398,40 @@
       window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
     }
 
-    // Reach partner interaction wiring
-    const items = Array.from(document.querySelectorAll('.partner-item'));
+    // Reach partner interaction wiring (re-runnable so live data can rebuild the list)
     const cardWrap = document.getElementById('partner-card');
+    function currentPartners() { return window.__ATN_PARTNERS || PARTNERS; }
     function showPartner(i) {
-      if (!cardWrap || !window.__ATN_PARTNERS) return;
-      const p = window.__ATN_PARTNERS[i]; if (!p) return;
+      if (!cardWrap) return;
+      const p = currentPartners()[i]; if (!p) return;
       cardWrap.innerHTML =
         (p.photo ? '<div class="pc-photo" style="background-image:url(\'' + p.photo + '\')"></div>' : '') +
         '<div class="pc-body">' +
           '<span class="pc-country">' + p.country + '</span>' +
           '<h4>' + p.name + '</h4>' +
-          '<span class="pc-role">' + p.role + '</span>' +
-          '<p>' + p.story + '</p>' +
+          '<span class="pc-role">' + (p.role || '') + '</span>' +
+          '<p>' + (p.story || '') + '</p>' +
           '<a href="#" class="pc-link">Read the full story &rarr;</a>' +
         '</div>';
       cardWrap.classList.add('show');
-      items.forEach((it) => it.classList.toggle('active', +it.dataset.i === i));
+      document.querySelectorAll('.partner-item').forEach((it) => it.classList.toggle('active', +it.dataset.i === i));
     }
     window.__atnPinHover = (i) => { if (i >= 0) showPartner(i); };
     window.__atnPinClick = (i) => { if (i >= 0) { showPartner(i); if (window.__atnFocusPartner) window.__atnFocusPartner(i); } };
-    items.forEach((it) => {
-      const i = +it.dataset.i;
-      it.addEventListener('mouseenter', () => showPartner(i));
-      it.addEventListener('click', () => { showPartner(i); if (window.__atnFocusPartner) window.__atnFocusPartner(i); });
-    });
-    // default: show home base
-    if (items.length) showPartner(PARTNERS.findIndex((p) => p.role === 'Sending'));
+    function wireItems() {
+      const items = Array.from(document.querySelectorAll('.partner-item'));
+      items.forEach((it) => {
+        const i = +it.dataset.i;
+        it.onmouseenter = () => showPartner(i);
+        it.onclick = () => { showPartner(i); if (window.__atnFocusPartner) window.__atnFocusPartner(i); };
+      });
+      // default: home base if present, else first
+      const list = currentPartners();
+      const home = list.findIndex((p) => p.role === 'Sending');
+      if (items.length) showPartner(home >= 0 ? home : 0);
+    }
+    window.__ATN_rewirePartners = wireItems;
+    wireItems();
   }
 
   window.__ATN_PARTNERS = PARTNERS;
