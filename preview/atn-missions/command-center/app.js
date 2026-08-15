@@ -482,15 +482,81 @@ function storyEditor(s){
     fld('SEO Title','seo_title',s.seo_title)+txt('SEO Description','seo_description',s.seo_description)+
     sel('Status','status',s.status||'draft',[['draft','Draft'],['review','In Review'],['scheduled','Scheduled'],['published','Published']]);
   openDrawer(s.id?'Edit Story':'New Story',body,
-    '<button class="btn btn-ghost" id="preview" style="margin-right:auto">Live Preview ↗</button>'+
+    '<button class="btn btn-ghost" id="preview" style="margin-right:auto">👁 Preview</button>'+
     '<button class="btn btn-ghost" onclick="__closeDrawer()">Cancel</button><button class="btn btn-primary" id="save">Save Story</button>');
-  $('#preview').addEventListener('click',function(){ window.open('../#stories','_blank'); });
+  $('#preview').addEventListener('click',function(){ openStoryPreview(collect()); });
   $('#save').addEventListener('click',function(){
     var v=collect(); var act=s.id?{action:'update',resource:'stories',id:s.id,values:v}:{action:'create',resource:'stories',values:v};
     api(act).then(function(){ closeDrawer(); toast('Story saved'+(v.status==='published'?' & published':'')); if(v.status==='published')logAct('Story "'+v.title+'" published','story'); else if(!s.id)logAct('New story draft "'+v.title+'" created','story'); go('stories'); }).catch(function(e){alert('Save failed: '+e.message);});
   });
 }
 window.__closeDrawer=closeDrawer;
+
+/* ---------- STORY PREVIEW (renders exactly like the public site) ---------- */
+function imgPath(p){ // command-center is one level deeper than the site root
+  if(!p) return '';
+  return /^https?:/.test(p) ? p : '../'+p;
+}
+function nl2p(t){ // turn plain text into <p> if it isn't already HTML
+  if(!t) return '<p style="color:#8a8578">Start writing the story body to see it here…</p>';
+  if(/<(p|h[1-6]|ul|ol|blockquote|div|br)\b/i.test(t)) return t;
+  return t.split(/\n{2,}/).map(function(x){return '<p>'+esc(x.trim()).replace(/\n/g,'<br>')+'</p>';}).join('');
+}
+var PV_STATE={s:null,mode:'article'};
+function openStoryPreview(s){
+  PV_STATE.s=s; PV_STATE.mode='article';
+  document.querySelectorAll('.pv-tab').forEach(function(t){t.classList.toggle('active',t.dataset.pv==='article');});
+  renderPreview();
+  document.getElementById('preview-overlay').classList.add('open');
+}
+function renderPreview(){
+  var s=PV_STATE.s||{}, F=document.getElementById('pv-frame');
+  var region=[s.location,s.region].filter(Boolean).join(' · ')||'Location · Region';
+  var img=imgPath(s.featured_image);
+  if(PV_STATE.mode==='article'){
+    var meta=[s.category, s.author, s.publish_date].filter(Boolean).join('  ·  ');
+    F.innerHTML='<div class="pv-doc">'+
+      '<div class="pv-hero" style="background-image:url(\''+esc(img)+'\')">'+
+        '<div><div class="pv-region">'+esc(region)+'</div>'+
+        '<h1>'+esc(s.title||'Untitled Story')+'</h1>'+
+        '<div class="pv-meta">'+esc(meta||'Category · Author')+'</div></div>'+
+      '</div>'+
+      '<div class="pv-body">'+
+        (s.excerpt?'<div class="pv-excerpt">'+esc(s.excerpt)+'</div>':'')+
+        '<div class="pv-rich">'+nl2p(s.body)+'</div>'+
+        '<div class="pv-foot">Among the Nations · '+esc([s.location,s.region].filter(Boolean).join(', ')||'')+(s.status?'  ·  '+esc(s.status.toUpperCase()):'')+'</div>'+
+      '</div>'+
+    '</div>';
+  } else {
+    // God Is Moving card row — show this story alongside the two other published featured stories
+    var others=(DATA.stories||[]).filter(function(x){return x.status==='published' && x.title!==s.title;}).slice(0,2);
+    var cards=[{story:s,isThis:true}].concat(others.map(function(o){return {story:o,isThis:false};})).slice(0,3);
+    F.innerHTML='<div class="pv-cards-wrap"><div class="pv-lab">Stories of Impact</div><h2>God Is Moving</h2>'+
+      '<div class="pv-row">'+cards.map(function(c){
+        var st=c.story; var rg=[st.location,st.region].filter(Boolean).join(' · ');
+        return '<div class="pv-story'+(c.isThis?' this':'')+'">'+
+          (c.isThis?'<span class="pv-badge-this">This story</span>':'')+
+          '<div class="pv-sph" style="background-image:url(\''+esc(imgPath(st.featured_image))+'\')"></div>'+
+          '<span class="pv-sr">'+esc(rg||'Location')+'</span>'+
+          '<h3>'+esc(st.title||'Untitled Story')+'</h3>'+
+          '<span class="pv-read">Read Story →</span></div>';
+      }).join('')+'</div>'+
+      '<p style="margin-top:20px;color:#7D6A4F;font-size:.82rem">This is how the card looks in the homepage’s God Is Moving row. Feature it in a slot on the Stories page to make it appear live.</p>'+
+    '</div>';
+  }
+}
+(function initPreviewControls(){
+  var ov=document.getElementById('preview-overlay'); if(!ov) return;
+  document.getElementById('pv-close').addEventListener('click',function(){ov.classList.remove('open');});
+  ov.addEventListener('click',function(e){ if(e.target===ov) ov.classList.remove('open'); });
+  document.querySelectorAll('.pv-tab').forEach(function(t){
+    t.addEventListener('click',function(){
+      document.querySelectorAll('.pv-tab').forEach(function(x){x.classList.remove('active');});
+      t.classList.add('active'); PV_STATE.mode=t.dataset.pv; renderPreview();
+    });
+  });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') ov.classList.remove('open'); });
+})();
 
 /* ---------- activity ---------- */
 function logAct(message,kind){ api({action:'log',message:message,kind:kind||'info'}).catch(function(){}); }
