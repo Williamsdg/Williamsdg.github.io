@@ -5,6 +5,43 @@ var API='https://raolhzzsbzvevwpjvvcp.supabase.co/functions/v1/atn-cc';
 var PASS_KEY='atn-cc-pass';
 var pass='';
 
+/* ---------- country -> map coordinates (auto-geocode, no network) ---------- */
+var COUNTRY_LL={
+  'afghanistan':[33.9,67.7],'albania':[41.2,20.2],'algeria':[28,1.7],'angola':[-11.2,17.9],'argentina':[-38.4,-63.6],
+  'armenia':[40.1,45],'australia':[-25.3,133.8],'austria':[47.5,14.6],'azerbaijan':[40.1,47.6],'bangladesh':[23.7,90.4],
+  'belarus':[53.7,27.9],'belgium':[50.5,4.5],'belize':[17.2,-88.5],'benin':[9.3,2.3],'bhutan':[27.5,90.4],'bolivia':[-16.5,-64],
+  'bosnia':[43.9,17.7],'botswana':[-22.3,24.7],'brazil':[-14.2,-51.9],'bulgaria':[42.7,25.5],'burkina faso':[12.2,-1.6],
+  'burundi':[-3.4,29.9],'cambodia':[12.6,105],'cameroon':[7.4,12.4],'canada':[56.1,-106.3],'chad':[15.5,18.7],'chile':[-35.7,-71.5],
+  'china':[35.9,104.2],'colombia':[4.6,-74.3],'costa rica':[9.7,-83.8],'croatia':[45.1,15.2],'cuba':[21.5,-77.8],'cyprus':[35.1,33.4],
+  'czech republic':[49.8,15.5],'democratic republic of the congo':[-4,21.8],'denmark':[56.3,9.5],'dominican republic':[18.7,-70.2],
+  'ecuador':[-1.8,-78.2],'egypt':[26.8,30.8],'el salvador':[13.8,-88.9],'estonia':[58.6,25],'ethiopia':[9.1,40.5],'fiji':[-17.7,178],
+  'finland':[61.9,25.7],'france':[46.2,2.2],'gabon':[-0.8,11.6],'georgia':[42.3,43.4],'germany':[51.2,10.5],'ghana':[7.9,-1],
+  'greece':[39.1,21.8],'guatemala':[15.8,-90.2],'guinea':[9.9,-9.7],'haiti':[19,-72.3],'honduras':[15.2,-86.2],'hungary':[47.2,19.5],
+  'iceland':[65,-19],'india':[20.6,79],'indonesia':[-0.8,113.9],'iran':[32.4,53.7],'iraq':[33.2,43.7],'ireland':[53.4,-8.2],
+  'israel':[31,34.9],'italy':[41.9,12.6],'ivory coast':[7.5,-5.5],'jamaica':[18.1,-77.3],'japan':[36.2,138.3],'jordan':[30.6,36.2],
+  'kazakhstan':[48,66.9],'kenya':[-0.02,37.9],'laos':[19.9,102.5],'latvia':[56.9,24.6],'lebanon':[33.9,35.9],'liberia':[6.4,-9.4],
+  'lithuania':[55.2,23.9],'madagascar':[-18.8,46.9],'malawi':[-13.3,34.3],'malaysia':[4.2,101.9],'mali':[17.6,-4],'mexico':[23.6,-102.6],
+  'moldova':[47.4,28.4],'mongolia':[46.9,103.8],'morocco':[31.8,-7.1],'mozambique':[-18.7,35.5],'myanmar':[21.9,95.9],'nepal':[28.4,84.1],
+  'nepal & india':[27.7,85.3],'netherlands':[52.1,5.3],'new zealand':[-40.9,174.9],'nicaragua':[12.9,-85.2],'niger':[17.6,8.1],
+  'nigeria':[9.1,8.7],'north korea':[40.3,127.5],'norway':[60.5,8.5],'pakistan':[30.4,69.3],'panama':[8.5,-80.8],
+  'papua new guinea':[-6.3,143.9],'paraguay':[-23.4,-58.4],'peru':[-9.2,-75],'philippines':[12.9,121.8],'poland':[51.9,19.1],
+  'portugal':[39.4,-8.2],'romania':[45.9,25],'russia':[61.5,105.3],'rwanda':[-1.9,29.9],'saudi arabia':[23.9,45.1],'senegal':[14.5,-14.5],
+  'serbia':[44,21],'sierra leone':[8.5,-11.8],'singapore':[1.4,103.8],'slovakia':[48.7,19.7],'somalia':[5.2,46.2],'south africa':[-30.6,22.9],
+  'south korea':[35.9,127.8],'south sudan':[7,30],'spain':[40.5,-3.7],'sri lanka':[7.9,80.8],'sudan':[12.9,30.2],'sweden':[60.1,18.6],
+  'switzerland':[46.8,8.2],'syria':[34.8,39],'taiwan':[23.7,121],'tajikistan':[38.9,71.3],'tanzania':[-6.4,34.9],'thailand':[15.9,101],
+  'togo':[8.6,0.8],'tunisia':[33.9,9.6],'turkey':[39,35.2],'uganda':[1.4,32.3],'ukraine':[48.4,31.2],'united arab emirates':[23.4,53.8],
+  'united kingdom':[55.4,-3.4],'uk':[55.4,-3.4],'united states':[39.8,-98.6],'usa':[39.8,-98.6],'uruguay':[-32.5,-55.8],
+  'uzbekistan':[41.4,64.6],'venezuela':[6.4,-66.6],'vietnam':[14.1,108.3],'yemen':[15.6,48.5],'zambia':[-13.1,27.8],'zimbabwe':[-19,29.2]
+};
+function geocodeCountry(name){
+  if(!name) return null;
+  var key=String(name).trim().toLowerCase();
+  if(COUNTRY_LL[key]) return COUNTRY_LL[key];
+  // try first part before "&"/"/"/"," (e.g. "Nepal & India" -> "nepal")
+  var first=key.split(/[&/,]/)[0].trim();
+  return COUNTRY_LL[first]||null;
+}
+
 /* ---------- tiny helpers ---------- */
 var $=function(s,r){return (r||document).querySelector(s);};
 var esc=function(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
@@ -368,14 +405,31 @@ function partnerForm(p){
     '<div class="grid2">'+fld('Email','email',p.email,'email')+fld('Phone','phone',p.phone)+'</div>'+
     fld('Website','website',p.website)+
     fld('Public Photo (path)','photo',p.photo||'img/partners/')+
-    '<div class="grid2">'+fld('Map Latitude','lat',p.lat,'number')+fld('Map Longitude','lon',p.lon,'number')+'</div>'+
+    '<div class="field"><label>Map Location — pin on the globe</label>'+
+      '<div style="display:flex;gap:10px;align-items:center">'+
+        '<input name="lat" type="number" step="any" placeholder="Latitude" value="'+esc(p.lat==null?'':p.lat)+'" style="flex:1;background:var(--white);border:1px solid var(--line-2);border-radius:5px;padding:10px 12px;font-size:.9rem">'+
+        '<input name="lon" type="number" step="any" placeholder="Longitude" value="'+esc(p.lon==null?'':p.lon)+'" style="flex:1;background:var(--white);border:1px solid var(--line-2);border-radius:5px;padding:10px 12px;font-size:.9rem">'+
+        '<button type="button" class="btn btn-ghost btn-sm" id="geo-btn" title="Fill from country">📍 From country</button>'+
+      '</div>'+
+      '<div class="hint" style="font-size:.72rem;color:var(--muted-d);margin-top:6px">Leave blank and we’ll auto-place the pin from the country name on save.</div>'+
+    '</div>'+
     txt('Public Description','description',p.description)+
     '<div class="field"><label>Show on Website</label><select name="published" data-bool="1"><option value="true"'+(p.published?' selected':'')+'>Yes — visible in Where We Serve</option><option value="false"'+(!p.published?' selected':'')+'>No — hidden</option></select></div>';
   openDrawer(p.id?'Edit Partner':'New Partner',body,
     '<button class="btn btn-ghost" onclick="__closeDrawer()">Cancel</button><button class="btn btn-primary" id="save">Save Partner</button>');
+  // "From country" button fills lat/lon from the country field
+  $('#geo-btn').addEventListener('click',function(){
+    var c=$('#drawer-body [name=country]').value;
+    var ll=geocodeCountry(c);
+    if(ll){ $('#drawer-body [name=lat]').value=ll[0]; $('#drawer-body [name=lon]').value=ll[1]; toast('Pin placed on '+c); }
+    else toast('Couldn’t find "'+c+'" — enter coordinates manually');
+  });
   $('#save').addEventListener('click',function(){
-    var v=collect(); var act=p.id?{action:'update',resource:'partners',id:p.id,values:v}:{action:'create',resource:'partners',values:v};
-    api(act).then(function(){ closeDrawer(); toast('Partner saved'); if(!p.id)logAct('New partner "'+v.name+'" added','partner'); go('partners'); }).catch(function(e){alert('Save failed: '+e.message);});
+    var v=collect();
+    // auto-geocode if coords are blank
+    if((v.lat==null||v.lon==null) && v.country){ var ll=geocodeCountry(v.country); if(ll){ v.lat=ll[0]; v.lon=ll[1]; } }
+    var act=p.id?{action:'update',resource:'partners',id:p.id,values:v}:{action:'create',resource:'partners',values:v};
+    api(act).then(function(){ closeDrawer(); toast('Partner saved'+((v.lat!=null&&(p.lat==null))?' · pin placed':'')); if(!p.id)logAct('New partner "'+v.name+'" added','partner'); go('partners'); }).catch(function(e){alert('Save failed: '+e.message);});
   });
 }
 
