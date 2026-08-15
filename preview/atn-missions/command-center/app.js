@@ -1,7 +1,7 @@
 /* ============ ATN Mission Command Center ============ */
 (function(){
 'use strict';
-var API='https://tkkhvbkocumyxpgsrpxv.supabase.co/functions/v1/atn-cc';
+var API='https://raolhzzsbzvevwpjvvcp.supabase.co/functions/v1/atn-cc';
 var PASS_KEY='atn-cc-pass';
 var pass='';
 
