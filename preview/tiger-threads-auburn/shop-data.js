@@ -6,7 +6,9 @@ window.TT_PRODUCTS = [
   "sizes": "S, M, L, XL",
   "desc": "Sequins on Sleeves, Fuzzy sparkly lettering (Bodda Getta)\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); Generously sized",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/millie-sweatshirt-bodda-getta.jpg"
+  "img": "img/products/millie-sweatshirt-bodda-getta.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/millie-sweatshirt-bodda-getta",
+  "available": true
  },
  {
   "name": "Celia Sweater Vest",
@@ -14,7 +16,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL",
   "desc": "50% Viscose, 28% Poly, 22% Nylon\nMachine Wash Cold\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); True To Size",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/celia-sweater-vest.jpg"
+  "img": "img/products/celia-sweater-vest.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/celia-sweater-vest",
+  "available": true
  },
  {
   "name": "Tina Top WDE",
@@ -22,7 +26,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL",
   "desc": "Sequin/Rhinestone Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); Generously sized",
   "cat": "Tops",
-  "img": "img/products/tina-top-wde.jpg"
+  "img": "img/products/tina-top-wde.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/tina-top-wde",
+  "available": true
  },
  {
   "name": "Sarah Sweatshirt Power Stripe",
@@ -30,7 +36,9 @@ window.TT_PRODUCTS = [
   "sizes": "S, M, L, XL, 1X, 2X",
   "desc": "Beaded Power Stripe/Embroidered Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/sarah-sweatshirt-power-stripe.jpg"
+  "img": "img/products/sarah-sweatshirt-power-stripe.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/sarah-sweatshirt-power-stripe",
+  "available": true
  },
  {
   "name": "Sarah Sweatshirt Fearless & True",
@@ -38,7 +46,9 @@ window.TT_PRODUCTS = [
   "sizes": "S, M, L, XL, 1X, 2X",
   "desc": "Sequin/Rhinestone on Sleeves, Sequin Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/sarah-sweatshirt-fearless-true.jpg"
+  "img": "img/products/sarah-sweatshirt-fearless-true.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/sarah-sweatshirt-fearless-true",
+  "available": true
  },
  {
   "name": "Sarah Sweatshirt Basketball",
@@ -46,7 +56,9 @@ window.TT_PRODUCTS = [
   "sizes": "S, M, L, XL, 1X",
   "desc": "Sequin Designs\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14);  1X (16-18) Generously sized",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/sarah-sweatshirt-basketball.jpg"
+  "img": "img/products/sarah-sweatshirt-basketball.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/sarah-sweatshirt-basketball",
+  "available": true
  },
  {
   "name": "Hannah Sweater",
@@ -54,7 +66,9 @@ window.TT_PRODUCTS = [
   "sizes": "S, M, L",
   "desc": "50% Viscose, 28% Poly, 22% Nylon\nMachine Wash Cold\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); True To Size",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/hannah-sweater.jpg"
+  "img": "img/products/hannah-sweater.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/hannah-sweater",
+  "available": true
  },
  {
   "name": "Anna Dress",
@@ -62,7 +76,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL, XXL",
   "desc": "Sequin Designs\n87% Poly, 10% Rayon, 3% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 2XL (16) True To Size",
   "cat": "Dresses",
-  "img": "img/products/anna-dress.jpg"
+  "img": "img/products/anna-dress.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/anna-dress",
+  "available": true
  },
  {
   "name": "Alli Pajama Set",
@@ -70,7 +86,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "94% Poly, 6% Spandex\nMachine Wash \nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18)",
   "cat": "Sets & Pajamas",
-  "img": "img/products/alli-pajama-set.jpg"
+  "img": "img/products/alli-pajama-set.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/alli-pajama-set",
+  "available": true
  },
  {
   "name": "Ginny Top & Shorts Set",
@@ -78,7 +96,9 @@ window.TT_PRODUCTS = [
   "sizes": "S, M, L, XL, XXL",
   "desc": "Sequin Designs/Draw String Elastic Shorts\n87% Poly, 10% Rayon, 3% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); XXL (16) True To Size",
   "cat": "Sets & Pajamas",
-  "img": "img/products/ginny-top-shorts-set.jpg"
+  "img": "img/products/ginny-top-shorts-set.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/ginny-top-shorts-set",
+  "available": true
  },
  {
   "name": "Lauren Top & Shorts Set",
@@ -86,7 +106,9 @@ window.TT_PRODUCTS = [
   "sizes": "S, M, L, XL",
   "desc": "Sequin Designs/Draw String Elastic Shorts\n87% Poly, 10% Rayon, 3% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nS (4-6); M (8-10); L (10-12); XL (14) True To Size",
   "cat": "Sets & Pajamas",
-  "img": "img/products/lauren-top-shorts-set.jpg"
+  "img": "img/products/lauren-top-shorts-set.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/lauren-top-shorts-set",
+  "available": true
  },
  {
   "name": "Faith V-Neck Sweater",
@@ -94,7 +116,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL",
   "desc": "Beaded and Logo Design\n52% Viscose, 20% Poly, 28% Nylon\nMachine Wash Cold\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); Runs Small",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/faith-v-neck-sweater.jpg"
+  "img": "img/products/faith-v-neck-sweater.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/faith-v-neck-sweater",
+  "available": true
  },
  {
   "name": "Sarah Sweatshirt Aubie",
@@ -102,7 +126,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Embroidered/Beaded Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/sarah-sweatshirt-aubie.jpg"
+  "img": "img/products/sarah-sweatshirt-aubie.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/sarah-sweatshirt-aubie",
+  "available": true
  },
  {
   "name": "Millie Sweatshirt WDE",
@@ -110,7 +136,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Rhinestone/Sequin Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/millie-sweatshirt-wde.jpg"
+  "img": "img/products/millie-sweatshirt-wde.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/millie-sweatshirt-wde",
+  "available": true
  },
  {
   "name": "Sarah Sweatshirt Varsity",
@@ -118,7 +146,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Chenille/Beaded Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/sarah-sweatshirt-varsity.jpg"
+  "img": "img/products/sarah-sweatshirt-varsity.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/sarah-sweatshirt-varsity",
+  "available": true
  },
  {
   "name": "Millie Sweatshirt Script",
@@ -126,7 +156,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Chenille Script Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) Generously sized",
   "cat": "Sweatshirts & Sweaters",
-  "img": "img/products/millie-sweatshirt-script.jpg"
+  "img": "img/products/millie-sweatshirt-script.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/millie-sweatshirt-script",
+  "available": true
  },
  {
   "name": "Tina Top War Eagle",
@@ -134,7 +166,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "Embroidered Rope Script Lettering\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18) True To Size",
   "cat": "Tops",
-  "img": "img/products/tina-top-war-eagle.jpg"
+  "img": "img/products/tina-top-war-eagle.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/tina-top-war-eagle",
+  "available": true
  },
  {
   "name": "Tracey Dress Tiger",
@@ -142,7 +176,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL",
   "desc": "Gathered Waist with Pockets\n100% Poly\nMachine Wash Cold\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); True To Size",
   "cat": "Dresses",
-  "img": "img/products/tracey-dress-tiger.jpg"
+  "img": "img/products/tracey-dress-tiger.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/tracey-dress-tiger",
+  "available": true
  },
  {
   "name": "Emily Top Icons",
@@ -150,7 +186,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL",
   "desc": "Embroidered Beaded Sequin Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14) Generously sized",
   "cat": "Tops",
-  "img": "img/products/emily-top-icons.jpg"
+  "img": "img/products/emily-top-icons.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/emily-top-icons",
+  "available": true
  },
  {
   "name": "Charlotte Pajama Set Toile",
@@ -158,7 +196,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL, 1X, 2X",
   "desc": "95% Viscose, 5% Spandex\nMachine Wash \nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14); 1X (16); 2X (18)",
   "cat": "Sets & Pajamas",
-  "img": "img/products/charlotte-pajama-set-toile.jpg"
+  "img": "img/products/charlotte-pajama-set-toile.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/charlotte-pajama-set-toile",
+  "available": true
  },
  {
   "name": "Emily Top Mascot",
@@ -166,7 +206,9 @@ window.TT_PRODUCTS = [
   "sizes": "XS, S, M, L, XL",
   "desc": "Embroidered Beaded Sequin Design\n62% Poly, 33% Rayon, 5% Spandex\nHand Wash (I use machine with hand wash cycle in lingerie bag)\nXS (0-2); S (4-6); M (8-10); L (10-12); XL (14) Generously sized",
   "cat": "Tops",
-  "img": "img/products/emily-top-mascot.jpg"
+  "img": "img/products/emily-top-mascot.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/emily-top-mascot",
+  "available": true
  },
  {
   "name": "Earrings Auburn Drop",
@@ -175,7 +217,9 @@ window.TT_PRODUCTS = [
   "sizes": "One Size",
   "desc": "AU Logo Drop Earrings With Large Stone Accent",
   "cat": "Earrings",
-  "img": "img/products/earrings-auburn-drop.jpg"
+  "img": "img/products/earrings-auburn-drop.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/earrings-auburn-drop",
+  "available": true
  },
  {
   "name": "Earrings Auburn Pendant",
@@ -184,7 +228,9 @@ window.TT_PRODUCTS = [
   "sizes": "One Size",
   "desc": "AU Pendant Earrings On Small Gold Hoop",
   "cat": "Earrings",
-  "img": "img/products/earrings-auburn-pendant.jpg"
+  "img": "img/products/earrings-auburn-pendant.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/earrings-auburn-pendant",
+  "available": true
  },
  {
   "name": "Earrings Aubie Pendant",
@@ -193,7 +239,9 @@ window.TT_PRODUCTS = [
   "sizes": "One Size",
   "desc": "Aubie Pendant Earrings On Small Gold Hoop",
   "cat": "Earrings",
-  "img": "img/products/earrings-aubie-pendant.jpg"
+  "img": "img/products/earrings-aubie-pendant.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/earrings-aubie-pendant",
+  "available": true
  },
  {
   "name": "Earrings Aubie Hoop",
@@ -201,7 +249,9 @@ window.TT_PRODUCTS = [
   "price": "31",
   "sizes": "One Size",
   "desc": "Aubie Pendant On Navy/Gold Hoop",
-  "cat": "Earrings"
+  "cat": "Earrings",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/earrings-aubie-hoop",
+  "available": true
  },
  {
   "name": "Earrings War Eagle Dangle",
@@ -210,7 +260,9 @@ window.TT_PRODUCTS = [
   "sizes": "One Size",
   "desc": "War Eagle Charm/Tiger Paw Charm/Blue Stone On Small Gold Hoop",
   "cat": "Earrings",
-  "img": "img/products/earrings-war-eagle-dangle.jpg"
+  "img": "img/products/earrings-war-eagle-dangle.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/earrings-war-eagle-dangle",
+  "available": true
  },
  {
   "name": "Earrings WDE Drop",
@@ -219,7 +271,9 @@ window.TT_PRODUCTS = [
   "sizes": "One Size",
   "desc": "WDE Navy/Orange Logo Drop Earrings With Large White Beaded Accent",
   "cat": "Earrings",
-  "img": "img/products/earrings-wde-drop.jpg"
+  "img": "img/products/earrings-wde-drop.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/earrings-wde-drop",
+  "available": true
  },
  {
   "name": "Earrings AU Hoop",
@@ -228,7 +282,9 @@ window.TT_PRODUCTS = [
   "sizes": "One Size",
   "desc": "AU Pendant On Navy/Gold Hoop",
   "cat": "Earrings",
-  "img": "img/products/earrings-au-hoop.jpg"
+  "img": "img/products/earrings-au-hoop.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/earrings-au-hoop",
+  "available": true
  },
  {
   "name": "Earrings Aubie Pearl Drop",
@@ -237,6 +293,8 @@ window.TT_PRODUCTS = [
   "sizes": "One Size",
   "desc": "Aubie Acrylic Logo Drop Earrings With Large Pearl Accent",
   "cat": "Earrings",
-  "img": "img/products/earrings-aubie-pearl-drop.jpg"
+  "img": "img/products/earrings-aubie-pearl-drop.jpg",
+  "url": "https://tigerthreadsauburn.myshopify.com/products/earrings-aubie-pearl-drop",
+  "available": true
  }
 ];
