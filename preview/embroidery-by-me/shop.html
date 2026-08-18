@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Shop the Collection — Embroidery by Me · Leeds, Alabama</title>
+<meta name="description" content="Shop the current rotating collection from Embroidery by Me — embroidered apparel, monogram gifts, and DTF tees, made in Leeds, Alabama.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧵</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="concept-note"><strong>Concept preview</strong> — sample products &amp; pricing. In the live build, checkout is completed securely through Square.</div>
+
+<header class="site-header">
+  <nav class="nav wrap">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">Em</span>
+      <span class="brand-name">Embroidery by Me<small>Leeds, Alabama</small></span>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html" class="active">Shop</a></li>
+      <li><a href="custom.html">Custom Orders</a></li>
+      <li><a href="index.html#services">Services</a></li>
+      <li><a href="index.html#about">About</a></li>
+      <li><a href="index.html#contact">Contact</a></li>
+    </ul>
+    <div class="nav-cta">
+      <button class="cart-btn" id="cartBtn">Cart <span class="cart-count" id="cartCount">0</span></button>
+      <button class="menu-toggle" id="menuToggle" aria-label="Menu">☰</button>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <section class="page-head">
+    <div class="wrap">
+      <span class="eyebrow">The current collection</span>
+      <h1>Shop Embroidery by Me</h1>
+      <p class="lede">A small, rotating lineup — around ten pieces at a time, each ready to personalize. When a piece rotates out, it's gone.</p>
+      <div class="shop-note">
+        <span style="flex:none">🧵</span>
+        <span><strong>Preview note:</strong> these ten products, prices, and options are samples to show how the store works. The real lineup drops in with Embroidery by Me's photos and pricing — swapping products takes minutes, not a redesign.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:20px">
+    <div class="wrap">
+      <div class="prod-grid" id="shopGrid"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-base" style="border-top:none;padding-top:0">
+      <span>© 2026 Embroidery by Me · Leeds, Alabama</span>
+      <span>Concept by <a href="https://williamsdigital.io" style="color:var(--rust);font-weight:600">Williams Digital</a></span>
+    </div>
+  </div>
+</footer>
+
+<!-- overlays -->
+<div class="overlay" id="overlay"></div>
+
+<!-- product modal -->
+<div class="modal" id="prodModal" role="dialog" aria-modal="true">
+  <div class="modal-card" id="prodModalCard"></div>
+</div>
+
+<!-- checkout confirmation modal -->
+<div class="modal" id="confirmModal" role="dialog" aria-modal="true">
+  <div class="modal-card" style="text-align:center">
+    <button class="modal-close" data-close>✕</button>
+    <div class="confirm-icon">✓</div>
+    <h3>Order received!</h3>
+    <div class="order-num" id="confirmOrderNum">EBM-1024</div>
+    <p style="font-size:14px;color:var(--ink-soft);margin-top:10px">Thank you! A confirmation email is on its way. We'll get stitching and let you know the moment your order is ready.</p>
+    <p style="font-size:12px;color:var(--ink-faint);margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)">Demo checkout — in the live store this step is a secure Square payment page, and the order (with every personalization detail) lands in the Embroidery by Me dashboard automatically.</p>
+    <div class="modal-actions"><button class="btn btn-primary" data-close>Keep Shopping</button></div>
+  </div>
+</div>
+
+<!-- cart drawer -->
+<aside class="drawer" id="cartDrawer" aria-label="Cart">
+  <div class="drawer-head">
+    <h3>Your Cart</h3>
+    <button class="modal-close" style="position:static" id="closeDrawer">✕</button>
+  </div>
+  <div class="drawer-body" id="cartBody"></div>
+  <div class="drawer-foot" id="cartFoot">
+    <div class="cart-total-row"><span>Subtotal</span><strong id="cartTotal">$0</strong></div>
+    <button class="btn btn-primary" id="checkoutBtn">Checkout with Square</button>
+    <p class="square-note">🔒 Payments processed securely by Square in the live store</p>
+  </div>
+</aside>
+
+<script src="products.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const cart = [];
+let orderSeq = 1024;
+
+/* ---------- render grid ---------- */
+EBM_PRODUCTS.forEach(p => {
+  const card = document.createElement('div');
+  card.className = 'prod-card';
+  card.id = 'card-' + p.id;
+  card.innerHTML = `
+    <div class="prod-photo">
+      <span class="prod-badge${p.badge === 'DTF' ? ' dtf' : ''}">${p.badge}</span>
+      ${EBM_ICONS[p.icon]}
+      <span class="photo-tag">Product photo goes here</span>
+    </div>
+    <div class="prod-body">
+      <h3>${p.name}</h3>
+      <p class="prod-desc">${p.desc}</p>
+      <div class="prod-foot">
+        <span class="prod-price">$${p.price}</span>
+        <span class="btn btn-primary btn-sm">Customize</span>
+      </div>
+    </div>`;
+  card.addEventListener('click', () => openProduct(p));
+  $('shopGrid').appendChild(card);
+});
+
+/* ---------- product modal ---------- */
+let current = null;
+
+function openProduct(p) {
+  current = { product: p, choices: {}, qty: 1, text: '' };
+  Object.entries(p.options).forEach(([k, vals]) => current.choices[k] = vals[0]);
+
+  let html = `
+    <button class="modal-close" data-close>✕</button>
+    <h3>${p.name}</h3>
+    <div class="modal-price">$${p.price}</div>`;
+
+  Object.entries(p.options).forEach(([k, vals]) => {
+    html += `<div class="opt-group"><span class="opt-label">${k}</span><div class="opt-pills" data-opt="${k}">` +
+      vals.map((v, i) => `<button class="opt-pill${i === 0 ? ' selected' : ''}" data-val="${v}">${v}</button>`).join('') +
+      `</div></div>`;
+  });
+
+  if (p.personalize) {
+    html += `<div class="opt-group"><span class="opt-label">${p.personalize.label}</span>
+      <input class="text-input" id="persText" maxlength="40" placeholder="${p.personalize.placeholder}"></div>`;
+  }
+
+  html += `
+    <div class="opt-group"><span class="opt-label">Quantity</span>
+      <div class="qty-row">
+        <button class="qty-btn" id="qtyMinus">−</button>
+        <span class="qty-val" id="qtyVal">1</span>
+        <button class="qty-btn" id="qtyPlus">+</button>
+      </div>
+    </div>
+    <div class="modal-actions"><button class="btn btn-primary" id="addToCart">Add to Cart — $<span id="lineTotal">${p.price}</span></button></div>`;
+
+  $('prodModalCard').innerHTML = html;
+
+  $('prodModalCard').querySelectorAll('.opt-pills').forEach(group => {
+    group.addEventListener('click', e => {
+      const pill = e.target.closest('.opt-pill');
+      if (!pill) return;
+      group.querySelectorAll('.opt-pill').forEach(b => b.classList.remove('selected'));
+      pill.classList.add('selected');
+      current.choices[group.dataset.opt] = pill.dataset.val;
+    });
+  });
+  $('qtyMinus').addEventListener('click', () => setQty(current.qty - 1));
+  $('qtyPlus').addEventListener('click', () => setQty(current.qty + 1));
+  $('addToCart').addEventListener('click', addToCart);
+
+  show($('prodModal'));
+}
+
+function setQty(q) {
+  current.qty = Math.min(20, Math.max(1, q));
+  $('qtyVal').textContent = current.qty;
+  $('lineTotal').textContent = current.product.price * current.qty;
+}
+
+function addToCart() {
+  const persInput = $('persText');
+  current.text = persInput ? persInput.value.trim() : '';
+  cart.push({ ...current });
+  hideAll();
+  renderCart();
+  openDrawer();
+}
+
+/* ---------- cart ---------- */
+function renderCart() {
+  $('cartCount').textContent = cart.reduce((n, i) => n + i.qty, 0);
+  const body = $('cartBody');
+  if (!cart.length) {
+    body.innerHTML = '<div class="cart-empty">Your cart is empty.<br>The collection is waiting. 🧵</div>';
+    $('cartFoot').style.display = 'none';
+    return;
+  }
+  $('cartFoot').style.display = 'block';
+  body.innerHTML = cart.map((item, idx) => {
+    const opts = Object.entries(item.choices).map(([k, v]) => v).join(' · ');
+    const pers = item.text ? ` · “${item.text}”` : '';
+    return `
+      <div class="cart-item">
+        <div class="cart-thumb">${EBM_ICONS[item.product.icon]}</div>
+        <div class="cart-info">
+          <h4>${item.product.name}</h4>
+          <div class="cart-opts">${opts}${pers}</div>
+          <div class="cart-line2">
+            <span class="price">${item.qty} × $${item.product.price}</span>
+            <button class="cart-remove" data-idx="${idx}">Remove</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  body.querySelectorAll('.cart-remove').forEach(btn =>
+    btn.addEventListener('click', () => { cart.splice(+btn.dataset.idx, 1); renderCart(); }));
+  $('cartTotal').textContent = '$' + cart.reduce((s, i) => s + i.qty * i.product.price, 0);
+}
+
+/* ---------- overlay / modal plumbing ---------- */
+function show(m) { $('overlay').classList.add('open'); m.classList.add('open'); }
+function hideAll() {
+  $('overlay').classList.remove('open');
+  document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
+  $('cartDrawer').classList.remove('open');
+}
+function openDrawer() { $('overlay').classList.add('open'); $('cartDrawer').classList.add('open'); }
+
+document.addEventListener('click', e => { if (e.target.closest('[data-close]')) hideAll(); });
+$('overlay').addEventListener('click', hideAll);
+$('cartBtn').addEventListener('click', () => { renderCart(); openDrawer(); });
+$('closeDrawer').addEventListener('click', hideAll);
+
+$('checkoutBtn').addEventListener('click', () => {
+  if (!cart.length) return;
+  cart.length = 0;
+  renderCart();
+  hideAll();
+  $('confirmOrderNum').textContent = 'EBM-' + (orderSeq++);
+  show($('confirmModal'));
+});
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') hideAll(); });
+
+/* mobile menu */
+$('menuToggle').addEventListener('click', () => $('navLinks').classList.toggle('open'));
+
+/* deep link: shop.html#product-id opens that product */
+renderCart();
+const hashId = location.hash.slice(1);
+if (hashId) {
+  const p = EBM_PRODUCTS.find(x => x.id === hashId);
+  if (p) setTimeout(() => openProduct(p), 250);
+}
+</script>
+</body>
+</html>
