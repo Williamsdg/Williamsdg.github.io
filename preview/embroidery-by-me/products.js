@@ -1,9 +1,9 @@
-/* Embroidery by Me — product catalog (SAMPLE DATA)
+/* WeAddALogo — product catalog (SAMPLE DATA)
    This file is the single seam for the rotating retail lineup.
    Swapping products = editing this array. In the live build, options and
    pricing flow straight into Square Checkout line items.
    All products, prices, and options below are placeholders pending
-   Embroidery by Me's real lineup. */
+   WeAddALogo's real lineup. */
 
 const EBM_ICONS = {
   crewneck: '<svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M24 10c0 4 3.5 7 8 7s8-3 8-7l10 4 8 14-9 5-1-4v25H16V29l-1 4-9-5 8-14 10-4z"/><path d="M26 34h12" stroke-dasharray="2.5 3"/></svg>',
