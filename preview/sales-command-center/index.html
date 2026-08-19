@@ -744,7 +744,7 @@ function viewCompanies() {
     </tr>`;
   }).join('');
   return `
-    <div class="view-head"><h2>Companies</h2><div class="spacer"></div><button class="btn" id="add-co">+ Add company</button></div>
+    <div class="view-head"><h2>Companies</h2><div class="spacer"></div><button class="btn ghost" id="import-co">⇪ Import leads</button><button class="btn" id="add-co">+ Add company</button></div>
     <p class="view-sub">The master database — every lead from the prospect pipeline, plus anything you add.</p>
     ${filterBar(list.length, all.length)}
     <div class="card table-scroll">
@@ -1607,6 +1607,96 @@ function viewSettings() {
     </div>`;
 }
 
+/* =============== Lead import (open-source Google Maps scrape) =============== */
+// Companion to ~/wdcc-scout/scout.mjs (gosom/google-maps-scraper): free local
+// scrape -> JSON on clipboard -> paste here. No API costs.
+function mapCat(s) {
+  s = String(s || '').toLowerCase();
+  if (/landscap|lawn|tree service/.test(s)) return 'Landscaping';
+  if (/hvac|plumb|roof|electric|garage door|pest|handyman|remodel|cleaning|air condition/.test(s)) return 'Home Services';
+  if (/coffee|cafe|espresso/.test(s)) return 'Coffee';
+  if (/restaurant|deli|bbq|barbecue|pizza|bakery|grill|diner|steak|taco|sandwich/.test(s)) return 'Restaurants';
+  if (/dentist|doctor|medical|clinic|chiroprac|health|physician|pediatric|dermatol|veterinar/.test(s)) return 'Healthcare';
+  if (/law firm|attorney|legal|lawyer/.test(s)) return 'Legal';
+  if (/construction|builder|general contractor|concrete|excavat|masonry/.test(s)) return 'Construction';
+  if (/breeder|kennel/.test(s)) return 'Dog Breeders';
+  if (/farm|orchard/.test(s)) return 'Farm';
+  if (/tour|charter|boat|fishing|kayak|adventure/.test(s)) return 'Tourism';
+  return null;
+}
+function parseImportRows(text) {
+  text = text.trim();
+  let rows;
+  try { rows = JSON.parse(text); } catch (e) {
+    rows = text.split('\n').map(l => { try { return JSON.parse(l); } catch (e2) { return null; } }).filter(Boolean);
+  }
+  if (!Array.isArray(rows)) rows = [rows];
+  return rows.filter(r => r && (r.name || r.title));
+}
+function importLeads(text) {
+  const rows = parseImportRows(text);
+  if (!rows.length) return { added: 0, skipped: 0, error: 'No leads recognized — paste the JSON that scout.mjs put on your clipboard.' };
+  const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const existing = new Set(companies().map(c => norm(c.name) + '|' + norm(c.loc)));
+  let added = 0, skipped = 0;
+  rows.forEach(r => {
+    const name = r.name || r.title;
+    const loc = r.city || r.loc || (r.address ? String(r.address).split(',').slice(-2).join(',').trim() : '—');
+    const key = norm(name) + '|' + norm(loc);
+    if (existing.has(key)) { skipped++; return; }
+    existing.add(key);
+    const website = r.website || r.web_site || '';
+    const socialUrl = r.social || '';
+    const noSite = !website && !socialUrl;
+    const fbOnly = !website && !!socialUrl;
+    const gCat = r.category || r.type || '';
+    const cat = mapCat(gCat) || (gCat ? gCat.replace(/\b\w/g, ch => ch.toUpperCase()) : 'Other');
+    const ratingBit = (r.rating != null && r.reviews != null) ? `${r.rating}★ (${r.reviews} reviews)` : '';
+    const co = {
+      custom: true, id: 'c' + Math.random().toString(36).slice(2, 9),
+      name, cat, loc, type: gCat,
+      web: noSite ? 'No site' : fbOnly ? 'Facebook/IG only' : website,
+      pitch: noSite ? 'No website at all — full build' : fbOnly ? 'Social-only presence — needs a real site' : '',
+      phone: r.phone || '', email: r.email || '', contact: '',
+      social: socialUrl ? (/instagram/i.test(socialUrl) ? { fb: '', ig: socialUrl.replace(/^.*instagram\.com\//i, '').replace(/\/.*$/, '') } : { fb: socialUrl, ig: '' }) : null,
+      importNote: [`Imported from Google Maps scrape ${today()}`, ratingBit, r.address || '', r.maps_link || ''].filter(Boolean).join(' · '),
+      stage: 'Prospect', lastContact: '—',
+      value: noSite || fbOnly ? 4000 : 3500, est: true,
+      score: noSite || fbOnly
+        ? { design: 16, mobile: 16, seo: 15, portal: 15, dashboard: 15 }
+        : { design: 11, mobile: 12, seo: 11, portal: 14, dashboard: 14 },
+      notes: [], outreach: [], opps: [],
+    };
+    ov.custom.push(co); added++;
+  });
+  if (added) syncMeta();
+  return { added, skipped };
+}
+function showImport() {
+  const el = document.createElement('div');
+  el.className = 'overlay';
+  el.innerHTML = `
+    <div class="proposal" style="max-width:640px">
+      <div class="p-kicker">Williams Digital · Lead import</div>
+      <h2>Import leads from a Google Maps scrape</h2>
+      <p style="font-size:14px;color:var(--ink-soft)">On your Mac: <code style="font-family:var(--mono);font-size:12.5px">cd ~/wdcc-scout && ./scout.mjs "hvac companies" "Auburn, AL"</code> — free, open-source, no API credits. It copies the results to your clipboard; paste them below. Businesses with no website import as your hottest leads.</p>
+      <textarea id="import-text" style="min-height:180px;font-family:var(--mono);font-size:12px" placeholder='[&#10; { "name": "...", "website": "", "phone": "...", "category": "...", "city": "..." }&#10;]'></textarea>
+      <div id="import-msg" style="font-size:13px;margin-top:8px;color:var(--ink-soft)"></div>
+      <div class="p-actions">
+        <button class="btn" id="do-import">Import</button>
+        <button class="btn ghost" data-close>Close</button>
+      </div>
+    </div>`;
+  el.addEventListener('click', e => { if (e.target === el || e.target.closest('[data-close]')) el.remove(); });
+  el.querySelector('#do-import').onclick = () => {
+    const res = importLeads(el.querySelector('#import-text').value);
+    if (res.error) { el.querySelector('#import-msg').textContent = res.error; return; }
+    el.remove();
+    go('leads');
+  };
+  document.body.appendChild(el);
+}
+
 /* =============== Proposal =============== */
 function showProposal(c) {
   const cfg = catCfg(c.cat);
@@ -1725,6 +1815,8 @@ function wire() {
     const t = b.textContent; b.textContent = 'Copied ✓ — paste in chat'; setTimeout(() => b.textContent = t, 2500);
   });
 
+  const importCo = $('#import-co');
+  if (importCo) importCo.onclick = () => showImport();
   const addCo = $('#add-co');
   if (addCo) addCo.onclick = () => {
     const name = prompt('Company name?');
