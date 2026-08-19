@@ -744,7 +744,7 @@ function viewCompanies() {
     </tr>`;
   }).join('');
   return `
-    <div class="view-head"><h2>Companies</h2><div class="spacer"></div><button class="btn ghost" id="import-co">⇪ Import leads</button><button class="btn" id="add-co">+ Add company</button></div>
+    <div class="view-head"><h2>Companies</h2><div class="spacer"></div><button class="btn ghost" id="import-co">◎ Find leads on Google</button><button class="btn" id="add-co">+ Add company</button></div>
     <p class="view-sub">The master database — every lead from the prospect pipeline, plus anything you add.</p>
     ${filterBar(list.length, all.length)}
     <div class="card table-scroll">
@@ -1672,18 +1672,30 @@ function importLeads(text) {
   if (added) syncMeta();
   return { added, skipped };
 }
+// Local helper (scout-server.mjs on Dylan's Mac). The browser talks to
+// loopback directly — localhost is exempt from mixed-content blocking, so this
+// works from the https:// site whenever the helper is running on this machine.
+const SCOUT_LOCAL = 'http://127.0.0.1:8484';
 function showImport() {
   const el = document.createElement('div');
   el.className = 'overlay';
   el.innerHTML = `
-    <div class="proposal" style="max-width:640px">
-      <div class="p-kicker">Williams Digital · Lead import</div>
-      <h2>Import leads from a Google Maps scrape</h2>
-      <p style="font-size:14px;color:var(--ink-soft)">On your Mac: <code style="font-family:var(--mono);font-size:12.5px">cd ~/wdcc-scout && ./scout.mjs "hvac companies" "Auburn, AL"</code> — free, open-source, no API credits. It copies the results to your clipboard; paste them below. Businesses with no website import as your hottest leads.</p>
-      <textarea id="import-text" style="min-height:180px;font-family:var(--mono);font-size:12px" placeholder='[&#10; { "name": "...", "website": "", "phone": "...", "category": "...", "city": "..." }&#10;]'></textarea>
+    <div class="proposal" style="max-width:660px">
+      <div class="p-kicker">Williams Digital · Lead scout</div>
+      <h2>Find companies on Google</h2>
+      <p style="font-size:13.5px;color:var(--ink-soft);margin:6px 0 2px">Free, open-source Google Maps scrape — runs on your Mac via the scout helper, no API credits. Businesses with no website import as your hottest leads. <span id="scout-status" style="font-family:var(--mono);font-size:11px;color:var(--caution)">checking for helper…</span></p>
+      <div class="aud-form" style="margin-top:10px">
+        <input type="text" id="scout-industry" placeholder="Industry (e.g. hvac companies)" style="flex:2">
+        <input type="text" id="scout-city" placeholder="City (e.g. Birmingham, AL)" style="flex:1.6">
+        <select id="scout-depth"><option value="1">Quick (~15)</option><option value="3" selected>Standard (~40)</option><option value="6">Deep (~80+)</option></select>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center"><button class="btn" id="run-scout" disabled>Run scout</button><span id="scout-progress" style="font-size:13px;color:var(--ink-soft)"></span></div>
+      <h3 style="margin-top:24px">…or paste scout JSON</h3>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:0 0 6px">Terminal fallback: <code style="font-family:var(--mono);font-size:12px">cd ~/wdcc-scout && ./scout.mjs "hvac companies" "Auburn, AL"</code> copies importable JSON to your clipboard.</p>
+      <textarea id="import-text" style="min-height:120px;font-family:var(--mono);font-size:12px" placeholder='[&#10; { "name": "...", "website": "", "phone": "...", "category": "...", "city": "..." }&#10;]'></textarea>
       <div id="import-msg" style="font-size:13px;margin-top:8px;color:var(--ink-soft)"></div>
       <div class="p-actions">
-        <button class="btn" id="do-import">Import</button>
+        <button class="btn" id="do-import">Import pasted JSON</button>
         <button class="btn ghost" data-close>Close</button>
       </div>
     </div>`;
@@ -1694,6 +1706,57 @@ function showImport() {
     el.remove();
     go('leads');
   };
+
+  const statusEl = el.querySelector('#scout-status');
+  const runBtn = el.querySelector('#run-scout');
+  const progEl = el.querySelector('#scout-progress');
+
+  // Detect the local helper (1.5s budget so the dialog never feels stuck).
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 1500);
+  fetch(SCOUT_LOCAL + '/health', { signal: ctrl.signal }).then(r => r.json()).then(h => {
+    clearTimeout(t);
+    if (h.busy) { statusEl.textContent = '● helper connected — a scrape is already running, wait for it'; statusEl.style.color = 'var(--caution)'; return; }
+    statusEl.textContent = '● helper connected';
+    statusEl.style.color = 'var(--go)';
+    runBtn.disabled = false;
+  }).catch(() => {
+    clearTimeout(t);
+    statusEl.textContent = '○ helper not running on this Mac — start it: node ~/wdcc-scout/scout-server.mjs (or use the paste fallback below)';
+    statusEl.style.color = 'var(--stop)';
+  });
+
+  runBtn.onclick = () => {
+    const industry = el.querySelector('#scout-industry').value.trim();
+    const city = el.querySelector('#scout-city').value.trim();
+    const depth = el.querySelector('#scout-depth').value;
+    if (!industry || !city) { progEl.textContent = 'Enter an industry and a city.'; return; }
+    runBtn.disabled = true;
+    const t0 = Date.now();
+    const tick = setInterval(() => {
+      progEl.textContent = `Scraping Google Maps for "${industry}" in ${city}… ${Math.round((Date.now()-t0)/1000)}s (deep runs can take a few minutes)`;
+    }, 1000);
+    fetch(SCOUT_LOCAL + '/scout', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ industry, city, depth }),
+    }).then(async r => {
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'HTTP ' + r.status);
+      return data;
+    }).then(data => {
+      clearInterval(tick);
+      const res = importLeads(JSON.stringify(data.leads || []));
+      const noSite = (data.leads || []).filter(l => !l.website).length;
+      el.remove();
+      go('leads');
+      alert(`Scout done: ${res.added} leads imported (${res.skipped} already in the database). ${noSite} have no website — they're at the top of your feed.`);
+    }).catch(err => {
+      clearInterval(tick);
+      runBtn.disabled = false;
+      progEl.textContent = 'Scout failed: ' + err.message;
+    });
+  };
+
   document.body.appendChild(el);
 }
 
