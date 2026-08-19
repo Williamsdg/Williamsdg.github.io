@@ -558,6 +558,7 @@ function companies() {
       notes: o?.notes || [],
       outreach: o?.outreach || [],
       userOpps: o?.opps || [],
+      preview: o?.preview || null,
     });
   });
   return merged.concat(ov.custom.map(c => Object.assign({ userOpps: c.opps || [], notes: c.notes || [], outreach: c.outreach || [], est: false }, c)));
@@ -598,6 +599,8 @@ function pkg(c) {
 }
 function today() { const d = new Date(); return (d.getMonth()+1) + '/' + d.getDate(); }
 const stageIdx = s => STAGES.indexOf(s);
+const slugify = s => String(s || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const previewUrl = c => (c.preview && c.preview.url) || '';
 
 /* =============== Router =============== */
 const VIEWS = [
@@ -670,6 +673,10 @@ function viewDashboard() {
   const workingVal = working.reduce((n,c) => n + c.value, 0);
   const due = ov.tasks.filter(t => !t.done).length;
   const top = prospects.slice().sort((a,b) => total(b)-total(a)).slice(0,5);
+  const td = today();
+  const previews = cos.filter(c => c.preview).length;
+  const prevsToday = cos.filter(c => c.preview && c.preview.date === td).length;
+  const msgsToday = cos.reduce((n,c) => n + c.outreach.filter(([d]) => d === td).length, 0);
   return `
     <div class="view-head"><h2>Dashboard</h2></div>
     <p class="view-sub">The day at a glance across all ${cos.length.toLocaleString()} companies.</p>
@@ -677,6 +684,7 @@ function viewDashboard() {
       <div class="card tile"><div class="t-label">New leads</div><div class="t-num">${prospects.length.toLocaleString()}</div><div class="t-hint">untouched, in the feed</div></div>
       <div class="card tile"><div class="t-label">In progress</div><div class="t-num">${working.length}</div><div class="t-hint">contacted → negotiation</div></div>
       <div class="card tile"><div class="t-label">Working pipeline</div><div class="t-num">${money(workingVal)}</div><div class="t-hint">est. value in progress</div></div>
+      <div class="card tile"><div class="t-label">Previews built</div><div class="t-num">${previews}</div><div class="t-hint">${prevsToday} today · ${msgsToday} msgs logged today</div></div>
       <div class="card tile"><div class="t-label">Tasks due</div><div class="t-num">${due}</div><div class="t-hint">open follow-ups</div></div>
     </div>
     <div class="grid-2">
@@ -696,7 +704,7 @@ function leadRow(c) {
   return `<div class="lead-row">
     <div class="l-main">
       <div class="l-name">${esc(c.name)}</div>
-      <div class="l-meta"><span class="chip ${chipClass(c.cat)}">${esc(c.cat)}</span> · ${esc(c.loc)} · ${esc(c.pitch || c.type)}</div>
+      <div class="l-meta"><span class="chip ${chipClass(c.cat)}">${esc(c.cat)}</span> · ${esc(c.loc)} · ${esc(c.pitch || c.type)}${c.preview ? ' · <span style="color:var(--go);font-weight:600">▶ preview live</span>' : ''}</div>
     </div>
     <span class="score-pill ${scoreClass(t)}">${t}${c.est?' <span class="est">est</span>':''}</span>
     <button class="btn small ghost" data-open="${c.id}">Open</button>
@@ -753,7 +761,7 @@ function viewCompany(c) {
   const cfg = catCfg(c.cat);
   const p = pkg(c);
   const opps = derivedOpps(c);
-  const tabs = [['overview','Overview'],['notes',`Notes (${c.notes.length + (c.importNote?1:0)})`],['opps','Opportunities'],['demos','Playbook & Demos'],['outreach','Outreach'],['contact','Contact']];
+  const tabs = [['overview','Overview'],['notes',`Notes (${c.notes.length + (c.importNote?1:0)})`],['opps','Opportunities'],['demos','Playbook & Demos'],['preview',`Preview${c.preview?' ✓':''}`],['outreach','Outreach'],['contact','Contact']];
   let body = '';
   if (companyTab === 'overview') {
     body = `
@@ -818,7 +826,39 @@ function viewCompany(c) {
       <div class="mini-label">Full playbook</div>
       <a href="${W}sales-playbook/" target="_blank" rel="noopener">Open the Sales Playbook →</a>
     </div>`;
+  } else if (companyTab === 'preview') {
+    const slug = slugify(c.name);
+    const suggested = W + slug + '/';
+    const brief = buildBriefText(briefInfoFromCompany(c));
+    body = `<div class="card panel">
+      <h3>Preview site</h3>
+      ${c.preview ? `
+        <div class="demo-asset"><span class="what">▶ Live preview</span><a href="${esc(c.preview.url)}" target="_blank" rel="noopener">${esc(c.preview.url.replace('https://',''))}</a><span style="font-family:var(--mono);font-size:11px;color:var(--ink-soft)">saved ${esc(c.preview.date || '')}</span></div>
+        <p style="font-size:13px;color:var(--ink-soft);margin:8px 0 0">This URL is auto-inserted into every message in the Outreach tab.</p>
+        <div style="margin-top:10px"><button class="btn small danger" id="del-preview">Remove preview URL</button></div>
+      ` : `
+        <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 10px">No preview yet. Copy the build brief below into Claude Code, deploy to the suggested URL, then save it here — the Outreach tab picks it up automatically.</p>
+        <div class="note-form" style="max-width:540px">
+          <input type="url" id="preview-url" placeholder="${esc(suggested)}">
+          <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" id="save-preview">Save preview URL</button><button class="btn small ghost" id="use-suggested">Use suggested: ${esc(slug)}/</button></div>
+        </div>
+      `}
+      <div class="mini-label">Claude build brief — the "Generate Preview" step</div>
+      <div class="gen-block">
+        <div class="gb-head"><span class="gb-title">Preview build brief</span><button class="btn ghost small copy-btn" data-copy="brief-text">Copy</button></div>
+        <pre id="brief-text">${esc(brief)}</pre>
+      </div>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 0">Built from this company's research data${derivedOpps(c).length > 1 ? ' + recorded opportunities' : ''}. Run the AI Auditor on this company first to feed it real findings.</p>
+    </div>`;
   } else if (companyTab === 'outreach') {
+    const pack = buildPack(c);
+    const packBlocks = [
+      ['pk-email','Cold email',pack.email],
+      ['pk-fb','Facebook / Instagram DM',pack.fb],
+      ['pk-text','Text message',pack.text],
+      ['pk-fu1','Follow-up #1 (2–3 days later)',pack.fu1],
+      ['pk-fu2','Follow-up #2 (about a week later)',pack.fu2],
+    ];
     body = `<div class="card panel">
       <h3>Outreach history</h3>
       ${c.outreach.length ? `<ul class="timeline">${c.outreach.map(([d,w]) => `<li><div class="t-date">${esc(d)}</div><div class="t-what">${esc(w)}</div></li>`).join('')}</ul>` : '<div class="empty">No outreach yet.</div>'}
@@ -826,6 +866,14 @@ function viewCompany(c) {
         <input type="text" id="outreach-text" placeholder="Log outreach (e.g. Discovery call)">
         <div><button class="btn small" id="add-outreach">Log for today</button></div>
       </div>
+    </div>
+    <div class="card panel" style="margin-top:16px">
+      <h3>Outreach pack <span style="font-weight:400;color:var(--ink-soft);font-size:12.5px">— generated from this company's data${c.preview ? ' + preview link' : ''}</span></h3>
+      ${c.preview ? '' : `<div class="future-note">No preview URL saved yet — messages below use a placeholder. Build the preview first (Preview tab): leading with a finished site is the whole play.</div>`}
+      ${packBlocks.map(([id,title,text]) => `<div class="gen-block">
+        <div class="gb-head"><span class="gb-title">${title}</span><button class="btn ghost small" style="margin-left:auto" data-logsend="${esc(title)}">Log sent</button><button class="btn ghost small copy-btn" style="margin-left:8px" data-copy="${id}">Copy</button></div>
+        <pre id="${id}">${esc(text)}</pre>
+      </div>`).join('')}
     </div>`;
   } else if (companyTab === 'contact') {
     body = `<div class="card panel">
@@ -859,6 +907,7 @@ function viewCompany(c) {
         <div class="fact"><div class="f-label">Phone</div><div class="f-val">${c.phone ? `<a href="tel:${esc(c.phone.replace(/[^+\d]/g,''))}">${esc(c.phone)}</a>` : '—'}</div></div>
         <div class="fact"><div class="f-label">Est. value</div><div class="f-val">${money(c.value)}</div></div>
         <div class="fact"><div class="f-label">Last contact</div><div class="f-val">${esc(c.lastContact)}</div></div>
+        <div class="fact"><div class="f-label">Preview</div><div class="f-val">${c.preview ? `<a href="${esc(c.preview.url)}" target="_blank" rel="noopener" style="color:var(--go)">▶ live</a>` : '—'}</div></div>
         <div class="fact"><div class="f-label">Assigned to</div><div class="f-val">${esc(ov.rep)}</div></div>
       </div>
     </div>
@@ -883,7 +932,7 @@ function viewPipeline() {
       <div class="col-body">
         ${list.map(c => `<div class="pcard" draggable="true" data-drag="${c.id}">
           <div class="p-name">${esc(c.name)}</div>
-          <div class="p-meta"><span class="score-pill ${scoreClass(total(c))}" style="font-size:11px;padding:1px 8px">${total(c)}</span> ${money(c.value)}</div>
+          <div class="p-meta"><span class="score-pill ${scoreClass(total(c))}" style="font-size:11px;padding:1px 8px">${total(c)}</span> ${money(c.value)}${c.preview ? ' <span style="color:var(--go)" title="Preview site live">▶</span>' : ''}</div>
         </div>`).join('')}
       </div>
       ${more ? `<div class="col-more">+${more.toLocaleString()} more — work them in the <a href="#" data-nav="leads">Lead Feed</a></div>` : ''}
@@ -1199,10 +1248,97 @@ function auditReportHTML(rep) {
         <pre id="aud-text">${esc(outreach.text)}</pre>
       </div>
       <div class="gen-block">
-        <div class="gb-head"><span class="gb-title">Homepage mockup prompt</span><button class="btn ghost small copy-btn" data-copy="aud-mock">Copy</button></div>
+        <div class="gb-head"><span class="gb-title">Preview build brief — paste into Claude Code</span><button class="btn ghost small copy-btn" data-copy="aud-mock">Copy</button></div>
         <pre id="aud-mock">${esc(outreach.mockup)}</pre>
       </div>
     </div>`;
+}
+
+/* =============== Preview brief + outreach pack =============== */
+// The middle of the workflow: find lead -> audit -> BUILD BRIEF -> preview site
+// -> outreach pack that leads with the preview URL.
+function buildBriefText(info) {
+  const cfg = catCfg(info.cat);
+  const slug = slugify(info.name);
+  const issues = (info.issues || []).filter(Boolean);
+  return `Create a modern website concept for ${info.name}, a ${info.type || info.cat || 'local business'}${info.loc ? ` in ${info.loc}` : ''}.
+
+DELIVERABLE
+- Single-page static site (HTML/CSS/JS, no build step), mobile-first.
+- Deploy to: https://williamsdigital.io/preview/${slug}/
+- Include <meta name="robots" content="noindex, nofollow"> — this is a private sales preview.
+
+BUSINESS FACTS — use only these; do NOT invent services, prices, reviews, or awards
+- Name: ${info.name}
+- Type: ${info.type || '—'}${info.cat ? ` (${info.cat})` : ''}
+- Location: ${info.loc || 'unknown'}
+- Phone: ${info.phone || 'unknown'}
+- Email: ${info.email || 'unknown'}
+- Current web presence: ${info.web || 'unknown'}
+${info.pitch ? `- Research notes: ${info.pitch}` : ''}
+
+PROBLEMS WITH THEIR CURRENT PRESENCE — the preview must visibly fix these
+${issues.length ? issues.map(x => '- ' + x).join('\n') : '- (none recorded — run the AI Auditor on this company first for a real issue list)'}
+
+SECTIONS
+1. Hero — business name, ${info.loc ? info.loc.split(',')[0] : 'local'} locality, one strong call-to-action${info.phone ? ` (tap-to-call ${info.phone})` : ''}. Premium ${(info.cat || 'local-business').toLowerCase()} feel with a distinctive hero interaction.
+2. Services — infer the obvious services for this trade; mark anything unverified [PLACEHOLDER].
+3. Trust — reviews/testimonials block. No real reviews on hand = clearly-labeled placeholder cards.
+4. ${cfg.portalWord} teaser — show what online self-service could look like (this is the upsell).
+5. Service area — ${info.loc || 'their city'} + surrounding areas, written for local SEO.
+6. Contact — tap-to-call, hours [PLACEHOLDER], embedded map placeholder.
+
+DESIGN DIRECTION
+- Mobile-first and fast: no frameworks, optimized images, above-the-fold CTA visible instantly.
+- Premium but approachable. Quality bar: ${cfg.demoName} — ${cfg.demos[0] ? cfg.demos[0][1] : W + 'portfolio/'}
+- Derive the palette from their existing branding/logo if visible; otherwise choose one that fits the trade.
+
+GUARDRAILS
+- Every unverified fact (prices, hours, review text) gets a [PLACEHOLDER] label.
+- No fabricated claims, press mentions, or credentials.`;
+}
+function briefInfoFromCompany(c) {
+  return { name: c.name, cat: c.cat, type: c.type, loc: c.loc, phone: c.phone, email: c.email,
+    web: c.web, pitch: c.pitch || c.importNote || '',
+    issues: derivedOpps(c).filter(o => !o.startsWith('Pitch angle')) };
+}
+function buildPack(c) {
+  const first = c.contact ? String(c.contact).split(/[ &,]/)[0] : 'there';
+  const prev = previewUrl(c) || '[PREVIEW URL — build it and save it in the Preview tab]';
+  const issues = derivedOpps(c).filter(o => !o.startsWith('Pitch angle'));
+  const hook = issues[0] ? issues[0].toLowerCase().replace(/\.$/, '') : 'a few things that are probably costing you customers';
+
+  const email =
+`Subject: I went ahead and built ${c.name} a new website
+
+Hi ${first},
+
+I came across ${c.name}${c.loc ? ` here in ${c.loc}` : ''} and noticed ${hook}. Instead of sending a pitch deck, I just built you a working preview of what a modern site could look like:
+
+${prev}
+
+It's yours to click around — nothing to sign up for. If you like the direction, I'll tailor it to exactly how you run things and get it live fast. If not, no hard feelings and the preview comes down.
+
+Worth a 10-minute call this week?
+
+Dylan Williams
+Williams Digital · Dylan@williamsdigital.io`;
+
+  const fb =
+`Hi ${first} — Dylan with Williams Digital${c.loc ? ` (${c.loc.split(',')[0]} area)` : ''}. I build websites for ${(c.cat || 'local').toLowerCase()} businesses and went ahead and made a free preview of what ${c.name}'s could look like: ${prev} — take a look and tell me what you think. No strings attached; if it's not for you, just ignore this and I'll take it down.`;
+
+  const text =
+`Hi ${first}, Dylan w/ Williams Digital. I built a quick preview of a new website for ${c.name} — see it here: ${prev}. Free to look, no obligation. Happy to walk you through it anytime.`;
+
+  const fu1 =
+`Hi ${first} — just making sure the preview link didn't get buried: ${prev}. Owners usually tell me the mobile version is what surprises them — most of your customers are finding you on their phone. Any reaction, good or bad, is useful to me.`;
+
+  const fu2 =
+`Hi ${first} — last note from me, I promise. The preview for ${c.name} (${prev}) comes down at the end of the month. If the timing's just wrong, say so and I'll check back in a few months instead. Otherwise it's a quick project — most sites like this are live within two weeks.
+
+— Dylan, Williams Digital`;
+
+  return { email, fb, text, fu1, fu2 };
 }
 
 function generateOutreach(rep, findings, cfg, est) {
@@ -1235,10 +1371,17 @@ Williams Digital · Dylan@williamsdigital.io`;
   const text =
 `Hi ${first} — Dylan with Williams Digital. Took a look at ${name}'s site and noticed ${topLine}. I build modern sites + ${cfg.portalWord.toLowerCase()} for ${c?c.cat.toLowerCase():'local'} businesses and can send a free homepage mockup first. Open to a quick call this week?`;
 
-  const mockup =
-`Design a modern homepage mockup for "${name}", a ${c?c.type||c.cat:'local business'}${loc?` in ${loc}`:''}.
-Fix these problems from the current site: ${findings.slice(0,4).map(f=>f.text.replace(/\s*\(vision model\)/,'')).join('; ')}.
-Requirements: clean mobile-first layout, clear above-the-fold call-to-action, ${cfg.portalWord.toLowerCase()}, prominent trust signals (reviews/credentials), fast-loading hero, cohesive modern brand palette. Match the polish of the Williams Digital ${cfg.demoName} demo.`;
+  const mockup = buildBriefText({
+    name,
+    cat: c ? c.cat : (rep.cat || null),
+    type: c ? c.type : '',
+    loc,
+    phone: c ? c.phone : ((rep.apiItem && rep.apiItem.phone) || ''),
+    email: c ? c.email : '',
+    web: rep.url || (c ? c.web : ''),
+    pitch: c ? c.pitch : (rep.apiScore ? rep.apiScore.reasoning || '' : ''),
+    issues: findings.slice(0, 6).map(f => f.text.replace(/\s*\(vision model\)/, '')),
+  });
 
   return { email, text, mockup };
 }
@@ -1530,6 +1673,24 @@ function wire() {
   };
   const gen = $('#gen-proposal');
   if (gen && c) gen.onclick = () => showProposal(c);
+
+  // Preview workflow
+  const savePrev = $('#save-preview');
+  if (savePrev && c) savePrev.onclick = () => {
+    const u = ($('#preview-url').value || '').trim();
+    if (!u) return;
+    mutate(c, o => { o.preview = { url: u, date: today() }; });
+  };
+  const useSug = $('#use-suggested');
+  if (useSug && c) useSug.onclick = () => {
+    mutate(c, o => { o.preview = { url: W + slugify(c.name) + '/', date: today() }; });
+  };
+  const delPrev = $('#del-preview');
+  if (delPrev && c) delPrev.onclick = () => mutate(c, o => { o.preview = null; });
+  document.querySelectorAll('[data-logsend]').forEach(b => b.onclick = () => {
+    if (!c) return;
+    mutate(c, o => { (o.outreach = o.outreach || []).push([today(), b.dataset.logsend + ' sent']); o.lastContact = today(); });
+  });
 
   const addCo = $('#add-co');
   if (addCo) addCo.onclick = () => {
