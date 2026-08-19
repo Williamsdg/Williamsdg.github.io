@@ -559,6 +559,7 @@ function companies() {
       outreach: o?.outreach || [],
       userOpps: o?.opps || [],
       preview: o?.preview || null,
+      social: o?.social || null,
     });
   });
   return merged.concat(ov.custom.map(c => Object.assign({ userOpps: c.opps || [], notes: c.notes || [], outreach: c.outreach || [], est: false }, c)));
@@ -870,10 +871,16 @@ function viewCompany(c) {
     <div class="card panel" style="margin-top:16px">
       <h3>Outreach pack <span style="font-weight:400;color:var(--ink-soft);font-size:12.5px">— generated from this company's data${c.preview ? ' + preview link' : ''}</span></h3>
       ${c.preview ? '' : `<div class="future-note">No preview URL saved yet — messages below use a placeholder. Build the preview first (Preview tab): leading with a finished site is the whole play.</div>`}
-      ${packBlocks.map(([id,title,text]) => `<div class="gen-block">
-        <div class="gb-head"><span class="gb-title">${title}</span><button class="btn ghost small" style="margin-left:auto" data-logsend="${esc(title)}">Log sent</button><button class="btn ghost small copy-btn" style="margin-left:8px" data-copy="${id}">Copy</button></div>
-        <pre id="${id}">${esc(text)}</pre>
-      </div>`).join('')}
+      ${packBlocks.map(([id,title,text]) => {
+        const dmBtns = id !== 'pk-fb' ? '' :
+          (c.social?.fb ? `<button class="btn small" data-dm="fb">Copy &amp; open Messenger</button>` : '') +
+          (c.social?.ig ? `<button class="btn small" style="margin-left:8px" data-dm="ig">Copy &amp; open Instagram</button>` : '');
+        const dmHint = id === 'pk-fb' && !c.social?.fb && !c.social?.ig
+          ? `<p style="font-size:12px;color:var(--ink-soft);margin:8px 14px 4px">Add their Facebook page / Instagram handle in the Contact tab to get one-click "copy &amp; open DM" buttons here.</p>` : '';
+        return `<div class="gen-block">
+        <div class="gb-head"><span class="gb-title">${title}</span><span style="margin-left:auto">${dmBtns}</span><button class="btn ghost small" style="margin-left:8px" data-logsend="${esc(title)}">Log sent</button><button class="btn ghost small copy-btn" style="margin-left:8px" data-copy="${id}">Copy</button></div>
+        <pre id="${id}">${esc(text)}</pre>${dmHint}
+      </div>`; }).join('')}
     </div>`;
   } else if (companyTab === 'contact') {
     body = `<div class="card panel">
@@ -885,6 +892,14 @@ function viewCompany(c) {
         <div class="fact"><div class="f-label">Business type</div><div class="f-val">${esc(c.type || '—')}</div></div>
         <div class="fact"><div class="f-label">Web presence</div><div class="f-val">${esc(c.web || '—')}</div></div>
         <div class="fact"><div class="f-label">Pitch angle</div><div class="f-val">${esc(c.pitch || '—')}</div></div>
+        <div class="fact"><div class="f-label">Facebook</div><div class="f-val">${c.social?.fb ? `<a href="${esc(c.social.fb.startsWith('http') ? c.social.fb : 'https://' + c.social.fb)}" target="_blank" rel="noopener">page ↗</a>` : '—'}</div></div>
+        <div class="fact"><div class="f-label">Instagram</div><div class="f-val">${c.social?.ig ? `<a href="https://instagram.com/${esc(c.social.ig.replace(/^@/,''))}" target="_blank" rel="noopener">@${esc(c.social.ig.replace(/^@/,''))}</a>` : '—'}</div></div>
+      </div>
+      <div class="mini-label">Social — powers the one-click DM buttons in the Outreach tab</div>
+      <div class="note-form" style="max-width:460px">
+        <input type="text" id="soc-fb" placeholder="Facebook page URL (facebook.com/theirpage)" value="${esc(c.social?.fb || '')}">
+        <input type="text" id="soc-ig" placeholder="Instagram handle (without @)" value="${esc(c.social?.ig || '')}">
+        <div><button class="btn small" id="save-social">Save social</button></div>
       </div>
     </div>`;
   }
@@ -1582,7 +1597,7 @@ function viewSettings() {
         <div style="display:flex;gap:8px"><button class="btn small" id="save-token">Save token</button>${ov.audToken?'<button class="btn small danger" id="clear-token">Turn off live</button>':''}</div>
       </div>
       <div class="mini-label">Data</div>
-      <p style="font-size:13.5px;color:var(--ink-soft)">${LEADS.length.toLocaleString()} imported leads (read-only base data) + ${ov.custom.length} added here. Source: the Prospect Pipeline research database.</p>
+      <p style="font-size:13.5px;color:var(--ink-soft)">${LEADS.length.toLocaleString()} imported leads + ${ov.custom.length} added here. Fresh database — add leads with the AI Auditor's "Search a city" mode (the old imported dataset lives in git history if you ever want it back).</p>
       <div class="mini-label">Sync</div>
       <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 6px">Edits sync to a shared Supabase table (${SB_TABLE}). Any device that opens this page sees the same up-to-date pipeline.</p>
       ${syncBadge()}
@@ -1690,6 +1705,24 @@ function wire() {
   document.querySelectorAll('[data-logsend]').forEach(b => b.onclick = () => {
     if (!c) return;
     mutate(c, o => { (o.outreach = o.outreach || []).push([today(), b.dataset.logsend + ' sent']); o.lastContact = today(); });
+  });
+  const saveSocial = $('#save-social');
+  if (saveSocial && c) saveSocial.onclick = () => {
+    const fb = ($('#soc-fb').value || '').trim();
+    const ig = ($('#soc-ig').value || '').trim().replace(/^@/,'');
+    mutate(c, o => { o.social = (fb || ig) ? { fb, ig } : null; });
+  };
+  // Copy the DM text, then open the conversation — Meta has no API for cold DMs,
+  // so this is the fastest compliant path: one click = text on clipboard + chat open.
+  document.querySelectorAll('[data-dm]').forEach(b => b.onclick = () => {
+    if (!c || !c.social) return;
+    const text = document.getElementById('pk-fb')?.textContent || '';
+    navigator.clipboard?.writeText(text);
+    const url = b.dataset.dm === 'fb'
+      ? (c.social.fb.startsWith('http') ? c.social.fb : 'https://' + c.social.fb)
+      : 'https://ig.me/m/' + c.social.ig;
+    window.open(url, '_blank', 'noopener');
+    const t = b.textContent; b.textContent = 'Copied ✓ — paste in chat'; setTimeout(() => b.textContent = t, 2500);
   });
 
   const addCo = $('#add-co');
