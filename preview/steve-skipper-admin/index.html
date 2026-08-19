@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Skipper Kickoff — Submissions</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ivory:#F7F4EE;--charcoal:#1C1B19;--muted:#6E6A63;--gold:#A8873E;--gold-light:#C6A863;
+  --rule:rgba(28,27,25,.14);--green:#4A7A5C;
+  --serif:"Cormorant Garamond",Georgia,serif;--sans:"Inter",-apple-system,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ivory);color:var(--charcoal);font-family:var(--sans);
+  font-size:16px;line-height:1.7}
+.bar{background:var(--charcoal);color:#fff;padding:16px 28px;display:flex;
+  justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.bar h1{font-family:var(--serif);font-size:22px;margin:0;font-weight:500}
+.bar .sub{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-light)}
+.wrap{max-width:900px;margin:0 auto;padding:36px 28px 80px}
+.tokbar{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap}
+input.tok{flex:1;min-width:260px;font-family:var(--sans);font-size:15px;padding:12px 14px;
+  border:1px solid var(--rule);border-radius:2px;background:#fff}
+input.tok:focus{outline:none;border-color:var(--gold)}
+button{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;padding:12px 22px;border:1px solid var(--charcoal);
+  background:var(--charcoal);color:#fff;border-radius:2px;cursor:pointer}
+button:hover{background:var(--gold);border-color:var(--gold)}
+.meta{background:#fff;border:1px solid var(--rule);padding:18px 22px;margin-bottom:22px;
+  font-size:14px;border-radius:2px}
+.meta span{color:var(--muted)}
+.meta b{color:var(--charcoal)}
+.sec{background:#fff;border:1px solid var(--rule);border-left:3px solid var(--gold);
+  padding:20px 24px;margin-bottom:16px;border-radius:0 2px 2px 0}
+.sec h3{font-family:var(--serif);font-size:22px;margin:0 0 10px;font-weight:500}
+.sec pre{white-space:pre-wrap;word-wrap:break-word;font-family:var(--sans);font-size:15.5px;
+  margin:0;color:#3A3835;line-height:1.75}
+.sec.empty{border-left-color:var(--rule);opacity:.6}
+.sec.empty pre{color:var(--muted);font-style:italic}
+.files{margin-top:14px;border-top:1px solid var(--rule);padding-top:12px}
+.files a{display:flex;justify-content:space-between;gap:12px;padding:9px 0;
+  border-bottom:1px solid rgba(28,27,25,.07);text-decoration:none;color:var(--charcoal);font-size:14.5px}
+.files a:last-child{border-bottom:none}
+.files a:hover{color:var(--gold)}
+.files .sz{color:var(--muted);font-size:12.5px;flex-shrink:0}
+.badge{display:inline-block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  font-weight:700;padding:4px 10px;border-radius:2px;background:#E7F0E9;color:var(--green)}
+.badge.no{background:#F5EEDC;color:#8A6D2F}
+.err{background:#FBEDED;border:1px solid #E4C3C3;color:#9B3B3B;padding:16px 20px;border-radius:2px}
+.hint{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>Steve Skipper — Kickoff Submissions</h1>
+  <span class="sub">Williams Digital · Internal</span>
+</div>
+<div class="wrap">
+  <div class="tokbar">
+    <input class="tok" id="tok" placeholder="Paste Steve's token (e.g. skipper-…)">
+    <button id="go">Load</button>
+  </div>
+  <div id="out"><p class="hint">Paste the token from Steve's link (the <code>?k=</code> value) and hit Load.</p></div>
+</div>
+<script>
+const URL_="https://tkkhvbkocumyxpgsrpxv.supabase.co";
+const ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRra2h2YmtvY3VteXhwZ3NycHh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NjYyNDAsImV4cCI6MjA5NzI0MjI0MH0.piSMSUJ427thN_sjCfgOp9lbnUsWGmYqQPRMlglfd6E";
+const BUCKET="skipper-assets";
+const SECS=[["shift4shop","01 · Shift4Shop Access"],["events","02 · Upcoming Shows & Events"],
+  ["artwork","03 · Artwork Images"],["honors","04 · Honors Captions"],["content","05 · Content & Sections"]];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=b=>!b?'':b<1024?b+' B':b<1048576?(b/1024).toFixed(0)+' KB':(b/1048576).toFixed(1)+' MB';
+const H=t=>({'apikey':ANON,'Authorization':`Bearer ${ANON}`,'x-session-token':t,'Content-Type':'application/json'});
+
+async function load(){
+  const t=document.getElementById('tok').value.trim();
+  const out=document.getElementById('out');
+  if(!t){out.innerHTML='<div class="err">Enter a token first.</div>';return;}
+  out.innerHTML='<p class="hint">Loading…</p>';
+  try{
+    const r=await fetch(`${URL_}/rest/v1/skipper_kickoff_responses?session_token=eq.${encodeURIComponent(t)}&select=*`,{headers:H(t)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const rows=await r.json();
+    if(!rows.length){out.innerHTML='<div class="err">Nothing submitted under that token yet.</div>';return;}
+    const d=rows[0];
+    const fr=await fetch(`${URL_}/rest/v1/skipper_kickoff_files?session_token=eq.${encodeURIComponent(t)}&select=*&order=created_at.desc`,{headers:H(t)});
+    const files=fr.ok?await fr.json():[];
+
+    let html=`<div class="meta">
+      ${d.submitted_at?'<span class="badge">Submitted</span>':'<span class="badge no">Draft — not sent yet</span>'}
+      &nbsp; <span>Last updated</span> <b>${new Date(d.updated_at).toLocaleString()}</b>
+      ${d.submitted_at?`&nbsp;·&nbsp; <span>Sent</span> <b>${new Date(d.submitted_at).toLocaleString()}</b>`:''}
+      ${d.contact?`<br><span>Contact given:</span> <b>${esc(d.contact)}</b>`:''}
+    </div>`;
+
+    for(const [k,label] of SECS){
+      const v=(d[k]||'').trim();
+      const mine=files.filter(f=>f.section===k);
+      html+=`<div class="sec${v||mine.length?'':' empty'}">
+        <h3>${label}</h3>
+        <pre>${v?esc(v):'— nothing entered —'}</pre>`;
+      if(mine.length){
+        html+='<div class="files">';
+        for(const f of mine){
+          const s=await fetch(`${URL_}/storage/v1/object/sign/${BUCKET}/${f.storage_path}`,
+            {method:'POST',headers:H(t),body:JSON.stringify({expiresIn:3600})});
+          let href='#';
+          if(s.ok){const j=await s.json(); href=URL_+'/storage/v1'+j.signedURL;}
+          html+=`<a href="${href}" target="_blank" rel="noopener"><span>${esc(f.file_name)}</span><span class="sz">${fmt(f.size_bytes)}</span></a>`;
+        }
+        html+='</div>';
+      }
+      html+='</div>';
+    }
+    const loose=files.filter(f=>!SECS.some(s=>s[0]===f.section));
+    if(loose.length){
+      html+='<div class="sec"><h3>Other files</h3><div class="files">';
+      for(const f of loose) html+=`<a href="#"><span>${esc(f.file_name)}</span><span class="sz">${fmt(f.size_bytes)}</span></a>`;
+      html+='</div></div>';
+    }
+    out.innerHTML=html;
+  }catch(e){
+    out.innerHTML='<div class="err">Could not load: '+esc(e.message)+'</div>';
+  }
+}
+document.getElementById('go').addEventListener('click',load);
+document.getElementById('tok').addEventListener('keydown',e=>{if(e.key==='Enter')load()});
+const k=new URLSearchParams(location.search).get('k');
+if(k){document.getElementById('tok').value=k;load();}
+</script>
+</body>
+</html>
