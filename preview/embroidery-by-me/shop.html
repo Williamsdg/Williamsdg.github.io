@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<div class="concept-note"><strong>Concept preview</strong> — sample products &amp; pricing. In the live build, checkout is completed on a secure hosted payment page.</div>
+<div class="concept-note"><strong>Concept preview</strong> — real lineup &amp; pricing from WeAddALogo's price list. Checkout is a demo until the secure payment page goes live.</div>
 
 <header class="site-header">
   <nav class="nav wrap">
@@ -44,7 +44,7 @@
       <p class="lede">A curated, rotating lineup — every piece ready to personalize. When a piece rotates out, it's gone.</p>
       <div class="shop-note">
         <span style="flex:none">🧵</span>
-        <span><strong>Preview note:</strong> these products, prices, and options are samples to show how the store works. The real lineup drops in with WeAddALogo's photos and pricing — adding or swapping products takes minutes, not a redesign.</span>
+        <span><strong>Preview note:</strong> this is WeAddALogo's real lineup and pricing, straight from the price list and current preorder flyers. Size ranges and a few colors are standard defaults pending Cindey's confirmation — and checkout is a demo until Stripe goes live.</span>
       </div>
     </div>
   </section>
@@ -111,11 +111,14 @@ EBM_PRODUCTS.forEach(p => {
   const card = document.createElement('div');
   card.className = 'prod-card';
   card.id = 'card-' + p.id;
+  const badgeCls = p.badge === 'DTF' ? ' dtf' : p.badge === 'Custom' ? ' custom' : '';
+  const media = p.photo
+    ? `<img class="prod-real" src="${p.photo}" alt="${p.name}" loading="lazy">`
+    : `${EBM_ICONS[p.icon]}<span class="photo-tag">Product photo coming</span>`;
   card.innerHTML = `
     <div class="prod-photo">
-      <span class="prod-badge${p.badge === 'DTF' ? ' dtf' : ''}">${p.badge}</span>
-      ${EBM_ICONS[p.icon]}
-      <span class="photo-tag">Product photo goes here</span>
+      <span class="prod-badge${badgeCls}">${p.badge}</span>
+      ${media}
     </div>
     <div class="prod-body">
       <h3>${p.name}</h3>
@@ -139,11 +142,14 @@ function openProduct(p) {
   let html = `
     <button class="modal-close" data-close>✕</button>
     <h3>${p.name}</h3>
-    <div class="modal-price">$${p.price}</div>`;
+    <div class="modal-price">$<span id="unitPriceLbl">${p.price}</span></div>`;
 
   Object.entries(p.options).forEach(([k, vals]) => {
     html += `<div class="opt-group"><span class="opt-label">${k}</span><div class="opt-pills" data-opt="${k}">` +
-      vals.map((v, i) => `<button class="opt-pill${i === 0 ? ' selected' : ''}" data-val="${v}">${v}</button>`).join('') +
+      vals.map((v, i) => {
+        const delta = p.optionPrices?.[k]?.[v] || 0;
+        return `<button class="opt-pill${i === 0 ? ' selected' : ''}" data-val="${v}">${v}${delta ? ` +$${delta}` : ''}</button>`;
+      }).join('') +
       `</div></div>`;
   });
 
@@ -171,6 +177,7 @@ function openProduct(p) {
       group.querySelectorAll('.opt-pill').forEach(b => b.classList.remove('selected'));
       pill.classList.add('selected');
       current.choices[group.dataset.opt] = pill.dataset.val;
+      refreshPrice();
     });
   });
   $('qtyMinus').addEventListener('click', () => setQty(current.qty - 1));
@@ -180,15 +187,28 @@ function openProduct(p) {
   show($('prodModal'));
 }
 
+function unitPrice() {
+  const p = current.product;
+  let u = p.price;
+  if (p.optionPrices) for (const [k, v] of Object.entries(current.choices)) u += (p.optionPrices[k]?.[v] || 0);
+  return u;
+}
+
+function refreshPrice() {
+  $('unitPriceLbl').textContent = unitPrice();
+  $('lineTotal').textContent = unitPrice() * current.qty;
+}
+
 function setQty(q) {
   current.qty = Math.min(20, Math.max(1, q));
   $('qtyVal').textContent = current.qty;
-  $('lineTotal').textContent = current.product.price * current.qty;
+  refreshPrice();
 }
 
 function addToCart() {
   const persInput = $('persText');
   current.text = persInput ? persInput.value.trim() : '';
+  current.unit = unitPrice();
   cart.push({ ...current });
   hideAll();
   renderCart();
@@ -208,14 +228,18 @@ function renderCart() {
   body.innerHTML = cart.map((item, idx) => {
     const opts = Object.entries(item.choices).map(([k, v]) => v).join(' · ');
     const pers = item.text ? ` · “${item.text}”` : '';
+    const unit = item.unit ?? item.product.price;
+    const thumb = item.product.photo
+      ? `<img src="${item.product.photo}" alt="${item.product.name}">`
+      : EBM_ICONS[item.product.icon];
     return `
       <div class="cart-item">
-        <div class="cart-thumb">${EBM_ICONS[item.product.icon]}</div>
+        <div class="cart-thumb">${thumb}</div>
         <div class="cart-info">
           <h4>${item.product.name}</h4>
           <div class="cart-opts">${opts}${pers}</div>
           <div class="cart-line2">
-            <span class="price">${item.qty} × $${item.product.price}</span>
+            <span class="price">${item.qty} × $${unit}</span>
             <button class="cart-remove" data-idx="${idx}">Remove</button>
           </div>
         </div>
@@ -223,7 +247,7 @@ function renderCart() {
   }).join('');
   body.querySelectorAll('.cart-remove').forEach(btn =>
     btn.addEventListener('click', () => { cart.splice(+btn.dataset.idx, 1); renderCart(); }));
-  $('cartTotal').textContent = '$' + cart.reduce((s, i) => s + i.qty * i.product.price, 0);
+  $('cartTotal').textContent = '$' + cart.reduce((s, i) => s + i.qty * (i.unit ?? i.product.price), 0);
 }
 
 /* ---------- overlay / modal plumbing ---------- */
