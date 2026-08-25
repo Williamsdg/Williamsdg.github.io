@@ -201,8 +201,8 @@ h1.h-big .amp{color:var(--bronze)}
 
 /* ---------- THE SAFE ---------- */
 #safe{position:relative;background:#060708}
-.safe-scroll{height:640svh;position:relative}
-@media(max-width:880px){.safe-scroll{height:480svh}}
+.safe-scroll{height:520svh;position:relative}
+@media(max-width:880px){.safe-scroll{height:430svh}}
 .safe-stage{
   position:sticky;top:0;height:100svh;overflow:hidden;
   background:radial-gradient(75% 60% at 50% 46%,#101317 0%,#08090A 55%,#050607 100%);
@@ -1783,6 +1783,7 @@ const deepLight  = new THREE.PointLight(0xFF8F2E, 0, 14, 1.8); deepLight.positio
 /* --- keyframes ------------------------------------------------------- */
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const easeIO = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const LIN = t => t;
 function track(p, keys, ease = easeIO){
   if(p <= keys[0][0]) return keys[0][1];
   for(let i = 0; i < keys.length - 1; i++){
@@ -1796,26 +1797,45 @@ const SWING = 1.88;
 
 /* opening — mapped to the brief's percentages */
 const K = {
-  dist:  [[0,1.62],[.20,1.06],[.30,.40],[.55,.36],[.66,1.02],[.82,1.0],[.86,.94]],
-  fly:   [[0,0],[.895,0],[1,1]],
-  dial:  [[0,0],[.20,0],[.35,D1],[.375,D1],[.45,D2],[.475,D2],[.55,D3],[.575,D3]],
-  wheel: [[0,0],[.55,0],[.645,TAU*.62],[.67,TAU*.62]],
-  bolt:  [[0,BOLT_OUT],[.65,BOLT_OUT],[.75,BOLT_IN],[1,BOLT_IN]],
-  push:  [[0,0],[.75,0],[.83,.19],[1,.19]],
-  swing: [[0,0],[.76,0],[.84,.30],[.93,1.28],[.985,SWING],[1,SWING]],
-  lightV:[[0,0],[.66,0],[.78,5],[.88,13],[.96,22],[1,28]],
-  lightS:[[0,0],[.76,0],[.88,5],[1,11]],
-  band:  [[0,0],[.74,0],[.88,.35],[1,.9]],
-  deep:  [[0,0],[.76,0],[.92,3.2],[1,5.5]],
-  emis:  [[0,0],[.78,0],[.94,.10],[1,.20]],
-  seam:  [[0,0],[.66,0],[.755,.30],[.82,.95],[.90,.7],[1,0]],
-  halo:  [[0,0],[.70,0],[.80,.10],[.86,.28],[.94,.12],[1,0]],
-  bloom: [[0,0],[.86,0],[.95,.55],[1,1]],
-  camX:  [[0,0],[.83,0],[.94,-.70],[1,-.95]],
-  camY:  [[0,0],[.82,0],[1,.20]],
-  fovA:  [[0,0],[.86,0],[1,22]],
-  inside:[[0,0],[.955,0],[1,1]]
+  //                 lock   ------- combination: 36 / 12 / 48 -------  bolts  rel   door       enter
+  dist:  [[0,1.58],[.065,1.42],[.17,1.02],[.24,.42],[.40,.37],[.50,1.02],[.80,1.0],[.85,.94]],
+  fly:   [[0,0],[.887,0],[1,1]],
+  dial:  [[0,0],[.065,0],[.165,D1],[.192,D1],[.292,D2],[.319,D2],[.419,D3],[.44,D3]],
+  wheel: [[0,0],[.419,0],[.487,TAU*.62],[.51,TAU*.62]],
+  push:  [[0,0],[.548,0],[.60,.19],[1,.19]],
+  // heavy to start, momentum through the middle, settle onto the stop
+  swing: [[0,0],[.613,0],[.70,.30],[.83,1.30],[.887,SWING],[1,SWING]],
+  lightV:[[0,0],[.548,0],[.68,5],[.80,14],[.92,24],[1,30]],
+  lightS:[[0,0],[.56,0],[.72,5],[.90,10],[1,12]],
+  band:  [[0,0],[.55,0],[.72,.32],[.88,.72],[1,.95]],
+  deep:  [[0,0],[.56,0],[.80,3.2],[1,5.5]],
+  emis:  [[0,0],[.58,0],[.88,.08],[1,.20]],
+  seam:  [[0,0],[.46,0],[.548,.35],[.62,.95],[.72,.65],[.90,0],[1,0]],
+  halo:  [[0,0],[.50,0],[.60,.12],[.68,.30],[.82,.12],[1,0]],
+  bloom: [[0,0],[.79,0],[.87,.26],[.94,.62],[1,1]],
+  camX:  [[0,0],[.62,0],[.90,-.70],[1,-.95]],
+  camY:  [[0,0],[.63,0],[.90,.16],[1,.22]],
+  fovA:  [[0,0],[.887,0],[1,22]],
+  // INSIDE reads through the opening while the door still has 20% of its travel left
+  inside:[[0,0],[.825,0],[.887,.42],[.95,.82],[1,1]]
 };
+// bolts cascade rather than firing as one block — ~53ms apart on the 6.2s spine
+const BOLT_T0 = .419, BOLT_SPAN = .048, BOLT_STAG = .0085;
+function boltsOpen(p){
+  bolts.forEach((b, i) => {
+    const t = clamp((p - BOLT_T0 - i * BOLT_STAG) / BOLT_SPAN, 0, 1);
+    const r = BOLT_OUT + (BOLT_IN - BOLT_OUT) * easeIO(t);
+    b.position.set(Math.cos(b.userData.a) * r, Math.sin(b.userData.a) * r, .02);
+  });
+}
+const SEAL_T0 = .76, SEAL_SPAN = .10, SEAL_STAG = .009;
+function boltsSeal(q){
+  bolts.forEach((b, i) => {
+    const t = clamp((q - SEAL_T0 - i * SEAL_STAG) / SEAL_SPAN, 0, 1);
+    const r = BOLT_IN + (BOLT_OUT - BOLT_IN) * easeIO(t);
+    b.position.set(Math.cos(b.userData.a) * r, Math.sin(b.userData.a) * r, .02);
+  });
+}
 /* sealing — the mechanism run backwards */
 const Q = {
   dist:  [[0,1.02],[1,1.16]],
@@ -1862,7 +1882,7 @@ function applyMech(vals){
   lastDial = vals.dial;
   dial.rotation.z  = vals.dial + Math.sin(vals.dial * 60) * .0055 * (dv / .06);
   wheel.rotation.z = vals.wheel;
-  setBolts(vals.bolt);
+  if(typeof vals.bolt === 'function') vals.bolt(); else setBolts(vals.bolt);
   hinge.rotation.y = vals.swing;
   hinge.rotation.z = -Math.sin(vals.swing) * .013;        // the door droops on its hinges
   M.seam.opacity = vals.seam || 0;
@@ -1887,45 +1907,47 @@ if(!mobile) stage.addEventListener('pointermove', e => {
   ty = ((e.clientY - r.top)  / r.height - .5) * 2;
 });
 
-const STEP_AT = [.02, .20, .65, .75, .88];
+const STEP_AT = [.004, .065, .419, .548, .613];
 function applyOpen(p){
-  const sh = clamp((p - .735) / .05, 0, 1) * clamp((.83 - p) / .05, 0, 1);
+  const sh = clamp((p - .548) / .022, 0, 1) * clamp((.618 - p) / .03, 0, 1);
   const t  = p * 900;
   applyMech({
-    dial: track(p, K.dial), wheel: track(p, K.wheel), bolt: track(p, K.bolt),
+    dial: track(p, K.dial), wheel: track(p, K.wheel), bolt: () => boltsOpen(p),
     swing: track(p, K.swing), push: track(p, K.push),
     shake: Math.sin(t) * .020 * sh, shakeY: Math.cos(t * 1.37) * .015 * sh,
     lightV: track(p, K.lightV), lightS: track(p, K.lightS), deep: track(p, K.deep),
     emis: track(p, K.emis), band: track(p, K.band), fovA: track(p, K.fovA),
     seam: track(p, K.seam), halo: track(p, K.halo)
   });
-  const par = clamp(1 - p / .82, 0, 1);
+  const par = clamp(1 - p / .62, 0, 1);
   const f = track(p, K.fly);
   const z = fitZ * track(p, K.dist) * (1 - f) + (-4.6) * f;
   px += (tx - px) * .06; py += (ty - py) * .06;
   camera.position.set(track(p, K.camX) + px * .34 * par, track(p, K.camY) - py * .26 * par, z);
-  const dive = clamp((p - .22) / .1, 0, 1) * clamp((.66 - p) / .1, 0, 1);   // hold centre on the dial
+  const dive = clamp((p - .18) / .07, 0, 1) * clamp((.50 - p) / .08, 0, 1);   // hold centre on the dial
   camera.lookAt(track(p, K.camX) * .5, track(p, K.camY) * .5 + .34 * par * (1 - dive), f > .05 ? -3 : 0);
 
   bloomEl.style.opacity = track(p, K.bloom).toFixed(3);
-  const fade = clamp((p - .05) / .14, 0, 1);
+  const fade = clamp((p - .02) / .07, 0, 1);
   introEl.style.opacity   = (1 - fade).toFixed(3);
   introEl.style.transform = 'translateY(' + (-fade * 30).toFixed(1) + 'px)';
   openEl.style.opacity    = (1 - clamp(p / .05, 0, 1)).toFixed(3);
   openEl.style.pointerEvents = p > .02 ? 'none' : 'auto';
-  const ins = track(p, K.inside);
+  // it should read as type sitting inside the vault, framed by the aperture, growing
+  // to full size as the camera carries you through — not a full-bleed overlay fading up
+  const ins = track(p, K.inside, LIN);
   insideEl.style.opacity = ins.toFixed(3);
-  insideEl.style.transform = 'translateY(' + (-50 + (1 - ins) * 3) + '%)';
+  insideEl.style.transform = 'translateY(-50%) scale(' + (.72 + ins * .28).toFixed(3) + ')';
 
-  hudEl.classList.toggle('on',   p > .03 && p < .95);
-  comboEl.classList.toggle('on', p > .16 && p < .72);
+  hudEl.classList.toggle('on',   p > .002 && p < .95);
+  comboEl.classList.toggle('on', p > .03 && p < .60);
   steps.forEach((s, i) => {
     const on = p >= STEP_AT[i], next = i < 4 && p >= STEP_AT[i + 1];
     s.classList.toggle('act', on && !next);
     s.classList.toggle('done', next);
   });
-  digits.forEach((d, i) => d.classList.toggle('hit', p >= [.35, .45, .55][i]));
-  interior.classList.toggle('lit', p > .88 || SEEN);
+  digits.forEach((d, i) => d.classList.toggle('hit', p >= [.165, .292, .419][i]));
+  interior.classList.toggle('lit', p > .83 || SEEN);
   if(p > .985 && !doneOnce){ doneOnce = true; sessionStorage.setItem('jeh_safe_open', '1'); }
 }
 
@@ -1933,7 +1955,7 @@ function applySeal(q){
   const sh = clamp((q - .44) / .04, 0, 1) * clamp((.56 - q) / .05, 0, 1);
   const t  = q * 900;
   applyMech({
-    dial: track(q, Q.dial), wheel: track(q, Q.wheel), bolt: track(q, Q.bolt),
+    dial: track(q, Q.dial), wheel: track(q, Q.wheel), bolt: () => boltsSeal(q),
     swing: track(q, Q.swing), push: track(q, Q.push),
     shake: Math.sin(t) * .016 * sh, shakeY: Math.cos(t * 1.37) * .012 * sh,
     lightV: track(q, Q.lightV), lightS: track(q, Q.lightS), deep: track(q, Q.deep),
@@ -1987,7 +2009,7 @@ function frame(){
   } else {
     claim(stage);
     const p = document.body.classList.contains('reopened') ? REOPEN_P : progOf(scroller);
-    smooth += (p - smooth) * (mobile ? .18 : .13);
+    smooth += (p - smooth) * (mobile ? .26 : .22);
     applyOpen(smooth);
   }
   renderer.render(scene, camera);
@@ -1999,10 +2021,10 @@ function runSequence(){
   const span  = scroller.offsetHeight - innerHeight;
   const start = scroller.getBoundingClientRect().top + scrollY;
   const from  = scrollY, to = start + span;
-  const dur   = 10500, t0 = performance.now();
+  const dur   = 6000, t0 = performance.now();   // linear below: the phase map IS the timing
   (function step(now){
     const k = clamp((now - t0) / dur, 0, 1);
-    scrollTo(0, from + (to - from) * easeIO(k));
+    scrollTo(0, from + (to - from) * k);
     if(k < 1) requestAnimationFrame(step);
   })(performance.now());
 }
