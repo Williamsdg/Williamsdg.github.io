@@ -600,126 +600,241 @@ body.menu-open .nav-toggle i:nth-child(3){transform:translateY(-7px) rotate(-45d
 }
 
 /* ============================================================
-   03 — TWO WORLDS (full-bleed cinematic panels)
+   03 — TWO WORLDS (intro → split, spotlight-led, hover-weighted)
    ============================================================ */
-.split-head{text-align:center;margin-bottom:clamp(38px,5.5vw,64px)}
-.split-head h2{
+.worlds{background:#050505;position:relative}
+.worlds-track{position:relative}
+.worlds-stage{position:sticky;top:0;height:100svh;overflow:hidden}
+
+/* ---- the statement that precedes the split ---- */
+.worlds-intro{
+  position:absolute;inset:0;z-index:6;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:0 24px;pointer-events:none;
+  transition:opacity 700ms ease,transform 900ms var(--ease);
+}
+.worlds-intro h2{
   font-family:var(--disp);
-  font-size:clamp(34px,6.4vw,88px);
-  margin-top:20px;
+  font-size:clamp(30px,6.2vw,86px);
+  line-height:.94;margin-top:18px;
 }
+.worlds-stage.split-on .worlds-intro{opacity:0;transform:translateY(-46px)}
+/* the intro sits over its own pool of light */
+.intro-pool{
+  position:absolute;left:50%;top:50%;width:min(900px,92vw);height:min(560px,64svh);
+  transform:translate(-50%,-50%);pointer-events:none;
+  background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(var(--beam),.10),transparent 70%);
+  filter:blur(24px);
+  transition:opacity 700ms ease;
+}
+.worlds-stage.split-on .intro-pool{opacity:0}
+
+/* ---- the split ---- */
 .split{
+  position:absolute;inset:0;z-index:3;
   display:flex;
-  min-height:clamp(560px,88vh,940px);
-  border-top:1px solid var(--hair);
-  border-bottom:1px solid var(--hair);
+  opacity:0;transition:opacity 900ms ease;
 }
+.worlds-stage.split-on .split{opacity:1}
 .half{
   position:relative;overflow:hidden;
   flex:1 1 50%;
   display:flex;flex-direction:column;justify-content:flex-end;
-  padding:clamp(30px,4.2vw,68px);
-  transition:flex-grow .75s cubic-bezier(.2,.8,.2,1),flex-basis .75s cubic-bezier(.2,.8,.2,1);
-  border-right:1px solid var(--hair);
+  padding:clamp(30px,4vw,64px) clamp(24px,3.4vw,54px) clamp(40px,5.5vw,84px);
+  transition:flex-basis 900ms var(--ease-cine),flex-grow 900ms var(--ease-cine);
   isolation:isolate;
 }
-.half:last-child{border-right:none}
-.half-art{position:absolute;inset:0;z-index:-3}
-.half-art .base{position:absolute;inset:0;transition:transform 1.2s cubic-bezier(.2,.8,.2,1)}
-.half:hover .half-art .base{transform:scale(1.04)}
+/* rest 50/50 — hover weights it 65/35 */
+.split.lead-a .half.athletes{flex-basis:65%}
+.split.lead-a .half.talent{flex-basis:35%}
+.split.lead-b .half.talent{flex-basis:65%}
+.split.lead-b .half.athletes{flex-basis:35%}
 
-/* --- ATHLETES: stadium / tunnel lighting --- */
-.half.athletes .base{
-  background:
-    radial-gradient(ellipse 60% 34% at 50% 4%,rgba(150,180,225,.24),transparent 62%),
-    linear-gradient(178deg,#0A1220 0%,#070A11 52%,#0B0B0C 100%);
+/* ---- environments ---- */
+.env{position:absolute;inset:0;z-index:-4;overflow:hidden}
+.env-base{position:absolute;inset:0;transition:opacity 900ms ease}
+.athletes .env-base{background:linear-gradient(176deg,#080D16 0%,#05070C 54%,#070707 100%)}
+.talent   .env-base{background:linear-gradient(184deg,#16110A 0%,#0A0806 54%,#070707 100%)}
+/* drop-in photograph — replace background-image when a licensed shot exists */
+.env-photo{
+  position:absolute;inset:0;
+  background-size:cover;background-repeat:no-repeat;
+  opacity:.22;
+  filter:grayscale(.7) contrast(1.1);
+  transition:opacity 900ms ease,filter 900ms ease,transform 1.6s var(--ease-cine);
 }
-/* tunnel mouth: light spilling from the far end */
-.half.athletes .tunnel{
-  position:absolute;inset:0;z-index:-2;
-  background:radial-gradient(ellipse 26% 40% at 50% 46%,
-    rgba(190,215,255,.16),rgba(150,180,225,.05) 42%,transparent 70%);
-  opacity:.55;transition:opacity .8s ease,transform 1s cubic-bezier(.2,.8,.2,1);
+.athletes .env-photo{background-position:78% 50%}   /* subject toward the inner edge */
+.talent   .env-photo{background-position:22% 50%}
+/* figure standing in the light — replaced by the photograph when supplied */
+.env-figure{
+  position:absolute;bottom:4%;width:17%;height:41%;
+  opacity:.2;
+  filter:blur(2.4px);
+  transition:opacity 900ms ease,transform 1.6s var(--ease-cine),filter 900ms ease;
 }
-.half.athletes:hover .tunnel{opacity:1;transform:scale(1.12)}
+.athletes .env-figure{right:15%}
+.talent   .env-figure{left:15%}
+.env-rig{position:absolute;top:0;left:0;right:0;height:30%;opacity:.34;transition:opacity 900ms ease}
 
-/* --- TALENT: studio / premiere lighting --- */
-.half.talent .base{
-  background:
-    radial-gradient(ellipse 60% 34% at 50% 4%,rgba(226,190,120,.22),transparent 62%),
-    linear-gradient(182deg,#1A140B 0%,#0A0806 52%,#0C0B0A 100%);
+/* ---- volumetric overhead beam ---- */
+.beam{
+  position:absolute;top:-6%;left:50%;width:56%;height:104%;
+  transform:translateX(-50%) scaleX(.86);
+  transform-origin:50% 0;
+  z-index:-3;pointer-events:none;
+  clip-path:polygon(38% 0,62% 0,104% 100%,-4% 100%);
+  filter:blur(16px);
+  opacity:0;
+  transition:opacity 1.1s ease,transform 1.1s var(--ease-cine);
 }
-.half.talent .tunnel{
-  position:absolute;inset:0;z-index:-2;
-  background:radial-gradient(ellipse 30% 42% at 50% 44%,
-    rgba(255,236,190,.15),rgba(201,162,39,.05) 44%,transparent 72%);
-  opacity:.55;transition:opacity .8s ease,transform 1s cubic-bezier(.2,.8,.2,1);
+.worlds-stage.split-on .beam{opacity:1}
+.athletes .beam{background:linear-gradient(180deg,rgba(186,214,255,.20),rgba(150,185,235,.06) 48%,transparent 84%)}
+.talent   .beam{background:linear-gradient(180deg,rgba(255,231,178,.20),rgba(226,190,120,.06) 48%,transparent 84%)}
+/* pool where the beam lands */
+.pool{
+  position:absolute;left:50%;bottom:6%;width:62%;height:16%;
+  transform:translateX(-50%);z-index:-3;pointer-events:none;
+  filter:blur(20px);opacity:0;
+  transition:opacity 1.1s ease .2s,transform 1.1s var(--ease-cine);
 }
-.half.talent:hover .tunnel{opacity:1;transform:scale(1.12)}
+.worlds-stage.split-on .pool{opacity:1}
+.athletes .pool{background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(186,214,255,.16),transparent 72%)}
+.talent   .pool{background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(255,231,178,.16),transparent 72%)}
 
-/* follow-spot that finds the subject on hover */
-.half-spot{
-  position:absolute;inset:0;z-index:-1;
-  opacity:0;transition:opacity .8s ease;
-}
-.half.athletes .half-spot{
-  background:radial-gradient(ellipse 54% 70% at 50% 40%,
-    rgba(206,226,255,.20),rgba(180,205,245,.05) 44%,transparent 72%);
-}
-.half.talent .half-spot{
-  background:radial-gradient(ellipse 54% 70% at 50% 40%,
-    rgba(255,244,214,.22),rgba(255,232,178,.05) 44%,transparent 72%);
-}
-.half:hover .half-spot{opacity:1}
+/* the hovered side's light takes over */
+.split.lead-a .athletes .beam{transform:translateX(-50%) scaleX(1.08)}
+.split.lead-a .talent   .beam{opacity:.24}
+.split.lead-a .talent   .pool{opacity:.2}
+.split.lead-b .talent   .beam{transform:translateX(-50%) scaleX(1.08)}
+.split.lead-b .athletes .beam{opacity:.24}
+.split.lead-b .athletes .pool{opacity:.2}
+/* the environment sharpens under its own light */
+.split.lead-a .athletes .env-photo,
+.split.lead-b .talent   .env-photo{opacity:.4;filter:grayscale(.45) contrast(1.05);transform:scale(1.03)}
+.split.lead-a .athletes .env-figure,
+.split.lead-b .talent   .env-figure{opacity:.34;filter:blur(2px);transform:scale(1.04)}
+.split.lead-a .athletes .env-rig,
+.split.lead-b .talent   .env-rig{opacity:.6}
+.split.lead-a .talent   .env-base,
+.split.lead-b .athletes .env-base{opacity:.55}
 
-/* overhead rig */
-.half-rig{
-  position:absolute;top:0;left:0;right:0;height:46%;z-index:-1;
-  opacity:.45;transition:opacity .75s ease;
+/* ---- the divider, and the light that opens it ---- */
+.divider{
+  position:absolute;top:0;bottom:0;left:50%;width:1px;z-index:5;
+  transform:translateX(-.5px);
+  background:linear-gradient(180deg,transparent,rgba(242,237,228,.16) 12%,rgba(242,237,228,.16) 88%,transparent);
+  pointer-events:none;
+  transition:left 900ms var(--ease-cine),opacity 700ms ease;
 }
-.half:hover .half-rig{opacity:1}
+.split.lead-a ~ .divider{left:65%}
+.split.lead-b ~ .divider{left:35%}
+.divider i{
+  position:absolute;left:50%;top:0;
+  width:5px;height:74px;
+  transform:translate(-50%,-40px);
+  border-radius:3px;
+  background:linear-gradient(180deg,transparent,var(--champagne-lt),transparent);
+  box-shadow:0 0 22px rgba(228,199,102,.75);
+  opacity:0;
+}
+.worlds-stage.split-on .divider i{animation:curtain 1700ms var(--ease-cine) 120ms forwards}
+@keyframes curtain{
+  0%{opacity:0;transform:translate(-50%,-40px)}
+  12%{opacity:1}
+  86%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,calc(100svh - 20px))}
+}
 
-.half-num{
+/* ---- copy ---- */
+.half-in{position:relative;z-index:2}
+.kicker{
   font-family:var(--cond);font-weight:200;
-  font-size:11px;letter-spacing:.34em;color:var(--champagne-deep);
-  margin-bottom:auto;
-  transition:color .5s ease;
+  font-size:10.5px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--champagne-deep);
+  transition:color var(--t-major) ease;
 }
-.half:hover .half-num{color:var(--champagne)}
+.split.lead-a .athletes .kicker,.split.lead-b .talent .kicker{color:var(--champagne)}
 .half h3{
   font-family:var(--disp);
-  font-size:clamp(42px,7.4vw,116px);
-  line-height:.86;
-  margin-bottom:16px;
-  transition:transform .7s cubic-bezier(.2,.8,.2,1);
+  font-size:clamp(46px,9.4vw,168px);
+  line-height:.82;
+  margin:clamp(10px,1.4vw,18px) 0 clamp(10px,1.2vw,16px);
+  white-space:nowrap;
+  transition:transform 900ms var(--ease-cine);
 }
-.half:hover h3{transform:translateY(-8px)}
+/* editorial bleed — the words run past their panel edge */
+.athletes h3{margin-left:-.055em}
+.talent   h3{text-align:right;margin-right:-.055em}
+.split.lead-a .athletes h3{transform:translateX(1.4%)}
+.split.lead-b .talent   h3{transform:translateX(-1.4%)}
+.sub{
+  font-family:var(--cond);font-weight:300;
+  font-size:11.5px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ivory-dim);
+  margin-bottom:clamp(12px,1.4vw,18px);
+}
+.talent .sub,.talent p,.talent .go{margin-left:auto}
+.talent .half-in{text-align:right}
 .half p{
   font-size:14px;color:var(--ivory-dim);font-weight:300;
-  max-width:46ch;line-height:1.75;
-  margin-bottom:24px;
-  opacity:.62;transition:opacity .6s ease,transform .7s cubic-bezier(.2,.8,.2,1);
-  transform:translateY(4px);
+  max-width:40ch;line-height:1.7;
+  margin-bottom:clamp(18px,2.2vw,28px);
+  opacity:.4;
+  transition:opacity var(--t-major) ease;
 }
-.half:hover p{opacity:1;transform:translateY(0)}
-.half-link{
-  display:inline-flex;align-items:center;gap:11px;
+.split.lead-a .athletes p,.split.lead-b .talent p{opacity:1}
+.split.lead-a .talent p,.split.lead-b .athletes p{opacity:.12}
+/* the CTA extends as the light arrives */
+.go{
+  display:inline-flex;align-items:center;gap:14px;
   font-size:10.5px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;
-  color:var(--champagne);
-  padding-bottom:7px;
-  border-bottom:1px solid rgba(201,162,39,.28);
-  align-self:flex-start;
-  transition:border-color .4s ease,gap .4s ease;
+  color:var(--ivory-mute);
+  transition:color var(--t-major) ease;
 }
-.half:hover .half-link{border-color:var(--champagne);gap:18px}
-@media(min-width:961px){
-  .split:hover .half{flex-grow:.82}
-  .split:hover .half:hover{flex-grow:1.36}
+.talent .go{flex-direction:row-reverse}
+.go .rule{
+  display:block;width:0;height:1px;background:var(--champagne);
+  transition:width 900ms var(--ease-cine);
 }
-@media(max-width:960px){
-  .split{flex-direction:column;min-height:0}
-  .half{border-right:none;border-bottom:1px solid var(--hair);min-height:min(74vh,560px)}
-  .half:last-child{border-bottom:none}
+.split.lead-a .athletes .go,.split.lead-b .talent .go{color:var(--champagne)}
+.split.lead-a .athletes .go .rule,.split.lead-b .talent .go .rule{width:clamp(48px,9vw,150px)}
+
+/* ---- the line that ties the two together ---- */
+.worlds-tie{
+  position:absolute;left:0;right:0;bottom:clamp(16px,2.4vh,28px);z-index:6;
+  text-align:center;pointer-events:none;
+  font-family:var(--cond);font-weight:200;
+  font-size:9.5px;letter-spacing:.42em;text-transform:uppercase;
+  color:rgba(242,237,228,.30);
+  opacity:0;transition:opacity 900ms ease .5s;
+}
+.worlds-stage.split-on .worlds-tie{opacity:1}
+
+/* ---- mobile: two cinematic chapters, not a split ---- */
+@media(max-width:900px){
+  .worlds-track{height:auto!important}
+  .worlds-stage{position:static;height:auto;overflow:visible}
+  .worlds-intro{position:static;padding:clamp(70px,16vh,120px) 24px clamp(34px,7vh,56px);opacity:1!important;transform:none!important}
+  .intro-pool{display:none}
+  .split{position:static;opacity:1;flex-direction:column}
+  .half{
+    flex:none;min-height:90svh;
+    padding:clamp(26px,6vw,40px) clamp(22px,6vw,34px) clamp(40px,9vw,64px);
+    border-top:1px solid var(--hair);
+  }
+  .half h3{font-size:clamp(52px,17vw,104px);white-space:normal}
+  .talent .half-in{text-align:left}
+  .talent .sub,.talent p,.talent .go{margin-left:0}
+  .talent h3{text-align:left;margin-right:0;margin-left:-.055em}
+  .talent .go{flex-direction:row}
+  .divider{display:none}
+  .beam,.pool{opacity:1}
+  .half p{opacity:1;max-width:100%}
+  .go{color:var(--champagne)}
+  .go .rule{width:44px}
+  .env-photo{opacity:.3}
+  .env-figure{opacity:.3}
+  .worlds-tie{position:static;padding:clamp(30px,7vh,50px) 24px clamp(40px,8vh,64px);opacity:1}
 }
 
 /* ============================================================
@@ -1532,6 +1647,23 @@ body.menu-open .nav-toggle i:nth-child(3){transform:translateY(-7px) rotate(-45d
     background:none;
   }
   /* sticky scroll-scrubbed sections become plain stacked reading */
+  .worlds-track{height:auto !important}
+  .worlds-stage{position:static;height:auto;overflow:visible}
+  .worlds-intro{position:static;padding:var(--pad) 24px 40px;opacity:1;transform:none}
+  .intro-pool{display:none}
+  .split{position:static;opacity:1;flex-direction:column}
+  .half{flex:none;min-height:70svh}
+  .divider{display:none}
+  .beam,.pool{opacity:1}
+  .half p{opacity:1;max-width:100%}
+  .half h3{white-space:normal}
+  .talent .half-in{text-align:left}
+  .talent .sub,.talent p,.talent .go{margin-left:0}
+  .talent h3{text-align:left;margin-right:0}
+  .talent .go{flex-direction:row}
+  .go{color:var(--champagne)}
+  .go .rule{width:44px}
+  .worlds-tie{position:static;padding:40px 24px var(--pad);opacity:1}
   .seq-track,.eco-track{height:auto !important}
   .seq-stage,.eco-stage{position:static;height:auto;padding:var(--pad) 0}
   .eco-head{position:static;margin-bottom:32px}
@@ -1640,71 +1772,110 @@ body.menu-open .nav-toggle i:nth-child(3){transform:translateY(-7px) rotate(-45d
 </header>
 
 <!-- ===== 03 TWO WORLDS ===== -->
-<section id="worlds" class="sec">
-  <div class="wrap">
-    <div class="split-head rv">
-      <p class="eyebrow">Two Divisions</p>
-      <h2 class="display">TWO WORLDS.<br>ONE STANDARD<br>OF MANAGEMENT.</h2>
-    </div>
-  </div>
-  <div class="split rv">
-    <a href="#management" class="half athletes">
-      <div class="half-art"><div class="base"></div></div>
-      <div class="tunnel"></div>
-      <div class="half-spot"></div>
-      <div class="half-rig">
-        <svg viewBox="0 0 600 300" preserveAspectRatio="none" aria-hidden="true" style="width:100%;height:100%">
-          <defs>
-            <radialGradient id="stadLight" cx="50%" cy="0%" r="72%">
-              <stop offset="0%" stop-color="#CFE2FF" stop-opacity=".46"/>
-              <stop offset="100%" stop-color="#CFE2FF" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          <g fill="url(#stadLight)">
-            <ellipse cx="96" cy="30" rx="68" ry="48"/>
-            <ellipse cx="300" cy="18" rx="76" ry="54"/>
-            <ellipse cx="504" cy="30" rx="68" ry="48"/>
-          </g>
-          <g fill="#DCE9FF" opacity=".6">
-            <circle cx="74" cy="22" r="2.6"/><circle cx="96" cy="20" r="2.6"/><circle cx="118" cy="22" r="2.6"/>
-            <circle cx="278" cy="12" r="2.6"/><circle cx="300" cy="10" r="2.6"/><circle cx="322" cy="12" r="2.6"/>
-            <circle cx="482" cy="22" r="2.6"/><circle cx="504" cy="20" r="2.6"/><circle cx="526" cy="22" r="2.6"/>
-          </g>
-        </svg>
-      </div>
-      <div class="half-num">01 — Division</div>
-      <h3 class="display">ATHLETES</h3>
-      <p>A personal manager is the athlete's chief strategist, business coordinator and trusted advisor — overseeing business affairs, coordinating every professional advisor, and protecting assets, brand and long-term interests.</p>
-      <span class="half-link">Athlete Management <span>&rarr;</span></span>
-    </a>
+<section id="worlds" class="worlds">
+  <div class="worlds-track" id="worldsTrack">
+    <div class="worlds-stage" id="worldsStage">
 
-    <a href="#management" class="half talent">
-      <div class="half-art"><div class="base"></div></div>
-      <div class="tunnel"></div>
-      <div class="half-spot"></div>
-      <div class="half-rig">
-        <svg viewBox="0 0 600 300" preserveAspectRatio="none" aria-hidden="true" style="width:100%;height:100%">
-          <defs>
-            <radialGradient id="flashLight" cx="50%" cy="0%" r="72%">
-              <stop offset="0%" stop-color="#FFEFC8" stop-opacity=".44"/>
-              <stop offset="100%" stop-color="#FFEFC8" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          <ellipse cx="300" cy="16" rx="238" ry="66" fill="url(#flashLight)"/>
-          <g fill="#FFF6DF">
-            <circle class="flash" cx="112" cy="40" r="2.4" opacity=".18"/>
-            <circle class="flash" cx="206" cy="24" r="2.4" opacity=".18"/>
-            <circle class="flash" cx="300" cy="44" r="2.4" opacity=".18"/>
-            <circle class="flash" cx="394" cy="22" r="2.4" opacity=".18"/>
-            <circle class="flash" cx="488" cy="42" r="2.4" opacity=".18"/>
-          </g>
-        </svg>
+      <div class="intro-pool"></div>
+      <div class="worlds-intro">
+        <p class="eyebrow">Two Divisions</p>
+        <h2 class="display">TWO WORLDS.<br>ONE STANDARD<br>OF MANAGEMENT.</h2>
       </div>
-      <div class="half-num">02 — Division</div>
-      <h3 class="display">TALENT</h3>
-      <p>Long-term career strategy, oversight of all business and financial advisors, brand development, deal evaluation, day-to-day operational management and crisis management — for recording artists and entertainers.</p>
-      <span class="half-link">Talent Management <span>&rarr;</span></span>
-    </a>
+
+      <div class="split" id="worldsSplit">
+
+        <a href="#management" class="half athletes" data-side="a">
+          <div class="env">
+            <div class="env-base"></div>
+            <div class="env-photo"></div>
+            <svg class="env-rig" viewBox="0 0 600 220" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
+              <defs>
+                <radialGradient id="stadGlow" cx="50%" cy="30%" r="60%">
+                  <stop offset="0%" stop-color="#CFE2FF" stop-opacity=".34"/>
+                  <stop offset="100%" stop-color="#CFE2FF" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <!-- distant stadium fixtures: masts and light banks, barely there -->
+              <g fill="#0E1626">
+                <rect x="86" y="52" width="4" height="168"/><rect x="300" y="34" width="5" height="186"/><rect x="512" y="58" width="4" height="162"/>
+                <rect x="60" y="34" width="56" height="20" rx="2"/>
+                <rect x="272" y="14" width="62" height="22" rx="2"/>
+                <rect x="486" y="40" width="56" height="20" rx="2"/>
+              </g>
+              <ellipse cx="72" cy="46" rx="52" ry="26" fill="url(#stadGlow)"/>
+              <ellipse cx="303" cy="27" rx="62" ry="30" fill="url(#stadGlow)"/>
+              <ellipse cx="514" cy="52" rx="52" ry="26" fill="url(#stadGlow)"/>
+            </svg>
+            <svg class="env-figure" viewBox="0 0 120 240" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+              <g fill="#8FA9CC">
+                <ellipse cx="60" cy="21" rx="8.6" ry="10"/>
+                <path d="M60 34c-9.5 0-15.6 5.2-17.6 14.4l-6.4 35c-.9 5 1 8.2 4.2 9.2l1.8 28.4-3.4 78h10.4l6.2-72h9.6l6.2 72h10.4l-3.4-78 1.8-28.4c3.2-1 5.1-4.2 4.2-9.2l-6.4-35C75.6 39.2 69.5 34 60 34z"/>
+              </g>
+            </svg>
+          </div>
+          <div class="beam"></div>
+          <div class="pool"></div>
+          <div class="half-in">
+            <div class="kicker">01 &mdash; Division</div>
+            <h3 class="display">ATHLETES</h3>
+            <div class="sub">Personal Management</div>
+            <p>Chief strategist, business coordinator and trusted advisor &mdash; protecting the athlete's assets, brand and long-term interests.</p>
+            <span class="go">Explore Athlete Management <i class="rule"></i> <span>&rarr;</span></span>
+          </div>
+        </a>
+
+        <a href="#management" class="half talent" data-side="b">
+          <div class="env">
+            <div class="env-base"></div>
+            <div class="env-photo"></div>
+            <svg class="env-rig" viewBox="0 0 600 220" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
+              <defs>
+                <radialGradient id="stageGlow" cx="50%" cy="26%" r="60%">
+                  <stop offset="0%" stop-color="#FFE7B2" stop-opacity=".32"/>
+                  <stop offset="100%" stop-color="#FFE7B2" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <!-- stage rigging: a truss with hanging fixtures -->
+              <g fill="#1C1408">
+                <rect x="0" y="26" width="600" height="7"/>
+                <path d="M0 33h600v3H0z" opacity=".6"/>
+                <g>
+                  <rect x="96" y="33" width="3" height="16"/><rect x="84" y="49" width="27" height="17" rx="2"/>
+                  <rect x="228" y="33" width="3" height="22"/><rect x="216" y="55" width="27" height="17" rx="2"/>
+                  <rect x="360" y="33" width="3" height="16"/><rect x="348" y="49" width="27" height="17" rx="2"/>
+                  <rect x="492" y="33" width="3" height="24"/><rect x="480" y="57" width="27" height="17" rx="2"/>
+                </g>
+              </g>
+              <g fill="url(#stageGlow)">
+                <ellipse cx="97" cy="70" rx="30" ry="16"/><ellipse cx="229" cy="76" rx="30" ry="16"/>
+                <ellipse cx="361" cy="70" rx="30" ry="16"/><ellipse cx="493" cy="78" rx="30" ry="16"/>
+              </g>
+              <ellipse cx="300" cy="36" rx="240" ry="40" fill="url(#stageGlow)"/>
+            </svg>
+            <svg class="env-figure" viewBox="0 0 120 240" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+              <g fill="#C9B48A">
+                <ellipse cx="60" cy="20" rx="8.2" ry="9.6"/>
+                <path d="M60 32c-8.8 0-14.6 4.8-16.8 13.4l-8.6 38c-1.4 5.6.6 9.2 4.6 10.2l3 24-3.6 77h10.2l5.8-71h10.8l5.8 71h10.2l-3.6-77 3-24c4-1 6-4.6 4.6-10.2l-8.6-38C74.6 36.8 68.8 32 60 32z"/>
+              </g>
+            </svg>
+          </div>
+          <div class="beam"></div>
+          <div class="pool"></div>
+          <div class="half-in">
+            <div class="kicker">02 &mdash; Division</div>
+            <h3 class="display">TALENT</h3>
+            <div class="sub">Personal Management</div>
+            <p>Long-term career strategy, brand development and deal evaluation &mdash; for recording artists and entertainers.</p>
+            <span class="go">Explore Talent Management <i class="rule"></i> <span>&rarr;</span></span>
+          </div>
+        </a>
+
+      </div>
+
+      <div class="divider"><i></i></div>
+      <div class="worlds-tie">Different industries. Same responsibility.</div>
+
+    </div>
   </div>
 </section>
 
@@ -2329,15 +2500,63 @@ body.menu-open .nav-toggle i:nth-child(3){transform:translateY(-7px) rotate(-45d
     });
   }
 
-  /* ---------- Camera flashes on the Talent half ---------- */
-  var flashes = document.querySelectorAll('.flash');
-  if(flashes.length && !reduced){
-    setInterval(function(){
-      var f = flashes[Math.floor(Math.random() * flashes.length)];
-      f.setAttribute('opacity','1');
-      f.setAttribute('r','5');
-      setTimeout(function(){ f.setAttribute('opacity','.2'); f.setAttribute('r','2.5'); }, 110);
-    }, 900);
+  /* ---------- 03 Two Worlds: intro -> split, then hover weighting ---------- */
+  var worldsTrack = document.getElementById('worldsTrack');
+  var worldsStage = document.getElementById('worldsStage');
+  var worldsSplit = document.getElementById('worldsSplit');
+  var splitOn = false;
+
+  if(worldsTrack && worldsStage){
+    var desktopSplit = window.matchMedia('(min-width:901px)');
+
+    function sizeWorlds(){
+      /* one screen for the statement, one for the split to settle into */
+      worldsTrack.style.height = (desktopSplit.matches && !reduced) ? '196svh' : '';
+    }
+    function trackWorlds(){
+      if(!desktopSplit.matches || reduced){
+        worldsStage.classList.add('split-on');   /* mobile: chapters are always lit */
+        return;
+      }
+      var r = worldsTrack.getBoundingClientRect();
+      var span = r.height - window.innerHeight;
+      var prog = span > 0 ? (-r.top) / span : 1;
+      var want = prog > 0.26;
+      if(want !== splitOn){
+        splitOn = want;
+        worldsStage.classList.toggle('split-on', want);
+        if(!want && worldsSplit) worldsSplit.classList.remove('lead-a','lead-b');
+      }
+    }
+    window.addEventListener('scroll', trackWorlds, {passive:true});
+    window.addEventListener('resize', function(){ sizeWorlds(); trackWorlds(); });
+    if(desktopSplit.addEventListener) desktopSplit.addEventListener('change', function(){ sizeWorlds(); trackWorlds(); });
+    sizeWorlds();
+    trackWorlds();
+
+    /* the panel under the cursor takes the light and the width */
+    if(worldsSplit && window.matchMedia('(hover:hover)').matches){
+      worldsSplit.querySelectorAll('.half').forEach(function(half){
+        half.addEventListener('mouseenter', function(){
+          if(!splitOn) return;
+          worldsSplit.classList.remove('lead-a','lead-b');
+          worldsSplit.classList.add(half.getAttribute('data-side') === 'a' ? 'lead-a' : 'lead-b');
+        });
+      });
+      worldsSplit.addEventListener('mouseleave', function(){
+        worldsSplit.classList.remove('lead-a','lead-b');
+      });
+      /* keyboard users get the same treatment */
+      worldsSplit.querySelectorAll('.half').forEach(function(half){
+        half.addEventListener('focus', function(){
+          worldsSplit.classList.remove('lead-a','lead-b');
+          worldsSplit.classList.add(half.getAttribute('data-side') === 'a' ? 'lead-a' : 'lead-b');
+        });
+        half.addEventListener('blur', function(){
+          worldsSplit.classList.remove('lead-a','lead-b');
+        });
+      });
+    }
   }
 
   /* ---------- Bio modal ---------- */
