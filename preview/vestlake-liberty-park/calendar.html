@@ -18,15 +18,17 @@
   .cal-card { background: white; border: 1px solid var(--border-light); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
   .cal-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
   .cal-controls h2 { font-size: 22px; margin: 0; }
-  .cal-nav-btn { background: white; border: 1px solid var(--border); width: 36px; height: 36px; border-radius: var(--radius-sm); cursor: pointer; color: var(--forest); display: inline-flex; align-items: center; justify-content: center; transition: var(--transition); }
+  .cal-nav-btn { background: white; border: 1px solid var(--border); width: 44px; height: 44px; border-radius: var(--radius-sm); cursor: pointer; color: var(--forest); display: inline-flex; align-items: center; justify-content: center; transition: var(--transition); }
   .cal-nav-btn:hover { background: var(--cream); border-color: var(--forest); }
 
   .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
   .cal-weekdays div { text-align: center; font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 1px; padding: 6px 0; text-transform: uppercase; }
   .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-  .cal-day { aspect-ratio: 1; padding: 6px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--cream-light); font-size: 13px; cursor: pointer; transition: var(--transition); position: relative; overflow: hidden; }
-  .cal-day:hover { background: var(--cream); border-color: var(--forest); }
-  .cal-day.empty { background: transparent; border: none; cursor: default; }
+  .cal-day { aspect-ratio: 1; padding: 6px; border: 1px solid var(--border-light); border-radius: var(--radius-sm); background: var(--cream-light); font-size: 13px; transition: var(--transition); position: relative; overflow: hidden; }
+  .cal-day.empty { background: transparent; border: none; }
+
+  .cal-mobile-toggle { display: none; width: 100%; min-height: 48px; margin-bottom: 16px; background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 15px; font-weight: 600; color: var(--forest); cursor: pointer; }
+  .cal-mobile-toggle:hover { background: var(--cream); }
   .cal-day.today { background: var(--forest); color: white; border-color: var(--forest); }
   .cal-day.today .day-num { color: white; }
   .cal-day.selected { background: var(--gold); border-color: var(--gold); }
@@ -63,8 +65,14 @@
 
   @media (max-width: 900px) {
     .cal-layout { grid-template-columns: 1fr; }
+    /* Agenda first on phones; month grid behind a disclosure */
+    .events-list { order: -1; }
+    .cal-mobile-toggle { display: block; order: 0; }
+    #calGridCard { display: none; }
+    #calGridCard.show { display: block; }
   }
   @media (max-width: 600px) {
+    .cal-card { padding: 16px 14px; }
     .cal-day { font-size: 11px; padding: 4px; }
     .cal-day .day-dots { bottom: 2px; }
     .cal-day .dot { width: 4px; height: 4px; }
@@ -73,6 +81,7 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main">Skip to main content</a>
 <nav class="site-nav">
   <div class="container nav-inner">
     <a href="index.html" class="nav-logo">
@@ -81,19 +90,20 @@
     </a>
     <ul class="nav-links" id="navLinks">
       <li><a href="index.html">Home</a></li>
-      <li><a href="calendar.html" class="active">Calendar</a></li>
+      <li><a href="calendar.html" class="active" aria-current="page">Calendar</a></li>
       <li><a href="newsletters.html">Newsletters</a></li>
       <li><a href="documents.html">Documents</a></li>
       <li><a href="resources.html">Resources</a></li>
       <li><a href="https://neighborhoodmanagement.securecafe.com/residentservices/neighborhood-management/userlogin.aspx" class="nav-cta" target="_blank" rel="noopener">Pay Dues</a></li>
     </ul>
-    <button class="nav-toggle" onclick="document.getElementById('navLinks').classList.toggle('open')" aria-label="Menu">
-      <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="mobileMenu" aria-label="Open menu">
+      <svg class="icon-menu" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      <svg class="icon-close" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
   </div>
 </nav>
 
-<section class="page-header">
+<section class="page-header" id="main">
   <div class="container">
     <h1>Community Calendar</h1>
     <p>Board meetings, social events, pool schedule, trash holidays, and ARC deadlines — all in one place.</p>
@@ -103,13 +113,11 @@
 <section class="section section-cream">
   <div class="container">
 
-    <div class="demo-note">
-      <strong>Demo:</strong> This is a sample month with placeholder events. The real calendar will be populated and managed by board admins through the CMS.
-    </div>
-
     <div class="cal-layout">
 
-      <div class="cal-card">
+      <button class="cal-mobile-toggle" type="button" aria-expanded="false" aria-controls="calGridCard" onclick="this.setAttribute('aria-expanded', document.getElementById('calGridCard').classList.toggle('show')); this.textContent = document.getElementById('calGridCard').classList.contains('show') ? 'Hide Month Calendar' : 'View Month Calendar';">View Month Calendar</button>
+
+      <div class="cal-card" id="calGridCard">
         <div class="cal-controls">
           <button class="cal-nav-btn" onclick="changeMonth(-1)" aria-label="Previous month">
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 4l-6 6 6 6"/></svg>
@@ -154,20 +162,14 @@
 (function () {
   var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  // Sample events for May 2026
-  var EVENTS = {
-    '2026-05-04': [{ tag: 'board', title: 'ARC Submission Deadline', time: '11:59 PM', dot: 'gold' }],
-    '2026-05-11': [{ tag: 'board', title: 'Annual Board Meeting', time: '7:00 PM · Clubhouse', dot: '' }],
-    '2026-05-18': [{ tag: 'facility', title: 'Lifeguard Training Begins', time: '9:00 AM · Community Pool', dot: 'gold' }],
-    '2026-05-24': [{ tag: 'facility', title: 'Pool Opens — Memorial Day Weekend', time: '10:00 AM', dot: 'gold' }],
-    '2026-05-25': [{ tag: 'holiday', title: 'Memorial Day — Trash Pickup Delayed', time: 'Office Closed', dot: 'danger' }],
-    '2026-06-07': [{ tag: 'social', title: 'Community Cookout', time: '5:00 PM · Pavilion', dot: 'gold' }],
-    '2026-06-14': [{ tag: 'social', title: 'Movie Night by the Pool', time: '8:30 PM', dot: 'gold' }],
-    '2026-06-15': [{ tag: 'board', title: 'Monthly Board Meeting', time: '7:00 PM · Clubhouse', dot: '' }]
-  };
+  // Community events, keyed by date. Format:
+  //   'YYYY-MM-DD': [{ tag: 'board'|'social'|'facility'|'holiday'|'deadline', title: '...', time: '...', dot: ''|'gold'|'danger' }]
+  // Events are added here as the Association schedules them.
+  var EVENTS = {};
 
-  var current = new Date(2026, 4, 1); // May 2026
-  var todayKey = '2026-05-11';
+  var now = new Date();
+  var current = new Date(now.getFullYear(), now.getMonth(), 1);
+  var todayKey = fmtKey(now.getFullYear(), now.getMonth(), now.getDate());
 
   function fmtKey(y, m, d) {
     return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
@@ -196,6 +198,9 @@
       if (EVENTS[key]) {
         var dotsArr = EVENTS[key].map(function (e) { return '<span class="dot ' + (e.dot || '') + '"></span>'; });
         dots = '<div class="day-dots">' + dotsArr.join('') + '</div>';
+        var names = EVENTS[key].map(function (e) { return e.title; }).join(', ');
+        cell.title = names;
+        cell.setAttribute('aria-label', MONTHS[m] + ' ' + d + ': ' + names);
       }
       cell.innerHTML = '<div class="day-num">' + d + '</div>' + dots;
       grid.appendChild(cell);
@@ -231,7 +236,7 @@
       });
     }
     if (added === 0) {
-      list.innerHTML = '<p style="color: var(--text-muted); font-size: 14px;">No upcoming events this month.</p>';
+      list.innerHTML = '<p style="color: var(--text-muted); font-size: 14px;">No events are posted for this month yet. Community events, board meetings, and important dates will appear here as they\'re scheduled.</p>';
     }
   }
 
@@ -244,5 +249,6 @@
 })();
 </script>
 
+<script src="site.js" defer></script>
 </body>
 </html>
