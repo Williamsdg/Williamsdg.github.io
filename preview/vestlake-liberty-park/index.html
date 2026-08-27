@@ -135,10 +135,50 @@
       <div>
         <span class="section-eyebrow">What's Happening</span>
         <h2 style="margin-bottom:8px;">Upcoming Events</h2>
-        <p style="color:var(--text-muted);">Board meetings, social events, and community dates are posted on the calendar as they're scheduled.</p>
+        <p style="color:var(--text-muted);" id="homeEventsNote">Board meetings, social events, and community dates are posted on the calendar as they're scheduled.</p>
       </div>
       <a href="calendar.html" class="btn btn-outline">View Full Calendar &rarr;</a>
     </div>
+    <div class="grid-3" id="homeEvents" hidden style="margin-top:36px;"></div>
+    <script>
+    (function () {
+      var SB = 'https://tkkhvbkocumyxpgsrpxv.supabase.co';
+      var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRra2h2YmtvY3VteXhwZ3NycHh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NjYyNDAsImV4cCI6MjA5NzI0MjI0MH0.piSMSUJ427thN_sjCfgOp9lbnUsWGmYqQPRMlglfd6E';
+      var MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+      function fmtTime(t) { if (!t) return ''; var p = t.split(':'); var h = +p[0]; return ((h % 12) || 12) + ':' + p[1] + ' ' + (h >= 12 ? 'PM' : 'AM'); }
+      var today = new Date().toLocaleDateString('en-CA');
+      fetch(SB + '/rest/v1/vl_events?status=eq.published&event_date=gte.' + today + '&select=*&order=event_date&limit=24', { headers: { apikey: KEY } })
+        .then(function (r) { return r.json(); })
+        .then(function (rows) {
+          if (!Array.isArray(rows) || !rows.length) return;
+          var picks = rows.filter(function (e) { return e.featured; }).slice(0, 3);
+          rows.forEach(function (e) { if (picks.length < 3 && picks.indexOf(e) === -1) picks.push(e); });
+          picks = picks.slice(0, 3).sort(function (a, b) { return a.event_date < b.event_date ? -1 : 1; });
+          var wrap = document.getElementById('homeEvents');
+          wrap.innerHTML = picks.map(function (e, i) {
+            var mp = e.event_date.split('-');
+            var dateStyle = i % 2 === 0
+              ? 'background:var(--forest);color:white;'
+              : 'background:var(--gold);color:var(--forest-dark);';
+            var moStyle = i % 2 === 0 ? 'color:var(--gold-light);' : '';
+            var time = e.all_day ? 'All day' : fmtTime(e.start_time);
+            return '<div class="card" style="display:flex;gap:16px;align-items:flex-start;">' +
+              '<div style="flex-shrink:0;width:60px;text-align:center;border-radius:var(--radius-sm);padding:8px 0;' + dateStyle + '">' +
+                '<div style="font-size:10px;letter-spacing:1.5px;font-weight:700;' + moStyle + '">' + MONTHS[+mp[1] - 1] + '</div>' +
+                '<div style="font-family:\'Playfair Display\',serif;font-size:24px;font-weight:700;line-height:1;">' + (+mp[2]) + '</div>' +
+              '</div><div>' +
+                '<h4 style="font-family:\'Inter\',sans-serif;margin-bottom:4px;">' + esc(e.name) + '</h4>' +
+                '<p style="font-size:13.5px;color:var(--text-muted);margin-bottom:4px;">' + time + (e.location ? ' · ' + esc(e.location) : '') + '</p>' +
+                (e.description ? '<p style="font-size:13.5px;">' + esc(e.description) + '</p>' : '') +
+              '</div></div>';
+          }).join('');
+          wrap.hidden = false;
+          document.getElementById('homeEventsNote').hidden = true;
+        })
+        .catch(function () {});
+    })();
+    </script>
   </div>
 </section>
 

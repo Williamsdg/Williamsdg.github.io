@@ -160,12 +160,11 @@
 
 <script>
 (function () {
+  var SB = 'https://tkkhvbkocumyxpgsrpxv.supabase.co';
+  var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRra2h2YmtvY3VteXhwZ3NycHh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NjYyNDAsImV4cCI6MjA5NzI0MjI0MH0.piSMSUJ427thN_sjCfgOp9lbnUsWGmYqQPRMlglfd6E';
   var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-  // Community events, keyed by date. Format:
-  //   'YYYY-MM-DD': [{ tag: 'board'|'social'|'facility'|'holiday'|'deadline', title: '...', time: '...', dot: ''|'gold'|'danger' }]
-  // Events are added here as the Association schedules them.
-  var EVENTS = {};
+  var DOT = { board: '', social: 'gold', facility: 'gold', deadline: 'gold', holiday: 'danger' };
+  var ALL = []; // published events from the admin system
 
   var now = new Date();
   var current = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -174,17 +173,63 @@
   function fmtKey(y, m, d) {
     return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
   }
+  function fmtTime(t) {
+    if (!t) return '';
+    var p = t.split(':'); var h = +p[0], mi = +p[1];
+    return ((h % 12) || 12) + ':' + String(mi).padStart(2, '0') + ' ' + (h >= 12 ? 'PM' : 'AM');
+  }
+  function timeLabel(e) {
+    var t = e.all_day ? 'All day' : (fmtTime(e.start_time) + (e.end_time ? ' \u2013 ' + fmtTime(e.end_time) : ''));
+    if (!t) t = 'Time TBA';
+    return t + (e.location ? ' \u00b7 ' + e.location : '');
+  }
+  // Expand an event (with recurrence) into day numbers within year y, month m (0-based)
+  function occurrences(e, y, m) {
+    var days = [];
+    var parts = e.event_date.split('-');
+    var by = +parts[0], bm = +parts[1] - 1, bd = +parts[2];
+    var monthStart = new Date(y, m, 1), monthEnd = new Date(y, m + 1, 0);
+    var recEnd = e.recurrence_end ? new Date(e.recurrence_end + 'T23:59') : null;
+    if (e.recurrence === 'none') {
+      if (by === y && bm === m) days.push(bd);
+    } else if (e.recurrence === 'weekly') {
+      var d = new Date(by, bm, bd);
+      while (d <= monthEnd && (!recEnd || d <= recEnd)) {
+        if (d >= monthStart && d.getMonth() === m && d.getFullYear() === y) days.push(d.getDate());
+        d.setDate(d.getDate() + 7);
+      }
+    } else if (e.recurrence === 'monthly') {
+      var cand = new Date(y, m, bd);
+      if (cand.getMonth() === m && cand >= new Date(by, bm, bd) && (!recEnd || cand <= recEnd)) days.push(bd);
+    } else if (e.recurrence === 'yearly') {
+      if (m === bm && y >= by) {
+        var cy = new Date(y, m, bd);
+        if (cy >= new Date(by, bm, bd) && (!recEnd || cy <= recEnd)) days.push(bd);
+      }
+    }
+    return days;
+  }
+  function eventsForMonth(y, m) {
+    var map = {};
+    ALL.forEach(function (e) {
+      occurrences(e, y, m).forEach(function (d) {
+        var k = fmtKey(y, m, d);
+        (map[k] = map[k] || []).push(e);
+      });
+    });
+    return map;
+  }
 
   function render() {
     var y = current.getFullYear();
     var m = current.getMonth();
     document.getElementById('monthTitle').textContent = MONTHS[m] + ' ' + y;
+    var EVENTS = eventsForMonth(y, m);
 
     var firstDay = new Date(y, m, 1).getDay();
     var daysInMonth = new Date(y, m + 1, 0).getDate();
     var grid = document.getElementById('calGrid');
     grid.innerHTML = '';
-
     for (var i = 0; i < firstDay; i++) {
       var empty = document.createElement('div');
       empty.className = 'cal-day empty';
@@ -196,9 +241,10 @@
       cell.className = 'cal-day' + (key === todayKey ? ' today' : '');
       var dots = '';
       if (EVENTS[key]) {
-        var dotsArr = EVENTS[key].map(function (e) { return '<span class="dot ' + (e.dot || '') + '"></span>'; });
-        dots = '<div class="day-dots">' + dotsArr.join('') + '</div>';
-        var names = EVENTS[key].map(function (e) { return e.title; }).join(', ');
+        dots = '<div class="day-dots">' + EVENTS[key].map(function (e) {
+          return '<span class="dot ' + (DOT[e.category] || '') + '"></span>';
+        }).join('') + '</div>';
+        var names = EVENTS[key].map(function (e) { return e.name; }).join(', ');
         cell.title = names;
         cell.setAttribute('aria-label', MONTHS[m] + ' ' + d + ': ' + names);
       }
@@ -206,37 +252,32 @@
       grid.appendChild(cell);
     }
 
-    // Build event list (this month + spillover for following month if sparse)
     var list = document.getElementById('eventsList');
     list.innerHTML = '';
     var keys = Object.keys(EVENTS).sort();
     var added = 0;
-    for (var i = 0; i < keys.length && added < 8; i++) {
-      var k = keys[i];
-      var parts = k.split('-');
-      var ky = parseInt(parts[0], 10);
-      var km = parseInt(parts[1], 10) - 1;
-      var kd = parseInt(parts[2], 10);
-      if (ky < y || (ky === y && km < m)) continue;
+    keys.forEach(function (k) {
       EVENTS[k].forEach(function (e) {
+        if (added >= 8) return;
+        var kd = +k.split('-')[2];
         var item = document.createElement('div');
         item.className = 'event-item';
-        item.innerHTML =
-          '<div class="event-date">' +
-            '<div class="ed-mo">' + MONTHS[km].slice(0,3) + '</div>' +
-            '<div class="ed-day">' + kd + '</div>' +
-          '</div>' +
-          '<div class="event-content">' +
-            '<span class="event-tag ' + e.tag + '">' + e.tag + '</span>' +
-            '<h4>' + e.title + '</h4>' +
-            '<div class="meta">' + e.time + '</div>' +
-          '</div>';
+        var tag = document.createElement('span');
+        tag.className = 'event-tag ' + e.category;
+        tag.textContent = e.category;
+        var h = document.createElement('h4'); h.textContent = e.name;
+        var meta = document.createElement('div'); meta.className = 'meta'; meta.textContent = timeLabel(e);
+        var contentEl = document.createElement('div'); contentEl.className = 'event-content';
+        contentEl.appendChild(tag); contentEl.appendChild(h); contentEl.appendChild(meta);
+        if (e.description) { var p = document.createElement('div'); p.className = 'meta'; p.style.marginTop = '4px'; p.textContent = e.description; contentEl.appendChild(p); }
+        item.innerHTML = '<div class="event-date"><div class="ed-mo">' + MONTHS[m].slice(0,3) + '</div><div class="ed-day">' + kd + '</div></div>';
+        item.appendChild(contentEl);
         list.appendChild(item);
         added++;
       });
-    }
+    });
     if (added === 0) {
-      list.innerHTML = '<p style="color: var(--text-muted); font-size: 14px;">No events are posted for this month yet. Community events, board meetings, and important dates will appear here as they\'re scheduled.</p>';
+      list.innerHTML = '<p style="color: var(--text-muted); font-size: 14px;">No events are posted for this month yet. Community events, board meetings, and important dates will appear here as they\u2019re scheduled.</p>';
     }
   }
 
@@ -245,7 +286,11 @@
     render();
   };
 
-  render();
+  render(); // paint the month grid immediately, then fill with events
+  fetch(SB + '/rest/v1/vl_events?status=eq.published&select=*', { headers: { apikey: KEY } })
+    .then(function (r) { return r.json(); })
+    .then(function (rows) { if (Array.isArray(rows)) { ALL = rows; render(); } })
+    .catch(function () { /* calendar still shows the month grid */ });
 })();
 </script>
 
