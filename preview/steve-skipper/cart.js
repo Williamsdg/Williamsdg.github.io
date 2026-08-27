@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var KEY = 'skipper.cart.v1';
-  var CHECKOUT = '/.netlify/functions/checkout';
+  var CHECKOUT = 'https://steve-skipper-studio.netlify.app/.netlify/functions/checkout';
 
   function read() {
     try { return JSON.parse(localStorage.getItem(KEY)) || []; }
