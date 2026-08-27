@@ -135,6 +135,11 @@
     document.addEventListener('click', function (ev) {
       if (ev.target.closest('.cart-toggle')) { ev.preventDefault(); open(); }
       if (ev.target.closest('.cart-close') || ev.target.classList.contains('cart-scrim')) close();
+      if (ev.target.classList.contains('ship-info')) {
+        ev.preventDefault();
+        var card = document.getElementById('shipping-rates');
+        if (card) { close(); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      }
       if (ev.target.classList.contains('cr-rm')) remove(+ev.target.dataset.i);
       if (ev.target.id === 'cart-checkout') checkout(ev.target);
     });
