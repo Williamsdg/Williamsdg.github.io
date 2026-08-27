@@ -1,6 +1,7 @@
 /* Vestlake Admin — events + newsletters management on Supabase.
-   Staff accounts live in vl_staff; RLS enforces access. No hard deletes — archive only. */
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+   Staff accounts live in vl_staff; RLS enforces access. No hard deletes — archive only.
+   supabase-js is self-hosted (./supabase.js, UMD build) so no CDN can be blocked by extensions. */
+const { createClient } = window.supabase;
 
 const SUPABASE_URL = 'https://tkkhvbkocumyxpgsrpxv.supabase.co';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRra2h2YmtvY3VteXhwZ3NycHh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NjYyNDAsImV4cCI6MjA5NzI0MjI0MH0.piSMSUJ427thN_sjCfgOp9lbnUsWGmYqQPRMlglfd6E';
