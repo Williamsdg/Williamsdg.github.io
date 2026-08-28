@@ -96,6 +96,8 @@ function showLoginError(msg) {
   const el = $('loginError');
   el.textContent = msg;
   el.hidden = false;
+  el.scrollIntoView({ block: 'center' });
+  alert(msg); // impossible to miss while we debug sign-in reports of "nothing happens"
 }
 
 // Surface anything unexpected on-screen — never fail silently.
