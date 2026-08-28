@@ -106,20 +106,45 @@ window.addEventListener('unhandledrejection', (e) => {
   if (!$('loginView').hidden) showLoginError('Unexpected error: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
 });
 
-$('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = $('loginBtn'); btn.disabled = true; btn.textContent = 'Signing in…';
+function trace(msg, isError) {
+  const el = $('loginTrace');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--danger)' : 'var(--success)';
+}
+
+// Sign-in mirrors the diagnostic page exactly: plain button, direct fetch —
+// no form submission for password managers or extensions to intercept.
+async function doLogin() {
+  const btn = $('loginBtn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
   $('loginError').hidden = true;
+  trace('Contacting sign-in service…');
   try {
-    const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPassword').value });
-    if (error) { showLoginError('Sign-in failed: ' + error.message); return; }
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { apikey: ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: $('loginEmail').value.trim(), password: $('loginPassword').value }),
+    });
+    let body = null;
+    try { body = await res.json(); } catch (e) { /* non-JSON */ }
+    if (!res.ok || !body || !body.access_token) {
+      const msg = (body && (body.msg || body.error_description || body.error)) || ('status ' + res.status);
+      trace('Sign-in rejected.', true);
+      showLoginError('Sign-in failed: ' + msg);
+      return;
+    }
+    trace('Signed in ✓ — loading dashboard…');
+    sb.auth.adoptSession(body);
     await boot();
   } catch (err) {
+    trace('Failed.', true);
     showLoginError('Sign-in hit an unexpected error: ' + err.message);
   } finally {
     btn.disabled = false; btn.textContent = 'Sign In';
   }
-});
+}
+$('loginBtn').addEventListener('click', doLogin);
+$('loginForm').addEventListener('submit', (e) => { e.preventDefault(); doLogin(); }); // Enter key
 
 $('forgotBtn').addEventListener('click', async () => {
   const email = $('loginEmail').value.trim();

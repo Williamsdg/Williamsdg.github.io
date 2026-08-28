@@ -64,6 +64,8 @@
     }
 
     var auth = {
+      // Adopt a session obtained by external code (e.g. a raw fetch sign-in).
+      adoptSession(d) { return saveSession(d); },
       async getSession() {
         var s = await ensureSession();
         return { data: { session: s } };
