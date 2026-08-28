@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Vestlake Admin — Diagnostic</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 640px; margin: 30px auto; padding: 0 16px; line-height: 1.6; color: #1A2E25; }
+  h1 { font-size: 22px; }
+  .step { padding: 10px 14px; border-radius: 8px; margin: 8px 0; background: #f4f4f0; border: 1px solid #ddd; font-size: 15px; }
+  .ok { background: #e8f3ef; border-color: #2E7D6F; }
+  .fail { background: #f9e8e8; border-color: #B43F3F; }
+  input { display: block; width: 100%; box-sizing: border-box; font-size: 16px; padding: 12px; margin: 8px 0; border: 1.5px solid #ccc; border-radius: 6px; }
+  button { font-size: 16px; padding: 14px 24px; border-radius: 6px; border: none; background: #1F4434; color: white; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
+  pre { white-space: pre-wrap; word-break: break-all; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>Vestlake Admin — Diagnostic</h1>
+<p>This page tests each part of the sign-in system and reports what it finds.</p>
+<div id="steps"></div>
+<input type="email" id="em" placeholder="Email" value="dylan@williamsdigital.io">
+<input type="password" id="pw" placeholder="Password">
+<button id="go" type="button">Run Sign-In Test</button>
+<div id="results"></div>
+
+<script>
+function step(target, msg, cls) {
+  var d = document.createElement('div');
+  d.className = 'step ' + (cls || '');
+  d.innerHTML = msg;
+  document.getElementById(target).appendChild(d);
+}
+step('steps', '1. JavaScript is running ✓', 'ok');
+
+var SB = 'https://tkkhvbkocumyxpgsrpxv.supabase.co';
+var KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRra2h2YmtvY3VteXhwZ3NycHh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NjYyNDAsImV4cCI6MjA5NzI0MjI0MH0.piSMSUJ427thN_sjCfgOp9lbnUsWGmYqQPRMlglfd6E';
+
+try {
+  localStorage.setItem('vl_test', '1');
+  localStorage.removeItem('vl_test');
+  step('steps', '2. Browser storage works ✓', 'ok');
+} catch (e) {
+  step('steps', '2. Browser storage is BLOCKED (' + e.message + ') — the admin now tolerates this, but it means an extension or setting is active', 'fail');
+}
+
+fetch(SB + '/auth/v1/health', { headers: { apikey: KEY } })
+  .then(function (r) { step('steps', '3. Can reach the sign-in service ✓ (status ' + r.status + ')', 'ok'); })
+  .catch(function (e) { step('steps', '3. CANNOT reach the sign-in service: ' + e.message + ' — something on this device/network blocks supabase.co', 'fail'); });
+
+fetch(SB + '/rest/v1/vl_newsletters?status=eq.published&select=title&limit=1', { headers: { apikey: KEY } })
+  .then(function (r) { return r.json(); })
+  .then(function (d) { step('steps', '4. Can read site data ✓ (' + (d[0] ? d[0].title : 'no rows') + ')', 'ok'); })
+  .catch(function (e) { step('steps', '4. CANNOT read site data: ' + e.message, 'fail'); });
+
+document.getElementById('go').addEventListener('click', function () {
+  document.getElementById('results').innerHTML = '';
+  step('results', '5. Button click registered ✓ — attempting sign-in…', 'ok');
+  fetch(SB + '/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    headers: { apikey: KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: document.getElementById('em').value.trim(), password: document.getElementById('pw').value }),
+  })
+  .then(function (r) { return r.json().then(function (d) { return { status: r.status, body: d }; }); })
+  .then(function (out) {
+    if (out.body && out.body.access_token) {
+      step('results', '6. SIGN-IN SUCCEEDED ✓ — signed in as ' + out.body.user.email + '. The admin app should work; if it does not, take a screenshot of this page and the admin page.', 'ok');
+    } else {
+      step('results', '6. Sign-in REJECTED (status ' + out.status + '): <pre>' + JSON.stringify(out.body) + '</pre>', 'fail');
+    }
+  })
+  .catch(function (e) {
+    step('results', '6. Sign-in request FAILED to send: ' + e.message, 'fail');
+  });
+});
+</script>
+</body>
+</html>
