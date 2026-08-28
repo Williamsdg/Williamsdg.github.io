@@ -74,18 +74,35 @@ async function selfTest() {
   }
 }
 
+function withTimeout(p, ms, label) {
+  return Promise.race([
+    Promise.resolve(p),
+    new Promise((_, rej) => setTimeout(() => rej(new Error(label + ' timed out after ' + ms / 1000 + 's — something in this browser or network is blocking the request')), ms)),
+  ]);
+}
+
 async function boot() {
+  trace('Checking session…');
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) { show('login'); selfTest(); return; }
-  const { data: p } = await sb.from('vl_staff').select('*').eq('user_id', session.user.id).maybeSingle();
+  if (!session) { show('login'); trace(''); selfTest(); return; }
+  trace('Loading your staff profile…');
+  const { data: p, error: perr } = await withTimeout(
+    sb.from('vl_staff').select('*').eq('user_id', session.user.id).maybeSingle(), 12000, 'Staff profile lookup');
+  if (perr) {
+    show('login');
+    trace('Profile lookup failed.', true);
+    showLoginError('Signed in, but your staff profile could not be loaded: ' + perr.message);
+    return;
+  }
   if (!p || !p.active) {
     await sb.auth.signOut();
     show('login');
-    $('loginError').textContent = 'This account is not an approved staff account.';
-    $('loginError').hidden = false;
+    trace('', true);
+    showLoginError('This account is not an approved staff account.');
     return;
   }
   profile = p;
+  trace('Profile loaded ✓ — opening dashboard…');
   $('whoami').textContent = p.full_name;
   $('staffNav').hidden = p.role !== 'admin';
   show('app');
