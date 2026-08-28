@@ -11,15 +11,26 @@
     var KEY = 'vl_session';
     var recoveryCb = null;
 
+    // Storage that survives blocked localStorage (privacy extensions / strict modes):
+    // falls back to in-memory (session lost on refresh, but sign-in still works).
+    var memStore = null;
     function loadSession() {
-      try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
+      try {
+        var raw = localStorage.getItem(KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) { /* storage blocked */ }
+      return memStore;
     }
     function saveSession(d) {
       if (!d.expires_at && d.expires_in) d.expires_at = Math.floor(Date.now() / 1000) + d.expires_in;
-      localStorage.setItem(KEY, JSON.stringify(d));
+      memStore = d;
+      try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) { /* storage blocked — memory only */ }
       return d;
     }
-    function clearSession() { localStorage.removeItem(KEY); }
+    function clearSession() {
+      memStore = null;
+      try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+    }
 
     async function authFetch(path, opts, token) {
       opts = opts || {};

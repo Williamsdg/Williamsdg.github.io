@@ -92,14 +92,31 @@ async function boot() {
   route();
 }
 
+function showLoginError(msg) {
+  const el = $('loginError');
+  el.textContent = msg;
+  el.hidden = false;
+}
+
+// Surface anything unexpected on-screen — never fail silently.
+window.addEventListener('error', (e) => { if (!$('loginView').hidden) showLoginError('Unexpected error: ' + e.message); });
+window.addEventListener('unhandledrejection', (e) => {
+  if (!$('loginView').hidden) showLoginError('Unexpected error: ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason)));
+});
+
 $('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = $('loginBtn'); btn.disabled = true; btn.textContent = 'Signing in…';
   $('loginError').hidden = true;
-  const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPassword').value });
-  btn.disabled = false; btn.textContent = 'Sign In';
-  if (error) { $('loginError').textContent = 'Sign-in failed: ' + error.message; $('loginError').hidden = false; return; }
-  boot();
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email: $('loginEmail').value.trim(), password: $('loginPassword').value });
+    if (error) { showLoginError('Sign-in failed: ' + error.message); return; }
+    await boot();
+  } catch (err) {
+    showLoginError('Sign-in hit an unexpected error: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
 });
 
 $('forgotBtn').addEventListener('click', async () => {
@@ -115,7 +132,10 @@ $('recoveryForm').addEventListener('submit', async (e) => {
   const { error } = await sb.auth.updateUser({ password: $('newPassword').value });
   if (error) { $('recoveryError').textContent = error.message; $('recoveryError').hidden = false; return; }
   toast('Password updated — you are signed in.');
-  boot();
+  boot().catch(function (err) {
+    $('recoveryError').textContent = 'Unexpected error: ' + err.message;
+    $('recoveryError').hidden = false;
+  });
 });
 
 $('signOutBtn').addEventListener('click', async () => { await sb.auth.signOut(); location.hash = ''; show('login'); });
