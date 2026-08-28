@@ -59,9 +59,24 @@ sb.auth.onAuthStateChange((event) => {
   if (event === 'PASSWORD_RECOVERY') show('recovery');
 });
 
+// Login-screen connectivity self-test: tells the user on-screen if the data
+// service is unreachable (firewall / VPN / extension) instead of failing silently.
+async function selfTest() {
+  const el = $('connStatus');
+  if (!el) return;
+  try {
+    const r = await fetch(SUPABASE_URL + '/auth/v1/health', { headers: { apikey: ANON_KEY } });
+    if (r.ok) { el.textContent = '✓ Connected to the Vestlake data service.'; el.style.color = 'var(--success)'; }
+    else { el.textContent = 'The data service responded with an error (' + r.status + '). Try again shortly.'; el.style.color = 'var(--danger)'; }
+  } catch (e) {
+    el.textContent = '✕ This browser cannot reach the Vestlake data service. A firewall, VPN, or browser extension is blocking supabase.co — sign-in will not work until it is allowed. Try another browser or network.';
+    el.style.color = 'var(--danger)';
+  }
+}
+
 async function boot() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) { show('login'); return; }
+  if (!session) { show('login'); selfTest(); return; }
   const { data: p } = await sb.from('vl_staff').select('*').eq('user_id', session.user.id).maybeSingle();
   if (!p || !p.active) {
     await sb.auth.signOut();
@@ -560,4 +575,9 @@ async function renderStaff() {
   });
 }
 
-boot();
+boot().catch(function (e) {
+  show('login');
+  const el = $('loginError');
+  el.textContent = 'The admin app hit an unexpected error: ' + e.message;
+  el.hidden = false;
+});
