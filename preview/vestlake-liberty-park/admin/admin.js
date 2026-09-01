@@ -12,6 +12,8 @@ const $ = (id) => document.getElementById(id);
 const content = $('content');
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const CATEGORIES = { board: 'Board', social: 'Social', facility: 'Facility', deadline: 'Deadline', holiday: 'Holiday' };
+const DOC_CATS = { governing: 'Governing Documents', minutes: 'Board Meeting Minutes', financial: 'Financial Reports', forms: 'Forms & Resident Guides' };
+const DOCS_BUCKET = 'vestlake-documents';
 
 let profile = null;      // vl_staff row for the signed-in user
 let duplicateSeed = null; // event values carried into #/events/new by Duplicate
@@ -205,6 +207,8 @@ function route() {
   else if (page === 'events') renderEvents();
   else if (page === 'newsletters' && arg) renderNewsletterForm(arg === 'new' ? null : arg);
   else if (page === 'newsletters') renderNewsletters();
+  else if (page === 'documents' && arg) renderDocumentForm(arg === 'new' ? null : arg);
+  else if (page === 'documents') renderDocuments();
   else if (page === 'staff' && profile.role === 'admin') renderStaff();
   else renderDashboard();
   content.focus({ preventScroll: true });
@@ -226,6 +230,7 @@ async function renderDashboard() {
     <div class="dash-actions">
       <a class="btn btn-gold" href="#/events/new">+ Add Calendar Event</a>
       <a class="btn btn-forest" href="#/newsletters/new">+ Post Newsletter</a>
+      <a class="btn btn-outline" href="#/documents/new">+ Add Document</a>
       <a class="btn btn-outline" href="../" target="_blank" rel="noopener">View Public Website ↗</a>
     </div>
     <div class="dash-grid">
@@ -568,6 +573,160 @@ async function renderNewsletterForm(id) {
       location.hash = '#/newsletters';
     } catch (e) {
       $('nlError').textContent = e.message; $('nlError').hidden = false;
+      $('draftBtn').disabled = false; $('publishBtn').disabled = false;
+    }
+  }
+  $('draftBtn').addEventListener('click', () => save('draft'));
+  $('publishBtn').addEventListener('click', () => save('published'));
+}
+
+/* ---------- shared PDF upload (XHR for progress events) ---------- */
+function uploadToBucket(bucket, file, path) {
+  return new Promise(async (resolve, reject) => {
+    const { data: { session } } = await sb.auth.getSession();
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', SUPABASE_URL + '/storage/v1/object/' + bucket + '/' + path);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + session.access_token);
+    xhr.setRequestHeader('apikey', ANON_KEY);
+    xhr.setRequestHeader('Content-Type', 'application/pdf');
+    const prog = $('uploadProgress');
+    if (prog) prog.hidden = false;
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable && $('uploadBar')) $('uploadBar').style.width = Math.round(e.loaded / e.total * 100) + '%'; };
+    xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error('Upload failed (' + xhr.status + '): ' + xhr.responseText));
+    xhr.onerror = () => reject(new Error('Upload failed — check your connection.'));
+    xhr.send(file);
+  });
+}
+async function countPdfPages(file) {
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    let str = '';
+    for (let i = 0; i < buf.length; i += 65536) str += String.fromCharCode.apply(null, buf.subarray(i, i + 65536));
+    const m = str.match(/\/Type\s*\/Page[^s]/g);
+    return m ? m.length : null;
+  } catch { return null; }
+}
+
+/* ---------- documents list ---------- */
+async function renderDocuments() {
+  content.innerHTML = '<h1>Documents</h1><p class="page-sub">Loading…</p>';
+  const { data: all, error } = await sb.from('vl_documents').select('*').order('doc_date', { ascending: false });
+  if (error) { content.innerHTML = '<h1>Documents</h1><p class="form-error">' + esc(error.message) + '</p>'; return; }
+  const row = (d) => `
+    <div class="row">
+      <div class="row-main">
+        <div class="title">${esc(d.title)} <span class="pill ${d.status}">${d.status}</span></div>
+        <div class="meta">${d.meta ? esc(d.meta) + ' · ' : ''}${d.page_count ? d.page_count + ' pages · ' : ''}${fmtSize(d.pdf_size) || 'PDF'}</div>
+      </div>
+      <div class="row-actions">
+        <a href="${esc(d.pdf_path)}" target="_blank" rel="noopener">Open PDF</a>
+        <a href="#/documents/${d.id}">Edit</a>
+        ${d.status !== 'archived'
+          ? `<button type="button" class="danger" data-archive="${d.id}" data-name="${esc(d.title)}">Archive</button>`
+          : `<button type="button" data-restore="${d.id}">Restore</button>`}
+      </div>
+    </div>`;
+  content.innerHTML = `
+    <div class="page-head"><div><h1>Documents</h1><p class="page-sub" style="margin:0;">Published documents appear on the public Documents page in their section, instantly.</p></div>
+    <a class="btn btn-gold" href="#/documents/new">+ Add Document</a></div>
+    ${Object.entries(DOC_CATS).map(([key, label]) => {
+      const docs = (all || []).filter((d) => d.category === key && d.status !== 'archived');
+      return `<div class="card"><h3>${label}</h3><div class="row-list">${docs.map(row).join('') || '<p class="empty-note">Nothing posted in this section yet.</p>'}</div></div>`;
+    }).join('')}
+    ${(all || []).some((d) => d.status === 'archived')
+      ? '<div class="card"><h3>Archived</h3><div class="row-list">' + all.filter((d) => d.status === 'archived').map(row).join('') + '</div></div>' : ''}`;
+  content.querySelectorAll('[data-archive]').forEach((b) => b.addEventListener('click', async () => {
+    if (!confirm('Archive "' + b.dataset.name + '"? It will be removed from the public site but kept here.')) return;
+    await sb.from('vl_documents').update({ status: 'archived', updated_by: profile.full_name }).eq('id', b.dataset.archive);
+    await logActivity('archived document', 'document', b.dataset.name);
+    toast('Document archived');
+    renderDocuments();
+  }));
+  content.querySelectorAll('[data-restore]').forEach((b) => b.addEventListener('click', async () => {
+    await sb.from('vl_documents').update({ status: 'draft', updated_by: profile.full_name }).eq('id', b.dataset.restore);
+    toast('Restored as a draft');
+    renderDocuments();
+  }));
+}
+
+/* ---------- document form ---------- */
+async function renderDocumentForm(id) {
+  let doc = { category: 'minutes', title: '', meta: '', doc_date: todayISO(), pdf_path: '', pdf_size: null, page_count: null, status: 'draft' };
+  if (id) {
+    const { data } = await sb.from('vl_documents').select('*').eq('id', id).single();
+    if (data) doc = data;
+  }
+  let pendingFile = null;
+  content.innerHTML = `
+    <h1>${id ? 'Edit Document' : 'Add Document'}</h1>
+    <p class="page-sub">${id && doc.updated_by ? 'Last updated by ' + esc(doc.updated_by) + ' · ' + timeAgo(doc.updated_at) : 'Upload a PDF, pick which section of the Documents page it belongs in, and publish.'}</p>
+    <form id="docForm"><div class="card">
+      <label>Document PDF ${id ? '(choose a file only to replace the current one)' : '*'}</label>
+      <div class="upload-box ${doc.pdf_path ? 'has-file' : ''}" id="uploadBox">
+        <input type="file" id="f_pdf" accept="application/pdf,.pdf" hidden>
+        <div id="uploadLabel">${doc.pdf_path ? '✓ Current file: ' + esc(decodeURIComponent(doc.pdf_path.split('/').pop())) + '<br><b>Tap to replace PDF</b>' : '<b>Tap to choose a PDF</b><br>PDF files only'}</div>
+        <div class="progress" id="uploadProgress" hidden><div id="uploadBar"></div></div>
+      </div>
+      <div class="form-grid" style="margin-top:6px;">
+        <div><label for="f_cat">Website section *</label><select id="f_cat">${Object.entries(DOC_CATS).map(([k, v]) => `<option value="${k}" ${doc.category === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+        <div><label for="f_date">Document date</label><input id="f_date" type="date" value="${esc(doc.doc_date || '')}"><div class="field-hint">Used for ordering — e.g. the meeting date</div></div>
+        <div class="full"><label for="f_title">Title *</label><input id="f_title" required value="${esc(doc.title)}" placeholder="e.g. September 2026 Board Meeting Minutes"></div>
+        <div class="full"><label for="f_meta">Short note (optional, shown under the title)</label><input id="f_meta" value="${esc(doc.meta || '')}" placeholder="e.g. Approved October 2026"></div>
+      </div>
+      <p class="form-error" id="docError" hidden></p>
+    </div></form>
+    <div class="save-bar">
+      <button type="button" class="btn btn-outline" id="draftBtn">Save Draft</button>
+      <button type="button" class="btn btn-gold" id="publishBtn">${doc.status === 'published' ? 'Save & Keep Published' : 'Publish'}</button>
+    </div>`;
+
+  const box = $('uploadBox');
+  box.addEventListener('click', () => $('f_pdf').click());
+  $('f_pdf').addEventListener('change', () => {
+    const f = $('f_pdf').files[0];
+    if (!f) return;
+    if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
+      $('docError').textContent = 'Only PDF files can be uploaded.'; $('docError').hidden = false; $('f_pdf').value = ''; return;
+    }
+    $('docError').hidden = true;
+    pendingFile = f;
+    box.classList.add('has-file');
+    $('uploadLabel').innerHTML = '✓ ' + esc(f.name) + ' (' + fmtSize(f.size) + ')<br><b>Ready to upload on save</b>';
+    if (!$('f_title').value) $('f_title').value = f.name.replace(/\.pdf$/i, '').replace(/[-_]+/g, ' ');
+  });
+
+  async function save(status) {
+    $('docError').hidden = true;
+    if (!$('f_title').value.trim()) { $('docError').textContent = 'A title is required.'; $('docError').hidden = false; return; }
+    if (!id && !pendingFile) { $('docError').textContent = 'A PDF upload is required.'; $('docError').hidden = false; return; }
+    $('draftBtn').disabled = true; $('publishBtn').disabled = true;
+    const v = {
+      category: $('f_cat').value,
+      title: $('f_title').value.trim(),
+      meta: $('f_meta').value.trim() || null,
+      doc_date: $('f_date').value || null,
+      status,
+      updated_by: profile.full_name,
+    };
+    try {
+      if (pendingFile) {
+        const stamp = Date.now().toString(36);
+        const safe = v.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+        const path = safe + '-' + stamp + '.pdf';
+        await uploadToBucket(DOCS_BUCKET, pendingFile, path);
+        v.pdf_path = SUPABASE_URL + '/storage/v1/object/public/' + DOCS_BUCKET + '/' + path;
+        v.pdf_size = pendingFile.size;
+        v.page_count = await countPdfPages(pendingFile);
+      }
+      let res;
+      if (id) res = await sb.from('vl_documents').update(v).eq('id', id);
+      else res = await sb.from('vl_documents').insert({ ...v, created_by: profile.full_name });
+      if (res.error) throw new Error(res.error.message);
+      await logActivity(status === 'published' ? 'published document' : 'saved document draft', 'document', v.title);
+      toast(status === 'published' ? '✓ Published — the document is live on the Documents page.' : 'Draft saved.');
+      location.hash = '#/documents';
+    } catch (e) {
+      $('docError').textContent = e.message; $('docError').hidden = false;
       $('draftBtn').disabled = false; $('publishBtn').disabled = false;
     }
   }
