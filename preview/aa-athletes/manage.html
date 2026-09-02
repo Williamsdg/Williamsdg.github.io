@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Manage Athlete — A&amp;A Dashboard Concept</title>
+<meta name="description" content="Concept athlete editor: how A&amp;A would control an athlete's brand, bio, stats, media, partners and publish state. Illustrative data only.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="system.css">
+<style>
+:root{--brand:#C9A55A;--brand-soft:rgba(201,165,90,.13);--on-brand:#080B10;--athlete:#E2622F}
+body{background:#070910}
+
+.editbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  padding:18px clamp(18px,3vw,38px);border-bottom:1px solid var(--line);background:#0A0D14;
+  position:sticky;top:37px;z-index:180}
+.editbar .left{display:flex;align-items:center;gap:14px}
+.editbar .back{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.editbar .back:hover{color:var(--bone)}
+.editbar .ath-av{width:40px;height:40px;border-radius:2px;background:var(--athlete);color:#0A0C11;
+  display:grid;place-items:center;font-family:var(--disp);font-weight:800;font-size:.85rem;transition:background .25s}
+.editbar .t{font-weight:600}
+.editbar .m{font-size:.76rem;color:var(--mute)}
+.editbar .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.saved{font-family:var(--mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;color:#5FE3A1;opacity:0;transition:opacity .3s}
+.saved.on{opacity:1}
+
+.demo-banner{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border:1px solid rgba(242,193,78,.35);background:rgba(242,193,78,.07);color:#F2C14E;
+  border-radius:var(--r);padding:11px 15px;font-size:.8rem;margin:22px clamp(18px,3vw,38px) 0;
+}
+.demo-banner b{font-family:var(--mono);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase}
+
+.edit-shell{display:grid;grid-template-columns:1fr 380px;gap:26px;padding:22px clamp(18px,3vw,38px) 70px;align-items:start}
+.edit-shell>*{min-width:0}
+.epanel,.fieldset{min-width:0}
+@media(max-width:1080px){.edit-shell{grid-template-columns:1fr}}
+
+/* tabs */
+.etabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:24px;scrollbar-width:none}
+.etabs::-webkit-scrollbar{display:none}
+.etabs button{background:transparent;border:0;border-bottom:2px solid transparent;cursor:pointer;
+  font-family:var(--mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  padding:12px 14px;white-space:nowrap;transition:all .15s}
+.etabs button:hover{color:var(--bone)}
+.etabs button.on{color:var(--bone);border-bottom-color:var(--athlete)}
+
+.epanel{display:none}
+.epanel.on{display:block}
+
+.fieldset{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-bottom:18px}
+.fieldset h3{font-size:1rem;margin-bottom:4px}
+.fieldset .sub{font-size:.8rem;color:var(--mute);margin-bottom:18px}
+.field{margin-bottom:15px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-family:var(--mono);font-size:.56rem;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-bottom:7px}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--ink);border:1px solid var(--line);border-radius:2px;color:var(--bone);
+  padding:11px 12px;font-family:var(--sans);font-size:.88rem;max-width:100%;min-width:0}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--athlete)}
+.field textarea{min-height:100px;resize:vertical}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.f3{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.f2>*,.f3>*{min-width:0}
+@media(max-width:640px){.f2,.f3{grid-template-columns:1fr}}
+
+/* swatches */
+.swatches{display:flex;gap:9px;flex-wrap:wrap}
+.swatches button{width:38px;height:38px;border-radius:3px;border:2px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s}
+.swatches button:hover{transform:scale(1.08)}
+.swatches button[aria-pressed="true"]{border-color:var(--bone)}
+
+/* toggles */
+.toggle-row{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(43,52,64,.6)}
+.toggle-row:last-child{border-bottom:0}
+.toggle-row .n{font-size:.88rem;font-weight:500}
+.toggle-row .d{font-size:.76rem;color:var(--mute);margin-top:3px}
+.sw{width:42px;height:23px;border-radius:12px;background:var(--ink-3);border:1px solid var(--line);position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#6E7885;transition:transform .2s,background .2s}
+.sw[aria-pressed="true"]{background:var(--athlete);border-color:var(--athlete)}
+.sw[aria-pressed="true"]::after{transform:translateX(19px);background:#0A0C11}
+
+/* repeatable rows */
+.rep{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(43,52,64,.6);flex-wrap:wrap}
+.rep:last-of-type{border-bottom:0}
+.rep .n{font-size:.88rem;font-weight:500}
+.rep .d{font-size:.75rem;color:var(--mute);margin-top:3px}
+.rep .x{font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);
+  border:1px solid var(--line);background:transparent;padding:6px 10px;border-radius:2px;cursor:pointer}
+.rep .x:hover{color:#F2777A;border-color:rgba(242,119,122,.4)}
+.addrow{margin-top:16px;font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--athlete);background:transparent;border:1px dashed var(--athlete);padding:10px 14px;border-radius:2px;cursor:pointer;width:100%}
+
+/* upload slots */
+.uploads{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:640px){.uploads{grid-template-columns:repeat(2,1fr)}}
+.up{aspect-ratio:3/4;border:1px dashed #3A4452;border-radius:3px;display:grid;place-items:center;text-align:center;
+  font-family:var(--mono);font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:#5C6672;padding:10px;
+  cursor:pointer;transition:border-color .2s,color .2s}
+.up:hover{border-color:var(--athlete);color:var(--athlete)}
+.up.filled{border-style:solid;border-color:var(--line);background:linear-gradient(160deg,#141922,#0A0C11);color:#6E7885}
+
+/* live preview */
+.preview{position:sticky;top:120px}
+@media(max-width:1080px){.preview{position:static}}
+.pv-frame{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.pv-chrome{display:flex;align-items:center;gap:7px;padding:10px 13px;border-bottom:1px solid var(--line);background:#0A0D14}
+.pv-chrome i{width:8px;height:8px;border-radius:50%;background:var(--ink-3);display:block}
+.pv-chrome .url{margin-left:8px;font-family:var(--mono);font-size:.56rem;color:#5C6672;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-body{padding:0}
+.pv-hero{position:relative;padding:34px 20px 26px;background:linear-gradient(150deg,#12161E,#080A0E);overflow:hidden}
+.pv-hero::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 78% 24%,rgba(226,98,47,.24),transparent 62%);
+  background:radial-gradient(ellipse at 78% 24%,color-mix(in srgb,var(--athlete) 26%,transparent),transparent 62%);transition:background .3s}
+.pv-hero .gn{position:absolute;right:-6px;top:2px;font-family:var(--disp);font-weight:800;font-size:6.4rem;line-height:.8;
+  color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.24);
+  -webkit-text-stroke:1.5px color-mix(in srgb,var(--athlete) 32%,transparent);transition:-webkit-text-stroke-color .3s}
+.pv-hero .in{position:relative;z-index:2}
+.pv-hero .eb{font-family:var(--mono);font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;color:var(--athlete);transition:color .3s}
+.pv-hero .nm{font-family:var(--disp);font-weight:800;font-size:1.85rem;text-transform:uppercase;line-height:1;margin:8px 0 7px;letter-spacing:-.01em}
+.pv-hero .ps{font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;color:#8A93A1}
+.pv-hero .sg{font-family:var(--disp);font-weight:800;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase;color:var(--athlete);margin-top:14px;transition:color .3s}
+.pv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line)}
+.pv-stats div{background:var(--ink-2);padding:14px 12px;text-align:center}
+.pv-stats .k{font-family:var(--disp);font-weight:800;font-size:1.15rem;line-height:1}
+.pv-stats .l{font-family:var(--mono);font-size:.45rem;letter-spacing:.06em;white-space:nowrap;text-transform:uppercase;color:var(--mute);margin-top:6px}
+.pv-sections{padding:16px 18px}
+.pv-sec{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(43,52,64,.6);font-size:.78rem;color:#C5C9D0}
+.pv-sec:last-child{border-bottom:0}
+.pv-sec.off{color:#4E5866;text-decoration:line-through}
+.pv-sec .dot{width:6px;height:6px;border-radius:50%;background:var(--athlete);transition:background .3s}
+.pv-sec.off .dot{background:#333C48}
+.pv-cta{padding:14px 18px 18px}
+.pv-cta a{display:block;text-align:center;background:var(--athlete);color:#0A0C11;padding:11px;border-radius:3px;
+  font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;font-weight:500;transition:background .3s}
+.pv-note{font-size:.74rem;color:var(--mute);margin-top:14px;line-height:1.7}
+
+/* publish */
+.pubcard{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.pubstate{display:flex;align-items:center;gap:12px;padding:16px;border:1px solid var(--line);border-radius:3px;margin-bottom:16px;background:rgba(255,255,255,.02)}
+.checklist li{list-style:none;display:flex;gap:11px;align-items:flex-start;padding:9px 0;font-size:.85rem;color:#C5C9D0}
+.checklist .mk{color:#5FE3A1;flex-shrink:0}
+.checklist .mk.no{color:#F2C14E}
+</style>
+</head>
+<body>
+
+<nav class="proto" aria-label="Prototype screens">
+  <span class="proto-label">Concept · 5 screens</span>
+  <a href="index.html">01 Network</a>
+  <a href="athlete.html">02 Athlete</a>
+  <a href="partner.html">03 Media kit</a>
+  <a href="dashboard.html">04 A&amp;A dashboard</a>
+  <a href="manage.html" aria-current="page">05 Manage athlete</a>
+  <span class="spacer"></span>
+  <a href="pitch.html">Partnership &amp; pricing →</a>
+</nav>
+
+<div class="editbar">
+  <div class="left">
+    <a class="back" href="dashboard.html">← Roster</a>
+    <span class="ath-av" id="avatar">TA</span>
+    <div>
+      <div class="t" id="hdrName">Trey Ashford</div>
+      <div class="m">Football · Fallbrook State · <span class="chip live">Live</span></div>
+    </div>
+  </div>
+  <div class="right">
+    <span class="saved" id="saved">Saved</span>
+    <a class="btn ghost sm" href="athlete.html" target="_blank" rel="noopener">View live site ↗</a>
+    <button class="btn sm" id="saveBtn">Save changes</button>
+  </div>
+</div>
+
+<div class="demo-banner">
+  <b>Illustrative data</b>
+  <span>An editor mock-up. Changing the brand colour or the section switches updates the preview on the right; nothing is stored.</span>
+</div>
+
+<div class="edit-shell">
+
+  <!-- ============ EDITOR ============ -->
+  <div>
+    <div class="etabs" role="tablist">
+      <button class="on" data-e="profile">Profile</button>
+      <button data-e="brand">Brand</button>
+      <button data-e="stats">Stats</button>
+      <button data-e="media">Media</button>
+      <button data-e="partners">Partners</button>
+      <button data-e="commerce">Merch</button>
+      <button data-e="opps">Opportunities</button>
+      <button data-e="publish">Publish</button>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="epanel on" id="e-profile">
+      <div class="fieldset">
+        <h3>Identity</h3>
+        <div class="sub">Feeds the athlete site, the media kit and the network card at the same time.</div>
+        <div class="f2">
+          <div class="field"><label for="fn">First name</label><input id="fn" type="text" value="Trey"></div>
+          <div class="field"><label for="ln">Last name</label><input id="ln" type="text" value="Ashford"></div>
+        </div>
+        <div class="f3">
+          <div class="field"><label for="sp">Sport</label>
+            <select id="sp"><option>Football</option><option>Basketball</option><option>Baseball</option><option>Gymnastics</option><option>Track &amp; field</option><option>Soccer</option></select>
+          </div>
+          <div class="field"><label for="po">Position</label><input id="po" type="text" value="Quarterback"></div>
+          <div class="field"><label for="jn">Number</label><input id="jn" type="text" value="7"></div>
+        </div>
+        <div class="f3">
+          <div class="field"><label for="sc">School</label><input id="sc" type="text" value="Fallbrook State"></div>
+          <div class="field"><label for="cl">Class</label>
+            <select id="cl"><option>Freshman</option><option>Sophomore</option><option selected>Junior</option><option>Senior</option><option>Professional</option></select>
+          </div>
+          <div class="field"><label for="ht">Height / weight</label><input id="ht" type="text" value="6'3&quot; 215"></div>
+        </div>
+        <div class="field"><label for="dm">Domain</label><input id="dm" type="text" value="treyashford.com"></div>
+      </div>
+
+      <div class="fieldset">
+        <h3>Story</h3>
+        <div class="sub">The part brands actually read.</div>
+        <div class="field"><label for="bo">Bio</label><textarea id="bo">Trey came to Fallbrook State as the third quarterback on the depth chart and finished his junior year holding four program records. The story is not that he can throw it — plenty of them can throw it. The story is what he does after the play breaks.</textarea></div>
+        <div class="field"><label for="sg">Signature line</label><input id="sg" type="text" value="Snap to Whistle."></div>
+      </div>
+    </div>
+
+    <!-- BRAND -->
+    <div class="epanel" id="e-brand">
+      <div class="fieldset">
+        <h3>Brand colour</h3>
+        <div class="sub">This is the switch that makes a gymnast's site stop looking like a linebacker's. Try one.</div>
+        <div class="swatches" id="swatches">
+          <button aria-pressed="true"  data-c="#E2622F" style="background:#E2622F" title="Stadium orange"></button>
+          <button aria-pressed="false" data-c="#4D7CFF" style="background:#4D7CFF" title="Arena blue"></button>
+          <button aria-pressed="false" data-c="#52C78A" style="background:#52C78A" title="Velocity green"></button>
+          <button aria-pressed="false" data-c="#D8A7B1" style="background:#D8A7B1" title="Blush"></button>
+          <button aria-pressed="false" data-c="#C9A55A" style="background:#C9A55A" title="Championship gold"></button>
+          <button aria-pressed="false" data-c="#3C7A9E" style="background:#3C7A9E" title="Heritage blue"></button>
+        </div>
+      </div>
+      <div class="fieldset">
+        <h3>Layout direction</h3>
+        <div class="sub">Each direction changes typography, spacing and photography treatment — not just colour.</div>
+        <div class="field"><label for="ld">Direction</label>
+          <select id="ld">
+            <option selected>Stadium night — heavy condensed, dark, performance forward</option>
+            <option>Editorial — serif, generous whitespace, lifestyle photography</option>
+            <option>Heritage — vintage card treatment, warm paper tones</option>
+            <option>Velocity — minimal, high contrast, motion led</option>
+            <option>Arena — spotlight lighting, sneaker-drop commerce</option>
+          </select>
+        </div>
+        <div class="field"><label for="mg">Monogram</label><input id="mg" type="text" value="TA7"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="epanel" id="e-stats">
+      <div class="fieldset">
+        <h3>Headline numbers</h3>
+        <div class="sub">The four figures that sit at the top of the athlete's site.</div>
+        <div class="f2">
+          <div class="field"><label>Stat 1 label</label><input type="text" value="Passing yards"></div>
+          <div class="field"><label>Stat 1 value</label><input type="text" value="3,118"></div>
+        </div>
+        <div class="f2">
+          <div class="field"><label>Stat 2 label</label><input type="text" value="Total touchdowns"></div>
+          <div class="field"><label>Stat 2 value</label><input type="text" value="37"></div>
+        </div>
+        <div class="f2">
+          <div class="field"><label>Stat 3 label</label><input type="text" value="Completion rate"></div>
+          <div class="field"><label>Stat 3 value</label><input type="text" value="67.7%"></div>
+        </div>
+        <div class="f2">
+          <div class="field"><label>Stat 4 label</label><input type="text" value="Passer rating"></div>
+          <div class="field"><label>Stat 4 value</label><input type="text" value="164.2"></div>
+        </div>
+      </div>
+      <div class="fieldset">
+        <h3>Season splits</h3>
+        <div class="sub">Typed by A&amp;A, or synced automatically from a stats feed the agency chooses.</div>
+        <div class="rep"><div><div class="n">Junior · 2025</div><div class="d">12 G · 241/356 · 3,118 yds · 29 TD · 7 INT</div></div><button class="x">Remove</button></div>
+        <div class="rep"><div><div class="n">Sophomore · 2024</div><div class="d">9 G · 178/274 · 2,284 yds · 19 TD · 5 INT</div></div><button class="x">Remove</button></div>
+        <button class="addrow">+ Add a season</button>
+      </div>
+    </div>
+
+    <!-- MEDIA -->
+    <div class="epanel" id="e-media">
+      <div class="fieldset">
+        <h3>Photography</h3>
+        <div class="sub">One upload feeds the hero, the network card, the media kit and the downloadable asset pack.</div>
+        <div class="uploads">
+          <div class="up filled">Hero image<br>set</div>
+          <div class="up filled">Portrait<br>set</div>
+          <div class="up">+ Upload</div>
+          <div class="up">+ Upload</div>
+          <div class="up">+ Upload</div>
+          <div class="up">+ Upload</div>
+        </div>
+      </div>
+      <div class="fieldset">
+        <h3>Highlight reels</h3>
+        <div class="sub">Hudl, YouTube or self-hosted. Replacing a reel archives the old one.</div>
+        <div class="rep"><div><div class="n">Junior season reel</div><div class="d">4:12 · featured</div></div><button class="x">Remove</button></div>
+        <div class="rep"><div><div class="n">Fourth-quarter drives</div><div class="d">2:38</div></div><button class="x">Remove</button></div>
+        <div class="rep"><div><div class="n">Off-script plays</div><div class="d">3:05</div></div><button class="x">Remove</button></div>
+        <button class="addrow">+ Add a reel</button>
+      </div>
+      <div class="fieldset">
+        <h3>Social accounts</h3>
+        <div class="sub">Connected accounts keep the media kit's follower and engagement numbers current.</div>
+        <div class="f2">
+          <div class="field"><label>Instagram</label><input type="text" value="@treyashford"></div>
+          <div class="field"><label>TikTok</label><input type="text" value="@treyashford7"></div>
+        </div>
+        <div class="f2">
+          <div class="field"><label>X</label><input type="text" value="@treyashford"></div>
+          <div class="field"><label>YouTube</label><input type="text" value="@treyashford"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARTNERS -->
+    <div class="epanel" id="e-partners">
+      <div class="fieldset">
+        <h3>Active partners</h3>
+        <div class="sub">Dates and deliverables live here, so renewals surface before they lapse.</div>
+        <div class="rep"><div><div class="n">Northline Auto</div><div class="d">Automotive · season-long · renews in 41 days</div></div><button class="x">Remove</button></div>
+        <div class="rep"><div><div class="n">Carro Fit</div><div class="d">Training · six-week series · complete</div></div><button class="x">Remove</button></div>
+        <div class="rep"><div><div class="n">Brightwell Nutrition</div><div class="d">Nutrition · ambassador · renews in 118 days</div></div><button class="x">Remove</button></div>
+        <div class="rep"><div><div class="n">Halsey Co.</div><div class="d">Apparel · limited drop · in negotiation</div></div><button class="x">Remove</button></div>
+        <button class="addrow">+ Add a partner</button>
+      </div>
+      <div class="fieldset">
+        <h3>Availability</h3>
+        <div class="sub">Controls how this athlete appears to brands browsing the network.</div>
+        <div class="toggle-row"><div><div class="n">Open to new partnerships</div><div class="d">Shows the athlete in brand-side filters</div></div><button class="sw" aria-pressed="true"></button></div>
+        <div class="toggle-row"><div><div class="n">Accepting appearances</div><div class="d">Enables the booking form</div></div><button class="sw" aria-pressed="true"></button></div>
+        <div class="toggle-row"><div><div class="n">Exclusive categories locked</div><div class="d">Blocks inquiries that conflict with an existing deal</div></div><button class="sw" aria-pressed="true"></button></div>
+      </div>
+    </div>
+
+    <!-- COMMERCE -->
+    <div class="epanel" id="e-commerce">
+      <div class="fieldset">
+        <h3>Drop 001 — Snap to Whistle</h3>
+        <div class="sub">Revenue reports back to the agency dashboard by athlete.</div>
+        <div class="rep"><div><div class="n">Signature Tee</div><div class="d">$34 · 112 sold</div></div><button class="x">Remove</button></div>
+        <div class="rep"><div><div class="n">Snap to Whistle Hoodie</div><div class="d">$68 · 41 sold</div></div><button class="x">Remove</button></div>
+        <div class="rep"><div><div class="n">Season Number Crew</div><div class="d">$52 · 23 sold</div></div><button class="x">Remove</button></div>
+        <button class="addrow">+ Add a product</button>
+      </div>
+      <div class="fieldset">
+        <h3>Store settings</h3>
+        <div class="toggle-row"><div><div class="n">Store visible on athlete site</div><div class="d">Hides the shop section entirely when off</div></div><button class="sw" aria-pressed="true" data-sec="shop"></button></div>
+        <div class="toggle-row"><div><div class="n">Drop window active</div><div class="d">Closes checkout when the drop ends</div></div><button class="sw" aria-pressed="true"></button></div>
+      </div>
+    </div>
+
+
+    <!-- OPPORTUNITIES -->
+    <div class="epanel" id="e-opps">
+      <div class="fieldset">
+        <h3>Open opportunities</h3>
+        <div class="sub">Everything a brand has submitted for this athlete, with A&amp;A's response clock on it.</div>
+        <div class="rep"><div><div class="n">Regional apparel campaign</div><div class="d">$5,000 &ndash; $7,500 · social + likeness · open 2 days</div></div><button class="x">Decline</button></div>
+        <div class="rep"><div><div class="n">Northline Auto — renewal</div><div class="d">Season-long · social + appearances · open 3 days</div></div><button class="x">Decline</button></div>
+        <div class="rep"><div><div class="n">Regional credit union — likeness</div><div class="d">Campaign assets · open today</div></div><button class="x">Decline</button></div>
+        <button class="addrow">+ Log an opportunity</button>
+      </div>
+      <div class="fieldset">
+        <h3>Documents</h3>
+        <div class="sub">Intake forms, representation agreements and disclosures, tracked per athlete.</div>
+        <div class="rep"><div><div class="n">Athlete intake form</div><div class="d">Completed 14 Aug 2026</div></div><button class="x">Archive</button></div>
+        <div class="rep"><div><div class="n">Representation agreement</div><div class="d">Signed 16 Aug 2026</div></div><button class="x">Archive</button></div>
+        <div class="rep"><div><div class="n">NIL disclosure — Q3</div><div class="d"><b style="color:var(--alert)">Awaiting athlete signature</b></div></div><button class="x">Remind</button></div>
+      </div>
+    </div>
+
+    <!-- PUBLISH -->
+    <div class="epanel" id="e-publish">
+      <div class="pubcard">
+        <h3 style="margin-bottom:4px">Publish state</h3>
+        <div class="sub" style="font-size:.8rem;color:var(--mute);margin-bottom:18px">What is live at treyashford.com right now.</div>
+        <div class="pubstate">
+          <span class="chip live">Live</span>
+          <div style="font-size:.85rem">Published 6 days ago · last content change 2 hours ago</div>
+        </div>
+        <ul class="checklist">
+          <li><span class="mk">✓</span><span>Identity, bio and signature line complete</span></li>
+          <li><span class="mk">✓</span><span>Headline stats and two season splits entered</span></li>
+          <li><span class="mk">✓</span><span>Hero and portrait photography uploaded</span></li>
+          <li><span class="mk">✓</span><span>Three highlight reels connected</span></li>
+          <li><span class="mk">✓</span><span>Four partners tracked with renewal dates</span></li>
+          <li><span class="mk no">!</span><span>Four additional photography slots still empty</span></li>
+          <li><span class="mk no">!</span><span>Senior-year timeline entry not written</span></li>
+        </ul>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:22px">
+          <button class="btn sm">Republish</button>
+          <a class="btn ghost sm" href="athlete.html" target="_blank" rel="noopener">View live site ↗</a>
+          <button class="btn ghost sm">Unpublish</button>
+        </div>
+      </div>
+
+      <div class="fieldset" style="margin-top:18px">
+        <h3>Sections on the athlete's site</h3>
+        <div class="sub">Not every athlete needs every section. Turn one off and it disappears from the site and the navigation.</div>
+        <div class="toggle-row"><div><div class="n">Story</div></div><button class="sw" aria-pressed="true" data-sec="story"></button></div>
+        <div class="toggle-row"><div><div class="n">Stats</div></div><button class="sw" aria-pressed="true" data-sec="stats"></button></div>
+        <div class="toggle-row"><div><div class="n">Film</div></div><button class="sw" aria-pressed="true" data-sec="film"></button></div>
+        <div class="toggle-row"><div><div class="n">Partners</div></div><button class="sw" aria-pressed="true" data-sec="partners"></button></div>
+        <div class="toggle-row"><div><div class="n">Shop</div></div><button class="sw" aria-pressed="true" data-sec="shop"></button></div>
+        <div class="toggle-row"><div><div class="n">Appearances</div></div><button class="sw" aria-pressed="true" data-sec="appearances"></button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LIVE PREVIEW ============ -->
+  <aside class="preview">
+    <span class="eyebrow" style="display:block;margin-bottom:12px">Live preview</span>
+    <div class="pv-frame">
+      <div class="pv-chrome"><i></i><i></i><i></i><span class="url" id="pvUrl">treyashford.com</span></div>
+      <div class="pv-body">
+        <div class="pv-hero">
+          <span class="gn" id="pvNum">7</span>
+          <div class="in">
+            <div class="eb" id="pvEb">TA7 · Fallbrook State</div>
+            <div class="nm" id="pvName">Trey<br>Ashford</div>
+            <div class="ps" id="pvPos">Quarterback · #7 · Junior</div>
+            <div class="sg" id="pvSig">Snap to Whistle.</div>
+          </div>
+        </div>
+        <div class="pv-stats">
+          <div><div class="k">3,118</div><div class="l">Pass yds</div></div>
+          <div><div class="k">37</div><div class="l">Total TD</div></div>
+          <div><div class="k">164.2</div><div class="l">Rating</div></div>
+        </div>
+        <div class="pv-sections">
+          <div class="pv-sec" data-sec="story"><span>Story</span><span class="dot"></span></div>
+          <div class="pv-sec" data-sec="stats"><span>Stats</span><span class="dot"></span></div>
+          <div class="pv-sec" data-sec="film"><span>Film</span><span class="dot"></span></div>
+          <div class="pv-sec" data-sec="partners"><span>Partners</span><span class="dot"></span></div>
+          <div class="pv-sec" data-sec="shop"><span>Shop</span><span class="dot"></span></div>
+          <div class="pv-sec" data-sec="appearances"><span>Appearances</span><span class="dot"></span></div>
+        </div>
+        <div class="pv-cta"><a href="partner.html">Work with Trey</a></div>
+      </div>
+    </div>
+    <p class="pv-note">The preview reflects the editor in real time. Switch the brand colour under <b>Brand</b>, or turn a section off under <b>Publish</b>, and watch what the athlete's visitors would see.</p>
+  </aside>
+</div>
+
+<footer style="margin-top:0">
+  <div class="wrap">
+    <p class="disclaimer" style="margin-top:0;border-top:0;padding-top:0">
+      <strong>Concept build by <a href="https://williamsdigital.io">Williams Digital</a>.</strong>
+      Trey Ashford and Fallbrook State are fictional, and every field pre-filled in this editor — stats, partners, products, social handles — was invented to demonstrate the interface. Nothing entered here is saved.
+      Prepared for A&amp;A Sports Agency at its request; nothing here states or implies any fact about A&amp;A's roster, revenue, inbound volume or operations.
+      Questions: <a href="mailto:Dylan@williamsdigital.io">Dylan@williamsdigital.io</a>
+    </p>
+  </div>
+</footer>
+
+<div class="concept-ribbon"><b>Concept</b> — fictional athlete · A&amp;A athlete editor by Williams Digital</div>
+
+<script>
+(function(){
+  /* tabs */
+  var tabs=document.querySelectorAll('.etabs button');
+  var panels=document.querySelectorAll('.epanel');
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){
+      tabs.forEach(function(x){x.classList.remove('on');});
+      t.classList.add('on');
+      panels.forEach(function(p){ p.classList.toggle('on', p.id==='e-'+t.dataset.e); });
+    });
+  });
+
+  /* brand colour */
+  var sw=document.querySelectorAll('#swatches button');
+  sw.forEach(function(b){
+    b.addEventListener('click',function(){
+      sw.forEach(function(x){x.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');
+      document.documentElement.style.setProperty('--athlete', b.dataset.c);
+    });
+  });
+
+  /* section toggles — mirrored into the preview */
+  function syncSection(name,on){
+    document.querySelectorAll('.pv-sec[data-sec="'+name+'"]').forEach(function(el){
+      el.classList.toggle('off',!on);
+    });
+    document.querySelectorAll('.sw[data-sec="'+name+'"]').forEach(function(el){
+      el.setAttribute('aria-pressed', on?'true':'false');
+    });
+  }
+  document.querySelectorAll('.sw').forEach(function(s){
+    s.addEventListener('click',function(){
+      var on=s.getAttribute('aria-pressed')!=='true';
+      if(s.dataset.sec){ syncSection(s.dataset.sec,on); }
+      else{ s.setAttribute('aria-pressed', on?'true':'false'); }
+    });
+  });
+
+  /* live text binding */
+  function bind(id,fn){ var el=document.getElementById(id); if(el){ el.addEventListener('input',fn); } }
+  function names(){
+    var f=document.getElementById('fn').value.trim()||'First';
+    var l=document.getElementById('ln').value.trim()||'Last';
+    document.getElementById('pvName').innerHTML=f+'<br>'+l;
+    document.getElementById('hdrName').textContent=f+' '+l;
+    document.getElementById('avatar').textContent=(f[0]||'')+(l[0]||'');
+  }
+  function meta(){
+    var num=document.getElementById('jn').value.trim();
+    var pos=document.getElementById('po').value.trim()||'Position';
+    var cls=document.getElementById('cl').value;
+    var sch=document.getElementById('sc').value.trim()||'School';
+    var mg=document.getElementById('mg');
+    document.getElementById('pvNum').textContent=num||'—';
+    document.getElementById('pvPos').textContent=pos+(num?' · #'+num:'')+' · '+cls;
+    document.getElementById('pvEb').textContent=(mg?mg.value.trim():'')+' · '+sch;
+  }
+  bind('fn',names); bind('ln',names);
+  bind('jn',meta); bind('po',meta); bind('sc',meta);
+  document.getElementById('cl').addEventListener('change',meta);
+  document.getElementById('mg').addEventListener('input',meta);
+  bind('sg',function(){ document.getElementById('pvSig').textContent=this.value||'—'; });
+  bind('dm',function(){ document.getElementById('pvUrl').textContent=this.value||'—'; });
+
+  /* remove rows */
+  document.addEventListener('click',function(e){
+    if(e.target.classList&&e.target.classList.contains('x')){
+      var row=e.target.closest('.rep'); if(row){ row.style.display='none'; }
+    }
+  });
+
+  /* save affordance */
+  var saved=document.getElementById('saved');
+  document.getElementById('saveBtn').addEventListener('click',function(){
+    saved.classList.add('on');
+    setTimeout(function(){ saved.classList.remove('on'); },1800);
+  });
+})();
+</script>
+</body>
+</html>
