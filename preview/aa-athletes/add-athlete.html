@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Add Athlete — A&amp;A Console Concept</title>
+<meta name="description" content="Concept onboarding flow: how A&amp;A would take a newly signed athlete from name to published site. Illustrative only.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="system.css">
+<style>
+:root{--brand:#C9A55A;--brand-soft:rgba(201,165,90,.13);--on-brand:#080B10;--pick:#E2622F}
+body{background:#070910}
+
+.wiz-bar{
+  position:sticky;top:37px;z-index:300;background:#0A0D14;border-bottom:1px solid var(--line);
+  padding:18px clamp(18px,3vw,38px);display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+}
+.wiz-bar .back{font-size:.64rem;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--steel-dim)}
+.wiz-bar .back:hover{color:var(--ivory)}
+.wiz-bar h1{font-size:1.35rem;margin-top:4px}
+.wiz-bar .right{display:flex;align-items:center;gap:14px}
+.stepcount{font-size:.66rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--steel-dim)}
+.stepcount b{color:var(--gold)}
+
+.demo-banner{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  border:1px solid rgba(233,167,74,.35);background:rgba(233,167,74,.07);color:var(--alert);
+  border-radius:var(--r);padding:11px 15px;font-size:.8rem;margin:22px clamp(18px,3vw,38px) 0;
+}
+.demo-banner b{font-size:.6rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+
+/* progress rail */
+.rail{display:flex;gap:0;padding:20px clamp(18px,3vw,38px) 0;overflow-x:auto;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.rail .r{flex:1;min-width:96px;padding-right:10px}
+.rail .r .bar{height:3px;background:var(--graphite);border-radius:2px;overflow:hidden}
+.rail .r .bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .5s var(--ease)}
+.rail .r.done .bar i,.rail .r.now .bar i{width:100%}
+.rail .r.now .bar i{background:var(--gold-warm)}
+.rail .r .t{font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--steel-dim);margin-top:9px;white-space:nowrap}
+.rail .r.now .t,.rail .r.done .t{color:var(--ivory)}
+
+.wiz{display:grid;grid-template-columns:1fr 372px;gap:28px;padding:26px clamp(18px,3vw,38px) 80px;align-items:start}
+@media(max-width:1080px){.wiz{grid-template-columns:1fr}}
+.wiz>*{min-width:0}
+
+.step{display:none}
+.step.on{display:block;animation:stepIn .45s var(--ease)}
+@keyframes stepIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.step h2{font-size:clamp(1.5rem,2.6vw,2.1rem);margin-bottom:8px}
+.step .sub{color:var(--steel);font-size:.92rem;margin-bottom:26px;max-width:60ch}
+
+.panel-box{background:var(--carbon);border:1px solid var(--line);border-radius:var(--r);padding:26px}
+.field{margin-bottom:17px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--steel-dim);margin-bottom:8px}
+.field input,.field select{
+  width:100%;max-width:100%;min-width:0;background:var(--midnight);border:1px solid var(--line);
+  border-radius:2px;color:var(--ivory);padding:13px 14px;font-family:var(--sans);font-size:.92rem;
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--gold)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:17px}
+.f3{display:grid;grid-template-columns:repeat(3,1fr);gap:17px}
+.f2>*,.f3>*{min-width:0}
+@media(max-width:660px){.f2,.f3{grid-template-columns:1fr}}
+
+/* photo slots */
+.ups{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:660px){.ups{grid-template-columns:repeat(2,1fr)}}
+.up{aspect-ratio:3/4;border:1px dashed rgba(255,255,255,.18);border-radius:3px;display:grid;place-items:center;
+  text-align:center;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--steel-dim);
+  padding:12px;cursor:pointer;transition:all .25s var(--ease)}
+.up:hover{border-color:var(--gold);color:var(--gold)}
+.up.filled{border-style:solid;border-color:var(--line);background:linear-gradient(160deg,#161B24,#0A0E13);color:var(--steel)}
+
+/* template families */
+.fams{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+@media(max-width:1000px){.fams{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.fams{grid-template-columns:repeat(2,1fr)}}
+.fam{
+  background:var(--carbon);border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;cursor:pointer;text-align:left;padding:0;transition:border-color .3s var(--ease),transform .3s var(--ease);
+}
+.fam:hover{transform:translateY(-3px)}
+.fam[aria-pressed="true"]{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,165,90,.35)}
+.fam .swatch{height:74px;display:block;position:relative}
+.fam .swatch::after{content:'';position:absolute;left:12px;right:12px;bottom:11px;height:8px;background:rgba(255,255,255,.28);border-radius:1px}
+.fam .swatch::before{content:'';position:absolute;left:12px;top:14px;width:44%;height:12px;background:rgba(255,255,255,.55);border-radius:1px}
+.fam .nm{padding:14px;font-family:var(--disp);font-weight:700;font-size:1.05rem;text-transform:uppercase;color:var(--ivory)}
+.fam .ds{padding:0 14px 15px;font-size:.76rem;color:var(--steel-dim);line-height:1.55}
+
+/* accent swatches */
+.accents{display:flex;gap:11px;flex-wrap:wrap;margin-top:22px}
+.accents button{width:42px;height:42px;border-radius:3px;border:2px solid transparent;cursor:pointer;transition:transform .2s}
+.accents button:hover{transform:scale(1.08)}
+.accents button[aria-pressed="true"]{border-color:var(--ivory)}
+
+/* modules */
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:860px){.mods{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.mods{grid-template-columns:1fr}}
+.mod{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--carbon);border:1px solid var(--line);border-radius:var(--r);
+  padding:15px 16px;cursor:pointer;transition:border-color .25s;
+}
+.mod:hover{border-color:var(--line-strong)}
+.mod[aria-pressed="true"]{border-color:var(--gold);background:var(--brand-soft)}
+.mod .n{font-size:.88rem;font-weight:600;color:var(--ivory)}
+.mod .tick{width:19px;height:19px;border:1px solid var(--line-strong);border-radius:2px;display:grid;place-items:center;
+  font-size:.66rem;color:transparent;flex-shrink:0}
+.mod[aria-pressed="true"] .tick{background:var(--gold);border-color:var(--gold);color:var(--on-brand)}
+.mod.req{opacity:.65;cursor:not-allowed}
+
+/* review */
+.review{background:var(--carbon);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.review .row{display:flex;justify-content:space-between;gap:16px;padding:15px 20px;border-bottom:1px solid rgba(255,255,255,.05);font-size:.9rem}
+.review .row:last-child{border-bottom:0}
+.review .row .k{color:var(--steel-dim);font-size:.66rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+.review .row .v{color:var(--ivory);text-align:right}
+
+/* generate */
+.gen{text-align:center;padding:26px 0}
+.genbar{height:5px;background:var(--graphite);border-radius:3px;overflow:hidden;max-width:460px;margin:26px auto 0}
+.genbar i{display:block;height:100%;width:0;background:var(--gold);transition:width .35s linear}
+.genlog{max-width:460px;margin:20px auto 0;text-align:left;font-size:.8rem;color:var(--steel-dim);line-height:2}
+.genlog div{opacity:0;transition:opacity .3s}
+.genlog div.in{opacity:1}
+.genlog b{color:var(--positive)}
+.done-mark{width:60px;height:60px;border-radius:50%;border:1px solid var(--positive);color:var(--positive);
+  display:grid;place-items:center;font-size:1.5rem;margin:0 auto 22px}
+
+/* nav buttons */
+.wiz-nav{display:flex;justify-content:space-between;gap:14px;margin-top:28px;flex-wrap:wrap}
+
+/* live preview card */
+.side{position:sticky;top:132px}
+@media(max-width:1080px){.side{position:static}}
+.pvcard{background:var(--carbon);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.pvcard .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);background:#0A0D14}
+.pvcard .bar i{width:8px;height:8px;border-radius:50%;background:var(--graphite);display:block}
+.pvcard .bar .u{margin-left:8px;font-size:.56rem;color:#4B535E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pvhero{position:relative;padding:34px 22px 28px;overflow:hidden;transition:background .5s var(--ease)}
+.pvhero .gn{position:absolute;right:-4px;top:0;font-family:var(--disp);font-weight:700;font-size:6rem;line-height:.82;
+  color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.2);transition:-webkit-text-stroke-color .4s}
+.pvhero .in{position:relative;z-index:2}
+.pvhero .eb{font-size:.52rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;transition:color .4s}
+.pvhero .nm{font-weight:700;font-size:1.75rem;line-height:1;margin:9px 0 7px;transition:font-family .4s}
+.pvhero .ps{font-size:.58rem;font-weight:600;letter-spacing:.13em;text-transform:uppercase;opacity:.7}
+.pvsecs{padding:15px 18px}
+.pvsecs .s{display:flex;justify-content:space-between;align-items:center;padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);font-size:.78rem;color:var(--steel)}
+.pvsecs .s:last-child{border-bottom:0}
+.pvsecs .s .dot{width:6px;height:6px;border-radius:50%;transition:background .4s}
+.pvcta{padding:0 18px 18px}
+.pvcta span{display:block;text-align:center;padding:11px;border-radius:3px;font-size:.58rem;font-weight:700;
+  letter-spacing:.15em;text-transform:uppercase;transition:background .4s,color .4s}
+.side .note{font-size:.78rem;color:var(--steel-dim);margin-top:14px;line-height:1.7}
+</style>
+</head>
+<body>
+
+<nav class="proto" aria-label="Prototype screens">
+  <span class="proto-label">Concept</span>
+  <a href="index.html">01 Network</a>
+  <a href="athlete.html">02 Athlete · football</a>
+  <a href="athlete-2.html">02b Athlete · gymnastics</a>
+  <a href="partner.html">03 Media kit</a>
+  <a href="dashboard.html">04 A&amp;A console</a>
+  <a href="manage.html">05 Manage athlete</a>
+  <a href="add-athlete.html" aria-current="page">06 Add athlete</a>
+  <span class="spacer"></span>
+  <a href="pitch.html">Partnership &amp; pricing →</a>
+</nav>
+
+<div class="wiz-bar">
+  <div>
+    <a class="back" href="dashboard.html">← A&amp;A console</a>
+    <h1>Add athlete</h1>
+  </div>
+  <div class="right">
+    <span class="stepcount">Step <b id="scNow">1</b> of 8</span>
+    <a class="btn ghost sm" href="dashboard.html"><span class="t">Cancel</span></a>
+  </div>
+</div>
+
+<div class="demo-banner">
+  <b>Illustrative</b>
+  <span>A working walkthrough of the onboarding flow. Nothing is saved, and no site is really generated.</span>
+</div>
+
+<div class="rail" id="rail">
+  <div class="r now"><div class="bar"><i></i></div><div class="t">Basics</div></div>
+  <div class="r"><div class="bar"><i></i></div><div class="t">Sport</div></div>
+  <div class="r"><div class="bar"><i></i></div><div class="t">Photos</div></div>
+  <div class="r"><div class="bar"><i></i></div><div class="t">Direction</div></div>
+  <div class="r"><div class="bar"><i></i></div><div class="t">Social</div></div>
+  <div class="r"><div class="bar"><i></i></div><div class="t">Modules</div></div>
+  <div class="r"><div class="bar"><i></i></div><div class="t">Review</div></div>
+  <div class="r"><div class="bar"><i></i></div><div class="t">Publish</div></div>
+</div>
+
+<div class="wiz">
+  <div>
+
+    <!-- 1 BASICS -->
+    <div class="step on" data-s="1">
+      <h2>Who are we building for?</h2>
+      <p class="sub">The name and domain drive everything downstream &mdash; the site, the media kit and the network card.</p>
+      <div class="panel-box">
+        <div class="f2">
+          <div class="field"><label for="fn">First name</label><input id="fn" type="text" value="Marcus" autocomplete="off"></div>
+          <div class="field"><label for="ln">Last name</label><input id="ln" type="text" value="Delaney" autocomplete="off"></div>
+        </div>
+        <div class="f2">
+          <div class="field"><label for="em">Athlete email</label><input id="em" type="email" placeholder="athlete@email.com"></div>
+          <div class="field"><label for="dm">Domain</label><input id="dm" type="text" value="marcusdelaney.com"></div>
+        </div>
+        <div class="field"><label for="ag">Managing agent</label>
+          <select id="ag"><option>Alander Pulliam</option><option>Assign later</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 SPORT -->
+    <div class="step" data-s="2">
+      <h2>Sport and status</h2>
+      <p class="sub">This selects the stat schema. A baseball athlete gets average, home runs and OPS; a boxer gets a record and weight class.</p>
+      <div class="panel-box">
+        <div class="f3">
+          <div class="field"><label for="sp">Sport</label>
+            <select id="sp"><option>Baseball</option><option>Football</option><option>Basketball</option><option>Gymnastics</option><option>Boxing</option><option>Other</option></select>
+          </div>
+          <div class="field"><label for="po">Position</label><input id="po" type="text" value="Outfield"></div>
+          <div class="field"><label for="jn">Number</label><input id="jn" type="text" value="24"></div>
+        </div>
+        <div class="f3">
+          <div class="field"><label for="lv">Level</label>
+            <select id="lv"><option>College</option><option>Professional</option><option>High school</option></select>
+          </div>
+          <div class="field"><label for="sc">School or team</label><input id="sc" type="text" value="Halloran College"></div>
+          <div class="field"><label for="cl">Class</label>
+            <select id="cl"><option>Freshman</option><option>Sophomore</option><option selected>Junior</option><option>Senior</option><option>N/A</option></select>
+          </div>
+        </div>
+        <div class="field"><label for="mn">Athlete is under 18</label>
+          <select id="mn"><option>No</option><option>Yes — guardian consent required on every element</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 PHOTOS -->
+    <div class="step" data-s="3">
+      <h2>Photography</h2>
+      <p class="sub">The one thing that can't be generated. In practice this is the step that decides how fast a roster actually launches.</p>
+      <div class="panel-box">
+        <div class="ups">
+          <div class="up filled">Hero<br>set</div>
+          <div class="up filled">Portrait<br>set</div>
+          <div class="up">+ Action</div>
+          <div class="up">+ Lifestyle</div>
+        </div>
+        <p class="small" style="margin-top:18px">Two of four uploaded. A site can publish on two &mdash; the rest fill the gallery and the media-kit asset pack.</p>
+      </div>
+    </div>
+
+    <!-- 4 DIRECTION -->
+    <div class="step" data-s="4">
+      <h2>Visual direction</h2>
+      <p class="sub">Five template families, then an accent. This is where two athletes on the same platform stop looking alike &mdash; watch the preview.</p>
+      <div class="fams" id="fams">
+        <button class="fam" aria-pressed="false" data-f="elite" data-bg="#0A0E14" data-fg="#F5F2EC" data-a="#E2622F" data-font="disp">
+          <span class="swatch" style="background:linear-gradient(150deg,#161C26,#0A0E14)"></span>
+          <span class="nm">Elite</span><span class="ds">Dark, cinematic, condensed. Football and boxing.</span>
+        </button>
+        <button class="fam" aria-pressed="false" data-f="editorial" data-bg="#F5F0E8" data-fg="#241C1E" data-a="#5E2C38" data-font="serif">
+          <span class="swatch" style="background:linear-gradient(150deg,#F5F0E8,#D8A7B1)"></span>
+          <span class="nm">Editorial</span><span class="ds">Serif, light, photography-led. Lifestyle brands.</span>
+        </button>
+        <button class="fam" aria-pressed="false" data-f="minimal" data-bg="#101214" data-fg="#F2F2F2" data-a="#A7ADB7" data-font="sans">
+          <span class="swatch" style="background:linear-gradient(150deg,#1C1F22,#101214)"></span>
+          <span class="nm">Minimal</span><span class="ds">Restrained, typographic, quiet.</span>
+        </button>
+        <button class="fam" aria-pressed="true" data-f="energy" data-bg="#0B1018" data-fg="#FFFFFF" data-a="#12D68A" data-font="disp">
+          <span class="swatch" style="background:linear-gradient(150deg,#12D68A,#0B1018)"></span>
+          <span class="nm">Energy</span><span class="ds">Bolder movement and colour. Basketball, soccer.</span>
+        </button>
+        <button class="fam" aria-pressed="false" data-f="legacy" data-bg="#12181F" data-fg="#EFE7D6" data-a="#3C7A9E" data-font="serif">
+          <span class="swatch" style="background:linear-gradient(150deg,#3C7A9E,#12181F)"></span>
+          <span class="nm">Legacy</span><span class="ds">Traditional, heritage, achievement-first. Baseball.</span>
+        </button>
+      </div>
+      <label style="display:block;font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--steel-dim);margin-top:28px">Accent</label>
+      <div class="accents" id="accents">
+        <button aria-pressed="false" data-c="#E2622F" style="background:#E2622F" title="Stadium orange"></button>
+        <button aria-pressed="false" data-c="#4D7CFF" style="background:#4D7CFF" title="Arena blue"></button>
+        <button aria-pressed="true"  data-c="#12D68A" style="background:#12D68A" title="Velocity green"></button>
+        <button aria-pressed="false" data-c="#D8A7B1" style="background:#D8A7B1" title="Blush"></button>
+        <button aria-pressed="false" data-c="#C9A55A" style="background:#C9A55A" title="Championship gold"></button>
+        <button aria-pressed="false" data-c="#3C7A9E" style="background:#3C7A9E" title="Heritage blue"></button>
+      </div>
+    </div>
+
+    <!-- 5 SOCIAL -->
+    <div class="step" data-s="5">
+      <h2>Social accounts</h2>
+      <p class="sub">Connected accounts keep the media kit's follower and engagement figures current without anyone editing a page.</p>
+      <div class="panel-box">
+        <div class="f2">
+          <div class="field"><label for="ig">Instagram</label><input id="ig" type="text" value="@marcusdelaney"></div>
+          <div class="field"><label for="tt">TikTok</label><input id="tt" type="text" value="@marcusdelaney24"></div>
+        </div>
+        <div class="f2">
+          <div class="field"><label for="xx">X</label><input id="xx" type="text" placeholder="@handle"></div>
+          <div class="field"><label for="yt">YouTube</label><input id="yt" type="text" placeholder="@handle"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 MODULES -->
+    <div class="step" data-s="6">
+      <h2>Modules</h2>
+      <p class="sub">Not every athlete needs every section. Switch one off and it disappears from the site and its navigation.</p>
+      <div class="mods" id="mods">
+        <button class="mod req" aria-pressed="true" data-m="home"><span class="n">Home</span><span class="tick">✓</span></button>
+        <button class="mod" aria-pressed="true" data-m="story"><span class="n">Story</span><span class="tick">✓</span></button>
+        <button class="mod" aria-pressed="true" data-m="career"><span class="n">Career</span><span class="tick">✓</span></button>
+        <button class="mod" aria-pressed="true" data-m="stats"><span class="n">Stats</span><span class="tick">✓</span></button>
+        <button class="mod" aria-pressed="true" data-m="film"><span class="n">Highlights</span><span class="tick">✓</span></button>
+        <button class="mod" aria-pressed="true" data-m="partners"><span class="n">Partners</span><span class="tick">✓</span></button>
+        <button class="mod" aria-pressed="false" data-m="merch"><span class="n">Merch</span><span class="tick">✓</span></button>
+        <button class="mod" aria-pressed="true" data-m="appearances"><span class="n">Appearances</span><span class="tick">✓</span></button>
+        <button class="mod" aria-pressed="false" data-m="camps"><span class="n">Camps</span><span class="tick">✓</span></button>
+        <button class="mod" aria-pressed="false" data-m="foundation"><span class="n">Foundation</span><span class="tick">✓</span></button>
+        <button class="mod req" aria-pressed="true" data-m="kit"><span class="n">Media kit</span><span class="tick">✓</span></button>
+        <button class="mod req" aria-pressed="true" data-m="contact"><span class="n">Contact</span><span class="tick">✓</span></button>
+      </div>
+      <p class="small" style="margin-top:18px">Home, media kit and contact stay on for every athlete. Merch, camps and foundation are the add-ons that get quoted separately.</p>
+    </div>
+
+    <!-- 7 REVIEW -->
+    <div class="step" data-s="7">
+      <h2>Review</h2>
+      <p class="sub">Everything A&amp;A entered, before anything goes live.</p>
+      <div class="review">
+        <div class="row"><span class="k">Athlete</span><span class="v" id="rvName">Marcus Delaney</span></div>
+        <div class="row"><span class="k">Sport</span><span class="v" id="rvSport">Baseball · Outfield · #24</span></div>
+        <div class="row"><span class="k">Team</span><span class="v" id="rvTeam">Halloran College · Junior</span></div>
+        <div class="row"><span class="k">Domain</span><span class="v" id="rvDomain">marcusdelaney.com</span></div>
+        <div class="row"><span class="k">Direction</span><span class="v" id="rvFam">Energy</span></div>
+        <div class="row"><span class="k">Photography</span><span class="v">2 of 4 uploaded</span></div>
+        <div class="row"><span class="k">Modules</span><span class="v" id="rvMods">9 enabled</span></div>
+        <div class="row"><span class="k">Managing agent</span><span class="v" id="rvAgent">Alander Pulliam</span></div>
+      </div>
+      <p class="small" style="margin-top:18px">In the real build this is also where a guardian-consent check would block publication for an athlete under 18.</p>
+    </div>
+
+    <!-- 8 PUBLISH -->
+    <div class="step" data-s="8">
+      <div class="gen" id="genWrap">
+        <h2 style="text-align:left">Generating the site</h2>
+        <p class="sub" style="text-align:left">Structured assembly from what A&amp;A entered &mdash; not a template copy, and not a page written from scratch.</p>
+        <div class="genbar"><i id="genFill"></i></div>
+        <div class="genlog" id="genLog">
+          <div>Applying the <b id="lgFam">Energy</b> template family</div>
+          <div>Loading the <b id="lgSport">baseball</b> stat schema</div>
+          <div>Writing athlete data and social accounts</div>
+          <div>Building the digital media kit</div>
+          <div>Routing partnership inquiries to <b>A&amp;A</b></div>
+          <div>Connecting <b id="lgDomain">marcusdelaney.com</b></div>
+          <div>Adding the athlete to the A&amp;A Athlete Network</div>
+        </div>
+      </div>
+      <div id="doneWrap" style="display:none;text-align:center;padding:20px 0">
+        <div class="done-mark">✓</div>
+        <h2>Marcus Delaney is live</h2>
+        <p class="sub" style="margin:12px auto 0;text-align:center">Signed on Monday, online the same week. The remaining photography and his bio can be filled in from the console at any point.</p>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:30px">
+          <a class="btn" href="athlete.html"><span class="t">View the site</span><span class="a">→</span></a>
+          <a class="btn ghost" href="manage.html"><span class="t">Open the editor</span><span class="a">↗</span></a>
+          <a class="btn ghost" href="dashboard.html"><span class="t">Back to roster</span><span class="a">→</span></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="wiz-nav" id="wizNav">
+      <button class="btn ghost" id="prev"><span class="a">←</span><span class="t">Back</span></button>
+      <button class="btn" id="next"><span class="t">Continue</span><span class="a">→</span></button>
+    </div>
+  </div>
+
+  <!-- LIVE PREVIEW -->
+  <aside class="side">
+    <span class="label" style="display:block;margin-bottom:12px">Live preview</span>
+    <div class="pvcard">
+      <div class="bar"><i></i><i></i><i></i><span class="u" id="pvUrl">marcusdelaney.com</span></div>
+      <div class="pvhero" id="pvHero">
+        <span class="gn" id="pvNum">24</span>
+        <div class="in">
+          <div class="eb" id="pvEb">Halloran College</div>
+          <div class="nm" id="pvName">Marcus Delaney</div>
+          <div class="ps" id="pvPos">Outfield · #24 · Junior</div>
+        </div>
+      </div>
+      <div class="pvsecs" id="pvSecs"></div>
+      <div class="pvcta"><span id="pvCta">Partner with Marcus</span></div>
+    </div>
+    <p class="note">The preview updates as A&amp;A types. Changing the template family on step four rewrites the ground, the typeface and the accent at once.</p>
+  </aside>
+</div>
+
+<footer style="margin-top:0">
+  <div class="wrap">
+    <p class="disclaimer" style="margin-top:0;border-top:0;padding-top:0">
+      <strong>Concept build by <a href="https://williamsdigital.io">Williams Digital</a>.</strong>
+      Marcus Delaney and Halloran College are fictional, and every value pre-filled in this flow was invented to demonstrate the interface. Nothing entered here is saved and no site is generated. Prepared for A&amp;A Sports Group at its request; nothing here states or implies any fact about A&amp;A's roster or operations.
+      Questions: <a href="mailto:Dylan@williamsdigital.io">Dylan@williamsdigital.io</a>
+    </p>
+  </div>
+</footer>
+
+<div class="concept-ribbon"><b>Concept</b> — illustrative onboarding flow · A&amp;A console by Williams Digital</div>
+
+<script>
+(function(){
+  var step=1, TOTAL=8;
+  var steps=document.querySelectorAll('.step');
+  var rail=document.querySelectorAll('#rail .r');
+  var prev=document.getElementById('prev'), next=document.getElementById('next');
+  var fam={f:'energy',bg:'#0B1018',fg:'#FFFFFF',a:'#12D68A',font:'disp',nm:'Energy'};
+  var accent='#12D68A';
+
+  var MODULES=[['story','Story'],['career','Career'],['stats','Stats'],['film','Highlights'],
+               ['partners','Partners'],['merch','Merch'],['appearances','Appearances'],
+               ['camps','Camps'],['foundation','Foundation'],['kit','Media kit']];
+
+  function val(id){var e=document.getElementById(id);return e?e.value.trim():'';}
+
+  function paintPreview(){
+    var first=val('fn')||'First', last=val('ln')||'Last';
+    var hero=document.getElementById('pvHero');
+    hero.style.background='linear-gradient(155deg,'+fam.bg+' 0%,'+shade(fam.bg)+' 100%)';
+    document.getElementById('pvName').style.color=fam.fg;
+    document.getElementById('pvName').style.fontFamily=
+      fam.font==='serif'?"Georgia,'Times New Roman',serif":
+      fam.font==='sans'?"'Manrope',sans-serif":"'Barlow Condensed',sans-serif";
+    document.getElementById('pvName').style.textTransform=fam.font==='disp'?'uppercase':'none';
+    document.getElementById('pvName').textContent=first+' '+last;
+    document.getElementById('pvPos').style.color=fam.fg;
+    document.getElementById('pvEb').style.color=accent;
+    document.getElementById('pvEb').textContent=val('sc')||'School';
+    document.getElementById('pvPos').textContent=[val('po')||'Position',
+      val('jn')?'#'+val('jn'):null, document.getElementById('cl').value].filter(Boolean).join(' · ');
+    var gn=document.getElementById('pvNum');
+    gn.textContent=val('jn')||(first[0]||'')+(last[0]||'');
+    gn.style.webkitTextStrokeColor=hexA(accent,.42);
+    document.getElementById('pvUrl').textContent=val('dm')||'—';
+    var cta=document.getElementById('pvCta');
+    cta.textContent='Partner with '+first;
+    cta.style.background=accent;
+    cta.style.color=isLight(accent)?'#0A0C11':'#FFFFFF';
+    // sections
+    var box=document.getElementById('pvSecs'); box.innerHTML='';
+    MODULES.forEach(function(m){
+      var btn=document.querySelector('.mod[data-m="'+m[0]+'"]');
+      if(!btn||btn.getAttribute('aria-pressed')!=='true')return;
+      var d=document.createElement('div'); d.className='s';
+      d.innerHTML='<span>'+m[1]+'</span><span class="dot"></span>';
+      d.querySelector('.dot').style.background=accent;
+      d.style.color=hexA(fam.fg,.72);
+      d.style.borderBottomColor=hexA(fam.fg,.10);
+      box.appendChild(d);
+    });
+    box.style.background=fam.bg;
+    document.querySelector('.pvcta').style.background=fam.bg;
+  }
+  function hexA(h,a){
+    var n=parseInt(h.slice(1),16);
+    return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')';
+  }
+  function isLight(h){
+    var n=parseInt(h.slice(1),16);
+    return (0.299*(n>>16&255)+0.587*(n>>8&255)+0.114*(n&255))>150;
+  }
+  function shade(h){
+    var n=parseInt(h.slice(1),16);
+    var r=Math.max(0,(n>>16&255)-14),g=Math.max(0,(n>>8&255)-14),b=Math.max(0,(n&255)-14);
+    return 'rgb('+r+','+g+','+b+')';
+  }
+
+  function render(){
+    steps.forEach(function(s){ s.classList.toggle('on', +s.dataset.s===step); });
+    rail.forEach(function(r,i){
+      r.classList.toggle('done', i+1<step);
+      r.classList.toggle('now', i+1===step);
+    });
+    document.getElementById('scNow').textContent=step;
+    prev.style.visibility=step===1?'hidden':'visible';
+    next.querySelector('.t').textContent = step===7?'Generate site' : step===8?'Done':'Continue';
+    document.getElementById('wizNav').style.display = step===8?'none':'flex';
+    if(step===7) fillReview();
+    if(step===8) generate();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function fillReview(){
+    document.getElementById('rvName').textContent=(val('fn')+' '+val('ln')).trim();
+    document.getElementById('rvSport').textContent=[document.getElementById('sp').value,
+      val('po'), val('jn')?'#'+val('jn'):null].filter(Boolean).join(' · ');
+    document.getElementById('rvTeam').textContent=val('sc')+' · '+document.getElementById('cl').value;
+    document.getElementById('rvDomain').textContent=val('dm');
+    document.getElementById('rvFam').textContent=fam.nm;
+    document.getElementById('rvAgent').textContent=document.getElementById('ag').value;
+    var on=document.querySelectorAll('.mod[aria-pressed="true"]').length;
+    document.getElementById('rvMods').textContent=on+' enabled';
+  }
+
+  var generated=false;
+  function generate(){
+    if(generated)return; generated=true;
+    document.getElementById('lgFam').textContent=fam.nm;
+    document.getElementById('lgSport').textContent=document.getElementById('sp').value.toLowerCase();
+    document.getElementById('lgDomain').textContent=val('dm');
+    var lines=document.querySelectorAll('#genLog div');
+    var fill=document.getElementById('genFill');
+    lines.forEach(function(l,i){
+      setTimeout(function(){
+        l.classList.add('in');
+        fill.style.width=Math.round(((i+1)/lines.length)*100)+'%';
+      }, 260+i*420);
+    });
+    setTimeout(function(){
+      document.getElementById('genWrap').style.display='none';
+      document.getElementById('doneWrap').style.display='block';
+    }, 260+lines.length*420+500);
+  }
+
+  next.addEventListener('click',function(){ if(step<TOTAL){ step++; render(); } });
+  prev.addEventListener('click',function(){ if(step>1){ step--; render(); } });
+
+  document.querySelectorAll('#fams .fam').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('#fams .fam').forEach(function(x){x.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');
+      fam={f:b.dataset.f,bg:b.dataset.bg,fg:b.dataset.fg,a:b.dataset.a,font:b.dataset.font,
+           nm:b.querySelector('.nm').textContent};
+      accent=b.dataset.a;
+      document.querySelectorAll('#accents button').forEach(function(x){
+        x.setAttribute('aria-pressed', x.dataset.c===accent?'true':'false');
+      });
+      paintPreview();
+    });
+  });
+  document.querySelectorAll('#accents button').forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('#accents button').forEach(function(x){x.setAttribute('aria-pressed','false');});
+      b.setAttribute('aria-pressed','true');
+      accent=b.dataset.c; paintPreview();
+    });
+  });
+  document.querySelectorAll('.mod').forEach(function(m){
+    m.addEventListener('click',function(){
+      if(m.classList.contains('req'))return;
+      m.setAttribute('aria-pressed', m.getAttribute('aria-pressed')==='true'?'false':'true');
+      paintPreview();
+    });
+  });
+  document.querySelectorAll('.up:not(.filled)').forEach(function(u){
+    u.addEventListener('click',function(){ u.classList.add('filled'); u.innerHTML='Uploaded'; });
+  });
+  ['fn','ln','dm','po','jn','sc'].forEach(function(id){
+    var e=document.getElementById(id); if(e) e.addEventListener('input',paintPreview);
+  });
+  ['cl','sp'].forEach(function(id){
+    var e=document.getElementById(id); if(e) e.addEventListener('change',paintPreview);
+  });
+
+  paintPreview(); render();
+})();
+</script>
+</body>
+</html>
