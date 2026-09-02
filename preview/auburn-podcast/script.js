@@ -1,0 +1,10 @@
+const progressBar=document.getElementById('progressBar');
+const menuButton=document.querySelector('.menu-button');
+const mobileNav=document.getElementById('mobileNav');
+const updateProgress=()=>{const h=document.documentElement;const max=h.scrollHeight-h.clientHeight;progressBar.style.width=`${max?Math.min(100,(h.scrollTop/max)*100):0}%`};
+addEventListener('scroll',updateProgress,{passive:true});
+menuButton.addEventListener('click',()=>{const open=menuButton.getAttribute('aria-expanded')==='true';menuButton.setAttribute('aria-expanded',String(!open));mobileNav.classList.toggle('open',!open)});
+mobileNav.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{mobileNav.classList.remove('open');menuButton.setAttribute('aria-expanded','false')}));
+const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target)}}),{threshold:.12,rootMargin:'0px 0px -40px'});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+updateProgress();
