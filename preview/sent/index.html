@@ -263,24 +263,36 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* ── commission (cinematic scroll) ───────────────────────────────────── */
 .commission{position:relative;height:230vh;background:var(--ink)}
+.commission-plate{
+  position:absolute;inset:-12% 0;z-index:0;opacity:.26;will-change:transform;
+}
+.commission-scrim{
+  position:absolute;inset:0;z-index:1;
+  background:radial-gradient(66% 58% at 50% 46%, rgba(23,25,22,.34) 0%, rgba(23,25,22,.88) 72%);
+}
+.tail-br{display:none}
+@media (min-width:700px){ .tail-br{display:inline} }
 .commission-stick{
   position:sticky;top:0;height:100svh;display:flex;align-items:center;justify-content:center;
   overflow:hidden;text-align:center;color:var(--ivory);
 }
 .verse{
   position:absolute;font-size:11px;font-weight:600;letter-spacing:.32em;text-transform:uppercase;
-  color:var(--ivory-45);top:calc(50% - 130px);
+  color:var(--ivory-45);top:calc(50% - clamp(160px,27vw,275px));
+  z-index:2;
 }
 .commission-word{
   font-family:var(--serif);line-height:.8;letter-spacing:-.03em;
-  font-size:clamp(120px,34vw,460px);
+  font-size:clamp(96px,26vw,380px);
   background:linear-gradient(180deg,#F4F0E7 0%,#A9B2A0 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   will-change:transform,opacity;
-  transform:scale(.42);opacity:.18;
+  /* legible at rest; the scroll handler animates out from here */
+  transform:scale(.78);
+  position:relative;z-index:2;
 }
 .commission-tail{
-  opacity:0;
+  z-index:2;
   position:absolute;bottom:clamp(60px,13vh,140px);
   font-family:var(--serif);font-size:clamp(20px,3.2vw,38px);color:var(--ivory-70);
   padding-inline:var(--gut);
@@ -647,6 +659,7 @@ footer{background:var(--ink);color:var(--ivory);padding:clamp(64px,9vh,110px) 0 
   .commission-word{transform:none;opacity:1}
   .commission-tail{opacity:1}
   .verse{opacity:1}
+  .commission-plate{opacity:.26;transform:none}
   .commission-stick{position:static;height:auto;padding:120px 0}
 }
 </style>
@@ -707,9 +720,12 @@ footer{background:var(--ink);color:var(--ivory);padding:clamp(64px,9vh,110px) 0 
 <!-- ── commission ──────────────────────────────────────────────────── -->
 <section class="commission" id="commission">
   <div class="commission-stick">
+    <!-- IMAGE SLOT: mission photography, held far back so the type still leads -->
+    <div class="commission-plate plate p-dawn" id="cPlate"></div>
+    <div class="commission-scrim"></div>
     <p class="verse" id="verse">Matthew 28:19</p>
     <div class="commission-word" id="cWord">GO</div>
-    <p class="commission-tail serif" id="cTail">Therefore go and make disciples of all nations.</p>
+    <p class="commission-tail serif" id="cTail">Therefore go and make disciples<br class="tail-br"> of all nations.</p>
   </div>
 </section>
 
@@ -1266,6 +1282,7 @@ var heroPlate = document.getElementById("heroPlate");
 var hero = document.querySelector(".hero");
 var commission = document.getElementById("commission");
 var cWord = document.getElementById("cWord");
+var cPlate = document.getElementById("cPlate");
 var cTail = document.getElementById("cTail");
 var verse = document.getElementById("verse");
 var ticking = false;
@@ -1290,13 +1307,19 @@ function onScroll(){
     var span = commission.offsetHeight - window.innerHeight;
     if(span > 0 && r.top < window.innerHeight && r.bottom > 0){
       var p = clamp((-r.top) / span, 0, 1);
-      verse.style.opacity = String(clamp(1 - p * 3.4, 0, 1));
-      verse.style.transform = "translateY(" + (-p * 40) + "px)";
-      var s = 0.42 + p * 1.05;
-      cWord.style.transform = "scale(" + s.toFixed(3) + ")";
-      cWord.style.opacity = String(clamp(0.18 + p * 2.2, 0, 1));
-      cTail.style.opacity = String(clamp((p - 0.55) * 3.2, 0, 1));
-      cTail.style.transform = "translateY(" + (clamp(1 - (p - 0.55) * 3.2, 0, 1) * 22) + "px)";
+
+      /* the verse settles in and holds — it frames GO rather than handing off to it */
+      verse.style.transform = "translateY(" + (clamp(1 - p * 5, 0, 1) * 14).toFixed(1) + "px)";
+
+      /* GO drifts upward as it grows: 0.55 -> 1.30 scale, +30px -> -30px */
+      var sc = 0.78 + p * 0.52;
+      cWord.style.transform = "translateY(" + ((0.5 - p) * 60).toFixed(1) + "px) scale(" + sc.toFixed(3) + ")";
+
+      cTail.style.opacity = String(clamp(0.25 + (p - 0.35) * 2.4, 0, 1));
+      cTail.style.transform = "translateY(" + (clamp(1 - (p - 0.5) * 3, 0, 1) * 20).toFixed(1) + "px)";
+
+      /* photograph settles slowly behind the type, never competing with it */
+      cPlate.style.transform = "translate3d(0," + (p * 46).toFixed(1) + "px,0) scale(" + (1.06 - p * 0.06).toFixed(3) + ")";
     }
   }
   ticking = false;
