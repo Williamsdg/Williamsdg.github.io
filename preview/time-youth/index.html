@@ -140,6 +140,25 @@ section[id],aside[id],main[id]{scroll-margin-top:96px}
 .mask{clip-path:inset(0 0 100% 0);transition:clip-path 1.15s var(--slow)}
 .mask.in{clip-path:inset(0 0 0 0)}
 
+/* Fail-safe: until JS proves it is running, nothing is hidden. A photograph
+   must never depend on an observer firing, or a failure leaves a black hole
+   where the picture should be. */
+html:not(.js) .rv,
+html:not(.js) .fadeup,
+html:not(.js) .story-slide{opacity:1!important;transform:none!important;pointer-events:auto!important}
+html:not(.js) .mask{clip-path:none!important}
+html:not(.js) .rvw>span{transform:none!important}
+html:not(.js) .story-photo{opacity:1!important;transform:none!important}
+html:not(.js) .story-final{opacity:1!important;visibility:visible!important;position:relative;inset:auto}
+html:not(.js) .story-track{height:auto}
+html:not(.js) .story-stage{position:static;height:auto;display:block}
+html:not(.js) .story-left{display:block;padding:0}
+html:not(.js) .story-right{display:none}
+html:not(.js) .story-slide{position:relative;left:auto;right:auto;padding:34px var(--gut);border-top:1px solid var(--cv-14)}
+html:not(.js) .story-eyebrow{position:static;padding:64px var(--gut) 0}
+html:not(.js) .story-prog{display:none}
+html:not(.js) .intro{display:none}
+
 /* buttons */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:9px;
@@ -1563,6 +1582,7 @@ section[id],aside[id],main[id]{scroll-margin-top:96px}
 (function(){
   "use strict";
   var d=document, w=window;
+  d.documentElement.classList.add("js");   /* gates every hide-then-reveal style */
   var q=function(s,c){return (c||d).querySelector(s);};
   var qa=function(s,c){return Array.prototype.slice.call((c||d).querySelectorAll(s));};
   var mm=w.matchMedia?w.matchMedia.bind(w):null;
@@ -1610,6 +1630,9 @@ section[id],aside[id],main[id]{scroll-margin-top:96px}
     setTimeout(endIntro, 8000);          /* hard fallback, never traps anyone */
   }
   if(introSkip) introSkip.addEventListener("click", endIntro);
+  ["wheel","touchstart","pointerdown"].forEach(function(ev){
+    w.addEventListener(ev, function(){ endIntro(); }, {passive:true, once:true});
+  });
   d.addEventListener("keydown", function(e){
     if(!introDone && intro && !intro.hidden && (e.key==="Escape"||e.key===" "||e.key==="Enter")) endIntro();
   });
@@ -1634,13 +1657,30 @@ section[id],aside[id],main[id]{scroll-margin-top:96px}
 
   /* ── reveal on scroll ───────────────────────────────────────────── */
   var targets=qa(".rv, .mask, .arc-step");
+  function watcherFor(el){
+    /* a .mask is clipped to zero height until revealed, so watch its parent */
+    return (el.classList.contains("mask") && el.parentElement) ? el.parentElement : el;
+  }
+  function inView(el){
+    var r=el.getBoundingClientRect();
+    return r.bottom > 0 && r.top < (w.innerHeight || d.documentElement.clientHeight);
+  }
   if("IntersectionObserver" in w && !reduce){
+    var pairs=targets.map(function(el){ return {el:el, watch:watcherFor(el)}; });
     var io=new IntersectionObserver(function(es){
       es.forEach(function(e){
-        if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); }
+        if(!e.isIntersecting) return;
+        pairs.forEach(function(p){
+          if(p.watch===e.target && !p.el.classList.contains("in")) p.el.classList.add("in");
+        });
+        io.unobserve(e.target);
       });
-    },{rootMargin:"0px 0px -10% 0px", threshold:0.06});
-    targets.forEach(function(el){ io.observe(el); });
+    },{rootMargin:"0px 0px -10% 0px", threshold:0.05});
+    pairs.forEach(function(p){ io.observe(p.watch); });
+    /* safety net: anything already on screen once layout settles */
+    var sweep=function(){ targets.forEach(function(el){ if(inView(watcherFor(el))) el.classList.add("in"); }); };
+    w.addEventListener("load", function(){ sweep(); setTimeout(sweep, 600); });
+    setTimeout(sweep, 2500);
   } else {
     targets.forEach(function(el){ el.classList.add("in"); });
   }
