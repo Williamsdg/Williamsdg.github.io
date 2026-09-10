@@ -48,18 +48,18 @@ FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox
 AR = '<span class="ar" aria-hidden="true">&#8594;</span>'
 
 NAV = [
-    ("index.html",   "Home",     None),
+    ("index.html",   "Home",     None, None),
     ("expertise.html","Expertise", [
         ("expertise-heavy-equipment.html", "Heavy Equipment", "Construction, agricultural &amp; specialized machinery"),
         ("expertise-complex-auto.html",    "Complex Auto Claims", "Losses that need investigation, not a photo app"),
         ("expertise-commercial-fleet.html","Commercial &amp; Fleet", "Trucks, trailers and transportation exposure"),
         ("expertise-specialty-claims.html","Specialty &amp; Disputed Claims", "Unusual, contested and high-exposure losses"),
-    ]),
-    ("services.html","Services",  None),
-    ("about.html",   "About",     None),
-    ("coverage.html","Coverage",  None),
-    ("roster.html",  "Join Our Roster", None),
-    ("contact.html", "Contact",   None),
+    ], None),
+    ("services.html","Services",  None, None),
+    ("about.html",   "About",     None, None),
+    ("coverage.html","Coverage",  None, None),
+    ("roster.html",  "Join Our Roster", None, "Roster"),
+    ("contact.html", "Contact",   None, None),
 ]
 
 # --------------------------------------------------------------------------- shell
@@ -84,20 +84,22 @@ def head(title, desc, extra=""):
 
 def header(current):
     items = []
-    for href, label, sub in NAV:
+    for href, label, sub, short in NAV:
         cur = ' aria-current="page"' if href == current else ''
+        txt = label if not short else (
+            f'<span class="nv-l">{label}</span><span class="nv-s">{short}</span>')
         if sub:
             links = "".join(
                 f'<a href="{h}">{l}<span>{d}</span></a>' for h, l, d in sub)
             items.append(
-                f'<div class="drop"><a href="{href}"{cur}>{label}</a>'
+                f'<div class="drop"><a href="{href}"{cur}>{txt}</a>'
                 f'<div class="drop__panel">{links}</div></div>')
         else:
-            items.append(f'<a href="{href}"{cur}>{label}</a>')
+            items.append(f'<a href="{href}"{cur}>{txt}</a>')
     nav = "".join(items)
 
     dr = []
-    for href, label, sub in NAV:
+    for href, label, sub, short in NAV:
         dr.append(f'<a href="{href}">{label}</a>')
         if sub:
             dr.append('<div class="sub">' + "".join(
@@ -114,7 +116,7 @@ def header(current):
       </span>
     </a>
     <nav class="nav" aria-label="Primary">{nav}</nav>
-    <a class="btn hdr__cta" href="assign.html">Submit an Assignment</a>
+    <a class="btn hdr__cta" href="assign.html"><span class="nv-l">Submit an Assignment</span><span class="nv-s">Submit Assignment</span></a>
     <button class="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="drawer">
       <span></span><span></span><span></span>
     </button>
