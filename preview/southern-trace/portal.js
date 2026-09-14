@@ -173,7 +173,7 @@ function initTooltips() {
       const tip = document.createElement('div');
       tip.className = 'tooltip-popup';
       tip.textContent = el.dataset.tooltip;
-      tip.style.cssText = 'position:absolute;bottom:calc(100%+8px);left:50%;transform:translateX(-50%);background:#16241C;color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap;z-index:1000;pointer-events:none;animation:fadeIn 0.15s ease;';
+      tip.style.cssText = 'position:absolute;bottom:calc(100%+8px);left:50%;transform:translateX(-50%);background:#16231B;color:#fff;padding:6px 12px;border-radius:6px;font-size:12px;white-space:nowrap;z-index:1000;pointer-events:none;animation:fadeIn 0.15s ease;';
       el.appendChild(tip);
     });
     el.addEventListener('mouseleave', () => {
@@ -186,7 +186,7 @@ function initTooltips() {
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
   const colors = {
-    success: '#4F7D5E',
+    success: '#5A7F63',
     error: '#C0392B',
     warning: '#D4943A',
     info: '#2980B9'
@@ -214,11 +214,11 @@ function showConfirm(message, onConfirm) {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;font-family:"Inter",sans-serif;';
   modal.innerHTML = `
     <div style="background:#fff;border-radius:12px;padding:24px;max-width:400px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.2);">
-      <h4 style="margin-bottom:8px;color:#16241C;font-family:'Plus Jakarta Sans',sans-serif;">Confirm Action</h4>
+      <h4 style="margin-bottom:8px;color:#16231B;font-family:'Plus Jakarta Sans',sans-serif;">Confirm Action</h4>
       <p style="color:#3D4A42;margin-bottom:20px;font-size:14px;line-height:1.5;">${message}</p>
       <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button class="confirm-cancel" style="padding:8px 16px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid #E1D9C9;background:#fff;color:#3D4A42;">Cancel</button>
-        <button class="confirm-ok" style="padding:8px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;background:#B08D4F;color:#14291F;border:none;">Confirm</button>
+        <button class="confirm-cancel" style="padding:8px 16px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid #E0D8C6;background:#fff;color:#3D4A42;">Cancel</button>
+        <button class="confirm-ok" style="padding:8px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;background:#B08D4F;color:#101F18;border:none;">Confirm</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -340,19 +340,19 @@ function timeAgo(date) {
       + '#cmdk-shell { width: min(620px, 100%); background: white; border-radius: 14px; box-shadow: 0 30px 80px rgba(0,0,0,0.4); overflow: hidden; }'
       + '#cmdk-input-wrap { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #E6DCC4; }'
       + '#cmdk-input-wrap svg { color: #888; flex-shrink: 0; }'
-      + '#cmdk-input { flex: 1; border: none; outline: none; font-size: 16px; font-family: inherit; padding: 4px 0; background: transparent; color: #16241C; }'
+      + '#cmdk-input { flex: 1; border: none; outline: none; font-size: 16px; font-family: inherit; padding: 4px 0; background: transparent; color: #16231B; }'
       + '#cmdk-input::placeholder { color: #999; }'
       + '#cmdk-hint { font-size: 11px; color: #999; background: #F4F4F5; padding: 3px 8px; border-radius: 4px; font-family: monospace; }'
       + '#cmdk-list { max-height: 50vh; overflow-y: auto; padding: 6px 0; }'
       + '.cmdk-section { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: 700; padding: 12px 18px 4px; }'
       + '.cmdk-item { display: flex; align-items: center; gap: 12px; padding: 9px 18px; cursor: pointer; transition: background 0.1s; }'
       + '.cmdk-item.active, .cmdk-item:hover { background: #F6F1E7; }'
-      + '.cmdk-item-icon { width: 28px; height: 28px; border-radius: 6px; background: #FAF7F0; display: flex; align-items: center; justify-content: center; color: #1C3B2E; flex-shrink: 0; font-size: 12px; font-weight: 700; }'
-      + '.cmdk-item-icon.resident { background: rgba(46,125,111,0.1); color: #4F7D5E; }'
+      + '.cmdk-item-icon { width: 28px; height: 28px; border-radius: 6px; background: #F7F3E9; display: flex; align-items: center; justify-content: center; color: #1B3026; flex-shrink: 0; font-size: 12px; font-weight: 700; }'
+      + '.cmdk-item-icon.resident { background: rgba(46,125,111,0.1); color: #5A7F63; }'
       + '.cmdk-item-icon.community { background: rgba(200,162,84,0.12); color: #B08D4F; }'
-      + '.cmdk-item-icon.action { background: rgba(27,42,74,0.08); color: #1C3B2E; }'
+      + '.cmdk-item-icon.action { background: rgba(27,42,74,0.08); color: #1B3026; }'
       + '.cmdk-item-text { flex: 1; min-width: 0; }'
-      + '.cmdk-item-label { font-weight: 600; color: #16241C; font-size: 13.5px; }'
+      + '.cmdk-item-label { font-weight: 600; color: #16231B; font-size: 13.5px; }'
       + '.cmdk-item-desc { font-size: 12px; color: #6E7A70; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }'
       + '.cmdk-item-arrow { color: #ccc; font-size: 14px; }'
       + '.cmdk-item.active .cmdk-item-arrow { color: #B08D4F; }'
@@ -474,7 +474,7 @@ function timeAgo(date) {
     try {
       if (!localStorage.getItem('lp_cmdk_seen')) {
         var hint = document.createElement('div');
-        hint.style.cssText = 'position:fixed;bottom:18px;right:18px;background:#1C3B2E;color:white;padding:9px 14px;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:400;cursor:pointer;display:flex;align-items:center;gap:8px;';
+        hint.style.cssText = 'position:fixed;bottom:18px;right:18px;background:#1B3026;color:white;padding:9px 14px;border-radius:8px;font-size:12px;font-family:Inter,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:400;cursor:pointer;display:flex;align-items:center;gap:8px;';
         hint.innerHTML = 'Press <kbd style="background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:3px;font-family:monospace;font-size:11px;">⌘K</kbd> to search anything';
         hint.addEventListener('click', open);
         document.body.appendChild(hint);
@@ -499,7 +499,7 @@ function timeAgo(date) {
       btn.id = 'cmdk-mobile-trigger';
       btn.setAttribute('aria-label', 'Search');
       btn.type = 'button';
-      btn.style.cssText = 'display:none;width:44px;height:44px;border-radius:8px;background:transparent;border:1px solid #E6DCC4;color:#1C3B2E;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;';
+      btn.style.cssText = 'display:none;width:44px;height:44px;border-radius:8px;background:transparent;border:1px solid #E6DCC4;color:#1B3026;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;';
       btn.innerHTML = '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
       btn.addEventListener('click', open);
       // Only show on small screens

@@ -318,8 +318,8 @@
     var overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;font-family:"Inter",sans-serif;';
     overlay.innerHTML = '<div style="background:#fff;border-radius:16px;padding:40px 48px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.2);">' +
-      '<div style="width:48px;height:48px;border:4px solid var(--border,#E1D9C9);border-top-color:var(--brass,#B08D4F);border-radius:50%;animation:demoSpin 0.8s linear infinite;margin:0 auto 16px;"></div>' +
-      '<div style="font-size:16px;font-weight:600;color:#1C3B2E;">' + message + '</div>' +
+      '<div style="width:48px;height:48px;border:4px solid var(--border,#E0D8C6);border-top-color:var(--brass,#B08D4F);border-radius:50%;animation:demoSpin 0.8s linear infinite;margin:0 auto 16px;"></div>' +
+      '<div style="font-size:16px;font-weight:600;color:#1B3026;">' + message + '</div>' +
     '</div>';
 
     if (!document.getElementById('demoSpinStyle')) {
