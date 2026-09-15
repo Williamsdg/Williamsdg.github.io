@@ -1210,7 +1210,7 @@
               </div>
               <div class="info-banner-text">
                 <p>All exterior modifications require Architectural Review Committee approval before work begins. Review typically takes 10-14 business days.</p>
-                <a href="#">
+                <a href="documents.html">
                   View Architectural Guidelines
                   <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                     <path d="M5 12h14"/>
@@ -2308,24 +2308,50 @@
       var tabs = document.querySelectorAll('#serviceTabs .tab');
       var panels = document.querySelectorAll('#serviceTabContent .tab-panel');
 
+      function activate(targetId, scroll) {
+        var match = false;
+        panels.forEach(function(panel) {
+          if (panel.id === targetId) {
+            panel.style.display = '';
+            panel.classList.add('active');
+            match = true;
+          } else {
+            panel.style.display = 'none';
+            panel.classList.remove('active');
+          }
+        });
+        if (!match) return false;
+        tabs.forEach(function(t) {
+          t.classList.toggle('active', t.getAttribute('data-tab') === targetId);
+        });
+        if (scroll) {
+          var tabStrip = document.getElementById('serviceTabs');
+          if (tabStrip && tabStrip.scrollIntoView) {
+            tabStrip.scrollIntoView({ block: 'start', behavior: 'auto' });
+          }
+        }
+        return true;
+      }
+
       tabs.forEach(function(tab) {
         tab.addEventListener('click', function() {
           var targetId = this.getAttribute('data-tab');
-
-          tabs.forEach(function(t) { t.classList.remove('active'); });
-          this.classList.add('active');
-
-          panels.forEach(function(panel) {
-            if (panel.id === targetId) {
-              panel.style.display = '';
-              panel.classList.add('active');
-            } else {
-              panel.style.display = 'none';
-              panel.classList.remove('active');
+          if (activate(targetId, false)) {
+            // keep the hash shareable without jumping the page
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState(null, '', '#' + targetId);
             }
-          });
+          }
         });
       });
+
+      // Deep links: services.html#tab-arc / #tab-clubhouse open that panel.
+      function applyHash(scroll) {
+        var id = (window.location.hash || '').replace('#', '');
+        if (id) activate(id, scroll);
+      }
+      applyHash(true);
+      window.addEventListener('hashchange', function() { applyHash(true); });
     })();
 
     /* --- ARC Submission Expand/Collapse --- */
