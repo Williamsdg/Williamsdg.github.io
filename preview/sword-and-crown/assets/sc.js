@@ -248,67 +248,103 @@
     shades();
   }
 
-  /* ── services: tabs + live preview ────────────── */
-  var svc = $('#services');
-  if (svc) {
-    var stabs = $$('.svc-tab', svc), groups = $$('.svc-group', svc);
-    var pvTitle = $('.pv-title', svc), pvCap = $('.svc-preview .plate-cap span', svc);
-    function tab(n, focus) {
-      stabs.forEach(function (t, k) { var on = k === n; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); });
-      groups.forEach(function (g, k) { g.hidden = k !== n; });
-      var first = $('.svc', groups[n]); first && preview(first);
-    }
-    function preview(el) {
-      if (!pvTitle) return;
-      pvTitle.textContent = el.dataset.title; pvCap.textContent = el.dataset.shot;
-    }
-    stabs.forEach(function (t, n) {
-      t.addEventListener('click', function () { tab(n); });
-      t.addEventListener('keydown', function (e) {
-        var k = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
-        if (k) { e.preventDefault(); tab((n + k + stabs.length) % stabs.length, true); }
-      });
-    });
-    $$('.svc', svc).forEach(function (el) {
-      el.addEventListener('mouseenter', function () { preview(el); });
-      el.addEventListener('toggle', function () { if (el.open) preview(el); });
-    });
-    tab(0);
-  }
 
-  /* ── nano brow before / after (drawn, not photographed) ── */
+  /* ── before / after: one slider per card; brow card is drawn ── */
+  $$('.ba-card').forEach(function (card) {
+    var st = $('.ba-stage', card), rg = $('.ba-range', card);
+    if (!st || !rg) return;
+    var set = function () { st.style.setProperty('--pos', rg.value + '%'); };
+    rg.addEventListener('input', set); set();
+  });
   var ba = $('#ba');
-  if (ba) {
-    var stage2 = $('.ba-stage', ba), range = $('.ba-range', ba);
-    var set = function () { stage2.style.setProperty('--pos', range.value + '%'); };
-    range.addEventListener('input', set); set();
-    function brow(svg, density, soft) {
+  if (ba && $('.ba-before .hairs', ba)) {
+    function brow(g, density, soft) {
       var seed = 3, out = '';
       function r() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
-      var n = density;
-      for (var k = 0; k < n; k++) {
-        var t = k / (n - 1);
-        var x = 120 + t * 360;
+      for (var k = 0; k < density; k++) {
+        var t = k / (density - 1), x = 120 + t * 360;
         var yb = 250 - Math.sin(Math.min(t * 1.35, 1) * Math.PI * .62) * 70 + (t > .74 ? (t - .74) * 180 : 0);
-        var thick = (1 - Math.abs(t - .38) * 1.25);
-        var ang = -1.05 + t * 1.0 + (r() - .5) * .25;
-        var len = 26 + thick * 22 + r() * 8;
-        var x2 = x + Math.cos(ang) * len, y2 = yb + Math.sin(ang) * len + 22;
+        var thick = (1 - Math.abs(t - .38) * 1.25), ang = -1.05 + t * 1.0 + (r() - .5) * .25;
+        var len = 26 + thick * 22 + r() * 8, x2 = x + Math.cos(ang) * len, y2 = yb + Math.sin(ang) * len + 22;
         out += '<path d="M' + x.toFixed(1) + ' ' + (yb + 22).toFixed(1) + ' Q' + ((x + x2) / 2 + 6).toFixed(1) + ' ' + ((yb + y2) / 2).toFixed(1) +
           ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + '" stroke-width="' + (1.3 + thick * .9).toFixed(2) + '" opacity="' + (soft ? (.38 + r() * .25) : (.75 + r() * .25)).toFixed(2) + '"/>';
       }
-      svg.innerHTML = '<g fill="none" stroke="#3A2A1E" stroke-linecap="round"' + (soft ? ' filter="url(#soften)"' : '') + '>' + out + '</g>';
+      g.innerHTML = '<g fill="none" stroke="#3A2A1E" stroke-linecap="round"' + (soft ? ' filter="url(#soften)"' : '') + '>' + out + '</g>';
     }
     var bBefore = $('.ba-before .hairs', ba), bAfter = $('.ba-after .hairs', ba);
     brow(bBefore, 42, true);
-    var modes = $$('.ba-mode button', ba), afterTag = $('.ba-tag.r', ba);
+    var bcard = bBefore.closest('.ba-card'), modes = $$('.ba-mode button', bcard), afterTag = $('.ba-tag.r', bcard);
     function mode(m) {
       modes.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === m)); });
       brow(bAfter, 120, m === 'healed');
-      afterTag.textContent = m === 'healed' ? 'Healed · illustration' : 'Fresh · illustration';
+      afterTag.textContent = m === 'healed' ? 'Healed' : 'Fresh';
     }
     modes.forEach(function (b) { b.addEventListener('click', function () { mode(b.dataset.m); }); });
     mode('fresh');
+  }
+
+  /* ── announcement bar: rotate + arrows ────────── */
+  var ann = $('.announce');
+  if (ann) {
+    var msgs = $$('.announce-msg', ann), ai = 0, timer;
+    var show = function (n) { ai = (n + msgs.length) % msgs.length; msgs.forEach(function (m, k) { m.classList.toggle('on', k === ai); }); };
+    var auto = function () { clearInterval(timer); if (!reduce) timer = setInterval(function () { show(ai + 1); }, 5000); };
+    $$('[data-ann]', ann).forEach(function (b) { b.addEventListener('click', function () { show(ai + (+b.dataset.ann)); auto(); }); });
+    ann.addEventListener('mouseenter', function () { clearInterval(timer); });
+    ann.addEventListener('mouseleave', auto);
+    auto();
+  }
+
+  /* ── three steps: expanding cards ─────────────── */
+  $$('.steps3').forEach(function (wrap) {
+    var steps = $$('.step', wrap);
+    steps.forEach(function (st) {
+      var btn = $('.step-hd', st);
+      var open = function () {
+        steps.forEach(function (o) { var on = o === st; o.classList.toggle('open', on); $('.step-hd', o).setAttribute('aria-expanded', String(on)); });
+      };
+      btn.addEventListener('click', open);
+      if (matchMedia('(hover:hover)').matches) st.addEventListener('mouseenter', open);
+    });
+  });
+
+  /* ── shop filter ──────────────────────────────── */
+  var shopTabs = $$('[data-shop]');
+  if (shopTabs.length) {
+    shopTabs.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var cat = b.dataset.shop;
+        shopTabs.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+        $$('.pcard').forEach(function (c) {
+          var on = cat === 'all' || c.dataset.cat === cat; c.hidden = !on;
+          if (on && !reduce) c.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,.7,.1,1)' });
+        });
+      });
+    });
+  }
+
+  /* ── learn tabs (Wig Bible / Journal) ─────────── */
+  var ltabs = $$('.learn-tabs [role="tab"]');
+  ltabs.forEach(function (t, n) {
+    var sel = function (focus) {
+      ltabs.forEach(function (x) {
+        var on = x === t; x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1;
+        var panel = d.getElementById(x.getAttribute('aria-controls')); if (panel) panel.hidden = !on;
+      });
+      if (focus) t.focus();
+    };
+    t.addEventListener('click', function () { sel(); });
+    t.addEventListener('keydown', function (e) {
+      var k = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+      if (k) { e.preventDefault(); var nx = ltabs[(n + k + ltabs.length) % ltabs.length]; nx.click(); nx.focus(); }
+    });
+  });
+
+  /* ── concept note: dismissible ────────────────── */
+  var pill = $('.concept-pill');
+  if (pill) {
+    try { if (sessionStorage.getItem('sc-note') === 'x') pill.hidden = true; } catch (e) {}
+    $('button', pill).addEventListener('click', function () { pill.hidden = true; try { sessionStorage.setItem('sc-note', 'x'); } catch (e) {} });
   }
 
   /* ── glossary popovers ────────────────────────── */
