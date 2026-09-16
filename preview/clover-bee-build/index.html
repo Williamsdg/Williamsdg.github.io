@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F6F5F0">
+<title>Clover + Bee Production Build</title>
+<meta name="description" content="Production build specification for the signed Clover + Bee storefront.">
+
+<!--
+  CLOVER + BEE — PRODUCTION BUILD SPECIFICATION
+  Williams Digital · 2026-09-15 · INTERNAL
+
+  Supersedes the concept-era "Signature Build" spec (that was priced at $6,500 and
+  predates the signed terms). The signed agreement governs scope; this document
+  governs implementation.
+
+  ⚠ The reconciliation table in §2 is the important part. Three items in Dylan's
+  plan sit outside the signed scope and need a written decision before they are built.
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#F6F5F0; --card:#FFFFFF; --sunk:#EFEEE7;
+  --ink:#1B1D19; --ink-2:#4A4E47; --mute:#82867C;
+  --rule:#DCDBD1; --rule-2:#E8E7DF;
+  --clover:#3F5A42; --clover-lt:#E4EBE2; --clover-bd:#CBD9C8;
+  --honey:#8A6712; --honey-lt:#F6EEDA; --honey-bd:#E6D6AC;
+  --flag:#8C3A2B; --flag-lt:#F7E7E2;
+  --serif:"Fraunces","Iowan Old Style",Georgia,serif;
+  --sans:"Hanken Grotesk","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --gut:clamp(20px,4vw,52px);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+a{color:var(--clover)}
+:focus-visible{outline:2px solid var(--clover);outline-offset:3px}
+p{margin:0 0 13px}
+strong{font-weight:600}
+code{font-family:var(--mono);font-size:.86em;background:var(--sunk);padding:1px 5px;border-radius:2px}
+
+.shell{max-width:1180px;margin:0 auto;padding:0 var(--gut)}
+.top{border-bottom:1px solid var(--rule)}
+.top-in{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center;max-width:1180px;margin:0 auto;padding:14px var(--gut)}
+.wd{font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+.top .for{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+
+.mast{padding:clamp(36px,5vw,64px) 0 clamp(20px,2.6vw,30px)}
+.eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--mute);margin:0}
+.mast h1{font-family:var(--serif);font-weight:300;font-size:clamp(32px,5.2vw,54px);line-height:1.02;letter-spacing:-.025em;margin:12px 0 14px}
+.mast .lead{font-size:17px;color:var(--ink-2);max-width:62ch;margin:0}
+.meta{display:flex;gap:clamp(18px,3vw,42px);flex-wrap:wrap;margin-top:30px;padding-top:22px;border-top:1px solid var(--rule)}
+.meta dt{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);font-weight:700;margin-bottom:4px}
+.meta dd{margin:0;font-family:var(--serif);font-weight:300;font-size:21px;letter-spacing:-.01em}
+
+.cols{display:grid;grid-template-columns:186px minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start;padding:clamp(26px,3.4vw,44px) 0 70px}
+@media (max-width:900px){.cols{grid-template-columns:1fr}}
+.rail{position:sticky;top:16px;font-family:var(--mono);font-size:11px;line-height:1.35}
+@media (max-width:900px){.rail{position:static;border:1px solid var(--rule);padding:14px;background:var(--card)}}
+.rail ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px}
+@media (max-width:900px){.rail ol{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}}
+.rail a{display:grid;grid-template-columns:20px 1fr;gap:6px;padding:5px 6px;text-decoration:none;color:var(--mute);border-left:2px solid transparent}
+.rail a:hover{color:var(--ink);background:var(--sunk)}
+.rail a.on{color:var(--ink);border-left-color:var(--clover);background:var(--clover-lt)}
+.rail .n{color:var(--clover);opacity:.8}
+
+main{min-width:0}
+section{padding-top:clamp(30px,3.6vw,46px);scroll-margin-top:14px}
+section+section{border-top:1px solid var(--rule-2);margin-top:clamp(30px,3.6vw,46px)}
+.sh{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:baseline;margin-bottom:16px}
+.sh .n{font-family:var(--mono);font-size:11.5px;color:var(--clover);padding-top:4px}
+h2{font-family:var(--serif);font-weight:300;font-size:clamp(23px,3vw,33px);line-height:1.08;letter-spacing:-.018em;margin:0}
+h3{font-size:15.5px;font-weight:600;margin:24px 0 8px}
+h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:20px 0 8px;font-weight:500}
+.lede{font-size:16px;color:var(--ink-2);max-width:66ch;margin-bottom:18px}
+ul,ol.body{margin:0 0 13px;padding-left:1.1em}
+li{margin-bottom:5px}
+li::marker{color:var(--mute)}
+
+.tbl{overflow-x:auto;margin:14px 0;border:1px solid var(--rule-2);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px}
+th{text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:500;padding:11px 14px;border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--rule-2);vertical-align:top;color:var(--ink-2)}
+tbody tr:last-child td{border-bottom:0}
+td b,td strong{color:var(--ink)}
+td code{background:none;padding:0;color:var(--clover)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.flag,.warn,.ok{padding:15px 18px;margin:16px 0;font-size:14.5px}
+.flag{border-left:2px solid var(--flag);background:var(--flag-lt)}
+.warn{border-left:2px solid var(--honey);background:var(--honey-lt)}
+.ok{border-left:2px solid var(--clover);background:var(--clover-lt)}
+.flag .lab,.warn .lab,.ok .lab{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:500;margin-bottom:5px}
+.flag .lab{color:var(--flag)} .warn .lab{color:var(--honey)} .ok .lab{color:var(--clover)}
+.flag p:last-child,.warn p:last-child,.ok p:last-child{margin-bottom:0}
+
+pre{font-family:var(--mono);font-size:12px;line-height:1.55;background:var(--sunk);border:1px solid var(--rule-2);padding:16px 18px;overflow-x:auto;margin:14px 0;white-space:pre}
+pre b{color:var(--clover);font-weight:500}
+
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px;margin:12px 0 4px}
+.sw div{display:flex;flex-direction:column;gap:5px}
+.sw .c{height:40px;border:1px solid var(--rule)}
+.sw .nm{font-size:12px;font-weight:500;line-height:1.2}
+.sw .hx{font-family:var(--mono);font-size:10.5px;color:var(--mute)}
+.theme{border-top:1px solid var(--rule-2);padding-top:16px;margin-top:18px}
+.theme h3{margin-top:0}
+
+footer{border-top:1px solid var(--rule);padding:22px 0 44px;font-family:var(--mono);font-size:11px;color:var(--mute)}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="top-in">
+    <span class="wd">Williams Digital</span>
+    <span class="for">Internal · Production build spec · v1.0</span>
+  </div>
+</div>
+
+<div class="shell">
+  <header class="mast">
+    <p class="eyebrow">Signed — build specification</p>
+    <h1>Clover + Bee Production Build</h1>
+    <p class="lead">Shopify stays the source of truth for commerce. The custom storefront and a Shopify-native theme system control presentation. This document governs implementation; the signed agreement governs scope, and where the two disagree the agreement wins.</p>
+    <dl class="meta">
+      <div><dt>Status</dt><dd>Signed</dd></div>
+      <div><dt>Contract</dt><dd>$2,000 + $50/mo</dd></div>
+      <div><dt>Timeline</dt><dd>4–6 weeks</dd></div>
+      <div><dt>Supersedes</dt><dd>Concept spec</dd></div>
+    </dl>
+  </header>
+</div>
+
+<div class="shell cols">
+
+<nav class="rail" aria-label="Sections">
+  <ol>
+    <li><a href="#verified"><span class="n">01</span><span>Verified facts</span></a></li>
+    <li><a href="#recon"><span class="n">02</span><span>Scope reconciliation</span></a></li>
+    <li><a href="#stack"><span class="n">03</span><span>Stack decisions</span></a></li>
+    <li><a href="#themes"><span class="n">04</span><span>Theme architecture</span></a></li>
+    <li><a href="#meta"><span class="n">05</span><span>Metaobjects</span></a></li>
+    <li><a href="#tokens"><span class="n">06</span><span>Theme tokens</span></a></li>
+    <li><a href="#palettes"><span class="n">07</span><span>Palettes</span></a></li>
+    <li><a href="#routes"><span class="n">08</span><span>Routes</span></a></li>
+    <li><a href="#components"><span class="n">09</span><span>Components</span></a></li>
+    <li><a href="#motion"><span class="n">10</span><span>Motion</span></a></li>
+    <li><a href="#budget"><span class="n">11</span><span>Budgets</span></a></li>
+    <li><a href="#phases"><span class="n">12</span><span>Phases</span></a></li>
+    <li><a href="#open"><span class="n">13</span><span>Open decisions</span></a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- 01 -->
+<section id="verified">
+  <div class="sh"><span class="n">01</span><h2>Verified facts about their store</h2></div>
+  <p class="lede">Everything here was checked against the live store, not assumed. Two findings change decisions.</p>
+
+  <div class="ok">
+    <span class="lab">Finding 1 — new customer accounts are already live</span>
+    <p><code>/account/login</code> returns a 302 to <code>account.shopcloverandbee.com</code>, which CNAMEs to <code>shops.myshopify.com</code>. That is Shopify's <strong>new customer accounts</strong> experience, hosted by Shopify on its own subdomain.</p>
+    <p><strong>This corrects an earlier read of mine.</strong> The homepage JSON carries <code>customerAccountsEnabled:"false"</code>, which I previously took to mean classic accounts. The redirect proves otherwise. It matters because it flips two decisions in our favour:</p>
+    <p>— The <strong>Customer Account API is available</strong>, so order history and profile work is viable rather than blocked.<br>
+    — Login already lives on a Shopify-controlled subdomain, so <strong>moving the apex to the new storefront does not touch it.</strong> Accounts, order history and Smile.io points keep working on day one with zero build effort. The contract's promise to preserve customer accounts is satisfied by doing nothing.</p>
+  </div>
+
+  <div class="warn">
+    <span class="lab">Finding 2 — the DNS picture has a third record</span>
+    <p><code>account.shopcloverandbee.com</code> → <code>shops.myshopify.com</code>. My earlier subdomain scan didn't probe <code>account</code> and missed it. It <em>stays</em> pointed at Shopify, so the "two records change" statement to Bryson remains true — but the GoDaddy zone export before cutover is now mandatory, not just good practice.</p>
+  </div>
+
+  <h4>Store facts</h4>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Item</th><th>Value</th><th>Consequence</th></tr></thead>
+    <tbody>
+      <tr><td>myshopify domain</td><td><code>shop-clover-and-bee.myshopify.com</code></td><td>Storefront API host</td></tr>
+      <tr><td>Current theme</td><td>Broadcast 5.3.0</td><td>Being replaced, not modified</td></tr>
+      <tr><td>Customer accounts</td><td><b>New</b> (hosted, <code>account.</code> subdomain)</td><td>Customer Account API usable; login untouched</td></tr>
+      <tr><td>DNS host</td><td>GoDaddy (<code>ns15/16.domaincontrol.com</code>)</td><td>Export zone before cutover</td></tr>
+      <tr><td>Email</td><td>Google Workspace</td><td>MX untouched</td></tr>
+      <tr><td>Storefront apps</td><td>Klaviyo, Smile.io, Judge.me, Redo, PageFly, Pinterest</td><td>PageFly pages need rebuilding</td></tr>
+      <tr><td>Season tags</td><td><code>HOC - Spring</code> / <code>HOC- Summer</code> / <code>HOC - Autumn</code> / <code>HOC - Winter</code></td><td><b>Note the inconsistent spacing</b> — normalise in code, not in their data</td></tr>
+      <tr><td>Game day tags</td><td><code>gameday</code> (145), <code>auburn</code> (80), <code>alabama</code> (56)</td><td>Drives Game Day panels</td></tr>
+      <tr><td>Occasion tags</td><td><code>occasion-casual/dressy/gameday/wedding-guest/date-night</code></td><td>Drives Shop by Occasion</td></tr>
+      <tr><td>Staff picks</td><td><code>FAVES</code> (81)</td><td>Drives Staff Picks</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="flag">
+    <span class="lab">Do not miss this</span>
+    <p>Their season tags are <code>HOC - Summer</code> for three seasons but <code>HOC- Summer</code> for Summer — the space is missing after the hyphen. Any tag matching must normalise whitespace or Summer silently returns zero products. Do not ask them to re-tag 250 products to fix our parser.</p>
+  </div>
+</section>
+
+<!-- 02 -->
+<section id="recon">
+  <div class="sh"><span class="n">02</span><h2>Scope reconciliation</h2></div>
+  <p class="lede">The build plan is broader than the signed agreement in three places. None is unreasonable — but at $2,000 each needs a deliberate decision rather than quiet absorption.</p>
+
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Plan item</th><th>Signed agreement</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>Eight themes</b><br>Evergreen, Valentine's, Spring, Summer, Game Day, Fall, Holiday, Winter</td>
+        <td>Six seasonal + two game day</td>
+        <td><b style="color:var(--clover)">Reconciles exactly.</b> Evergreen is the base state, not a campaign. Valentine's fills the "flexible slot". Auburn + Alabama are the two game day treatments.</td>
+      </tr>
+      <tr>
+        <td><b>Theme manager in Shopify metaobjects</b></td>
+        <td>"A password-protected admin page, <em>separate from Shopify</em>"</td>
+        <td><b style="color:var(--honey)">Deviation — in their favour.</b> Better product, one less login, less build. But it is not what they signed. Get one line in writing from Bryson accepting it before building.</td>
+      </tr>
+      <tr>
+        <td><b>Eleven apps in §34</b></td>
+        <td>Four named: Klaviyo, Smile.io, Judge.me, Redo</td>
+        <td><b style="color:var(--flag)">Real scope risk.</b> See below.</td>
+      </tr>
+      <tr>
+        <td><b>Custom "My C+B" account area</b></td>
+        <td>Preserve Shopify customer accounts</td>
+        <td><b style="color:var(--flag)">Out of scope.</b> Accounts already work untouched. Quote separately, post-launch.</td>
+      </tr>
+      <tr>
+        <td><b>Theme scheduling</b> with start/end dates</td>
+        <td>Admin page can "switch the active seasonal theme"</td>
+        <td><b style="color:var(--clover)">In scope and nearly free</b> — see §04. Resolve at read time, no scheduler needed.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>The app list is the expensive line</h3>
+  <p>Of the eleven apps in §34, most cost nothing because they never touch the storefront. Three do:</p>
+
+  <div class="tbl">
+  <table>
+    <thead><tr><th>App</th><th>Where it lives</th><th>Cost to us</th></tr></thead>
+    <tbody>
+      <tr><td>Faire, Shopify Flow, Power Tools tagging, inventory workflows</td><td>Back office only</td><td><b style="color:var(--clover)">Zero.</b> Unaffected, as Section 3 of the agreement says</td></tr>
+      <tr><td>Klaviyo, Smile.io, Judge.me, Redo</td><td>Storefront</td><td>Contracted — included</td></tr>
+      <tr><td><b>Shopify Bundles</b></td><td>Storefront <em>and cart logic</em></td><td><b style="color:var(--flag)">Highest risk item in the build.</b> Bundle pricing and cart composition are not a widget — they change how the cart is constructed. Not in the contracted four</td></tr>
+      <tr><td><b>AMP Back in Stock</b></td><td>Storefront widget on PDP</td><td>Not contracted. Small but real</td></tr>
+      <tr><td><b>AvantLink</b></td><td>Affiliate tracking script + attribution</td><td>Not contracted. Must survive or their affiliate revenue mis-attributes</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="flag">
+    <span class="lab">Recommendation</span>
+    <p>Before writing any code, confirm with Bryson whether <strong>Bundles</strong> is actually in use and on how many products. If it is live, it is either a change order or a deliberate absorb — but decide now. Discovering bundle logic in week four is how a $2,000 project becomes a loss.</p>
+    <p>AvantLink and Back in Stock are small enough to absorb as goodwill; say so explicitly so it reads as generosity rather than as scope you didn't notice.</p>
+  </div>
+</section>
+
+<!-- 03 -->
+<section id="stack">
+  <div class="sh"><span class="n">03</span><h2>Stack decisions</h2></div>
+
+  <h3>Hydrogen on Oxygen, not Next.js on Vercel</h3>
+  <p>The concept spec said Next.js. The production build should use <strong>Hydrogen</strong> (Remix-based) deployed to <strong>Oxygen</strong>. Three reasons, in order of weight:</p>
+  <ul>
+    <li><strong>Oxygen hosting is included with their Shopify plan.</strong> That removes the hosting line from the $50/month entirely, which matters when the monthly has to cover real infrastructure at a $2,000 project price. <em>Verify plan eligibility before promising it.</em></li>
+    <li><strong>Customer Account API support is first-class in Hydrogen's tooling</strong>, including typed access for logged-in experiences. On Next.js that is hand-rolled.</li>
+    <li>Caching, cart and analytics primitives ship with the framework rather than being assembled.</li>
+  </ul>
+  <p>The cost is Remix rather than Next. For a solo build at this price, included hosting and built-in commerce plumbing beats framework familiarity.</p>
+
+  <h4>Dependencies</h4>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Layer</th><th>Choice</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Framework</td><td>Hydrogen + Remix + TypeScript</td><td>Oxygen deploy</td></tr>
+      <tr><td>Commerce data</td><td>Storefront API</td><td>Server-side loaders, parallel fetch, deferred for non-critical</td></tr>
+      <tr><td>Accounts</td><td>Customer Account API</td><td>Only if §13 decision says build it; otherwise leave hosted</td></tr>
+      <tr><td>Content</td><td><b>Metaobjects + metafields</b></td><td>No second database, no second admin</td></tr>
+      <tr><td>UI motion</td><td>Motion</td><td>Buttons, cards, drawers, sheets, filters, hovers</td></tr>
+      <tr><td>Editorial motion</td><td>GSAP + ScrollTrigger</td><td>Hero, reveals, masks, season transition only</td></tr>
+      <tr><td>Page transitions</td><td>Native View Transition API</td><td>Progressive enhancement; no library, no fallback needed</td></tr>
+      <tr><td>Smooth scroll</td><td>Lenis — desktop only, optional</td><td>Ship without it; add only if it demonstrably helps</td></tr>
+      <tr><td>WebGL</td><td>R3F — one signature moment max</td><td>Lazy, desktop, post-LCP, never required to buy</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="warn">
+    <span class="lab">Cut line</span>
+    <p>If the schedule tightens, drop in this order: WebGL → Lenis → GSAP pinned sequences. Motion and View Transitions stay, because they carry the "expensive" feel at almost no cost. Commerce correctness is never the thing that gets cut.</p>
+  </div>
+</section>
+
+<!-- 04 -->
+<section id="themes">
+  <div class="sh"><span class="n">04</span><h2>Theme architecture</h2></div>
+  <p class="lede">Eight themes are not eight websites. One component system reads a token set and a content record.</p>
+
+  <h3>Scheduling without a scheduler</h3>
+  <p>Metaobjects have no native "activate on date" behaviour, and that is fine — we do not need one. Store <code>startDate</code> and <code>endDate</code> on each theme and <strong>resolve the active theme at request time</strong>:</p>
+<pre>activeTheme(now) =
+  themes
+    .filter(t =&gt; t.enabled)
+    .filter(t =&gt; t.startDate &lt;= now &amp;&amp; (t.endDate == null || now &lt;= t.endDate))
+    .sort(by priority desc, then startDate desc)
+    [0]  <b>?? evergreen</b></pre>
+  <p>"Activate now" simply writes today's date into <code>startDate</code>. "Schedule" writes a future one. No cron, no Shopify Flow, no background job, and no state that can drift out of sync with what Bryson sees in admin.</p>
+
+  <div class="warn">
+    <span class="lab">Caching consequence</span>
+    <p>If pages are cached and the theme is resolved per request, a midnight switch would serve stale pages. Cache the <em>theme lookup</em> for a short TTL (5 minutes) and include the resolved theme id in the page cache key. A theme change then appears within five minutes without a deploy — and the admin "Publish" button is honest rather than aspirational.</p>
+  </div>
+
+  <h3>Priority resolves overlaps</h3>
+  <p>Game Day (Aug 15 – Nov 30) overlaps Fall. Rather than forbidding overlap, give each theme a <code>priority</code> integer and let the higher number win. Game Day sits above Fall; Evergreen is priority 0 and has no dates, so it is always the fallback.</p>
+</section>
+
+<!-- 05 -->
+<section id="meta">
+  <div class="sh"><span class="n">05</span><h2>Metaobject and metafield definitions</h2></div>
+  <p class="lede">Create these in Shopify admin in week one. Everything the storefront renders that is not a product comes from here.</p>
+
+  <h4>Metaobject — <code>cb_theme</code></h4>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Field key</th><th>Type</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>single_line_text</td><td>"Game Day", "Holiday"</td></tr>
+      <tr><td><code>enabled</code></td><td>boolean</td><td>Master on/off</td></tr>
+      <tr><td><code>priority</code></td><td>number_integer</td><td>Overlap winner; Evergreen = 0</td></tr>
+      <tr><td><code>start_date</code> / <code>end_date</code></td><td>date</td><td>Empty end date = open-ended</td></tr>
+      <tr><td><code>colors</code></td><td>json</td><td>Token set — see §06</td></tr>
+      <tr><td><code>hero_desktop</code> / <code>hero_mobile</code></td><td>file_reference</td><td>Separate crops, deliberately</td></tr>
+      <tr><td><code>hero_eyebrow</code> / <code>hero_title</code> / <code>hero_body</code></td><td>single / multi_line_text</td><td>Campaign copy</td></tr>
+      <tr><td><code>hero_cta_label</code> / <code>hero_cta_collection</code></td><td>text / collection_reference</td><td>Primary action</td></tr>
+      <tr><td><code>featured_collection</code> / <code>secondary_collection</code></td><td>collection_reference</td><td>Rails</td></tr>
+      <tr><td><code>announcement</code></td><td>single_line_text</td><td>Bar copy</td></tr>
+      <tr><td><code>sections</code></td><td>json</td><td>Which sections show, and in what order</td></tr>
+      <tr><td><code>motion_preset</code></td><td>single_line_text</td><td><code>calm</code> | <code>editorial</code> | <code>signature</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Other metaobjects</h4>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Definition</th><th>Drives</th><th>Key fields</th></tr></thead>
+    <tbody>
+      <tr><td><code>cb_editorial</code></td><td>The Clover + Bee Edit</td><td>image, eyebrow, title, body, cta_label, collection</td></tr>
+      <tr><td><code>cb_season</code></td><td>Shop My Season</td><td>name, palette (json), description, tag_filter, hero image, collection</td></tr>
+      <tr><td><code>cb_occasion</code></td><td>Shop by Occasion tiles</td><td>label, sublabel, image, collection</td></tr>
+      <tr><td><code>cb_gameday_team</code></td><td>Auburn / Alabama panels</td><td>name, accent, accent_secondary, image, tag_filter</td></tr>
+      <tr><td><code>cb_staff_pick</code></td><td>Loved by the C+B Girls</td><td>person, quote, portrait, collection</td></tr>
+      <tr><td><code>cb_look</code></td><td>Complete the Look</td><td>image, hotspots (json), products (list.product_reference)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>Product metafields</h4>
+  <p>Only two are genuinely needed, because their tags already carry season, occasion and team:</p>
+  <ul>
+    <li><code>custom.fit_notes</code> — multi_line_text. Highest-value returns reducer on a dress-led catalogue.</li>
+    <li><code>custom.model_stats</code> — single_line_text. "Model is 5'8", wearing S".</li>
+  </ul>
+  <div class="ok">
+    <span class="lab">Why so few</span>
+    <p>The concept spec proposed eleven metafields. Their tag taxonomy already encodes season, occasion, colour, team, price band and staff picks across 250 products. Adding metafields that duplicate existing tags would create two sources of truth and a data-entry burden for staff. Read the tags.</p>
+  </div>
+</section>
+
+<!-- 06 -->
+<section id="tokens">
+  <div class="sh"><span class="n">06</span><h2>Theme tokens</h2></div>
+  <p class="lede">Every theme writes the same keys. Components never reference a hex value.</p>
+<pre>{
+  <b>"background"</b>:        "#F7F4EE",   /* page ground            */
+  <b>"surface"</b>:           "#FFFDF9",   /* cards, sheets, menus   */
+  <b>"surfaceAlt"</b>:        "#EEE9E0",   /* banded sections        */
+  <b>"text"</b>:              "#20201E",
+  <b>"muted"</b>:             "#76736D",
+  <b>"accent"</b>:            "#526653",   /* CTAs, active states    */
+  <b>"accentSecondary"</b>:   "#AAB7A4",
+  <b>"border"</b>:            "rgba(32,32,30,.12)",
+  <b>"heroTreatment"</b>:     "full" | "split" | "editorial",
+  <b>"displayFont"</b>:       "serif" | "serifTight",
+  <b>"motionPreset"</b>:      "calm" | "editorial" | "signature"
+}</pre>
+  <p>Applied as CSS custom properties on <code>&lt;html&gt;</code> at the server render, so there is no flash of the previous theme and no client-side theme JavaScript.</p>
+  <div class="warn">
+    <span class="lab">Contrast gate</span>
+    <p>Every theme must pass 4.5:1 for <code>text</code> on <code>background</code> and on <code>surface</code>, and 3:1 for <code>accent</code> as a boundary. Write this as a unit test over the token sets, not a manual check — eight palettes edited by a non-designer will otherwise drift into unreadable at some point. The Fall and Holiday sets in §07 are the ones to watch.</p>
+  </div>
+</section>
+
+<!-- 07 -->
+<section id="palettes">
+  <div class="sh"><span class="n">07</span><h2>Palettes</h2></div>
+
+  <div class="theme">
+    <h3>Evergreen — base and fallback</h3>
+    <div class="sw">
+      <div><span class="c" style="background:#F7F4EE"></span><span class="nm">Background</span><span class="hx">#F7F4EE</span></div>
+      <div><span class="c" style="background:#FFFDF9"></span><span class="nm">Paper</span><span class="hx">#FFFDF9</span></div>
+      <div><span class="c" style="background:#EEE9E0"></span><span class="nm">Secondary</span><span class="hx">#EEE9E0</span></div>
+      <div><span class="c" style="background:#20201E"></span><span class="nm">Text</span><span class="hx">#20201E</span></div>
+      <div><span class="c" style="background:#526653"></span><span class="nm">Clover</span><span class="hx">#526653</span></div>
+      <div><span class="c" style="background:#AAB7A4"></span><span class="nm">Soft sage</span><span class="hx">#AAB7A4</span></div>
+    </div>
+  </div>
+
+  <div class="theme">
+    <h3>Valentine's — romantic editorial, no hearts</h3>
+    <div class="sw">
+      <div><span class="c" style="background:#F5E5E5"></span><span class="nm">Blush</span><span class="hx">#F5E5E5</span></div>
+      <div><span class="c" style="background:#FFF9F5"></span><span class="nm">Cream</span><span class="hx">#FFF9F5</span></div>
+      <div><span class="c" style="background:#8D3348"></span><span class="nm">Berry</span><span class="hx">#8D3348</span></div>
+      <div><span class="c" style="background:#332A28"></span><span class="nm">Deep cocoa</span><span class="hx">#332A28</span></div>
+    </div>
+  </div>
+
+  <div class="theme">
+    <h3>Spring / Easter</h3>
+    <div class="sw">
+      <div><span class="c" style="background:#FFFDF7"></span><span class="nm">Cream</span><span class="hx">#FFFDF7</span></div>
+      <div><span class="c" style="background:#F4E8B8"></span><span class="nm">Butter</span><span class="hx">#F4E8B8</span></div>
+      <div><span class="c" style="background:#D8CBE0"></span><span class="nm">Soft lilac</span><span class="hx">#D8CBE0</span></div>
+      <div><span class="c" style="background:#AAB7A4"></span><span class="nm">Sage</span><span class="hx">#AAB7A4</span></div>
+    </div>
+  </div>
+
+  <div class="theme">
+    <h3>Summer / Vacation</h3>
+    <div class="sw">
+      <div><span class="c" style="background:#FFFDF9"></span><span class="nm">White</span><span class="hx">#FFFDF9</span></div>
+      <div><span class="c" style="background:#E9DDC9"></span><span class="nm">Sand</span><span class="hx">#E9DDC9</span></div>
+      <div><span class="c" style="background:#A9C5BD"></span><span class="nm">Sea glass</span><span class="hx">#A9C5BD</span></div>
+      <div><span class="c" style="background:#A9C3D3"></span><span class="nm">Sunwashed</span><span class="hx">#A9C3D3</span></div>
+    </div>
+  </div>
+
+  <div class="theme">
+    <h3>Fall</h3>
+    <div class="sw">
+      <div><span class="c" style="background:#F5EFE4"></span><span class="nm">Cream</span><span class="hx">#F5EFE4</span></div>
+      <div><span class="c" style="background:#B79069"></span><span class="nm">Camel</span><span class="hx">#B79069</span></div>
+      <div><span class="c" style="background:#77785C"></span><span class="nm">Olive</span><span class="hx">#77785C</span></div>
+      <div><span class="c" style="background:#594438"></span><span class="nm">Chocolate</span><span class="hx">#594438</span></div>
+    </div>
+  </div>
+
+  <div class="theme">
+    <h3>Holiday — luxury, no snowflakes</h3>
+    <div class="sw">
+      <div><span class="c" style="background:#FAF6ED"></span><span class="nm">Cream</span><span class="hx">#FAF6ED</span></div>
+      <div><span class="c" style="background:#283E32"></span><span class="nm">Evergreen</span><span class="hx">#283E32</span></div>
+      <div><span class="c" style="background:#703D45"></span><span class="nm">Wine</span><span class="hx">#703D45</span></div>
+      <div><span class="c" style="background:#D6C4A2"></span><span class="nm">Champagne</span><span class="hx">#D6C4A2</span></div>
+    </div>
+  </div>
+
+  <div class="theme">
+    <h3>Winter / New Year</h3>
+    <div class="sw">
+      <div><span class="c" style="background:#FAF9F6"></span><span class="nm">Cream</span><span class="hx">#FAF9F6</span></div>
+      <div><span class="c" style="background:#E6E3DF"></span><span class="nm">Stone</span><span class="hx">#E6E3DF</span></div>
+      <div><span class="c" style="background:#B8B7B3"></span><span class="nm">Silver</span><span class="hx">#B8B7B3</span></div>
+      <div><span class="c" style="background:#292927"></span><span class="nm">Charcoal</span><span class="hx">#292927</span></div>
+    </div>
+  </div>
+
+  <div class="theme">
+    <h3>Game Day — base stays Clover + Bee</h3>
+    <p>The site does not turn orange or crimson. Base tokens stay Evergreen; only the team panels carry team colour, and only as accent and image treatment.</p>
+    <div class="sw">
+      <div><span class="c" style="background:#F7F4EE"></span><span class="nm">Base</span><span class="hx">#F7F4EE</span></div>
+      <div><span class="c" style="background:#DD6B20"></span><span class="nm">AU orange</span><span class="hx">#DD6B20</span></div>
+      <div><span class="c" style="background:#0C2042"></span><span class="nm">AU navy</span><span class="hx">#0C2042</span></div>
+      <div><span class="c" style="background:#9E1B32"></span><span class="nm">AL crimson</span><span class="hx">#9E1B32</span></div>
+      <div><span class="c" style="background:#F1E9DC"></span><span class="nm">AL cream</span><span class="hx">#F1E9DC</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 -->
+<section id="routes">
+  <div class="sh"><span class="n">08</span><h2>Routes</h2></div>
+<pre>/                          theme-driven homepage
+/collections/:handle       PLP · filters in URL
+/products/:handle          PDP
+/season/:season            Shop My Season  (tag: HOC - {Season})
+/gameday                   Game Day landing
+/gameday/:team             auburn | alabama  (tag: team)
+/occasion/:occasion        occasion-* tag view
+/edit/:handle              editorial story → collection
+/search                    full-viewport overlay + results page
+/visit                     store, hours, directions
+<b>account.shopcloverandbee.com   stays Shopify-hosted — do not rebuild</b></pre>
+  <p>Every existing product and collection URL must 301 to its match. Their current structure is already <code>/collections/*</code> and <code>/products/*</code>, so the mapping is one-to-one — the exception is any PageFly-built page, which needs a decided destination rather than a 404.</p>
+</section>
+
+<!-- 09 -->
+<section id="components">
+  <div class="sh"><span class="n">09</span><h2>Component system</h2></div>
+  <p class="lede">Eight section components. Themes change their tokens and content, never their code.</p>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Component</th><th>Content source</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>&lt;Hero&gt;</code></td><td><code>cb_theme</code></td><td>Three treatments via <code>heroTreatment</code>; separate desktop/mobile crops</td></tr>
+      <tr><td><code>&lt;ProductRail&gt;</code></td><td>Collection reference</td><td>4-up desktop, 1.2-card swipe mobile</td></tr>
+      <tr><td><code>&lt;EditorialSplit&gt;</code></td><td><code>cb_editorial</code></td><td>60/40, reversible</td></tr>
+      <tr><td><code>&lt;CollectionGrid&gt;</code></td><td>Storefront API</td><td>Editorial break injected every 8–12 products</td></tr>
+      <tr><td><code>&lt;SeasonSelector&gt;</code></td><td><code>cb_season</code> ×4</td><td>The signature moment</td></tr>
+      <tr><td><code>&lt;GameDay&gt;</code></td><td><code>cb_gameday_team</code> ×2</td><td>Team accent only, never site-wide</td></tr>
+      <tr><td><code>&lt;StaffEdit&gt;</code></td><td><code>cb_staff_pick</code></td><td>Real people; needs their names and portraits</td></tr>
+      <tr><td><code>&lt;StoreVisit&gt;</code></td><td>Static + theme</td><td>Needs the storefront photograph that still doesn't exist</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- 10 -->
+<section id="motion">
+  <div class="sh"><span class="n">10</span><h2>Motion hierarchy</h2></div>
+  <p class="lede">Expensive because it moves well, not because everything moves.</p>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Level</th><th>Duration</th><th>Tool</th><th>Applies to</th></tr></thead>
+    <tbody>
+      <tr><td><b>1 · Micro</b></td><td class="num">100–250ms</td><td>Motion</td><td>Buttons, cards, hovers, swatches</td></tr>
+      <tr><td><b>2 · UI</b></td><td class="num">250–450ms</td><td>Motion</td><td>Menus, cart, filters, bottom sheets</td></tr>
+      <tr><td><b>3 · Editorial</b></td><td class="num">600–1000ms</td><td>GSAP</td><td>Hero, masked reveals, campaign transitions</td></tr>
+      <tr><td><b>4 · Signature</b></td><td class="num">1–2s</td><td>GSAP / R3F</td><td><b>One or two moments site-wide.</b> Shop My Season is the first</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h4>Reduced motion</h4>
+  <p>Under <code>prefers-reduced-motion: reduce</code>: no parallax, no pinned sequences, no WebGL movement, transitions shortened to level 1, simple fades retained, and every section rendered at its final state. Test it rather than assume it — it is the most commonly broken thing in sites built this way.</p>
+</section>
+
+<!-- 11 -->
+<section id="budget">
+  <div class="sh"><span class="n">11</span><h2>Budgets</h2></div>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Metric</th><th>Target</th><th>Condition</th></tr></thead>
+    <tbody>
+      <tr><td>LCP</td><td class="num">&lt; 2.5s</td><td>Mid-tier Android, 4G, homepage</td></tr>
+      <tr><td>CLS</td><td class="num">&lt; 0.1</td><td>All templates</td></tr>
+      <tr><td>INP</td><td class="num">&lt; 200ms</td><td>Filters, variant select, add to bag</td></tr>
+      <tr><td>Lighthouse performance</td><td class="num">≥ 90</td><td>Homepage, PLP, PDP</td></tr>
+      <tr><td>Lighthouse accessibility</td><td class="num">≥ 95</td><td>Every template</td></tr>
+      <tr><td>WebGL chunk</td><td class="num">lazy, desktop, post-LCP</td><td>Never blocks purchase</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <ul>
+    <li>Images through the Shopify CDN with correct <code>sizes</code>, AVIF/WebP, blurred placeholder. Preload the hero only.</li>
+    <li>Parallel fetch in loaders; defer non-critical data; server-side cache per Shopify's guidance.</li>
+    <li>No autoplaying background video on mobile.</li>
+    <li>Klaviyo on-site tracking fired manually — <code>Viewed Product</code> and <code>Added to Cart</code>. Contracted, and silent if forgotten.</li>
+  </ul>
+</section>
+
+<!-- 12 -->
+<section id="phases">
+  <div class="sh"><span class="n">12</span><h2>Phases</h2></div>
+  <p class="lede">Ordered so a complete, sellable storefront exists before any editorial polish. The project can stop at any boundary without leaving a broken site.</p>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Phase</th><th>Work</th><th>Hrs</th><th>Ships</th></tr></thead>
+    <tbody>
+      <tr><td>0 · Discovery</td><td>App audit incl. Bundles decision, zone export, metaobject definitions created</td><td class="num">6</td><td>Signed-off data model</td></tr>
+      <tr><td>1 · Foundation</td><td>Hydrogen + Oxygen, Storefront API, cart, tokens, type, header/footer</td><td class="num">14</td><td>Deployed shell</td></tr>
+      <tr><td>2 · Commerce</td><td>PLP, PDP, quick shop, bag, search, filters, tag normalisation</td><td class="num">24</td><td><b>A complete storefront</b></td></tr>
+      <tr><td>3 · Theme system</td><td>Metaobjects wired, resolver, tokens, 8 palettes, contrast tests</td><td class="num">14</td><td>Seasonal control</td></tr>
+      <tr><td>4 · Editorial</td><td>Homepage sections, GSAP, View Transitions, mega menu, mobile home</td><td class="num">18</td><td>The brand</td></tr>
+      <tr><td>5 · Season + Game Day</td><td>Shop My Season signature moment, team panels</td><td class="num">12</td><td>The differentiator</td></tr>
+      <tr><td>6 · Apps</td><td>Klaviyo tracking, Smile.io, Judge.me, Redo</td><td class="num">10</td><td>Nothing lost</td></tr>
+      <tr><td>7 · Launch</td><td>Redirects, perf, a11y, analytics, zone cutover, staff training</td><td class="num">10</td><td>Live</td></tr>
+      <tr><td></td><td><b>Total</b></td><td class="num"><b>108</b></td><td>≈ 6 weeks</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="flag">
+    <span class="lab">The number to keep in view</span>
+    <p>108 hours against $2,000 is about <strong>$18.50/hour</strong>, and that assumes Bundles is not in play and the photography arrives. This was a relationship and portfolio decision, which is legitimate — but it means scope discipline is the whole game. Anything in §02 marked out of scope stays out until it is quoted.</p>
+  </div>
+</section>
+
+<!-- 13 -->
+<section id="open">
+  <div class="sh"><span class="n">13</span><h2>Open decisions</h2></div>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>#</th><th>Decision</th><th>Needed by</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Is Shopify Bundles in use, and on how many products?</b> Change order or absorb.</td><td>Phase 0</td></tr>
+      <tr><td>2</td><td><b>Theme manager in Shopify admin rather than a separate login</b> — one line in writing from Bryson.</td><td>Phase 0</td></tr>
+      <tr><td>3</td><td>Confirm Oxygen hosting is included on their Shopify plan.</td><td>Phase 0</td></tr>
+      <tr><td>4</td><td>PageFly pages — list them, decide rebuild or redirect.</td><td>Phase 0</td></tr>
+      <tr><td>5</td><td>Campaign photography and the storefront photograph. Still the largest quality risk.</td><td>Phase 4</td></tr>
+      <tr><td>6</td><td>Staff picks — real names, portraits and permission.</td><td>Phase 4</td></tr>
+      <tr><td>7</td><td>Custom "My C+B" account area — quote post-launch or drop.</td><td>Post-launch</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <div class="shell">Williams Digital · Clover + Bee production build specification · v1.0 · 15 September 2026 · Internal</div>
+</footer>
+
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.rail a')),map={};
+  links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a;});
+  if(!('IntersectionObserver' in window))return;
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      var a=map[e.target.id]; if(!a)return;
+      if(e.isIntersecting){links.forEach(function(l){l.classList.remove('on');});a.classList.add('on');}
+    });
+  },{rootMargin:'-8% 0px -78% 0px'});
+  document.querySelectorAll('section[id]').forEach(function(s){io.observe(s);});
+})();
+</script>
+</body>
+</html>
