@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jewelry — Cummings Jewelry Design</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="img/s/logo-dark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  .crumbs { padding: 26px 0; font-size: 13px; color: var(--ink-2); }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { text-decoration: underline; }
+  .pd { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(28px, 5vw, 80px); align-items: start; }
+  .gal { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; position: sticky; top: 96px; }
+  .thumbs { display: grid; gap: 10px; align-content: start; }
+  .thumbs button { padding: 0; border: 1px solid transparent; background: var(--stone); cursor: pointer; aspect-ratio: 1; overflow: hidden; }
+  .thumbs button[aria-current="true"] { border-color: var(--ink); }
+  .thumbs img { width: 100%; height: 100%; object-fit: cover; }
+  .stage { position: relative; background: var(--stone); aspect-ratio: 1; overflow: hidden; cursor: zoom-in; border: 0; padding: 0; width: 100%; }
+  .stage img { width: 100%; height: 100%; object-fit: cover; transition: transform .2s ease-out; }
+  .stage.zoom img { transform: scale(2.1); }
+  .stage .hint { position: absolute; right: 12px; bottom: 12px; background: rgba(251,248,243,.9); font: 600 11px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; padding: 8px 10px; }
+  .info .ref { display: block; margin-bottom: 14px; }
+  .info h1 { font-size: clamp(40px, 4.4vw, 60px); line-height: 1.02; }
+  .price { font: 500 32px/1 var(--serif); margin: 22px 0 8px; font-variant-numeric: lining-nums; }
+  .avail { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); }
+  .avail::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #3F8F5F; }
+  .avail.sold::before { background: var(--ink-3); }
+  .avail.reserved::before, .avail.made::before { background: var(--champagne); }
+  .desc { font-size: 17px; line-height: 1.7; margin: 26px 0; color: var(--ink); }
+  .specs { margin: 0 0 30px; border-top: 1px solid var(--line); }
+  .specs div { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+  .specs dt { color: var(--ink-3); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; padding-top: 2px; }
+  .specs dd { margin: 0; }
+  .actions { display: grid; gap: 10px; }
+  .actions .btn { width: 100%; }
+  .assure { list-style: none; padding: 0; margin: 28px 0 0; display: grid; gap: 12px; font-size: 14px; color: var(--ink-2); }
+  .assure li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
+  .assure svg { margin-top: 3px; }
+  .draft-bar { background: #F3D9A4; padding: 12px var(--pad); font-size: 14px; text-align: center; }
+  .missing { padding: 120px 0; text-align: center; }
+  .lightbox { position: fixed; inset: 0; background: rgba(20,18,17,.94); z-index: 90; display: grid; place-items: center; padding: 20px; }
+  .lightbox img { max-height: 92vh; max-width: 92vw; object-fit: contain; }
+  .lightbox button { position: absolute; top: 14px; right: 14px; width: 48px; height: 48px; background: none; border: 0; color: #fff; font-size: 32px; cursor: pointer; }
+  @media (max-width: 900px) {
+    .pd { grid-template-columns: 1fr; }
+    .gal { grid-template-columns: 1fr; position: static; }
+    .thumbs { grid-template-columns: repeat(5, 1fr); order: 2; }
+    .stage { cursor: pointer; }
+  }
+</style>
+</head>
+<body data-page="jewelry">
+<div id="chrome-top"></div>
+<main id="main">
+  <div id="draft" hidden class="draft-bar"></div>
+  <div class="wrap" id="root"></div>
+  <section class="sec" id="related-sec" hidden>
+    <div class="wrap">
+      <div class="sec-head"><div><p class="eyebrow">Also in the case</p><h2 class="h2">You may <em>also love.</em></h2></div><a class="link" href="jewelry.html" id="rel-link">See more</a></div>
+      <div class="grid-cards" id="related"></div>
+    </div>
+  </section>
+</main>
+<div id="chrome-foot"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/site.js"></script>
+<script>
+(function () {
+  var esc = SITE.esc;
+  var handle = new URLSearchParams(location.search).get('p');
+  var p = CJD.get(handle);
+  var root = document.getElementById('root');
+
+  if (!p || p.status === 'archived') {
+    root.innerHTML = '<div class="missing"><p class="eyebrow">Not in the case</p><h1 class="display" style="font-size:56px;margin:12px 0">This piece has moved on.</h1><p class="lede" style="margin:0 auto 28px">It may have found its owner. Browse what’s in the case now, or ask us about something similar.</p><a class="btn" href="jewelry.html">Browse jewelry</a></div>';
+    return;
+  }
+  if (p.status !== 'published') {
+    var d = document.getElementById('draft');
+    d.hidden = false;
+    d.innerHTML = '<b>Draft preview</b> — only staff can see this page. <a href="admin.html#edit/' + encodeURIComponent(p.handle) + '">Back to the editor</a>';
+  }
+  document.title = p.title + ' — Cummings Jewelry Design';
+
+  var imgs = p.images && p.images.length ? p.images : [];
+  var alts = p.alt || [];
+  var sold = p.availability === 'sold';
+  var specs = [['Type', p.type], ['Metal', p.metal], ['Stones', (p.stones || []).join(', ')], ['Size', p.size], ['Period', p.era], ['Designer', p.designer], ['Reference', p.ref]].filter(function (s) { return s[1]; });
+  var tick = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12.5 9.5 18 20 6"/></svg>';
+
+  root.innerHTML =
+    '<nav class="crumbs" aria-label="Breadcrumb"><a href="jewelry.html">Jewelry</a> / <a href="jewelry.html?type=' + encodeURIComponent(p.type === 'Pendant' ? 'Necklace|Pendant' : p.type) + '">' + esc(p.type) + '</a> / <span aria-current="page">' + esc(p.title) + '</span></nav>' +
+    '<div class="pd">' +
+      '<div class="gal">' +
+        '<div class="thumbs" role="group" aria-label="Photos">' + imgs.map(function (src, i) { return '<button type="button" data-i="' + i + '" aria-label="Photo ' + (i + 1) + '"' + (i === 0 ? ' aria-current="true"' : '') + '><img src="' + esc(src) + '" alt=""></button>'; }).join('') + '</div>' +
+        '<button type="button" class="stage" id="stage" aria-label="Zoom photo">' + (imgs[0] ? '<img id="main-img" src="' + esc(imgs[0]) + '" alt="' + esc(alts[0] || p.title) + '">' : '') + '<span class="hint">Hover to zoom</span></button>' +
+      '</div>' +
+      '<div class="info">' +
+        '<span class="ref">' + esc(p.ref || '') + (p.designer ? ' · Cummings original' : p.era ? ' · ' + esc(p.era) : '') + '</span>' +
+        '<h1 class="display">' + esc(p.title) + '</h1>' +
+        '<div class="price">' + esc(CJD.priceLabel(p)) + '</div>' +
+        '<span class="avail ' + esc(p.availability) + '">' + esc(sold ? 'This piece has sold' : CJD.availLabel(p.availability)) + '</span>' +
+        (p.description ? '<p class="desc">' + esc(p.description) + '</p>' : '<div style="height:26px"></div>') +
+        '<dl class="specs">' + specs.map(function (s) { return '<div><dt>' + s[0] + '</dt><dd>' + esc(s[1]) + '</dd></div>'; }).join('') + '</dl>' +
+        '<div class="actions">' +
+          (sold ? '<button class="btn" id="similar">Request a similar design</button>' :
+            '<button class="btn" id="ask">Ask about this piece</button>' +
+            (p.shopifyUrl && p.priceMode === 'fixed' && p.availability === 'available' ? '<a class="btn ghost" href="' + esc(p.shopifyUrl) + '" target="_blank" rel="noopener">Purchase online</a>' : '') +
+            '<button class="btn ghost" id="similar">Request a similar design</button>') +
+        '</div>' +
+        '<ul class="assure">' +
+          '<li>' + tick + '<span>Written appraisal included with every purchase — two copies, one for your insurance agent.</span></li>' +
+          '<li>' + tick + '<span>Ring sizing and adjustments by our own jewelers.</span></li>' +
+          '<li>' + tick + '<span><a href="https://www.mysynchrony.com/mmc/LX207956300" target="_blank" rel="noopener">Financing available</a> through Synchrony, subject to approval.</span></li>' +
+        '</ul>' +
+      '</div>' +
+    '</div>';
+
+  var stage = document.getElementById('stage'), main = document.getElementById('main-img'), cur = 0;
+  root.querySelectorAll('.thumbs button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      cur = +b.dataset.i; main.src = imgs[cur]; main.alt = alts[cur] || p.title;
+      root.querySelectorAll('.thumbs button').forEach(function (x) { x.setAttribute('aria-current', String(x === b)); });
+    });
+  });
+  var fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (!fine) stage.querySelector('.hint').textContent = 'Tap to enlarge';
+  if (fine && main) {
+    stage.addEventListener('mousemove', function (e) {
+      var r = stage.getBoundingClientRect();
+      main.style.transformOrigin = ((e.clientX - r.left) / r.width * 100) + '% ' + ((e.clientY - r.top) / r.height * 100) + '%';
+      stage.classList.add('zoom');
+    });
+    stage.addEventListener('mouseleave', function () { stage.classList.remove('zoom'); });
+  }
+  stage.addEventListener('click', function () {
+    if (!imgs[cur]) return;
+    var lb = document.createElement('div');
+    lb.className = 'lightbox'; lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-label', 'Enlarged photo');
+    lb.innerHTML = '<img src="' + esc(imgs[cur]) + '" alt="' + esc(alts[cur] || p.title) + '"><button aria-label="Close">×</button>';
+    document.body.appendChild(lb);
+    var close = function () { lb.remove(); document.removeEventListener('keydown', k); stage.focus(); };
+    var k = function (e) { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', k);
+    lb.addEventListener('click', close);
+    lb.querySelector('button').focus();
+  });
+
+  var ask = document.getElementById('ask');
+  if (ask) ask.addEventListener('click', function () {
+    SITE.inquiry({ piece: p, kind: 'piece', message: 'I’m interested in the ' + p.title + (p.ref ? ' (' + p.ref + ')' : '') + '. ' });
+  });
+  document.getElementById('similar').addEventListener('click', function () {
+    SITE.inquiry({ piece: p, kind: 'custom', eyebrow: 'Request a similar design', title: 'Let’s make something like it.', message: 'I’d love something similar to the ' + p.title + (p.ref ? ' (' + p.ref + ')' : '') + '. ' });
+  });
+
+  var rel = CJD.publicPieces().filter(function (x) { return x.handle !== p.handle && x.type === p.type; }).slice(0, 4);
+  if (rel.length) {
+    document.getElementById('related-sec').hidden = false;
+    document.getElementById('related').innerHTML = rel.map(function (x) { return SITE.card(x); }).join('');
+    document.getElementById('rel-link').href = 'jewelry.html?type=' + encodeURIComponent(p.type);
+  }
+  SITE.reveal();
+})();
+</script>
+</body>
+</html>
