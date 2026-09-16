@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Operations — Vassaltis (concept)</title>
+<meta name="theme-color" content="#20231F">
+<link rel="icon" href="https://vassaltis.com/wp-content/uploads/2020/11/cropped-Vassaltis_favicon-1-32x32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<style>
+  body.printing .shell, body.printing .demo-bar, body.printing .bnav { display: none !important; }
+  .print-sheet { display: none; }
+  body.printing .print-sheet { display: block; padding: 24px; font-size: 13px; }
+  .print-sheet table { width: 100%; border-collapse: collapse; }
+  .print-sheet th, .print-sheet td { border-bottom: 1px solid #ccc; padding: 6px 8px; text-align: left; vertical-align: top; }
+</style>
+<!--
+  VASSALTIS OPERATIONS — staff dashboard concept · Williams Digital · 2026-09-16
+  ALL RESERVATIONS, GUESTS, EVENTS AND MESSAGES ARE FICTIONAL SAMPLE DATA.
+  Experience names, prices and schedules are Vassaltis's published ones.
+  Nothing connects to i-host, email or payments. State: this browser only.
+-->
+</head>
+<body>
+<div class="demo-bar" role="note"><span><b>Concept · sample data.</b><span class="long"> Fictional guests and bookings, stored in this browser only. Nothing is sent to i-host, email or payments.</span></span>
+  <label>Viewing as <select id="role" class="sel" style="min-height:26px;font-size:12.5px;padding:0 6px"></select></label>
+  <button type="button" id="reset">Reset demo data</button>
+  <a href="index.html">Public site</a> <a href="client.html">Guest portal</a>
+</div>
+
+<div class="shell">
+  <aside class="side" aria-label="Main navigation">
+    <a class="brand" href="#today"><img src="img/logo.png" alt="Vassaltis" width="947" height="396"><span>Operations</span></a>
+    <nav id="sidenav"></nav>
+    <div class="foot">Santorini &amp; Athens · times shown in Europe/Athens</div>
+    <div class="who"><span class="avatar" id="who-av"></span><span><span id="who-nm" style="color:var(--chalk);font-size:13.5px"></span><br><span id="who-role" class="xs"></span></span></div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div><h1 id="title">Today</h1><div class="sub" id="subtitle"></div></div>
+      <div class="grow"></div>
+      <div class="search" id="searchbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><label class="sr" for="q">Search guests and reservations</label><input id="q" type="search" placeholder="Guest name, email or VX-ref"></div>
+    </header>
+    <main class="content" id="view" tabindex="-1"></main>
+  </div>
+</div>
+
+<nav class="bnav" id="bnav" aria-label="Mobile navigation"></nav>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="dr-title" hidden></aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="print-sheet" id="print"></div>
+
+<script src="assets/data.js"></script>
+<script src="assets/store.js"></script>
+<script>
+(function () {
+  const $ = s => document.querySelector(s);
+  const esc = VXS.esc;
+  const T = () => VXS.today();
+  const S = () => VXS.get();
+
+  /* ---------------- roles ---------------- */
+  const ROLES = {
+    'Manager':            { user: 'Yannis V.',  views: ['today', 'reservations', 'tasks', 'events', 'guests', 'content', 'settings'] },
+    'Host':               { user: 'Artemis K.', views: ['today', 'reservations', 'tasks', 'guests', 'settings'] },
+    'Events coordinator': { user: 'Maria P.',   views: ['today', 'tasks', 'events', 'guests', 'settings'] },
+    'Content editor':     { user: 'Kiriaki K.', views: ['content', 'settings'] }
+  };
+  let role = 'Manager';
+  try { role = localStorage.getItem('vassaltis.demo.role') || 'Manager'; } catch (e) {}
+  if (!ROLES[role]) role = 'Manager';
+  const me = () => ROLES[role].user;
+  const can = v => ROLES[role].views.includes(v);
+
+  const I = {
+    today: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+    reservations: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    tasks: '<path d="m4 12 5 5L20 6"/>',
+    events: '<path d="M12 3c-3 3-5 6-5 9a5 5 0 0 0 10 0c0-3-2-6-5-9Z"/><path d="M12 17v4"/>',
+    guests: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
+    content: '<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 14H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 3.1V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/>',
+    more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
+  };
+  const icon = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[k]}</svg>`;
+  const LABEL = { today: 'Today', reservations: 'Reservations', tasks: 'Tasks', events: 'Events', guests: 'Guests & members', content: 'Content', settings: 'Settings' };
+
+  /* ---------------- helpers ---------------- */
+  const g = id => S().guests.find(x => x.id === id) || { name: 'Unknown guest', email: '', phone: '' };
+  const expName = id => VXS.exp(id).name;
+  const chipCls = st => ({ 'Requested': 'requested', 'Confirmed': 'confirmed', 'Checked in': 'checked', 'Completed': 'completed', 'Cancelled': 'cancelled', 'No-show': 'noshow' }[st] || 'neutral');
+  const chip = st => `<span class="chip ${chipCls(st)}">${esc(st)}</span>`;
+  const venueTag = v => v === 'athens' ? '<span class="tag athens">Athens</span>' : '<span class="tag">Santorini</span>';
+  const initials = n => n.split(/[\s-]+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+  const live = r => !['Cancelled', 'No-show'].includes(r.status);
+  const nowHM = () => new Intl.DateTimeFormat('en-GB', { timeZone: VXS.TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 3200); }
+  function relDay(iso) { const d = (new Date(iso + 'T12:00:00Z') - new Date(T() + 'T12:00:00Z')) / 864e5; return d === 0 ? 'Today' : d === 1 ? 'Tomorrow' : d === -1 ? 'Yesterday' : VXS.fmtDate(iso); }
+  function push(r, text) { r.history.push({ at: VXS.nowStamp(), by: me(), text }); }
+
+  /* ---------------- chrome ---------------- */
+  function chrome(active) {
+    const s = S();
+    const pend = s.reservations.filter(r => r.status === 'Requested' && r.date >= T()).length;
+    const openTasks = s.tasks.filter(t => !t.done).length;
+    const inq = s.events.filter(e => e.stage === 'inquiry').length;
+    const counts = { reservations: pend, tasks: openTasks, events: inq };
+    $('#sidenav').innerHTML = ROLES[role].views.map(v => `<a class="nv" href="#${v}"${active === v ? ' aria-current="page"' : ''}>${icon(v)}${LABEL[v]}${counts[v] ? `<span class="count" aria-label="${counts[v]} need attention">${counts[v]}</span>` : ''}</a>`).join('')
+      .replace(/(<a class="nv" href="#settings")/, '<div class="sep"></div>$1');
+    const mob = ['today', 'reservations', 'tasks'].filter(can);
+    $('#bnav').innerHTML = mob.map(v => `<a href="#${v}"${active === v ? ' aria-current="page"' : ''}>${icon(v)}${v === 'reservations' ? 'Bookings' : LABEL[v]}</a>`).join('') + `<a href="#more"${['more', 'events', 'guests', 'content', 'settings'].includes(active) ? ' aria-current="page"' : ''}>${icon('more')}More</a>`;
+    $('#bnav').style.gridTemplateColumns = `repeat(${mob.length + 1}, 1fr)`;
+    $('#who-av').textContent = initials(me()); $('#who-nm').textContent = me(); $('#who-role').textContent = role;
+    $('#searchbox').hidden = !(can('reservations') || can('guests'));
+  }
+  function setTitle(t, sub) { $('#title').textContent = t; $('#subtitle').textContent = sub || ''; document.title = t + ' — Vassaltis Operations (concept)'; }
+
+  /* ---------------- views ---------------- */
+  const V = {};
+
+  V.today = () => {
+    const s = S(), t = T();
+    const todays = s.reservations.filter(r => r.date === t).sort((a, b) => a.time.localeCompare(b.time));
+    const arriving = todays.filter(live);
+    const guests = arriving.reduce((n, r) => n + r.party, 0);
+    const pending = s.reservations.filter(r => r.status === 'Requested' && r.date >= t);
+    const openEvents = s.events.filter(e => !['completed', 'lost'].includes(e.stage) && e.date >= t);
+    setTitle('Today', VXS.fmtDate(t, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ' · Europe/Athens');
+
+    const now = nowHM(); let lineDone = false;
+    const tl = todays.map(r => {
+      let pre = '';
+      if (!lineDone && r.time > now) { pre = `<li class="now-line" aria-hidden="true"></li>`; lineDone = true; }
+      const gg = g(r.guestId);
+      return pre + `<li data-res="${r.id}" class="${r.time < now ? 'past' : ''}" tabindex="0" role="button" aria-label="${esc(gg.name)}, ${esc(expName(r.exp))} at ${r.time}">
+        <span class="t">${r.time}</span>
+        <span><span class="nm">${esc(gg.name)}</span> <span class="muted">· ${r.party} guests</span><br><span class="meta">${esc(expName(r.exp))} · ${r.venue === 'athens' ? 'Athens' : 'Santorini'}${r.staff ? ' · ' + esc(r.staff) : ''}</span>${gg.dietary ? `<br><span class="allergy">${esc(gg.dietary)}</span>` : ''}</span>
+        <span style="display:flex;gap:8px;align-items:center;justify-content:flex-end">${chip(r.status)}${r.status === 'Confirmed' ? `<button class="btn sm" data-checkin="${r.id}">Check in</button>` : ''}</span>
+      </li>`;
+    }).join('');
+
+    const att = [];
+    pending.forEach(r => att.push(`<li><span class="ic a" aria-hidden="true">?</span><span class="tx"><b>${esc(g(r.guestId).name)}</b> requested ${esc(expName(r.exp))}, ${relDay(r.date)} ${r.time}, ${r.party} guests.<br><span class="small muted">Enter it in i-host first, then mark it confirmed here.</span></span><button class="btn sm ghost" data-res="${r.id}">Open</button></li>`));
+    todays.filter(live).forEach(r => { const gg = g(r.guestId); if (gg.dietary) att.push(`<li><span class="ic r" aria-hidden="true">!</span><span class="tx"><b>${esc(gg.dietary)}</b> · ${esc(gg.name)}, ${esc(expName(r.exp))} ${r.time}<br><span class="small muted">Tell the kitchen before service.</span></span></li>`); });
+    s.events.filter(e => e.stage === 'inquiry').forEach(e => att.push(`<li><span class="ic w" aria-hidden="true">✦</span><span class="tx"><b>New inquiry:</b> ${esc(e.title)}<br><span class="small muted">${esc(e.type)} · ${e.guests} guests · ${VXS.fmtDate(e.date, { year: 'numeric' })}${e.coordinator ? '' : ' · unassigned'}</span></span>${can('events') ? `<a class="btn sm ghost" href="#event/${e.id}">Open</a>` : ''}</li>`));
+    s.events.forEach(e => (e.decisions || []).filter(d => !d.done && d.due <= VXS.addDays(t, 14)).forEach(d => att.push(`<li><span class="ic s" aria-hidden="true">◷</span><span class="tx"><b>${esc(d.text)}</b> · ${esc(e.title)}<br><span class="small muted">Client decision due ${relDay(d.due)}</span></span></li>`)));
+
+    const open = s.tasks.filter(x => !x.done).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 6);
+
+    $('#view').innerHTML = `
+      <section class="tiles" aria-label="Today at a glance">
+        ${can('reservations') ? `<a class="tile" href="#reservations"><div class="k">Arrivals today</div><div class="v">${arriving.length}</div><div class="d">${todays.length - arriving.length} cancelled or no-show</div></a>` : ''}
+        ${can('reservations') ? `<div class="tile"><div class="k">Guests booked today</div><div class="v">${guests}</div><div class="d">Across ${new Set(arriving.map(r => r.exp)).size} experiences</div></div>` : ''}
+        ${can('reservations') ? `<a class="tile" href="#reservations"><div class="k">Pending requests</div><div class="v">${pending.length}</div><div class="d">Awaiting entry in i-host</div></a>` : ''}
+        ${can('events') ? `<a class="tile" href="#events"><div class="k">Open events</div><div class="v">${openEvents.length}</div><div class="d">${(n => n + (n === 1 ? ' new inquiry' : ' new inquiries'))(s.events.filter(e => e.stage === 'inquiry').length)}</div></a>` : ''}
+        <div class="tile off"><div class="k">Sales today</div><div class="v">Not connected</div><div class="d">No point-of-sale feed, so no figure is shown.</div></div>
+      </section>
+      <div class="grid-today">
+        ${can('reservations') ? `<section class="panel"><div class="panel-h"><h2>Service timeline</h2><div style="display:flex;gap:8px"><button class="btn sm ghost noprint" data-print="${t}">Print service sheet</button><a class="btn sm quiet" href="#reservations">All reservations</a></div></div>
+          ${todays.length ? `<ul class="tl">${tl}</ul>` : `<div class="empty"><span class="serif">A quiet day.</span>No reservations for today.</div>`}</section>` : `<section class="panel"><div class="empty"><span class="serif">Events day.</span>Reservations are handled by the hosting team.</div></section>`}
+        <div class="stack">
+          <section class="panel"><div class="panel-h"><h2>Needs attention</h2><span class="small muted">${att.length}</span></div>${att.length ? `<ul class="q">${att.join('')}</ul>` : `<div class="empty"><span class="serif">All clear.</span>Nothing waiting on the team.</div>`}</section>
+          <section class="panel"><div class="panel-h"><h2>Tasks</h2><a class="btn sm quiet" href="#tasks">All tasks</a></div>${taskList(open)}</section>
+        </div>
+      </div>`;
+  };
+
+  function taskList(list) {
+    const t = T();
+    if (!list.length) return `<div class="empty"><span class="serif">Nothing open.</span>Tasks created from reservations and events appear here.</div>`;
+    return `<ul class="tasks">${list.map(x => `<li class="${x.done ? 'done' : ''}"><input type="checkbox" id="tk-${x.id}" data-task="${x.id}" ${x.done ? 'checked' : ''}><label for="tk-${x.id}" style="flex:1;cursor:pointer"><span class="tt">${esc(x.text)}</span><br><span class="due ${!x.done && x.due < t ? 'over' : ''}">${!x.done && x.due < t ? 'Overdue · ' : ''}${relDay(x.due)}${x.who ? ' · ' + esc(x.who) : ' · unassigned'}${x.link ? ' · ' + esc(x.link) : ''}</span></label></li>`).join('')}</ul>`;
+  }
+
+  /* reservations */
+  const RF = { scope: 'upcoming', venue: 'all', status: 'all', source: 'all', q: '', view: 'list' };
+  V.reservations = () => {
+    const s = S(), t = T();
+    let list = s.reservations.slice();
+    if (RF.scope === 'today') list = list.filter(r => r.date === t);
+    if (RF.scope === 'upcoming') list = list.filter(r => r.date >= t);
+    if (RF.scope === 'past') list = list.filter(r => r.date < t);
+    if (RF.venue !== 'all') list = list.filter(r => r.venue === RF.venue);
+    if (RF.status !== 'all') list = list.filter(r => r.status === RF.status);
+    if (RF.source !== 'all') list = list.filter(r => r.source.startsWith(RF.source));
+    if (RF.q) { const q = RF.q.toLowerCase(); list = list.filter(r => { const gg = g(r.guestId); return (gg.name + ' ' + gg.email + ' ' + r.ref + ' ' + expName(r.exp)).toLowerCase().includes(q); }); }
+    list.sort((a, b) => (RF.scope === 'past' ? -1 : 1) * ((a.date + a.time).localeCompare(b.date + b.time)));
+    setTitle('Reservations', `${list.length} shown · i-host remains the booking system of record`);
+    const sel = (id, label, opts, val) => `<label class="sr" for="${id}">${label}</label><select class="sel" id="${id}">${opts.map(([v, l]) => `<option value="${v}"${v === val ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+    const rows = list.map(r => { const gg = g(r.guestId); return `<tr data-res="${r.id}" tabindex="0">
+      <td class="dt">${relDay(r.date)}</td><td>${r.time}</td>
+      <td><span class="nm">${esc(gg.name)}</span>${gg.dietary ? ' <span class="allergy" title="Dietary note"><span class="sr">Dietary note</span></span>' : ''}${gg.member ? ' <span class="chip slate" style="margin-left:4px">Member</span>' : ''}</td>
+      <td>${esc(expName(r.exp))}<br>${venueTag(r.venue)}</td><td>${r.party}</td><td>${chip(r.status)}</td>
+      <td class="small">${esc(r.source)}</td><td class="small">${esc(r.staff || '—')}</td></tr>`; }).join('');
+    const cards = list.map(r => { const gg = g(r.guestId); return `<article class="rcard">
+      <div class="top"><span class="t">${r.time}</span><span class="small muted">${relDay(r.date)}</span>${chip(r.status)}</div>
+      <div><div class="nm">${esc(gg.name)}</div><div class="small muted">${esc(expName(r.exp))} · ${r.party} guests · ${r.venue === 'athens' ? 'Athens' : 'Santorini'}</div>${gg.dietary ? `<div class="allergy" style="margin-top:4px">${esc(gg.dietary)}</div>` : ''}</div>
+      <div class="acts">${r.status === 'Confirmed' && r.date === t ? `<button class="btn" data-checkin="${r.id}">Check in</button>` : ''}${gg.phone ? `<a class="btn ghost" href="tel:${gg.phone.replace(/\s/g, '')}">Call</a>` : ''}<button class="btn ghost" data-res="${r.id}">Details</button></div>
+    </article>`; }).join('');
+    let dayView = '';
+    if (RF.view === 'day') {
+      const byDay = {}; list.forEach(r => (byDay[r.date] = byDay[r.date] || []).push(r));
+      dayView = Object.keys(byDay).map(d => `<section class="panel" style="margin-bottom:12px"><div class="panel-h"><h2>${relDay(d)} <span class="muted" style="font-weight:400">· ${VXS.fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })}</span></h2><span class="small muted">${byDay[d].filter(live).reduce((n, r) => n + r.party, 0)} guests</span></div><ul class="tl">${byDay[d].map(r => `<li data-res="${r.id}" tabindex="0" role="button"><span class="t">${r.time}</span><span><span class="nm">${esc(g(r.guestId).name)}</span> <span class="muted">· ${r.party}</span><br><span class="meta">${esc(expName(r.exp))}</span></span><span>${chip(r.status)}</span></li>`).join('')}</ul></section>`).join('');
+    }
+    $('#view').innerHTML = `
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Date range">${[['today', 'Today'], ['upcoming', 'Upcoming'], ['past', 'Past'], ['all', 'All']].map(([v, l]) => `<button data-scope="${v}" aria-pressed="${RF.scope === v}">${l}</button>`).join('')}</div>
+        ${sel('f-venue', 'Venue', [['all', 'Both venues'], ['santorini', 'Santorini'], ['athens', 'Athens']], RF.venue)}
+        ${sel('f-status', 'Status', [['all', 'Any status'], ...['Requested', 'Confirmed', 'Checked in', 'Completed', 'Cancelled', 'No-show'].map(x => [x, x])], RF.status)}
+        ${sel('f-source', 'Source', [['all', 'Any source'], ['i-host', 'i-host import'], ['Portal', 'Portal request']], RF.source)}
+        <div style="flex:1"></div>
+        <div class="seg" role="group" aria-label="Layout"><button data-rview="list" aria-pressed="${RF.view === 'list'}">List</button><button data-rview="day" aria-pressed="${RF.view === 'day'}">By day</button></div>
+        <button class="btn ghost" data-print="${RF.scope === 'today' ? t : ''}">Print</button>
+      </div>
+      ${RF.q ? `<p class="small" style="margin:-6px 0 14px">Searching “${esc(RF.q)}” · <button class="link" id="clearq">Clear</button></p>` : ''}
+      ${!list.length ? `<div class="panel"><div class="empty"><span class="serif">No reservations match.</span>Try another date range or clear the filters.</div></div>` :
+        RF.view === 'day' ? dayView : `<div class="tbl-wrap resv"><table class="tbl"><caption class="sr">Reservations</caption><thead><tr><th>Date</th><th>Time</th><th>Guest</th><th>Experience</th><th>Party</th><th>Status</th><th>Source</th><th>Staff</th></tr></thead><tbody>${rows}</tbody></table></div><div class="rcards">${cards}</div>`}
+      <p class="small muted" style="margin-top:16px">Imported rows come from an i-host export entered by staff. Changes made here don’t update i-host; they create a task instead.</p>`;
+    $('#view').querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { RF.scope = b.dataset.scope; render(); });
+    $('#view').querySelectorAll('[data-rview]').forEach(b => b.onclick = () => { RF.view = b.dataset.rview; render(); });
+    $('#f-venue').onchange = e => { RF.venue = e.target.value; render(); };
+    $('#f-status').onchange = e => { RF.status = e.target.value; render(); };
+    $('#f-source').onchange = e => { RF.source = e.target.value; render(); };
+    const cq = $('#clearq'); if (cq) cq.onclick = () => { RF.q = ''; $('#q').value = ''; render(); };
+  };
+
+  function openRes(id) {
+    const s = S(), r = s.reservations.find(x => x.id === id); if (!r) return;
+    const gg = g(r.guestId), canWines = ['Checked in', 'Completed'].includes(r.status);
+    const acts = {
+      'Requested': `<button class="btn" data-act="confirm">Mark confirmed (entered in i-host)</button><button class="btn danger" data-act="decline">Decline request</button>`,
+      'Confirmed': `${r.date === T() ? '<button class="btn" data-act="checkin">Check in</button>' : ''}<button class="btn ghost" data-act="change">Change needed in i-host</button><button class="btn ghost" data-act="noshow">No-show</button><button class="btn danger" data-act="cancel">Cancel</button>`,
+      'Checked in': `<button class="btn" data-act="complete">Mark completed</button>`,
+      'Completed': '', 'Cancelled': '', 'No-show': ''
+    }[r.status];
+    openDrawer(`
+      <div class="drawer-h"><div class="grow"><div class="small muted">${esc(r.ref)} · ${venueTag(r.venue)}</div><h2 id="dr-title">${esc(gg.name)}</h2><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${chip(r.status)}${gg.member ? '<span class="chip slate">Club member</span>' : ''}</div></div><button class="x" data-close aria-label="Close">×</button></div>
+      <div class="drawer-b">
+        <dl class="dl">
+          <dt>Experience</dt><dd>${esc(expName(r.exp))}</dd>
+          <dt>When</dt><dd>${VXS.fmtDate(r.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}, ${r.time} <span class="muted small">Europe/Athens</span></dd>
+          <dt>Party</dt><dd>${r.party} guests</dd>
+          <dt>Source</dt><dd>${esc(r.source)}${r.extId ? ` <span class="muted small">· ${esc(r.extId)}</span>` : ''}</dd>
+          <dt>Payment</dt><dd>${esc(r.payment)} <span class="muted small">· separate from booking status</span></dd>
+          <dt><label for="dr-staff">Host</label></dt><dd><select id="dr-staff" class="sel"><option value="">Unassigned</option>${['Artemis K.', 'Yannis P.', 'Kiriaki K.', 'Maria P.'].map(n => `<option${r.staff === n ? ' selected' : ''}>${n}</option>`).join('')}</select></dd>
+        </dl>
+        <div><p class="sec-t">Guest</p><dl class="dl">
+          <dt>Phone</dt><dd>${gg.phone ? `<a href="tel:${gg.phone.replace(/\s/g, '')}">${esc(gg.phone)}</a>` : '—'}</dd>
+          <dt>Email</dt><dd>${esc(gg.email)}</dd><dt>Language</dt><dd>${esc(gg.lang)}</dd>
+          <dt>Dietary</dt><dd>${gg.dietary ? `<span class="allergy">${esc(gg.dietary)}</span> <span class="xs muted">restricted · service staff only</span>` : '<span class="muted">None recorded</span>'}</dd>
+        </dl>${can('guests') ? `<p style="margin:8px 0 0"><a class="link" href="#guest/${gg.id}">Open guest profile</a></p>` : ''}</div>
+        <div class="internal"><p class="sec-t">Service notes · staff only</p><textarea class="inp" id="dr-notes" aria-label="Service notes (staff only)">${esc(r.notes)}</textarea><div style="margin-top:8px"><button class="btn sm ghost" data-act="notes">Save notes</button></div></div>
+        <div><p class="sec-t">Wines served</p>${canWines ? `<p class="small muted" style="margin:0 0 8px">Tick what was actually poured. The guest sees exactly these in their Wine Passport.</p><div class="winepick">${VX.wines.map(w => `<label><input type="checkbox" value="${w.id}" ${r.winesServed.includes(w.id) ? 'checked' : ''}><span class="sw hex" style="background:${w.color}"></span>${esc(w.name)}</label>`).join('')}</div><div style="margin-top:8px"><button class="btn sm" data-act="wines">Save wines served</button></div>` : `<p class="small muted" style="margin:0">Available once the guest has checked in.</p>`}</div>
+        <div><p class="sec-t">History</p><ul class="hist">${r.history.slice().reverse().map(h => `<li><div>${esc(h.text)}</div><div class="when">${VXS.fmtStamp(h.at)} · ${esc(h.by)}</div></li>`).join('')}</ul></div>
+      </div>
+      <div class="drawer-f">${acts}<button class="btn quiet" data-print="${r.date}">Service sheet</button></div>`);
+    const d = $('#drawer');
+    d.querySelector('#dr-staff').onchange = e => { VXS.update(s => { const x = s.reservations.find(y => y.id === id); x.staff = e.target.value; push(x, 'Host set to ' + (e.target.value || 'unassigned')); }, 'Reassigned ' + r.ref, me()); toast('Host updated'); };
+    d.querySelectorAll('[data-act]').forEach(b => b.onclick = () => {
+      const a = b.dataset.act; let msg = '';
+      VXS.update(s => {
+        const x = s.reservations.find(y => y.id === id);
+        if (a === 'confirm') { x.status = 'Confirmed'; x.staff = x.staff || me(); push(x, 'Confirmed — entered in i-host by staff'); msg = 'Marked confirmed. The guest now sees “Confirmed”.'; s.tasks.forEach(t => { if (t.link === id) t.done = true; }); }
+        if (a === 'decline') { x.status = 'Cancelled'; push(x, 'Request declined'); msg = 'Request declined'; }
+        if (a === 'checkin') { x.status = 'Checked in'; push(x, 'Checked in'); msg = gg.name + ' checked in'; }
+        if (a === 'complete') { x.status = 'Completed'; push(x, 'Completed'); msg = 'Visit completed'; }
+        if (a === 'noshow') { x.status = 'No-show'; push(x, 'Marked no-show'); msg = 'Marked no-show'; }
+        if (a === 'cancel') { x.status = 'Cancelled'; push(x, 'Cancelled by staff — cancel in i-host too'); s.tasks.unshift({ id: VXS.uid('t'), text: `Cancel ${x.ref} in i-host (${gg.name})`, due: T(), done: false, who: me(), link: x.id }); msg = 'Cancelled here. A task was created to cancel it in i-host.'; }
+        if (a === 'change') { push(x, 'Change flagged for i-host'); s.tasks.unshift({ id: VXS.uid('t'), text: `Update ${x.ref} in i-host for ${gg.name}`, due: T(), done: false, who: me(), link: x.id }); msg = 'Task created. i-host was not changed.'; }
+        if (a === 'notes') { x.notes = d.querySelector('#dr-notes').value; push(x, 'Service notes updated'); msg = 'Notes saved'; }
+        if (a === 'wines') { x.winesServed = [...d.querySelectorAll('.winepick input:checked')].map(i => i.value); push(x, `Recorded ${x.winesServed.length} wines served`); msg = 'Wines saved to the guest’s Wine Passport'; }
+      }, `${a} ${r.ref}`, me());
+      toast(msg); render(); if (!['notes', 'wines'].includes(a)) openRes(id); else if (a === 'wines') openRes(id);
+    });
+  }
+
+  /* tasks */
+  let TF = 'open';
+  V.tasks = () => {
+    const s = S();
+    const list = s.tasks.filter(t => TF === 'all' || (TF === 'open' ? !t.done : t.done)).sort((a, b) => a.due.localeCompare(b.due));
+    setTitle('Tasks', `${s.tasks.filter(t => !t.done).length} open`);
+    $('#view').innerHTML = `
+      <div class="toolbar"><div class="seg" role="group" aria-label="Show">${[['open', 'Open'], ['done', 'Done'], ['all', 'All']].map(([v, l]) => `<button data-tf="${v}" aria-pressed="${TF === v}">${l}</button>`).join('')}</div></div>
+      <form class="panel" id="addtask" style="margin-bottom:14px"><div class="panel-b" style="display:flex;gap:8px;flex-wrap:wrap"><label class="sr" for="nt">New task</label><input class="inp" id="nt" placeholder="Add a task — e.g. Call the Tanaka group about the allergy" style="flex:1;min-width:220px"><button class="btn" type="submit">Add task</button></div></form>
+      <section class="panel">${taskList(list)}</section>`;
+    $('#view').querySelectorAll('[data-tf]').forEach(b => b.onclick = () => { TF = b.dataset.tf; render(); });
+    $('#addtask').onsubmit = e => { e.preventDefault(); const v = $('#nt').value.trim(); if (!v) { $('#nt').focus(); return; } VXS.update(s => s.tasks.unshift({ id: VXS.uid('t'), text: v, due: T(), done: false, who: me(), link: '' }), 'Task added', me()); render(); toast('Task added'); };
+  };
+
+  /* events */
+  const STAGES = [['inquiry', 'New inquiry'], ['discussion', 'Discussion'], ['proposal', 'Proposal'], ['awaiting', 'Awaiting approval'], ['confirmed', 'Confirmed'], ['completed', 'Completed'], ['lost', 'Lost / cancelled']];
+  const stageName = k => (STAGES.find(x => x[0] === k) || [k, k])[1];
+  V.events = () => {
+    const s = S();
+    setTitle('Events', 'Weddings, private dinners and corporate gatherings · Santorini & Athens');
+    $('#view').innerHTML = `
+      <p class="small muted" style="margin:0 0 14px">Stages track the conversation. Deposits and balances are tracked separately, once a payment process is agreed.</p>
+      <div class="board" role="list">${STAGES.map(([k, l]) => { const es = s.events.filter(e => e.stage === k); return `<section class="col${['completed', 'lost'].includes(k) ? ' closed' : ''}" role="listitem" aria-label="${l}"><div class="col-h"><span>${l}</span><span class="n">${es.length}</span></div>
+        ${es.map(e => `<a class="ecard" href="#event/${e.id}">${e.fromWebsite ? '<div class="new">From website</div>' : ''}<div class="t">${esc(e.title)}</div><div class="m">${VXS.fmtDate(e.date, { year: 'numeric' })} · ${e.guests} guests</div><div class="m">${e.venue === 'athens' ? 'Athens' : 'Santorini'} · ${e.coordinator ? esc(e.coordinator) : '<b style="color:var(--wine)">Unassigned</b>'}</div>${e.outcome ? `<div class="m" style="margin-top:4px">${esc(e.outcome)}</div>` : ''}${e.approvals && e.approvals.length ? `<div class="m" style="margin-top:6px;color:var(--vine-ink)">✓ Menu v${e.approvals[e.approvals.length - 1].v} approved</div>` : ''}</a>`).join('') || '<div class="small faint" style="padding:6px">None</div>'}
+      </section>`; }).join('')}</div>`;
+  };
+
+  function eventPage(id) {
+    const s = S(), e = s.events.find(x => x.id === id);
+    if (!e) { $('#view').innerHTML = `<div class="panel"><div class="empty"><span class="serif">Event not found.</span><a href="#events">Back to events</a></div></div>`; return; }
+    const cl = g(e.clientId);
+    setTitle(e.title, `${e.id} · ${stageName(e.stage)}`);
+    $('#view').innerHTML = `
+      <p style="margin:0 0 14px"><a class="link" href="#events">← All events</a></p>
+      <div class="proj">
+        <div class="stack">
+          <section class="panel"><div class="panel-h"><h2>Conversation with ${esc(cl.name)}</h2><span class="chip neutral">Visible to client</span></div>
+            <div class="panel-b"><div class="thread">${e.thread.map(m => `<div class="msg ${m.from}"><div class="by">${esc(m.name)} · ${VXS.fmtStamp(m.at)}</div>${esc(m.text)}</div>`).join('') || '<p class="muted small">No messages yet.</p>'}</div>
+            <form id="reply" style="margin-top:14px;display:grid;gap:8px"><label class="sr" for="rp">Reply to client</label><textarea class="inp" id="rp" placeholder="Write to ${esc(cl.name.split(' ')[0])}… (demo: not emailed)"></textarea><div><button class="btn" type="submit">Send to client portal</button></div></form></div></section>
+          <section class="panel"><div class="panel-h"><h2>Menus</h2><button class="btn sm ghost" id="newmenu">New version</button></div><div class="panel-b">
+            ${e.menus.length ? e.menus.slice().reverse().map(m => { const ap = e.approvals.find(a => a.v === m.v); return `<div class="menu-v"><div style="display:flex;justify-content:space-between;gap:10px"><b>Menu v${m.v}</b><span class="chip ${ap ? 'confirmed' : m.status === 'Superseded' ? 'completed' : 'requested'}">${ap ? 'Approved' : esc(m.status)}</span></div><div class="xs muted">Sent ${VXS.fmtStamp(m.sentAt)}</div><ol>${m.courses.map(c => `<li>${esc(c)}</li>`).join('')}</ol>${ap ? `<div class="approval">Approved by ${esc(ap.by)} · version ${ap.v} · ${VXS.fmtStamp(ap.at)}</div>` : ''}</div>`; }).join('') : '<p class="small muted" style="margin:0">No menu shared yet.</p>'}
+            <p class="xs muted" style="margin:10px 0 0">A menu approval records which version was approved, by whom and when. It is not a contract signature.</p>
+          </div></section>
+        </div>
+        <div class="stack">
+          <section class="panel"><div class="panel-h"><h2>Project</h2></div><div class="panel-b" style="display:grid;gap:14px">
+            <div class="field"><label for="ev-stage">Stage</label><select id="ev-stage" class="sel">${STAGES.map(([k, l]) => `<option value="${k}"${e.stage === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+            <div class="field"><label for="ev-coord">Coordinator</label><select id="ev-coord" class="sel"><option value="">Unassigned</option>${['Artemis K.', 'Maria P.', 'Yannis V.'].map(n => `<option${e.coordinator === n ? ' selected' : ''}>${n}</option>`).join('')}</select></div>
+            <dl class="dl"><dt>Type</dt><dd>${esc(e.type)}</dd><dt>Venue</dt><dd>${e.venue === 'athens' ? 'Vassaltis Downtown, Athens' : 'The winery, Santorini'}</dd><dt>Date</dt><dd>${VXS.fmtDate(e.date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</dd><dt>Guests</dt><dd>${e.guests}</dd><dt>Budget</dt><dd>${e.budget ? esc(e.budget) : '<span class="muted">Not shared</span>'}</dd><dt>Client</dt><dd>${esc(cl.name)}<br><span class="small muted">${esc(cl.email)}</span></dd>${e.outcome ? `<dt>Outcome</dt><dd>${esc(e.outcome)}</dd>` : ''}</dl>
+          </div></section>
+          <section class="panel"><div class="panel-h"><h2>Client decisions</h2></div><div class="panel-b">${e.decisions.length ? `<ul class="decisions">${e.decisions.map(d => `<li class="${d.done ? 'done' : ''}"><span>${esc(d.text)}</span><span class="small ${!d.done && d.due < T() ? 'err' : 'muted'}">${d.done ? 'Done' : 'Due ' + relDay(d.due)}</span></li>`).join('')}</ul>` : '<p class="small muted" style="margin:0">None yet.</p>'}</div></section>
+          <section class="internal"><p class="sec-t">Internal notes · never shown to the client</p>${e.internal.map(n => `<p style="margin:0 0 8px">${esc(n.text)}<br><span class="xs muted">${esc(n.name)} · ${VXS.fmtStamp(n.at)}</span></p>`).join('')}<form id="inote" style="display:grid;gap:6px"><label class="sr" for="in">Internal note</label><textarea class="inp" id="in" style="min-height:60px" placeholder="Add an internal note"></textarea><div><button class="btn sm ghost" type="submit">Add note</button></div></form></section>
+          <section class="panel"><div class="panel-h"><h2>Documents</h2></div><div class="panel-b">${e.docs.length ? e.docs.map(d => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px"><span>${esc(d.name)} <span class="muted">v${d.v}</span></span><span class="small muted">${VXS.fmtDate(d.at)}</span></div>`).join('') : '<p class="small muted" style="margin:0">No documents.</p>'}<p class="xs muted" style="margin:8px 0 0">In production, documents open through short-lived private links.</p></div></section>
+          ${e.runOfShow.length ? `<section class="panel"><div class="panel-h"><h2>Run of show</h2></div><div class="panel-b">${e.runOfShow.map(r => `<div style="display:flex;gap:14px;padding:5px 0;font-size:14px"><b style="width:48px">${r.t}</b><span>${esc(r.what)}</span></div>`).join('')}</div></section>` : ''}
+        </div>
+      </div>`;
+    const up = (fn, a, m) => { VXS.update(s => fn(s.events.find(x => x.id === id), s), a, me()); toast(m); eventPage(id); chrome('events'); };
+    $('#ev-stage').onchange = ev => up(x => { x.stage = ev.target.value; }, `Stage → ${stageName(ev.target.value)} (${id})`, 'Stage updated');
+    $('#ev-coord').onchange = ev => up(x => { x.coordinator = ev.target.value; }, `Coordinator set (${id})`, 'Coordinator updated');
+    $('#reply').onsubmit = ev => { ev.preventDefault(); const v = $('#rp').value.trim(); if (!v) { $('#rp').focus(); return; } up(x => x.thread.push({ at: VXS.nowStamp(), from: 'staff', name: me(), text: v }), `Message to client (${id})`, 'Message added to the client’s portal'); };
+    $('#inote').onsubmit = ev => { ev.preventDefault(); const v = $('#in').value.trim(); if (!v) { $('#in').focus(); return; } up(x => x.internal.push({ at: VXS.nowStamp(), name: me(), text: v }), `Internal note (${id})`, 'Internal note added'); };
+    $('#newmenu').onclick = () => up(x => { const last = x.menus[x.menus.length - 1]; x.menus.forEach(m => { if (m.status === 'Sent') m.status = 'Superseded'; }); x.menus.push({ v: (last ? last.v : 0) + 1, sentAt: VXS.nowStamp(), status: 'Sent', courses: last ? last.courses.slice() : ['Course one', 'Course two', 'Course three'] }); if (!x.decisions.find(d => !d.done && /menu/i.test(d.text))) x.decisions.unshift({ id: VXS.uid('d'), text: `Approve menu v${x.menus.length ? x.menus[x.menus.length - 1].v : 1}`, due: VXS.addDays(T(), 10), done: false }); }, `New menu version (${id})`, 'New menu version shared with the client');
+  }
+
+  /* guests */
+  V.guests = () => {
+    const s = S(); const q = RF.q.toLowerCase();
+    const list = s.guests.filter(x => !q || (x.name + ' ' + x.email).toLowerCase().includes(q)).sort((a, b) => a.name.localeCompare(b.name));
+    setTitle('Guests & members', `${list.length} profiles`);
+    const visits = id => s.reservations.filter(r => r.guestId === id && r.status === 'Completed').length;
+    $('#view').innerHTML = `
+      <p class="small muted" style="margin:0 0 14px">Marketing permission and club membership are recorded only when a guest gives them. A booking never implies either.</p>
+      <div class="tbl-wrap"><table class="tbl"><caption class="sr">Guests</caption><thead><tr><th>Name</th><th>Country</th><th>Language</th><th>Visits</th><th>Club</th><th>Marketing</th></tr></thead><tbody>
+      ${list.map(x => `<tr data-guest="${x.id}" tabindex="0"><td class="nm">${esc(x.name)}<br><span class="small muted" style="font-weight:400">${esc(x.email)}</span></td><td>${esc(x.country || '—')}</td><td>${esc(x.lang)}</td><td>${visits(x.id)}</td><td>${x.member ? `<span class="chip slate">${esc(x.member.ref)}</span>` : '<span class="muted">—</span>'}</td><td>${x.marketing ? '<span class="chip confirmed">Opted in</span>' : '<span class="small muted">No consent</span>'}</td></tr>`).join('')}
+      </tbody></table></div>`;
+  };
+  function openGuest(id) {
+    const s = S(), x = s.guests.find(y => y.id === id); if (!x) return;
+    const rs = s.reservations.filter(r => r.guestId === id).sort((a, b) => b.date.localeCompare(a.date));
+    const tasted = [...new Set(rs.flatMap(r => r.winesServed))];
+    const evs = s.events.filter(e => e.clientId === id);
+    openDrawer(`
+      <div class="drawer-h"><div class="grow"><div class="small muted">Guest profile</div><h2 id="dr-title">${esc(x.name)}</h2><div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${x.member ? `<span class="chip slate">Club · ${esc(x.member.ref)} · since ${esc(x.member.since)}</span>` : ''}${x.marketing ? '<span class="chip confirmed">Marketing opt-in</span>' : '<span class="chip neutral">No marketing consent</span>'}</div></div><button class="x" data-close aria-label="Close">×</button></div>
+      <div class="drawer-b">
+        <dl class="dl"><dt>Email</dt><dd>${esc(x.email)}</dd><dt>Phone</dt><dd>${x.phone ? `<a href="tel:${x.phone.replace(/\s/g, '')}">${esc(x.phone)}</a>` : '—'}</dd><dt>Language</dt><dd>${esc(x.lang)}</dd><dt>Country</dt><dd>${esc(x.country || '—')}</dd>
+        <dt>Consent</dt><dd>${x.marketing ? `Opted in ${x.marketingAt ? VXS.fmtDate(x.marketingAt, { year: 'numeric' }) : ''} via My Vassaltis` : 'None recorded'}</dd>
+        <dt>Dietary</dt><dd>${x.dietary ? `<span class="allergy">${esc(x.dietary)}</span><br><span class="xs muted">Sensitive · visible to service roles only · never included in emails</span>` : '<span class="muted">None recorded</span>'}</dd></dl>
+        ${x.internal ? `<div class="internal"><p class="sec-t">Internal · staff only</p>${esc(x.internal)}</div>` : ''}
+        <div><p class="sec-t">Visits</p>${rs.length ? rs.map(r => `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px"><button class="link" data-res="${r.id}" style="text-align:left">${esc(expName(r.exp))}</button><span class="small">${VXS.fmtDate(r.date, { year: 'numeric' })} ${chip(r.status)}</span></div>`).join('') : '<p class="small muted" style="margin:0">No visits.</p>'}</div>
+        <div><p class="sec-t">Wines tasted</p>${tasted.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${tasted.map(w => `<span class="chip neutral"><span class="hex" style="width:9px;height:9px;background:${VX.wine(w).color}"></span>${esc(VX.wine(w).name)}</span>`).join('')}</div>` : '<p class="small muted" style="margin:0">None recorded yet.</p>'}</div>
+        ${evs.length && can('events') ? `<div><p class="sec-t">Events</p>${evs.map(e => `<p style="margin:0 0 6px"><a class="link" href="#event/${e.id}">${esc(e.title)}</a> <span class="small muted">· ${stageName(e.stage)}</span></p>`).join('')}</div>` : ''}
+      </div>`);
+  }
+
+  /* content */
+  V.content = () => {
+    const s = S();
+    const draft = s.content.draft || JSON.parse(JSON.stringify(s.content.published));
+    const pub = s.content.published;
+    const dirty = JSON.stringify(draft) !== JSON.stringify(pub);
+    setTitle('Content', 'Homepage · guided editing with draft, preview, publish and rollback');
+    const checks = [
+      [draft.heroTitle.trim().length > 0 && draft.heroTitle.length <= 70, `Headline length ${draft.heroTitle.length}/70`],
+      [draft.heroLede.length >= 40 && draft.heroLede.length <= 180, `Introduction ${draft.heroLede.length} characters (40–180)`],
+      [draft.featured.length >= 3 && draft.featured.length <= 4, `${draft.featured.length} featured wines (3–4)`],
+      [true, 'Greek translation · flagged for review (not required in this concept)']
+    ];
+    const ok = checks.every(c => c[0]);
+    $('#view').innerHTML = `
+      <div class="toolbar"><span class="chip ${dirty ? 'requested' : 'confirmed'}">${dirty ? 'Unpublished changes' : 'Live version'}</span><div style="flex:1"></div>
+        <a class="btn ghost" href="index.html?preview=draft" target="_blank" rel="noopener">Preview draft ↗</a>
+        <button class="btn ghost" id="discard" ${dirty ? '' : 'disabled'}>Discard draft</button>
+        <button class="btn vine" id="publish" ${dirty && ok ? '' : 'disabled'}>Publish to website</button></div>
+      <div class="editor">
+        <form class="panel" id="cform"><div class="panel-h"><h2>Homepage hero</h2><span class="small muted">Autosaves as a draft</span></div><div class="panel-b" style="display:grid;gap:16px">
+          <div class="field"><label for="c-title">Headline <span style="text-transform:none;letter-spacing:0;font-weight:400">· line break starts a new line</span></label><textarea class="inp" id="c-title" rows="2" maxlength="90">${esc(draft.heroTitle)}</textarea></div>
+          <div class="field"><label for="c-lede">Introduction</label><textarea class="inp" id="c-lede" maxlength="220">${esc(draft.heroLede)}</textarea></div>
+          <div class="field"><span class="lbl" id="fw-l">Featured wines · order shown on the homepage</span>
+            <ul class="order" aria-labelledby="fw-l">${draft.featured.map((w, i) => `<li><span class="hex" style="width:12px;height:12px;background:${VX.wine(w).color}"></span><span class="grow">${esc(VX.wine(w).name)}</span><button type="button" class="ob" data-mv="${i}:-1" aria-label="Move ${esc(VX.wine(w).name)} up" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="ob" data-mv="${i}:1" aria-label="Move ${esc(VX.wine(w).name)} down" ${i === draft.featured.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="ob" data-rm="${w}" aria-label="Remove ${esc(VX.wine(w).name)}">×</button></li>`).join('')}</ul>
+            <div style="display:flex;gap:8px;margin-top:6px"><label class="sr" for="c-add">Add a wine</label><select class="sel" id="c-add"><option value="">Add a wine…</option>${VX.wines.filter(w => !draft.featured.includes(w.id)).map(w => `<option value="${w.id}">${esc(w.name)}</option>`).join('')}</select></div>
+          </div>
+        </div></form>
+        <div class="stack">
+          <section class="panel"><div class="panel-h"><h2>Draft preview</h2></div><div class="panel-b"><div class="preview-card"><div class="xs muted" style="letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px">Santorini, Greece · since 2014</div><div class="ph">${esc(draft.heroTitle)}</div><p style="margin:14px 0 0;color:var(--basalt-2)">${esc(draft.heroLede)}</p></div></div></section>
+          <section class="panel"><div class="panel-h"><h2>Before publishing</h2></div><div class="panel-b">${checks.map(c => `<div class="check"><span class="${c[0] ? 'ok' : 'no'}" aria-hidden="true">${c[0] ? '✓' : '✕'}</span><span>${c[0] ? '' : '<span class="sr">Needs fixing: </span>'}${esc(c[1])}</span></div>`).join('')}<p class="xs muted" style="margin:10px 0 0">Seasonal edits change imagery and featured content only. They never change hours, prices or booking policies.</p></div></section>
+          <section class="panel"><div class="panel-h"><h2>Published versions</h2></div><div class="panel-b">${s.content.history.length ? s.content.history.slice(0, 6).map((h, i) => `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)"><span class="small">${VXS.fmtStamp(h.at)} · ${esc(h.by)}<br><span class="muted">${esc(h.snapshot.heroTitle.split('\n')[0])}…</span></span><button class="btn sm ghost" data-rb="${i}">Restore</button></div>`).join('') : '<p class="small muted" style="margin:0">Only the original version so far. Earlier versions appear here after you publish.</p>'}</div></section>
+        </div>
+      </div>`;
+    const save = mut => { VXS.update(s => { const d = s.content.draft || JSON.parse(JSON.stringify(s.content.published)); mut(d); s.content.draft = d; }); };
+    let tmr;
+    ['c-title', 'c-lede'].forEach(fid => $('#' + fid).addEventListener('input', ev => { clearTimeout(tmr); const v = ev.target.value; tmr = setTimeout(() => { const pos = ev.target.selectionStart; save(d => { d[fid === 'c-title' ? 'heroTitle' : 'heroLede'] = v; }); V.content(); const el = $('#' + fid); el.focus(); el.setSelectionRange(pos, pos); }, 500); }));
+    $('#view').querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { const [i, dir] = b.dataset.mv.split(':').map(Number); save(d => { const a = d.featured; [a[i], a[i + dir]] = [a[i + dir], a[i]]; }); V.content(); });
+    $('#view').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { save(d => { d.featured = d.featured.filter(x => x !== b.dataset.rm); }); V.content(); });
+    $('#c-add').onchange = ev => { if (ev.target.value) { save(d => { d.featured.push(ev.target.value); }); V.content(); } };
+    $('#discard').onclick = () => { VXS.update(s => { s.content.draft = null; }, 'Draft discarded', me()); V.content(); toast('Draft discarded'); };
+    $('#publish').onclick = () => { VXS.update(s => { s.content.history.unshift({ at: VXS.nowStamp(), by: me(), snapshot: s.content.published }); s.content.published = s.content.draft; s.content.draft = null; }, 'Homepage published', me()); V.content(); toast('Published. Open the public homepage to see it.'); };
+    $('#view').querySelectorAll('[data-rb]').forEach(b => b.onclick = () => { VXS.update(s => { const h = s.content.history[+b.dataset.rb]; s.content.draft = JSON.parse(JSON.stringify(h.snapshot)); }, 'Restored an earlier version to draft', me()); V.content(); toast('Earlier version restored as a draft. Publish to make it live.'); });
+  };
+
+  /* settings */
+  V.settings = () => {
+    const s = S();
+    setTitle('Settings', 'Roles, integrations and demo data');
+    const integ = [
+      ['i-host reservations', 'Not connected', 'Booking buttons hand guests to i-host. Reservations here are manual imports or portal requests. No live availability or two-way sync is claimed.'],
+      ['Wine Club (club.vassaltis.com)', 'Not connected', 'Existing member accounts stay on the club site. Linking requires verifying each account’s ownership; passwords are never migrated.'],
+      ['Email & reminders', 'Not connected', 'No messages are sent from this concept. Production reminders would come from confirmed records only and respect each guest’s permissions.'],
+      ['Payments', 'Out of scope', 'No payments are taken or marked paid. Any future integration would use hosted checkout and signed webhooks.']
+    ];
+    $('#view').innerHTML = `
+      <div class="grid-today">
+        <div class="stack">
+          <section class="panel"><div class="panel-h"><h2>Integrations</h2></div>${integ.map(i => `<div class="panel-b" style="border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><b>${i[0]}</b><span class="chip neutral">${i[1]}</span></div><p class="small muted" style="margin:6px 0 0">${i[2]}</p></div>`).join('')}</section>
+          <section class="panel"><div class="panel-h"><h2>Recent activity</h2></div><div class="panel-b">${s.audit.length ? `<ul class="hist">${s.audit.slice(0, 15).map(a => `<li><div>${esc(a.text)}</div><div class="when">${new Date(a.at).toLocaleString('en-GB', { timeZone: VXS.TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${esc(a.by)}</div></li>`).join('')}</ul>` : '<p class="small muted" style="margin:0">No activity in this session yet.</p>'}</div></section>
+        </div>
+        <div class="stack">
+          <section class="panel"><div class="panel-h"><h2>Staff roles</h2><span class="chip requested">Demo switcher</span></div><div class="panel-b">
+            <p class="small muted" style="margin:0 0 10px">Production uses real sign-in with multi-factor authentication. Permissions are enforced on the server, not by hiding menus.</p>
+            ${Object.entries(ROLES).map(([k, v]) => `<label style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer"><input type="radio" name="rl" value="${k}" ${k === role ? 'checked' : ''} style="accent-color:var(--vine)"><span><b>${k}</b> <span class="muted small">· ${v.user}</span><br><span class="small muted">${v.views.filter(x => x !== 'settings').map(x => LABEL[x]).join(', ')}</span></span></label>`).join('')}
+          </div></section>
+          <section class="panel"><div class="panel-h"><h2>Demo data</h2></div><div class="panel-b"><p class="small muted" style="margin:0 0 10px">Restore the original fictional reservations, events and homepage content.</p><button class="btn danger" id="reset2">Reset demo data</button></div></section>
+        </div>
+      </div>`;
+    $('#view').querySelectorAll('input[name=rl]').forEach(r => r.onchange = () => setRole(r.value));
+    $('#reset2').onclick = doReset;
+  };
+
+  V.more = () => {
+    setTitle('More');
+    const items = ['events', 'guests', 'content', 'settings'].filter(can);
+    $('#view').innerHTML = `<section class="panel">${items.map(v => `<a href="#${v}" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line);text-decoration:none;font-size:16px">${icon(v)}${LABEL[v]}<span style="margin-left:auto" class="muted">›</span></a>`).join('')}<a href="index.html" style="display:flex;gap:14px;padding:16px 18px;text-decoration:none;font-size:16px">Public website<span style="margin-left:auto" class="muted">↗</span></a></section>`;
+  };
+
+  /* ---------------- drawer ---------------- */
+  let lastFocus = null, drawerGen = 0;
+  function openDrawer(html) {
+    const d = $('#drawer'), sc = $('#scrim'); drawerGen++;
+    if (d.hidden) lastFocus = document.activeElement;
+    d.innerHTML = html; d.hidden = false; sc.hidden = false;
+    requestAnimationFrame(() => { d.classList.add('on'); sc.classList.add('on'); });
+    (d.querySelector('[data-close]') || d).focus();
+  }
+  function closeDrawer(fromNav) {
+    const d = $('#drawer'), sc = $('#scrim'); if (d.hidden) return;
+    d.classList.remove('on'); sc.classList.remove('on');
+    const gen = drawerGen;
+    setTimeout(() => { if (gen === drawerGen) { d.hidden = true; sc.hidden = true; } }, 220);
+    if (!fromNav && /^#(res|guest)\//.test(location.hash)) history.replaceState(null, '', '#' + (location.hash.startsWith('#guest') ? 'guests' : 'reservations'));
+    if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
+  }
+  $('#scrim').onclick = () => closeDrawer();
+  document.addEventListener('keydown', e => {
+    const d = $('#drawer');
+    if (e.key === 'Escape' && !d.hidden) closeDrawer();
+    if (e.key === 'Tab' && !d.hidden) { const f = [...d.querySelectorAll('button,a[href],input,select,textarea')].filter(x => !x.disabled); if (!f.length) return; if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); } }
+  });
+
+  /* ---------------- print ---------------- */
+  function printSheet(date) {
+    const s = S(), d = date || T();
+    const rs = s.reservations.filter(r => r.date === d && live(r)).sort((a, b) => a.time.localeCompare(b.time));
+    $('#print').innerHTML = `<h2 style="font-family:var(--serif);font-size:24px;margin:0 0 4px">Service sheet · ${VXS.fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</h2><p style="margin:0 0 14px">Vassaltis · ${rs.reduce((n, r) => n + r.party, 0)} guests · printed ${VXS.fmtStamp(VXS.nowStamp())} by ${esc(me())} · SAMPLE DATA</p>
+      <table><thead><tr><th>Time</th><th>Guest</th><th>Party</th><th>Experience</th><th>Dietary</th><th>Notes</th><th>Host</th><th>✓</th></tr></thead><tbody>${rs.map(r => { const gg = g(r.guestId); return `<tr><td>${r.time}</td><td>${esc(gg.name)}</td><td>${r.party}</td><td>${esc(expName(r.exp))}</td><td>${esc(gg.dietary || '')}</td><td>${esc(r.notes)}</td><td>${esc(r.staff)}</td><td>☐</td></tr>`; }).join('') || '<tr><td colspan="8">No reservations</td></tr>'}</tbody></table>`;
+    document.body.classList.add('printing'); window.print(); setTimeout(() => document.body.classList.remove('printing'), 500);
+  }
+
+  /* ---------------- router ---------------- */
+  function render() {
+    const h = (location.hash || '').slice(1);
+    const [base, arg] = h.split('/');
+    let view = base || ROLES[role].views[0];
+    const map = { res: 'reservations', event: 'events', guest: 'guests' };
+    const needs = map[view] || view;
+    if (!V[view] && !map[view]) view = ROLES[role].views[0];
+    chrome(map[view] || view);
+    if (needs !== 'more' && !can(needs)) {
+      setTitle('No access');
+      $('#view').innerHTML = `<section class="panel"><div class="empty"><span class="serif">You don’t have access to ${esc(LABEL[needs] || needs)}.</span>Your role is ${esc(role)}. Ask a manager if you need it.<br><br><a class="btn ghost" href="#${ROLES[role].views[0]}">Go to ${LABEL[ROLES[role].views[0]]}</a></div></section>`;
+      return;
+    }
+    if (view === 'event') return eventPage(arg);
+    if (view === 'res') { V.reservations(); if (arg) openRes(arg); return; }
+    if (view === 'guest') { V.guests(); if (arg) openGuest(arg); return; }
+    V[view]();
+  }
+  function setRole(r) { role = r; try { localStorage.setItem('vassaltis.demo.role', r); } catch (e) {} $('#role').value = r; closeDrawer(); toast('Now viewing as ' + r); render(); }
+  function doReset() { if (!confirm('Reset all demo data to the original sample?')) return; VXS.reset(); closeDrawer(); toast('Demo data reset'); render(); }
+
+  $('#role').innerHTML = Object.keys(ROLES).map(k => `<option${k === role ? ' selected' : ''}>${k}</option>`).join('');
+  $('#role').onchange = e => setRole(e.target.value);
+  $('#reset').onclick = doReset;
+  let qT; $('#q').addEventListener('input', e => { clearTimeout(qT); qT = setTimeout(() => { RF.q = e.target.value.trim(); if (can('reservations')) { RF.scope = 'all'; if (location.hash !== '#reservations') location.hash = '#reservations'; else render(); } else if (can('guests')) { location.hash = '#guests'; render(); } }, 250); });
+
+  /* delegated clicks */
+  document.addEventListener('click', e => {
+    const t = e.target;
+    const ci = t.closest('[data-checkin]');
+    if (ci) { e.stopPropagation(); const id = ci.dataset.checkin; VXS.update(s => { const r = s.reservations.find(x => x.id === id); r.status = 'Checked in'; r.history.push({ at: VXS.nowStamp(), by: me(), text: 'Checked in' }); }, 'Check-in ' + id, me()); toast(g(S().reservations.find(x => x.id === id).guestId).name + ' checked in'); render(); return; }
+    const pr = t.closest('[data-print]'); if (pr) { printSheet(pr.dataset.print); return; }
+    if (t.closest('[data-close]')) { closeDrawer(); return; }
+    const rs = t.closest('[data-res]'); if (rs && !t.closest('a')) { openRes(rs.dataset.res); return; }
+    const gs = t.closest('[data-guest]'); if (gs) { openGuest(gs.dataset.guest); return; }
+  });
+  document.addEventListener('change', e => { const tk = e.target.closest('[data-task]'); if (tk) { VXS.update(s => { const x = s.tasks.find(y => y.id === tk.dataset.task); x.done = tk.checked; }, (tk.checked ? 'Completed' : 'Reopened') + ' task', me()); toast(tk.checked ? 'Task done' : 'Task reopened'); setTimeout(render, 250); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[data-res],[data-guest]') && !e.target.matches('button,a')) e.target.click(); });
+  window.addEventListener('hashchange', () => { closeDrawer(true); render(); $('#view').focus({ preventScroll: true }); window.scrollTo(0, 0); });
+  VXS.onChange(() => { if ($('#drawer').hidden) render(); });
+  render();
+})();
+</script>
+</body>
+</html>
