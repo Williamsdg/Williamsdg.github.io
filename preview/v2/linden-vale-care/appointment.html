@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en" class="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Book a sample visit — Linden &amp; Vale Care (concept)</title>
+<meta name="description" content="Concept project: choose a visit type, provider, and sample time, then get a preparation checklist. Fictional practice; nothing is booked.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Young+Serif&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="lv.css">
+<style>
+  .lv .appt { padding: clamp(16px, 2vw, 28px) 0 0; }
+  .lv .crumb { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; min-height: 44px; }
+  .lv .crumb svg { width: 16px; height: 16px; }
+  .lv .appt-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px 40px; margin: 4px 0 22px; }
+  .lv .appt-head h1 { font-family: var(--serif); font-size: clamp(32px, 3.4vw, 46px); }
+  .lv .appt-head p { color: var(--ink-2); max-width: 46ch; font-size: 17px; }
+
+  /* Progress */
+  .lv .progress { border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 14px 0 16px; margin-bottom: 32px; }
+  .lv .progress-line { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .lv .progress-count { font-weight: 700; font-size: 17px; }
+  .lv .progress-count span { font-weight: 400; color: var(--ink-2); }
+  .lv .segs { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; counter-reset: s; }
+  .lv .segs li { font-size: 15px; color: var(--ink-2); }
+  .lv .segs li::before { content: ""; display: block; height: 6px; border-radius: 3px; background: var(--line); margin-bottom: 8px; transition: background var(--t); }
+  .lv .segs li.done::before { background: var(--euc); }
+  .lv .segs li.now::before { background: var(--euc-dark); }
+  .lv .segs li.now { color: var(--ink); font-weight: 700; }
+
+  .lv .flow { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: clamp(32px, 5vw, 80px); align-items: start; }
+  .lv .step h2 { font-family: var(--serif); font-size: clamp(26px, 2.4vw, 34px); margin-bottom: 8px; outline: none; }
+  .lv .step h2:focus, .lv .step h2:focus-visible { outline: none; }
+  .lv .step .intro { color: var(--ink-2); margin-bottom: 22px; max-width: 58ch; }
+  .lv fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .lv legend { padding: 0; }
+
+  /* Option rows (native radios, restyled) */
+  .lv .opts { display: grid; gap: 10px; }
+  .lv .opt-wrap { position: relative; }
+  .lv .opt {
+    display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 16px; align-items: start; cursor: pointer;
+    padding: 18px 20px; border-radius: var(--r); background: var(--paper); border: 1.5px solid var(--line); transition: border-color var(--t), background var(--t);
+  }
+  .lv .opt:hover { border-color: var(--euc); }
+  .lv .opt input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .lv .opt .ring { grid-row: 1 / span 2; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--euc-dark); margin-top: 2px; display: grid; place-items: center; background: var(--white); }
+  .lv .opt .ring::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--euc-dark); transform: scale(0); transition: transform var(--t); }
+  .lv .opt:has(input:checked) { border-color: var(--euc-dark); background: var(--white); box-shadow: inset 4px 0 0 var(--euc-dark); }
+  .lv .opt:has(input:checked) .ring::after { transform: scale(1); }
+  .lv .opt:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 3px; }
+  .lv .opt-t { font-weight: 700; font-size: 19px; line-height: 1.3; }
+  .lv .opt-m { font-size: 15px; color: var(--ink-2); white-space: nowrap; text-align: right; padding-top: 3px; font-variant-numeric: tabular-nums; }
+  .lv .opt-d { grid-column: 2 / -1; color: var(--ink-2); font-size: 16px; }
+  .lv .opt-fit { grid-column: 2 / -1; font-size: 14px; color: var(--euc-deep); font-weight: 700; }
+
+  .lv .opt.prov { grid-template-columns: 26px auto 1fr; padding-right: 130px; }
+  .lv .opt.prov .mono { width: 52px; height: 52px; font-size: 18px; grid-row: 1 / span 3; }
+  .lv .opt.prov .mono::after { inset: -4px; }
+  .lv .opt.prov .opt-t, .lv .opt.prov .opt-d, .lv .opt.prov .opt-x { grid-column: 3; }
+  .lv .opt.prov .ring { grid-row: 1 / span 3; margin-top: 14px; }
+  .lv .opt-x { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: 15px; color: var(--ink-2); }
+  .lv .opt-about { position: absolute; right: 16px; top: 16px; }
+  .lv .opt.first .fa-mark { width: 52px; height: 52px; border-radius: 50%; border: 1.5px dashed var(--euc); display: grid; place-items: center; grid-row: 1 / span 2; color: var(--euc-dark); }
+  .lv .opt.first { grid-template-columns: 26px auto 1fr; }
+  .lv .opt.first .opt-t, .lv .opt.first .opt-d { grid-column: 3; }
+  .lv .opt.first .ring { margin-top: 14px; }
+  .lv .opt.first .fa-mark svg { width: 24px; height: 24px; }
+
+  /* Week view */
+  .lv .week { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: 18px; }
+  .lv .day {
+    font: inherit; cursor: pointer; text-align: left; padding: 12px 12px 12px; min-height: 74px; border-radius: var(--r-s);
+    background: var(--paper); border: 1.5px solid var(--line); color: var(--ink); display: flex; flex-direction: column; gap: 2px;
+  }
+  .lv .day:hover { border-color: var(--euc); }
+  .lv .day b { font-size: 17px; }
+  .lv .day span { font-size: 14px; color: var(--ink-2); }
+  .lv .day[aria-selected="true"] { background: var(--euc-dark); border-color: var(--euc-dark); color: #fff; }
+  .lv .day[aria-selected="true"] span { color: #E9EFEA; }
+  .lv .day.none span { font-style: italic; }
+  .lv .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .lv .slot { position: relative; }
+  .lv .slot label {
+    display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: var(--r-s); background: var(--paper);
+    border: 1.5px solid var(--line); cursor: pointer; min-height: 56px;
+  }
+  .lv .slot input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .lv .slot b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .lv .slot span { font-size: 14px; color: var(--ink-2); }
+  .lv .slot label:hover { border-color: var(--euc); }
+  .lv .slot input:checked + label { border-color: var(--euc-dark); background: var(--euc-wash); box-shadow: inset 0 -3px 0 var(--euc-dark); }
+  .lv .slot input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: 3px; }
+  .lv .panel-h { font-size: 16px; color: var(--ink-2); margin-bottom: 12px; }
+  .lv .empty { padding: 26px 24px; border-radius: var(--r); background: var(--peach-wash); border: 1px dashed var(--peach); }
+  .lv .empty h3 { font-family: var(--serif); font-size: 24px; margin-bottom: 6px; }
+  .lv .empty p { color: var(--ink-2); margin-bottom: 14px; }
+  .lv .empty .row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* Details form */
+  .lv .field { display: grid; gap: 6px; margin-bottom: 18px; max-width: 520px; }
+  .lv .field label, .lv .field legend { font-weight: 700; font-size: 17px; }
+  .lv .field .help { font-size: 15px; color: var(--ink-2); }
+  .lv .field input[type="text"], .lv .field input[type="email"] {
+    font: inherit; font-size: 18px; padding: 12px 14px; min-height: 52px; border-radius: var(--r-s); border: 1.5px solid var(--line-2); background: var(--white); color: var(--ink);
+  }
+  .lv .field input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-color: var(--euc-dark); }
+  .lv .field input[aria-invalid="true"] { border-color: #A3452A; }
+  .lv .err { color: #9A3A20; font-size: 15px; font-weight: 700; }
+  .lv .yn { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  .lv .yn label { display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; min-height: 48px; border: 1.5px solid var(--line); border-radius: var(--r-s); background: var(--paper); cursor: pointer; font-weight: 400; }
+  .lv .yn input { width: 20px; height: 20px; accent-color: var(--euc-dark); margin: 0; }
+  .lv .yn label:has(input:checked) { border-color: var(--euc-dark); background: var(--white); }
+  .lv .privacy { display: flex; gap: 12px; padding: 14px 16px; border-radius: var(--r-s); background: var(--euc-wash); margin: 4px 0 24px; max-width: 620px; font-size: 16px; }
+  .lv .privacy svg { width: 22px; height: 22px; flex: none; color: var(--euc-deep); margin-top: 1px; }
+
+  .lv .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--line); }
+  .lv .actions .btn-primary { margin-left: auto; }
+  .lv .step-err { margin-top: 14px; }
+
+  /* Summary */
+  .lv .summary { position: sticky; top: 20px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 22px 22px 18px; }
+  .lv .summary h2 { font-family: var(--serif); font-size: 22px; margin-bottom: 12px; }
+  .lv .sum-list { margin: 0; display: grid; }
+  .lv .sum-list div { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .lv .sum-list dt { font-size: 14px; color: var(--ink-2); grid-column: 1; }
+  .lv .sum-list dd { margin: 0; grid-column: 1; font-weight: 700; font-size: 17px; line-height: 1.35; }
+  .lv .sum-list dd.empty-v { font-weight: 400; color: var(--ink-2); font-style: italic; }
+  .lv .sum-list .linkbtn { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 15px; }
+  .lv .sum-foot { font-size: 14px; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 12px; }
+  .lv .sum-mobile { display: none; }
+  .lv #sum-done .hours { font-size: 16px; }
+  .lv #sum-done .info-list li { font-size: 16px; }
+
+  /* Confirmation */
+  .lv .card {
+    display: grid; grid-template-columns: 1fr 200px; border-radius: var(--r); overflow: hidden; background: var(--white);
+    border: 1px solid var(--line); margin: 20px 0 28px;
+  }
+  .lv .card-main { padding: 24px 26px; }
+  .lv .card-when { font-family: var(--serif); font-size: clamp(28px, 3vw, 38px); line-height: 1.1; }
+  .lv .card-what { margin-top: 10px; font-size: 18px; }
+  .lv .card-what b { display: block; }
+  .lv .card-stub { background: var(--peach-soft); padding: 24px 22px; border-left: 2px dashed var(--peach); display: flex; flex-direction: column; justify-content: space-between; gap: 16px; font-size: 15px; }
+  .lv .card-stub b { display: block; font-size: 16px; }
+  .lv .nothing-sent { font-size: 16px; color: var(--ink-2); max-width: 60ch; }
+  .lv .check-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px 20px; margin: 34px 0 12px; }
+  .lv .check-head h3 { font-family: var(--serif); font-size: 26px; }
+  .lv .meter { font-weight: 700; color: var(--euc-deep); }
+  .lv .meter-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin-bottom: 14px; }
+  .lv .meter-bar i { display: block; height: 100%; background: var(--euc-dark); width: 0; transition: width 240ms ease; }
+  .lv .checks { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .lv .checks li { border-bottom: 1px solid var(--line); }
+  .lv .checks label { display: grid; grid-template-columns: 28px 1fr; gap: 2px 14px; padding: 14px 6px; cursor: pointer; min-height: 56px; align-items: start; border-radius: 8px; }
+  .lv .checks label:hover { background: var(--paper); }
+  .lv .checks input { width: 24px; height: 24px; margin: 1px 0 0; accent-color: var(--euc-dark); grid-row: 1 / span 2; }
+  .lv .checks .ct { font-size: 18px; }
+  .lv .checks .ch { grid-column: 2; font-size: 15px; color: var(--ink-2); }
+  .lv .checks input:checked ~ .ct { text-decoration: line-through; text-decoration-color: var(--euc); color: var(--ink-2); }
+  .lv .cal { margin-top: 28px; display: grid; gap: 8px; max-width: 560px; justify-items: start; }
+  .lv .cal p { font-size: 15px; color: var(--ink-2); }
+  .lv .done-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--line); }
+  .lv .crisis { margin-top: 18px; font-size: 16px; }
+
+  .lv .step-anim { animation: lvIn 220ms ease both; }
+  @keyframes lvIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  @media (max-width: 1000px) {
+    .lv .flow { grid-template-columns: 1fr; }
+    .lv .summary { display: none; }
+    .lv .sum-mobile { display: block; margin-bottom: 22px; border: 1px solid var(--line); border-radius: var(--r-s); background: var(--paper); }
+    .lv .sum-mobile summary { cursor: pointer; padding: 12px 14px; min-height: 48px; display: flex; gap: 10px; align-items: center; font-size: 15px; list-style: none; }
+    .lv .sum-mobile summary::-webkit-details-marker { display: none; }
+    .lv .sum-mobile summary::after { content: ""; margin-left: auto; width: 9px; height: 9px; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(45deg); flex: none; }
+    .lv .sum-mobile[open] summary::after { transform: rotate(-135deg); }
+    .lv .sum-mobile summary b { font-weight: 700; }
+    .lv .sum-mobile .sum-list { padding: 0 14px 8px; }
+  }
+  @media (max-width: 760px) {
+    .lv .week { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .lv .card { grid-template-columns: 1fr; }
+    .lv .card-stub { border-left: 0; border-top: 2px dashed var(--peach); flex-direction: row; flex-wrap: wrap; }
+  }
+  @media (max-width: 640px) {
+    html.lv { scroll-padding-top: 130px; scroll-padding-bottom: 90px; }
+    .lv .appt { padding-top: 12px; }
+    .lv .appt-head { margin: 0 0 16px; }
+    .lv .appt-head h1 { font-size: 26px; }
+    .lv .crumb { display: none; }
+    .lv .appt-head p { display: none; }
+    .lv .progress { padding: 12px 0 14px; margin-bottom: 20px; position: sticky; top: 0; background: var(--ivory); z-index: 4; }
+    .lv .segs { margin-top: 10px; gap: 5px; }
+    .lv .segs li { font-size: 12px; }
+    .lv .segs li::before { margin-bottom: 5px; }
+    .lv .opt { padding: 16px 14px; gap: 4px 12px; grid-template-columns: 24px 1fr; }
+    .lv .opt-m { grid-column: 2; text-align: left; padding-top: 0; }
+    .lv .opt.prov { grid-template-columns: 24px 1fr; padding-right: 14px; }
+    .lv .opt.prov .mono { display: none; }
+    .lv .opt.prov .opt-t, .lv .opt.prov .opt-d, .lv .opt.prov .opt-x { grid-column: 2; }
+    .lv .opt.prov .opt-t { padding-right: 84px; }
+    .lv .opt.prov .ring { margin-top: 2px; }
+    .lv .opt-about { right: 10px; top: 10px; }
+    .lv .opt-about .btn { padding: 6px 12px; }
+    .lv .opt.first { grid-template-columns: 24px 1fr; }
+    .lv .opt.first .fa-mark { display: none; }
+    .lv .opt.first .opt-t, .lv .opt.first .opt-d { grid-column: 2; }
+    .lv .opt.first .ring { margin-top: 2px; }
+    .lv .opt-t { font-size: 18px; }
+    .lv .slots { grid-template-columns: 1fr 1fr; }
+    .lv .actions { position: sticky; bottom: 0; background: var(--ivory); margin-top: 20px; padding: 12px 0 14px; z-index: 3; }
+    .lv .actions .btn { flex: 1; }
+    .lv .card-main { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<p class="concept"><strong>Concept project</strong> · Fictional practice · Sample times only — nothing is booked or sent</p>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a class="brand" href="index.html" aria-label="Linden &amp; Vale Care, home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#F4E1D5"/><path d="M20 31c-9-3.2-12.6-11-8.6-16.4 2.6-3.4 6.6-2.8 8.6.3 2-3.1 6-3.7 8.6-.3 4 5.4.4 13.2-8.6 16.4z" fill="#647C70"/><path d="M20 31V16.5M20 22l-4-3.2M20 25.5l4.4-3.4" stroke="#F5F3ED" stroke-width="1.4" stroke-linecap="round" fill="none"/><path d="M5.5 29.5c4.5 2.6 9 3.6 14.5 3.6s10-1 14.5-3.6" stroke="#4F6559" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+      <span><span class="brand-name">Linden &amp; Vale</span><span class="brand-sub">Family medicine &amp; wellness</span></span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#visits">Visit types</a>
+      <a href="index.html#providers">Providers</a>
+      <a href="index.html#first-visit">First visit</a>
+      <a href="appointment.html" aria-current="page">Book</a>
+    </nav>
+    <div class="hdr-actions">
+      <button class="btn btn-quiet btn-small" type="button" data-open-visit aria-haspopup="dialog"><span>Hours<span class="lbl-long"> &amp; location</span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="appt">
+  <div class="wrap">
+    <a class="crumb" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 12H6M11 6l-6 6 6 6"/></svg>Linden &amp; Vale home</a>
+    <div class="appt-head">
+      <h1>Book a sample visit</h1>
+      <p>Four short steps. Times are fictional and filtered by visit type and provider. Nothing leaves this browser.</p>
+    </div>
+
+    <div class="progress" id="progress">
+      <div class="progress-line">
+        <p class="progress-count" id="progress-count" aria-live="polite">Step 1 of 4 <span>· Type of visit</span></p>
+        <button class="linkbtn" type="button" data-reset style="font-size:15px">Reset demo</button>
+      </div>
+      <ol class="segs" id="segs">
+        <li>Visit</li><li>Provider</li><li>Time</li><li>Details</li>
+      </ol>
+    </div>
+
+    <div class="flow">
+      <div>
+        <details class="sum-mobile" id="sum-mobile">
+          <summary><span id="sum-mobile-line">Your visit so far: nothing chosen yet</span></summary>
+          <dl class="sum-list" data-sum></dl>
+        </details>
+
+        <!-- Step 1 -->
+        <section class="step" data-step="1" aria-labelledby="s1-title">
+          <h2 id="s1-title" tabindex="-1">What kind of visit?</h2>
+          <p class="intro">Each description says what the visit is for and roughly how long it takes. We don't ask about symptoms.</p>
+          <fieldset>
+            <legend class="sr">Type of visit</legend>
+            <div class="opts" id="visit-opts"></div>
+          </fieldset>
+          <p class="err step-err" id="s1-err" role="alert" hidden>Choose a type of visit to continue.</p>
+          <div class="actions">
+            <a class="btn btn-quiet" href="index.html">Back</a>
+            <button class="btn btn-primary" type="button" data-next="1">Continue</button>
+          </div>
+        </section>
+
+        <!-- Step 2 -->
+        <section class="step" data-step="2" aria-labelledby="s2-title" hidden>
+          <h2 id="s2-title" tabindex="-1">Who would you like to see?</h2>
+          <p class="intro" id="s2-intro"></p>
+          <fieldset>
+            <legend class="sr">Provider</legend>
+            <div class="opts" id="provider-opts"></div>
+          </fieldset>
+          <p class="err step-err" id="s2-err" role="alert" hidden>Choose a provider, or First available, to continue.</p>
+          <div class="actions">
+            <button class="btn btn-quiet" type="button" data-back="2">Back</button>
+            <button class="btn btn-primary" type="button" data-next="2">Continue</button>
+          </div>
+        </section>
+
+        <!-- Step 3 -->
+        <section class="step" data-step="3" aria-labelledby="s3-title" hidden>
+          <h2 id="s3-title" tabindex="-1">Pick a sample time</h2>
+          <p class="intro" id="s3-intro"></p>
+          <div id="time-area"></div>
+          <p class="err step-err" id="s3-err" role="alert" hidden>Choose a time to continue.</p>
+          <div class="actions">
+            <button class="btn btn-quiet" type="button" data-back="3">Back</button>
+            <button class="btn btn-primary" type="button" data-next="3">Continue</button>
+          </div>
+        </section>
+
+        <!-- Step 4 -->
+        <section class="step" data-step="4" aria-labelledby="s4-title" hidden>
+          <h2 id="s4-title" tabindex="-1">Who is the visit for?</h2>
+          <p class="intro">Just a name and a placeholder email, so the preparation checklist can be addressed to you.</p>
+          <div class="privacy" role="note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <p><strong>Don't enter health information.</strong> This fictional demo stores this only in your browser.</p>
+          </div>
+          <form id="details" novalidate>
+            <div class="field">
+              <label for="f-name">Full name</label>
+              <input id="f-name" name="name" type="text" autocomplete="off" aria-describedby="f-name-err">
+              <p class="err" id="f-name-err" hidden>Enter a name (any sample name is fine).</p>
+            </div>
+            <div class="field">
+              <label for="f-email">Email</label>
+              <span class="help" id="f-email-help">Use an address ending in @example.com — for example, sam@example.com.</span>
+              <input id="f-email" name="email" type="email" autocomplete="off" inputmode="email" aria-describedby="f-email-help f-email-err">
+              <p class="err" id="f-email-err" hidden>Use an email ending in @example.com.</p>
+            </div>
+            <fieldset class="field">
+              <legend>Is this your first visit with Linden &amp; Vale?</legend>
+              <span class="help">New patients get an extra reminder to arrive early.</span>
+              <div class="yn">
+                <label><input type="radio" name="isNew" value="yes"> Yes, I'm new</label>
+                <label><input type="radio" name="isNew" value="no"> No, I've been before</label>
+              </div>
+              <p class="err" id="f-new-err" hidden>Choose yes or no.</p>
+            </fieldset>
+            <div class="actions">
+              <button class="btn btn-quiet" type="button" data-back="4">Back</button>
+              <button class="btn btn-primary" type="submit">Hold this sample time</button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Confirmation -->
+        <section class="step" data-step="done" aria-labelledby="done-title" hidden>
+          <h2 id="done-title" tabindex="-1">Your sample visit is held</h2>
+          <p class="nothing-sent"><strong>In this browser only.</strong> Nothing was sent and no appointment exists — this is what a confirmation could look like.</p>
+          <div class="card" id="card"></div>
+          <div id="checklist-area"></div>
+          <div class="cal">
+            <button class="btn btn-quiet" type="button" disabled aria-describedby="cal-why">Add to calendar</button>
+            <p id="cal-why">Turned off in this demo: the time is fictional, so there is nothing real to add to your calendar.</p>
+          </div>
+          <div class="done-actions">
+            <button class="btn btn-quiet" type="button" id="change-time">Change the time</button>
+            <a class="btn btn-quiet" href="index.html">Back to home</a>
+            <button class="btn btn-quiet" type="button" data-reset>Reset demo</button>
+          </div>
+        </section>
+      </div>
+
+      <aside class="summary" aria-labelledby="sum-title">
+        <div id="sum-live">
+          <h2 id="sum-title">Your visit</h2>
+          <dl class="sum-list" data-sum></dl>
+          <p class="sum-foot">12 Linden Row (fictional) · Free parking behind the building</p>
+        </div>
+        <div id="sum-done" hidden>
+          <h2>Before you go</h2>
+          <div data-visit-body></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="ftr">
+  <div class="wrap ftr-in">
+    <div>
+      <p><strong>Linden &amp; Vale Care is a fictional practice.</strong> Clinicians and times are sample data. No appointment is made, nothing is sent, and nothing here is medical advice.</p>
+      <p>Urgent symptoms? Call 911 or go to the nearest ER — this demo can't help with emergencies.</p>
+    </div>
+    <div class="ftr-right">
+      <p>Concept by <a href="https://williamsdigital.io/portfolio/">Williams Digital</a></p>
+    </div>
+  </div>
+</footer>
+
+<dialog class="sheet" id="visit-sheet" aria-labelledby="visit-sheet-title">
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <h2 id="visit-sheet-title">Hours &amp; location</h2>
+      <button class="x" type="button" data-close data-autofocus aria-label="Close hours and location">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div data-visit-body></div>
+    <p class="urgent" style="margin-top:18px"><span><strong>Urgent symptoms?</strong> Call 911 or go to the nearest ER — this demo can't help with emergencies.</span></p>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="provider-sheet" aria-labelledby="provider-sheet-title" data-no-book>
+  <div class="sheet-in" data-provider-body></div>
+</dialog>
+
+<script src="lv-data.js"></script>
+<script src="lv-common.js"></script>
+<script src="appointment.js"></script>
+</body>
+</html>

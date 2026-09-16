@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en" data-daypart="afterdark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Event — Iron Oak (concept)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="io">
+<a class="skip" href="#main">Skip to content</a>
+<p class="honesty">Concept project · Fictional venue · Sample event — no real reservation, message or payment is made</p>
+
+<header class="site-head">
+  <div class="head-in">
+    <a class="brand" href="index.html" aria-label="Iron Oak home"><span data-svg="mark"></span><b>Iron Oak</b></a>
+    <nav class="nav" aria-label="Main">
+      <a href="index.html#menu">Menu</a>
+      <a class="nav-x" href="index.html#events">Events</a>
+      <a class="nav-x" href="index.html#story">Story</a>
+      <a class="nav-x" href="index.html#visit">Visit</a>
+    </nav>
+    <a class="btn btn-solid" href="index.html#visit">Plan a visit</a>
+  </div>
+</header>
+
+<main id="main" class="grain">
+  <div id="evRoot"></div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>Iron Oak is a fictional business. This event, its band, capacity and places are sample content. Reservations are stored only in this browser — nothing is booked, sent or charged. <a href="https://williamsdigital.io/portfolio/">Concept by Williams Digital</a></p>
+    <button type="button" class="btn" data-reset>Reset demo</button>
+  </div>
+</footer>
+<p class="announce" aria-live="polite" id="announce"></p>
+
+<script src="assets/site.js"></script>
+<script>
+(function(){
+'use strict';
+var IO = window.IO, $ = function(id){return document.getElementById(id);};
+document.querySelectorAll('[data-svg]').forEach(function(el){ el.outerHTML = IO.svg[el.getAttribute('data-svg')] || ''; });
+
+var id = new URLSearchParams(location.search).get('id');
+var ev = IO.eventById(id);
+var root = $('evRoot');
+
+if (!ev){
+  document.documentElement.setAttribute('data-daypart','morning');
+  root.innerHTML = '<div class="ev-missing"><h1 style="font-size:64px">Poster not found</h1><p style="margin:14px 0 20px;font-size:17px">That event isn’t on the board. It may have been a sample link.</p><a class="btn btn-solid" href="index.html#events">Back to the poster wall</a></div>';
+  return;
+}
+
+var D = IO.DAYPARTS[ev.part];
+document.documentElement.setAttribute('data-daypart', ev.part);
+document.title = ev.title+' — Iron Oak (concept)';
+
+function render(){
+  var left = IO.placesLeft(ev);
+  var pct = Math.round((ev.capacity-left)/ev.capacity*100);
+  root.innerHTML =
+  '<div class="ev">'+
+    '<div class="ev-poster">'+
+      '<p class="crumbs"><a href="index.html#events">← All posters</a></p>'+
+      IO.poster(ev,{tag:'div'}).replace('class="pposter', 'aria-hidden="true" class="pposter')+
+    '</div>'+
+    '<article class="ticket" aria-labelledby="evTitle">'+
+      '<div class="t-top"><span class="mono">'+D.label+' · '+IO.esc(ev.where)+'</span><h1 id="evTitle">'+IO.esc(ev.title)+'</h1></div>'+
+      '<div class="t-body">'+
+        '<dl class="t-facts">'+
+          '<div><dt>Day</dt><dd>Every '+ev.day+'</dd></div>'+
+          '<div><dt>Time</dt><dd>'+ev.time+'</dd></div>'+
+          '<div><dt>Note</dt><dd>'+IO.esc(ev.doors)+'</dd></div>'+
+          '<div><dt>Price</dt><dd>'+IO.esc(ev.price)+'</dd></div>'+
+        '</dl>'+
+        '<div class="t-desc">'+ev.desc.map(function(p){return '<p>'+IO.esc(p)+'</p>';}).join('')+'</div>'+
+        '<div class="cap"><p class="cap-label" id="capLabel">'+left+' of '+ev.capacity+' sample places left</p>'+
+          '<div class="cap-bar" role="img" aria-label="'+pct+'% of sample places taken"><i style="width:'+pct+'%"></i></div></div>'+
+        '<div id="resArea"></div>'+
+      '</div>'+
+    '</article>'+
+  '</div>';
+  showForm(left);
+}
+
+function showForm(left){
+  var area = $('resArea');
+  if (left < 1){
+    area.innerHTML = '<div class="res"><h2>Sample places full</h2><p class="note">Every sample place is taken in this browser. Use Reset demo in the footer to start over.</p></div>';
+    return;
+  }
+  var max = Math.min(6, left);
+  area.innerHTML =
+  '<form class="res" id="resForm" novalidate>'+
+    '<h2>Reserve a sample place</h2>'+
+    '<div class="field"><label id="partyL">Party size</label>'+
+      '<div class="stepper" role="group" aria-labelledby="partyL">'+
+        '<button type="button" id="minus" aria-label="Fewer people">−</button>'+
+        '<output id="party" aria-live="polite" aria-labelledby="partyL">2</output>'+
+        '<button type="button" id="plus" aria-label="More people">+</button>'+
+      '</div></div>'+
+    '<div class="field"><label for="rname">Name</label><input id="rname" name="name" autocomplete="off" required aria-describedby="nameErr"><span class="err" id="nameErr"></span></div>'+
+    '<div class="field"><label for="remail">Email</label><input id="remail" name="email" type="email" placeholder="email@example.com" autocomplete="off" required aria-describedby="emailHint emailErr"><span class="note" id="emailHint" style="margin:0">Use a sample address — nothing is sent.</span><span class="err" id="emailErr"></span></div>'+
+    '<p class="note">Saved in this browser only. No reservation is made and no one is contacted.</p>'+
+    '<button type="submit" class="btn btn-cta">Save sample place <span class="arr" aria-hidden="true">→</span></button>'+
+  '</form>';
+  var party = 2;
+  if (party > max) party = max;
+  function sync(){ $('party').textContent = party; $('minus').disabled = party<=1; $('plus').disabled = party>=max; }
+  sync();
+  $('minus').onclick = function(){ if(party>1){party--;sync();} };
+  $('plus').onclick = function(){ if(party<max){party++;sync();} };
+  $('resForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    var name = $('rname').value.trim(), email = $('remail').value.trim(), ok = true;
+    $('nameErr').textContent = ''; $('emailErr').textContent = '';
+    $('rname').removeAttribute('aria-invalid'); $('remail').removeAttribute('aria-invalid');
+    if (!name){ $('nameErr').textContent = 'Add a name for the list.'; $('rname').setAttribute('aria-invalid','true'); ok = false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $('emailErr').textContent = 'Enter an email like email@example.com.'; $('remail').setAttribute('aria-invalid','true'); ok = false; }
+    if (!ok){ (name ? $('remail') : $('rname')).focus(); return; }
+    var n = IO.loadRes().length + 1;
+    var code = 'IO-' + ev.dayShort.toUpperCase() + '-' + String(100 + n*7).slice(-3);
+    var list = IO.loadRes(); list.push({eventId:ev.id, party:party, name:name, email:email, code:code, savedAt:Date.now()});
+    var saved = IO.saveRes(list);
+    var nowLeft = IO.placesLeft(ev);
+    $('capLabel').textContent = nowLeft+' of '+ev.capacity+' sample places left';
+    var bar = document.querySelector('.cap-bar'), p2 = Math.round((ev.capacity-nowLeft)/ev.capacity*100);
+    bar.firstChild.style.width = p2+'%'; bar.setAttribute('aria-label', p2+'% of sample places taken');
+    $('resArea').innerHTML =
+      '<div class="confirm" id="confirm" tabindex="-1">'+
+        '<span class="mono">Sample ticket · '+IO.esc(code)+'</span>'+
+        '<h2>'+IO.esc(ev.title)+'</h2>'+
+        '<p class="honest">'+(saved ? 'Saved in this browser only — no reservation was made.' : 'Your browser blocked storage, so this sample ticket will disappear on reload — no reservation was made.')+'</p>'+
+        '<dl><dt>Name</dt><dd>'+IO.esc(name)+'</dd><dt>Party</dt><dd>'+party+(party===1?' person':' people')+'</dd><dt>When</dt><dd>'+ev.day+' · '+ev.time+'</dd><dt>Email</dt><dd>'+IO.esc(email)+' (nothing sent)</dd></dl>'+
+        '<div class="barcode" aria-hidden="true"></div>'+
+        '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px"><a class="btn btn-solid" href="index.html#events">See your sample reservations</a><button type="button" class="btn" id="another">Save another</button></div>'+
+      '</div>';
+    $('confirm').focus();
+    $('announce').textContent = 'Sample place saved in this browser only. No reservation was made.';
+    $('another').onclick = function(){ showForm(IO.placesLeft(ev)); $('rname').focus(); };
+  });
+}
+
+document.querySelectorAll('[data-reset]').forEach(function(b){
+  b.addEventListener('click', function(){ IO.resetDemo(); render(); $('announce').textContent='Demo reset. Sample reservations cleared.'; });
+});
+render();
+})();
+</script>
+</body>
+</html>
