@@ -18,7 +18,9 @@ IMG = {
   "quarry":   u("1523848309072-c199db53f137", 1800),      # machines at excavation
   "collision":u("1556086744-7502d61b1af5",    1800),      # collision scene
   "rock":     u("1580901369227-308f6f40bdeb", 1800),      # excavator, mountains
-  "scania":   u("1601584115197-04ecc0da31d7", 1600),      # tractor unit on road
+  "scania":   u("1601584115197-04ecc0da31d7", 1600),      # (retired — Scania logo)
+  "aerialexc":u("1606811883055-0d24f05c8bcd", 1400),      # aerial excavator, no logos
+  "dumptruck":u("1650535716978-eb644a8cf898", 1400),      # dump truck side, no logos
 }
 
 PHONE      = "334-568-9450"
@@ -100,7 +102,8 @@ def footer():
         <p style="font-size:14.5px;color:#C9C7C7;margin:0 0 6px;max-width:34ch">
           Independent Vehicle &amp; Equipment Appraisal<br>Damage Consulting &middot; Claims Expertise</p>
         <p style="font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:#FF8497;margin:16px 0 0">
-          Alabama &middot; Florida &middot; Georgia &middot; Mississippi</p>
+          Alabama &middot; Florida &middot; Georgia &middot; Mississippi &middot; Tennessee</p>
+        <p style="font-size:13.5px;color:#A8A8A8;margin:10px 0 0">Based in Prattville, Alabama</p>
       </div>
       <div>
         <h4>Services</h4>
@@ -127,8 +130,8 @@ def footer():
           <li><a href="assign.html">Submit an Assignment</a></li>
           <li><a href="{PHONE_HREF}">{PHONE}</a></li>
           <li><a href="mailto:{EMAIL}">{EMAIL}</a></li>
-          <li><a href="https://www.linkedin.com/" rel="noopener">LinkedIn</a></li>
-          <li><a href="https://www.facebook.com/" rel="noopener">Facebook</a></li>
+          <li><a href="https://www.linkedin.com/in/clayton-grigsby-0bb314223" rel="noopener" target="_blank">LinkedIn</a></li>
+          <li><a href="https://www.facebook.com/profile.php?id=100076008322994" rel="noopener" target="_blank">Facebook</a></li>
         </ul>
       </div>
     </div>
@@ -180,9 +183,9 @@ SERVICES6 = [
  ("Vehicle Appraisals", "Auto, light truck, motorcycle, RV and specialty vehicle damage assessment.",
   "appraisal-services.html#vehicle", IMG["damage"], "Close detail of collision damage to a vehicle front end"),
  ("Commercial &amp; Fleet", "Commercial trucks, trailers, fleet vehicles and business-owned equipment.",
-  "fleet-commercial.html", IMG["fleetlot"], "Aerial view of a commercial trailer yard"),
+  "fleet-commercial.html", IMG["dumptruck"], "A commercial dump truck on a work site"),
  ("Heavy Equipment", "Construction, agricultural and specialized equipment damage appraisal.",
-  "appraisal-services.html#heavy", IMG["cat"], "Construction dozer on a work site"),
+  "appraisal-services.html#heavy", IMG["rock"], "An excavator working a rocky site"),
  ("Mechanical &amp; Fuel Claims", "Mechanical causation, accident-related failures and fuel-contamination investigations.",
   "appraisal-services.html#mechanical", IMG["engine"], "Technician inspecting a vehicle engine bay"),
  ("Estimate &amp; Repair Review", "Estimate audits, supplements, post-repair inspections and repair-quality evaluations.",
@@ -221,6 +224,41 @@ def region_map():
     with io.open(os.path.join(OUT, "assets", "region-map.svg"), encoding="utf-8") as f:
         return f.read()
 
+def fleet_block(image, button=True):
+    """The Fleet & Commercial section. Kerissa asked for it on both Home and the Fleet page."""
+    btn = (f'        <div class="btn-row"><a class="btn" href="fleet-commercial.html">Explore Fleet Services {AR}</a></div>\n'
+           if button else "")
+    return f'''<!-- ========================================================= Fleet &amp; commercial -->
+<section class="sect">
+  <div class="wrap">
+    <div class="fleet">
+      <div class="rv">
+        <p class="eyebrow">Fleet &amp; Commercial</p>
+        <h2 class="h-lg">Your Vehicles Work<br>for Your Business.</h2>
+        <p class="lede" style="font-weight:500;color:var(--ink)">When they&rsquo;re damaged, you need answers &mdash; not just an estimate.</p>
+        <p>Cornerstone provides independent vehicle and equipment damage assessments directly to businesses
+        and fleet operators &mdash; not only insurance companies.</p>
+        <p>We can help determine the extent of damage, appropriate repair procedures, reasonable repair
+        costs, repair quality, and whether damage is consistent with a reported incident.</p>
+        <ul class="chips">
+          <li>Trucking &amp; Transportation</li><li>Construction &amp; Contractors</li>
+          <li>Municipal Fleets</li><li>Utility Companies</li>
+          <li>Equipment Owners</li><li>Commercial Vehicle Fleets</li>
+        </ul>
+        <div class="callout">
+          <b>No insurance claim required.</b>
+          <p>Businesses and fleet operators can engage Cornerstone directly.</p>
+        </div>
+{btn}      </div>
+      <div class="rv" data-rv-delay="80">
+        <div class="fleet__media"><img src="{image}" alt="A commercial tractor unit on the highway" loading="lazy" /></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+'''
+
 def final_cta():
     return f'''<section class="sect final">
   <div class="wrap finalgrid">
@@ -252,7 +290,7 @@ home = hero(
   '<a class="btn btn--lg" href="assign.html">Submit an Assignment</a>'
   '<a class="btn btn--ghost btn--lg" href="appraisal-services.html">Explore Our Services</a>',
   "Cornerstone fleet: bucket truck, dump trucks, pickups and an excavator",
-  extra='<p class="hero__area"><span>Alabama</span><span>Florida</span><span>Georgia</span><span>Mississippi</span></p>'
+  extra='<p class="hero__area"><span>Alabama</span><span>Florida</span><span>Georgia</span><span>Mississippi</span><span>Tennessee</span></p>'
         '<p class="hero__creds"><b>I-CAR Platinum Pro-Level 3</b><b>Licensed &amp; Insured</b>'
         '<b>Commercial &amp; Personal Vehicles</b><b>Heavy Equipment</b></p>',
 ) + serve_band() + f'''
@@ -296,36 +334,7 @@ home = hero(
   </div>
 </section>
 
-<!-- ========================================================= Fleet &amp; commercial -->
-<section class="sect">
-  <div class="wrap">
-    <div class="fleet">
-      <div class="rv">
-        <p class="eyebrow">Fleet &amp; Commercial</p>
-        <h2 class="h-lg">Your Vehicles Work<br>for Your Business.</h2>
-        <p class="lede" style="font-weight:500;color:var(--ink)">When they&rsquo;re damaged, you need answers &mdash; not just an estimate.</p>
-        <p>Cornerstone provides independent vehicle and equipment damage assessments directly to businesses
-        and fleet operators &mdash; not only insurance companies.</p>
-        <p>We can help determine the extent of damage, appropriate repair procedures, reasonable repair
-        costs, repair quality, and whether damage is consistent with a reported incident.</p>
-        <ul class="chips">
-          <li>Trucking &amp; Transportation</li><li>Construction &amp; Contractors</li>
-          <li>Municipal Fleets</li><li>Utility Companies</li>
-          <li>Equipment Owners</li><li>Commercial Vehicle Fleets</li>
-        </ul>
-        <div class="callout">
-          <b>No insurance claim required.</b>
-          <p>Businesses and fleet operators can engage Cornerstone directly.</p>
-        </div>
-        <div class="btn-row"><a class="btn" href="fleet-commercial.html">Explore Fleet Services {AR}</a></div>
-      </div>
-      <div class="rv" data-rv-delay="80">
-        <div class="fleet__media"><img src="{IMG['semi']}" alt="A commercial tractor unit on the highway" loading="lazy" /></div>
-      </div>
-    </div>
-  </div>
-</section>
-
+'''+ fleet_block(IMG['semi'], button=True) + f'''
 <!-- ============================================================ Complex claims -->
 <section class="sect dark">
   <div class="wrap">
@@ -388,14 +397,15 @@ home = hero(
       <div class="rv" data-rv-delay="80">
         <p class="eyebrow">Service Area</p>
         <h2 class="h-lg">Regional Expertise.<br>Responsive Service.</h2>
-        <p class="lede">Licensed independent claims appraisal services throughout Alabama, Florida, Georgia
-        and Mississippi, with specialized commercial and consulting assignments available based on the needs
-        of the client.</p>
+        <p class="lede">Licensed independent claims appraisal throughout Alabama, Florida, Georgia and
+        Mississippi, with service into Tennessee and specialized commercial and consulting assignments
+        available based on the needs of the client.</p>
         <ul class="statelist">
           <li><span class="ab">AL</span> Alabama</li>
           <li><span class="ab">FL</span> Florida</li>
           <li><span class="ab">GA</span> Georgia</li>
           <li><span class="ab">MS</span> Mississippi</li>
+          <li><span class="ab">TN</span> Tennessee</li>
         </ul>
       </div>
     </div>
@@ -418,7 +428,7 @@ def caps_block(rows):
         for n,(i,t,d) in enumerate(rows,1)) + '</div>'
 
 def service_page(fn, title, desc, eyebrow, h1, lede, heroimg, heroalt,
-                 intro_h, intro_p, rows, gallery, galt, closing, tqi):
+                 intro_h, intro_p, rows, gallery, galt, closing, tqi, lead=None):
     gal = "".join(
         f'<div style="position:relative;aspect-ratio:4/3;overflow:hidden;background:#ECECEA;border-radius:2px">'
         f'<img src="{g}" alt="{a}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" /></div>'
@@ -427,16 +437,16 @@ def service_page(fn, title, desc, eyebrow, h1, lede, heroimg, heroalt,
         '<a class="btn btn--lg" href="assign.html">Submit an Assignment</a>'
         f'<a class="btn btn--ghost btn--lg" href="{PHONE_HREF}">Call {PHONE}</a>',
         heroalt, page_v=True) + serve_band() + f'''
-<section class="sect">
+{lead if lead else f'''<section class="sect">
   <div class="wrap">
     {shead("Overview", intro_h, f'<p class="lede">{intro_p}</p>')}
     <div class="cols2 rv">{gal}</div>
   </div>
-</section>
+</section>'''}
 <section class="sect paper2">
   <div class="wrap">
     {shead("What We Handle", "Assignments accepted.",
-      '<p class="lede">If what you need is not listed, ask. This is the common work, not the limit of it.</p>')}
+      '<p class="lede">If what you need is not listed, just ask. These are the most common assignments requested, but not the limit of our expertise.</p>')}
     {caps_block(rows)}
   </div>
 </section>
@@ -475,11 +485,14 @@ service_page(
    ("fuel","Fuel Contamination Claims",
     "Investigation and documentation of misfuelling and fuel-contamination losses, including the extent "
     "of component damage and the reasonable scope of repair."),
+   ("repo","Bank &amp; Lienholder Repossessions",
+    "Condition and damage assessment of repossessed vehicles and equipment on behalf of banks and "
+    "lienholders."),
    ("total","Total Loss &amp; Value Consulting",
     "Repair-versus-replace analysis, pre-loss condition and value assessment, and review of total loss "
     "determinations and valuation methodology.")],
-  [IMG["cat"], IMG["engine"]],
-  ["Construction dozer on a work site","Technician inspecting a vehicle engine bay"],
+  [IMG["aerialexc"], IMG["engine"]],
+  ["An excavator working a quarry, seen from above","Technician inspecting a vehicle engine bay"],
   "", 4)
 
 
@@ -489,9 +502,9 @@ service_page(
   "Independent vehicle and equipment damage assessment for fleets, trucking, construction, municipalities "
   "and utilities. No insurance claim required.",
   "Fleet &amp; Commercial",
-  "Your Vehicles Work<br>for Your Business.",
-  "When they&rsquo;re damaged, you need answers &mdash; not just an estimate. Cornerstone works directly "
-  "for businesses and fleet operators, not only insurance companies.",
+  "Fleet &amp; Commercial<br>Damage Appraisal.",
+  "Independent damage assessment for trucking companies, contractors, municipal and utility fleets "
+  "and equipment owners &mdash; with or without an insurance claim.",
   IMG["semi"], "A commercial tractor unit on the highway at dusk",
   "Independent answers,<br>without a claim file.",
   "Businesses and fleet operators can engage Cornerstone directly. That means an objective assessment of "
@@ -502,11 +515,11 @@ service_page(
     "and unrelated conditions."),
    ("procedures","Appropriate Repair Procedures",
     "What the correct repair actually involves, referenced against manufacturer and industry repair "
-    "procedures rather than whatever is fastest."),
+    "procedures rather than whatever is easiest."),
    ("cost","Reasonable Repair Cost",
     "A documented estimate you can hold a vendor to, or use to evaluate the estimate you have been given."),
    ("quality","Repair Quality Verification",
-    "Post-repair inspection confirming the work performed matches the work billed, in scope and in method."),
+    "Post-repair inspection confirming the work performed matches the work billed, in scope and in proper repair methods."),
    ("consistency","Damage Consistency Review",
     "Whether the damage presented is consistent with the incident as reported &mdash; useful for fleets "
     "managing driver-reported losses."),
@@ -514,7 +527,8 @@ service_page(
     "Recurring inspection support across a fleet, with consistent reporting and a single point of contact.")],
   [IMG["fleetlot"], IMG["scania"]],
   ["Aerial view of a commercial trailer yard","A tractor unit on the road"],
-  "", 0)
+  "", 0,
+  lead=fleet_block(IMG["dumptruck"], button=False))
 
 
 service_page(
@@ -526,7 +540,7 @@ service_page(
   "When an Estimate<br>Isn&rsquo;t Enough.",
   "Independent analysis for the files that do not resolve on their own &mdash; disputed repairs, "
   "questionable damage, competing estimates and losses with real exposure attached.",
-  IMG["collision"], "Emergency response at a multi-vehicle collision scene",
+  IMG["damage"], "Close detail of collision damage to a vehicle front end",
   "The shop says one thing.<br>The owner says another.",
   "Cornerstone is frequently brought in after the disagreement has already started. The work is to "
   "establish what the evidence actually supports, document it properly, and put it in a form that holds "
@@ -538,10 +552,9 @@ service_page(
     "Independent post-repair inspection where quality, completeness or method of repair is contested "
     "between a shop, an owner and an insurer."),
    ("subrogation","Subrogation Review",
-    "Damage and cost analysis supporting recovery, including separating recoverable damage from "
-    "unrelated or pre-existing conditions."),
+    "Is what is being demanded actually what is owed?"),
    ("postrepair","Post-Repair Inspection",
-    "Verification that the completed repair matches the authorised estimate in both scope and method."),
+    "Verification that the completed repair matches the authorized estimate in scope and in proper repair methods."),
    ("dispute","Dispute Resolution",
     "Objective analysis and documentation when repair facilities, owners, insurers or other parties "
     "cannot agree on damage, method or amount."),
@@ -621,13 +634,13 @@ about = hero(
           <a href="tel:+18139563709" style="text-decoration:none;color:var(--red)">813-956-3709</a></p>
       </div>
       <div class="rv" data-rv-delay="80">
-        <p>Alex brings more than 20 years of claims handling experience and has worked as an independent
+        <p>Alex brings more than 23 years of claims handling experience and has worked as an independent
         adjuster since January 2022.</p>
-        <p>He is a licensed claims adjuster in Florida, New York and Pennsylvania, I-CAR Level 3 Platinum
+        <p>He is a licensed claims adjuster in Florida, I-CAR Level 3 Platinum
         certified, ASE Pro Level 3 and ASE B-6 certified, a Smith System defensive driving instructor, and
         NATMI-trained in accident investigation.</p>
         <ul class="tags">
-          <li>Licensed FL &middot; NY &middot; PA</li><li>I-CAR Level 3 Platinum</li>
+          <li>Licensed in Florida</li><li>I-CAR Level 3 Platinum</li>
           <li>ASE Pro Level 3</li><li>ASE B-6</li>
           <li>Smith System Instructor</li><li>NATMI Accident Investigation</li>
         </ul>
@@ -787,7 +800,7 @@ contact_form = f'''{WIRING}
   {f_text("cemail","Email", True, typ="email")}
   {f_text("cphone","Phone", False, typ="tel")}
   {f_sel("creason","Reason for Contact", ["New assignment","Question about an existing assignment",
-      "Fleet or business enquiry","Service area question","Adjuster roster","General enquiry"], full=True)}
+      "Fleet or business inquiry","Service area question","Adjuster roster","General inquiry"], full=True)}
   {f_area("cmsg","Message", True)}
   <div class="field field--full">
     <button class="btn btn--lg" type="submit" style="width:100%">Send Message</button>
@@ -797,12 +810,12 @@ contact_form = f'''{WIRING}
   "We&rsquo;ll respond directly. For a live assignment, the assignment form routes faster.")}'''
 
 contact = hero(
-  IMG["scania"], "Contact",
+  IMG["semi"], "Contact",
   "Start With<br>a Conversation.",
-  "Assignments, fleet enquiries and questions about a complicated damage claim all reach the same place.",
+  "Assignments, fleet inquiries and questions about a complicated damage claim all reach the same place.",
   f'<a class="btn btn--lg" href="assign.html">Submit an Assignment</a>'
   f'<a class="btn btn--ghost btn--lg" href="{PHONE_HREF}">Call {PHONE}</a>',
-  "A commercial tractor unit on the road", page_v=True) + f'''
+  "A commercial tractor unit on the highway at dusk", page_v=True) + f'''
 <section class="sect">
   <div class="wrap">
     <div class="cols2" style="align-items:start">
@@ -813,7 +826,8 @@ contact = hero(
           <dl>
             <dt>Telephone</dt><dd><a href="{PHONE_HREF}" style="color:var(--red);font-weight:600;text-decoration:none">{PHONE}</a></dd>
             <dt>Email</dt><dd><a href="mailto:{EMAIL}" style="color:var(--red);font-weight:600;text-decoration:none">{EMAIL}</a></dd>
-            <dt>Service Area</dt><dd>Alabama &middot; Florida &middot; Georgia &middot; Mississippi</dd>
+            <dt>Location</dt><dd>Prattville, Alabama</dd>
+            <dt>Service Area</dt><dd>Alabama &middot; Florida &middot; Georgia &middot; Mississippi &middot; Tennessee</dd>
             <dt>Central Florida</dt><dd>Alex Franklin &mdash;
               <a href="tel:+18139563709" style="color:var(--red);font-weight:600;text-decoration:none">813-956-3709</a></dd>
           </dl>
@@ -826,7 +840,7 @@ contact = hero(
             <p class="cap__d">Direct engagement, no insurance claim required.
             <a class="tlink" href="fleet-commercial.html" style="display:inline-flex;margin-left:8px">Fleet services {AR}</a></p></div>
           <div class="cap"><div class="cap__n">/ 03</div><h3 class="cap__t">Everything Else</h3>
-            <p class="cap__d">Questions, existing files and general enquiries &mdash; use the form or call directly.</p></div>
+            <p class="cap__d">Questions, existing files and general inquiries &mdash; use the form or call directly.</p></div>
         </div>
       </div>
       <div class="rv" data-rv-delay="80">
