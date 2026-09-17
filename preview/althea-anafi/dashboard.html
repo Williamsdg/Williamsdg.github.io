@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Host Desk — Althea Anafi Suites (concept)</title>
+<meta name="theme-color" content="#003753">
+<link rel="icon" href="img/cropped-favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Serif+Display:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<!--
+  ALTHEA HOST DESK — staff dashboard concept · Williams Digital · 2026-09-16
+  ALL GUESTS, RESERVATIONS, REQUESTS, TEAM MEMBERS AND PAYMENT STATUSES ARE FICTIONAL.
+  Suite names, sizes, capacities and experiences are Althea's published ones.
+  Not connected to reserve-online, email, WhatsApp, booking channels or payments.
+  State: this browser only (localStorage "althea.demo.v1").
+-->
+</head>
+<body>
+<div class="demo-bar" role="note">
+  <span><b>Staff demo · sample data.</b> Fictional guests; demo date Wed 23 Sep 2026, Europe/Athens. Saved in this browser only — nothing syncs with booking channels.</span>
+  <span class="views"><a href="index.html">Website</a><a href="dashboard.html" aria-current="page">Staff demo</a><a href="client.html">Guest demo</a><button type="button" id="reset">Reset demo</button></span>
+</div>
+
+<div class="shell">
+  <aside class="side" aria-label="Host Desk">
+    <a class="brand" href="#today"><img src="img/Althea-header-logo.png" alt="Althea" width="394" height="131"><span>Host Desk</span></a>
+    <nav id="sidenav" aria-label="Sections"></nav>
+    <div class="foot">Five suites · Chora, Anafi<br>Times in Europe/Athens</div>
+    <div class="who"><span class="avatar" aria-hidden="true">E</span><span>Eleni<br><span class="xs" style="opacity:.7">Host (demo user)</span></span></div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div><h1 id="viewTitle">Today</h1><div class="sub" id="viewSub"></div></div>
+      <div class="grow"></div>
+      <div id="viewActions"></div>
+    </header>
+    <main class="content" id="view" tabindex="-1"></main>
+  </div>
+</div>
+<nav class="bnav" id="bnav" aria-label="Sections"></nav>
+
+<dialog id="dlg" aria-labelledby="dlgTitle"><div id="dlgInner"></div></dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="assets/store.js"></script>
+<script>
+(function () {
+  const A = window.Althea, E = A.esc;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const I = {
+    today: '<path d="M12 3v2M12 19v2M5 12H3M21 12h-2M6.3 6.3 4.9 4.9M19.1 19.1l-1.4-1.4M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/><circle cx="12" cy="12" r="4"/>',
+    reservations: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+    care: '<path d="M4 20h16M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/>',
+    requests: '<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
+    website: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/>',
+    moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/>',
+    x: '<path d="M6 6l12 12M18 6 6 18"/>',
+    up: '<path d="m6 15 6-6 6 6"/>', down: '<path d="m6 9 6 6 6-6"/>'
+  };
+  const icon = (k, w) => `<svg viewBox="0 0 24 24" width="${w || 18}" height="${w || 18}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[k]}</svg>`;
+  const VIEWS = [['today', 'Today'], ['reservations', 'Reservations'], ['care', 'Suite Care'], ['requests', 'Guest Requests'], ['website', 'Website']];
+  const D = () => A.get();
+  const S = A.suite;
+  const guestOf = (q) => { const r = q.res && A.res(D(), q.res); return r ? r.guest : (q.guestName ? q.guestName + ' (website)' : 'Website visitor'); };
+  const OPEN = ['received', 'reviewing', 'proposed'];
+  const reqPill = (st) => `<span class="pill ${{ received: 'clay', reviewing: 'amber', proposed: 'sea', confirmed: 'green', completed: 'olive', declined: 'red', cancelled: 'line' }[st]}">${A.REQ_LABEL[st]}</span>`;
+  const carePill = (st) => `<span class="pill ${{ ready: 'green', occupied: 'sea', 'needs-cleaning': 'clay', cleaning: 'amber', inspection: 'amber', maintenance: 'red' }[st]}">${A.CARE_LABEL[st]}</span>`;
+  const resStatus = (r) => ({ booked: '<span class="pill sea">Booked</span>', 'checked-in': '<span class="pill green">Checked in</span>', 'checked-out': '<span class="pill line">Checked out</span>', cancelled: '<span class="pill red">Cancelled</span>' }[r.status]);
+  let view = 'today', selReq = null, reqFilter = 'open', resMode = 'calendar';
+
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(t._t); t._t = setTimeout(() => t.hidden = true, 3200); }
+
+  /* ---- nav ---- */
+  function nav() {
+    const d = D();
+    const counts = { requests: d.requests.filter(q => OPEN.includes(q.status)).length, care: Object.values(d.care).filter(c => c.state !== 'ready' && c.state !== 'occupied').length };
+    const html = VIEWS.map(([k, l]) => `<a class="nv" href="#${k}" ${view === k ? 'aria-current="page"' : ''}>${icon(k)}<span>${l}</span>${counts[k] ? `<span class="count" aria-label="${counts[k]} need attention">${counts[k]}</span>` : ''}</a>`).join('');
+    $('#sidenav').innerHTML = html;
+    $('#bnav').innerHTML = VIEWS.map(([k, l]) => `<a href="#${k}" ${view === k ? 'aria-current="page"' : ''}>${icon(k)}<span>${l.replace('Guest ', '')}</span></a>`).join('');
+  }
+
+  /* ---- dialog helper ---- */
+  let dlgReturn = null;
+  function openDlg(title, body, foot, onMount) {
+    dlgReturn = document.activeElement;
+    $('#dlgInner').innerHTML = `<div class="dlg-h"><h2 id="dlgTitle">${title}</h2><button type="button" class="x" data-close aria-label="Close">${icon('x', 16)}</button></div><div class="dlg-b">${body}</div>${foot ? `<div class="dlg-f">${foot}</div>` : ''}`;
+    const dlg = $('#dlg'); if (!dlg.open) dlg.showModal();
+    $$('[data-close]', dlg).forEach(b => b.addEventListener('click', () => dlg.close()));
+    if (onMount) onMount(dlg);
+  }
+  $('#dlg').addEventListener('close', () => { if (dlgReturn && document.contains(dlgReturn)) dlgReturn.focus(); });
+
+  /* ================= TODAY ================= */
+  function viewToday() {
+    const d = D(), T = A.TODAY;
+    const occ = A.occupiedOn(d, T);
+    const inHouse = d.reservations.filter(r => r.status === 'checked-in');
+    const arr = A.arrivalsOn(d, T), dep = A.departuresOn(d, T), arrTom = A.arrivalsOn(d, A.addDays(T, 1));
+    const open = d.requests.filter(q => OPEN.includes(q.status));
+    const late = A.lateArrivals(d);
+    $('#viewSub').textContent = 'Wednesday 23 September 2026 · 10:30 Europe/Athens (demo)';
+    $('#viewActions').innerHTML = '';
+    const lateHtml = late.map(r => {
+      const q = d.requests.find(x => x.res === r.id && x.type === 'arrival');
+      return `<section class="late" aria-label="After-midnight arrival">
+        ${icon('moon', 28)}
+        <div><h3>After-midnight arrival · ${S(r.suite).name}</h3>
+          <p class="small">${E(r.guest)}, party of ${r.party}. The reservation starts tonight, so the suite should be ready this evening — the guests land after midnight.</p>
+          <dl><div><dt>Reservation night</dt><dd>${A.fmtDate(r.from)} → ${A.fmtDate(r.to)} (${A.nights(r.from, r.to)} nights)</dd></div>
+          <div><dt>Actual arrival</dt><dd>${A.fmtDate(r.arrival.at)} · ${A.fmtTime(r.arrival.at)}</dd></div>
+          <div><dt>Transfer</dt><dd>${q ? A.REQ_LABEL[q.status] : 'Not requested'}</dd></div></dl></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${q ? `<a class="btn sm" href="#requests/${q.id}">Open request</a>` : ''}<button class="btn ghost sm" data-res="${r.id}">Reservation</button></div>
+      </section>`;
+    }).join('');
+    const stat = (n, label, small, go) => `<button type="button" class="stat" data-go="${go}"><b>${n}</b><span>${label}</span><small>${small}</small></button>`;
+    const rrow = (r, kind) => {
+      const s = S(r.suite);
+      let act = '';
+      if (kind === 'dep' && r.status === 'checked-in') act = `<button class="btn ghost sm" data-checkout="${r.id}">Check out</button>`;
+      if (kind === 'arr' && r.status === 'booked') act = `<button class="btn ghost sm" data-checkin="${r.id}">Mark arrived</button>`;
+      const when = kind === 'arr' ? (r.arrival && r.arrival.at ? `Arriving ${A.fmtDate(r.arrival.at) === A.fmtDate(r.from) ? '' : A.fmtDate(r.arrival.at) + ' '}${A.fmtTime(r.arrival.at)}` : 'Arrival time not shared yet') : `Leaving today · ${A.nights(r.from, r.to)} nights`;
+      return `<div class="row"><img class="thumb" src="img/${s.id}-1-sm.webp" alt=""><div class="grow"><div class="t">${E(r.guest)} <span class="muted small">· ${s.name}</span></div><div class="s">${when} · party of ${r.party}</div></div>${resStatus(r)}${act}</div>`;
+    };
+    $('#view').innerHTML = `
+      ${lateHtml}
+      <div class="stats">
+        ${stat(`${occ.length}<span class="small muted" style="font-family:var(--sans)"> / 5</span>`, 'Occupied tonight', 'Suites with a reservation for the night of 23 Sep', 'reservations')}
+        ${stat(inHouse.length, 'Checked in now', 'Guests currently in-house', 'reservations')}
+        ${stat(arr.length + dep.length, 'Arrivals & departures', `${arr.length} arriving · ${dep.length} leaving`, 'today-list')}
+        ${stat(open.length, 'Open requests', `${open.filter(q => q.status === 'received').length} not yet picked up`, 'requests')}
+      </div>
+      <div class="cols">
+        <div class="stack">
+          <section class="card" id="today-list"><div class="card-h"><h2>Arrivals</h2><span class="small muted">Today & tomorrow</span></div>
+            ${arr.map(r => rrow(r, 'arr')).join('') || '<p class="empty">No arrivals today.</p>'}
+            ${arrTom.length ? `<div class="row" style="background:var(--lime-2);padding:6px 18px"><span class="xs muted">TOMORROW · ${A.fmtDate(A.addDays(T, 1)).toUpperCase()}</span></div>${arrTom.map(r => rrow(r, 'arr')).join('')}` : ''}
+          </section>
+          <section class="card"><div class="card-h"><h2>Departures</h2><span class="small muted">Today</span></div>
+            ${dep.map(r => rrow(r, 'dep')).join('') || '<p class="empty">No departures today.</p>'}
+          </section>
+          <section class="card"><div class="card-h"><h2>Suite readiness</h2><a class="btn quiet sm" href="#care">Suite Care</a></div>
+            <div class="readiness">${A.SUITES.map(s => { const c = d.care[s.id]; return `<button type="button" data-care="${s.id}"><span class="nm">${s.name}</span>${carePill(c.state)}<span class="xs muted">${c.outOfService ? 'Out of service · ' : ''}${A.team(c.assignee).name}</span></button>`; }).join('')}</div>
+          </section>
+        </div>
+        <div class="stack">
+          <section class="card"><div class="card-h"><h2>Needs a reply</h2><a class="btn quiet sm" href="#requests">All requests</a></div>
+            ${open.map(q => `<a class="row" style="text-decoration:none" href="#requests/${q.id}"><div class="grow"><div class="t">${E(q.title)}</div><div class="s">${E(guestOf(q))} · ${A.fmtStamp(q.at)}</div></div>${reqPill(q.status)}</a>`).join('') || '<p class="empty">Nothing waiting. Enjoy the quiet.</p>'}
+          </section>
+          <section class="card"><div class="card-h"><h2>Activity</h2><span class="xs muted">This browser</span></div>
+            <ul class="activity">${d.log.slice(0, 8).map(l => `<li><time>${A.fmtStamp(l.at)}</time><span>${E(l.text)}</span></li>`).join('')}</ul>
+          </section>
+        </div>
+      </div>`;
+    $$('[data-go]').forEach(b => b.addEventListener('click', () => { const g = b.dataset.go; if (g === 'today-list') { $('#today-list').scrollIntoView({ behavior: 'smooth' }); $('#today-list').querySelector('.row, .empty').focus?.(); } else location.hash = g; }));
+    $$('[data-care]').forEach(b => b.addEventListener('click', () => { location.hash = 'care'; }));
+    bindResButtons();
+  }
+  function bindResButtons() {
+    $$('[data-res]').forEach(b => b.addEventListener('click', () => resDialog(b.dataset.res)));
+    $$('[data-checkout]').forEach(b => b.addEventListener('click', () => {
+      const r = A.res(D(), b.dataset.checkout);
+      openDlg('Check out ' + E(r.guest) + '?', `<p>${S(r.suite).name} will move to <b>Needs cleaning</b>. ${r.pay.includes('due') ? `<div class="warn" style="margin-top:12px">Payment note: ${E(r.pay)}.</div>` : ''}</p>`,
+        `<button class="btn ghost" data-close>Cancel</button><button class="btn" id="ok">Check out</button>`, dlg => {
+          $('#ok', dlg).addEventListener('click', () => { A.update(d => { A.res(d, r.id).status = 'checked-out'; d.care[r.suite].state = 'needs-cleaning'; d.care[r.suite].checklist = A.CHECKLIST.map(() => false); }, `${r.guest} checked out of ${S(r.suite).name}`); dlg.close(); toast('Checked out — suite marked Needs cleaning'); });
+        });
+    }));
+    $$('[data-checkin]').forEach(b => b.addEventListener('click', () => {
+      const r = A.res(D(), b.dataset.checkin), c = D().care[r.suite];
+      openDlg('Mark ' + E(r.guest) + ' as arrived?', `${c.state !== 'ready' ? `<div class="warn">${S(r.suite).name} is currently <b>${A.CARE_LABEL[c.state]}</b>, not Ready.</div>` : ''}${r.arrival && r.arrival.at > A.NOW ? `<div class="info">Their shared arrival time is ${A.fmtStamp(r.arrival.at)}. In the demo you can still record it now.</div>` : ''}<p>This records the check-in in Althea’s own records only.</p>`,
+        `<button class="btn ghost" data-close>Cancel</button><button class="btn" id="ok">Mark arrived</button>`, dlg => {
+          $('#ok', dlg).addEventListener('click', () => { A.update(d => { A.res(d, r.id).status = 'checked-in'; d.care[r.suite].state = 'occupied'; }, `${r.guest} arrived — ${S(r.suite).name}`); dlg.close(); toast('Checked in'); });
+        });
+    }));
+  }
+
+  /* ================= RESERVATIONS ================= */
+  const WIN0 = '2026-09-19', DAYS = 14;
+  function viewReservations() {
+    const d = D();
+    $('#viewSub').textContent = `${A.fmtDate(WIN0)} – ${A.fmtDate(A.addDays(WIN0, DAYS - 1))} · all five suites`;
+    $('#viewActions').innerHTML = `<button class="btn" id="newRes">New reservation</button>`;
+    $('#newRes').addEventListener('click', () => resDialog(null));
+    const days = Array.from({ length: DAYS }, (_, i) => A.addDays(WIN0, i));
+    const idx = (iso) => A.nights(WIN0, iso);
+    let cells = `<div class="hd" style="border-left:0;text-align:left;padding-left:12px">Suite</div>` + days.map(x => `<div class="hd ${x === A.TODAY ? 'today' : ''}">${A.fmtDate(x, { day: undefined, month: undefined })}<b>${+x.slice(8)}</b></div>`).join('');
+    A.SUITES.forEach((s, ri) => {
+      cells += `<div class="sn" style="grid-row:${ri + 2}"><span>${s.name}<small>${s.cat} · ${s.guests} guests</small></span></div>`;
+      days.forEach((x, ci) => cells += `<div class="cell ${x === A.TODAY ? 'today' : ''}" style="grid-row:${ri + 2};grid-column:${ci + 2}"></div>`);
+      d.reservations.filter(r => r.suite === s.id && r.status !== 'cancelled' && r.to > WIN0 && r.from <= days[DAYS - 1]).forEach(r => {
+        const a = Math.max(0, idx(r.from)), b = Math.min(DAYS - 1, idx(r.to));
+        const span = b - a + 1, clipL = idx(r.from) < 0, clipR = idx(r.to) > DAYS - 1;
+        const clash = A.overlaps(d, r).length > 0;
+        const cls = clash ? 'clash' : r.status === 'checked-in' ? 'in' : r.status === 'checked-out' ? 'out' : 'booked';
+        const ml = clipL ? '0' : `calc(50% / ${span})`, mr = clipR ? '0' : `calc(50% / ${span})`;
+        const late = r.arrival && r.arrival.at && r.arrival.at.slice(0, 10) > r.from ? ' · arrives ' + A.fmtTime(r.arrival.at) + ' next day' : '';
+        cells += `<button type="button" class="bk ${cls}" data-res="${r.id}" style="grid-row:${ri + 2};grid-column:${a + 2} / span ${span};margin-left:${ml};margin-right:${mr}" aria-label="${E(r.guest)}, ${s.name}, ${A.fmtDate(r.from)} to ${A.fmtDate(r.to)}, ${r.status}${clash ? ', overlaps another reservation' : ''}"><b>${E(r.guest)}${clash ? ' ⚠' : ''}</b>${r.party} guests · ${A.nights(r.from, r.to)}n${late}</button>`;
+      });
+    });
+    const list = d.reservations.slice().sort((a, b) => a.from.localeCompare(b.from));
+    $('#view').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div class="seg" role="group" aria-label="Layout"><button type="button" data-mode="calendar" aria-pressed="${resMode === 'calendar'}">Calendar</button><button type="button" data-mode="list" aria-pressed="${resMode === 'list'}">List</button></div>
+        <p class="xs muted">Sample data. This preview does not sync with reserve-online or booking channels, so it cannot prevent a real overbooking.</p>
+      </div>
+      <div ${resMode === 'calendar' ? '' : 'hidden'}>
+        <div class="cal-wrap desk"><div class="cal" style="--days:${DAYS}">${cells}</div></div>
+        <div class="legend desk"><span><i style="background:var(--ink);border-color:var(--ink)"></i>Checked in</span><span><i style="background:var(--sea-wash);border-color:rgba(31,106,138,.35)"></i>Booked</span><span><i style="background:var(--lime-2);border-color:var(--line-2)"></i>Checked out</span><span><i style="background:var(--red-wash);border-color:var(--red)"></i>Overlap ⚠</span><span>Bars start and end mid-day: arrival afternoon, departure morning.</span></div>
+      </div>
+      <div class="card ${resMode === 'calendar' ? 'reslist' : ''}" ${resMode === 'list' ? 'style="display:block"' : ''}>
+        ${list.map(r => `<button type="button" class="row" data-res="${r.id}"><img class="thumb" src="img/${r.suite}-1-sm.webp" alt=""><div class="grow"><div class="t">${E(r.guest)} <span class="small muted">· ${S(r.suite).name}</span></div><div class="s">${A.fmtDate(r.from)} → ${A.fmtDate(r.to)} · ${A.nights(r.from, r.to)} nights · ${r.party} guests · ${E(r.source)}</div></div>${resStatus(r)}</button>`).join('')}
+      </div>`;
+    $$('[data-mode]').forEach(b => b.addEventListener('click', () => { resMode = b.dataset.mode; render(); }));
+    bindResButtons();
+  }
+
+  function resDialog(id) {
+    const d = D(), r0 = id ? A.res(d, id) : { id: null, suite: 'tholos', guest: '', email: '', phone: '', country: '', party: 2, from: A.TODAY, to: A.addDays(A.TODAY, 3), source: 'Email / phone', pay: 'Sample: not yet paid', status: 'booked', arrival: null, notes: '' };
+    const linked = id ? d.requests.filter(q => q.res === id) : [];
+    const body = `
+      <form id="resForm" novalidate>
+        <div class="grid2">
+          <div class="field"><label for="fGuest">Guest name</label><input id="fGuest" value="${E(r0.guest)}" required></div>
+          <div class="field"><label for="fSuite">Suite</label><select id="fSuite">${A.SUITES.map(s => `<option value="${s.id}" ${s.id === r0.suite ? 'selected' : ''}>${s.name} · up to ${s.guests}</option>`).join('')}</select></div>
+          <div class="field"><label for="fFrom">Check-in (first night)</label><input id="fFrom" type="date" value="${r0.from}" required></div>
+          <div class="field"><label for="fTo">Check-out</label><input id="fTo" type="date" value="${r0.to}" required></div>
+          <div class="field"><label for="fParty">Guests</label><input id="fParty" type="number" min="1" max="6" value="${r0.party}" inputmode="numeric"></div>
+          <div class="field"><label for="fStatus">Status</label><select id="fStatus">${['booked', 'checked-in', 'checked-out', 'cancelled'].map(s => `<option ${s === r0.status ? 'selected' : ''} value="${s}">${s.replace('-', ' ')}</option>`).join('')}</select></div>
+          <div class="field"><label for="fArr">Actual arrival (date & time)</label><input id="fArr" type="datetime-local" value="${r0.arrival && r0.arrival.at ? r0.arrival.at : ''}"><span class="hint">Kept separate from the reservation dates.</span></div>
+          <div class="field"><label for="fSource">Source</label><input id="fSource" value="${E(r0.source)}"></div>
+        </div>
+        <div class="field"><label for="fNotes">Internal notes</label><textarea id="fNotes">${E(r0.notes)}</textarea></div>
+        <div id="resErr" role="alert"></div>
+        ${id ? `<dl class="kv" style="margin-top:6px"><dt>Reference</dt><dd>${r0.id}</dd><dt>Payment</dt><dd>${E(r0.pay)} <span class="xs faint">(sample — no payment system connected)</span></dd><dt>Contact</dt><dd>${E(r0.email)} · ${E(r0.phone)}</dd><dt>Requests</dt><dd>${linked.map(q => `<a href="#requests/${q.id}" data-close>${E(q.title)}</a> ${reqPill(q.status)}`).join('<br>') || 'None'}</dd></dl>` : ''}
+      </form>`;
+    openDlg(id ? `${E(r0.guest)} · ${S(r0.suite).name}` : 'New reservation', body,
+      `<button class="btn ghost" data-close>Cancel</button><button class="btn" id="review">Review changes</button>`, dlg => {
+        const val = () => ({ guest: $('#fGuest').value.trim(), suite: $('#fSuite').value, from: $('#fFrom').value, to: $('#fTo').value, party: +$('#fParty').value, status: $('#fStatus').value, arrivalAt: $('#fArr').value, source: $('#fSource').value.trim(), notes: $('#fNotes').value });
+        $('#review', dlg).addEventListener('click', function handler() {
+          const v = val(), errs = [], warns = [];
+          if (!v.guest) errs.push('Add the guest’s name.');
+          if (!v.from || !v.to) errs.push('Both dates are required.');
+          else if (v.to <= v.from) errs.push('Check-out must be after check-in.');
+          const cap = S(v.suite).guests;
+          if (!(v.party >= 1)) errs.push('Guests must be at least 1.');
+          else if (v.party > cap) errs.push(`${S(v.suite).name} sleeps up to ${cap}. Choose a larger suite or fewer guests.`);
+          const clashes = v.status === 'cancelled' || v.status === 'checked-out' || errs.length ? [] : A.overlaps(D(), { id: r0.id, suite: v.suite, from: v.from, to: v.to });
+          if (clashes.length) errs.push(`Overlaps ${clashes.map(c => `${c.guest} (${A.fmtDate(c.from)} → ${A.fmtDate(c.to)})`).join(', ')} in ${S(v.suite).name}.`);
+          if (v.arrivalAt && v.from && v.arrivalAt.slice(0, 10) > v.from) warns.push(`Arrival is after midnight (${A.fmtStamp(v.arrivalAt)}). The first night stays ${A.fmtDate(v.from)} — the reservation is not moved.`);
+          if (v.arrivalAt && v.from && v.arrivalAt.slice(0, 10) < v.from) warns.push('Arrival is before the first reservation night. Early access is not implied — confirm with the guest.');
+          $$('#resForm [aria-invalid]').forEach(x => x.removeAttribute('aria-invalid'));
+          if (errs.length) {
+            $('#resErr').innerHTML = `<div class="warn red"><b>Can’t save yet</b><ul style="margin:6px 0 0;padding-left:18px">${errs.map(e => `<li>${E(e)}</li>`).join('')}</ul></div>`;
+            if (errs.some(e => e.includes('after check-in') || e.includes('Overlaps'))) $('#fTo').setAttribute('aria-invalid', 'true');
+            if (errs.some(e => e.includes('sleeps'))) $('#fParty').setAttribute('aria-invalid', 'true');
+            return;
+          }
+          const changes = id ? Object.entries({ Guest: [r0.guest, v.guest], Suite: [S(r0.suite).name, S(v.suite).name], 'Check-in': [r0.from, v.from], 'Check-out': [r0.to, v.to], Guests: [r0.party, v.party], Status: [r0.status, v.status], Arrival: [r0.arrival ? r0.arrival.at : '', v.arrivalAt] }).filter(([, [a, b]]) => String(a) !== String(b)) : null;
+          $('#resErr').innerHTML = `${warns.map(w => `<div class="info">${E(w)}</div>`).join('')}<div class="warn"><b>Confirm ${id ? 'changes' : 'new reservation'}</b><div class="small" style="margin-top:4px">${id ? (changes.length ? changes.map(([k, [a, b]]) => `${k}: ${E(a || '—')} → <b>${E(b || '—')}</b>`).join('<br>') : 'Notes or source only.') : `${E(v.guest)} · ${S(v.suite).name} · ${A.fmtDate(v.from)} → ${A.fmtDate(v.to)} (${A.nights(v.from, v.to)} nights)`}</div></div>`;
+          const btn = $('#review', dlg); btn.textContent = 'Confirm & save'; btn.removeEventListener('click', handler);
+          const inputs = $$('#resForm input, #resForm select, #resForm textarea');
+          inputs.forEach(x => x.addEventListener('input', () => { $('#resErr').innerHTML = '<p class="xs muted">Changed — review again before saving.</p>'; const nb = btn.cloneNode(true); nb.textContent = 'Review changes'; btn.replaceWith(nb); nb.addEventListener('click', handler); }, { once: true }));
+          btn.addEventListener('click', () => {
+            A.update(dd => {
+              let r = id ? A.res(dd, id) : null;
+              if (!r) { r = { id: A.nextId(dd, 'AL'), email: '', phone: '', country: '', pay: 'Sample: not yet paid' }; dd.reservations.push(r); }
+              Object.assign(r, { guest: v.guest, suite: v.suite, from: v.from, to: v.to, party: v.party, status: v.status, source: v.source, notes: v.notes, arrival: v.arrivalAt ? { at: v.arrivalAt, note: (r.arrival && r.arrival.note) || '' } : null });
+            }, `${id ? 'Updated' : 'Created'} reservation · ${v.guest} · ${S(v.suite).name}`);
+            dlg.close(); toast(id ? 'Reservation saved (demo)' : 'Reservation created (demo)');
+          }, { once: true });
+        });
+      });
+  }
+
+  /* ================= SUITE CARE ================= */
+  function nextArrival(d, sid) { return d.reservations.filter(r => r.suite === sid && r.status === 'booked' && r.from >= A.TODAY).sort((a, b) => a.from.localeCompare(b.from))[0]; }
+  function viewCare() {
+    const d = D();
+    $('#viewSub').textContent = 'Housekeeping readiness — separate from whether a suite is booked';
+    $('#viewActions').innerHTML = '';
+    $('#view').innerHTML = `<div class="care-grid">${A.SUITES.map(s => {
+      const c = d.care[s.id], done = c.checklist.filter(Boolean).length, na = nextArrival(d, s.id);
+      const inRes = d.reservations.find(r => r.suite === s.id && r.status === 'checked-in');
+      return `<article class="card care">
+        <div class="ph"><img src="img/${s.id}-1-sm.webp" alt="">${carePill(c.state)}</div>
+        <div class="body">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><h3>${s.name}</h3><span class="xs muted">${s.cat}</span></div>
+          ${c.outOfService ? '<span class="pill red plain">⛔ Out of service</span>' : ''}
+          <div class="small">${inRes ? `In-house: <b>${E(inRes.guest)}</b> until ${A.fmtDate(inRes.to)}` : 'No guest in-house'}<br>${na ? `Next arrival: <b>${A.fmtDate(na.from)}</b> · ${E(na.guest)}` : 'No upcoming arrival in the demo'}</div>
+          ${c.state !== 'occupied' ? `<div><div class="xs muted" style="display:flex;justify-content:space-between"><span>Turnover checklist</span><span>${done}/${A.CHECKLIST.length}</span></div><div class="progress" role="img" aria-label="${done} of ${A.CHECKLIST.length} checklist items done"><i style="width:${done / A.CHECKLIST.length * 100}%"></i></div></div>` : ''}
+          ${c.note ? `<p class="small muted">${E(c.note)}</p>` : ''}
+          ${c.issue ? `<p class="issue">⚠ ${E(c.issue.text)} <span class="xs">· ${A.fmtStamp(c.issue.at)}</span></p>` : ''}
+          <div class="field" style="margin:0"><label for="as-${s.id}">Assigned to</label><select id="as-${s.id}" data-assign="${s.id}">${A.TEAM.map(t => `<option value="${t.id}" ${t.id === c.assignee ? 'selected' : ''}>${t.name} — ${t.role} (demo)</option>`).join('')}</select></div>
+        </div>
+        <div class="acts">
+          ${c.state === 'needs-cleaning' ? `<button class="btn sm" data-act="start" data-s="${s.id}">Start cleaning</button>` : ''}
+          ${['needs-cleaning', 'cleaning', 'inspection'].includes(c.state) ? `<button class="btn ${c.state === 'needs-cleaning' ? 'ghost' : ''} sm" data-act="check" data-s="${s.id}">Checklist</button>` : ''}
+          ${['cleaning', 'inspection', 'maintenance'].includes(c.state) ? `<button class="btn ghost sm" data-act="ready" data-s="${s.id}">Mark ready</button>` : ''}
+          ${c.issue ? `<button class="btn ghost sm" data-act="resolve" data-s="${s.id}">Resolve issue</button>` : `<button class="btn quiet sm" data-act="issue" data-s="${s.id}">Report issue</button>`}
+        </div>
+      </article>`; }).join('')}</div>`;
+    $$('[data-assign]').forEach(sel => sel.addEventListener('change', () => { A.update(dd => { dd.care[sel.dataset.assign].assignee = sel.value; }, `${S(sel.dataset.assign).name} assigned to ${A.team(sel.value).name}`); toast('Assigned'); }));
+    $$('[data-act]').forEach(b => b.addEventListener('click', () => careAction(b.dataset.act, b.dataset.s)));
+  }
+  function careAction(act, sid) {
+    const d = D(), c = d.care[sid], s = S(sid);
+    if (act === 'start') { A.update(dd => { dd.care[sid].state = 'cleaning'; }, `${s.name}: cleaning started`); toast(`${s.name}: cleaning started`); return; }
+    if (act === 'check') {
+      openDlg(`${s.name} · turnover checklist`, `<p class="small muted" style="margin-bottom:6px">Assigned to ${A.team(c.assignee).name}. Ticking items moves the suite to Inspection when the list is complete.</p>${A.CHECKLIST.map((t, i) => `<label class="check"><input type="checkbox" data-i="${i}" ${c.checklist[i] ? 'checked' : ''}><span>${t}</span></label>`).join('')}`,
+        `<button class="btn ghost" data-close>Close</button><button class="btn" id="saveCk">Save checklist</button>`, dlg => {
+          $('#saveCk', dlg).addEventListener('click', () => {
+            const vals = $$('input[data-i]', dlg).map(x => x.checked);
+            A.update(dd => { const cc = dd.care[sid]; cc.checklist = vals; if (vals.every(Boolean) && cc.state !== 'maintenance') cc.state = 'inspection'; else if (vals.some(Boolean) && cc.state === 'needs-cleaning') cc.state = 'cleaning'; }, `${s.name}: checklist ${vals.filter(Boolean).length}/${vals.length}`);
+            dlg.close(); toast('Checklist saved');
+          });
+        });
+      return;
+    }
+    if (act === 'ready') {
+      const blockers = [];
+      if (!c.checklist.every(Boolean)) blockers.push(`Checklist incomplete (${c.checklist.filter(Boolean).length}/${A.CHECKLIST.length}).`);
+      if (c.issue) blockers.push(`Open issue: ${c.issue.text}.`);
+      openDlg(`Mark ${s.name} ready?`, blockers.length ? `<div class="warn">${blockers.map(E).join('<br>')}</div><p class="small">You can still mark it ready if you have checked in person.</p>` : `<p>${s.name} will show as <b>Ready</b> on Today.</p>`,
+        `<button class="btn ghost" data-close>Cancel</button><button class="btn" id="ok">Mark ready</button>`, dlg => {
+          $('#ok', dlg).addEventListener('click', () => { A.update(dd => { const cc = dd.care[sid]; cc.state = 'ready'; cc.checklist = A.CHECKLIST.map(() => true); cc.outOfService = false; }, `${s.name} marked ready`); dlg.close(); toast(`${s.name} is ready`); });
+        });
+      return;
+    }
+    if (act === 'resolve') { A.update(dd => { const cc = dd.care[sid]; cc.issue = null; cc.outOfService = false; if (cc.state === 'maintenance') cc.state = 'inspection'; }, `${s.name}: issue resolved`); toast('Issue resolved — suite moved to Inspection'); return; }
+    if (act === 'issue') {
+      const affected = d.reservations.filter(r => r.suite === sid && ['booked', 'checked-in'].includes(r.status) && r.to > A.TODAY);
+      openDlg(`Report an issue · ${s.name}`, `
+        <div class="field"><label for="isT">What’s wrong?</label><textarea id="isT" required aria-describedby="isErr"></textarea><span class="err" id="isErr" hidden>Describe the issue.</span></div>
+        <label class="check"><input type="checkbox" id="isOOS"><span><b>Take ${s.name} out of service</b><br><span class="small muted">Use when guests should not stay until it is fixed.</span></span></label>
+        <div id="isAff" hidden class="warn red"><b>Reservations affected</b><br>${affected.map(r => `${E(r.guest)} · ${A.fmtDate(r.from)} → ${A.fmtDate(r.to)} (${r.status.replace('-', ' ')})`).join('<br>') || 'None in the demo data.'}<br><span class="xs">This does not move or cancel anything — contact the guests yourself.</span></div>`,
+        `<button class="btn ghost" data-close>Cancel</button><button class="btn danger" id="ok">Report issue</button>`, dlg => {
+          $('#isOOS', dlg).addEventListener('change', e => { $('#isAff', dlg).hidden = !e.target.checked; $('#ok', dlg).textContent = e.target.checked ? 'Confirm: out of service' : 'Report issue'; });
+          $('#ok', dlg).addEventListener('click', () => {
+            const t = $('#isT', dlg).value.trim(); if (!t) { $('#isErr', dlg).hidden = false; $('#isT', dlg).setAttribute('aria-invalid', 'true'); $('#isT', dlg).focus(); return; }
+            const oos = $('#isOOS', dlg).checked;
+            A.update(dd => { const cc = dd.care[sid]; cc.issue = { text: t, at: A.NOW }; cc.outOfService = oos; if (cc.state !== 'occupied' || oos) cc.state = 'maintenance'; }, `${s.name}: issue reported${oos ? ' — out of service' : ''}`);
+            dlg.close(); toast('Issue recorded');
+          });
+        });
+    }
+  }
+
+  /* ================= GUEST REQUESTS ================= */
+  function viewRequests() {
+    const d = D();
+    $('#viewSub').textContent = 'In-app demo inbox — not connected to email, WhatsApp or booking-platform messages';
+    $('#viewActions').innerHTML = '';
+    const F = { open: q => OPEN.includes(q.status), waiting: q => q.status === 'proposed', done: q => ['confirmed', 'completed', 'declined', 'cancelled'].includes(q.status), all: () => true };
+    const list = d.requests.filter(F[reqFilter]).sort((a, b) => b.at.localeCompare(a.at));
+    if (!selReq || !d.requests.find(q => q.id === selReq)) selReq = (list[0] || {}).id || null;
+    const q = d.requests.find(x => x.id === selReq);
+    $('#view').innerHTML = `
+      <div class="inbox">
+        <div>
+          <div class="filters" role="group" aria-label="Filter">${[['open', 'Open'], ['waiting', 'Awaiting guest'], ['done', 'Closed'], ['all', 'All']].map(([k, l]) => `<button type="button" class="chip" data-f="${k}" aria-pressed="${reqFilter === k}">${l} (${d.requests.filter(F[k]).length})</button>`).join('')}</div>
+          <div class="card">${list.map(x => `<button type="button" class="rq-item" data-q="${x.id}" aria-current="${x.id === selReq}"><span class="top"><span class="t">${E(x.title)}</span>${reqPill(x.status)}</span><span class="small muted">${E(guestOf(x))}${x.res ? ' · ' + S(A.res(d, x.res).suite).name : ''} · ${A.REQ_TYPE[x.type]}</span><span class="xs faint">${A.fmtStamp(x.at)} · ${A.team(x.owner).name}</span></button>`).join('') || '<p class="empty">No requests in this view.</p>'}</div>
+        </div>
+        <div id="rqDetail">${q ? detail(q) : '<div class="card"><p class="empty">Select a request.</p></div>'}</div>
+      </div>`;
+    $$('[data-f]').forEach(b => b.addEventListener('click', () => { reqFilter = b.dataset.f; selReq = null; render(); }));
+    $$('[data-q]').forEach(b => b.addEventListener('click', () => { selReq = b.dataset.q; history.replaceState(null, '', '#requests/' + selReq); render(); if (innerWidth < 1100) $('#rqDetail').scrollIntoView({ behavior: 'smooth' }); }));
+    if (q) bindDetail(q);
+  }
+  function detail(q) {
+    const d = D(), r = q.res && A.res(d, q.res), s = r && S(r.suite), x = q.exp && A.EXPERIENCES.find(e => e.id === q.exp);
+    const det = Object.assign({}, q.detail);
+    const kv = [];
+    if (r) kv.push(['Reservation', `${r.id} · ${s.name} · ${A.fmtDate(r.from)} → ${A.fmtDate(r.to)} · party of ${r.party}`]);
+    else kv.push(['Reservation', 'Not linked (website request)']);
+    if (det.arrivalAt) kv.push(['Actual arrival', `${A.fmtStamp(det.arrivalAt)}${r && det.arrivalAt.slice(0, 10) > r.from ? ' — after midnight; reservation night ' + A.fmtDate(r.from) : ''}`]);
+    if (det.date) kv.push(['Preferred date', A.fmtDate(det.date) + (det.time ? ' · ' + det.time : '')]);
+    if (det.party) kv.push(['Party', det.party]);
+    if (det.luggage) kv.push(['Luggage', E(det.luggage)]);
+    if (x) kv.push(['Published group', x.group]);
+    const p = q.proposal;
+    return `<section class="card">
+      <div class="card-h" style="align-items:flex-start"><div><p class="xs muted">${q.id} · ${A.REQ_TYPE[q.type]}${q.source ? ' · via ' + q.source : ''}</p><h2>${E(q.title)}</h2><p class="small muted">${E(guestOf(q))} · received ${A.fmtStamp(q.at)}</p></div>${reqPill(q.status)}</div>
+      <div class="card-b">
+        <dl class="kv">${kv.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+        <div class="grid2" style="margin-top:14px">
+          <div class="field"><label for="rqOwner">Owner</label><select id="rqOwner">${A.TEAM.map(t => `<option value="${t.id}" ${t.id === q.owner ? 'selected' : ''}>${t.name} — ${t.role}</option>`).join('')}</select></div>
+          <div class="field"><span class="lbl">Status</span><div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${q.status === 'received' ? '<button class="btn ghost sm" data-st="reviewing">Start reviewing</button>' : ''}
+            ${OPEN.includes(q.status) ? `<button class="btn sm" data-st="confirmed" ${p && !p.acceptedAt ? 'disabled title="Waiting for the guest to accept the proposal"' : ''}>Confirm</button>` : ''}
+            ${q.status === 'confirmed' ? '<button class="btn ghost sm" data-st="completed">Mark completed</button>' : ''}
+            ${OPEN.includes(q.status) ? '<button class="btn danger sm" data-st="declined">Decline</button>' : ''}
+            ${!['cancelled', 'completed', 'declined'].includes(q.status) ? '<button class="btn quiet sm" data-st="cancelled">Cancel</button>' : ''}
+          </div></div>
+        </div>
+        ${p && !p.acceptedAt && q.status === 'proposed' ? '<p class="xs muted" style="margin-top:-4px">Confirm unlocks once the guest accepts the proposal in their portal.</p>' : ''}
+
+        <h3 class="xs muted" style="margin-top:14px;letter-spacing:.06em;text-transform:uppercase;font-weight:500">Conversation · visible to the guest</h3>
+        <div class="thread">${q.thread.map(m => `<div class="msg ${m.by}"><div class="by">${m.by === 'guest' ? E(guestOf(q)) : m.by === 'staff' ? 'Althea' : ''} ${m.by !== 'sys' ? '· ' : ''}${A.fmtStamp(m.at)}</div>${E(m.text)}</div>`).join('')}</div>
+
+        ${OPEN.includes(q.status) || q.status === 'confirmed' ? `
+        <div class="proposal" style="margin-bottom:12px">
+          <h4>${p ? 'Proposed arrangement' : 'Propose an arrangement'}</h4>
+          ${p ? `<p style="margin-bottom:6px">${E(p.text)}</p><p class="small">${p.when ? `<b>${A.fmtStamp(p.when)}</b> · ` : ''}Cost to guest: ${E(p.cost || 'to confirm')}</p>
+            <p class="small" style="margin-top:6px">${p.acceptedAt ? `<span class="pill green">Accepted by guest · ${A.fmtStamp(p.acceptedAt)}</span>` : '<span class="pill sea">Waiting for the guest to accept</span>'}</p>
+            <details style="margin-top:10px"><summary class="small" style="cursor:pointer">Change proposal</summary><div style="margin-top:10px">${propForm(q, p)}</div></details>` : propForm(q, null)}
+        </div>` : ''}
+
+        <form id="replyForm" class="field"><label for="reply">Reply to guest</label><textarea id="reply" placeholder="Write a message the guest will see…"></textarea>
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><span class="xs muted">Demo: appears in the guest portal only. No email is sent.</span><button class="btn sm" type="submit">Send reply</button></div></form>
+
+        <div class="notes field" style="margin-top:6px"><label class="lbl" for="sn">Staff-only notes · never shown to the guest</label><textarea id="sn" style="background:#fffdf5">${E(q.staffNotes)}</textarea><div><button class="btn ghost sm" id="saveNotes" type="button">Save notes</button></div></div>
+      </div>
+    </section>`;
+  }
+  function propForm(q, p) {
+    const def = q.type === 'arrival' ? 'Giorgos will meet you at Agios Nikolaos port as you come off the ferry and drive you up to Chora (about 10 minutes). Your suite will be ready with a light left on.' : q.type === 'experience' ? 'We can arrange this with our guide/partner. Please confirm the details below work for you.' : '';
+    const when = p ? p.when : (q.detail.arrivalAt || (q.detail.date ? q.detail.date + 'T' + (q.detail.time || '09:00') : ''));
+    return `<form class="propForm"><div class="field"><label for="pT-${q.id}">What you’re offering</label><textarea id="pT-${q.id}" name="text" required>${E(p ? p.text : def)}</textarea></div>
+      <div class="grid2"><div class="field"><label for="pW-${q.id}">Date & time</label><input id="pW-${q.id}" name="when" type="datetime-local" value="${when || ''}"></div>
+      <div class="field"><label for="pC-${q.id}">Cost to guest</label><input id="pC-${q.id}" name="cost" value="${E(p ? p.cost : '')}" placeholder="e.g. to confirm with Althea"><span class="hint">No prices are assumed in this demo.</span></div></div>
+      <div id="pErr-${q.id}"></div>
+      <button class="btn sm" type="submit">${p ? 'Update proposal' : 'Send proposal to guest'}</button></form>`;
+  }
+  function bindDetail(q) {
+    const sid = q.id;
+    $('#rqOwner').addEventListener('change', e => A.update(d => { d.requests.find(x => x.id === sid).owner = e.target.value; }, `${sid} assigned to ${A.team(e.target.value).name}`));
+    $$('[data-st]').forEach(b => b.addEventListener('click', () => {
+      const st = b.dataset.st;
+      const go = (reason) => A.update(d => {
+        const x = d.requests.find(y => y.id === sid); x.status = st;
+        x.thread.push({ by: 'sys', at: A.NOW, text: `Status: ${A.REQ_LABEL[st]}${reason ? ' — ' + reason : ''}` });
+        if (reason) x.thread.push({ by: 'staff', at: A.NOW, text: reason });
+      }, `${sid} → ${A.REQ_LABEL[st]}`);
+      if (st === 'declined' || st === 'cancelled') {
+        openDlg(st === 'declined' ? 'Decline request?' : 'Cancel request?', `<div class="field"><label for="why">Message to the guest ${st === 'declined' ? '(required)' : '(optional)'}</label><textarea id="why"></textarea></div>`,
+          `<button class="btn ghost" data-close>Back</button><button class="btn danger" id="ok">${st === 'declined' ? 'Decline' : 'Cancel request'}</button>`, dlg => {
+            $('#ok', dlg).addEventListener('click', () => { const w = $('#why', dlg).value.trim(); if (st === 'declined' && !w) { $('#why', dlg).setAttribute('aria-invalid', 'true'); $('#why', dlg).focus(); return; } go(w); dlg.close(); toast(A.REQ_LABEL[st]); });
+          });
+      } else { go(''); toast(A.REQ_LABEL[st]); }
+    }));
+    $$('.propForm').forEach(f => f.addEventListener('submit', e => {
+      e.preventDefault();
+      const text = f.text.value.trim(), when = f.when.value, cost = f.cost.value.trim();
+      if (!text) { $(`#pErr-${sid}`).innerHTML = '<p class="err small">Describe the arrangement.</p>'; f.text.focus(); return; }
+      A.update(d => {
+        const x = d.requests.find(y => y.id === sid), prev = x.proposal;
+        const changed = prev && (prev.when !== when || prev.text !== text || prev.cost !== cost);
+        x.proposal = { text, when, cost, sentAt: A.NOW, acceptedAt: changed ? null : (prev ? prev.acceptedAt : null) };
+        x.status = 'proposed';
+        x.thread.push({ by: 'sys', at: A.NOW, text: prev ? (changed && prev.acceptedAt ? 'Proposal changed — the guest’s earlier acceptance no longer applies' : 'Proposal updated') : 'Proposal sent to guest' });
+      }, `${sid}: proposal ${q.proposal ? 'updated' : 'sent'}`);
+      toast(q.proposal ? 'Proposal updated — guest must accept again' : 'Proposal sent to the guest portal (demo)');
+    }));
+    $('#replyForm').addEventListener('submit', e => {
+      e.preventDefault(); const t = $('#reply').value.trim(); if (!t) { $('#reply').focus(); return; }
+      A.update(d => { d.requests.find(y => y.id === sid).thread.push({ by: 'staff', at: A.NOW, text: t }); }, `${sid}: reply sent`);
+      toast('Reply added (demo — no email sent)');
+    });
+    $('#saveNotes').addEventListener('click', () => { A.update(d => { d.requests.find(y => y.id === sid).staffNotes = $('#sn').value; }); toast('Staff notes saved'); });
+  }
+
+  /* ================= WEBSITE ================= */
+  const HEROES = [['hero-pool', 'The shared pool at Althea looking out over the Aegean'], ['loungers', 'Loungers and fringed parasols beside the pool'], ['terrace-view', 'Suite terraces with a pergola and a view of the sea'], ['terraces', 'Terraces stepping down toward the Aegean']];
+  let previewOn = false;
+  function viewWebsite() {
+    const d = D(), c = d.content.draft, pub = d.content.published;
+    const dirty = JSON.stringify(c) !== JSON.stringify(pub);
+    $('#viewSub').textContent = dirty ? 'Draft has unpublished changes' : 'Draft matches the published demo site';
+    $('#viewActions').innerHTML = `<a class="btn ghost" href="index.html" target="_blank" rel="noopener">Open website demo</a>`;
+    const ord = c.order.helios;
+    $('#view').innerHTML = `
+      <div class="info">Edits publish to <b>this preview</b> only — never to altheaanafisuites.com. Flow: <b>Draft → Preview → Publish to demo</b>.</div>
+      <div class="editor">
+        <form id="webForm" class="stack" novalidate>
+          <section class="card"><div class="card-h"><h2>Homepage opening</h2></div><div class="card-b">
+            <div class="field"><label for="wTitle">Headline (English)</label><input id="wTitle" value="${E(c.heroTitle)}" maxlength="80"></div>
+            <div class="field"><label for="wSub">Supporting line (English)</label><input id="wSub" value="${E(c.heroSub)}" maxlength="140"></div>
+            <div class="field"><span class="lbl">Greek</span><p class="small muted" lang="el">${E(c.heroTitleEl)} — ${E(c.heroSubEl)}</p>${c.elReview.includes('hero') ? '<span class="pill amber">Greek needs review — English changed</span>' : '<span class="pill olive plain">Greek in step</span>'}</div>
+            <fieldset style="border:0;padding:0;margin:0"><legend class="lbl" style="font-size:12.5px;font-weight:500;color:var(--ink);margin-bottom:6px">Hero photograph</legend>
+              <div class="hero-pick">${HEROES.map(([k, alt]) => `<label><input type="radio" name="hero" value="${k}" ${c.heroImage === k ? 'checked' : ''}><img src="img/${k}-sm.webp" alt="${alt}"></label>`).join('')}</div></fieldset>
+            <div class="field" style="margin-top:10px"><label for="wAlt">Alt text for the hero photo (required)</label><input id="wAlt" value="${E(c.heroAlt || (HEROES.find(h => h[0] === c.heroImage) || [])[1] || '')}" aria-describedby="wAltErr"><span class="err" id="wAltErr" hidden>Describe the photo for people using screen readers.</span></div>
+          </div></section>
+          <section class="card"><div class="card-h"><h2>Introduction</h2></div><div class="card-b">
+            <div class="field"><label for="wIntro">About Althea (English)</label><textarea id="wIntro" rows="5">${E(c.intro)}</textarea></div>
+            ${c.elReview.includes('intro') ? '<span class="pill amber">Greek needs review — English changed</span>' : ''}
+          </div></section>
+          <section class="card"><div class="card-h"><h2>Helios photo order</h2><span class="xs muted">First photo shows in the explorer</span></div><div class="card-b">
+            <ol class="order">${ord.map((n, i) => `<li><img src="img/helios-${n}-sm.webp" alt=""><span class="grow">Photo ${n}${i === 0 ? ' · <b>cover</b>' : ''}</span><button type="button" class="btn quiet sm" data-mv="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move photo ${n} up">${icon('up', 16)}</button><button type="button" class="btn quiet sm" data-mv="${i}" data-dir="1" ${i === ord.length - 1 ? 'disabled' : ''} aria-label="Move photo ${n} down">${icon('down', 16)}</button></li>`).join('')}</ol>
+          </div></section>
+          <section class="card"><div class="card-h"><h2>FAQ · pets</h2></div><div class="card-b">
+            <div class="field"><label for="wPets">Answer (English)</label><textarea id="wPets">${E(c.faqPets)}</textarea><span class="hint">Current answer is from Althea’s FAQ. The cleaning-fee amount is not published.</span></div>
+          </div></section>
+          <section class="card"><div class="card-h"><h2>Experience requests</h2></div><div class="card-b">
+            ${A.EXPERIENCES.map(x => `<label class="check"><input type="checkbox" data-xo="${x.id}" ${c.expOpen[x.id] !== false ? 'checked' : ''}><span>${x.name}<br><span class="xs muted">${x.group}</span></span></label>`).join('')}
+          </div></section>
+        </form>
+        <div class="stack" style="position:sticky;top:calc(var(--bar) + 80px)">
+          <section class="card"><div class="card-h"><h2>Preview</h2>${dirty ? '<span class="pill amber">Unpublished draft</span>' : '<span class="pill green">Published</span>'}</div>
+            <div class="card-b">
+              <div class="preview-frame"><div class="pv"><div><p class="xs muted" style="letter-spacing:.14em">ALTHEA ANAFI SUITES · CHORA</p><h3 id="pvTitle">${E(c.heroTitle)}</h3><p class="small" id="pvSub" style="margin-top:8px">${E(c.heroSub)}</p></div><div class="arch"><img id="pvImg" src="img/${c.heroImage}-sm.webp" alt=""></div></div></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+                <button class="btn ghost" type="button" id="saveDraft">Save draft</button>
+                <button class="btn" type="button" id="publish" ${dirty ? '' : 'disabled'}>Publish to demo</button>
+                ${dirty ? '<button class="btn quiet" type="button" id="discard">Discard draft</button>' : ''}
+              </div>
+              <p class="xs muted" style="margin-top:10px">${d.content.publishedAt ? 'Last published ' + A.fmtStamp(d.content.publishedAt) : 'Showing the original concept copy.'}</p>
+            </div></section>
+        </div>
+      </div>`;
+    const readForm = () => {
+      const nd = JSON.parse(JSON.stringify(D().content.draft));
+      const t = $('#wTitle').value.trim(), s = $('#wSub').value.trim(), intro = $('#wIntro').value.trim();
+      const pub = D().content.published;
+      nd.elReview = [];
+      if (t !== pub.heroTitle || s !== pub.heroSub) nd.elReview.push('hero');
+      if (intro !== pub.intro) nd.elReview.push('intro');
+      Object.assign(nd, { heroTitle: t, heroSub: s, intro, heroImage: ($('input[name=hero]:checked') || {}).value || nd.heroImage, heroAlt: $('#wAlt').value.trim(), faqPets: $('#wPets').value.trim() });
+      $$('[data-xo]').forEach(x => nd.expOpen[x.dataset.xo] = x.checked);
+      return nd;
+    };
+    $('#wTitle').addEventListener('input', e => $('#pvTitle').textContent = e.target.value);
+    $('#wSub').addEventListener('input', e => $('#pvSub').textContent = e.target.value);
+    $$('input[name=hero]').forEach(r => r.addEventListener('change', () => { $('#pvImg').src = `img/${r.value}-sm.webp`; $('#wAlt').value = HEROES.find(h => h[0] === r.value)[1]; }));
+    $$('[data-mv]').forEach(b => b.addEventListener('click', () => {
+      const i = +b.dataset.mv, j = i + +b.dataset.dir, nd = readForm(); const o = nd.order.helios;[o[i], o[j]] = [o[j], o[i]];
+      A.update(d => { d.content.draft = nd; });
+      setTimeout(() => { const f = $(`[data-mv="${j}"][data-dir="${b.dataset.dir}"]`) || $(`[data-mv="${j}"]`); f && f.focus(); }, 0);
+    }));
+    const valid = () => { const ok = !!$('#wAlt').value.trim(); $('#wAltErr').hidden = ok; $('#wAlt').setAttribute('aria-invalid', String(!ok)); if (!ok) $('#wAlt').focus(); const t = !!$('#wTitle').value.trim(); if (!t) { $('#wTitle').setAttribute('aria-invalid', 'true'); $('#wTitle').focus(); } return ok && t; };
+    $('#saveDraft').addEventListener('click', () => { if (!valid()) return; A.update(d => { d.content.draft = readForm(); }, 'Website draft saved'); toast('Draft saved'); });
+    $('#discard') && $('#discard').addEventListener('click', () => { A.update(d => { d.content.draft = JSON.parse(JSON.stringify(d.content.published)); }, 'Website draft discarded'); toast('Draft discarded'); });
+    $('#webForm').addEventListener('input', () => { const p = $('#publish'); p.disabled = false; $('#viewSub').textContent = 'Draft has unsaved changes'; });
+    $('#publish').addEventListener('click', () => {
+      if (!valid()) return;
+      const nd = readForm();
+      openDlg('Publish to the demo website?', `<p>The website preview (<code>index.html</code>) updates immediately in this browser. The live altheaanafisuites.com is not touched.</p>${nd.elReview.length ? '<div class="warn" style="margin-top:12px">The Greek version still shows the previous wording — flagged for review.</div>' : ''}`,
+        `<button class="btn ghost" data-close>Cancel</button><button class="btn" id="ok">Publish to demo</button>`, dlg => {
+          $('#ok', dlg).addEventListener('click', () => { A.update(d => { d.content.draft = nd; d.content.published = JSON.parse(JSON.stringify(nd)); d.content.publishedAt = A.NOW; }, 'Homepage published to demo'); dlg.close(); toast('Published — open the website demo to see it'); });
+        });
+    });
+  }
+
+  /* ---- router ---- */
+  function render() {
+    const h = (location.hash || '#today').slice(1).split('/');
+    view = VIEWS.some(v => v[0] === h[0]) ? h[0] : 'today';
+    if (view === 'requests' && h[1]) { selReq = h[1]; const q = D().requests.find(x => x.id === h[1]); if (q && !(reqFilter === 'all' || (reqFilter === 'open' && OPEN.includes(q.status)))) reqFilter = 'all'; }
+    $('#viewTitle').textContent = VIEWS.find(v => v[0] === view)[1];
+    document.title = VIEWS.find(v => v[0] === view)[1] + ' — Althea Host Desk (concept)';
+    nav();
+    ({ today: viewToday, reservations: viewReservations, care: viewCare, requests: viewRequests, website: viewWebsite })[view]();
+  }
+  let lastHash = location.hash;
+  addEventListener('hashchange', () => { const main = lastHash.split('/')[0] !== location.hash.split('/')[0]; lastHash = location.hash; render(); if (main) { scrollTo(0, 0); $('#view').focus({ preventScroll: true }); } });
+  A.onChange(() => { const ae = document.activeElement, id = ae && ae.id; const y = scrollY; if (!$('#dlg').open) { render(); scrollTo(0, y); if (id && $('#' + id)) $('#' + id).focus({ preventScroll: true }); } });
+  $('#dlg').addEventListener('close', () => { const y = scrollY; render(); scrollTo(0, y); });
+  $('#reset').addEventListener('click', () => { if (confirm('Reset all demo data in this browser?')) { A.reset(); toast('Demo data reset'); } });
+  if (!A.storageOk()) setTimeout(() => toast('Browser storage is unavailable — changes will be lost on reload.'), 400);
+  render();
+})();
+</script>
+</body>
+</html>

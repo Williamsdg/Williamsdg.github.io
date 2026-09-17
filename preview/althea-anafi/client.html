@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Your Althea Stay (concept)</title>
+<meta name="theme-color" content="#F7F4ED">
+<link rel="icon" href="img/cropped-favicon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Serif+Display:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<!--
+  YOUR ALTHEA STAY — guest portal concept · Williams Digital · 2026-09-16
+  The guest (Claire Whitaker), reservation AL-2039 and every message are FICTIONAL.
+  Suite facts, experiences and contact details are Althea's published ones.
+  No login, no payments, nothing sent. State: this browser only.
+  A real version needs authenticated access and server-side reservation ownership checks.
+-->
+</head>
+<body>
+<div class="demo-bar" role="note">
+  <span><b>Guest demo · fictional stay.</b> Signed in as a sample guest; demo date 23 Sep 2026.</span>
+  <span class="views"><a href="index.html">Website</a><a href="dashboard.html">Staff demo</a><a href="client.html" aria-current="page">Guest demo</a><button type="button" id="reset">Reset demo</button></span>
+</div>
+<div class="g-page">
+  <div class="g-app">
+    <header class="g-hdr">
+      <a href="#stay" aria-label="Your Althea stay — home"><img src="img/Althea-header-logo-blue.png" alt="Althea Anafi Suites" width="394" height="131"></a>
+      <span class="small muted" id="whoami"></span>
+    </header>
+    <main id="view" tabindex="-1"></main>
+  </div>
+</div>
+<nav class="g-tabs" id="tabs" aria-label="Your stay"></nav>
+<dialog id="dlg" aria-labelledby="dlgTitle"><div id="dlgInner"></div></dialog>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="assets/store.js"></script>
+<script>
+(function () {
+  const A = window.Althea, E = A.esc;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const RES = 'AL-2039';
+  const I = {
+    stay: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+    arrival: '<path d="M3 17h18"/><path d="M5 17l1.5-5h11L19 17"/><path d="M8 12V8h8v4"/><path d="M4 21c2-1 4-1 6 0s4 1 6 0 4-1 4-1"/>',
+    experiences: '<path d="m3 20 6-11 4 6 3-4 5 9z"/><circle cx="17" cy="5" r="2"/>',
+    help: '<path d="M4 5h16v11H8l-4 4z"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.4"/><path d="M12 14.5h.01"/>',
+    check: '<path d="m5 12 4.5 4.5L19 7"/>', x: '<path d="M6 6l12 12M18 6 6 18"/>'
+  };
+  const icon = (k, w) => `<svg viewBox="0 0 24 24" width="${w || 20}" height="${w || 20}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[k]}</svg>`;
+  const TABS = [['stay', 'My Stay'], ['arrival', 'Arrival'], ['experiences', 'Experiences'], ['help', 'Help']];
+  const D = () => A.get();
+  const R = () => A.res(D(), RES);
+  const mine = () => D().requests.filter(q => q.res === RES);
+  const arrivalReq = () => mine().find(q => q.type === 'arrival');
+  const G_LABEL = { received: 'Sent — waiting for Althea', reviewing: 'Althea is arranging this', proposed: 'Althea has proposed a plan', confirmed: 'Confirmed', completed: 'Completed', declined: 'Not available', cancelled: 'Cancelled' };
+  const gPill = (st) => `<span class="pill ${{ received: 'clay', reviewing: 'amber', proposed: 'sea', confirmed: 'green', completed: 'olive', declined: 'red', cancelled: 'line' }[st]}">${G_LABEL[st]}</span>`;
+  let view = 'stay';
+
+  function toast(m) { const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(t._t); t._t = setTimeout(() => t.hidden = true, 3200); }
+  let dlgReturn = null;
+  function openDlg(title, body, foot, onMount) {
+    dlgReturn = document.activeElement;
+    $('#dlgInner').innerHTML = `<div class="dlg-h"><h2 id="dlgTitle">${title}</h2><button type="button" class="x" data-close aria-label="Close">${icon('x', 16)}</button></div><div class="dlg-b">${body}</div>${foot ? `<div class="dlg-f">${foot}</div>` : ''}`;
+    const dlg = $('#dlg'); if (!dlg.open) dlg.showModal();
+    $$('[data-close]', dlg).forEach(b => b.addEventListener('click', () => dlg.close()));
+    onMount && onMount(dlg);
+  }
+  $('#dlg').addEventListener('close', () => { dlgReturn && document.contains(dlgReturn) && dlgReturn.focus(); });
+
+  /* ---- MY STAY ---- */
+  function viewStay() {
+    const r = R(), s = A.suite(r.suite), aq = arrivalReq();
+    const late = r.arrival && r.arrival.at && r.arrival.at.slice(0, 10) > r.from;
+    const confirmed = mine().filter(q => q.status === 'confirmed' || q.status === 'completed');
+    const itin = [];
+    if (r.arrival && r.arrival.at) itin.push({ at: r.arrival.at, t: 'You arrive on Anafi', s: r.arrival.note || '' });
+    confirmed.forEach(q => {
+      const when = (q.proposal && q.proposal.when) || q.detail.arrivalAt || (q.detail.date ? q.detail.date + 'T' + (q.detail.time || '') : null);
+      if (when) itin.push({ at: when, t: q.title, s: q.proposal ? q.proposal.text : '' });
+    });
+    itin.push({ at: r.to + 'T', t: 'Check-out', s: 'Departure day' });
+    itin.sort((a, b) => a.at.localeCompare(b.at));
+    const step = (done, wait, t, s, href) => `<li class="${done ? 'done' : wait ? 'wait' : ''}"><span class="dot">${done ? icon('check', 12) : ''}</span><span style="flex:1"><a href="${href}" style="text-decoration:none;font-weight:500;color:var(--ink)">${t}</a><br><span class="small muted">${s}</span></span></li>`;
+    const exps = mine().filter(q => q.type === 'experience');
+    $('#view').innerHTML = `
+      <div class="g-hero"><img src="img/${s.id}-2.webp" alt="${s.name} suite at Althea"><div class="cap"><p class="xs" style="letter-spacing:.14em;text-transform:uppercase;opacity:.85">${s.cat} · ${s.size} m²</p><h1>Welcome, ${E(r.guest.split(' ')[0])}.<br>${s.name} is waiting.</h1></div></div>
+      <section class="g-sec">
+        <div class="g-card">
+          <div class="dates"><div><span class="xs muted">First night</span><b>${A.fmtDate(r.from)}</b></div><span class="arrow" aria-hidden="true">→</span><div><span class="xs muted">Check-out</span><b>${A.fmtDate(r.to)}</b></div></div>
+          <p class="small muted" style="margin-top:10px">${A.nights(r.from, r.to)} nights · ${r.party} guests · ${s.name} (${s.cat}) · reference <b>${r.id}</b></p>
+          ${late ? `<div class="info" style="margin:12px 0 0">Your ferry lands at <b>${A.fmtTime(r.arrival.at)} on ${A.fmtDate(r.arrival.at)}</b>. Your reservation starts the night of ${A.fmtDate(r.from)}, so ${s.name} is yours when you arrive.</div>` : ''}
+        </div>
+        <h2>Before you arrive</h2>
+        <div class="g-card"><ol class="steps">
+          ${step(!!(r.arrival && r.arrival.at), false, 'Share your arrival time', r.arrival && r.arrival.at ? `${A.fmtStamp(r.arrival.at)}` : 'Tell Althea when your ferry lands', '#arrival')}
+          ${step(aq && ['confirmed', 'completed'].includes(aq.status), aq && ['received', 'reviewing', 'proposed'].includes(aq.status), 'Port transfer', aq ? G_LABEL[aq.status] : 'Optional — ask for help getting up to Chora', '#arrival')}
+          ${step(exps.some(q => q.status === 'confirmed'), exps.some(q => ['received', 'reviewing', 'proposed'].includes(q.status)), 'Plan an experience', exps.length ? exps.map(q => `${E(q.title)}: ${G_LABEL[q.status]}`).join(' · ') : 'Hikes, boat rides, yoga — on request', '#experiences')}
+          ${step(false, false, 'Good to know', 'Pool, breakfast, getting around', '#help')}
+        </ol></div>
+        <h2>Your itinerary</h2>
+        <div class="g-card"><ul class="itin">${itin.map(i => `<li><time><b>${i.at.length > 11 ? A.fmtTime(i.at) : '—'}</b>${A.fmtDate(i.at)}</time><div><div style="font-weight:500;color:var(--ink)">${E(i.t)}</div>${i.s ? `<div class="small muted">${E(i.s)}</div>` : ''}</div></li>`).join('')}</ul>
+          <p class="xs muted" style="margin-top:8px">Only arrangements Althea has confirmed appear here.</p></div>
+        <h2>Your suite</h2>
+        <div class="g-card">
+          <p class="serif" style="font-size:17px;font-style:italic;color:var(--body)">“${E(s.line)}”</p>
+          <dl class="kv" style="margin-top:12px"><dt>Size</dt><dd>${s.size} m²</dd><dt>Beds</dt><dd>${s.beds.join(', ')}</dd><dt>In the suite</dt><dd>Sea view, balcony, Wi-Fi, coffee machine, mini bar, safe box, KORRES amenities</dd><dt>Pool</dt><dd>Shared with other guests</dd></dl>
+        </div>
+        <div class="g-card"><h3>Payments</h3><p class="small">${E(r.pay)}.</p><p class="xs muted" style="margin-top:6px">Sample status only. This preview has no payment system and never charges a card.</p></div>
+      </section>`;
+  }
+
+  /* ---- ARRIVAL ---- */
+  function viewArrival() {
+    const r = R(), q = arrivalReq(), p = q && q.proposal;
+    const a = r.arrival || {};
+    $('#view').innerHTML = `
+      <section class="g-sec">
+        <h2>Your arrival</h2>
+        <div class="g-card">
+          <p class="small" style="margin-bottom:12px">Ferries to Anafi often arrive at night. Agios Nikolaos port is a 10-minute drive from Chora.</p>
+          <form id="arrForm" novalidate>
+            <div class="field"><label for="aAt">When does your ferry land?</label><input id="aAt" type="datetime-local" value="${a.at || ''}" required aria-describedby="aAtHint aAtErr"><span class="hint" id="aAtHint">Use local Greek time. Your first reservation night is ${A.fmtDate(r.from)}.</span><span class="err" id="aAtErr" hidden></span></div>
+            <div id="aWarn"></div>
+            <div class="field"><label for="aFrom">Travelling from</label><select id="aFrom">${['Piraeus', 'Santorini', 'Crete', 'Another island'].map(x => `<option ${a.from === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+            <label class="check"><input type="checkbox" id="aHelp" ${q && q.status !== 'cancelled' ? 'checked' : ''}><span><b>Please help us get from the port to Althea</b><br><span class="small muted">Althea will confirm what’s possible. A transfer isn’t assumed to be included or free.</span></span></label>
+            <div class="field"><label for="aNote">Anything else? (luggage, pets, a late check-in need)</label><textarea id="aNote">${E(a.note || '')}</textarea></div>
+            <button class="btn lg block" type="submit">Save arrival details</button>
+          </form>
+        </div>
+        ${q ? `
+        <h2>Transfer request</h2>
+        <div class="g-card">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px"><h3 style="margin:0">${E(q.title)}</h3>${gPill(q.status)}</div>
+          ${p ? `<div class="proposal" style="margin:10px 0">
+              <h4>${p.acceptedAt ? 'Confirmed plan' : 'Althea’s proposed plan'}</h4>
+              <p>${E(p.text)}</p>
+              <p class="small" style="margin-top:6px">${p.when ? `<b>${A.fmtStamp(p.when)}</b><br>` : ''}Cost: ${E(p.cost || 'Althea will confirm')}</p>
+              ${p.acceptedAt ? `<p class="small" style="margin-top:8px"><span class="pill green">You accepted · ${A.fmtStamp(p.acceptedAt)}</span></p>` : `<button class="btn block" style="margin-top:12px" id="accept">Accept this plan</button><p class="xs muted" style="margin-top:6px">If the plan doesn’t work, reply below instead.</p>`}
+            </div>` : `<p class="small muted">${q.status === 'received' ? 'Althea has your request and will reply with a plan.' : 'Althea is arranging this — you will see the plan here.'}</p>`}
+          <div class="thread">${q.thread.map(m => `<div class="msg ${m.by === 'guest' ? 'staff' : m.by === 'staff' ? 'guest' : 'sys'}"><div class="by">${m.by === 'guest' ? 'You' : m.by === 'staff' ? 'Althea' : ''}${m.by !== 'sys' ? ' · ' : ''}${A.fmtStamp(m.at)}</div>${E(m.text)}</div>`).join('')}</div>
+          <form id="msgForm" class="field" style="margin:0"><label for="msg">Message Althea about your arrival</label><textarea id="msg"></textarea><button class="btn ghost" type="submit">Send message</button><span class="hint">Demo — shows in the staff demo only; nothing is emailed.</span></form>
+        </div>` : ''}
+      </section>`;
+    const warn = () => {
+      const v = $('#aAt').value; let h = '';
+      if (v) {
+        const d = v.slice(0, 10);
+        if (d === A.addDays(r.from, 1) && v.slice(11) < '12:00') h = `<div class="info">After-midnight arrival — that’s the right booking: your suite is reserved from the night of ${A.fmtDate(r.from)}.</div>`;
+        else if (d > A.addDays(r.from, 1) || (d === A.addDays(r.from, 1) && v.slice(11) >= '12:00')) h = `<div class="warn">That’s later than your first reservation night (${A.fmtDate(r.from)}). Your booking won’t change automatically — Althea will check with you.</div>`;
+        else if (d < r.from) h = `<div class="warn">That’s before your reservation starts. Early access isn’t guaranteed — Althea will let you know.</div>`;
+        if (d >= r.to) h = `<div class="warn red">That’s on or after your check-out date (${A.fmtDate(r.to)}). Please check the date.</div>`;
+      }
+      $('#aWarn').innerHTML = h;
+    };
+    $('#aAt').addEventListener('input', warn); warn();
+    $('#arrForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const at = $('#aAt').value, err = $('#aAtErr');
+      if (!at) { err.textContent = 'Add the date and time your ferry lands.'; err.hidden = false; $('#aAt').setAttribute('aria-invalid', 'true'); $('#aAt').focus(); return; }
+      if (at.slice(0, 10) >= r.to) { err.textContent = 'This is on or after check-out. Check the date.'; err.hidden = false; $('#aAt').setAttribute('aria-invalid', 'true'); $('#aAt').focus(); return; }
+      err.hidden = true; $('#aAt').removeAttribute('aria-invalid');
+      const from = $('#aFrom').value, note = $('#aNote').value.trim(), help = $('#aHelp').checked;
+      let msg = 'Arrival details saved';
+      A.update(d => {
+        const rr = A.res(d, RES), prevAt = rr.arrival && rr.arrival.at;
+        rr.arrival = { at, from, note };
+        let x = d.requests.find(y => y.res === RES && y.type === 'arrival');
+        if (help && !x) {
+          x = { id: A.nextId(d, 'RQ'), res: RES, type: 'arrival', title: 'Transfer from Agios Nikolaos port', status: 'received', owner: 't3', at: A.NOW, detail: { arrivalAt: at, party: rr.party }, thread: [{ by: 'guest', at: A.NOW, text: `Our ferry from ${from} lands ${A.fmtStamp(at)}. Could you help us get up to Chora?${note ? ' ' + note : ''}` }], proposal: null, staffNotes: '' };
+          d.requests.unshift(x); msg = 'Sent to Althea — waiting for a reply';
+        } else if (x) {
+          if (!help && x.status !== 'cancelled') { x.status = 'cancelled'; x.thread.push({ by: 'guest', at: A.NOW, text: 'We no longer need help with the transfer.' }); msg = 'Transfer request cancelled'; }
+          else if (help && prevAt !== at) {
+            x.detail.arrivalAt = at;
+            x.thread.push({ by: 'guest', at: A.NOW, text: `Our arrival time has changed: now ${A.fmtStamp(at)} (from ${from}).` });
+            if (x.status === 'cancelled') x.status = 'received';
+            if (x.proposal) { const had = x.proposal.acceptedAt; x.proposal.acceptedAt = null; x.status = 'reviewing'; x.thread.push({ by: 'sys', at: A.NOW, text: had ? 'Arrival time changed — the accepted plan needs Althea to confirm again' : 'Arrival time changed — waiting for an updated plan' }); msg = 'Althea will update the plan for your new time'; }
+            else msg = 'New time sent to Althea';
+          }
+        }
+      }, `Guest ${R().guest.split(' ')[0]} updated arrival: ${A.fmtStamp(at)}`);
+      toast(msg);
+    });
+    if (q) {
+      $('#accept') && $('#accept').addEventListener('click', () => {
+        A.update(d => { const x = d.requests.find(y => y.id === q.id); x.proposal.acceptedAt = A.NOW; x.status = 'confirmed'; x.thread.push({ by: 'sys', at: A.NOW, text: 'Guest accepted the plan' }); }, `Guest accepted transfer plan (${q.id})`);
+        toast('Accepted — it’s now in your itinerary');
+      });
+      $('#msgForm').addEventListener('submit', e => { e.preventDefault(); const t = $('#msg').value.trim(); if (!t) { $('#msg').focus(); return; } A.update(d => { d.requests.find(y => y.id === q.id).thread.push({ by: 'guest', at: A.NOW, text: t }); }, `Guest message on ${q.id}`); toast('Message sent (demo)'); });
+    }
+  }
+
+  /* ---- EXPERIENCES ---- */
+  const COPY = {
+    hike: 'With a local guide: a sunset hike with a night under the stars, or a sunrise climb to the summit.',
+    boat: 'With Elmar Anafi: a private RIB along the coast, or the Koursaros kaiki for a full island tour with lunch.',
+    bbq: 'Good food, local wine and soft music by Althea’s barbecue area.',
+    yoga: 'On one of Althea’s terraces — sunrise or sunset, small group or private.',
+    massage: 'Traditional Thai massage in a quiet, open setting.'
+  };
+  function viewExperiences() {
+    const r = R(), open = D().content.published.expOpen, reqs = mine().filter(q => q.type === 'experience');
+    $('#view').innerHTML = `<section class="g-sec">
+      <h2>Experiences</h2>
+      <p class="small muted" style="margin:-4px 4px 12px">Everything is arranged on request. Nothing is booked until Althea confirms it.</p>
+      ${A.EXPERIENCES.map(x => {
+        const mineX = reqs.filter(q => q.exp === x.id);
+        return `<div class="g-card"><div class="xp">
+          <div class="ph">${x.img ? `<img src="img/${x.img}-sm.webp" alt="">` : ''}</div>
+          <div><h3>${x.name}</h3><p class="xs muted" style="margin-bottom:6px">${x.group}</p><p class="small">${COPY[x.id]}</p>
+            ${mineX.map(q => `<p style="margin-top:8px">${gPill(q.status)} <span class="xs muted">${q.detail.date ? A.fmtDate(q.detail.date) : ''}</span></p>${q.proposal && !q.proposal.acceptedAt && q.status === 'proposed' ? `<button class="btn sm" style="margin-top:6px" data-acc="${q.id}">Review Althea’s plan</button>` : ''}`).join('')}
+            ${open[x.id] !== false ? `<button class="btn ghost sm" style="margin-top:10px" data-req="${x.id}">${mineX.length ? 'Request another date' : 'Request'}</button>` : '<p class="xs muted" style="margin-top:8px">Not taking requests right now.</p>'}
+          </div></div></div>`;
+      }).join('')}
+    </section>`;
+    $$('[data-req]').forEach(b => b.addEventListener('click', () => {
+      const x = A.EXPERIENCES.find(e => e.id === b.dataset.req);
+      openDlg(`Request: ${x.name}`, `<div class="info">Published group: ${x.group}. Althea checks with the guide or partner and confirms.</div>
+        <div class="field"><label for="xDate">Preferred date</label><input id="xDate" type="date" min="${r.from}" max="${A.addDays(r.to, -1)}" value="${A.addDays(r.from, 2)}" aria-describedby="xErr"><span class="hint">During your stay: ${A.fmtDate(r.from)} – ${A.fmtDate(A.addDays(r.to, -1))}</span></div>
+        <div class="field"><label for="xParty">People</label><input id="xParty" type="number" min="1" max="12" value="${r.party}" inputmode="numeric"></div>
+        <div class="field"><label for="xNote">Note (optional)</label><textarea id="xNote" placeholder="${x.id === 'hike' ? 'Sunrise or sunset?' : ''}"></textarea></div><p class="err small" id="xErr" role="alert"></p>`,
+        `<button class="btn ghost" data-close>Cancel</button><button class="btn" id="send">Send request</button>`, dlg => {
+          $('#send', dlg).addEventListener('click', () => {
+            const date = $('#xDate', dlg).value, party = +$('#xParty', dlg).value, note = $('#xNote', dlg).value.trim();
+            if (!date || date < r.from || date >= r.to) { $('#xErr', dlg).textContent = `Choose a date during your stay (${A.fmtDate(r.from)} – ${A.fmtDate(A.addDays(r.to, -1))}).`; $('#xDate', dlg).setAttribute('aria-invalid', 'true'); $('#xDate', dlg).focus(); return; }
+            if (!(party >= 1 && party <= 12)) { $('#xErr', dlg).textContent = 'Enter between 1 and 12 people.'; $('#xParty', dlg).focus(); return; }
+            A.update(d => { d.requests.unshift({ id: A.nextId(d, 'RQ'), res: RES, type: 'experience', exp: x.id, title: x.name, status: 'received', owner: 't1', at: A.NOW, detail: { date, party }, thread: [{ by: 'guest', at: A.NOW, text: note || `We’d like ${x.name.toLowerCase()} on ${A.fmtDate(date)} for ${party}.` }], proposal: null, staffNotes: '' }); }, `Guest requested ${x.name}`);
+            dlg.close(); toast('Request sent — Althea will confirm');
+          });
+        });
+    }));
+    $$('[data-acc]').forEach(b => b.addEventListener('click', () => {
+      const q = D().requests.find(y => y.id === b.dataset.acc), p = q.proposal;
+      openDlg('Althea’s plan', `<p>${E(p.text)}</p><p class="small" style="margin-top:8px">${p.when ? `<b>${A.fmtStamp(p.when)}</b><br>` : ''}Cost: ${E(p.cost || 'Althea will confirm')}</p>`,
+        `<button class="btn ghost" data-close>Not now</button><button class="btn" id="ok">Accept plan</button>`, dlg => {
+          $('#ok', dlg).addEventListener('click', () => { A.update(d => { const x = d.requests.find(y => y.id === q.id); x.proposal.acceptedAt = A.NOW; x.status = 'confirmed'; x.thread.push({ by: 'sys', at: A.NOW, text: 'Guest accepted the plan' }); }, `Guest accepted plan (${q.id})`); dlg.close(); toast('Confirmed — added to your itinerary'); });
+        });
+    }));
+  }
+
+  /* ---- HELP ---- */
+  function viewHelp() {
+    const conv = mine().find(q => q.type === 'message');
+    const quick = [['housekeeping', 'Extra towels or linen'], ['breakfast', 'Breakfast in the morning'], ['housekeeping', 'Something in the suite isn’t working'], ['message', 'A general question']];
+    $('#view').innerHTML = `<section class="g-sec">
+      <h2>Help during your stay</h2>
+      <div class="g-card"><h3>Ask Althea</h3>
+        <div style="display:grid;gap:8px;margin-top:8px">${quick.map(([t, l], i) => `<button class="btn ghost block" style="justify-content:flex-start" data-quick="${i}">${l}</button>`).join('')}</div>
+      </div>
+      ${mine().filter(q => ['housekeeping', 'breakfast', 'message'].includes(q.type)).map(q => `<div class="g-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h3 style="margin:0">${E(q.title)}</h3>${gPill(q.status)}</div><div class="thread">${q.thread.filter(m => m.by !== 'sys').map(m => `<div class="msg ${m.by === 'guest' ? 'staff' : 'guest'}"><div class="by">${m.by === 'guest' ? 'You' : 'Althea'} · ${A.fmtStamp(m.at)}</div>${E(m.text)}</div>`).join('')}</div></div>`).join('')}
+      <h2>Good to know</h2>
+      <div class="g-card"><dl class="kv">
+        <dt>Pool</dt><dd>Shared, open to all guests.</dd>
+        <dt>Breakfast</dt><dd>À la carte on request, with an additional charge.</dd>
+        <dt>Pets</dt><dd>Welcome — please don’t leave them alone in the suite; a small cleaning fee may apply.</dd>
+        <dt>Getting around</dt><dd>Limited buses link the port, Chora and some beaches. Althea can help with car or scooter rental.</dd>
+        <dt>Wi-Fi</dt><dd class="muted">Shared privately at check-in — never published in this preview.</dd>
+      </dl><p class="xs muted" style="margin-top:10px">Althea can edit this section. House rules and access details would only appear to signed-in guests in a real version.</p></div>
+      <div class="g-card"><h3>Contact Althea</h3>
+        <p style="margin-top:4px"><a href="tel:+302286062341">+30 2286 062 341</a><br><a href="mailto:altheaanafisuites@gmail.com">altheaanafisuites@gmail.com</a></p>
+        <p class="small muted" style="margin-top:8px">In an emergency anywhere in the EU, call 112.</p></div>
+    </section>`;
+    $$('[data-quick]').forEach(b => b.addEventListener('click', () => {
+      const [type, label] = quick[+b.dataset.quick];
+      openDlg(label, `<div class="field"><label for="hq">Message</label><textarea id="hq" aria-describedby="hqErr">${type === 'breakfast' ? 'Could we have breakfast tomorrow at ' : ''}</textarea><span class="err" id="hqErr" hidden>Write a short message.</span></div>${type === 'breakfast' ? '<p class="small muted">Breakfast is à la carte, with an additional charge.</p>' : ''}<p class="xs muted">Demo — appears in the staff demo only.</p>`,
+        `<button class="btn ghost" data-close>Cancel</button><button class="btn" id="ok">Send</button>`, dlg => {
+          $('#ok', dlg).addEventListener('click', () => {
+            const t = $('#hq', dlg).value.trim(); if (!t || t === 'Could we have breakfast tomorrow at') { $('#hqErr', dlg).hidden = false; $('#hq', dlg).focus(); return; }
+            A.update(d => { d.requests.unshift({ id: A.nextId(d, 'RQ'), res: RES, type, title: label, status: 'received', owner: type === 'housekeeping' ? 't2' : 't1', at: A.NOW, detail: {}, thread: [{ by: 'guest', at: A.NOW, text: t }], proposal: null, staffNotes: '' }); }, `Guest request: ${label}`);
+            dlg.close(); toast('Sent to Althea (demo)');
+          });
+        });
+    }));
+  }
+
+  function render() {
+    const h = (location.hash || '#stay').slice(1);
+    view = TABS.some(t => t[0] === h) ? h : 'stay';
+    $('#whoami').textContent = R().guest + ' · ' + A.suite(R().suite).name;
+    $('#tabs').innerHTML = TABS.map(([k, l]) => `<a href="#${k}" ${k === view ? 'aria-current="page"' : ''}>${icon(k, 22)}<span>${l}</span></a>`).join('');
+    document.title = TABS.find(t => t[0] === view)[1] + ' — Your Althea Stay (concept)';
+    ({ stay: viewStay, arrival: viewArrival, experiences: viewExperiences, help: viewHelp })[view]();
+  }
+  addEventListener('hashchange', () => { render(); scrollTo(0, 0); $('#view').focus({ preventScroll: true }); });
+  A.onChange(() => { if ($('#dlg').open) return; const y = scrollY, id = document.activeElement && document.activeElement.id; render(); scrollTo(0, y); if (id && $('#' + id)) $('#' + id).focus({ preventScroll: true }); });
+  $('#dlg').addEventListener('close', () => { const y = scrollY; render(); scrollTo(0, y); });
+  $('#reset').addEventListener('click', () => { if (confirm('Reset all demo data in this browser?')) { A.reset(); toast('Demo data reset'); } });
+  if (!A.storageOk()) setTimeout(() => toast('Browser storage is unavailable — changes will be lost on reload.'), 400);
+  render();
+})();
+</script>
+</body>
+</html>
