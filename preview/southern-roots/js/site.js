@@ -557,3 +557,56 @@
   document.addEventListener('visibilitychange', function () { if (document.hidden) pause(); else resume(); });
   restart();
 })();
+
+/* ============================================================
+   About — words light up and "Better." fills as the reader scrolls
+   ============================================================ */
+(function () {
+  'use strict';
+  var el = document.querySelector('[data-scrub]');
+  if (!el) return;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fill = document.querySelector('.ab-better');
+
+  var words = [];
+  el.childNodes.forEach(function (n) {
+    if (n.nodeType !== 3) return;
+    var frag = document.createDocumentFragment();
+    n.textContent.split(/(\s+)/).forEach(function (part) {
+      if (!part) return;
+      if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+      var w = document.createElement('span'); w.className = 'sw'; w.textContent = part;
+      words.push(w); frag.appendChild(w);
+    });
+    el.replaceChild(frag, n);
+  });
+
+  if (reduce) {
+    words.forEach(function (w) { w.classList.add('is-lit'); });
+    if (fill) fill.style.setProperty('--fill', 1);
+    return;
+  }
+
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var vh = window.innerHeight;
+    /* statement: lit from when its top reaches 85% of the viewport
+       until its bottom reaches 45% */
+    var r = el.getBoundingClientRect();
+    var start = vh * 0.85, end = vh * 0.45;
+    var p = (start - r.top) / ((start - end) + r.height);
+    p = Math.max(0, Math.min(1, p));
+    var lit = Math.round(p * words.length);
+    words.forEach(function (w, i) { w.classList.toggle('is-lit', i < lit); });
+    if (fill) {
+      var fr = fill.getBoundingClientRect();
+      var q = (vh * 0.9 - fr.top) / (vh * 0.9 - vh * 0.35);
+      fill.querySelector('.ab-better__fill').style.setProperty('--fill', Math.max(0, Math.min(1, q)).toFixed(3));
+    }
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+  update();
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+})();
