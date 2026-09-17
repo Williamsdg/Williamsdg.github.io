@@ -287,7 +287,7 @@
   }
 
   /* ---------- Hero intro ---------- */
-  var hero = document.querySelector('.h-hero');
+  var hero = document.querySelector('.h-hero, .h3-hero');
   if (hero) {
     var go = function () { requestAnimationFrame(function () { hero.classList.add('is-loaded'); }); };
     if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
@@ -499,4 +499,61 @@
   });
 
   window.SR.openApply = openApply;
+})();
+
+/* ============================================================
+   v3 hero spotlight — rotates the featured athletes
+   ============================================================ */
+(function () {
+  'use strict';
+  var spot = document.querySelector('.h3-spot');
+  if (!spot) return;
+  var slides = Array.prototype.slice.call(spot.querySelectorAll('.h3-slide'));
+  var dots = Array.prototype.slice.call(spot.querySelectorAll('.h3-nav button'));
+  var cap = spot.querySelector('.h3-cap');
+  var capSport = cap.querySelector('[data-cap="sport"]');
+  var capName = cap.querySelector('[data-cap="name"]');
+  var capInfo = cap.querySelector('[data-cap="info"]');
+  var capLink = cap.querySelector('a');
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var DUR = 5500, at = 0, timer = null, paused = false;
+  spot.style.setProperty('--dur', DUR + 'ms');
+
+  function show(i, user) {
+    if (i === at && slides[i].classList.contains('is-on')) return;
+    var prev = slides[at];
+    slides.forEach(function (s) { s.classList.remove('is-out'); });
+    prev.classList.remove('is-on'); prev.classList.add('is-out');
+    at = (i + slides.length) % slides.length;
+    var s = slides[at];
+    s.classList.add('is-on');
+    slides.forEach(function (x, k) { x.setAttribute('aria-hidden', String(k !== at)); });
+    dots.forEach(function (d, k) {
+      d.setAttribute('aria-current', String(k === at));
+      /* restart the progress bar animation */
+      var bar = d.querySelector('i'); bar.style.display = 'none'; void bar.offsetWidth; bar.style.display = '';
+    });
+    cap.classList.add('is-swapping');
+    setTimeout(function () {
+      capSport.textContent = s.dataset.sport;
+      capName.textContent = s.dataset.name;
+      capInfo.textContent = s.dataset.info;
+      capLink.setAttribute('href', s.dataset.href);
+      capLink.setAttribute('aria-label', 'View ' + s.dataset.name + "'s profile");
+      cap.classList.remove('is-swapping');
+    }, 320);
+    if (user) restart();
+  }
+  function tick() { if (!paused) show(at + 1); }
+  function restart() { clearInterval(timer); if (!reduce) timer = setInterval(tick, DUR); }
+
+  dots.forEach(function (d, k) { d.addEventListener('click', function () { show(k, true); }); });
+  var pause = function () { paused = true; spot.classList.add('is-paused'); };
+  var resume = function () { paused = false; spot.classList.remove('is-paused'); };
+  spot.addEventListener('mouseenter', pause);
+  spot.addEventListener('mouseleave', resume);
+  spot.addEventListener('focusin', pause);
+  spot.addEventListener('focusout', resume);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) pause(); else resume(); });
+  restart();
 })();
