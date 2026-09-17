@@ -149,8 +149,10 @@
     return record;
   }
 
-  /* ---------- Multi-step + validating forms ---------- */
-  document.querySelectorAll('form[data-form]').forEach((form) => {
+  /* ---------- Multi-step + validating forms ----------
+     Exported as window.SR.bindForm so the Apply popup can bind a fresh
+     copy of the athlete form after each successful submission. */
+  function bindForm(form) {
     const steps = Array.from(form.querySelectorAll('[data-step]'));
     const markers = Array.from(form.parentElement.querySelectorAll('.fstep'));
     const back = form.querySelector('[data-back]');
@@ -220,8 +222,13 @@
         done.hidden = false;
         done.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+      form.dispatchEvent(new CustomEvent('sr:submitted', { bubbles: true, detail: data }));
     });
-  });
+  }
+
+  document.querySelectorAll('form[data-form]').forEach(bindForm);
+  window.SR = window.SR || {};
+  window.SR.bindForm = bindForm;
 
   /* ---------- Footer year ---------- */
   document.querySelectorAll('[data-year]').forEach((el) => {
@@ -349,4 +356,147 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
   }
+})();
+
+/* ============================================================
+   Apply popup + sticky "Apply Today" button
+   Every "Apply" link on the site opens the athlete application in a
+   popup instead of navigating away. Links keep their contact.html#apply
+   href, so the page still works without JavaScript, and cmd/ctrl-click
+   still opens the contact page in a new tab.
+   ============================================================ */
+(function () {
+  'use strict';
+  if (!window.SR || typeof window.SR.bindForm !== 'function') {
+    throw new Error('Apply popup: window.SR.bindForm is missing — site.js form module did not load');
+  }
+
+  function field(id, label, opts) {
+    opts = opts || {};
+    var req = opts.required ? ' required' : '';
+    var star = opts.required ? ' <span class="req">*</span>' : '';
+    var control;
+    if (opts.textarea) {
+      control = '<textarea id="ap-' + id + '" name="' + id + '" placeholder="' + (opts.ph || '') + '"' + req + '></textarea>';
+    } else {
+      control = '<input type="' + (opts.type || 'text') + '" id="ap-' + id + '" name="' + id + '" placeholder="' + (opts.ph || '') + '"' +
+        (opts.auto ? ' autocomplete="' + opts.auto + '"' : '') + req + '>';
+    }
+    return '<div class="field"><label for="ap-' + id + '">' + label + star + '</label>' + control +
+      '<span class="err" hidden>' + (opts.type === 'email' ? 'Enter a valid email address.' : 'This field is required.') + '</span></div>';
+  }
+
+  function formMarkup() {
+    return '' +
+      '<div class="fsteps" aria-hidden="true"><div class="fstep is-on">1. Athlete</div><div class="fstep">2. Sport</div><div class="fstep">3. Goals</div></div>' +
+      '<form class="form" data-form="athlete" data-done="ap-done" novalidate>' +
+        '<div data-step>' +
+          '<div class="fgroup">' + field('athlete_name', 'Athlete full name', { required: true, auto: 'name' }) +
+                                   field('athlete_email', 'Athlete email', { required: true, type: 'email', auto: 'email' }) + '</div>' +
+          '<div class="fgroup">' + field('athlete_phone', 'Athlete phone', { type: 'tel', auto: 'tel' }) +
+                                   field('guardian', 'Parent or guardian name', { ph: 'Required if under 18' }) + '</div>' +
+          '<div class="fgroup">' + field('guardian_email', 'Parent or guardian email', { type: 'email' }) +
+                                   field('guardian_phone', 'Parent or guardian phone', { type: 'tel' }) + '</div>' +
+        '</div>' +
+        '<div data-step hidden>' +
+          '<div class="fgroup">' + field('school', 'School, club or program', { required: true }) +
+                                   field('sport', 'Sport', { required: true }) + '</div>' +
+          '<div class="fgroup">' + field('position', 'Position or event') +
+                                   field('grad_year', 'Graduation year', { ph: 'e.g. 2028' }) + '</div>' +
+          '<div class="fgroup">' + field('instagram', 'Instagram handle', { ph: '@username' }) +
+                                   field('tiktok', 'TikTok handle', { ph: '@username' }) + '</div>' +
+          '<div class="fgroup fgroup--1">' + field('highlights', 'Highlight film or profile link', { type: 'url', ph: 'https://' }) + '</div>' +
+        '</div>' +
+        '<div data-step hidden>' +
+          '<div class="fgroup fgroup--1">' + field('achievements', 'Current achievements and honors', { textarea: true, ph: 'Awards, records, all-conference selections, academic honors…' }) + '</div>' +
+          '<div class="fgroup fgroup--1">' + field('goals', 'What do you want representation to do for you?', { textarea: true, required: true, ph: 'Tell us about your goals for the next season and beyond.' }) + '</div>' +
+          '<div class="check"><input type="checkbox" id="ap-consent" name="consent" required>' +
+            '<label for="ap-consent">I confirm the information above is accurate and I consent to Southern Roots contacting me about representation. If the athlete is under 18, a parent or guardian has reviewed and approved this submission. <span class="req">*</span>' +
+            '<span class="err" hidden>Please confirm to continue.</span></label></div>' +
+        '</div>' +
+        '<div class="formnav">' +
+          '<button type="button" class="btn btn--outline" data-back hidden>Back</button>' +
+          '<button type="button" class="btn btn--dark" data-next>Continue</button>' +
+          '<button type="submit" class="btn btn--primary" data-submit hidden>Submit application</button>' +
+        '</div>' +
+      '</form>' +
+      '<div class="done" id="ap-done" hidden tabindex="-1">' +
+        '<h3>Application received</h3>' +
+        '<p>Thank you &mdash; your application is with the Southern Roots team. A confirmation is on its way to your inbox, and someone from the team will follow up with you personally.</p>' +
+        '<button type="button" class="btn btn--primary" data-apply-close>Done</button>' +
+      '</div>';
+  }
+
+  /* ---------- build the dialog once ---------- */
+  var logo = document.querySelector('.sr-top__logo img, .hdr__logo img');
+  var logoSrc = logo ? logo.getAttribute('src') : 'assets/logo-mark.jpg';
+
+  var dlg = document.createElement('dialog');
+  dlg.className = 'ap';
+  dlg.setAttribute('aria-labelledby', 'ap-title');
+  dlg.innerHTML =
+    '<div class="ap__panel">' +
+      '<header class="ap__head">' +
+        '<img src="' + logoSrc + '" alt="">' +
+        '<div><p class="ap__kicker">Southern Roots Sports Management Group</p><h2 id="ap-title" tabindex="-1">Apply for Representation</h2></div>' +
+        '<button type="button" class="ap__close" data-apply-close aria-label="Close application">&times;</button>' +
+      '</header>' +
+      '<div class="ap__body">' +
+        '<p class="ap__intro">Three short steps. Only the starred fields are required &mdash; send what you have and we\'ll follow up for the rest.</p>' +
+        '<div class="ap__form"></div>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(dlg);
+
+  var host = dlg.querySelector('.ap__form');
+  var submitted = false;
+
+  function fresh() {
+    host.innerHTML = formMarkup();
+    window.SR.bindForm(host.querySelector('form'));
+    submitted = false;
+  }
+  fresh();
+
+  host.addEventListener('sr:submitted', function () { submitted = true; });
+
+  var opener = null;
+  function openApply(from) {
+    opener = from || document.activeElement;
+    if (submitted) fresh();
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
+    document.documentElement.classList.add('ap-open');
+    dlg.querySelector('.ap__body').scrollTop = 0;
+    var t = dlg.querySelector('#ap-title'); if (t) t.focus({ preventScroll: true });
+  }
+  function closeApply() {
+    if (dlg.open) { if (typeof dlg.close === 'function') dlg.close(); else dlg.removeAttribute('open'); }
+  }
+  dlg.addEventListener('close', function () {
+    document.documentElement.classList.remove('ap-open');
+    if (submitted) fresh();              /* next open starts clean */
+    if (opener && opener.focus) opener.focus({ preventScroll: true });
+  });
+
+  /* close on backdrop click — typed answers are kept until submission */
+  dlg.addEventListener('click', function (e) {
+    if (e.target === dlg) closeApply();
+    if (e.target.closest('[data-apply-close]')) closeApply();
+  });
+
+  /* ---------- every Apply link opens the popup ---------- */
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest('[data-apply], a[href$="contact.html#apply"]');
+    if (!a || dlg.contains(a)) return;
+    e.preventDefault();
+    /* if the menu overlay is open, let it close first */
+    var menu = document.getElementById('sr-menu');
+    var menuBtn = document.querySelector('.sr-menu-btn');
+    if (menu && menu.classList.contains('is-open') && menuBtn) menuBtn.click();
+    /* a link inside the (now closed) menu is hidden — return focus to the menu button instead */
+    openApply(menu && menu.contains(a) ? menuBtn : a);
+  });
+
+  window.SR.openApply = openApply;
 })();
