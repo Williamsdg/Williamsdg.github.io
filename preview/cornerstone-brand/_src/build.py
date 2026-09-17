@@ -2,6 +2,7 @@
 import os, io, json, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from marks import symbols
+from marks2 import symbols2
 OUT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs(OUT, exist_ok=True)
 
@@ -17,14 +18,33 @@ LOGOS = [
       why="A C built from stone blocks, with the red cornerstone set where the first stone of a building goes. The name made literal."),
  dict(id="m4", dir="The Cornerstone", name="Foundation Stone",
       font="'Archivo',sans-serif", w=800, ls="-.01em", upper=True, sub="Claims Adjusters",
-      why="The simplest and boldest of the six: one red cornerstone set into a larger block. Still recognizable as a tiny browser-tab icon or on a truck door."),
+      why="One of the simplest and boldest: one red cornerstone set into a larger block. Still recognizable as a tiny browser-tab icon or on a truck door."),
  dict(id="m5", dir="Precision", name="The Square",
       font="'IBM Plex Sans',sans-serif", w=700, ls="0", upper=True, sub="Claims Adjusters",
       why="A builder's square with measurement marks: the tool for checking whether something is true. Speaks to inspection and getting the number right."),
  dict(id="m6", dir="Precision", name="The Credential",
       font="'Libre Franklin',sans-serif", w=800, ls="0", upper=True, sub="Claims Adjusters",
-      why="A shield carrying the red diamond. Reads as certified and trustworthy, much like a credential badge. The most conventional of the six, and the easiest for carriers to trust."),
+      why="A shield carrying the red diamond. Reads as certified and trustworthy, much like a credential badge. The most conventional of the twelve, and the easiest for carriers to trust."),
+ dict(id="m7", dir="The Story", name="The Level",
+      font="'Libre Franklin',sans-serif", w=800, ls="0", upper=True, sub="Claims Adjusters",
+      why="A spirit level with the bubble dead center. Fair, true, level. A body shop owner who has dealt with Clay for 20 years says he has always been fair. This is that, as a symbol. Best as a wide logo; it is small as a square icon."),
+ dict(id="m8", dir="The Story", name="The Cairn",
+      font="'Libre Baskerville',serif", w=700, ls=".02em", upper=True, sub="Integrity · Experience · Results",
+      why="Three stones balanced on each other: Integrity, Experience and Results, with the red stone on top. A cairn marks the path for whoever comes next. Calm and memorable."),
+ dict(id="m9", dir="The Damage", name="The Fracture",
+      font="'Archivo',sans-serif", w=800, ls="-.01em", upper=True, sub="Claims Adjusters",
+      why="A solid stone with the damage traced through it in red. Says exactly what you do: find the damage and follow it all the way through. The boldest of the twelve."),
+ dict(id="m12", dir="The Damage", name="Verified",
+      font="'IBM Plex Sans',sans-serif", w=700, ls="0", upper=True, sub="Claims Adjusters",
+      why="A check mark built from two stones, the red one the cornerstone. Says findings you can act on, inspected and confirmed. Pairs naturally with The Fracture: the damage, then the answer."),
+ dict(id="m10", dir="The Work", name="The Viewfinder",
+      font="'Barlow Condensed',sans-serif", w=700, ls=".03em", upper=True, sub="Claims Adjusters",
+      why="Camera focus brackets around the red diamond: the damage in focus, photographed and documented. Clear even at the smallest sizes, and suits a firm whose product is documented findings."),
+ dict(id="m11", dir="The Work", name="The Gear",
+      font="'Archivo',sans-serif", w=700, ls="0", upper=True, sub="Claims Adjusters",
+      why="A C set inside a gear, with the diamond at its center. Speaks to the mechanical, fuel and heavy-equipment work that sets you apart from a standard auto appraiser."),
 ]
+
 
 PALETTES = [
  dict(id="p1", name="Signal Red", tag="Evolution of today's colors",
@@ -71,10 +91,13 @@ def logo_cards():
     for i,L in enumerate(LOGOS,1):
         if L["dir"]!=cur:
             cur=L["dir"]
-            blurb={"Evolution":"Builds on the logo you have today, so nothing already out in the world looks wrong.",
+            blurb={"The Story":"More creative. Symbols with a meaning you can explain to a customer in one sentence.",
+                   "The Damage":"More creative. The problem you're hired for, and the answer you deliver.",
+                   "The Work":"More creative. Drawn from the documentation, machinery and mechanics of the job itself.",
+                   "Evolution":"Builds on the logo you have today, so nothing already out in the world looks wrong.",
                    "The Cornerstone":"Turns the company name into the symbol.",
                    "Precision":"Built around what you actually do: inspect, measure and document."}[cur]
-            letter={'Evolution':'A','The Cornerstone':'B','Precision':'C'}[cur]
+            letter={'Evolution':'A','The Cornerstone':'B','Precision':'C','The Story':'D','The Damage':'E','The Work':'F'}[cur]
             out.append(f'<div class="dirh"><span>Direction {letter}</span>'
                        f'<h3>{cur}</h3><p>{blurb}</p></div>')
         out.append(f'''<article class="lc" data-pick="logo:{L["id"]}">
@@ -135,10 +158,13 @@ def font_cards():
     return "\n".join(out)
 
 HTML = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),"page.html"),encoding="utf-8").read()
-HTML = (HTML.replace("%%SYMBOLS%%", symbols())
+HTML = (HTML.replace("%%SYMBOLS%%", symbols()+symbols2())
             .replace("%%LOGOS%%", logo_cards())
             .replace("%%PALETTES%%", palette_cards())
             .replace("%%FONTS%%", font_cards())
+            .replace("%%BADGE%%", "BADGEPLACEHOLDER", 1).replace("%%BADGE%%", "BADGEPLACEHOLDER2", 1)
             .replace("%%DATA%%", json.dumps(dict(logos=LOGOS, palettes=PALETTES, fonts=FONTS))))
+BADGE = '<svg viewBox="0 0 220 220" role="img" aria-label="Round field badge">\n  <defs>\n    <path id="%(u)sT" d="M26 110A84 84 0 0 1 194 110"/>\n    <path id="%(u)sB" d="M30 110A80 80 0 0 0 190 110"/>\n  </defs>\n  <circle cx="110" cy="110" r="106" style="fill:var(--bd-bg)"/>\n  <circle cx="110" cy="110" r="100" fill="none" style="stroke:var(--bd-acc)" stroke-width="2.5"/>\n  <circle cx="110" cy="110" r="64" fill="none" style="stroke:var(--bd-fg)" stroke-width="1.2" opacity=".35"/>\n  <text style="fill:var(--bd-fg);font-family:\'Barlow Condensed\',sans-serif;font-weight:700;font-size:15px;letter-spacing:1.5px">\n    <textPath href="#%(u)sT" startOffset="50%%" text-anchor="middle">CORNERSTONE CLAIMS ADJUSTERS</textPath></text>\n  <text style="fill:var(--bd-fg);font-family:\'Barlow Condensed\',sans-serif;font-weight:600;font-size:14px;letter-spacing:3px">\n    <textPath href="#%(u)sB" startOffset="50%%" text-anchor="middle" dominant-baseline="hanging">EST. 2021 · PRATTVILLE, AL</textPath></text>\n  <path d="M12 110L17 105L22 110L17 115Z" style="fill:var(--bd-acc)"/>\n  <path d="M198 110L203 105L208 110L203 115Z" style="fill:var(--bd-acc)"/>\n  <svg x="70" y="70" width="80" height="80" viewBox="0 0 64 64"><use class="bdg-mark" href="#m4"/></svg>\n</svg>'
+HTML = HTML.replace("BADGEPLACEHOLDER2", BADGE % {"u":"bdL"}).replace("BADGEPLACEHOLDER", BADGE % {"u":"bdD"})
 with io.open(os.path.join(OUT,"index.html"),"w",encoding="utf-8") as f: f.write(HTML)
 print("wrote", len(HTML), "bytes")

@@ -125,6 +125,15 @@ section.blk{padding:clamp(46px,7vw,90px) 0;border-bottom:1px solid var(--line)}
 .fc__nums{display:flex;gap:18px;flex-wrap:wrap;font-size:calc(26px * var(--fs,1));font-weight:700;color:var(--ink)}
 .fc__az{margin-top:12px;font-size:15px;color:var(--grey2);overflow-wrap:anywhere}
 
+.bdg-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,30px)}
+.bdg-stage{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+@media(max-width:640px){.bdg-stage{grid-template-columns:1fr}}
+.bdg-tile{border-radius:12px;display:flex;align-items:center;justify-content:center;padding:clamp(20px,4vw,40px)}
+.bdg-tile svg{width:min(100%,300px);height:auto}
+.bdg-tile--light{background:var(--bg);--bd-bg:#242323;--bd-fg:#FFFFFF;--bd-acc:#D91A3B;--mk-ink:#FFFFFF;--mk-mid:#9A9A9A;--mk-acc:#E0304E}
+.bdg-tile--dark{background:#242323;--bd-bg:#FFFFFF;--bd-fg:#242323;--bd-acc:#D91A3B;--mk-ink:#242323;--mk-mid:#9A9A9A;--mk-acc:#D91A3B}
+.bdg-note{font-size:14px;color:var(--grey);margin:14px 0 0}
+
 /* ---------------- mixer */
 .mixer{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .ctl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border-bottom:1px solid var(--line)}
@@ -213,10 +222,10 @@ section.blk{padding:clamp(46px,7vw,90px) 0;border-bottom:1px solid var(--line)}
 <div class="intro"><div class="wrap">
   <p class="kick">Brand directions</p>
   <h1>Options for a refreshed Cornerstone look.</h1>
-  <p class="lede">Six logo concepts, four color palettes and four font pairings. Tap <b>Favorite</b> on
+  <p class="lede">Twelve logo concepts, a field badge, four color palettes and four font pairings. Tap <b>Favorite</b> on
   anything you like, try combinations in the live preview further down, then send your picks.
   Nothing here is final, and nothing changes on your website until you choose.</p>
-  <div class="jump"><a href="#logos">Logos</a><a href="#colors">Colors</a><a href="#fonts">Fonts</a><a href="#mixer">Try combinations</a><a href="#picks">Your picks</a></div>
+  <div class="jump"><a href="#logos">Logos</a><a href="#colors">Colors</a><a href="#badge">Field badge</a><a href="#fonts">Fonts</a><a href="#mixer">Try combinations</a><a href="#picks">Your picks</a></div>
   <div class="note"><b>If you are already talking to a designer,</b> this page is still useful. Your
   favorites are a quick way to show them what you are drawn to, and can save a round or two of back-and-forth.</div>
 </div></div>
@@ -237,9 +246,22 @@ section.blk{padding:clamp(46px,7vw,90px) 0;border-bottom:1px solid var(--line)}
 </div></section>
 
 <section class="blk" id="logos"><div class="wrap">
-  <div class="bh"><div><p class="kick">Logos</p><h2>Six concepts in three directions.</h2></div>
-  <p>Each is shown on light and dark backgrounds and at real-world sizes, down to the smallest browser tab. A good logo has to work at every size.</p></div>
+  <div class="bh"><div><p class="kick">Logos</p><h2>Twelve concepts in six directions.</h2></div>
+  <p>Directions A&ndash;C are closer to what you have today. D&ndash;F are more creative. Each is shown on light and dark backgrounds and at real-world sizes, down to the smallest browser tab.</p></div>
   <div class="lgrid">%%LOGOS%%</div>
+</div></section>
+
+<section class="blk" id="badge"><div class="wrap">
+  <div class="bh"><div><p class="kick">Bonus</p><h2>A field badge.</h2></div>
+  <p>A round badge for embroidered shirts, hats, truck doors and report stamps: places where a wide logo doesn't fit. It can carry any of the twelve marks. Tap a number to swap.</p></div>
+  <div class="bdg-wrap">
+    <div class="bdg-stage">
+      <div class="bdg-tile bdg-tile--light">%%BADGE%%</div>
+      <div class="bdg-tile bdg-tile--dark">%%BADGE%%</div>
+    </div>
+    <div class="seg" id="segBadge"></div>
+    <p class="bdg-note">&ldquo;Est. 2021&rdquo; and &ldquo;Prattville, AL&rdquo; come from details you have already confirmed. Round badges are for larger sizes. At icon size, use the plain mark.</p>
+  </div>
 </div></section>
 
 <section class="blk" id="colors"><div class="wrap">
@@ -402,7 +424,7 @@ function apply(){
   document.getElementById('mockUse').setAttribute('href','#'+L.id);
   var nm=document.getElementById('mockName');
   nm.style.fontFamily=L.font; nm.style.fontWeight=L.w; nm.style.letterSpacing=L.ls;
-  document.querySelectorAll('.seg button').forEach(function(b){
+  document.querySelectorAll('.seg button[data-k]').forEach(function(b){
     var k=b.getAttribute('data-k'), v=b.getAttribute('data-v');
     b.setAttribute('aria-pressed', (S[k]===v)?'true':'false');
   });
@@ -500,6 +522,18 @@ document.getElementById('reset').addEventListener('click',function(){
   document.getElementById('pNotes').value=''; renderPicks(); toast('Cleared');
 });
 
+(function(){
+  var seg=document.getElementById('segBadge');
+  seg.innerHTML=D.logos.map(function(x,i){
+    return '<button type="button" data-bv="'+x.id+'" aria-pressed="'+(i===3?'true':'false')+'" title="'+x.name+'"><svg aria-hidden="true"><use href="#'+x.id+'"/></svg>'+(i+1)+'</button>';
+  }).join('');
+  seg.addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    var id=b.getAttribute('data-bv');
+    document.querySelectorAll('.bdg-mark').forEach(function(u){ u.setAttribute('href','#'+id); });
+    seg.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', x===b?'true':'false'); });
+  });
+})();
 apply(); renderPicks();
 })();
 </script>
