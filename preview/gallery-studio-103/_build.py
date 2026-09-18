@@ -107,7 +107,7 @@ SHELL = """<!DOCTYPE html>
 </html>
 """
 
-V = "4"
+V = "5"
 
 PAGES = {
  "index.html": dict(page="home",
