@@ -29,18 +29,31 @@
     sync();
   }
 
-  /* ---- reveal on scroll ---- */
-  var rev = document.querySelectorAll(".reveal");
+  /* ---- reveal on scroll ----
+     Never allowed to leave content invisible: a hash load reveals everything up front,
+     and a failsafe sweeps anything the observer missed. */
+  var rev = Array.prototype.slice.call(document.querySelectorAll(".reveal"));
+  var showAll = function () { rev.forEach(function (el) { el.classList.add("in"); }); };
   if (rev.length) {
-    if (reduce || !("IntersectionObserver" in window)) {
-      rev.forEach(function (el) { el.classList.add("in"); });
+    if (reduce || !("IntersectionObserver" in window) || location.hash) {
+      showAll();
     } else {
       var io = new IntersectionObserver(function (es) {
         es.forEach(function (e) {
           if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
         });
-      }, { rootMargin: "0px 0px -8% 0px", threshold: 0.06 });
+      }, { rootMargin: "0px 0px -6% 0px", threshold: 0.05 });
       rev.forEach(function (el) { io.observe(el); });
+      var sweep = function () {
+        rev.forEach(function (el) {
+          if (el.classList.contains("in")) return;
+          var r = el.getBoundingClientRect();
+          if (r.top < window.innerHeight * 1.25) el.classList.add("in");
+        });
+      };
+      window.addEventListener("load", function () { setTimeout(sweep, 350); });
+      window.addEventListener("hashchange", showAll);
+      setTimeout(sweep, 2500);
     }
   }
 

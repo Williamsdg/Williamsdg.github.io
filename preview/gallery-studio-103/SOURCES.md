@@ -85,3 +85,22 @@ Pages are assembled by `_build.py` from the fragments in `src/`. Edit a fragment
 Nothing sends, charges, books or publishes. Forms show a confirmation and reset. The
 Studio Ledger runs entirely in the browser — no storage, no network. All pages are
 `noindex, nofollow`.
+
+## Revisions
+
+**2026-09-18 (same day):**
+- Fixed a real rendering bug: the base `img` reset was missing `height:auto`, so any image
+  with HTML width/height attributes and a CSS width was stretched vertically. The artist
+  portrait was rendering 496×1210 instead of 496×620 — her face was elongated. Every image
+  on every page is now audited for correct aspect ratio.
+- Fixed a second bug: `.reveal` elements start at `opacity:0`, so loading any page at an
+  anchor (`index.html#studio`, `index.html#visit` — both are in the header nav) rendered a
+  blank screen. Reveal is now scoped to `.js` so it can never hide content without
+  JavaScript, a hash load reveals everything up front, and a failsafe sweep catches the rest.
+- `anthe-portrait.webp` recropped from her original snapshot to head-and-shoulders
+  (the dog and the awkward lower crop are out). The untouched original is in the source
+  notes above. **Ask Anthe for one good studio portrait before build** — this is the
+  weakest asset on the page.
+- Added `index-alt.html`: an alternate hero on the paper ground with the painting shown as
+  a framed work, rather than full-bleed behind a dark scrim. Built to test distance from
+  steveskipperstudio.com. Not linked from anywhere.

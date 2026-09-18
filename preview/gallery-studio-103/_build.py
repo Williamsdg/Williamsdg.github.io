@@ -73,6 +73,7 @@ FOOTER = ('<footer class="ftr"><div class="wrap"><div class="ftr-grid">'
 SHELL = """<!DOCTYPE html>
 <html lang="en">
 <head>
+<script>document.documentElement.className="js"</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
@@ -106,12 +107,16 @@ SHELL = """<!DOCTYPE html>
 </html>
 """
 
-V = "3"
+V = "4"
 
 PAGES = {
  "index.html": dict(page="home",
    title="Gallery Studio 103 — Art by Anthe Capitan-Valais, Naples Art District",
    desc="Movement-inspired original paintings, collage and hand-pulled prints by Anthe Capitan-Valais. Gallery, working studio and classes in the Naples Art District.",
+   preload='<link rel="preload" as="image" href="img/white-line.webp" fetchpriority="high">\n'),
+ "index-alt.html": dict(page="home",
+   title="Gallery Studio 103 — alternate hero",
+   desc="Alternate hero treatment for comparison.",
    preload='<link rel="preload" as="image" href="img/white-line.webp" fetchpriority="high">\n'),
  "work.html": dict(page="work",
    title="The Collection — Gallery Studio 103",
