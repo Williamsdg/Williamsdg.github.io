@@ -28,10 +28,21 @@ PHONE_HREF = "tel:+13345689450"
 EMAIL      = "clay@cornerstoneadj.com"
 AR = '<span class="ar" aria-hidden="true">&#8594;</span>'
 
-FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E"
-           "%3Crect width='32' height='32' fill='%23ffffff'/%3E"
-           "%3Ccircle cx='13' cy='16' r='8' fill='none' stroke='%23D91A3B' stroke-width='4'/%3E"
-           "%3Crect x='19' y='11' width='9' height='9' transform='rotate(45 23.5 15.5)' fill='%23D91A3B'/%3E%3C/svg%3E")
+FAVICON = ("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E"
+           "%3Crect width='64' height='64' fill='%23ffffff'/%3E"
+           "%3Cpath d='M8%208H56V56H33V31H8Z' fill='%23242323'/%3E"
+           "%3Crect x='8' y='34' width='22' height='22' fill='%23D91A3B'/%3E%3C/svg%3E")
+
+# Foundation Stone — the mark Cornerstone chose on 2026-09-18.
+def mark(ink="#242323", acc="#D91A3B", cls="logo__mark"):
+    return (f'<svg class="{cls}" viewBox="0 0 64 64" aria-hidden="true">'
+            f'<path d="M8 8H56V56H33V31H8Z" fill="{ink}"/>'
+            f'<rect x="8" y="34" width="22" height="22" fill="{acc}"/></svg>')
+
+def lockup(ink="#242323", acc="#D91A3B"):
+    return (f'{mark(ink, acc)}<span class="logo__txt">'
+            f'<span class="logo__name">Cornerstone</span>'
+            f'<span class="logo__sub">Claims Adjusters</span></span>')
 
 # Nav per the brief: Home, Services, Fleet & Commercial, Claims Consulting, About, Contact
 NAV = [
@@ -62,9 +73,7 @@ def head(title, desc):
 '''
 
 LOGO = ('<a class="logo" href="index.html" aria-label="Cornerstone Claims Adjusters — home">'
-        '<img class="logo__full" src="assets/cornerstone-logo.png" alt="Cornerstone Claims Adjusters, LLC" />'
-        '<img class="logo__mark" src="assets/cornerstone-mark.png" alt="Cornerstone Claims Adjusters, LLC" />'
-        '</a>')
+        + lockup() + '</a>')
 
 def header(current):
     items = []
@@ -98,7 +107,7 @@ def footer():
   <div class="wrap">
     <div class="ftr__top">
       <div>
-        <span class="ftr__logo"><img src="assets/cornerstone-logo.png" alt="Cornerstone Claims Adjusters, LLC" /></span>
+        <a class="logo" href="index.html" aria-label="Cornerstone Claims Adjusters — home">{lockup("#FFFFFF", "#E0304E")}</a>
         <p style="font-size:14.5px;color:#C9C7C7;margin:0 0 6px;max-width:34ch">
           Independent Vehicle &amp; Equipment Appraisal<br>Damage Consulting &middot; Claims Expertise</p>
         <p style="font-family:'Archivo',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:#FF8497;margin:16px 0 0">
