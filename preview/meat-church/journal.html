@@ -110,6 +110,7 @@
         <li><a href="#school">BBQ School</a></li><li><a href="https://www.youtube.com/@MeatChurchBBQ" target="_blank" rel="noopener">YouTube</a></li></ul></div>
       <div><h4>Company</h4><ul>
         <li><a href="#story">Our Story</a></li><li><a href="#store">Store Finder</a></li>
+        <li><a href="admin.html">Journal Admin</a></li>
         <li><a href="write.html">Journal Studio</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
     <div class="ftr-btm">
@@ -121,55 +122,38 @@
 
 <script src="assets/data.js?v=1"></script>
 <script src="assets/seasoning.js?v=1"></script>
+<script src="assets/store.js?v=1"></script>
 <script>
-/* Three sample stories sit alongside the real recipe archive so the Journal's
-   long-form side is visible. They are flagged as samples everywhere they appear. */
-MC.stories = [
-  { slug:'trim-day', title:'Why we trim a brisket the way we do',
-    img:'img/recipe/tri-tip-smoked-like-a-brisket.jpg', tags:['Technique','Beef'],
-    dek:'Fat you leave on, fat you take off, and the one cut that decides how the whole thing cooks.' },
-  { slug:'fire-management', title:'Fire management is the part nobody films',
-    img:'img/recipe/beef-back-party-ribs.jpg', tags:['Technique','Fire'],
-    dek:'A clean fire does more for flavor than any rub. Here is how we keep one for twelve hours.' },
-  { slug:'first-cook', title:'What your first bad cook is actually teaching you',
-    img:'img/recipe/pork-butt-cooked-like-whole-hog.jpg', tags:['Notes'],
-    dek:'Everyone ruins a brisket. The useful question is which part you got wrong.' }
-];
+/* The Journal lists whatever the editorial store says is published, so edits
+   made in the Studio or the admin show up here immediately. */
+var S = MC.store;
+function esc(s){ return (s==null?'':String(s))
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-var ALL = MC.recipes.map(function(r){
-      return { kind:'Recipe', slug:r.slug, title:r.title, img:r.img, tags:r.tags,
-               dek:'', href:'recipe.html#' + r.slug, sample:false };
-    }).concat(MC.stories.map(function(s){
-      return { kind:'Story', slug:s.slug, title:s.title, img:s.img, tags:s.tags,
-               dek:s.dek, href:'story.html#' + s.slug, sample:true };
-    }));
+var ALL = S.load()
+  .filter(function(p){ return p.status === 'Published' && p.title; })
+  .map(function(p){
+    return { kind:p.kind, slug:p.slug, title:p.title, img:p.hero,
+             tags:p.tags.split(',').map(function(t){ return t.trim(); }).filter(Boolean),
+             dek:p.dek, sample:!!p.sample, date:p.date,
+             href:(p.kind === 'Recipe' ? 'recipe.html#' : 'story.html#') + p.slug };
+  })
+  .sort(function(a,b){ return a.date < b.date ? 1 : -1; });
 
-/* interleave so stories are not all stranded at the end */
-var mixed = [];
-var recs = ALL.filter(function(x){ return x.kind === 'Recipe'; });
-var tales = ALL.filter(function(x){ return x.kind === 'Story'; });
-recs.forEach(function(r, i){
-  mixed.push(r);
-  if (i === 2 || i === 8 || i === 15) { var t = tales.shift(); if (t) mixed.push(t); }
-});
-tales.forEach(function(t){ mixed.push(t); });
-
-var active = 'All', shown = 9;
-var tags = ['All','Recipes','Stories'].concat(
-  MC.recipes.reduce(function(a,r){
-    r.tags.forEach(function(t){ if (a.indexOf(t) < 0) a.push(t); }); return a;
-  }, []).sort());
+var active = 'All', shown = 10;
+var tagset = [];
+ALL.forEach(function(x){ x.tags.forEach(function(t){
+  if (tagset.indexOf(t) < 0) tagset.push(t); }); });
+var tags = ['All','Recipes','Stories'].concat(tagset.sort());
 
 var filters = document.getElementById('filters');
-tags.forEach(function(t){
-  var b = document.createElement('button');
-  b.className = 'chip'; b.type = 'button'; b.textContent = t;
-  b.setAttribute('aria-pressed', t === active);
-  b.addEventListener('click', function(){ active = t; shown = 9; render(); });
-  filters.appendChild(b);
+filters.innerHTML = tags.map(function(t){
+  return '<button class="chip" type="button" aria-pressed="' + (t === active) +
+    '">' + esc(t) + '</button>'; }).join('') + '<span class="count" id="jcount"></span>';
+filters.addEventListener('click', function(e){
+  var b = e.target.closest('.chip'); if (!b) return;
+  active = b.textContent; shown = 10; render();
 });
-var count = document.createElement('span');
-count.className = 'count'; filters.appendChild(count);
 
 function match(x){
   if (active === 'All') return true;
@@ -177,45 +161,41 @@ function match(x){
   if (active === 'Stories') return x.kind === 'Story';
   return x.tags.indexOf(active) > -1;
 }
-
-function card(x){
-  var a = document.createElement('a');
-  a.className = 'card'; a.href = x.href;
-  a.innerHTML = '<div class="card-media"><img src="' + x.img + '" alt="" loading="lazy"></div>' +
-    '<div class="card-body"><div class="tagrow">' +
-    '<span class="kind kind--' + x.kind.toLowerCase() + '">' + x.kind + '</span>' +
-    (x.sample ? '<span class="kind kind--sample">Sample</span>' : '') +
-    x.tags.slice(0,2).map(function(t){ return '<span class="tag">' + t + '</span>'; }).join('') +
-    '</div><h3>' + x.title + '</h3>' +
-    (x.dek ? '<p class="muted" style="margin:0;font-size:15px">' + x.dek + '</p>' : '') +
-    '</div>';
-  return a;
+function chips(x){
+  return '<span class="kind kind--' + x.kind.toLowerCase() + '">' + x.kind + '</span>' +
+    (x.sample ? '<span class="kind kind--sample">Sample</span>' : '');
 }
-
+function card(x){
+  return '<a class="card" href="' + x.href + '">' +
+    '<div class="card-media"><img src="' + x.img + '" alt="" loading="lazy"></div>' +
+    '<div class="card-body"><div class="tagrow">' + chips(x) +
+    x.tags.slice(0,2).map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') +
+    '</div><h3>' + esc(x.title) + '</h3>' +
+    (x.dek ? '<p class="muted" style="margin:0;font-size:15px">' +
+      esc(x.dek.slice(0,150)) + (x.dek.length > 150 ? '…' : '') + '</p>' : '') +
+    '</div></a>';
+}
 function render(){
   Array.prototype.forEach.call(filters.querySelectorAll('.chip'), function(c){
     c.setAttribute('aria-pressed', c.textContent === active);
   });
-  var list = mixed.filter(match);
-  count.textContent = list.length + ' post' + (list.length === 1 ? '' : 's');
+  var list = ALL.filter(match);
+  document.getElementById('jcount').textContent =
+    list.length + ' post' + (list.length === 1 ? '' : 's');
 
-  var f = document.getElementById('feature');
-  var lead = list[0];
+  var f = document.getElementById('feature'), lead = list[0];
   if (lead) {
     f.style.display = '';
     f.href = lead.href;
     f.innerHTML = '<img src="' + lead.img + '" alt="">' +
-      '<div class="jfeature-body"><div class="tagrow">' +
-      '<span class="kind kind--' + lead.kind.toLowerCase() + '">' + lead.kind + '</span>' +
-      (lead.sample ? '<span class="kind kind--sample">Sample</span>' : '') +
-      '</div><h2>' + lead.title + '</h2>' +
-      '<p class="lede" style="margin:0">' + (lead.dek ||
+      '<div class="jfeature-body"><div class="tagrow">' + chips(lead) + '</div>' +
+      '<h2>' + esc(lead.title) + '</h2>' +
+      '<p class="lede" style="margin:0">' + esc(lead.dek ||
         'Open the full write-up — ingredients, temps and every step.') + '</p></div>';
   } else { f.style.display = 'none'; }
 
-  var g = document.getElementById('jgrid');
-  g.innerHTML = '';
-  list.slice(1, shown).forEach(function(x){ g.appendChild(card(x)); });
+  document.getElementById('jgrid').innerHTML =
+    list.slice(1, shown).map(card).join('');
   document.getElementById('more').style.display = list.length > shown ? '' : 'none';
 }
 document.getElementById('more').addEventListener('click', function(){ shown += 9; render(); });

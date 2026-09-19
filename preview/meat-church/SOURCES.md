@@ -5,35 +5,43 @@ or endorsed by Meat Church BBQ. Published `noindex, nofollow`.
 
 ## What is real
 
-Everything commercial on these pages came from meatchurch.com on **18 Sep 2026**:
+Everything commercial and editorial on these pages came from meatchurch.com,
+scraped **18–19 Sep 2026**:
 
 | Thing | Source |
 |---|---|
 | 16 rubs & seasonings — names, prices, sizes, descriptions | `meatchurch.com/products.json` (live Shopify catalog) |
 | 4 multi-packs — The Ocho, Whole Shootin Match, Holy Trinity, Holy Gospel Multi Pack — names, prices, compare-at prices | same |
-| Product photography | Meat Church CDN. White backgrounds keyed out locally for the dark layout; images are otherwise unaltered |
-| 36 recipes — titles and photography | `meatchurch.com/blogs/recipes` (pages 1–3) |
-| Hatch Chile Brisket Dip — ingredients, method, temps | `meatchurch.com/blogs/recipes/hatch-chile-brisket-dip`, condensed |
+| Product photography | Meat Church CDN. White backgrounds keyed out locally for the dark layout; images otherwise unaltered |
+| **36 recipes, in full** — titles, photography, intros, ingredients (including sub-recipe groups), tools, and every method step | Each article on `meatchurch.com/blogs/recipes/…`, parsed individually |
+| Seasoning links per recipe | The product links Meat Church put in their own recipe copy |
+| Pit and internal temperatures, cook times | Extracted from the recipe text — see *Derived* below |
 | Brand story, mission quote, founder details | `meatchurch.com/pages/about` and press coverage (Texas Monthly, Dallas Observer) |
 | Logo | Meat Church logo, background keyed to transparent |
 | Phone / email | Listed on their site: 214.980.1063, support@meatchurch.com |
 
-**Editorial groupings.** The family labels used for filtering (Beef, Pork, Poultry,
-All-Purpose, Tex-Mex, Gourmet) and the recipe tags are ours, but each one is derived
-from Meat Church's own product and recipe copy — no flavor or heat claim has been
-invented.
+### Derived, not quoted
 
-**"300+ recipes"** is inferred from their recipe index running to 26 pages at ~12 posts
-per page. Verify before using in a pitch.
+* **Family labels** (Beef, Pork, Poultry, All-Purpose, Tex-Mex, Gourmet) and **recipe
+  tags** are ours, but each is derived from Meat Church's own copy. No flavor or heat
+  claim is invented.
+* **Pit temp vs internal temp.** Recipes state several temperatures. The scraper reads
+  the surrounding sentence to tell a cooker temperature ("preheat your smoker to 250°")
+  from a doneness target ("pull at 135°") and labels them separately. 20 recipes have a
+  pit temp, 17 an internal temp — the rest state neither and show neither.
+* **Cook time** is taken only from an explicit "for N minutes/hours" in a step.
+* **Read counts** in the admin are demo figures, labelled as such in the UI.
+* **"300+ recipes"** on the homepage is inferred from their recipe index running to 26
+  pages at ~12 posts per page. Verify before using in a pitch.
 
 ## What is not real
 
-* **Three "Story" posts** in the Journal (`trim-day`, `fire-management`, `first-cook`)
-  and the whole of `story.html`. These are written by Williams Digital to show the
-  long-form layout. They are chipped **Sample** in every list and carry a notice at the
-  top of the article. They are not Meat Church editorial and must not be presented as such.
-* **Journal Studio** (`write.html`) seed posts. Demo content, stored in `localStorage`.
+* **Three "Story" posts** (`trim-day`, `fire-management`, `first-cook`). Written by
+  Williams Digital to show the long-form layout. They are chipped **Sample** in every
+  listing, in the admin, in the Studio, and carry a notice at the top of the article.
+  They are not Meat Church editorial and must not be presented as such.
 * Cart, checkout, newsletter and class booking are inert.
+* The admin and Studio persist to `localStorage` only — no server.
 
 ## Pages
 
@@ -42,10 +50,31 @@ per page. Verify before using in a pitch.
 | `index.html` | Homepage. Opens with the seasoning pour |
 | `rubs.html` | The lineup — all 16, filterable, plus multi-packs |
 | `rub.html` | Product detail, hash-routed (`rub.html#holy-cow-rub`) |
-| `journal.html` | The blog — recipes and stories, filterable |
-| `recipe.html` | Recipe article (Hatch Chile Brisket Dip) |
-| `story.html` | Long-form article (sample content) |
+| `journal.html` | The blog — reads the editorial store, so it reflects the admin |
+| `recipe.html` | Recipe article, hash-routed — **all 36 recipes have full content** |
+| `story.html` | Long-form article, hash-routed across the three samples |
 | `write.html` | **Journal Studio** — the authoring surface |
+| `admin.html` | **Journal Admin** — the editorial dashboard |
+
+## How the editorial side fits together
+
+`assets/store.js` is the single source of truth, seeded from the live catalog into
+`localStorage` (39 posts: 36 recipes + 3 sample stories) and shared by four surfaces:
+
+```
+store.js ──┬── admin.html    overview, posts, calendar, health, media, tags
+           ├── write.html    the editor
+           ├── journal.html  public listing (published only)
+           └── story.html    long-form articles
+```
+
+Edit a post in the Studio and it changes in the admin and on the Journal. Change its
+status in the admin and it appears or disappears from the public Journal. "Reset demo
+data" in the admin sidebar restores the seed.
+
+The admin's **Health** view is the part worth demoing: it flags posts with no hero, no
+standfirst, no tags, and recipes with no seasoning linked, no method or no ingredients
+— the editorial QA an editor would otherwise do by eye.
 
 ## The opening
 
@@ -69,6 +98,10 @@ Notes for anyone editing it:
 `MC.seasoning.ambient()` drifts a light dusting behind the hero and the product
 shot; `MC.seasoning.burst()` shakes seasoning over a card on hover.
 
+**On a commerce homepage this is an argument you have to win.** It is session-gated,
+skippable and reduced-motion aware, but a conversion-minded client will still raise it.
+Have the answer ready, or show it on a campaign page instead.
+
 ## Build
 
 Shared chrome (head, ribbon, header, footer) is lifted out of `index.html` so the
@@ -77,11 +110,13 @@ pages cannot drift apart. Edit `pages.py`, then:
     python3 _build.py
 
 `index.html` is hand-maintained and is the source of truth for the chrome.
-`assets/data.js` is generated from the live catalog.
+`assets/data.js` is generated from the live catalog — rebuild it with the scraper
+rather than editing it by hand.
 
 ## Known gaps
 
-* No real cart, account or checkout — this is a design concept, not a store.
-* Recipe pages other than the Hatch Chile Brisket Dip route to that one article;
-  only the one recipe has full body content.
-* Product photography is theirs. Any real engagement needs their asset library.
+* **This is not a Shopify theme.** Their entire business runs on Shopify — catalog,
+  variants, retail, the blog. Any real engagement needs this rebuilt as a theme, and
+  the pitch should say so rather than implying a lift-and-shift.
+* No real cart, account or checkout.
+* Product and recipe photography is theirs. Any real engagement needs their asset library.

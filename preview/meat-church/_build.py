@@ -53,6 +53,7 @@ PAGE = """<!doctype html>
 
 <script src="assets/data.js?v=1"></script>
 <script src="assets/seasoning.js?v=1"></script>
+{extra}
 <script>
 {js}
 </script>
@@ -60,11 +61,11 @@ PAGE = """<!doctype html>
 </html>
 """
 
-def emit(name, title, desc, css='', body='', js=''):
-    nav_marked = HEADER
+def emit(name, title, desc, css='', body='', js='', scripts=()):
+    extra = '\n'.join('<script src="assets/%s?v=1"></script>' % f for f in scripts)
     out = PAGE.format(title=title, desc=desc, fonts=FONTS, css=css.strip(),
-                      ribbon=RIBBON, header=nav_marked, body=body.strip(),
-                      footer=FOOTER, js=js.strip())
+                      ribbon=RIBBON, header=HEADER, body=body.strip(),
+                      footer=FOOTER, js=js.strip(), extra=extra)
     (HERE / name).write_text(out)
     print(f'  {name:16s} {len(out):>7,} bytes')
 

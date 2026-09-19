@@ -373,55 +373,37 @@ JOURNAL_BODY = '''
 </section>
 '''
 
-JOURNAL_JS = '''
-/* Three sample stories sit alongside the real recipe archive so the Journal's
-   long-form side is visible. They are flagged as samples everywhere they appear. */
-MC.stories = [
-  { slug:'trim-day', title:'Why we trim a brisket the way we do',
-    img:'img/recipe/tri-tip-smoked-like-a-brisket.jpg', tags:['Technique','Beef'],
-    dek:'Fat you leave on, fat you take off, and the one cut that decides how the whole thing cooks.' },
-  { slug:'fire-management', title:'Fire management is the part nobody films',
-    img:'img/recipe/beef-back-party-ribs.jpg', tags:['Technique','Fire'],
-    dek:'A clean fire does more for flavor than any rub. Here is how we keep one for twelve hours.' },
-  { slug:'first-cook', title:'What your first bad cook is actually teaching you',
-    img:'img/recipe/pork-butt-cooked-like-whole-hog.jpg', tags:['Notes'],
-    dek:'Everyone ruins a brisket. The useful question is which part you got wrong.' }
-];
+JOURNAL_JS = r'''
+/* The Journal lists whatever the editorial store says is published, so edits
+   made in the Studio or the admin show up here immediately. */
+var S = MC.store;
+function esc(s){ return (s==null?'':String(s))
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-var ALL = MC.recipes.map(function(r){
-      return { kind:'Recipe', slug:r.slug, title:r.title, img:r.img, tags:r.tags,
-               dek:'', href:'recipe.html#' + r.slug, sample:false };
-    }).concat(MC.stories.map(function(s){
-      return { kind:'Story', slug:s.slug, title:s.title, img:s.img, tags:s.tags,
-               dek:s.dek, href:'story.html#' + s.slug, sample:true };
-    }));
+var ALL = S.load()
+  .filter(function(p){ return p.status === 'Published' && p.title; })
+  .map(function(p){
+    return { kind:p.kind, slug:p.slug, title:p.title, img:p.hero,
+             tags:p.tags.split(',').map(function(t){ return t.trim(); }).filter(Boolean),
+             dek:p.dek, sample:!!p.sample, date:p.date,
+             href:(p.kind === 'Recipe' ? 'recipe.html#' : 'story.html#') + p.slug };
+  })
+  .sort(function(a,b){ return a.date < b.date ? 1 : -1; });
 
-/* interleave so stories are not all stranded at the end */
-var mixed = [];
-var recs = ALL.filter(function(x){ return x.kind === 'Recipe'; });
-var tales = ALL.filter(function(x){ return x.kind === 'Story'; });
-recs.forEach(function(r, i){
-  mixed.push(r);
-  if (i === 2 || i === 8 || i === 15) { var t = tales.shift(); if (t) mixed.push(t); }
-});
-tales.forEach(function(t){ mixed.push(t); });
-
-var active = 'All', shown = 9;
-var tags = ['All','Recipes','Stories'].concat(
-  MC.recipes.reduce(function(a,r){
-    r.tags.forEach(function(t){ if (a.indexOf(t) < 0) a.push(t); }); return a;
-  }, []).sort());
+var active = 'All', shown = 10;
+var tagset = [];
+ALL.forEach(function(x){ x.tags.forEach(function(t){
+  if (tagset.indexOf(t) < 0) tagset.push(t); }); });
+var tags = ['All','Recipes','Stories'].concat(tagset.sort());
 
 var filters = document.getElementById('filters');
-tags.forEach(function(t){
-  var b = document.createElement('button');
-  b.className = 'chip'; b.type = 'button'; b.textContent = t;
-  b.setAttribute('aria-pressed', t === active);
-  b.addEventListener('click', function(){ active = t; shown = 9; render(); });
-  filters.appendChild(b);
+filters.innerHTML = tags.map(function(t){
+  return '<button class="chip" type="button" aria-pressed="' + (t === active) +
+    '">' + esc(t) + '</button>'; }).join('') + '<span class="count" id="jcount"></span>';
+filters.addEventListener('click', function(e){
+  var b = e.target.closest('.chip'); if (!b) return;
+  active = b.textContent; shown = 10; render();
 });
-var count = document.createElement('span');
-count.className = 'count'; filters.appendChild(count);
 
 function match(x){
   if (active === 'All') return true;
@@ -429,45 +411,41 @@ function match(x){
   if (active === 'Stories') return x.kind === 'Story';
   return x.tags.indexOf(active) > -1;
 }
-
-function card(x){
-  var a = document.createElement('a');
-  a.className = 'card'; a.href = x.href;
-  a.innerHTML = '<div class="card-media"><img src="' + x.img + '" alt="" loading="lazy"></div>' +
-    '<div class="card-body"><div class="tagrow">' +
-    '<span class="kind kind--' + x.kind.toLowerCase() + '">' + x.kind + '</span>' +
-    (x.sample ? '<span class="kind kind--sample">Sample</span>' : '') +
-    x.tags.slice(0,2).map(function(t){ return '<span class="tag">' + t + '</span>'; }).join('') +
-    '</div><h3>' + x.title + '</h3>' +
-    (x.dek ? '<p class="muted" style="margin:0;font-size:15px">' + x.dek + '</p>' : '') +
-    '</div>';
-  return a;
+function chips(x){
+  return '<span class="kind kind--' + x.kind.toLowerCase() + '">' + x.kind + '</span>' +
+    (x.sample ? '<span class="kind kind--sample">Sample</span>' : '');
 }
-
+function card(x){
+  return '<a class="card" href="' + x.href + '">' +
+    '<div class="card-media"><img src="' + x.img + '" alt="" loading="lazy"></div>' +
+    '<div class="card-body"><div class="tagrow">' + chips(x) +
+    x.tags.slice(0,2).map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') +
+    '</div><h3>' + esc(x.title) + '</h3>' +
+    (x.dek ? '<p class="muted" style="margin:0;font-size:15px">' +
+      esc(x.dek.slice(0,150)) + (x.dek.length > 150 ? '…' : '') + '</p>' : '') +
+    '</div></a>';
+}
 function render(){
   Array.prototype.forEach.call(filters.querySelectorAll('.chip'), function(c){
     c.setAttribute('aria-pressed', c.textContent === active);
   });
-  var list = mixed.filter(match);
-  count.textContent = list.length + ' post' + (list.length === 1 ? '' : 's');
+  var list = ALL.filter(match);
+  document.getElementById('jcount').textContent =
+    list.length + ' post' + (list.length === 1 ? '' : 's');
 
-  var f = document.getElementById('feature');
-  var lead = list[0];
+  var f = document.getElementById('feature'), lead = list[0];
   if (lead) {
     f.style.display = '';
     f.href = lead.href;
     f.innerHTML = '<img src="' + lead.img + '" alt="">' +
-      '<div class="jfeature-body"><div class="tagrow">' +
-      '<span class="kind kind--' + lead.kind.toLowerCase() + '">' + lead.kind + '</span>' +
-      (lead.sample ? '<span class="kind kind--sample">Sample</span>' : '') +
-      '</div><h2>' + lead.title + '</h2>' +
-      '<p class="lede" style="margin:0">' + (lead.dek ||
+      '<div class="jfeature-body"><div class="tagrow">' + chips(lead) + '</div>' +
+      '<h2>' + esc(lead.title) + '</h2>' +
+      '<p class="lede" style="margin:0">' + esc(lead.dek ||
         'Open the full write-up — ingredients, temps and every step.') + '</p></div>';
   } else { f.style.display = 'none'; }
 
-  var g = document.getElementById('jgrid');
-  g.innerHTML = '';
-  list.slice(1, shown).forEach(function(x){ g.appendChild(card(x)); });
+  document.getElementById('jgrid').innerHTML =
+    list.slice(1, shown).map(card).join('');
   document.getElementById('more').style.display = list.length > shown ? '' : 'none';
 }
 document.getElementById('more').addEventListener('click', function(){ shown += 9; render(); });
@@ -524,85 +502,55 @@ ARTICLE_CSS = '''
 .usedrub span{font-size:13px;color:var(--bone-3)}
 .samplebar{background:rgba(232,163,61,.1);border:1px solid rgba(232,163,61,.3);
   padding:14px 18px;font-size:14.5px;color:var(--sugar);margin-bottom:28px}
+.pn{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:clamp(40px,5vw,64px);
+  padding-top:26px;border-top:1px solid var(--line)}
+.pn a{text-decoration:none;border:1px solid var(--line-2);padding:16px 18px;
+  transition:border-color .25s var(--ease),background .25s var(--ease)}
+.pn a:hover{border-color:var(--ember);background:var(--char)}
+.pn a.nx{text-align:right}
+.pn span{display:block;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.18em;
+  font-size:10.5px;color:var(--bone-3);margin-bottom:6px}
+.pn b{font-family:var(--f-disp);font-weight:800;text-transform:uppercase;font-size:18px;
+  line-height:1.05;display:block}
+.prose .ings{margin-bottom:18px}
+.prose h3{color:var(--bone)}
+@media (max-width:560px){.pn{grid-template-columns:1fr}.pn a.nx{text-align:left}}
 @media (max-width:980px){.abody{grid-template-columns:1fr}.rail{position:static}}
 '''
 
-RECIPE_BODY = '''
+RECIPE_BODY = """
 <article>
 <section class="ahero">
-  <div class="ahero-bg"><img src="img/recipe/hatch-chile-brisket-dip.jpg" alt=""></div>
+  <div class="ahero-bg"><img id="r-hero" src="" alt=""></div>
   <div class="ahero-in wrap">
     <p class="crumbs"><a href="index.html">Home</a> &nbsp;/&nbsp;
       <a href="journal.html">Journal</a> &nbsp;/&nbsp; Recipe</p>
-    <h1>Hatch Chile Brisket Dip</h1>
-    <dl class="ameta">
-      <div><dt>Pit temp</dt><dd>350&deg;F</dd></div>
-      <div><dt>Cook time</dt><dd>45 min</dd></div>
-      <div><dt>Vessel</dt><dd>12" cast iron</dd></div>
-      <div><dt>Category</dt><dd>Appetizer</dd></div>
-    </dl>
+    <div class="tagrow" id="r-tags" style="margin:0 0 4px"></div>
+    <h1 id="r-title"></h1>
+    <dl class="ameta" id="r-meta"></dl>
   </div>
 </section>
 
 <div class="wrap">
   <div class="abody">
     <div class="prose">
-      <p class="lede">Smoked brisket, roasted Hatch chiles and loads of melted cheese come together to
-        make this the ultimate game-day favorite. Football season calls for a killer smoked dip,
-        and this one checks every box.</p>
-      <p>We start with softened cream cheese and mix in roasted Hatch green chiles, chopped brisket,
-        and cream of poblano soup to make this dip ridiculously rich and creamy. Then we load the top
-        with a generous pile of freshly shredded cheese and bake the whole thing until it is hot,
-        bubbly and perfectly melted.</p>
-      <p>This is an easy way to put leftover brisket to work, and the perfect dip for college football
-        Saturdays, NFL Sundays, tailgates, or any game-day party.</p>
-
+      <div id="r-intro"></div>
       <h2>Ingredients</h2>
-      <ul class="ings" id="ings">
-        <li><input type="checkbox"><span>1 lb smoked chopped brisket</span></li>
-        <li><input type="checkbox"><span>16 oz softened cream cheese</span></li>
-        <li><input type="checkbox"><span>8 oz chopped Hatch chiles</span></li>
-        <li><input type="checkbox"><span>&frac12; of a diced sweet onion</span></li>
-        <li><input type="checkbox"><span>1 can cream of poblano soup</span></li>
-        <li><input type="checkbox"><span>2 C shredded Monterey Jack cheese</span></li>
-        <li><input type="checkbox"><span>1 C shredded cheddar cheese</span></li>
-        <li><input type="checkbox"><span>1 sliced jalape&ntilde;o</span></li>
-        <li><input type="checkbox"><span>2 T minced cilantro</span></li>
-        <li><input type="checkbox"><span>5 oz queso fresco</span></li>
-        <li><input type="checkbox"><span>Meat Church Garlic &amp; Jalape&ntilde;o BLANCO, to taste</span></li>
-        <li><input type="checkbox"><span>Tortilla chips, for serving</span></li>
-      </ul>
-
+      <div id="r-ings"></div>
+      <div id="r-gear"></div>
       <h2>Method</h2>
-      <ol class="steps">
-        <li><div><h3>Prepare your pellet grill</h3>
-          <p>Set your pellet grill to 350&deg;F. We used pecan and cherry pellets.</p></div></li>
-        <li><div><h3>Compile the dip</h3>
-          <p>This fits a 12 inch cast iron skillet or a half foil pan. Press the cream cheese into the
-            bottom of the skillet. Follow with the Hatch chiles, onion, brisket and cream of poblano
-            soup in that order. Season evenly with Garlic &amp; Jalape&ntilde;o BLANCO. Add the shredded
-            cheese and top with the sliced jalape&ntilde;o.</p></div></li>
-        <li><div><h3>Smoke</h3>
-          <p>Place in the center of the grill for 45 minutes, or until the cheese is completely melted.</p></div></li>
-        <li><div><h3>Garnish</h3>
-          <p>Garnish with minced cilantro and queso fresco.</p></div></li>
-        <li><div><h3>Serve</h3>
-          <p>Let it cool for ten minutes. Dip with tortilla chips and enjoy alongside a cold beer.</p></div></li>
-      </ol>
+      <ol class="steps" id="r-steps"></ol>
+      <nav class="pn" id="r-pn"></nav>
     </div>
 
     <aside class="rail">
-      <div class="railbox">
+      <div class="railbox" id="r-usedbox">
         <h4>Seasoning used</h4>
         <div id="used"></div>
       </div>
       <div class="railbox">
         <h4>Cook at a glance</h4>
-        <dl class="ameta" style="margin:0;padding:0;border:0;gap:18px">
-          <div><dt>Pit temp</dt><dd>350&deg;F</dd></div>
-          <div><dt>Time</dt><dd>45 min</dd></div>
-          <div><dt>Rest</dt><dd>10 min</dd></div>
-        </dl>
+        <dl class="ameta" id="r-glance" style="margin:0;padding:0;border:0;gap:18px"></dl>
       </div>
       <div class="railbox">
         <h4>Keep reading</h4>
@@ -619,117 +567,144 @@ RECIPE_BODY = '''
     <div class="grid g3" id="more3"></div>
   </div>
 </section>
-'''
+"""
 
-RECIPE_JS = '''
-/* ingredient ticking — click anywhere on the row */
-Array.prototype.forEach.call(document.querySelectorAll('#ings li'), function(li){
-  var box = li.querySelector('input');
-  function sync(){ li.classList.toggle('got', box.checked); }
-  li.addEventListener('click', function(e){
-    if (e.target !== box) box.checked = !box.checked;
-    sync();
-  });
-  box.addEventListener('change', sync);
-});
+RECIPE_JS = r'''
+function esc(s){ return (s==null?'':String(s))
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+var $ = function(id){ return document.getElementById(id); };
 
-/* the rub this recipe actually calls for */
-var used = MC.rubs.filter(function(r){ return r.h === 'garlic-jalapeno-blanco'; });
-var ubox = document.getElementById('used');
-used.forEach(function(r){
-  var a = document.createElement('a');
-  a.className = 'usedrub'; a.href = 'rub.html#' + r.h;
-  a.innerHTML = '<img src="' + r.img + '" alt=""><div><b>' + r.name +
-    '</b><span>From $' + r.price + '</span></div>';
-  ubox.appendChild(a);
-});
-
-function mini(x){
-  var a = document.createElement('a');
-  a.className = 'usedrub'; a.href = 'recipe.html#' + x.slug;
-  a.innerHTML = '<img src="' + x.img + '" alt="" style="width:52px;height:40px;object-fit:cover">' +
-    '<div><b style="font-size:15px;line-height:1.1">' + x.title + '</b></div>';
-  return a;
+function current(){
+  var h = (location.hash || '').replace('#','');
+  return MC.recipes.filter(function(r){ return r.slug === h; })[0] || MC.recipes[0];
 }
-var rel = MC.recipes.filter(function(x){
-  return x.slug !== 'hatch-chile-brisket-dip' && x.tags.indexOf('Beef') > -1;
-}).slice(0,4);
-var rbox = document.getElementById('related');
-rel.forEach(function(x){ rbox.appendChild(mini(x)); });
 
-var m3 = document.getElementById('more3');
-MC.recipes.filter(function(x){ return x.slug !== 'hatch-chile-brisket-dip'; })
-  .slice(3,6).forEach(function(x){
-    var a = document.createElement('a');
-    a.className = 'card'; a.href = 'recipe.html#' + x.slug;
-    a.innerHTML = '<div class="card-media" style="aspect-ratio:16/10">' +
-      '<img src="' + x.img + '" alt="" loading="lazy"></div><div class="card-body">' +
-      '<div class="tagrow">' + x.tags.map(function(t){
-        return '<span class="tag">' + t + '</span>'; }).join('') +
-      '</div><h3>' + x.title + '</h3></div>';
-    m3.appendChild(a);
+function render(){
+  var r = current(), i = MC.recipes.indexOf(r);
+  document.title = r.title + ' \u2014 Meat Church BBQ';
+
+  $('r-hero').src = r.img;
+  $('r-hero').alt = r.title;
+  $('r-title').textContent = r.title;
+  $('r-tags').innerHTML = r.tags.map(function(t){
+    return '<span class="tag tag--fire">' + esc(t) + '</span>'; }).join('');
+
+  var nIngs = r.ings.reduce(function(a,g){ return a + g.items.length; }, 0);
+  var meta = [];
+  if (r.temp)     meta.push(['Pit temp', r.temp]);
+  if (r.internal) meta.push(['Internal', r.internal]);
+  if (r.time)     meta.push(['Cook time', r.time]);
+  meta.push(['Ingredients', nIngs]);
+  meta.push(['Steps', r.steps.length]);
+  var cells = meta.map(function(m){
+    return '<div><dt>' + m[0] + '</dt><dd>' + esc(m[1]) + '</dd></div>'; }).join('');
+  $('r-meta').innerHTML = cells;
+  $('r-glance').innerHTML = cells;
+
+  $('r-intro').innerHTML = r.intro.map(function(p, n){
+    return '<p' + (n === 0 ? ' class="lede"' : '') + '>' + esc(p) + '</p>'; }).join('')
+    || '<p class="lede">' + esc(r.title) + '.</p>';
+
+  $('r-ings').innerHTML = r.ings.map(function(g){
+    return (g.g ? '<h3>' + esc(g.g) + '</h3>' : '') +
+      '<ul class="ings">' + g.items.map(function(x){
+        return '<li><input type="checkbox"><span>' + esc(x) + '</span></li>';
+      }).join('') + '</ul>';
+  }).join('');
+
+  $('r-gear').innerHTML = r.gear && r.gear.length
+    ? '<h3>Tools</h3><ul class="ings">' + r.gear.map(function(x){
+        return '<li><input type="checkbox"><span>' + esc(x) + '</span></li>';
+      }).join('') + '</ul>'
+    : '';
+
+  $('r-steps').innerHTML = r.steps.map(function(s){
+    return '<li><div>' + (s.h ? '<h3>' + esc(s.h) + '</h3>' : '') +
+      '<p>' + esc(s.b) + '</p></div></li>'; }).join('');
+
+  /* tick an ingredient by clicking anywhere on its row */
+  Array.prototype.forEach.call(document.querySelectorAll('.ings li'), function(li){
+    var box = li.querySelector('input');
+    function sync(){ li.classList.toggle('got', box.checked); }
+    li.addEventListener('click', function(e){
+      if (e.target !== box) box.checked = !box.checked;
+      sync();
+    });
+    box.addEventListener('change', sync);
   });
+
+  /* seasonings this recipe actually calls for */
+  var used = MC.rubs.filter(function(x){ return r.rubs.indexOf(x.h) > -1; });
+  $('r-usedbox').hidden = !used.length;
+  $('used').innerHTML = used.map(function(x){
+    return '<a class="usedrub" href="rub.html#' + x.h + '"><img src="' + x.img +
+      '" alt=""><div><b>' + esc(x.name) + '</b><span>From $' + x.price +
+      '</span></div></a>'; }).join('');
+
+  /* related by shared tag, then fall back to neighbours in the archive */
+  var rel = MC.recipes.filter(function(x){
+    return x.slug !== r.slug && x.tags.some(function(t){ return r.tags.indexOf(t) > -1; });
+  });
+  if (rel.length < 4) {
+    rel = rel.concat(MC.recipes.filter(function(x){
+      return x.slug !== r.slug && rel.indexOf(x) < 0; }));
+  }
+  $('related').innerHTML = rel.slice(0,4).map(function(x){
+    return '<a class="usedrub" href="recipe.html#' + x.slug + '"><img src="' + x.img +
+      '" alt="" style="width:52px;height:40px;object-fit:cover">' +
+      '<div><b style="font-size:15px;line-height:1.1">' + esc(x.title) +
+      '</b></div></a>'; }).join('');
+
+  /* previous / next through the archive */
+  var prev = MC.recipes[(i - 1 + MC.recipes.length) % MC.recipes.length];
+  var next = MC.recipes[(i + 1) % MC.recipes.length];
+  $('r-pn').innerHTML =
+    '<a href="recipe.html#' + prev.slug + '"><span>Previous</span><b>' +
+      esc(prev.title) + '</b></a>' +
+    '<a href="recipe.html#' + next.slug + '" class="nx"><span>Next</span><b>' +
+      esc(next.title) + '</b></a>';
+
+  $('more3').innerHTML = rel.slice(4,7).map(function(x){
+    return '<a class="card" href="recipe.html#' + x.slug + '">' +
+      '<div class="card-media" style="aspect-ratio:16/10"><img src="' + x.img +
+      '" alt="" loading="lazy"></div><div class="card-body"><div class="tagrow">' +
+      x.tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') +
+      '</div><h3>' + esc(x.title) + '</h3></div></a>'; }).join('');
+
+  window.scrollTo(0, 0);
+}
+render();
+window.addEventListener('hashchange', render);
 '''
 
 
 # ===========================================================================
 # 5. story.html — the long-form side of the Journal (sample content)
 # ===========================================================================
-STORY_BODY = '''
+STORY_BODY = """
 <article>
 <section class="ahero">
-  <div class="ahero-bg"><img src="img/hero/tri-tip-smoked-like-a-brisket.jpg" alt=""></div>
+  <div class="ahero-bg"><img id="s-hero" src="" alt=""></div>
   <div class="ahero-in wrap">
     <p class="crumbs"><a href="index.html">Home</a> &nbsp;/&nbsp;
       <a href="journal.html">Journal</a> &nbsp;/&nbsp; Story</p>
-    <h1>Why we trim a brisket the way we do</h1>
-    <dl class="ameta">
-      <div><dt>Written by</dt><dd>Sample author</dd></div>
-      <div><dt>Reading</dt><dd>6 min</dd></div>
-      <div><dt>Filed under</dt><dd>Technique</dd></div>
-    </dl>
+    <div class="tagrow" id="s-tags" style="margin:0 0 4px"></div>
+    <h1 id="s-title"></h1>
+    <dl class="ameta" id="s-meta"></dl>
   </div>
 </section>
 
 <div class="wrap">
   <div class="abody">
     <div class="prose">
-      <div class="samplebar"><strong>Sample post.</strong> Written by Williams Digital to show the
-        Journal&rsquo;s long-form layout — headings, pull quotes, inline images and the seasoning rail.
-        Nothing here is Meat Church editorial.</div>
-
-      <p class="lede">A brisket tells you how it wants to be cooked before you ever light the fire.
-        The trim is where you listen.</p>
-      <p>Most people trim a brisket to make it look tidy. Tidy is not the goal. The goal is a piece of
-        meat that cooks evenly from the thin end to the thick end, holds enough fat to stay honest
-        through a long cook, and gives the smoke somewhere to sit.</p>
-
-      <h2>Start with the fat cap</h2>
-      <p>Take the cap down to a quarter inch and stop. Any less and the flat dries out before the point
-        is ready. Any more and you end up with a greasy band under the bark that never renders. A
-        quarter inch is not a tradition, it is a compromise — enough insulation to protect the flat,
-        thin enough to render clean.</p>
-
-      <blockquote class="pull">Trim for how it will cook, not for how it looks on the board.</blockquote>
-
-      <h2>The deckle is the decision</h2>
-      <p>The hard seam of fat between the point and the flat is the one place where trimming actually
-        changes the cook. Leave too much and the two muscles finish hours apart. Take too much and the
-        point loses the thing that makes it worth eating.</p>
-      <p>Square the edges last. Round every corner that would otherwise burn, and keep the thin end of
-        the flat thick enough to survive. If the tip is thinner than your finger, it is going to be
-        jerky by the time the point is probe tender — take it off now and put it in the chili.</p>
-
-      <h2>Then season like you mean it</h2>
-      <p>Trim, then season, then let it sit while the pit comes up to temperature. A coarse Texas-style
-        rub wants surface to hold on to. That surface is exactly what you just spent twenty minutes
-        building.</p>
-      <p>None of this is complicated. It is just the part of the cook that happens before anyone is
-        watching, which is why it is the part most people skip.</p>
+      <div class="samplebar" id="s-sample" hidden><strong>Sample post.</strong>
+        Written by Williams Digital to show the Journal&rsquo;s long-form layout &mdash;
+        headings, standfirst and the seasoning rail. Not Meat Church editorial.</div>
+      <div id="s-body"></div>
+      <nav class="pn" id="s-pn"></nav>
     </div>
-
     <aside class="rail">
-      <div class="railbox">
+      <div class="railbox" id="s-usedbox">
         <h4>Seasoning mentioned</h4>
         <div id="used"></div>
       </div>
@@ -748,41 +723,79 @@ STORY_BODY = '''
     <div class="grid g3" id="more3"></div>
   </div>
 </section>
-'''
+"""
 
-STORY_JS = '''
-var used = MC.rubs.filter(function(r){
-  return ['holy-cow-rub','blanco-steak-and-everything-else-seasoning'].indexOf(r.h) > -1;
-});
-var ubox = document.getElementById('used');
-used.forEach(function(r){
-  var a = document.createElement('a');
-  a.className = 'usedrub'; a.href = 'rub.html#' + r.h;
-  a.innerHTML = '<img src="' + r.img + '" alt=""><div><b>' + r.name +
-    '</b><span>From $' + r.price + '</span></div>';
-  ubox.appendChild(a);
-});
+STORY_JS = r'''
+var S = MC.store;
+var $ = function(id){ return document.getElementById(id); };
+function esc(s){ return (s==null?'':String(s))
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-var rbox = document.getElementById('related');
-MC.recipes.filter(function(x){ return x.tags.indexOf('Beef') > -1; }).slice(0,4).forEach(function(x){
-  var a = document.createElement('a');
-  a.className = 'usedrub'; a.href = 'recipe.html#' + x.slug;
-  a.innerHTML = '<img src="' + x.img + '" alt="" style="width:52px;height:40px;object-fit:cover">' +
-    '<div><b style="font-size:15px;line-height:1.1">' + x.title + '</b></div>';
-  rbox.appendChild(a);
-});
+var STORIES = S.load().filter(function(p){ return p.kind === 'Story'; });
 
-var m3 = document.getElementById('more3');
-MC.recipes.slice(6,9).forEach(function(x){
-  var a = document.createElement('a');
-  a.className = 'card'; a.href = 'recipe.html#' + x.slug;
-  a.innerHTML = '<div class="card-media" style="aspect-ratio:16/10">' +
-    '<img src="' + x.img + '" alt="" loading="lazy"></div><div class="card-body">' +
-    '<div class="tagrow">' + x.tags.map(function(t){
-      return '<span class="tag">' + t + '</span>'; }).join('') +
-    '</div><h3>' + x.title + '</h3></div>';
-  m3.appendChild(a);
-});
+function prose(t){
+  return (t||'').split(/\n{2,}/).map(function(b){
+    b = b.trim(); if (!b) return '';
+    if (b.indexOf('## ') === 0) return '<h2>' + esc(b.slice(3)) + '</h2>';
+    return '<p>' + esc(b).replace(/\n/g,'<br>') + '</p>';
+  }).join('');
+}
+
+function render(){
+  var h = (location.hash || '').replace('#','');
+  var p = STORIES.filter(function(x){ return x.slug === h; })[0] || STORIES[0];
+  if (!p) return;
+  var i = STORIES.indexOf(p);
+
+  document.title = p.title + ' — Meat Church BBQ';
+  $('s-hero').src = p.hero; $('s-hero').alt = p.title;
+  $('s-title').textContent = p.title;
+  var tags = p.tags.split(',').map(function(t){ return t.trim(); }).filter(Boolean);
+  $('s-tags').innerHTML = tags.map(function(t){
+    return '<span class="tag tag--fire">' + esc(t) + '</span>'; }).join('');
+  $('s-meta').innerHTML =
+    '<div><dt>Filed under</dt><dd>' + esc(tags[0] || 'Journal') + '</dd></div>' +
+    '<div><dt>Reading</dt><dd>' + Math.max(1, Math.round(S.words(p)/200)) + ' min</dd></div>' +
+    '<div><dt>Status</dt><dd>' + esc(p.status) + '</dd></div>';
+  $('s-sample').hidden = !p.sample;
+  $('s-body').innerHTML = (p.dek ? '<p class="lede">' + esc(p.dek) + '</p>' : '') + prose(p.body);
+
+  var used = MC.rubs.filter(function(r){ return (p.rubs||[]).indexOf(r.h) > -1; });
+  $('s-usedbox').hidden = !used.length;
+  $('used').innerHTML = used.map(function(r){
+    return '<a class="usedrub" href="rub.html#' + r.h + '"><img src="' + r.img +
+      '" alt=""><div><b>' + esc(r.name) + '</b><span>From $' + r.price +
+      '</span></div></a>'; }).join('');
+
+  var rel = MC.recipes.filter(function(x){
+    return x.tags.some(function(t){ return tags.indexOf(t) > -1; }); });
+  if (rel.length < 4) rel = rel.concat(MC.recipes.filter(function(x){ return rel.indexOf(x) < 0; }));
+  $('related').innerHTML = rel.slice(0,4).map(function(x){
+    return '<a class="usedrub" href="recipe.html#' + x.slug + '"><img src="' + x.img +
+      '" alt="" style="width:52px;height:40px;object-fit:cover">' +
+      '<div><b style="font-size:15px;line-height:1.1">' + esc(x.title) +
+      '</b></div></a>'; }).join('');
+
+  if (STORIES.length > 1) {
+    var prev = STORIES[(i - 1 + STORIES.length) % STORIES.length];
+    var next = STORIES[(i + 1) % STORIES.length];
+    $('s-pn').innerHTML =
+      '<a href="story.html#' + prev.slug + '"><span>Previous story</span><b>' +
+        esc(prev.title) + '</b></a>' +
+      '<a href="story.html#' + next.slug + '" class="nx"><span>Next story</span><b>' +
+        esc(next.title) + '</b></a>';
+  }
+
+  $('more3').innerHTML = rel.slice(4,7).map(function(x){
+    return '<a class="card" href="recipe.html#' + x.slug + '">' +
+      '<div class="card-media" style="aspect-ratio:16/10"><img src="' + x.img +
+      '" alt="" loading="lazy"></div><div class="card-body"><div class="tagrow">' +
+      x.tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join('') +
+      '</div><h3>' + esc(x.title) + '</h3></div></a>'; }).join('');
+  window.scrollTo(0,0);
+}
+render();
+window.addEventListener('hashchange', render);
 '''
 
 
@@ -801,7 +814,13 @@ body{overflow-x:hidden}
 .colhead .btn{margin-left:auto}
 
 /* post list */
-.plist{padding:10px 0}
+.psearch{padding:12px 22px 10px;border-bottom:1px solid var(--line-2);display:grid;gap:8px}
+.psearch input{background:var(--char);border:1px solid var(--line);color:var(--bone);
+  padding:9px 12px;font:inherit;font-size:14px;border-radius:var(--r);width:100%}
+.psearch input:focus{outline:none;border-color:var(--ember)}
+.psearch .count{margin:0;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.16em;
+  font-size:10.5px;color:var(--bone-3)}
+.plist{padding:10px 0;max-height:calc(100vh - 260px);overflow:auto}
 .pitem{display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;
   padding:14px 22px;border-bottom:1px solid var(--line-2);transition:background .18s}
 .pitem:hover{background:var(--char)}
@@ -848,6 +867,13 @@ body{overflow-x:hidden}
 .x{background:none;border:1px solid var(--line-2);color:var(--bone-3);cursor:pointer;
   border-radius:var(--r);height:38px;transition:all .2s}
 .x:hover{border-color:var(--ember);color:var(--ember)}
+.row.step{align-items:start}
+.row.step > div{display:grid;gap:6px}
+.row .sh{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.row .grouprow{border-color:rgba(232,163,61,.45);color:var(--sugar);
+  font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.addpair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:620px){.addpair{grid-template-columns:1fr}}
 .addrow{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.14em;font-size:11.5px;
   font-weight:700;background:none;border:1px dashed var(--line);color:var(--bone-2);
   padding:10px 16px;cursor:pointer;border-radius:var(--r);transition:all .2s;width:100%}
@@ -921,7 +947,12 @@ WRITE_BODY = '''
   <div class="col">
     <div class="colhead">
       <h2>Posts</h2>
+      <a class="btn btn--sm btn--ghost" href="admin.html">Admin</a>
       <button class="btn btn--sm btn--fire" id="new" type="button">New</button>
+    </div>
+    <div class="psearch">
+      <input type="search" id="plistq" placeholder="Search posts&hellip;" aria-label="Search posts">
+      <span class="count" id="plistn"></span>
     </div>
     <div class="plist" id="plist"></div>
   </div>
@@ -933,6 +964,9 @@ WRITE_BODY = '''
       <button class="btn btn--sm btn--ghost" id="preview" type="button">Preview</button>
     </div>
     <div class="editor">
+      <div class="samplebar" id="samplenote" hidden><strong>Sample post.</strong>
+        Written by Williams Digital to demonstrate the long-form layout &mdash;
+        not Meat Church editorial.</div>
       <div class="seg" id="kind">
         <button type="button" data-k="Recipe" aria-pressed="true">Recipe</button>
         <button type="button" data-k="Story" aria-pressed="false">Story</button>
@@ -960,7 +994,10 @@ WRITE_BODY = '''
       <div class="fieldset" id="ingbox">
         <h3>Ingredients</h3>
         <div class="rows" id="ingrows"></div>
-        <button class="addrow" type="button" data-add="ing">+ Add ingredient</button>
+        <div class="addpair">
+          <button class="addrow" type="button" data-add="ing">+ Add ingredient</button>
+          <button class="addrow" type="button" data-add="group">+ Add sub-recipe heading</button>
+        </div>
       </div>
 
       <div class="fieldset" id="stepbox">
@@ -1023,134 +1060,125 @@ WRITE_BODY = '''
 '''
 
 WRITE_JS = r'''
-/* ------------------------------------------------------------------ store */
-var KEY = 'mc-journal-v1';
-function seed(){
-  return [
-    { id:'p1', kind:'Recipe', status:'Published', date:'2026-09-08',
-      title:'Hatch Chile Brisket Dip',
-      dek:'Smoked brisket, roasted Hatch chiles and loads of melted cheese. Football season calls for a killer smoked dip.',
-      hero:'img/recipe/hatch-chile-brisket-dip.jpg', tags:'Beef, Tailgating, Appetizer',
-      temp:'350°F', time:'45 min', serves:'8', vessel:'12" cast iron',
-      rubs:['garlic-jalapeno-blanco'],
-      ings:['1 lb smoked chopped brisket','16 oz softened cream cheese','8 oz chopped Hatch chiles',
-            '1 can cream of poblano soup','2 C shredded Monterey Jack','1 sliced jalapeño'],
-      steps:['Set your pellet grill to 350°F.',
-             'Press the cream cheese into a 12 inch cast iron skillet, then layer the chiles, onion, brisket and soup. Season with Garlic & Jalapeño BLANCO and top with cheese.',
-             'Smoke for 45 minutes until the cheese is completely melted.',
-             'Garnish with cilantro and queso fresco, rest ten minutes, serve with chips.'],
-      body:'This is an easy way to put leftover brisket to work, and the perfect dip for college football Saturdays, NFL Sundays, tailgates, or any game-day party.' },
-    { id:'p2', kind:'Story', status:'Scheduled', date:'2026-09-24',
-      title:'Why we trim a brisket the way we do',
-      dek:'Fat you leave on, fat you take off, and the one cut that decides how the whole thing cooks.',
-      hero:'img/recipe/tri-tip-smoked-like-a-brisket.jpg', tags:'Technique, Beef',
-      temp:'', time:'', serves:'', vessel:'', rubs:['holy-cow-rub'], ings:[], steps:[],
-      body:'## Start with the fat cap\nTake the cap down to a quarter inch and stop. Any less and the flat dries out before the point is ready.\n\n## The deckle is the decision\nThe hard seam of fat between the point and the flat is the one place where trimming actually changes the cook.' },
-    { id:'p3', kind:'Recipe', status:'Draft', date:'2026-09-18',
-      title:'', dek:'', hero:'img/recipe/beef-back-party-ribs.jpg', tags:'',
-      temp:'', time:'', serves:'', vessel:'', rubs:[], ings:[''], steps:[''], body:'' }
-  ];
-}
-var posts, cur;
-try { posts = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ posts = seed(); }
-if (!posts.length) posts = seed();
-function persist(){ try { localStorage.setItem(KEY, JSON.stringify(posts)); } catch(e){} }
-
-/* ------------------------------------------------------------------ dom */
 var $ = function(id){ return document.getElementById(id); };
+var S = MC.store;
 var F = { title:$('f-title'), dek:$('f-dek'), temp:$('f-temp'), time:$('f-time'),
           serves:$('f-serves'), vessel:$('f-vessel'), tags:$('f-tags'),
           status:$('f-status'), date:$('f-date'), body:$('f-body') };
+var cur = null;
 
-function slugify(s){
-  return (s || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g,'-')
-    .replace(/^-|-$/g,'').slice(0,60) || 'untitled';
+function esc(s){ return (s==null?'':String(s))
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qs(k){
+  var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+  return m ? decodeURIComponent(m[1]) : null;
 }
 
 /* ------------------------------------------------------------------ list */
 function drawList(){
-  var box = $('plist'); box.innerHTML = '';
-  posts.forEach(function(p){
-    var b = document.createElement('button');
-    b.className = 'pitem'; b.type = 'button';
-    b.setAttribute('aria-current', p.id === cur.id);
-    b.innerHTML = '<b>' + (p.title || 'Untitled post') + '</b>' +
-      '<span><i class="dot dot--' + p.status.toLowerCase() + '"></i>' +
-      p.status + ' &middot; ' + p.kind + ' &middot; ' + p.date + '</span>';
-    b.addEventListener('click', function(){ pull(); load(p); });
-    box.appendChild(b);
+  var q = ($('plistq') && $('plistq').value || '').trim().toLowerCase();
+  var all = S.load().filter(function(p){
+    return !q || (p.title + ' ' + p.tags).toLowerCase().indexOf(q) > -1;
   });
+  $('plist').innerHTML = all.slice(0, 60).map(function(p){
+    return '<button class="pitem" type="button" data-id="' + esc(p.id) + '" aria-current="' +
+      (cur && p.id === cur.id) + '"><b>' + esc(p.title || 'Untitled post') + '</b>' +
+      '<span><i class="dot dot--' + p.status.toLowerCase() + '"></i>' + p.status +
+      ' &middot; ' + p.kind + ' &middot; ' + p.date + '</span></button>';
+  }).join('');
+  $('plistn').textContent = all.length + ' post' + (all.length === 1 ? '' : 's');
 }
+$('plist').addEventListener('click', function(e){
+  var b = e.target.closest('.pitem'); if (!b) return;
+  pull(); S.save();
+  load(S.byId(b.getAttribute('data-id')));
+});
 
 /* ------------------------------------------------------------------ pickers */
-var HEROES = MC.recipes.slice(0, 18);
+var HEROES = MC.recipes.slice(0, 24);
 function drawHero(){
-  var box = $('heropick'); box.innerHTML = '';
-  HEROES.forEach(function(r){
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.setAttribute('aria-pressed', cur.hero === r.img);
-    b.title = r.title;
-    b.innerHTML = '<img src="' + r.img + '" alt="' + r.title + '">';
-    b.addEventListener('click', function(){ cur.hero = r.img; drawHero(); glance(); });
-    box.appendChild(b);
-  });
+  $('heropick').innerHTML = HEROES.map(function(r){
+    return '<button type="button" data-src="' + r.img + '" title="' + esc(r.title) +
+      '" aria-pressed="' + (cur.hero === r.img) + '">' +
+      '<img src="' + r.img + '" alt="' + esc(r.title) + '" loading="lazy"></button>';
+  }).join('');
 }
-function drawRubs(){
-  var box = $('rubpick'); box.innerHTML = '';
-  MC.rubs.forEach(function(r){
-    var on = cur.rubs.indexOf(r.h) > -1;
-    var b = document.createElement('button');
-    b.type = 'button'; b.setAttribute('aria-pressed', on);
-    b.innerHTML = '<img src="' + r.img + '" alt=""><span>' + r.name + '</span>';
-    b.addEventListener('click', function(){
-      var i = cur.rubs.indexOf(r.h);
-      if (i > -1) cur.rubs.splice(i,1); else cur.rubs.push(r.h);
-      drawRubs();
-    });
-    box.appendChild(b);
-  });
-}
+$('heropick').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  cur.hero = b.getAttribute('data-src'); drawHero(); glance();
+});
 
-/* ------------------------------------------------------------------ repeatable rows */
-function drawRows(which){
-  var box = which === 'ing' ? $('ingrows') : $('steprows');
-  var arr = which === 'ing' ? cur.ings : cur.steps;
-  box.innerHTML = '';
-  arr.forEach(function(v, i){
-    var row = document.createElement('div');
-    row.className = 'row';
-    var field = which === 'ing'
-      ? '<input value="" placeholder="1 lb smoked chopped brisket">'
-      : '<textarea placeholder="Describe the step."></textarea>';
-    row.innerHTML = '<span class="n">' + (i+1) + '</span>' + field +
-      '<button class="x" type="button" aria-label="Remove">&times;</button>';
-    var input = row.querySelector('input, textarea');
-    input.value = v;
-    input.addEventListener('input', function(){ arr[i] = input.value; glance(); });
-    row.querySelector('.x').addEventListener('click', function(){
-      arr.splice(i,1); if (!arr.length) arr.push(''); drawRows(which); glance();
-    });
-    box.appendChild(row);
-  });
+function drawRubs(){
+  $('rubpick').innerHTML = MC.rubs.map(function(r){
+    return '<button type="button" data-h="' + r.h + '" aria-pressed="' +
+      (cur.rubs.indexOf(r.h) > -1) + '"><img src="' + r.img + '" alt="">' +
+      '<span>' + esc(r.name) + '</span></button>';
+  }).join('');
 }
+$('rubpick').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  var h = b.getAttribute('data-h'), i = cur.rubs.indexOf(h);
+  if (i > -1) cur.rubs.splice(i,1); else cur.rubs.push(h);
+  drawRubs();
+});
+
+/* ------------------------------------------------------------------ rows */
+function drawIngs(){
+  $('ingrows').innerHTML = cur.ings.map(function(v, i){
+    var group = /^—\s/.test(v);
+    return '<div class="row" data-i="' + i + '"><span class="n">' +
+      (group ? '&para;' : (i+1)) + '</span>' +
+      '<input value="' + esc(v) + '" placeholder="1 lb smoked chopped brisket"' +
+      (group ? ' class="grouprow"' : '') + '>' +
+      '<button class="x" type="button" aria-label="Remove">&times;</button></div>';
+  }).join('');
+}
+function drawSteps(){
+  $('steprows').innerHTML = cur.steps.map(function(s, i){
+    return '<div class="row step" data-i="' + i + '"><span class="n">' + (i+1) + '</span>' +
+      '<div><input class="sh" value="' + esc(s.h) + '" placeholder="Step heading — e.g. Prepare your smoker">' +
+      '<textarea class="sb" placeholder="What to do.">' + esc(s.b) + '</textarea></div>' +
+      '<button class="x" type="button" aria-label="Remove">&times;</button></div>';
+  }).join('');
+}
+$('ingrows').addEventListener('input', function(e){
+  var row = e.target.closest('.row'); if (!row) return;
+  cur.ings[+row.getAttribute('data-i')] = e.target.value; glance();
+});
+$('steprows').addEventListener('input', function(e){
+  var row = e.target.closest('.row'); if (!row) return;
+  var s = cur.steps[+row.getAttribute('data-i')];
+  if (e.target.classList.contains('sh')) s.h = e.target.value; else s.b = e.target.value;
+  glance();
+});
+$('ingrows').addEventListener('click', function(e){
+  if (!e.target.classList.contains('x')) return;
+  cur.ings.splice(+e.target.closest('.row').getAttribute('data-i'), 1);
+  if (!cur.ings.length) cur.ings.push('');
+  drawIngs(); glance();
+});
+$('steprows').addEventListener('click', function(e){
+  if (!e.target.classList.contains('x')) return;
+  cur.steps.splice(+e.target.closest('.row').getAttribute('data-i'), 1);
+  drawSteps(); glance();
+});
 Array.prototype.forEach.call(document.querySelectorAll('[data-add]'), function(b){
   b.addEventListener('click', function(){
     var w = b.getAttribute('data-add');
-    (w === 'ing' ? cur.ings : cur.steps).push('');
-    drawRows(w); glance();
+    if (w === 'ing') { cur.ings.push(''); drawIngs(); }
+    else if (w === 'group') { cur.ings.push('— '); drawIngs(); }
+    else { cur.steps.push({h:'',b:''}); drawSteps(); }
+    glance();
   });
 });
 
 /* ------------------------------------------------------------------ kind */
-Array.prototype.forEach.call(document.querySelectorAll('#kind button'), function(b){
-  b.addEventListener('click', function(){
-    cur.kind = b.getAttribute('data-k');
-    syncKind(); glance();
-  });
+$('kind').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  cur.kind = b.getAttribute('data-k'); syncKind(); glance();
 });
 function syncKind(){
-  Array.prototype.forEach.call(document.querySelectorAll('#kind button'), function(b){
+  Array.prototype.forEach.call($('kind').querySelectorAll('button'), function(b){
     b.setAttribute('aria-pressed', b.getAttribute('data-k') === cur.kind);
   });
   var recipe = cur.kind === 'Recipe';
@@ -1158,17 +1186,19 @@ function syncKind(){
   $('edhead').textContent = 'Editing ' + cur.kind.toLowerCase();
 }
 
-/* ------------------------------------------------------------------ load / pull */
+/* ------------------------------------------------------------------ load/pull */
 function load(p){
+  if (!p) p = S.load()[0];
   cur = p;
   F.title.value = p.title; F.dek.value = p.dek; F.temp.value = p.temp;
-  F.time.value = p.time; F.serves.value = p.serves; F.vessel.value = p.vessel;
+  F.time.value = p.time; F.serves.value = p.serves || ''; F.vessel.value = p.vessel || '';
   F.tags.value = p.tags; F.status.value = p.status; F.date.value = p.date;
   F.body.value = p.body;
-  if (!cur.ings.length) cur.ings = [''];
-  if (!cur.steps.length) cur.steps = [''];
-  syncKind(); drawHero(); drawRubs(); drawRows('ing'); drawRows('step');
-  drawList(); glance();
+  if (!cur.ings || !cur.ings.length) cur.ings = [''];
+  if (!cur.steps) cur.steps = [];
+  if (!cur.rubs) cur.rubs = [];
+  $('samplenote').hidden = !p.sample;
+  syncKind(); drawHero(); drawRubs(); drawIngs(); drawSteps(); drawList(); glance();
 }
 function pull(){
   if (!cur) return;
@@ -1176,21 +1206,22 @@ function pull(){
   cur.time = F.time.value; cur.serves = F.serves.value; cur.vessel = F.vessel.value;
   cur.tags = F.tags.value; cur.status = F.status.value; cur.date = F.date.value;
   cur.body = F.body.value;
+  if (!cur.slug || !cur.slug.length) cur.slug = S.slugify(cur.title);
 }
 
-/* ------------------------------------------------------------------ glance + seo */
+/* ------------------------------------------------------------------ glance */
 function glance(){
   pull();
-  var words = (cur.body + ' ' + cur.dek + ' ' + cur.steps.join(' '))
-    .trim().split(/\s+/).filter(Boolean).length;
+  var w = S.words(cur);
   $('g-kind').textContent = cur.kind;
-  $('g-words').textContent = words;
-  $('g-read').textContent = Math.max(1, Math.round(words / 200)) + ' min';
-  $('g-ings').textContent = cur.ings.filter(Boolean).length;
-  $('g-steps').textContent = cur.steps.filter(Boolean).length;
-  $('g-slug').textContent = slugify(cur.title);
+  $('g-words').textContent = w.toLocaleString('en-US');
+  $('g-read').textContent = Math.max(1, Math.round(w / 200)) + ' min';
+  $('g-ings').textContent = cur.ings.filter(function(x){
+    return x && !/^—\s/.test(x); }).length;
+  $('g-steps').textContent = cur.steps.filter(function(s){ return s.h || s.b; }).length;
+  $('g-slug').textContent = S.slugify(cur.title);
   $('s-title').textContent = cur.title || 'Untitled post';
-  $('s-slug').textContent = slugify(cur.title);
+  $('s-slug').textContent = S.slugify(cur.title);
   $('s-desc').textContent = cur.dek || 'Add a standfirst and it will show up here.';
   drawList();
 }
@@ -1198,28 +1229,28 @@ Object.keys(F).forEach(function(k){
   F[k].addEventListener('input', glance);
   F[k].addEventListener('change', glance);
 });
+$('plistq').addEventListener('input', drawList);
 
-/* ------------------------------------------------------------------ new / save */
+/* ------------------------------------------------------------------ actions */
 $('new').addEventListener('click', function(){
-  pull();
-  var p = { id:'p' + Date.now(), kind:'Recipe', status:'Draft',
-            date:new Date().toISOString().slice(0,10), title:'', dek:'',
-            hero:MC.recipes[0].img, tags:'', temp:'', time:'', serves:'', vessel:'',
-            rubs:[], ings:[''], steps:[''], body:'' };
-  posts.unshift(p); persist(); load(p);
+  pull(); S.save();
+  load(S.add({ id:'p'+Date.now(), kind:'Recipe', status:'Draft', slug:'',
+    date:new Date().toISOString().slice(0,10), title:'', dek:'',
+    hero:MC.recipes[0].img, tags:'', temp:'', internal:'', time:'', serves:'', vessel:'',
+    rubs:[], ings:[''], steps:[{h:'',b:''}], body:'', sample:false, views:0 }));
   F.title.focus();
 });
 $('save').addEventListener('click', function(){
-  pull(); persist();
+  pull(); S.save();
   var m = $('savedmsg');
   m.textContent = 'Saved · ' + new Date().toLocaleTimeString();
   m.classList.add('on');
   setTimeout(function(){ m.classList.remove('on'); }, 2200);
   drawList();
 });
+window.addEventListener('beforeunload', function(){ pull(); S.save(); });
 
 /* ------------------------------------------------------------------ preview */
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function prose(t){
   return (t||'').split(/\n{2,}/).map(function(b){
     b = b.trim(); if (!b) return '';
@@ -1237,11 +1268,18 @@ $('preview').addEventListener('click', function(){
     if (cur.vessel) meta.push(['Vessel', cur.vessel]);
   } else {
     meta.push(['Filed under', cur.tags || 'Journal']);
-    var w = (cur.body||'').trim().split(/\s+/).filter(Boolean).length;
-    meta.push(['Reading', Math.max(1, Math.round(w/200)) + ' min']);
+    meta.push(['Reading', Math.max(1, Math.round(S.words(cur)/200)) + ' min']);
   }
-  var ings = cur.ings.filter(Boolean), steps = cur.steps.filter(Boolean);
+  var steps = cur.steps.filter(function(s){ return s.h || s.b; });
   var rubs = MC.rubs.filter(function(r){ return cur.rubs.indexOf(r.h) > -1; });
+
+  /* ingredients, honouring "— Group" marker rows */
+  var groups = [], g = null;
+  cur.ings.filter(Boolean).forEach(function(v){
+    var m = /^—\s*(.*)$/.exec(v);
+    if (m) { g = { g:m[1], items:[] }; groups.push(g); }
+    else { if (!g) { g = { g:'', items:[] }; groups.push(g); } g.items.push(v); }
+  });
 
   $('pvbody').innerHTML =
     '<article><section class="ahero"><div class="ahero-bg">' +
@@ -1254,15 +1292,19 @@ $('preview').addEventListener('click', function(){
     '<div class="wrap"><div class="abody"><div class="prose">' +
       (cur.dek ? '<p class="lede">' + esc(cur.dek) + '</p>' : '') +
       prose(cur.body) +
-      (ings.length ? '<h2>Ingredients</h2><ul class="ings">' + ings.map(function(i){
-        return '<li><input type="checkbox"><span>' + esc(i) + '</span></li>'; }).join('') + '</ul>' : '') +
+      (groups.length ? '<h2>Ingredients</h2>' + groups.map(function(gr){
+        return (gr.g ? '<h3>' + esc(gr.g) + '</h3>' : '') + '<ul class="ings">' +
+          gr.items.map(function(i){
+            return '<li><input type="checkbox"><span>' + esc(i) + '</span></li>';
+          }).join('') + '</ul>'; }).join('') : '') +
       (steps.length ? '<h2>Method</h2><ol class="steps">' + steps.map(function(s){
-        return '<li><div><p>' + esc(s) + '</p></div></li>'; }).join('') + '</ol>' : '') +
+        return '<li><div>' + (s.h ? '<h3>' + esc(s.h) + '</h3>' : '') +
+          '<p>' + esc(s.b) + '</p></div></li>'; }).join('') + '</ol>' : '') +
     '</div><aside class="rail">' +
       (rubs.length ? '<div class="railbox"><h4>Seasoning used</h4>' + rubs.map(function(r){
         return '<a class="usedrub" href="rub.html#' + r.h + '"><img src="' + r.img +
-          '" alt=""><div><b>' + r.name + '</b><span>From $' + r.price + '</span></div></a>';
-      }).join('') + '</div>' : '') +
+          '" alt=""><div><b>' + esc(r.name) + '</b><span>From $' + r.price +
+          '</span></div></a>'; }).join('') + '</div>' : '') +
       '<div class="railbox"><h4>Status</h4><div class="kv"><span>' + cur.status +
       '</span><b>' + cur.date + '</b></div></div>' +
     '</aside></div></div></article>';
@@ -1277,7 +1319,526 @@ window.addEventListener('keydown', function(e){
   if (e.key === 'Escape' && $('pv').classList.contains('open')) $('pvclose').click();
 });
 
-load(posts[0]);
+/* ------------------------------------------------------------------ boot */
+if (qs('new')) { $('new').click(); }
+else { load(qs('id') ? S.byId(qs('id')) : null); }
+'''
+
+
+# ===========================================================================
+# 7. admin.html — editorial dashboard
+# ===========================================================================
+ADMIN_CSS = '''
+.shell{display:grid;grid-template-columns:230px minmax(0,1fr);min-height:calc(100vh - 70px)}
+.side{border-right:1px solid var(--line-2);padding:22px 0;position:sticky;top:70px;
+  height:calc(100vh - 70px);overflow:auto}
+.side h4{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.18em;font-size:10.5px;
+  color:var(--bone-3);margin:0 0 10px;padding:0 22px;font-weight:600}
+.side nav{display:grid;margin-bottom:26px}
+.side a{display:flex;align-items:center;gap:10px;padding:11px 22px;text-decoration:none;
+  font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.12em;font-size:13px;
+  font-weight:600;color:var(--bone-2);border-left:3px solid transparent;transition:all .2s}
+.side a:hover{background:var(--char);color:var(--bone)}
+.side a[aria-current="true"]{border-left-color:var(--ember);color:var(--bone);background:var(--char)}
+.side a i{margin-left:auto;font-style:normal;font-size:11px;color:var(--bone-3)}
+
+.main{padding:clamp(22px,3vw,38px) clamp(20px,3vw,44px) 90px;min-width:0}
+.view{display:none}
+.view.on{display:block}
+.vhead{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:clamp(22px,3vw,34px)}
+.vhead h1{font-size:clamp(32px,4vw,54px);margin:6px 0 0}
+.vhead .btn{margin-left:auto}
+
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:26px}
+.tile{background:var(--char);border:1px solid var(--line-2);padding:20px}
+.tile b{display:block;font-family:var(--f-disp);font-weight:800;font-size:clamp(30px,3.4vw,46px);
+  line-height:1;margin-bottom:6px}
+.tile span{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.16em;font-size:10.5px;
+  color:var(--bone-3)}
+.tile.t--fire b{color:var(--ember)}
+.tile.t--gold b{color:var(--sugar)}
+
+.panels{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;align-items:start}
+.panel{background:var(--char);border:1px solid var(--line-2);padding:22px}
+.panel h3{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.18em;font-size:11px;
+  color:var(--bone-3);margin:0 0 16px;font-weight:600;display:flex;align-items:center;gap:10px}
+.panel h3 .btn{margin-left:auto}
+
+/* a wide table scrolls inside its own box, never the page */
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:520px}
+th{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.16em;font-size:10.5px;
+  color:var(--bone-3);text-align:left;padding:0 10px 12px;font-weight:600;white-space:nowrap;
+  border-bottom:1px solid var(--line);cursor:pointer;user-select:none}
+th:hover{color:var(--bone)}
+th[data-dir]::after{content:' \u25be';opacity:.7}
+th[data-dir="asc"]::after{content:' \u25b4'}
+td{padding:13px 10px;border-bottom:1px solid var(--line-2);font-size:14.5px;vertical-align:middle}
+tr:hover td{background:rgba(255,255,255,.015)}
+td.t b{display:block;font-family:var(--f-disp);font-weight:800;text-transform:uppercase;
+  font-size:16px;line-height:1.1}
+td.t span{font-size:12px;color:var(--bone-3)}
+td.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--bone-2)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-cond);text-transform:uppercase;
+  letter-spacing:.14em;font-size:10px;font-weight:700;padding:4px 10px;border-radius:99px;
+  border:1px solid var(--line)}
+.pill i{width:6px;height:6px;border-radius:50%;display:block}
+.pill--published i{background:#4E9A5B}
+.pill--scheduled i{background:var(--sugar)}
+.pill--draft i{background:var(--bone-3)}
+.rowacts{display:flex;gap:6px;justify-content:flex-end}
+.mini{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-size:10.5px;
+  font-weight:700;border:1px solid var(--line-2);background:transparent;color:var(--bone-2);
+  padding:6px 11px;border-radius:var(--r);cursor:pointer;text-decoration:none;transition:all .2s}
+.mini:hover{border-color:var(--ember);color:var(--ember)}
+.mini--danger:hover{border-color:#C0392B;color:#E06C5B}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.toolbar input[type=search]{background:var(--char);border:1px solid var(--line);color:var(--bone);
+  padding:10px 14px;font:inherit;font-size:14.5px;border-radius:var(--r);min-width:220px;flex:1}
+.toolbar input:focus,.toolbar select:focus{outline:none;border-color:var(--ember)}
+.toolbar select{background:var(--char);border:1px solid var(--line);color:var(--bone);
+  padding:10px 12px;font:inherit;font-size:14px;border-radius:var(--r)}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:var(--line-2);
+  border:1px solid var(--line-2)}
+.cal .dow{background:var(--ash);padding:9px;text-align:center;font-family:var(--f-cond);
+  text-transform:uppercase;letter-spacing:.14em;font-size:10px;color:var(--bone-3);font-weight:600}
+.cal .day{background:var(--char);min-height:96px;padding:8px;position:relative}
+.cal .day.out{background:var(--smoke)}
+.cal .day em{font-style:normal;font-family:var(--f-cond);font-size:11px;color:var(--bone-3);
+  display:block;margin-bottom:5px}
+.cal .day.today em{color:var(--ember);font-weight:700}
+.cal .ev{display:block;font-size:11px;line-height:1.25;padding:4px 6px;margin-bottom:3px;
+  border-radius:2px;text-decoration:none;border-left:2px solid var(--bone-3);
+  background:var(--ash);color:var(--bone-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal .ev:hover{color:var(--bone)}
+.cal .ev.published{border-left-color:#4E9A5B}
+.cal .ev.scheduled{border-left-color:var(--sugar)}
+.cal .ev.draft{border-left-color:var(--bone-3);opacity:.7}
+.calbar{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.calbar b{font-family:var(--f-disp);font-weight:800;text-transform:uppercase;font-size:22px}
+
+/* health */
+.issue{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line-2)}
+.issue:last-child{border-bottom:0}
+.issue b{font-family:var(--f-disp);font-weight:800;text-transform:uppercase;font-size:15px;
+  line-height:1.15;display:block;margin-bottom:5px}
+.issue .flags{display:flex;gap:5px;flex-wrap:wrap}
+.flag{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;
+  font-weight:700;color:var(--ember);border:1px solid rgba(210,69,30,.4);padding:2px 7px;
+  border-radius:99px}
+.issue .mini{margin-left:auto;flex:0 0 auto}
+
+/* media + tags */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.mcell{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--char);
+  border:1px solid var(--line-2)}
+.mcell img{width:100%;height:100%;object-fit:cover}
+.mcell figcaption{position:absolute;left:0;right:0;bottom:0;padding:16px 8px 6px;font-size:10.5px;
+  color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.85));
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.taglist{display:flex;flex-wrap:wrap;gap:8px}
+.tagchip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);
+  padding:7px 8px 7px 14px;border-radius:99px;font-family:var(--f-cond);text-transform:uppercase;
+  letter-spacing:.12em;font-size:11.5px;font-weight:600;color:var(--bone-2)}
+.tagchip b{background:var(--ash);color:var(--bone);border-radius:99px;padding:2px 8px;
+  font-family:var(--f-body);font-size:11px;letter-spacing:0}
+
+.bar{height:6px;background:var(--ash);border-radius:99px;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--ember);border-radius:99px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px}
+.legend span{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--bone-3)}
+.legend i{width:8px;height:8px;border-radius:50%;display:block}
+
+.empty{padding:40px 0;text-align:center;color:var(--bone-3);font-size:14.5px}
+
+@media (max-width:1100px){
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .panels{grid-template-columns:1fr}
+}
+@media (max-width:820px){
+  .shell{grid-template-columns:1fr}
+  .side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line-2);
+    display:flex;gap:0;overflow-x:auto;padding:0}
+  .side h4{display:none}
+  .side nav{display:flex;margin:0}
+  .side a{border-left:0;border-bottom:3px solid transparent;white-space:nowrap}
+  .side a[aria-current="true"]{border-left-color:transparent;border-bottom-color:var(--ember)}
+  .side a i{display:none}
+  .tcol{display:none}
+  table{min-width:460px}
+  .rowacts{gap:4px}
+  .mini{padding:5px 8px;font-size:10px}
+}
+@media (max-width:520px){
+  .dcol{display:none}
+  table{min-width:460px}
+  /* deleting is a desktop job; keep the row readable on a phone */
+  .mini--danger{display:none}
+  td.t b{font-size:15px}
+}
+'''
+
+ADMIN_BODY = """
+<div class="shell">
+  <aside class="side">
+    <h4>Journal</h4>
+    <nav id="nav">
+      <a href="#overview" data-v="overview">Overview</a>
+      <a href="#posts" data-v="posts">Posts <i id="n-posts"></i></a>
+      <a href="#calendar" data-v="calendar">Calendar</a>
+      <a href="#health" data-v="health">Health <i id="n-health"></i></a>
+      <a href="#media" data-v="media">Media <i id="n-media"></i></a>
+      <a href="#tags" data-v="tags">Tags <i id="n-tags"></i></a>
+    </nav>
+    <h4>Shortcuts</h4>
+    <nav>
+      <a href="write.html">Journal Studio</a>
+      <a href="journal.html">View the Journal</a>
+      <a href="#" id="reseed">Reset demo data</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+
+    <!-- overview -->
+    <section class="view" id="v-overview">
+      <div class="vhead">
+        <div><p class="eyebrow">Editorial</p><h1>Overview</h1></div>
+        <a class="btn btn--fire btn--sm" href="write.html?new=1">New post</a>
+      </div>
+      <div class="tiles" id="tiles"></div>
+      <div class="panels">
+        <div class="panel">
+          <h3>Publishing schedule
+            <a class="btn btn--sm btn--ghost" href="#calendar" data-go="calendar">Open calendar</a></h3>
+          <div id="upcoming"></div>
+        </div>
+        <div class="panel">
+          <h3>Mix</h3>
+          <div id="mix"></div>
+        </div>
+      </div>
+      <div class="panels" style="margin-top:18px">
+        <div class="panel">
+          <h3>Most read <span class="tiny" style="letter-spacing:0;text-transform:none">demo figures</span></h3>
+          <div id="topread"></div>
+        </div>
+        <div class="panel">
+          <h3>Needs attention
+            <a class="btn btn--sm btn--ghost" href="#health" data-go="health">All issues</a></h3>
+          <div id="healthmini"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- posts -->
+    <section class="view" id="v-posts">
+      <div class="vhead">
+        <div><p class="eyebrow">Editorial</p><h1>Posts</h1></div>
+        <a class="btn btn--fire btn--sm" href="write.html?new=1">New post</a>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="q" placeholder="Search titles, tags, seasonings&hellip;" aria-label="Search">
+        <select id="f-kind"><option value="">All types</option><option>Recipe</option><option>Story</option></select>
+        <select id="f-status"><option value="">Any status</option><option>Published</option><option>Scheduled</option><option>Draft</option></select>
+        <span class="count" id="n-result"></span>
+      </div>
+      <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th data-sort="title">Title</th>
+          <th data-sort="kind" class="tcol">Type</th>
+          <th data-sort="status">Status</th>
+          <th data-sort="date" class="dcol">Date</th>
+          <th data-sort="words" class="num tcol">Words</th>
+          <th data-sort="views" class="num tcol">Reads</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      </div>
+      <div class="empty" id="norows" hidden>Nothing matches those filters.</div>
+    </section>
+
+    <!-- calendar -->
+    <section class="view" id="v-calendar">
+      <div class="vhead"><div><p class="eyebrow">Editorial</p><h1>Calendar</h1></div></div>
+      <div class="calbar">
+        <button class="mini" id="prevm" type="button">&larr; Prev</button>
+        <b id="mlabel"></b>
+        <button class="mini" id="nextm" type="button">Next &rarr;</button>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div class="legend">
+        <span><i style="background:#4E9A5B"></i> Published</span>
+        <span><i style="background:#E8A33D"></i> Scheduled</span>
+        <span><i style="background:#7C7263"></i> Draft</span>
+      </div>
+    </section>
+
+    <!-- health -->
+    <section class="view" id="v-health">
+      <div class="vhead"><div><p class="eyebrow">Editorial</p><h1>Health</h1></div></div>
+      <p class="lede" style="max-width:60ch;margin-top:-6px">Posts missing something a reader
+        or a search engine will notice. Checked on every load.</p>
+      <div class="panel" style="margin-top:22px"><div id="healthlist"></div></div>
+    </section>
+
+    <!-- media -->
+    <section class="view" id="v-media">
+      <div class="vhead"><div><p class="eyebrow">Editorial</p><h1>Media</h1></div></div>
+      <p class="lede" style="max-width:60ch;margin-top:-6px">Every image in the library, with the
+        number of posts using it.</p>
+      <div class="mgrid" id="mgrid" style="margin-top:22px"></div>
+    </section>
+
+    <!-- tags -->
+    <section class="view" id="v-tags">
+      <div class="vhead"><div><p class="eyebrow">Editorial</p><h1>Tags</h1></div></div>
+      <p class="lede" style="max-width:60ch;margin-top:-6px">How the archive is distributed.
+        Thin tags are worth merging; heavy ones are worth a landing page.</p>
+      <div class="panel" style="margin-top:22px"><div class="taglist" id="taglist"></div></div>
+    </section>
+
+  </main>
+</div>
+"""
+
+ADMIN_JS = r'''
+var $ = function(id){ return document.getElementById(id); };
+var S = MC.store;
+function esc(s){ return (s==null?'':String(s))
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmt(n){ return (n||0).toLocaleString('en-US'); }
+function nice(d){
+  var p = d.split('-');
+  return new Date(+p[0], +p[1]-1, +p[2]).toLocaleDateString('en-US',
+    { month:'short', day:'numeric', year:'numeric' });
+}
+function pill(s){
+  return '<span class="pill pill--' + s.toLowerCase() + '"><i></i>' + s + '</span>';
+}
+
+/* ---------------------------------------------------------------- routing */
+var VIEWS = ['overview','posts','calendar','health','media','tags'];
+function show(v){
+  if (VIEWS.indexOf(v) < 0) v = 'overview';
+  VIEWS.forEach(function(x){ $('v-'+x).classList.toggle('on', x === v); });
+  Array.prototype.forEach.call($('nav').querySelectorAll('a'), function(a){
+    a.setAttribute('aria-current', a.getAttribute('data-v') === v);
+  });
+  if (v === 'calendar') drawCal();
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', function(){ show(location.hash.replace('#','')); });
+Array.prototype.forEach.call(document.querySelectorAll('[data-go]'), function(b){
+  b.addEventListener('click', function(e){ e.preventDefault();
+    location.hash = b.getAttribute('data-go'); });
+});
+
+/* ---------------------------------------------------------------- overview */
+function drawOverview(){
+  var st = S.stats();
+  $('tiles').innerHTML =
+    '<div class="tile"><b>' + st.by.Published + '</b><span>Published</span></div>' +
+    '<div class="tile t--gold"><b>' + (st.by.Scheduled||0) + '</b><span>Scheduled</span></div>' +
+    '<div class="tile"><b>' + (st.by.Draft||0) + '</b><span>Drafts</span></div>' +
+    '<div class="tile t--fire"><b>' + fmt(st.words) + '</b><span>Words in the archive</span></div>';
+
+  var soon = S.load().filter(function(p){ return p.status === 'Scheduled'; })
+    .sort(function(a,b){ return a.date < b.date ? -1 : 1; }).slice(0,5);
+  $('upcoming').innerHTML = soon.length ? soon.map(function(p){
+    return '<div class="issue"><div><b>' + esc(p.title || 'Untitled') + '</b>' +
+      '<span class="tiny">' + p.kind + ' \u00b7 ' + nice(p.date) + '</span></div>' +
+      '<a class="mini" href="write.html?id=' + encodeURIComponent(p.id) + '">Edit</a></div>';
+  }).join('') : '<div class="empty">Nothing scheduled.</div>';
+
+  var tot = st.total || 1;
+  $('mix').innerHTML =
+    '<div style="font-size:14px;color:var(--bone-2)">Recipes <b style="float:right;color:var(--bone)">' +
+      st.recipes + '</b></div><div class="bar"><i style="width:' +
+      Math.round(st.recipes/tot*100) + '%"></i></div>' +
+    '<div style="font-size:14px;color:var(--bone-2);margin-top:16px">Stories ' +
+      '<b style="float:right;color:var(--bone)">' + st.stories + '</b></div>' +
+      '<div class="bar"><i style="width:' + Math.round(st.stories/tot*100) +
+      '%;background:var(--sugar)"></i></div>' +
+    '<p class="tiny" style="margin:18px 0 0">The archive is ' +
+      Math.round(st.recipes/tot*100) + '% recipes. The Journal is built to carry both.</p>';
+
+  var top = S.load().filter(function(p){ return p.status === 'Published'; })
+    .sort(function(a,b){ return b.views - a.views; }).slice(0,5);
+  $('topread').innerHTML = top.map(function(p){
+    return '<div class="issue"><div><b>' + esc(p.title) + '</b>' +
+      '<span class="tiny">' + esc(p.tags) + '</span></div>' +
+      '<span class="mini" style="cursor:default">' + fmt(p.views) + '</span></div>';
+  }).join('');
+
+  var h = S.health();
+  $('healthmini').innerHTML = h.length ? h.slice(0,5).map(function(x){
+    return '<div class="issue"><div><b>' + esc(x.post.title || 'Untitled') + '</b>' +
+      '<div class="flags">' + x.issues.map(function(i){
+        return '<span class="flag">' + i + '</span>'; }).join('') + '</div></div>' +
+      '<a class="mini" href="write.html?id=' + encodeURIComponent(x.post.id) + '">Fix</a></div>';
+  }).join('') : '<div class="empty">Everything checks out.</div>';
+
+  $('n-posts').textContent = st.total;
+  $('n-health').textContent = h.length || '';
+}
+
+/* ---------------------------------------------------------------- posts */
+var sortKey = 'date', sortDir = 'desc';
+function rowsData(){
+  var q = $('q').value.trim().toLowerCase();
+  var k = $('f-kind').value, st = $('f-status').value;
+  var list = S.load().filter(function(p){
+    if (k && p.kind !== k) return false;
+    if (st && p.status !== st) return false;
+    if (!q) return true;
+    var hay = (p.title + ' ' + p.tags + ' ' + p.rubs.join(' ')).toLowerCase();
+    return hay.indexOf(q) > -1;
+  });
+  list.sort(function(a,b){
+    var A, B;
+    if (sortKey === 'words') { A = S.words(a); B = S.words(b); }
+    else if (sortKey === 'views') { A = a.views; B = b.views; }
+    else { A = (a[sortKey]||'').toString().toLowerCase(); B = (b[sortKey]||'').toString().toLowerCase(); }
+    if (A < B) return sortDir === 'asc' ? -1 : 1;
+    if (A > B) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return list;
+}
+function drawRows(){
+  var list = rowsData();
+  $('n-result').textContent = list.length + ' of ' + S.load().length;
+  $('norows').hidden = list.length > 0;
+  $('rows').innerHTML = list.map(function(p){
+    var href = p.kind === 'Recipe' ? 'recipe.html#' + p.slug : 'story.html#' + p.slug;
+    return '<tr data-id="' + esc(p.id) + '">' +
+      '<td class="t"><b>' + esc(p.title || 'Untitled') + '</b><span>' +
+        esc(p.tags || 'untagged') + (p.sample ? ' \u00b7 sample' : '') + '</span></td>' +
+      '<td class="tcol">' + p.kind + '</td>' +
+      '<td>' + pill(p.status) + '</td>' +
+      '<td class="dcol" style="white-space:nowrap;color:var(--bone-2)">' + nice(p.date) + '</td>' +
+      '<td class="num tcol">' + fmt(S.words(p)) + '</td>' +
+      '<td class="num tcol">' + (p.views ? fmt(p.views) : '\u2014') + '</td>' +
+      '<td><div class="rowacts">' +
+        '<a class="mini" href="' + href + '">View</a>' +
+        '<a class="mini" href="write.html?id=' + encodeURIComponent(p.id) + '">Edit</a>' +
+        '<button class="mini" data-act="cycle" type="button">Status</button>' +
+        '<button class="mini mini--danger" data-act="del" type="button">Delete</button>' +
+      '</div></td></tr>';
+  }).join('');
+}
+$('rows').addEventListener('click', function(e){
+  var b = e.target.closest('[data-act]'); if (!b) return;
+  var id = e.target.closest('tr').getAttribute('data-id');
+  var p = S.byId(id); if (!p) return;
+  if (b.getAttribute('data-act') === 'cycle') {
+    var order = ['Draft','Scheduled','Published'];
+    p.status = order[(order.indexOf(p.status) + 1) % order.length];
+    S.save();
+  } else {
+    if (!confirm('Delete \u201c' + (p.title || 'Untitled') + '\u201d? This only affects the demo data.')) return;
+    S.remove(id);
+  }
+  drawRows(); drawOverview();
+});
+['q','f-kind','f-status'].forEach(function(id){
+  $(id).addEventListener('input', drawRows);
+  $(id).addEventListener('change', drawRows);
+});
+Array.prototype.forEach.call(document.querySelectorAll('th[data-sort]'), function(th){
+  th.addEventListener('click', function(){
+    var k = th.getAttribute('data-sort');
+    if (sortKey === k) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortKey = k; sortDir = k === 'date' || k === 'words' || k === 'views' ? 'desc' : 'asc'; }
+    Array.prototype.forEach.call(document.querySelectorAll('th[data-sort]'), function(o){
+      o.removeAttribute('data-dir'); });
+    th.setAttribute('data-dir', sortDir);
+    drawRows();
+  });
+});
+
+/* ---------------------------------------------------------------- calendar */
+var calRef = new Date();
+function drawCal(){
+  var y = calRef.getFullYear(), m = calRef.getMonth();
+  $('mlabel').textContent = calRef.toLocaleDateString('en-US',
+    { month:'long', year:'numeric' });
+  var first = new Date(y, m, 1), start = new Date(first);
+  start.setDate(1 - first.getDay());
+  var byDate = {};
+  S.load().forEach(function(p){ (byDate[p.date] = byDate[p.date] || []).push(p); });
+
+  var today = new Date().toISOString().slice(0,10);
+  var html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    .map(function(d){ return '<div class="dow">' + d + '</div>'; }).join('');
+  for (var i = 0; i < 42; i++) {
+    var d = new Date(start); d.setDate(start.getDate() + i);
+    var key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') +
+              '-' + String(d.getDate()).padStart(2,'0');
+    var evs = byDate[key] || [];
+    html += '<div class="day' + (d.getMonth() !== m ? ' out' : '') +
+      (key === today ? ' today' : '') + '"><em>' + d.getDate() + '</em>' +
+      evs.map(function(p){
+        return '<a class="ev ' + p.status.toLowerCase() + '" title="' + esc(p.title) +
+          '" href="write.html?id=' + encodeURIComponent(p.id) + '">' +
+          esc(p.title || 'Untitled') + '</a>'; }).join('') + '</div>';
+  }
+  $('cal').innerHTML = html;
+}
+$('prevm').addEventListener('click', function(){ calRef.setMonth(calRef.getMonth()-1); drawCal(); });
+$('nextm').addEventListener('click', function(){ calRef.setMonth(calRef.getMonth()+1); drawCal(); });
+
+/* ---------------------------------------------------------------- health */
+function drawHealth(){
+  var h = S.health();
+  $('healthlist').innerHTML = h.length ? h.map(function(x){
+    return '<div class="issue"><div><b>' + esc(x.post.title || 'Untitled') + '</b>' +
+      '<div class="flags">' + x.issues.map(function(i){
+        return '<span class="flag">' + i + '</span>'; }).join('') + '</div></div>' +
+      '<a class="mini" href="write.html?id=' + encodeURIComponent(x.post.id) + '">Fix</a></div>';
+  }).join('') : '<div class="empty">Every post has a title, hero, standfirst and tags.</div>';
+}
+
+/* ---------------------------------------------------------------- media */
+function drawMedia(){
+  var use = {};
+  S.load().forEach(function(p){ if (p.hero) use[p.hero] = (use[p.hero]||0) + 1; });
+  var imgs = MC.recipes.map(function(r){ return { src:r.img, name:r.title }; });
+  Object.keys(use).forEach(function(src){
+    if (!imgs.some(function(i){ return i.src === src; })) imgs.push({ src:src, name:src.split('/').pop() });
+  });
+  $('n-media').textContent = imgs.length;
+  $('mgrid').innerHTML = imgs.map(function(i){
+    var n = use[i.src] || 0;
+    return '<figure class="mcell"><img src="' + i.src + '" alt="" loading="lazy">' +
+      '<figcaption>' + esc(i.name) + (n ? ' \u00b7 used ' + n + '\u00d7' : ' \u00b7 unused') +
+      '</figcaption></figure>';
+  }).join('');
+}
+
+/* ---------------------------------------------------------------- tags */
+function drawTags(){
+  var t = S.tagCounts();
+  $('n-tags').textContent = t.length;
+  $('taglist').innerHTML = t.map(function(x){
+    return '<span class="tagchip">' + esc(x.tag) + '<b>' + x.n + '</b></span>'; }).join('');
+}
+
+/* ---------------------------------------------------------------- boot */
+$('reseed').addEventListener('click', function(e){
+  e.preventDefault();
+  if (!confirm('Reset the demo Journal back to its seeded state?')) return;
+  S.reset(); drawAll();
+});
+function drawAll(){ drawOverview(); drawRows(); drawHealth(); drawMedia(); drawTags(); drawCal(); }
+drawAll();
+show(location.hash.replace('#',''));
 '''
 
 
@@ -1293,7 +1854,7 @@ def build(emit):
 
     emit('journal.html', 'The Journal — Meat Church BBQ',
          'Recipes, stories and cook notes from Meat Church.',
-         JOURNAL_CSS, JOURNAL_BODY, JOURNAL_JS)
+         JOURNAL_CSS, JOURNAL_BODY, JOURNAL_JS, scripts=('store.js',))
 
     emit('recipe.html', 'Hatch Chile Brisket Dip — Meat Church BBQ',
          'Smoked brisket, roasted Hatch chiles and loads of melted cheese.',
@@ -1301,8 +1862,12 @@ def build(emit):
 
     emit('story.html', 'Why we trim a brisket the way we do — Meat Church BBQ',
          'A sample long-form Journal post showing the article layout.',
-         ARTICLE_CSS, STORY_BODY, STORY_JS)
+         ARTICLE_CSS, STORY_BODY, STORY_JS, scripts=('store.js',))
 
     emit('write.html', 'Journal Studio — Meat Church BBQ',
          'Write, structure and publish recipes and stories.',
-         WRITE_CSS, WRITE_BODY, WRITE_JS)
+         WRITE_CSS, WRITE_BODY, WRITE_JS, scripts=('store.js',))
+
+    emit('admin.html', 'Journal Admin — Meat Church BBQ',
+         'Editorial dashboard for the Meat Church Journal.',
+         ADMIN_CSS, ADMIN_BODY, ADMIN_JS, scripts=('store.js',))

@@ -24,7 +24,13 @@ body{overflow-x:hidden}
 .colhead .btn{margin-left:auto}
 
 /* post list */
-.plist{padding:10px 0}
+.psearch{padding:12px 22px 10px;border-bottom:1px solid var(--line-2);display:grid;gap:8px}
+.psearch input{background:var(--char);border:1px solid var(--line);color:var(--bone);
+  padding:9px 12px;font:inherit;font-size:14px;border-radius:var(--r);width:100%}
+.psearch input:focus{outline:none;border-color:var(--ember)}
+.psearch .count{margin:0;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.16em;
+  font-size:10.5px;color:var(--bone-3)}
+.plist{padding:10px 0;max-height:calc(100vh - 260px);overflow:auto}
 .pitem{display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;
   padding:14px 22px;border-bottom:1px solid var(--line-2);transition:background .18s}
 .pitem:hover{background:var(--char)}
@@ -71,6 +77,13 @@ body{overflow-x:hidden}
 .x{background:none;border:1px solid var(--line-2);color:var(--bone-3);cursor:pointer;
   border-radius:var(--r);height:38px;transition:all .2s}
 .x:hover{border-color:var(--ember);color:var(--ember)}
+.row.step{align-items:start}
+.row.step > div{display:grid;gap:6px}
+.row .sh{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.row .grouprow{border-color:rgba(232,163,61,.45);color:var(--sugar);
+  font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.addpair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:620px){.addpair{grid-template-columns:1fr}}
 .addrow{font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.14em;font-size:11.5px;
   font-weight:700;background:none;border:1px dashed var(--line);color:var(--bone-2);
   padding:10px 16px;cursor:pointer;border-radius:var(--r);transition:all .2s;width:100%}
@@ -181,6 +194,19 @@ body{overflow-x:hidden}
 .usedrub span{font-size:13px;color:var(--bone-3)}
 .samplebar{background:rgba(232,163,61,.1);border:1px solid rgba(232,163,61,.3);
   padding:14px 18px;font-size:14.5px;color:var(--sugar);margin-bottom:28px}
+.pn{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:clamp(40px,5vw,64px);
+  padding-top:26px;border-top:1px solid var(--line)}
+.pn a{text-decoration:none;border:1px solid var(--line-2);padding:16px 18px;
+  transition:border-color .25s var(--ease),background .25s var(--ease)}
+.pn a:hover{border-color:var(--ember);background:var(--char)}
+.pn a.nx{text-align:right}
+.pn span{display:block;font-family:var(--f-cond);text-transform:uppercase;letter-spacing:.18em;
+  font-size:10.5px;color:var(--bone-3);margin-bottom:6px}
+.pn b{font-family:var(--f-disp);font-weight:800;text-transform:uppercase;font-size:18px;
+  line-height:1.05;display:block}
+.prose .ings{margin-bottom:18px}
+.prose h3{color:var(--bone)}
+@media (max-width:560px){.pn{grid-template-columns:1fr}.pn a.nx{text-align:left}}
 @media (max-width:980px){.abody{grid-template-columns:1fr}.rail{position:static}}
 </style>
 </head>
@@ -209,7 +235,12 @@ body{overflow-x:hidden}
   <div class="col">
     <div class="colhead">
       <h2>Posts</h2>
+      <a class="btn btn--sm btn--ghost" href="admin.html">Admin</a>
       <button class="btn btn--sm btn--fire" id="new" type="button">New</button>
+    </div>
+    <div class="psearch">
+      <input type="search" id="plistq" placeholder="Search posts&hellip;" aria-label="Search posts">
+      <span class="count" id="plistn"></span>
     </div>
     <div class="plist" id="plist"></div>
   </div>
@@ -221,6 +252,9 @@ body{overflow-x:hidden}
       <button class="btn btn--sm btn--ghost" id="preview" type="button">Preview</button>
     </div>
     <div class="editor">
+      <div class="samplebar" id="samplenote" hidden><strong>Sample post.</strong>
+        Written by Williams Digital to demonstrate the long-form layout &mdash;
+        not Meat Church editorial.</div>
       <div class="seg" id="kind">
         <button type="button" data-k="Recipe" aria-pressed="true">Recipe</button>
         <button type="button" data-k="Story" aria-pressed="false">Story</button>
@@ -248,7 +282,10 @@ body{overflow-x:hidden}
       <div class="fieldset" id="ingbox">
         <h3>Ingredients</h3>
         <div class="rows" id="ingrows"></div>
-        <button class="addrow" type="button" data-add="ing">+ Add ingredient</button>
+        <div class="addpair">
+          <button class="addrow" type="button" data-add="ing">+ Add ingredient</button>
+          <button class="addrow" type="button" data-add="group">+ Add sub-recipe heading</button>
+        </div>
       </div>
 
       <div class="fieldset" id="stepbox">
@@ -325,6 +362,7 @@ body{overflow-x:hidden}
         <li><a href="#school">BBQ School</a></li><li><a href="https://www.youtube.com/@MeatChurchBBQ" target="_blank" rel="noopener">YouTube</a></li></ul></div>
       <div><h4>Company</h4><ul>
         <li><a href="#story">Our Story</a></li><li><a href="#store">Store Finder</a></li>
+        <li><a href="admin.html">Journal Admin</a></li>
         <li><a href="write.html">Journal Studio</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
     <div class="ftr-btm">
@@ -336,135 +374,127 @@ body{overflow-x:hidden}
 
 <script src="assets/data.js?v=1"></script>
 <script src="assets/seasoning.js?v=1"></script>
+<script src="assets/store.js?v=1"></script>
 <script>
-/* ------------------------------------------------------------------ store */
-var KEY = 'mc-journal-v1';
-function seed(){
-  return [
-    { id:'p1', kind:'Recipe', status:'Published', date:'2026-09-08',
-      title:'Hatch Chile Brisket Dip',
-      dek:'Smoked brisket, roasted Hatch chiles and loads of melted cheese. Football season calls for a killer smoked dip.',
-      hero:'img/recipe/hatch-chile-brisket-dip.jpg', tags:'Beef, Tailgating, Appetizer',
-      temp:'350°F', time:'45 min', serves:'8', vessel:'12" cast iron',
-      rubs:['garlic-jalapeno-blanco'],
-      ings:['1 lb smoked chopped brisket','16 oz softened cream cheese','8 oz chopped Hatch chiles',
-            '1 can cream of poblano soup','2 C shredded Monterey Jack','1 sliced jalapeño'],
-      steps:['Set your pellet grill to 350°F.',
-             'Press the cream cheese into a 12 inch cast iron skillet, then layer the chiles, onion, brisket and soup. Season with Garlic & Jalapeño BLANCO and top with cheese.',
-             'Smoke for 45 minutes until the cheese is completely melted.',
-             'Garnish with cilantro and queso fresco, rest ten minutes, serve with chips.'],
-      body:'This is an easy way to put leftover brisket to work, and the perfect dip for college football Saturdays, NFL Sundays, tailgates, or any game-day party.' },
-    { id:'p2', kind:'Story', status:'Scheduled', date:'2026-09-24',
-      title:'Why we trim a brisket the way we do',
-      dek:'Fat you leave on, fat you take off, and the one cut that decides how the whole thing cooks.',
-      hero:'img/recipe/tri-tip-smoked-like-a-brisket.jpg', tags:'Technique, Beef',
-      temp:'', time:'', serves:'', vessel:'', rubs:['holy-cow-rub'], ings:[], steps:[],
-      body:'## Start with the fat cap\nTake the cap down to a quarter inch and stop. Any less and the flat dries out before the point is ready.\n\n## The deckle is the decision\nThe hard seam of fat between the point and the flat is the one place where trimming actually changes the cook.' },
-    { id:'p3', kind:'Recipe', status:'Draft', date:'2026-09-18',
-      title:'', dek:'', hero:'img/recipe/beef-back-party-ribs.jpg', tags:'',
-      temp:'', time:'', serves:'', vessel:'', rubs:[], ings:[''], steps:[''], body:'' }
-  ];
-}
-var posts, cur;
-try { posts = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch(e){ posts = seed(); }
-if (!posts.length) posts = seed();
-function persist(){ try { localStorage.setItem(KEY, JSON.stringify(posts)); } catch(e){} }
-
-/* ------------------------------------------------------------------ dom */
 var $ = function(id){ return document.getElementById(id); };
+var S = MC.store;
 var F = { title:$('f-title'), dek:$('f-dek'), temp:$('f-temp'), time:$('f-time'),
           serves:$('f-serves'), vessel:$('f-vessel'), tags:$('f-tags'),
           status:$('f-status'), date:$('f-date'), body:$('f-body') };
+var cur = null;
 
-function slugify(s){
-  return (s || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g,'-')
-    .replace(/^-|-$/g,'').slice(0,60) || 'untitled';
+function esc(s){ return (s==null?'':String(s))
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function qs(k){
+  var m = new RegExp('[?&]' + k + '=([^&]*)').exec(location.search);
+  return m ? decodeURIComponent(m[1]) : null;
 }
 
 /* ------------------------------------------------------------------ list */
 function drawList(){
-  var box = $('plist'); box.innerHTML = '';
-  posts.forEach(function(p){
-    var b = document.createElement('button');
-    b.className = 'pitem'; b.type = 'button';
-    b.setAttribute('aria-current', p.id === cur.id);
-    b.innerHTML = '<b>' + (p.title || 'Untitled post') + '</b>' +
-      '<span><i class="dot dot--' + p.status.toLowerCase() + '"></i>' +
-      p.status + ' &middot; ' + p.kind + ' &middot; ' + p.date + '</span>';
-    b.addEventListener('click', function(){ pull(); load(p); });
-    box.appendChild(b);
+  var q = ($('plistq') && $('plistq').value || '').trim().toLowerCase();
+  var all = S.load().filter(function(p){
+    return !q || (p.title + ' ' + p.tags).toLowerCase().indexOf(q) > -1;
   });
+  $('plist').innerHTML = all.slice(0, 60).map(function(p){
+    return '<button class="pitem" type="button" data-id="' + esc(p.id) + '" aria-current="' +
+      (cur && p.id === cur.id) + '"><b>' + esc(p.title || 'Untitled post') + '</b>' +
+      '<span><i class="dot dot--' + p.status.toLowerCase() + '"></i>' + p.status +
+      ' &middot; ' + p.kind + ' &middot; ' + p.date + '</span></button>';
+  }).join('');
+  $('plistn').textContent = all.length + ' post' + (all.length === 1 ? '' : 's');
 }
+$('plist').addEventListener('click', function(e){
+  var b = e.target.closest('.pitem'); if (!b) return;
+  pull(); S.save();
+  load(S.byId(b.getAttribute('data-id')));
+});
 
 /* ------------------------------------------------------------------ pickers */
-var HEROES = MC.recipes.slice(0, 18);
+var HEROES = MC.recipes.slice(0, 24);
 function drawHero(){
-  var box = $('heropick'); box.innerHTML = '';
-  HEROES.forEach(function(r){
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.setAttribute('aria-pressed', cur.hero === r.img);
-    b.title = r.title;
-    b.innerHTML = '<img src="' + r.img + '" alt="' + r.title + '">';
-    b.addEventListener('click', function(){ cur.hero = r.img; drawHero(); glance(); });
-    box.appendChild(b);
-  });
+  $('heropick').innerHTML = HEROES.map(function(r){
+    return '<button type="button" data-src="' + r.img + '" title="' + esc(r.title) +
+      '" aria-pressed="' + (cur.hero === r.img) + '">' +
+      '<img src="' + r.img + '" alt="' + esc(r.title) + '" loading="lazy"></button>';
+  }).join('');
 }
-function drawRubs(){
-  var box = $('rubpick'); box.innerHTML = '';
-  MC.rubs.forEach(function(r){
-    var on = cur.rubs.indexOf(r.h) > -1;
-    var b = document.createElement('button');
-    b.type = 'button'; b.setAttribute('aria-pressed', on);
-    b.innerHTML = '<img src="' + r.img + '" alt=""><span>' + r.name + '</span>';
-    b.addEventListener('click', function(){
-      var i = cur.rubs.indexOf(r.h);
-      if (i > -1) cur.rubs.splice(i,1); else cur.rubs.push(r.h);
-      drawRubs();
-    });
-    box.appendChild(b);
-  });
-}
+$('heropick').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  cur.hero = b.getAttribute('data-src'); drawHero(); glance();
+});
 
-/* ------------------------------------------------------------------ repeatable rows */
-function drawRows(which){
-  var box = which === 'ing' ? $('ingrows') : $('steprows');
-  var arr = which === 'ing' ? cur.ings : cur.steps;
-  box.innerHTML = '';
-  arr.forEach(function(v, i){
-    var row = document.createElement('div');
-    row.className = 'row';
-    var field = which === 'ing'
-      ? '<input value="" placeholder="1 lb smoked chopped brisket">'
-      : '<textarea placeholder="Describe the step."></textarea>';
-    row.innerHTML = '<span class="n">' + (i+1) + '</span>' + field +
-      '<button class="x" type="button" aria-label="Remove">&times;</button>';
-    var input = row.querySelector('input, textarea');
-    input.value = v;
-    input.addEventListener('input', function(){ arr[i] = input.value; glance(); });
-    row.querySelector('.x').addEventListener('click', function(){
-      arr.splice(i,1); if (!arr.length) arr.push(''); drawRows(which); glance();
-    });
-    box.appendChild(row);
-  });
+function drawRubs(){
+  $('rubpick').innerHTML = MC.rubs.map(function(r){
+    return '<button type="button" data-h="' + r.h + '" aria-pressed="' +
+      (cur.rubs.indexOf(r.h) > -1) + '"><img src="' + r.img + '" alt="">' +
+      '<span>' + esc(r.name) + '</span></button>';
+  }).join('');
 }
+$('rubpick').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  var h = b.getAttribute('data-h'), i = cur.rubs.indexOf(h);
+  if (i > -1) cur.rubs.splice(i,1); else cur.rubs.push(h);
+  drawRubs();
+});
+
+/* ------------------------------------------------------------------ rows */
+function drawIngs(){
+  $('ingrows').innerHTML = cur.ings.map(function(v, i){
+    var group = /^—\s/.test(v);
+    return '<div class="row" data-i="' + i + '"><span class="n">' +
+      (group ? '&para;' : (i+1)) + '</span>' +
+      '<input value="' + esc(v) + '" placeholder="1 lb smoked chopped brisket"' +
+      (group ? ' class="grouprow"' : '') + '>' +
+      '<button class="x" type="button" aria-label="Remove">&times;</button></div>';
+  }).join('');
+}
+function drawSteps(){
+  $('steprows').innerHTML = cur.steps.map(function(s, i){
+    return '<div class="row step" data-i="' + i + '"><span class="n">' + (i+1) + '</span>' +
+      '<div><input class="sh" value="' + esc(s.h) + '" placeholder="Step heading — e.g. Prepare your smoker">' +
+      '<textarea class="sb" placeholder="What to do.">' + esc(s.b) + '</textarea></div>' +
+      '<button class="x" type="button" aria-label="Remove">&times;</button></div>';
+  }).join('');
+}
+$('ingrows').addEventListener('input', function(e){
+  var row = e.target.closest('.row'); if (!row) return;
+  cur.ings[+row.getAttribute('data-i')] = e.target.value; glance();
+});
+$('steprows').addEventListener('input', function(e){
+  var row = e.target.closest('.row'); if (!row) return;
+  var s = cur.steps[+row.getAttribute('data-i')];
+  if (e.target.classList.contains('sh')) s.h = e.target.value; else s.b = e.target.value;
+  glance();
+});
+$('ingrows').addEventListener('click', function(e){
+  if (!e.target.classList.contains('x')) return;
+  cur.ings.splice(+e.target.closest('.row').getAttribute('data-i'), 1);
+  if (!cur.ings.length) cur.ings.push('');
+  drawIngs(); glance();
+});
+$('steprows').addEventListener('click', function(e){
+  if (!e.target.classList.contains('x')) return;
+  cur.steps.splice(+e.target.closest('.row').getAttribute('data-i'), 1);
+  drawSteps(); glance();
+});
 Array.prototype.forEach.call(document.querySelectorAll('[data-add]'), function(b){
   b.addEventListener('click', function(){
     var w = b.getAttribute('data-add');
-    (w === 'ing' ? cur.ings : cur.steps).push('');
-    drawRows(w); glance();
+    if (w === 'ing') { cur.ings.push(''); drawIngs(); }
+    else if (w === 'group') { cur.ings.push('— '); drawIngs(); }
+    else { cur.steps.push({h:'',b:''}); drawSteps(); }
+    glance();
   });
 });
 
 /* ------------------------------------------------------------------ kind */
-Array.prototype.forEach.call(document.querySelectorAll('#kind button'), function(b){
-  b.addEventListener('click', function(){
-    cur.kind = b.getAttribute('data-k');
-    syncKind(); glance();
-  });
+$('kind').addEventListener('click', function(e){
+  var b = e.target.closest('button'); if (!b) return;
+  cur.kind = b.getAttribute('data-k'); syncKind(); glance();
 });
 function syncKind(){
-  Array.prototype.forEach.call(document.querySelectorAll('#kind button'), function(b){
+  Array.prototype.forEach.call($('kind').querySelectorAll('button'), function(b){
     b.setAttribute('aria-pressed', b.getAttribute('data-k') === cur.kind);
   });
   var recipe = cur.kind === 'Recipe';
@@ -472,17 +502,19 @@ function syncKind(){
   $('edhead').textContent = 'Editing ' + cur.kind.toLowerCase();
 }
 
-/* ------------------------------------------------------------------ load / pull */
+/* ------------------------------------------------------------------ load/pull */
 function load(p){
+  if (!p) p = S.load()[0];
   cur = p;
   F.title.value = p.title; F.dek.value = p.dek; F.temp.value = p.temp;
-  F.time.value = p.time; F.serves.value = p.serves; F.vessel.value = p.vessel;
+  F.time.value = p.time; F.serves.value = p.serves || ''; F.vessel.value = p.vessel || '';
   F.tags.value = p.tags; F.status.value = p.status; F.date.value = p.date;
   F.body.value = p.body;
-  if (!cur.ings.length) cur.ings = [''];
-  if (!cur.steps.length) cur.steps = [''];
-  syncKind(); drawHero(); drawRubs(); drawRows('ing'); drawRows('step');
-  drawList(); glance();
+  if (!cur.ings || !cur.ings.length) cur.ings = [''];
+  if (!cur.steps) cur.steps = [];
+  if (!cur.rubs) cur.rubs = [];
+  $('samplenote').hidden = !p.sample;
+  syncKind(); drawHero(); drawRubs(); drawIngs(); drawSteps(); drawList(); glance();
 }
 function pull(){
   if (!cur) return;
@@ -490,21 +522,22 @@ function pull(){
   cur.time = F.time.value; cur.serves = F.serves.value; cur.vessel = F.vessel.value;
   cur.tags = F.tags.value; cur.status = F.status.value; cur.date = F.date.value;
   cur.body = F.body.value;
+  if (!cur.slug || !cur.slug.length) cur.slug = S.slugify(cur.title);
 }
 
-/* ------------------------------------------------------------------ glance + seo */
+/* ------------------------------------------------------------------ glance */
 function glance(){
   pull();
-  var words = (cur.body + ' ' + cur.dek + ' ' + cur.steps.join(' '))
-    .trim().split(/\s+/).filter(Boolean).length;
+  var w = S.words(cur);
   $('g-kind').textContent = cur.kind;
-  $('g-words').textContent = words;
-  $('g-read').textContent = Math.max(1, Math.round(words / 200)) + ' min';
-  $('g-ings').textContent = cur.ings.filter(Boolean).length;
-  $('g-steps').textContent = cur.steps.filter(Boolean).length;
-  $('g-slug').textContent = slugify(cur.title);
+  $('g-words').textContent = w.toLocaleString('en-US');
+  $('g-read').textContent = Math.max(1, Math.round(w / 200)) + ' min';
+  $('g-ings').textContent = cur.ings.filter(function(x){
+    return x && !/^—\s/.test(x); }).length;
+  $('g-steps').textContent = cur.steps.filter(function(s){ return s.h || s.b; }).length;
+  $('g-slug').textContent = S.slugify(cur.title);
   $('s-title').textContent = cur.title || 'Untitled post';
-  $('s-slug').textContent = slugify(cur.title);
+  $('s-slug').textContent = S.slugify(cur.title);
   $('s-desc').textContent = cur.dek || 'Add a standfirst and it will show up here.';
   drawList();
 }
@@ -512,28 +545,28 @@ Object.keys(F).forEach(function(k){
   F[k].addEventListener('input', glance);
   F[k].addEventListener('change', glance);
 });
+$('plistq').addEventListener('input', drawList);
 
-/* ------------------------------------------------------------------ new / save */
+/* ------------------------------------------------------------------ actions */
 $('new').addEventListener('click', function(){
-  pull();
-  var p = { id:'p' + Date.now(), kind:'Recipe', status:'Draft',
-            date:new Date().toISOString().slice(0,10), title:'', dek:'',
-            hero:MC.recipes[0].img, tags:'', temp:'', time:'', serves:'', vessel:'',
-            rubs:[], ings:[''], steps:[''], body:'' };
-  posts.unshift(p); persist(); load(p);
+  pull(); S.save();
+  load(S.add({ id:'p'+Date.now(), kind:'Recipe', status:'Draft', slug:'',
+    date:new Date().toISOString().slice(0,10), title:'', dek:'',
+    hero:MC.recipes[0].img, tags:'', temp:'', internal:'', time:'', serves:'', vessel:'',
+    rubs:[], ings:[''], steps:[{h:'',b:''}], body:'', sample:false, views:0 }));
   F.title.focus();
 });
 $('save').addEventListener('click', function(){
-  pull(); persist();
+  pull(); S.save();
   var m = $('savedmsg');
   m.textContent = 'Saved · ' + new Date().toLocaleTimeString();
   m.classList.add('on');
   setTimeout(function(){ m.classList.remove('on'); }, 2200);
   drawList();
 });
+window.addEventListener('beforeunload', function(){ pull(); S.save(); });
 
 /* ------------------------------------------------------------------ preview */
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function prose(t){
   return (t||'').split(/\n{2,}/).map(function(b){
     b = b.trim(); if (!b) return '';
@@ -551,11 +584,18 @@ $('preview').addEventListener('click', function(){
     if (cur.vessel) meta.push(['Vessel', cur.vessel]);
   } else {
     meta.push(['Filed under', cur.tags || 'Journal']);
-    var w = (cur.body||'').trim().split(/\s+/).filter(Boolean).length;
-    meta.push(['Reading', Math.max(1, Math.round(w/200)) + ' min']);
+    meta.push(['Reading', Math.max(1, Math.round(S.words(cur)/200)) + ' min']);
   }
-  var ings = cur.ings.filter(Boolean), steps = cur.steps.filter(Boolean);
+  var steps = cur.steps.filter(function(s){ return s.h || s.b; });
   var rubs = MC.rubs.filter(function(r){ return cur.rubs.indexOf(r.h) > -1; });
+
+  /* ingredients, honouring "— Group" marker rows */
+  var groups = [], g = null;
+  cur.ings.filter(Boolean).forEach(function(v){
+    var m = /^—\s*(.*)$/.exec(v);
+    if (m) { g = { g:m[1], items:[] }; groups.push(g); }
+    else { if (!g) { g = { g:'', items:[] }; groups.push(g); } g.items.push(v); }
+  });
 
   $('pvbody').innerHTML =
     '<article><section class="ahero"><div class="ahero-bg">' +
@@ -568,15 +608,19 @@ $('preview').addEventListener('click', function(){
     '<div class="wrap"><div class="abody"><div class="prose">' +
       (cur.dek ? '<p class="lede">' + esc(cur.dek) + '</p>' : '') +
       prose(cur.body) +
-      (ings.length ? '<h2>Ingredients</h2><ul class="ings">' + ings.map(function(i){
-        return '<li><input type="checkbox"><span>' + esc(i) + '</span></li>'; }).join('') + '</ul>' : '') +
+      (groups.length ? '<h2>Ingredients</h2>' + groups.map(function(gr){
+        return (gr.g ? '<h3>' + esc(gr.g) + '</h3>' : '') + '<ul class="ings">' +
+          gr.items.map(function(i){
+            return '<li><input type="checkbox"><span>' + esc(i) + '</span></li>';
+          }).join('') + '</ul>'; }).join('') : '') +
       (steps.length ? '<h2>Method</h2><ol class="steps">' + steps.map(function(s){
-        return '<li><div><p>' + esc(s) + '</p></div></li>'; }).join('') + '</ol>' : '') +
+        return '<li><div>' + (s.h ? '<h3>' + esc(s.h) + '</h3>' : '') +
+          '<p>' + esc(s.b) + '</p></div></li>'; }).join('') + '</ol>' : '') +
     '</div><aside class="rail">' +
       (rubs.length ? '<div class="railbox"><h4>Seasoning used</h4>' + rubs.map(function(r){
         return '<a class="usedrub" href="rub.html#' + r.h + '"><img src="' + r.img +
-          '" alt=""><div><b>' + r.name + '</b><span>From $' + r.price + '</span></div></a>';
-      }).join('') + '</div>' : '') +
+          '" alt=""><div><b>' + esc(r.name) + '</b><span>From $' + r.price +
+          '</span></div></a>'; }).join('') + '</div>' : '') +
       '<div class="railbox"><h4>Status</h4><div class="kv"><span>' + cur.status +
       '</span><b>' + cur.date + '</b></div></div>' +
     '</aside></div></div></article>';
@@ -591,7 +635,9 @@ window.addEventListener('keydown', function(e){
   if (e.key === 'Escape' && $('pv').classList.contains('open')) $('pvclose').click();
 });
 
-load(posts[0]);
+/* ------------------------------------------------------------------ boot */
+if (qs('new')) { $('new').click(); }
+else { load(qs('id') ? S.byId(qs('id')) : null); }
 </script>
 </body>
 </html>
