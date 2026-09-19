@@ -9,7 +9,7 @@ Content came from dubisgroup.com (home, `/about-us/`, `/services/`), read 19 Sep
 
 | Thing | Source |
 |---|---|
-| Phone `(216) 712-6712` | Listed on their site |
+| Phone `(216) 712-6712`, text `(216) 978-0281` | Listed on their site |
 | Mark Dubis as founder | Their About page |
 | VP roles in the marketing divisions of **KeyBank** and **National City Bank**, indirect automotive lending | Their About page |
 | Editor of **Digital Dealer** magazine (technology / eCommerce strategy) | Their About page |
@@ -22,9 +22,9 @@ The four service groupings, the four process steps, and all headline/body copy a
 
 ## ⚠ Check before this is sent
 
-* **"29+ years" / "Nearly 30 years."** Their own About page says *"over the last 26 years"*
-  and the home page says *"more than 20 years."* The page is undated, so the real figure is
-  unverified. The 29+/Nearly 30 framing came from the brief — **confirm with Mark before sending.**
+* **The experience figure now reads "26 years" / "26+"**, matching Mark's own About page
+  ("over the last 26 years"). The brief originally specified 29+/"Nearly 30"; that was changed
+  on 2026-09-19 because Mark reads his own site and an inflated number would read as careless.
 * **No client names, testimonials, logos, or project work** appear anywhere in this concept.
   Their "Clients" and "Web Gallery" pages were not reproduced.
 * **No prices.** Their services page lists $75/hour for standard design and maintenance;
