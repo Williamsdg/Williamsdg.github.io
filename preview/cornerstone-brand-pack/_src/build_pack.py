@@ -8,7 +8,7 @@ OUT  = os.path.expanduser("~/Williamsdg.github.io/preview/cornerstone-brand-pack
 F    = os.path.join(OUT, "files")
 SVGD, PNGD, PDFD, FNT = (os.path.join(F, d) for d in ("svg", "png", "pdf", "fonts"))
 for d in (SVGD, PNGD, PDFD, FNT): os.makedirs(d, exist_ok=True)
-SRCF = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "fonts")
+SRCF = mk.FDIR
 
 def w(path, s):
     open(path, "w", encoding="utf-8").write(s); return path
@@ -112,5 +112,7 @@ png(os.path.join(SVGD, "cornerstone-logo-horizontal.svg"),
 
 # ---------------------------------------------------------------- fonts
 for f in ("Archivo-Variable.ttf", "Archivo-OFL.txt", "Inter-Variable.ttf", "Inter-OFL.txt"):
-    shutil.copy(os.path.join(SRCF, f), os.path.join(FNT, f))
+    src, dst = os.path.join(SRCF, f), os.path.join(FNT, f)
+    if os.path.abspath(src) != os.path.abspath(dst):
+        shutil.copy(src, dst)
 print("files written")

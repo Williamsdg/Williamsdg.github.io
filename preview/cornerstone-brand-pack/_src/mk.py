@@ -7,7 +7,11 @@ from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.boundsPen import BoundsPen
 
-FDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "fonts")
+_HERE = os.path.dirname(os.path.abspath(__file__))
+# fonts ship with the pack itself, so this source is self-contained
+FDIR = os.path.join(_HERE, "..", "files", "fonts")
+if not os.path.exists(os.path.join(FDIR, "Archivo-Variable.ttf")):
+    FDIR = os.path.join(_HERE, "..", "fonts")
 INK, RED, WHITE = "#242323", "#D91A3B", "#FFFFFF"
 
 _cache = {}
@@ -133,17 +137,53 @@ def arc_text(font, text, size, tracking_em, radius, cx, cy, top=True, fill=INK):
         run += adv
     return "".join(out)
 
-def badge(ink=INK, red=RED, fg=WHITE, size=220):
-    """Round field badge — shirts, hats, truck doors, report stamps."""
+def _arc_len(font, text, size, tracking_em):
+    upem = font["head"].unitsPerEm; sc = size/upem
+    cmap, hmtx = font.getBestCmap(), font["hmtx"]
+    t = 0.0
+    for ch in text:
+        gn = cmap.get(ord(ch))
+        t += (hmtx[gn][0]*sc if gn else size*0.35) + tracking_em*size
+    return t - tracking_em*size
+
+def fit_arc(font, text, radius, max_span_deg, size0, tracking_em):
+    """Shrink until the text occupies no more than max_span_deg of the circle."""
+    size = size0
+    while size > 5:
+        half = math.degrees((_arc_len(font, text, size, tracking_em)/2)/radius)
+        if half*2 <= max_span_deg:
+            return size, half*2
+        size -= 0.25
+    return size, math.degrees((_arc_len(font, text, size, tracking_em)/2)/radius)*2
+
+def badge(ink=INK, red=RED, fg=WHITE, size=220, report=False):
+    """Round field badge. Arc text is fitted so it never reaches the side diamonds."""
     f7, f6 = archivo(700), archivo(600)
     cx = cy = 110.0
+    TOP_SPAN, BOT_SPAN = 162.0, 118.0     # degrees; diamonds sit at +/-90
+    r_top, r_bot = 86.0, 92.0             # baselines: top grows outward, bottom inward
+    s_top, span_top = fit_arc(f7, "CORNERSTONE CLAIMS ADJUSTERS", r_top, TOP_SPAN, 17.0, 0.06)
+    s_bot, span_bot = fit_arc(f6, "EST. 2021 · PRATTVILLE, AL",   r_bot, BOT_SPAN, 15.0, 0.09)
     body  = f'<circle cx="{cx}" cy="{cy}" r="106" fill="{ink}"/>'
-    body += f'<circle cx="{cx}" cy="{cy}" r="100" fill="none" stroke="{red}" stroke-width="2.5"/>'
-    body += f'<circle cx="{cx}" cy="{cy}" r="64" fill="none" stroke="{fg}" stroke-width="1.2" opacity=".35"/>'
-    body += arc_text(f7, "CORNERSTONE CLAIMS ADJUSTERS", 15, 0.10, 84, cx, cy, True, fg)
-    body += arc_text(f6, "EST. 2021 · PRATTVILLE, AL", 13, 0.12, 80, cx, cy, False, fg)
-    body += f'<path d="M12 110L17 105L22 110L17 115Z" fill="{red}"/>'
-    body += f'<path d="M198 110L203 105L208 110L203 115Z" fill="{red}"/>'
-    body += (f'<g transform="translate(70,70) scale({80/64:.4f})">' + MARK.format(ink=fg, red=red) + '</g>')
+    body += f'<circle cx="{cx}" cy="{cy}" r="99" fill="none" stroke="{red}" stroke-width="2.5"/>'
+    body += f'<circle cx="{cx}" cy="{cy}" r="72" fill="none" stroke="{fg}" stroke-width="1" opacity=".28"/>'
+    body += arc_text(f7, "CORNERSTONE CLAIMS ADJUSTERS", s_top, 0.06, r_top, cx, cy, True,  fg)
+    body += arc_text(f6, "EST. 2021 · PRATTVILLE, AL",   s_bot, 0.09, r_bot, cx, cy, False, fg)
+    for sx in (-1, 1):                     # separator diamonds at 9 and 3 o'clock
+        dx = cx + sx*87.5
+        body += f'<path d="M{dx-4.5:.1f} {cy}L{dx} {cy-4.5}L{dx+4.5:.1f} {cy}L{dx} {cy+4.5}Z" fill="{red}"/>'
+    m = 78.0
+    body += (f'<g transform="translate({cx-m/2:.1f},{cy-m/2:.1f}) scale({m/64:.4f})">'
+             + MARK.format(ink=fg, red=red) + '</g>')
     s = svg(220, 220, body)
-    return s.replace('width="220.0" height="220.0"', f'width="{size}" height="{size}"')
+    s = s.replace('width="220.0" height="220.0"', f'width="{size}" height="{size}"')
+    if report:
+        return s, dict(top_size=s_top, top_span=span_top, bot_size=s_bot, bot_span=span_bot,
+                       top_gap=(180-span_top)/2, bot_gap=(180-span_bot)/2)
+    return s
+
+def badge_shell(ink=INK, red=RED, fg=WHITE):
+    """The seal minus the centre mark, so a page can drop any mark inside."""
+    full, _ = badge(ink, red, fg, report=True)
+    i = full.index('<g transform="translate(71.0,71.0)')
+    return full[:i], full[full.index("</svg>"):]
