@@ -24,18 +24,26 @@ def pdf(src, dst):
 
 # ---------------------------------------------------------------- lockups
 LOCKUPS = {
+ # primary — with the Integrity · Experience · Results tagline
  "cornerstone-logo-horizontal":        mk.horizontal(INK,  RED),
  "cornerstone-logo-horizontal-white":  mk.horizontal(WHITE, RED),
  "cornerstone-logo-horizontal-black":  mk.horizontal(INK,  INK),
- "cornerstone-logo-compact":           mk.horizontal(INK,  RED, tagline=False),
- "cornerstone-logo-compact-white":     mk.horizontal(WHITE, RED, tagline=False),
  "cornerstone-logo-stacked":           mk.stacked(INK,  RED),
  "cornerstone-logo-stacked-white":     mk.stacked(WHITE, RED),
+ # without the tagline, for tight spaces
+ "cornerstone-logo-simple":            mk.horizontal(INK,  RED, tagline=False),
+ "cornerstone-logo-simple-white":      mk.horizontal(WHITE, RED, tagline=False),
+ "cornerstone-logo-compact":           mk.horizontal(INK,  RED, tagline=False, sub=False),
+ "cornerstone-logo-compact-white":     mk.horizontal(WHITE, RED, tagline=False, sub=False),
+ # mark
  "cornerstone-mark":                   mk.mark_svg(INK,  RED, 512),
  "cornerstone-mark-white":             mk.mark_svg(WHITE, RED, 512),
  "cornerstone-mark-black":             mk.mark_svg(INK,  INK, 512),
+ # seals — tagline version is primary, location version is the alternate
  "cornerstone-badge":                  mk.badge(INK, RED, WHITE, 1024),
  "cornerstone-badge-white":            mk.badge(WHITE, RED, INK, 1024),
+ "cornerstone-badge-est":              mk.badge(INK, RED, WHITE, 1024, bottom="EST. 2021 · PRATTVILLE, AL"),
+ "cornerstone-badge-est-white":        mk.badge(WHITE, RED, INK, 1024, bottom="EST. 2021 · PRATTVILLE, AL"),
 }
 for name, s in LOCKUPS.items():
     p = w(os.path.join(SVGD, name + ".svg"), s)
@@ -44,14 +52,18 @@ for name, s in LOCKUPS.items():
 PNG_SIZES = {
  "cornerstone-logo-horizontal":       [600, 1200, 2400],
  "cornerstone-logo-horizontal-white": [600, 1200, 2400],
- "cornerstone-logo-compact":          [600, 1200],
- "cornerstone-logo-compact-white":    [600, 1200],
  "cornerstone-logo-stacked":          [800, 1600],
  "cornerstone-logo-stacked-white":    [800, 1600],
+ "cornerstone-logo-simple":           [600, 1200],
+ "cornerstone-logo-simple-white":     [600, 1200],
+ "cornerstone-logo-compact":          [600, 1200],
+ "cornerstone-logo-compact-white":    [600, 1200],
  "cornerstone-mark":                  [16, 32, 48, 64, 128, 180, 192, 256, 512, 1024],
  "cornerstone-mark-white":            [256, 512, 1024],
  "cornerstone-badge":                 [512, 1024, 2048],
  "cornerstone-badge-white":           [512, 1024],
+ "cornerstone-badge-est":             [512, 1024, 2048],
+ "cornerstone-badge-est-white":       [512, 1024],
 }
 for name, sizes in PNG_SIZES.items():
     for s in sizes:

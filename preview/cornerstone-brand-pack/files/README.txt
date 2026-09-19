@@ -17,6 +17,16 @@ Facebook cover .............. png/facebook-cover-820x312.png
 Email newsletter header ..... png/email-header-600x200.png
 Shirts, hats, truck doors,
   report stamps ............. svg/cornerstone-badge.svg (or the PDF)
+                              -est version carries the year and town
+Tight spaces where the
+  tagline won't read ........ svg/cornerstone-logo-simple.svg
+
+THE TAGLINE
+--------------------------------------------------------------------
+The main logo files carry "Integrity - Experience - Results" beneath
+the name. Where the logo has to sit small and the tagline would be
+unreadable, use the "-simple" files instead. The seal comes two ways:
+with the tagline, or with "Est. 2021 - Prattville, AL".
 
 WHICH VERSION?
 --------------------------------------------------------------------

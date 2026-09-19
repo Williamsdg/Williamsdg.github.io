@@ -42,7 +42,8 @@ def mark(ink="#242323", acc="#D91A3B", cls="logo__mark"):
 def lockup(ink="#242323", acc="#D91A3B"):
     return (f'{mark(ink, acc)}<span class="logo__txt">'
             f'<span class="logo__name">Cornerstone</span>'
-            f'<span class="logo__sub">Claims Adjusters</span></span>')
+            f'<span class="logo__sub">Claims Adjusters</span>'
+            f'<span class="logo__tag">Integrity &middot; Experience &middot; Results</span></span>')
 
 # Nav per the brief: Home, Services, Fleet & Commercial, Claims Consulting, About, Contact
 NAV = [
@@ -368,7 +369,7 @@ home = hero(
       <div class="cred"><div class="cred__n">25+</div><div class="cred__l">Years of Appraisal Experience</div></div>
       <div class="cred"><div class="cred__n">150+</div><div class="cred__l">I-CAR Courses Completed</div></div>
       <div class="cred"><div class="cred__n">Level 3</div><div class="cred__l">I-CAR Platinum</div></div>
-      <div class="cred"><div class="cred__n">4 States</div><div class="cred__l">AL &middot; FL &middot; GA &middot; MS</div></div>
+      <div class="cred"><div class="cred__n">5 States</div><div class="cred__l">AL &middot; FL &middot; GA &middot; MS &middot; TN</div></div>
     </div>
     <div class="cols2">
       <div class="rv">
@@ -597,7 +598,7 @@ about = hero(
       <div class="cred"><div class="cred__n">25+</div><div class="cred__l">Years of Appraisal Experience</div></div>
       <div class="cred"><div class="cred__n">150+</div><div class="cred__l">I-CAR Courses Completed</div></div>
       <div class="cred"><div class="cred__n">Level 3</div><div class="cred__l">I-CAR Platinum</div></div>
-      <div class="cred"><div class="cred__n">4 States</div><div class="cred__l">AL &middot; FL &middot; GA &middot; MS</div></div>
+      <div class="cred"><div class="cred__n">5 States</div><div class="cred__l">AL &middot; FL &middot; GA &middot; MS &middot; TN</div></div>
     </div>
     <div class="cols2">
       <div class="rv">

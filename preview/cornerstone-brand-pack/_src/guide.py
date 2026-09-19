@@ -13,6 +13,7 @@ USE = [
  ("Word, Google Docs, PDFs", "png/cornerstone-logo-horizontal-1200.png", "PNG &middot; 1200px wide"),
  ("Letterhead &amp; printed reports", "pdf/cornerstone-logo-horizontal.pdf", "PDF &middot; vector"),
  ("Sign shop, vehicle wrap, embroidery", "svg/cornerstone-logo-horizontal.svg", "SVG &middot; vector"),
+ ("Somewhere the tagline is too small", "svg/cornerstone-logo-simple.svg", "SVG &middot; vector"),
  ("Website favicon", "png/cornerstone-mark-32.png", "PNG &middot; 32px"),
  ("Social profile picture", "png/social-profile-light-1000.png", "PNG &middot; 1000&times;1000"),
  ("LinkedIn banner", "png/linkedin-banner-1584x396.png", "PNG &middot; 1584&times;396"),
@@ -22,27 +23,31 @@ USE = [
 ]
 
 GROUPS = [
- ("The logo", "The full lockup. This is the default choice.", "dark", [
+ ("The logo", "The full lockup, with the Integrity &middot; Experience &middot; Results tagline. This is the default choice.", None, [
    ("Horizontal &mdash; primary", "cornerstone-logo-horizontal", "png/cornerstone-logo-horizontal-1200.png", [600,1200,2400]),
    ("Horizontal &mdash; reversed", "cornerstone-logo-horizontal-white", "png/cornerstone-logo-horizontal-white-1200.png", [600,1200,2400]),
    ("Horizontal &mdash; one colour", "cornerstone-logo-horizontal-black", None, []),
- ]),
- ("Compact &amp; stacked", "For tight spaces, or when the shape needs to be squarer.", "light", [
-   ("Compact &mdash; no tagline", "cornerstone-logo-compact", "png/cornerstone-logo-compact-1200.png", [600,1200]),
-   ("Compact &mdash; reversed", "cornerstone-logo-compact-white", "png/cornerstone-logo-compact-white-1200.png", [600,1200]),
    ("Stacked", "cornerstone-logo-stacked", "png/cornerstone-logo-stacked-800.png", [800,1600]),
    ("Stacked &mdash; reversed", "cornerstone-logo-stacked-white", "png/cornerstone-logo-stacked-white-800.png", [800,1600]),
  ]),
- ("The mark on its own", "Use where the name is already obvious, or where the space is square.", "light", [
+ ("Shorter versions", "For tight spaces &mdash; a narrow website header, a small stamp, a favicon strip &mdash; where the tagline would be too small to read.", None, [
+   ("Without the tagline", "cornerstone-logo-simple", "png/cornerstone-logo-simple-1200.png", [600,1200]),
+   ("Without the tagline &mdash; reversed", "cornerstone-logo-simple-white", "png/cornerstone-logo-simple-white-1200.png", [600,1200]),
+   ("Name only", "cornerstone-logo-compact", "png/cornerstone-logo-compact-1200.png", [600,1200]),
+   ("Name only &mdash; reversed", "cornerstone-logo-compact-white", "png/cornerstone-logo-compact-white-1200.png", [600,1200]),
+ ]),
+ ("The mark on its own", "Use where the name is already obvious, or where the space is square.", None, [
    ("Mark", "cornerstone-mark", "png/cornerstone-mark-256.png", [16,32,48,64,128,180,192,256,512,1024]),
    ("Mark &mdash; reversed", "cornerstone-mark-white", "png/cornerstone-mark-white-256.png", [256,512,1024]),
    ("Mark &mdash; one colour", "cornerstone-mark-black", None, []),
  ]),
- ("The field badge", "Round format for embroidery, vehicle doors and report stamps.", "light", [
-   ("Badge", "cornerstone-badge", "png/cornerstone-badge-512.png", [512,1024,2048]),
-   ("Badge &mdash; reversed", "cornerstone-badge-white", "png/cornerstone-badge-white-512.png", [512,1024]),
+ ("The seal", "Round format for embroidery, vehicle doors and report stamps. The tagline version is the default; the second carries the year and the town instead.", None, [
+   ("Seal &mdash; tagline", "cornerstone-badge", "png/cornerstone-badge-512.png", [512,1024,2048]),
+   ("Seal &mdash; tagline, reversed", "cornerstone-badge-white", "png/cornerstone-badge-white-512.png", [512,1024]),
+   ("Seal &mdash; est. &amp; town", "cornerstone-badge-est", "png/cornerstone-badge-est-512.png", [512,1024,2048]),
+   ("Seal &mdash; est. &amp; town, reversed", "cornerstone-badge-est-white", "png/cornerstone-badge-est-white-512.png", [512,1024]),
  ]),
- ("Ready-made pieces", "Sized correctly for each platform. Upload as they are.", "light", [
+ ("Ready-made pieces", "Sized correctly for each platform. Upload as they are.", None, [
    ("LinkedIn banner", "linkedin-banner-1584x396", "png/linkedin-banner-1584x396.png", []),
    ("Facebook cover", "facebook-cover-820x312", "png/facebook-cover-820x312.png", []),
    ("Email header", "email-header-600x200", "png/email-header-600x200.png", []),

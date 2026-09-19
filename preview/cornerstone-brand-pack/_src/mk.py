@@ -22,6 +22,20 @@ def archivo(weight):
     _cache[weight] = inst
     return inst
 
+
+TAGLINE = "INTEGRITY · EXPERIENCE · RESULTS"
+
+def _raw_width(font, text, size):
+    upem = font["head"].unitsPerEm; sc = size/upem
+    cmap, hmtx = font.getBestCmap(), font["hmtx"]
+    return sum((hmtx[cmap[ord(c)]][0]*sc if cmap.get(ord(c)) else size*0.35) for c in text)
+
+def track_to_width(font, text, size, target):
+    """Tracking (in em) that makes this line exactly `target` wide."""
+    n = len(text)
+    if n < 2: return 0.0
+    return max(0.0, (target - _raw_width(font, text, size)) / (size * (n - 1)))
+
 def text_outline(font, text, size, tracking_em=0.0):
     """Return (svg path d, width, (ymin,ymax)) with the baseline at y=0, y down."""
     upem = font["head"].unitsPerEm
@@ -58,53 +72,63 @@ def svg(w, h, body, pad=0):
 def mark_svg(ink=INK, red=RED, size=64):
     return svg(size, size, f'<g transform="scale({size/64:.4f})">' + MARK.format(ink=ink, red=red) + '</g>')
 
-def horizontal(ink=INK, red=RED, tagline=True, name_size=42):
-    """Mark + CORNERSTONE (+ CLAIMS ADJUSTERS). Text outlined."""
+def horizontal(ink=INK, red=RED, tagline=True, sub=True, name_size=42):
+    """Mark + CORNERSTONE, with CLAIMS ADJUSTERS and the tagline justified to its width."""
     f8, f6 = archivo(800), archivo(600)
     nd, nw, _ = text_outline(f8, "CORNERSTONE", name_size, 0.005)
     cap = cap_height(f8, name_size)
-    ts = name_size * 0.265
-    td, tw, _ = text_outline(f6, "CLAIMS ADJUSTERS", ts, 0.2) if tagline else ("", 0, (0, 0))
-    gap_v = name_size * 0.30
-    text_h = cap + (gap_v + ts * 0.72 if tagline else 0)
-    mark_s = text_h * 1.28
-    gap_h = mark_s * 0.34
-    pad = mark_s * 0.16
-    top = pad
-    my = top + (text_h - mark_s) / 2
+    lines = []
+    if sub:
+        ss = name_size * 0.245
+        tr = track_to_width(f6, "CLAIMS ADJUSTERS", ss, nw)
+        lines.append((f6, "CLAIMS ADJUSTERS", ss, tr, 1.0))
+    if tagline:
+        ts = name_size * 0.195
+        tr = track_to_width(f6, TAGLINE, ts, nw)
+        lines.append((f6, TAGLINE, ts, tr, 0.68))
+    gap_v = name_size * 0.26
+    text_h = cap + sum(gap_v * 0.9 + sz * 0.72 for _, _, sz, _, _ in lines)
+    mark_s = text_h * (1.12 if lines else 1.28)
+    gap_h = mark_s * 0.30
+    pad = mark_s * 0.17
+    my = pad + (text_h - mark_s) / 2
     tx = pad + mark_s + gap_h
-    base = top + cap
+    base = pad + cap
     body = (f'<g transform="translate({pad:.1f},{my:.1f}) scale({mark_s/64:.4f})">'
             + MARK.format(ink=ink, red=red) + '</g>'
             f'<path d="{nd}" fill="{ink}" transform="translate({tx:.1f},{base:.1f})"/>')
-    if tagline:
-        tb = base + gap_v + ts * 0.72
-        body += f'<path d="{td}" fill="{ink}" opacity=".72" transform="translate({tx:.1f},{tb:.1f})"/>'
-    w = tx + max(nw, tw) + pad
-    h = top + text_h + pad
-    return svg(w, h, body)
+    y = base
+    for fnt, txt, sz, tr, op in lines:
+        d, _, _ = text_outline(fnt, txt, sz, tr)
+        y += gap_v * 0.9 + sz * 0.72
+        body += f'<path d="{d}" fill="{ink}" opacity="{op}" transform="translate({tx:.1f},{y:.1f})"/>'
+    return svg(tx + nw + pad, pad * 2 + text_h, body)
 
-def stacked(ink=INK, red=RED, name_size=42):
+def stacked(ink=INK, red=RED, tagline=True, name_size=42):
     f8, f6 = archivo(800), archivo(600)
     nd, nw, _ = text_outline(f8, "CORNERSTONE", name_size, 0.005)
     cap = cap_height(f8, name_size)
-    ts = name_size * 0.265
-    td, tw, _ = text_outline(f6, "CLAIMS ADJUSTERS", ts, 0.2)
-    mark_s = name_size * 1.75
-    pad = name_size * 0.28
-    w = max(nw, tw, mark_s) + pad * 2
+    ss = name_size * 0.245
+    sub_tr = track_to_width(f6, "CLAIMS ADJUSTERS", ss, nw)
+    sd, sw_, _ = text_outline(f6, "CLAIMS ADJUSTERS", ss, sub_tr)
+    mark_s = name_size * 1.7
+    pad = name_size * 0.30
+    w = max(nw, sw_, mark_s) + pad * 2
     cx = w / 2
-    gap1 = name_size * 0.45
-    gap2 = name_size * 0.34
     my = pad
-    base = my + mark_s + gap1 + cap
-    tb = base + gap2 + ts * 0.72
-    h = tb + pad
+    base = my + mark_s + name_size * 0.42 + cap
     body = (f'<g transform="translate({cx - mark_s/2:.1f},{my:.1f}) scale({mark_s/64:.4f})">'
             + MARK.format(ink=ink, red=red) + '</g>'
-            f'<path d="{nd}" fill="{ink}" transform="translate({cx - nw/2:.1f},{base:.1f})"/>'
-            f'<path d="{td}" fill="{ink}" opacity=".72" transform="translate({cx - tw/2:.1f},{tb:.1f})"/>')
-    return svg(w, h, body)
+            f'<path d="{nd}" fill="{ink}" transform="translate({cx - nw/2:.1f},{base:.1f})"/>')
+    y = base + name_size * 0.30 + ss * 0.72
+    body += f'<path d="{sd}" fill="{ink}" opacity=".72" transform="translate({cx - sw_/2:.1f},{y:.1f})"/>'
+    if tagline:
+        ts = name_size * 0.195
+        tr = track_to_width(f6, TAGLINE, ts, nw)
+        td, tw, _ = text_outline(f6, TAGLINE, ts, tr)
+        y += name_size * 0.24 + ts * 0.72
+        body += f'<path d="{td}" fill="{ink}" opacity=".62" transform="translate({cx - tw/2:.1f},{y:.1f})"/>'
+    return svg(w, y + pad, body)
 
 import math
 def arc_text(font, text, size, tracking_em, radius, cx, cy, top=True, fill=INK):
@@ -156,19 +180,19 @@ def fit_arc(font, text, radius, max_span_deg, size0, tracking_em):
         size -= 0.25
     return size, math.degrees((_arc_len(font, text, size, tracking_em)/2)/radius)*2
 
-def badge(ink=INK, red=RED, fg=WHITE, size=220, report=False):
+def badge(ink=INK, red=RED, fg=WHITE, size=220, report=False, bottom=TAGLINE):
     """Round field badge. Arc text is fitted so it never reaches the side diamonds."""
     f7, f6 = archivo(700), archivo(600)
     cx = cy = 110.0
-    TOP_SPAN, BOT_SPAN = 162.0, 118.0     # degrees; diamonds sit at +/-90
+    TOP_SPAN, BOT_SPAN = 162.0, 132.0     # degrees; diamonds sit at +/-90
     r_top, r_bot = 86.0, 92.0             # baselines: top grows outward, bottom inward
     s_top, span_top = fit_arc(f7, "CORNERSTONE CLAIMS ADJUSTERS", r_top, TOP_SPAN, 17.0, 0.06)
-    s_bot, span_bot = fit_arc(f6, "EST. 2021 · PRATTVILLE, AL",   r_bot, BOT_SPAN, 15.0, 0.09)
+    s_bot, span_bot = fit_arc(f6, bottom, r_bot, BOT_SPAN, 15.0, 0.09)
     body  = f'<circle cx="{cx}" cy="{cy}" r="106" fill="{ink}"/>'
     body += f'<circle cx="{cx}" cy="{cy}" r="99" fill="none" stroke="{red}" stroke-width="2.5"/>'
     body += f'<circle cx="{cx}" cy="{cy}" r="72" fill="none" stroke="{fg}" stroke-width="1" opacity=".28"/>'
     body += arc_text(f7, "CORNERSTONE CLAIMS ADJUSTERS", s_top, 0.06, r_top, cx, cy, True,  fg)
-    body += arc_text(f6, "EST. 2021 · PRATTVILLE, AL",   s_bot, 0.09, r_bot, cx, cy, False, fg)
+    body += arc_text(f6, bottom, s_bot, 0.09, r_bot, cx, cy, False, fg)
     for sx in (-1, 1):                     # separator diamonds at 9 and 3 o'clock
         dx = cx + sx*87.5
         body += f'<path d="M{dx-4.5:.1f} {cy}L{dx} {cy-4.5}L{dx+4.5:.1f} {cy}L{dx} {cy+4.5}Z" fill="{red}"/>'
@@ -182,8 +206,8 @@ def badge(ink=INK, red=RED, fg=WHITE, size=220, report=False):
                        top_gap=(180-span_top)/2, bot_gap=(180-span_bot)/2)
     return s
 
-def badge_shell(ink=INK, red=RED, fg=WHITE):
+def badge_shell(ink=INK, red=RED, fg=WHITE, bottom=TAGLINE):
     """The seal minus the centre mark, so a page can drop any mark inside."""
-    full, _ = badge(ink, red, fg, report=True)
+    full, _ = badge(ink, red, fg, report=True, bottom=bottom)
     i = full.index('<g transform="translate(71.0,71.0)')
     return full[:i], full[full.index("</svg>"):]
