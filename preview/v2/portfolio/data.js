@@ -84,6 +84,15 @@ const SELECTED = [
     caps: ["website", "commerce"],
     links: [{ label: "Explore shop", href: V2 + "marbleyard-goods/" }],
   },
+  {
+    id: "quarry-bend", name: "The Quarry Bend Record", status: "concept", industry: "civic",
+    premise: "A local newspaper front page the reader can re-set: the same stories laid out as a broadsheet, a morning digest, or a newsroom wire.",
+    caps: ["website", "tools"],
+    links: [
+      { label: "Explore front page", href: V2 + "quarry-bend-record/" },
+      { label: "Read a story", href: V2 + "quarry-bend-record/story.html" },
+    ],
+  },
 ];
 
 const WORKFLOWS = [

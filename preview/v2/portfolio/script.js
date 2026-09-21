@@ -21,7 +21,7 @@
     b.type = "button";
     b.setAttribute("role", "tab");
     b.id = `vt-${p.id}`;
-    b.textContent = p.name.replace(" Adventure Co.", "").replace(" Builders", "").replace(" Care", "").replace(" Goods", "");
+    b.textContent = p.name.replace(" Adventure Co.", "").replace(" Builders", "").replace(" Care", "").replace(" Goods", "").replace(/^The /, "").replace(" Record", "");
     b.setAttribute("aria-selected", "false");
     b.tabIndex = -1;
     b.addEventListener("click", () => select(i, false));
