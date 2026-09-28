@@ -464,6 +464,37 @@ footer a:hover{color:#fff}
   .nav-in{gap:8px}
   .cur button{min-width:28px}
 }
+
+.agenda{display:none}
+@media(max-width:900px){
+  .half.land{min-height:56vh;min-height:56svh}
+  .boat-visual{min-height:260px}
+  .tl-wrap{display:none}
+  .agenda{display:block;margin-bottom:4px}
+  .ag-row{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;align-items:stretch;margin-bottom:10px;animation:pop .35s cubic-bezier(.2,.9,.3,1.4)}
+  .ag-row time{font-family:var(--mono);font-size:13px;font-weight:700;color:#fff;padding-top:12px;line-height:1.3}
+  .ag-row time small{display:block;font-weight:500;color:rgba(255,255,255,.45)}
+  .ag-card{position:relative;border-radius:14px;padding:12px 44px 12px 14px;color:#fff;box-shadow:0 6px 16px rgba(0,0,0,.25);min-width:0}
+  .ag-card b{display:block;font-size:15px;line-height:1.25}
+  .ag-card small{font-size:12.5px;opacity:.85}
+  .ag-card button{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.2);color:#fff;font-size:18px;cursor:pointer}
+  .ag-sun{display:flex;align-items:center;gap:10px;margin:4px 0 12px 68px;color:var(--sulfur);font-family:var(--mono);font-size:12px;font-weight:700}
+  .ag-sun::before,.ag-sun::after{content:"";flex:1;border-top:2px dashed rgba(232,197,71,.6)}
+  .ag-sun::before{flex:0 0 14px}
+  .ag-empty{border:1px dashed rgba(255,255,255,.2);border-radius:14px;padding:22px 16px;text-align:center;color:rgba(255,255,255,.55);font-size:14px}
+  .picker{display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,auto);grid-auto-columns:max-content;overflow-x:auto;scrollbar-width:none;margin:18px -14px 0;padding:0 14px 6px;gap:8px}
+  .picker::-webkit-scrollbar{display:none}
+  .revs{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;margin:0 -16px;padding:0 16px 12px;scrollbar-width:none}
+  .revs::-webkit-scrollbar{display:none}
+  .revs>*{flex:0 0 84%;scroll-snap-align:center;opacity:1!important;transform:none!important}
+  .dock a{box-shadow:0 14px 30px rgba(0,0,0,.35)}
+  .plan .lede{font-size:16px}
+}
+@media(max-width:600px){
+  .fgrid>div:nth-child(2),.fgrid>div:nth-child(3){display:none}
+  .fgrid{gap:26px;margin-bottom:30px}
+}
+
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
   .rv{opacity:1;transform:none}
@@ -681,7 +712,7 @@ footer a:hover{color:#fff}
         <div class="kicker" style="color:var(--sulfur)">Plan your day</div>
         <h2>Build your <em>perfect</em><br>Santorini day.</h2>
       </div>
-      <p class="lede">Tap the experiences below and we’ll fit them around each other and around tonight’s sunset. Tap a block on the timeline to remove it. Then send us the whole day in one request.</p>
+      <p class="lede">Tap the experiences below and we’ll fit them around each other and around tonight’s sunset. Tap × on anything to remove it. Then send us the whole day in one request.</p>
     </div>
     <div class="planner rv">
       <div class="plan-top">
@@ -697,6 +728,7 @@ footer a:hover{color:#fff}
           <div class="sunline" id="sunline"><span id="sunlineT">19:08</span></div>
         </div>
       </div>
+      <div class="agenda" id="agenda" aria-live="polite"></div>
       <div class="picker" id="picker"></div>
       <div class="plan-sum">
         <div><div class="p" id="planTotal">€0</div><small id="planNote">Nothing planned yet</small></div>
@@ -716,6 +748,7 @@ footer a:hover{color:#fff}
       </div>
       <div><span class="sample">Sample reviews · replaced with real ones at launch</span></div>
     </div>
+    <div class="swipe-hint">Swipe for more →</div>
     <div class="revs">
       <div class="rev rv"><div class="st">★★★★★</div><blockquote>“The skipper found us an empty cove at Red Beach while every other boat queued. Best day of our honeymoon.”</blockquote><cite><b>Sample guest</b>Private catamaran, sunset</cite></div>
       <div class="rev rv"><div class="st">★★★★★</div><blockquote>“They dropped two quads at our hotel at nine, with a map. We made the lighthouse in time for sunset.”</blockquote><cite><b>Sample guest</b>ATV rental, 3 days</cite></div>
@@ -781,7 +814,7 @@ footer a:hover{color:#fff}
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
-<div class="dock" id="dock"><a class="btn btn-dark" href="#sea">Yachts</a><a class="btn btn-coral" href="#plan">Build my day</a></div>
+<div class="dock" id="dock"><a class="btn btn-coral" href="#plan">Build my Santorini day →</a></div>
 <div class="ribbon">Concept · placeholder brand · Williams Digital</div>
 
 <script>
@@ -1100,6 +1133,15 @@ footer a:hover{color:#fff}
         lane.appendChild(b);
       });
     });
+    var ag = $('#agenda'), items = plan.slice().sort(function(a, b){ return a.s - b.s; }), html = '', sunDone = false;
+    if(!items.length) html = '<div class="ag-empty">Your day is empty. Tap an experience below to start.</div>';
+    items.forEach(function(p){
+      if(!sunDone && p.s >= SUN){ html += '<div class="ag-sun">☀ Sunset ' + hm(SUN) + '</div>'; sunDone = true; }
+      html += '<div class="ag-row"><time>' + hm(p.s) + '<small>' + hm(p.e) + '</small></time><div class="ag-card ' + p.x.col + '"><b>' + p.x.n + '</b><small>' + (p.x.lane === 'B' ? 'All day · ' : Math.round(p.x.dur / 30) / 2 + ' h · ') + money(price(p.x)) + '</small><button type="button" data-rm="' + p.x.k + '" aria-label="Remove ' + p.x.n + '">×</button></div></div>';
+    });
+    if(items.length && !sunDone) html += '<div class="ag-sun">☀ Sunset ' + hm(SUN) + '</div>';
+    ag.innerHTML = html;
+    $$('[data-rm]', ag).forEach(function(b){ b.addEventListener('click', function(){ removePlan(b.dataset.rm); }); });
     var total = plan.reduce(function(a, p){ return a + price(p.x); }, 0);
     setMoney($('#planTotal'), total);
     $('#planNote').textContent = plan.length ? plan.length + (plan.length === 1 ? ' experience' : ' experiences') + ' · ' + guests + ' guests · pay nothing until we confirm' : 'Nothing planned yet';
@@ -1144,7 +1186,12 @@ footer a:hover{color:#fff}
   $('#burger').addEventListener('click', function(){ var o = $('#nav').classList.toggle('open'); this.setAttribute('aria-expanded', o); this.setAttribute('aria-label', o ? 'Close menu' : 'Open menu'); });
   $$('#menu a').forEach(function(a){ a.addEventListener('click', function(){ $('#nav').classList.remove('open'); $('#burger').setAttribute('aria-expanded', false); }); });
   var nav = $('#nav'), dock = $('#dock'), hero = $('#top');
-  function onScroll(){ var y = window.scrollY; nav.classList.toggle('solid', y > 40); dock.classList.toggle('show', y > hero.offsetHeight - 200); }
+  function onScroll(){
+    var y = window.scrollY; nav.classList.toggle('solid', y > 40);
+    var pl = $('#plan').getBoundingClientRect(), cta = $('.cta').getBoundingClientRect();
+    var inPlan = pl.top < innerHeight * .6 && pl.bottom > innerHeight * .4;
+    dock.classList.toggle('show', y > hero.offsetHeight - 200 && !inPlan && cta.top > innerHeight && !nav.classList.contains('open'));
+  }
   window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
   // desktop: the divider follows the hovered half
   $$('.half').forEach(function(h){
