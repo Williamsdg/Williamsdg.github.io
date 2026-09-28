@@ -78,7 +78,7 @@
         '<span class="wd-lab">'+esc(L.label)+'</span>'+
         (b.title?'<div class="wd-t">'+esc(b.title)+'</div>':'')+
         (b.msg?'<div class="wd-m">'+esc(b.msg)+'</div>':'')+
-        (b.linkText&&b.linkUrl?'<a class="wd-lk" href="'+esc(b.linkUrl)+'">'+esc(b.linkText)+'</a>':'')+
+        (b.linkText&&b.linkUrl?'<a class="wd-lk" href="'+esc(normUrl(b.linkUrl))+'">'+esc(b.linkText)+'</a>':'')+
       '</span>'+
       '<button class="wd-x" aria-label="Dismiss this notice">&times;</button></div>';
     el.innerHTML=html;
@@ -91,6 +91,13 @@
     else document.body.insertBefore(el,document.body.firstChild);
   }
 
+  function normUrl(u){
+    u=String(u||'').trim();
+    if(!u) return u;
+    if(/^(https?:|mailto:|tel:|#|\/)/i.test(u)) return u;
+    if(/^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(u)) return 'https://'+u;
+    return u;
+  }
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
   function setText(id,val){ var el=document.getElementById(id); if(el&&val!=null&&val!=='') el.textContent=val; }
