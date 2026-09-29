@@ -246,7 +246,7 @@ footer{padding:40px 0 60px;font-size:13px;color:var(--muted);border-top:1px soli
 /* ---------------- places ---------------- */
 const PLACES=[
  {id:'santorini',city:'Santorini',country:'Greece',code:'GR',lat:36.46,lng:25.38,motif:'meander',word:'Yamas',
-  P:{ink:'#16213A',sky:'#CFE3F2',sea:'#2E6FB5',a:'#1F4E9A',rock:'#C98A5E',sun:'#F2B84B',cream:'#F6F0E4',tile:'#F3EDE2'}},
+  P:{ink:'#16213A',sky:'#A48BC6',sea:'#3E5E9C',a:'#1F5FC4',rock:'#8E4A3A',sun:'#F7C878',cream:'#F6F0E4',tile:'#F3EDE2',lw:1.4}},
  {id:'lisbon',city:'Lisbon',country:'Portugal',code:'PT',lat:38.72,lng:-9.14,motif:'azulejo',word:'Saudade',
   P:{ink:'#16213A',sky:'#F6DDB3',sea:'#3D7EA6',a:'#E6A92A',b:'#E58C7E',c:'#9CC3D5',rock:'#C4643B',sun:'#F2B84B',cream:'#FBF3E4',tile:'#F7EEDD'}},
  {id:'kyoto',city:'Kyoto',country:'Japan',code:'JP',lat:35.01,lng:135.77,motif:'seigaiha',word:'Kanpai',
@@ -273,7 +273,7 @@ const fmt=(v,p,n)=>Math.abs(v).toFixed(2)+'°'+(v>=0?p:n);
    mode: 'color' full art · 'line' single-weight outline · 'sil' solid ink silhouette */
 function painter(P,m){
   return {
-    f:c=>m==='color'?`fill="${c}"`:m==='sil'?`fill="${P.ink}"`:`fill="none" stroke="${P.ink}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"`,
+    f:c=>m==='color'?`fill="${c}"`:m==='sil'?`fill="${P.ink}"`:`fill="${P.tile||P.cream||'#FFFFFF'}" stroke="${P.ink}" stroke-width="${P.lw||2}" stroke-linejoin="round" stroke-linecap="round"`,
     bg:el=>m==='color'?el:'',
     det:el=>m==='sil'?'':el,
     s:(c,w)=>`fill="none" stroke="${m==='color'?c:P.ink}" stroke-width="${m==='line'?2:w}" stroke-linecap="round"`,
@@ -281,14 +281,34 @@ function painter(P,m){
 }
 const SCENES={
  santorini(P,m){const {f,bg,det,s}=painter(P,m);
-  const H=[[4,60,24,18],[26,52,20,22],[46,62,24,16],[88,66,22,16],[110,72,26,14],[136,78,22,12],[10,78,28,14],[40,78,26,14],[68,80,24,12],[94,84,24,12]];
-  return bg(`<rect width="200" height="140" fill="${P.sky}"/>`)+`<circle cx="160" cy="36" r="15" ${f(P.sun)}/>`
-   +bg(`<rect y="102" width="200" height="38" fill="${P.sea}"/>`)+(m==='line'?`<path d="M120 112 q10 -4 20 0 t20 0 t20 0 t20 0" ${s(P.ink,2)}/>`:'')
-   +`<path d="M0 140 V72 Q30 64 60 70 Q100 78 132 84 Q164 90 200 102 V140Z" ${f(P.rock)}/>`
-   +H.map(([x,y,w,h])=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5" ${f('#FFFFFF')}/>`+det(`<rect x="${x+w*.38}" y="${y+h*.42}" width="${w*.22}" height="${h*.4}" ${f(P.a)}/>`)).join('')
-   +`<rect x="58" y="34" width="26" height="26" ${f('#FFFFFF')}/><path d="M58 34 A13 13 0 0 1 84 34Z" ${f(P.a)}/><path d="M71 21 V12 M67.5 15.5 H74.5" ${s(P.a,1.8)}/>`
-   +det(`<rect x="66" y="44" width="10" height="16" rx="5" ${f(P.a)}/>`)
-   +`<path d="M146 118 h26 l-5 6 h-16z" ${f('#FFFFFF')}/><path d="M158 118 V104 L168 116" ${s(P.ink,1.4)}/>`;
+  let seed=11;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  const g=uid('g'),gs=uid('g');
+  const WALL=['#FBF7F0','#FBF7F0','#FBF7F0','#F6ECDD','#F2C9A8','#EFD58E','#E9B7B0','#FBF7F0'];
+  // one terrace row: contiguous boxes from xL to 200, bottoms run below the next row so every building sits on the one below
+  const row=(top,xL,h)=>{let x=xL,o='';while(x<200){const w=8+rnd()*11,dy=rnd()*5,c=WALL[Math.floor(rnd()*WALL.length)],y=top-dy,hh=h+dy;
+    o+=`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(w+.6).toFixed(1)}" height="${hh.toFixed(1)}" ${f(c)}/>`;
+    if(rnd()<.22)o+=`<path d="M${x.toFixed(1)} ${y.toFixed(1)} A${(w/2).toFixed(1)} 3.6 0 0 1 ${(x+w).toFixed(1)} ${y.toFixed(1)}Z" ${f(c)}/>`;
+    o+=det(`<rect x="${(x+w-2).toFixed(1)}" y="${y.toFixed(1)}" width="2.2" height="${hh.toFixed(1)}" fill="${m==='color'?'#000':'none'}" opacity="${m==='color'?.06:0}"/>`);
+    const r2=rnd();if(r2<.45)o+=det(`<rect x="${(x+w*.28).toFixed(1)}" y="${(y+4).toFixed(1)}" width="3" height="4" rx="1.2" ${m==='color'?'fill="#FFC96B"':`fill="${P.ink}"`}/>`);
+    else if(r2<.65)o+=det(`<path d="M${(x+w*.4).toFixed(1)} ${(y+hh-2).toFixed(1)} v-5 a1.8 1.8 0 0 1 3.6 0 v5z" ${m==='color'?'fill="#2E4F8C"':`fill="${P.ink}"`}/>`);
+    x+=w;}return o};
+  const sky=`<defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5F63AE"/><stop offset=".38" stop-color="#A48BC6"/><stop offset=".7" stop-color="#EFA7A0"/><stop offset="1" stop-color="#F7C878"/></linearGradient><linearGradient id="${gs}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6F7FB8"/><stop offset="1" stop-color="#2F4A86"/></linearGradient></defs><rect width="200" height="76" fill="url(#${g})"/>`
+   +[[46,26,1],[110,16,1.3],[160,32,.9],[14,42,.6]].map(([x,y,k])=>`<g transform="translate(${x} ${y}) scale(${k})" opacity=".85"><ellipse cx="0" cy="0" rx="20" ry="4.5" fill="#7C72A9"/><ellipse cx="6" cy="-4" rx="10" ry="5.5" fill="#7C72A9"/><ellipse cx="-7" cy="-2.5" rx="8" ry="4" fill="#8A7FB3"/><ellipse cx="15" cy="-1" rx="8" ry="3" fill="#8A7FB3"/><ellipse cx="2" cy="3" rx="17" ry="1.6" fill="#F2A99F" opacity=".7"/></g>`).join('')
+   +`<rect y="72" width="200" height="68" fill="url(#${gs})"/><path d="M0 80 H120" stroke="#F7C878" stroke-width="1.2" opacity=".5"/><path d="M8 88 H90" stroke="#F7C878" stroke-width=".8" opacity=".35"/>`;
+  return bg(sky)+(m==='line'?`<path d="M0 74 H70 M10 90 q6 -3 12 0 t12 0 M30 104 q6 -3 12 0 t12 0" ${s(P.ink,2)}/>`:'')
+   +`<path d="M0 74 Q10 66 24 67 Q44 60 66 68 L78 74Z" ${f('#3A3F63')}/>`
+   +`<path d="M0 140 V122 Q16 114 30 110 L50 104 L70 98 L110 94 L200 92 V140Z" ${f('#8E4A3A')}/>`+det(`<path d="M6 130 Q20 120 40 114" ${s('#6E3A30',3)}/>`)
+   +`<g>`+row(22,172,20)+row(32,150,18)+row(44,130,18)
+   +`<rect x="126" y="52" width="22" height="18" ${f('#FBF7F0')}/><path d="M126 52 A11 10 0 0 1 148 52Z" ${f('#1F5FC4')}/>`+det(`<path d="M135 66 v-6 a1.8 1.8 0 0 1 3.6 0 v6z" ${f(m==='color'?'#2E4F8C':P.ink)}/>`)
+   +row(58,108,18)+row(70,90,18)
+   +`<rect x="70" y="62" width="13" height="36" ${f('#FBF7F0')}/><path d="M70 62 A6.5 7 0 0 1 83 62Z" ${f('#1F5FC4')}/><path d="M76.5 55 V49 M74 51.5 H79" ${s(m==='color'?'#FFFFFF':P.ink,1.4)}/>`
+   +det(`<path d="M72.5 76 v-5 a2 2 0 0 1 4 0 v5z M77 76 v-5 a2 2 0 0 1 4 0 v5z" ${f(m==='color'?'#3A4466':P.ink)}/><rect x="69" y="77" width="15" height="1.6" ${f(m==='color'?'#E6DED2':P.ink)}/>`)
+   +`<rect x="86" y="80" width="30" height="22" ${f('#FBF7F0')}/><rect x="89" y="76" width="24" height="5" ${f('#FBF7F0')}/><path d="M89 76 A12 12 0 0 1 113 76Z" ${f('#1F5FC4')}/>`
+   +det(`<path d="M93 70 A9 8 0 0 1 101 66" ${s('#6E9BE8',1.6)} opacity=".8"/><path d="M95 96 v-7 a2 2 0 0 1 4 0 v7z M104 96 v-7 a2 2 0 0 1 4 0 v7z" ${f(m==='color'?'#8FA6C8':P.ink)}/>`)
+   +row(88,58,18)+row(102,40,20)+row(116,54,26)+`</g>`
+   +`<path d="M44 140 V124 Q46 118 50 114" ${s('#6B4A34',2.4)}/>`+`<path d="M50 114 q-8 -2 -12 4 q6 -3 12 -4z M50 114 q8 -3 12 3 q-6 -2 -12 -3z M50 114 q-2 -8 -9 -9 q5 4 9 9z M50 114 q3 -8 10 -8 q-6 3 -10 8z" ${f('#3F6B45')}/>`
+   +`<path d="M96 140 Q136 128 176 110 L200 104 V140Z" ${f('#FBF7F0')}/><path d="M122 140 Q150 128 184 114 L200 110 V140Z" ${f('#7B7F88')}/>`
+   +det([[140,134],[150,130],[160,126],[170,122],[180,118],[146,138],[158,134],[168,130],[178,126],[188,122],[190,130],[176,136],[164,138]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="3.4" ry="1.8" ${f(m==='color'?'#A2A7AF':P.ink)}/>`).join(''));
  },
  lisbon(P,m){const {f,bg,det,s}=painter(P,m);
   const B=[[0,58,24,54],[24,48,22,64],[46,62,24,50],[70,52,26,60],[96,60,22,52],[118,48,26,64],[144,56,24,56],[168,50,32,62]];
