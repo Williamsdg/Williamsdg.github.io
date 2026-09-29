@@ -624,7 +624,7 @@ about = hero(
         <p class="cap__d">I-CAR Platinum Pro-Level 3 with more than 150 I-CAR courses completed. Farmers
         University Gold Star Certification, including a perfect score in Advanced School.</p></div>
       <div class="cap"><div class="cap__n">/ 02</div><h3 class="cap__t">Licensing</h3>
-        <p class="cap__d">Licensed in Alabama, Mississippi, Florida, Georgia and Oklahoma, with reciprocal
+        <p class="cap__d">Licensed in Alabama, Mississippi, Florida and Georgia, with reciprocal
         licensing across approximately 25 additional states.</p></div>
       <div class="cap"><div class="cap__n">/ 03</div><h3 class="cap__t">Arbitration &amp; Training</h3>
         <p class="cap__d">Arbitrator for Arbitration Forums. Developed claims training curriculum and
