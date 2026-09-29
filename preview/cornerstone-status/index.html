@@ -113,6 +113,19 @@ a{color:var(--red)}
 .who label{display:block;font-family:var(--f-disp);font-weight:700;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--grey-2);margin-bottom:5px}
 .who input{width:100%;font-family:inherit;font-size:15px;padding:10px 11px;border:1px solid var(--line);border-radius:3px;background:#fff}
 
+.send{background:#fff;border:1px solid var(--line);border-radius:3px;padding:clamp(20px,3vw,28px);margin-top:26px}
+.send__h{font-size:clamp(19px,2.2vw,23px);margin:0 0 .4em}
+.send__d{color:var(--grey);font-size:15.5px;margin:0 0 4px;max-width:62ch}
+.who--one{grid-template-columns:1fr}
+.who textarea{width:100%;min-height:86px;font-family:inherit;font-size:15px;padding:10px 11px;
+  border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--ink);resize:vertical}
+.who input:focus,.who textarea:focus{outline:2px solid var(--red);outline-offset:1px}
+.btn[disabled]{opacity:.55;cursor:default}
+.sendmsg{margin-top:16px;font-size:15.5px;line-height:1.6;display:none;border-radius:3px;padding:14px 16px}
+.sendmsg.on{display:block}
+.sendmsg.ok{background:var(--ok-soft);border:1px solid rgba(30,122,70,.3);color:#14532d}
+.sendmsg.bad{background:var(--red-soft);border:1px solid rgba(217,26,59,.3);color:var(--red-dk)}
+.sendmsg b{font-family:var(--f-disp)}
 .ftr{background:var(--ink);color:#C9C7C7;padding:clamp(28px,4vw,42px) 0;font-size:14.5px}
 .ftr a{color:#FF8497}
 .ftr__n{font-family:var(--f-disp);font-weight:800;font-size:17px;color:#fff;margin:0 0 4px}
@@ -183,8 +196,8 @@ a{color:var(--red)}
   <span class="num">/ 02 &mdash; Over to you</span>
   <h2>What I still need from Cornerstone</h2>
   <p class="sub">Tick each one as you send it or answer it, and type straight into the boxes &mdash;
-  this page saves itself on your device as you go, so you can stop and come back. Use
-  <b>Copy everything</b> at the bottom when you are ready to send it to me.</p>
+  this page saves itself on your device as you go, so you can stop and come back. Then press
+  <b>Send to Dylan</b> at the bottom &mdash; no email needed.</p>
   <p class="cnt" id="cnt">&mdash;</p><div class="bar"><i id="barf"></i></div>
 
   <div class="item" data-k="p1"><button class="chk" type="button" aria-label="Mark done"></button><div class="item__b">
@@ -231,17 +244,27 @@ a{color:var(--red)}
     <span class="item__t">Anything else you want changed</span>
     <p class="item__d">While we are waiting on photographs is the cheapest possible time to change your mind about anything. Nothing is precious.</p></div></div>
 
-  <div class="who">
-    <div><label for="wname">Your name</label><input id="wname" type="text" placeholder="Kerissa Grigsby" /></div>
-    <div><label for="wemail">Email</label><input id="wemail" type="email" placeholder="kerissa@cornerstoneadj.com" /></div>
+  <div class="send">
+    <h3 class="send__h">Send it to me</h3>
+    <p class="send__d">When you have answered what you can, press the button. It goes straight to my
+    inbox &mdash; you do not need to write an email, and it does not go through your mail system at
+    all. You can send as many times as you like; later ones simply replace the earlier ones.</p>
+    <div class="who">
+      <div><label for="wname">Your name</label><input id="wname" type="text" placeholder="Kerissa Grigsby" autocomplete="name" /></div>
+      <div><label for="wemail">Email <span style="text-transform:none;letter-spacing:0;font-weight:400">(so I can reply)</span></label><input id="wemail" type="email" placeholder="kerissa@cornerstoneadj.com" autocomplete="email" /></div>
+    </div>
+    <div class="who who--one">
+      <div><label for="wnote">Anything else you want to tell me</label><textarea id="wnote" placeholder="Optional &mdash; questions, changes, anything at all"></textarea></div>
+    </div>
+    <div aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap">
+      <label>Website<input id="whp" type="text" tabindex="-1" autocomplete="off" /></label>
+    </div>
+    <div class="actions">
+      <button class="btn" type="button" id="send">Send to Dylan</button>
+      <button class="btn btn--g" type="button" id="copy">Copy it instead</button>
+    </div>
+    <div class="sendmsg" id="sendmsg" role="status" aria-live="polite"></div>
   </div>
-  <div class="actions">
-    <button class="btn" type="button" id="copy">Copy everything</button>
-    <a class="btn btn--g" id="mail" href="#">Open in email</a>
-  </div>
-  <div class="note"><b>If &ldquo;Open in email&rdquo; does nothing</b>, your browser has no mail
-  program attached to it &mdash; which is common, and nothing to do with this page or with your
-  email problems. Use <b>Copy everything</b> and paste it into a reply to me instead.</div>
 </div></section>
 
 <section class="sect"><div class="wrap">
@@ -294,7 +317,7 @@ a{color:var(--red)}
 (function(){
   "use strict";
   var KEY="cs-status-v1";
-  var state={done:{},ans:{},name:"",email:""};
+  var state={done:{},ans:{},name:"",email:"",note:""};
   try{var raw=localStorage.getItem(KEY); if(raw) state=Object.assign(state,JSON.parse(raw));}catch(e){}
   var st=null;
   function save(){
@@ -331,10 +354,12 @@ a{color:var(--red)}
     ta.addEventListener("input",function(){state.ans[k]=ta.value;save();});
   });
 
-  var nm=document.getElementById("wname"), em=document.getElementById("wemail");
-  nm.value=state.name||""; em.value=state.email||"";
+  var nm=document.getElementById("wname"), em=document.getElementById("wemail"),
+      nt=document.getElementById("wnote");
+  nm.value=state.name||""; em.value=state.email||""; nt.value=state.note||"";
   nm.addEventListener("input",function(){state.name=nm.value;save();});
   em.addEventListener("input",function(){state.email=em.value;save();});
+  nt.addEventListener("input",function(){state.note=nt.value;save();});
 
   function summary(){
     var L=["CORNERSTONE — WEBSITE STATUS REPLY",
@@ -353,7 +378,7 @@ a{color:var(--red)}
   }
   document.getElementById("copy").addEventListener("click",function(){
     var t=summary();
-    function ok(){toast("Copied — paste it into an email to Dylan");}
+    function ok(){toast("Copied — paste it into a reply to Dylan");}
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(t).then(ok,function(){fb(t);});
     } else fb(t);
@@ -364,12 +389,46 @@ a{color:var(--red)}
       document.body.removeChild(ta);
     }
   });
-  document.getElementById("mail").addEventListener("click",function(ev){
-    ev.preventDefault();
-    var href="mailto:Dylan@williamsdigital.io?subject="+
-      encodeURIComponent("Cornerstone — website status")+"&body="+encodeURIComponent(summary());
-    if(href.length>1900){ toast("Too long for email — use Copy everything"); return; }
-    window.location.href=href;
+  /* ---- send straight to Dylan ---- */
+  var ENDPOINT="https://wd-forms.vercel.app/api/cornerstone-status";
+  var sendBtn=document.getElementById("send"), msgEl=document.getElementById("sendmsg");
+  function msg(kind,html){
+    msgEl.className="sendmsg on "+kind; msgEl.innerHTML=html;
+    msgEl.scrollIntoView({block:"nearest",behavior:"smooth"});
+  }
+  sendBtn.addEventListener("click",function(){
+    var payload={
+      name:(state.name||"").trim(),
+      email:(state.email||"").trim(),
+      note:(state.note||"").trim(),
+      website:document.getElementById("whp").value,
+      items:items.map(function(it){
+        return { title:it.querySelector(".item__t").textContent.trim(),
+                 done:!!state.done[it.dataset.k],
+                 answer:(state.ans[it.dataset.k]||"").trim() };
+      })
+    };
+    var anything=payload.note||payload.items.some(function(i){return i.done||i.answer;});
+    if(!anything){ msg("bad","Tick something or type an answer first, then press send."); return; }
+    if(payload.email && !/^\S+@\S+\.\S+$/.test(payload.email)){
+      msg("bad","That email address does not look right &mdash; have another look at it."); return;
+    }
+    sendBtn.disabled=true; var label=sendBtn.textContent; sendBtn.textContent="Sending\u2026";
+    msgEl.className="sendmsg";
+    fetch(ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok,j:j}; }); })
+      .then(function(o){
+        if(!o.ok) throw new Error((o.j&&o.j.error)||"Something went wrong.");
+        msg("ok","<b>Sent &mdash; thank you.</b><br>It is in my inbox now. Your answers stay saved on "+
+            "this page, so you can add more later and send it again whenever you like.");
+        toast("Sent to Dylan");
+      })
+      .catch(function(e){
+        msg("bad","<b>That did not go through.</b><br>"+(e.message||"Please try again in a moment.")+
+            " If it keeps failing, press <b>Copy it instead</b> and paste it into a reply &mdash; "+
+            "nothing you have typed is lost.");
+      })
+      .finally(function(){ sendBtn.disabled=false; sendBtn.textContent=label; });
   });
 
   paint();
