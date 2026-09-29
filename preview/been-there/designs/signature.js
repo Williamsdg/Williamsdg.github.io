@@ -285,15 +285,18 @@ window.SIG=SIG;
 
 /* ---------------- page wiring ---------------- */
 const CORE=['passport','postmark'];
+const isDark=h=>{const n=parseInt(h.slice(1),16);return (0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255))/255<.45};
+// core designs print straight on the fabric; paper products keep the full page
+const CORE_APPS={passport:[['teeL','#F2EBDD'],['teeL','#2F3B52'],['crewL','#E8E0D0'],['print',null,{fabric:false}]],postmark:[['teeL','#F2EBDD'],['teeL','#1E2C44'],['crewL','#8E9C8B'],['mug','#FFFFFF']]};
 const LIB=FAM.filter(F=>!CORE.includes(F.id));
-function card(F,art,i,total,meta,apps){return `<article class="fam" id="f-${F.id}">
-  <div class="art" style="background:${F.id==='poster'?'#E9DFCC':cur.P.tile}"><svg viewBox="0 0 300 300" role="img" aria-label="${esc(F.name)} design for ${esc(cur.city)}">${art}</svg></div>
+function card(F,art,i,total,meta,apps,fabricAware){return `<article class="fam" id="f-${F.id}">
+  <div class="art" style="background:${fabricAware?'#EFE8DA':F.id==='poster'?'#E9DFCC':cur.P.tile}"><svg viewBox="0 0 300 300" role="img" aria-label="${esc(F.name)} design for ${esc(cur.city)}">${art}</svg></div>
   <div><span class="fnum">${String(i+1).padStart(2,'0')} / ${total}</span><h3>${F.name}</h3><p class="concept">${F.story||F.concept}</p>
    <dl class="meta">${meta}</dl>
-   <div class="apps">${apps.map(([k,c])=>`<div class="app">${mock(k,F.render(cur),c)}<small>${APPNAME[k]}</small></div>`).join('')}</div></div></article>`}
+   <div class="apps" style="grid-template-columns:repeat(${apps.length},1fr)">${apps.map(([k,c,op])=>{const o=fabricAware?Object.assign({fabric:true,bg:c||'#F4EFE1',dark:!!c&&isDark(c)},op||{}):{};return `<div class="app">${mock(k,F.render(cur,o),c)}<small>${APPNAME[k]}${o.dark?' · dark':''}</small></div>`}).join('')}</div></div></article>`}
 window.drawFams=function(){
   const core=CORE.map(id=>FAM.find(F=>F.id===id));
-  document.getElementById('coreList').innerHTML=core.map((F,i)=>card(F,F.render(cur),i,core.length,`<dt>Best on</dt><dd>${F.best}</dd><dt>Personalize</dt><dd>${F.persona}</dd><dt>Print</dt><dd>${F.print}</dd>`,APPS[F.id])).join('');
+  document.getElementById('coreList').innerHTML=core.map((F,i)=>card(F,F.render(cur,{fabric:true,bg:'#EFE8DA'}),i,core.length,`<dt>Best on</dt><dd>${F.best}</dd><dt>Personalize</dt><dd>${F.persona}</dd><dt>Print</dt><dd>${F.print} · prints straight on the fabric, no background box</dd>`,CORE_APPS[F.id],true)).join('');
   const sig=SIG[cur.id]||[];
   document.querySelectorAll('.cityName').forEach(e=>e.textContent=cur.city);
   document.getElementById('sigList').innerHTML=sig.map((F,i)=>card(F,F.render(cur),i,sig.length,`<dt>Best on</dt><dd>${F.best}</dd><dt>Only for</dt><dd>${esc(cur.city)}, ${esc(cur.country)}</dd><dt>Rights</dt><dd><span class="rights"><i></i>Original art — clear to sell</span></dd>`,F.apps)).join('');
