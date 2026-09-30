@@ -86,7 +86,7 @@ def email(with_images):
         s('counters', 'The Counters: every producer you work with, one tap away.', SITE + '#counters'),
         para('<b>Ask the Counter.</b> Tap a face and see that person’s three favorite things in the shop. It’s the staff-picks content from your About page, turned into the part of the site people will actually play with.', '0 0 12px'),
         s('team', 'Ask the Counter, using the line portraits your team already has.', SITE + '#team'),
-        para('<b>The Journal.</b> A home for shop news and stories from the counter, plus everything written about you: Tasting Table, Food &amp; Wine, AL.com, Bham Now, Soul Grown and The Localist. I drafted four articles from facts you’ve already published, so it launches full.', '0 0 12px'),
+        para('<b>The Journal.</b> A home for shop news and stories from the counter, plus everything written about you: Tasting Table, Food &amp; Wine, The Birmingham News, Bham Now, Soul Grown and The Localist. I drafted four articles from facts you’ve already published, so it launches full.', '0 0 12px'),
         s('journal', 'The Journal, with news, counter stories, press and kitchen guides in one place.', JOURNAL),
         para('<b>Phones first.</b> Most people looking up a butcher are standing in their kitchen or sitting in the car. The concept was built for that, and tested on iPhone and Android.', '0 0 12px'),
         s('phones', 'On a phone: the hero, the sammies board with its live status, and Ask the Counter.', SITE),
