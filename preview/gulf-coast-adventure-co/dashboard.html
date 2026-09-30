@@ -752,9 +752,64 @@
     .app{grid-template-columns:1fr}
     .search,.alert-mini,.g-pills{display:none}
   }
+
+  /* ---- mobile pass (2026-09-30): drawer nav + bottom tabs ---- */
+  .m-burger,.m-tabs,.side-scrim{display:none}
+  @media (max-width:820px){
+    html,body{overflow-x:clip}
+    .app{overflow-x:clip}
+    header.topbar{padding:10px 14px;gap:10px}
+    .topbar .heading{min-width:0;flex:1}
+    .topbar .heading h1{font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .topbar .heading .sub{font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .topbar-right{gap:8px;flex:none}
+    .new-btn{width:40px;height:40px;padding:0;justify-content:center;font-size:0;gap:0}
+    .new-btn::before{content:"＋";font-size:1.15rem}
+    .new-btn .car,.av-wrap .car{display:none}
+    .av-topbar{width:36px;height:36px}
+    .m-burger{display:flex;flex:none;flex-direction:column;justify-content:center;gap:4px;width:40px;height:40px;border-radius:11px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);padding:0 11px;cursor:pointer}
+    .m-burger span{display:block;height:2px;border-radius:2px;background:var(--ink)}
+    aside.side{display:flex;position:fixed;left:0;top:0;bottom:0;width:284px;height:100%;z-index:400;transform:translateX(-105%);visibility:hidden;transition:transform .3s ease,visibility .3s}
+    body.side-open aside.side{transform:none;visibility:visible;box-shadow:24px 0 60px rgba(0,0,0,.55)}
+    .side-scrim{display:block;position:fixed;inset:0;z-index:390;background:rgba(2,10,16,.6);opacity:0;pointer-events:none;transition:opacity .3s}
+    body.side-open .side-scrim{opacity:1;pointer-events:auto}
+    .content{padding:16px 14px 110px;gap:16px}
+    .panel{gap:16px}
+    .row.r-4,.ops-row{grid-template-columns:1fr 1fr}
+    .ops-row .card:first-child{grid-column:1/-1}
+    .alert{flex-wrap:wrap;align-items:flex-start}
+    .alert .body{min-width:calc(100% - 60px)}
+    .alert .actions{width:100%;flex-wrap:wrap}
+    .alert .actions button{flex:1;min-height:40px}
+    .tour-card,.xp-card{grid-template-columns:1fr 1fr;gap:10px}
+    .bkpi-row,.crm-grid-3{grid-template-columns:1fr 1fr}
+    .sched-wrap,.table-wrap{overflow-x:auto}
+    .xp-drawer{width:100vw;max-width:390px;visibility:hidden}
+    .xp-drawer.open{visibility:visible}
+    .spec-ribbon{bottom:calc(78px + env(safe-area-inset-bottom));left:10px;font-size:.56rem;padding:7px 12px}
+    .row:not(.r-4){grid-template-columns:1fr!important}
+    .row.r-4,.bkpi-row,.crm-grid-3{grid-template-columns:1fr 1fr!important}
+    .tbl,.card:has(.sched-row){overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .tbl>.trow{min-width:620px}
+    .sched-row{min-width:720px}
+    .attn-row,.fc-row,.msg-row{flex-wrap:wrap}
+    .attn-act{margin-left:auto}
+    .m-tabs{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:300;background:rgba(4,22,31,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line-2);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+    .m-tabs button{background:none;border:0;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.62rem;font-weight:600;letter-spacing:.02em;padding:6px 2px;min-height:52px;cursor:pointer;font-family:inherit}
+    .m-tabs button .i{font-size:1.15rem;line-height:1.2}
+    .m-tabs button.on{color:var(--aqua)}
+  }
 </style>
 </head>
 <body>
+<div class="side-scrim" id="sideScrim"></div>
+<nav class="m-tabs" id="mTabs" aria-label="Main">
+  <button type="button" class="on" data-tab="dashboard"><span class="i">🏠</span>Overview</button>
+  <button type="button" data-tab="bookings"><span class="i">📅</span>Bookings</button>
+  <button type="button" data-tab="tours"><span class="i">🛥</span>Tours</button>
+  <button type="button" data-tab="crm"><span class="i">👥</span>Guests</button>
+  <button type="button" id="mMore"><span class="i">☰</span>More</button>
+</nav>
 <div class="app">
 
   <aside class="side">
@@ -893,6 +948,7 @@
 
   <main>
     <header class="topbar">
+      <button class="m-burger" id="mBurger" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
       <div class="heading">
         <h1 id="greetH">Good Afternoon, Capt. Mike</h1>
         <div class="sub" id="greetSub">Wednesday, June 3, 2026 · All tours operating normally</div>
@@ -2932,6 +2988,22 @@
       if (panel) panel.classList.add('active');
     });
   });
+
+  // mobile: drawer nav + bottom tabs stay in sync with the sidebar
+  (function(){
+    const body = document.body, burger = document.getElementById('mBurger');
+    function side(o){ body.classList.toggle('side-open', o); burger.setAttribute('aria-expanded', o); }
+    burger.addEventListener('click', () => side(!body.classList.contains('side-open')));
+    document.getElementById('mMore').addEventListener('click', () => side(true));
+    document.getElementById('sideScrim').addEventListener('click', () => side(false));
+    document.querySelectorAll('[data-tab]').forEach(item => item.addEventListener('click', () => {
+      const t = item.dataset.tab, m = item.dataset.module || '';
+      document.querySelectorAll('#mTabs [data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t && !m));
+      document.querySelectorAll('.nav-item[data-tab]').forEach(n => n.classList.toggle('active', n.dataset.tab === t && (n.dataset.module || '') === m));
+      side(false);
+      if (window.innerWidth <= 820) window.scrollTo(0, 0);
+    }));
+  })();
 
   // collapsible nav groups
   document.querySelectorAll('.nav-sec-head').forEach(h => {
