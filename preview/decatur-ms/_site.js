@@ -14,7 +14,8 @@
           due:'Due the 10th',dueNote:'Service is disconnected the first working day after the 10th. Reconnection is $50.',
           hours:'8:00 a.m. – 12:00 p.m., closed for lunch, then 1:00 – 5:00 p.m.',
           cutoffs:'Monday, October 13 · Wednesday, November 12 · Friday, December 11'},
-    news:[]
+    news:[],
+    depts:{police:true,fire:true,works:true,chamber:false}
   };
 
   function clone(o){return JSON.parse(JSON.stringify(o));}
@@ -117,6 +118,19 @@
       }).join('')+'</div></div>';
   }
 
+  function renderDepts(d){
+    var host=document.getElementById('deptCards');
+    if(!host) return;
+    var on=d.depts||{}, shown=0;
+    host.querySelectorAll('[data-dept]').forEach(function(card){
+      var vis = on[card.getAttribute('data-dept')]!==false;
+      card.hidden=!vis;
+      if(vis) shown++;
+    });
+    var sec=document.getElementById('depts');
+    if(sec) sec.hidden = shown===0;
+  }
+
   function apply(){
     var d=load();
     renderBanner(d);
@@ -126,6 +140,7 @@
     setText('wdDue',d.week.due);         setText('wdDueNote',d.week.dueNote);
     setText('wdHours',d.week.hours);     setText('wdCutoffs',d.week.cutoffs);
     renderNews(d);
+    renderDepts(d);
   }
 
   window.WDSite={KEY:KEY,DEFAULTS:DEFAULTS,load:load,save:save,reset:reset,apply:apply,LEVELS:LEVELS};
