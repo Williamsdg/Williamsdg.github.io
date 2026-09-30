@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>The Locker Room · Hoopsology</title>
+<meta name="description" content="Preview of the Hoopsology Locker Room: chat rooms, episode threads and subscriber rooms.">
+<meta name="theme-color" content="#0c0a0b">
+<link rel="icon" href="assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css?v=3">
+<style>
+  body[data-page="community"] .site-footer { display: none; }
+  body[data-page="community"] { overflow: hidden; }
+  .preview-bar { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px; font-size: 13px; color: #0c0a0b; background: var(--flask); font-weight: 600; text-align: center; }
+  .pb-short { display: none; }
+  .preview-bar b { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; }
+  .hub { display: grid; grid-template-columns: 264px minmax(0, 1fr) 300px; height: calc(100dvh - 72px - var(--pb, 36px)); }
+  /* rooms */
+  .rooms { border-right: 1px solid var(--line); background: #0e0b0d; overflow-y: auto; padding: 18px 12px 30px; }
+  .rooms h2 { font-size: 30px; padding: 0 10px; margin-bottom: 4px; }
+  .rooms .sub { padding: 0 10px; color: var(--dim); font-size: 13px; margin: 0 0 18px; }
+  .grp { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 16px 10px 8px; display: flex; justify-content: space-between; }
+  .room { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border-radius: 10px; color: var(--muted); font-weight: 600; font-size: 14.5px; text-align: left; min-height: 40px; }
+  .room:hover { background: rgba(255,255,255,.05); color: var(--text); }
+  .room[aria-current="true"] { background: rgba(255,122,26,.13); color: var(--text); }
+  .room .ic { width: 20px; text-align: center; color: var(--dim); flex: none; font-family: var(--mono); }
+  .room[aria-current="true"] .ic { color: var(--orange); }
+  .room .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .room .live { font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; color: #fff; background: #e5263b; padding: 2px 6px; border-radius: 5px; }
+  .room .lock { width: 14px; height: 14px; color: var(--dim); flex: none; }
+  .room .cnt { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+  /* stream */
+  .stream { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg); }
+  .room-head { display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-bottom: 1px solid var(--line); min-height: 68px; }
+  .room-head .t { font-weight: 800; font-size: 17px; display: flex; align-items: center; gap: 8px; }
+  .room-head .d { color: var(--dim); font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .room-head .meta { min-width: 0; flex: 1; }
+  .room-switch { display: none; }
+  .msgs { flex: 1; overflow-y: auto; padding: 18px 22px 10px; display: flex; flex-direction: column; gap: 4px; overscroll-behavior: contain; }
+  .day { text-align: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--dim); margin: 10px 0; display: flex; align-items: center; gap: 12px; }
+  .day::before, .day::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .msg { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 8px 10px; border-radius: 12px; }
+  .msg:hover { background: rgba(255,255,255,.025); }
+  .av { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 15px; color: #fff; }
+  .av.bot { background: #fff url(assets/icon.png) center/cover; }
+  .who { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .who b { font-size: 15px; }
+  .who .tm { font-family: var(--mono); font-size: 10.5px; color: var(--dim); }
+  .badge { font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 6px; border-radius: 5px; }
+  .b-sub { background: rgba(255,122,26,.15); color: var(--orange); }
+  .b-bot { background: var(--maroon); color: #fff; }
+  .b-you { background: rgba(134,217,234,.15); color: var(--flask); }
+  .b-team { background: rgba(255,255,255,.07); color: var(--muted); }
+  .txt { margin: 3px 0 0; color: #e9e1d6; font-size: 15px; line-height: 1.55; word-wrap: break-word; }
+  .reacts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .rx { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line-2); font-size: 13px; background: rgba(255,255,255,.03); }
+  .rx span { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .rx.on { border-color: var(--orange); background: rgba(255,122,26,.14); }
+  .rx.on span { color: var(--orange); }
+  .rx.add { opacity: 0; color: var(--dim); }
+  .msg:hover .rx.add, .rx.add:focus-visible { opacity: 1; }
+  @media (hover: none) { .rx.add { opacity: .7; } }
+  .ep-card { display: grid; grid-template-columns: 180px 1fr; gap: 14px; margin-top: 10px; padding: 10px; border-radius: 14px; border: 1px solid var(--line-2); background: var(--card); text-align: left; max-width: 560px; width: 100%; transition: border-color .2s; }
+  .ep-card:hover { border-color: var(--orange); }
+  .ep-card .th { position: relative; aspect-ratio: 16/9; border-radius: 9px; overflow: hidden; }
+  .ep-card .th img { width: 100%; height: 100%; object-fit: cover; }
+  .ep-card .th .ball-play { position: absolute; inset: 0; margin: auto; width: 40px; height: 40px; box-shadow: none; }
+  .ep-card .th .ball-play svg { width: 16px; height: 16px; margin-left: 2px; }
+  .ep-card b { font-size: 14.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .ep-card .byline { margin-bottom: 4px; display: block; }
+  .thread-op { border: 1px solid var(--line-2); border-radius: 18px; padding: 18px; background: var(--card); margin-bottom: 14px; }
+  .thread-op h3 { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 30px; line-height: 1; margin: 8px 0 12px; }
+  .thread-op .screen { border-radius: 12px; cursor: pointer; }
+  /* locked */
+  .locked { position: relative; flex: 1; overflow: hidden; }
+  .locked .msgs { filter: blur(6px); opacity: .45; pointer-events: none; user-select: none; height: 100%; }
+  .lock-card { position: absolute; inset: 0; display: grid; place-items: center; padding: 20px; }
+  .lock-card > div { max-width: 400px; text-align: center; background: rgba(20,16,19,.92); border: 1px solid var(--line-2); border-radius: 22px; padding: 30px 26px; box-shadow: 0 30px 70px -20px #000; }
+  .lock-card .big { width: 60px; height: 60px; border-radius: 18px; margin: 0 auto 14px; display: grid; place-items: center; background: var(--maroon); }
+  .lock-card .big svg { width: 28px; height: 28px; }
+  .lock-card h3 { font-family: var(--display); font-weight: 900; font-size: 34px; text-transform: uppercase; line-height: 1; margin: 0 0 10px; }
+  .lock-card p { color: var(--muted); margin: 0 0 18px; font-size: 15px; }
+  /* composer */
+  .composer { padding: 12px 22px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--bg); }
+  .comp-box { display: flex; align-items: flex-end; gap: 8px; padding: 6px 6px 6px 14px; border-radius: 16px; border: 1px solid var(--line-2); background: #151114; }
+  .comp-box:focus-within { border-color: var(--orange); }
+  .comp-box textarea { flex: 1; min-width: 0; border: 0; background: transparent; resize: none; font-size: 16px; line-height: 1.45; padding: 9px 0; max-height: 140px; outline: none; }
+  .comp-box textarea::placeholder { color: var(--dim); }
+  .emo { display: flex; gap: 2px; }
+  .emo button { width: 40px; height: 40px; border-radius: 10px; font-size: 18px; }
+  .emo button:hover { background: rgba(255,255,255,.07); }
+  .send { width: 44px; height: 44px; border-radius: 12px; background: var(--orange); color: #1a0c02; display: grid; place-items: center; flex: none; }
+  .send:disabled { opacity: .35; cursor: default; }
+  .send svg { width: 20px; height: 20px; }
+  .comp-note { font-size: 12px; color: var(--dim); margin-top: 7px; display: flex; justify-content: space-between; gap: 10px; }
+  .handle-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .handle-form .in { flex: 1 1 160px; min-height: 46px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line-2); background: #151114; font-size: 16px; }
+  .handle-form select.in { flex: 0 1 170px; appearance: none; -webkit-appearance: none; }
+  .handle-form p { flex: 1 1 100%; margin: 0 0 4px; font-weight: 700; }
+  /* side */
+  .side-panel { border-left: 1px solid var(--line); background: #0e0b0d; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .card h4 { margin: 0 0 12px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); display: flex; justify-content: space-between; }
+  .card .ep-card { grid-template-columns: 1fr; margin: 0; padding: 0; border: 0; background: none; }
+  .poll button { position: relative; display: flex; justify-content: space-between; width: 100%; min-height: 42px; align-items: center; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-2); margin-bottom: 8px; overflow: hidden; font-weight: 600; font-size: 14px; }
+  .poll button i { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(255,122,26,.16); transition: width .5s; }
+  .poll button span { position: relative; }
+  .poll button.mine { border-color: var(--orange); }
+  .poll .pct { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .rules { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 6px; }
+  .rules li::marker { color: var(--orange); }
+  @media (max-width: 1180px) { .hub { grid-template-columns: 250px minmax(0, 1fr); } .side-panel { display: none; } }
+  @media (max-width: 760px) {
+    .hub { grid-template-columns: 1fr; }
+    .rooms { position: fixed; inset: 72px 0 0; z-index: 40; transform: translateX(-100%); transition: transform .25s; padding-bottom: 60px; }
+    .rooms.open { transform: none; }
+    .room-switch { display: grid; }
+    .room-head { padding: 10px 14px; min-height: 60px; }
+    .msgs { padding: 12px 10px 8px; }
+    .msg { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 8px 6px; }
+    .av { width: 34px; height: 34px; border-radius: 10px; font-size: 13px; }
+    .composer { padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); }
+    .emo button:nth-child(n+3) { display: none; }
+    .ep-card { grid-template-columns: 120px 1fr; }
+    .comp-note span:last-child { display: none; }
+    .thread-op h3 { font-size: 24px; }
+    .pb-long { display: none; } .pb-short { display: inline; }
+    .preview-bar { padding: 6px 12px; font-size: 12.5px; }
+    .room-switch { flex: none; }
+    .handle-form p { font-size: 14px; }
+    .handle-form .in { min-height: 44px; }
+    .handle-form select.in { flex: 1 1 40%; }
+  }
+</style>
+</head>
+<body data-page="community">
+<div class="preview-bar" id="pbar"><b>PREVIEW</b> <span class="pb-long">Sample conversation showing how the Locker Room will work. Anything you post stays on this device.</span><span class="pb-short">Sample chat · your posts stay on this device</span></div>
+<main class="hub">
+  <aside class="rooms" id="rooms" aria-label="Rooms"></aside>
+  <section class="stream" id="stream"></section>
+  <aside class="side-panel" id="side"></aside>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite" style="position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--text);color:var(--bg);font-weight:700;padding:10px 16px;border-radius:12px;opacity:0;visibility:hidden;transition:opacity .2s;z-index:200"></div>
+<script src="assets/config.js?v=3"></script>
+<script src="assets/store.js?v=3"></script>
+<script src="assets/site.js?v=3"></script>
+<script src="assets/community.js?v=1"></script>
+</body>
+</html>

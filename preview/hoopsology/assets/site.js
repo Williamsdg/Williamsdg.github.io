@@ -25,6 +25,7 @@
     x: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>',
     ig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>',
     chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg>',
+    expand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>',
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
     bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>',
     mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg>',
@@ -176,6 +177,7 @@
   function step(d) { const n = modalIdx + d; if (n >= 0 && n < modalList.length) { modalIdx = n; load(); } }
   function openPlayer(list, idx, isVertical) {
     ensureModal();
+    $$('.short.playing, .short.previewing').forEach(stopShort);
     modalList = list; modalIdx = idx; vertical = !!isVertical;
     modal.classList.toggle('vertical', vertical);
     $('.vnav', modal).hidden = !vertical;
@@ -193,9 +195,54 @@
         ${v.seconds ? `<span class="dur">${fmtDur(v.seconds)}</span>` : ''}<span class="hover-play">${ICON_PLAY_BALL}</span></div>
       <div class="ep-text"><div class="ep-meta">${ago(v.published)}${v.views != null ? ' · ' + fmtViews(v.views) : ''}</div><h3>${esc(v.title)}</h3></div></button>`;
   };
-  const shortCard = (v, i) => `<button class="short" data-i="${i}" aria-label="Play short: ${esc(cleanTitle(v.title))}">
-      ${img(thumb(v.id, 'oar2'), '', '', thumb(v.id, 'hqdefault'))}<span class="sbadge">${I.bolt.replace('<svg', '<svg width="12" height="12"')} ${fmtDur(v.seconds) || 'SHORT'}</span>
-      <span class="cap">${esc(cleanTitle(v.title))}<span class="v">${[fmtViews(v.views), ago(v.published)].filter(Boolean).join(' · ')}</span></span></button>`;
+  const shortCard = (v, i) => `<div class="short" data-i="${i}" data-id="${v.id}">
+      <div class="short-media">${img(thumb(v.id, 'oar2'), '', 'poster', thumb(v.id, 'hqdefault'))}</div>
+      <button class="short-hit" aria-label="Play short: ${esc(cleanTitle(v.title))}"></button>
+      <span class="sbadge">${I.bolt.replace('<svg', '<svg width="12" height="12"')} ${fmtDur(v.seconds) || 'SHORT'}</span>
+      <span class="sound-hint">🔇 Click for sound</span>
+      <button class="short-expand" aria-label="Open full screen">${I.expand}</button>
+      <span class="cap">${esc(cleanTitle(v.title))}<span class="v">${[fmtViews(v.views), ago(v.published)].filter(Boolean).join(' · ')}</span></span></div>`;
+
+  /* Shorts play in the card: hover = muted looping preview, click/tap = sound + controls,
+     expand button = full-screen swipe viewer. Only one Short plays with sound at a time. */
+  const CAN_HOVER = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  let soundCard = null;
+  function stopShort(card) {
+    clearTimeout(card._t);
+    const f = $('iframe', card); if (f) f.remove();
+    card.classList.remove('previewing', 'playing', 'ready');
+    if (soundCard === card) soundCard = null;
+  }
+  function startShort(card, withSound) {
+    const id = card.dataset.id;
+    stopShort(card);
+    if (withSound && soundCard) stopShort(soundCard);
+    const f = document.createElement('iframe');
+    f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&${withSound ? 'controls=1' : 'mute=1&controls=0'}&loop=1&playlist=${id}&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3`;
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+    f.title = 'Hoopsology short';
+    f.addEventListener('load', () => { card._t = setTimeout(() => card.classList.add('ready'), withSound ? 300 : 900); });
+    $('.short-media', card).append(f);
+    card.classList.add(withSound ? 'playing' : 'previewing');
+    if (withSound) soundCard = card;
+  }
+  const shortObserver = 'IntersectionObserver' in window
+    ? new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting && e.target.classList.contains('playing')) stopShort(e.target); }), { threshold: 0.2 })
+    : null;
+  function inlineShorts(container, list) {
+    $$('.short', container).forEach((card) => {
+      if (shortObserver) shortObserver.observe(card);
+      if (CAN_HOVER) {
+        card.addEventListener('mouseenter', () => { if (card.classList.contains('playing')) return; clearTimeout(card._t); card._t = setTimeout(() => startShort(card, false), 280); });
+        card.addEventListener('mouseleave', () => { if (!card.classList.contains('playing')) stopShort(card); });
+      }
+    });
+    container.addEventListener('click', (e) => {
+      const card = e.target.closest('.short'); if (!card) return;
+      if (e.target.closest('.short-expand')) { stopShort(card); return openPlayer(list, +card.dataset.i, true); }
+      if (e.target.closest('.short-hit')) startShort(card, true);
+    });
+  }
   const storyUrl = (s) => `${root}story.html?s=${encodeURIComponent(s.slug)}`;
   const storyCover = (s) => s.cover || (s.video ? thumb(s.video) : `${root}assets/banner.jpg`);
   const storyFeature = (s) => `<a class="story-feature rv" href="${storyUrl(s)}"><div class="cover">${img(storyCover(s), '', '', s.video ? thumb(s.video, 'hqdefault') : '')}</div>
@@ -273,7 +320,7 @@
 
       const reel = $('#reel'), sl = shorts.slice(0, 14);
       reel.innerHTML = sl.map(shortCard).join('');
-      bindPlay(reel, sl, true);
+      inlineShorts(reel, sl);
       $$('[data-reel]').forEach((b) => b.addEventListener('click', () => reel.scrollBy({ left: +b.dataset.reel * reel.clientWidth * .8, behavior: 'smooth' })));
 
       const stories = await HS.store.stories().catch(() => []);
@@ -307,7 +354,7 @@
       const data = await videoData();
       const grid = $('#shortGrid');
       grid.innerHTML = data.shorts.map(shortCard).join('');
-      bindPlay(grid, data.shorts, true);
+      inlineShorts(grid, data.shorts);
       $('#count').textContent = `${data.shorts.length} shorts`;
     },
 
@@ -359,12 +406,12 @@
     async locker() { videoData().catch(() => {}); waitlistForm($('#waitlist')); },
   };
 
-  HS.ui = { I, esc, fmtDur, fmtDate, ago, fmtViews, thumb, tagOf, sanitize, cleanTitle, COURT, root };
+  HS.ui = { I, esc, fmtDur, fmtDate, ago, fmtViews, thumb, tagOf, sanitize, cleanTitle, COURT, root, openPlayer };
 
   document.addEventListener('DOMContentLoaded', () => {
     const page = document.body.dataset.page;
     if (page === 'admin') return;
-    chrome(page);
+    chrome(page === 'community' ? 'locker' : page);
     $$('[data-court]').forEach((el) => el.insertAdjacentHTML('afterbegin', COURT));
     $$('[data-icon]').forEach((el) => el.insertAdjacentHTML('afterbegin', I[el.dataset.icon] || ''));
     $$('[data-link]').forEach((el) => { el.href = L[el.dataset.link]; el.target = '_blank'; el.rel = 'noopener'; });
