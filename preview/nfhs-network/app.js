@@ -82,11 +82,11 @@
     bits.push(kind(e));
     if (e.t.length < 2) bits.push(e.mt ? 'Multi-team event' : 'Opponent TBA');
     if (place(e)) bits.push(place(e));
-    return '<a class="row" href="' + esc(e.u) + '" target="_blank" rel="noopener">' + swatch(sides(e)) +
+    return '<a class="row" href="event.html?k=' + esc(e.k) + '">' + swatch(sides(e)) +
       '<span><h3>' + matchup(e) + '</h3><p>' + esc(bits.join(' · ')) + '</p></span>' + cta(e) + '</a>';
   }
   function tile(e) {
-    return '<a class="tile" href="' + esc(e.u) + '" target="_blank" rel="noopener">' +
+    return '<a class="tile" href="event.html?k=' + esc(e.k) + '">' +
       swatch(sides(e), '<span class="badge"><span class="dot"></span>LIVE</span>') +
       '<h3>' + matchup(e) + '</h3><p>' + esc(kind(e) + (place(e) ? ' · ' + place(e) : '')) + '</p></a>';
   }
@@ -260,7 +260,8 @@
     $('#rail').innerHTML = live.slice(0, 12).map(tile).join('');
 
     // slate
-    var state = { tab: 'up', sport: '', state: '' };
+    var saved = ''; try { saved = localStorage.getItem('nfhs-state') || ''; } catch (e) {}
+    var state = { tab: 'up', sport: '', state: saved };
     var chips = $('#slate-chips'), sel = $('#slate-state'), out = $('#slate'), more = $('#slate-more');
     function paint() {
       var base = filterEvents({ tab: state.tab, state: state.state });
@@ -272,9 +273,12 @@
       more.href = 'watch.html?' + qs.toString();
       more.textContent = list.length > 8 ? 'See all ' + nf(list.length) + ' in the guide' : 'Open the full guide';
     }
-    stateOptions(sel, D.events, '');
+    stateOptions(sel, D.events, state.state);
     chips.addEventListener('click', function (ev) { var b = ev.target.closest('.chip'); if (b) { state.sport = b.dataset.sport; paint(); } });
-    sel.addEventListener('change', function () { state.state = sel.value; state.sport = ''; paint(); });
+    sel.addEventListener('change', function () {
+      state.state = sel.value; state.sport = ''; paint();
+      try { localStorage.setItem('nfhs-state', sel.value); } catch (e) {}
+    });
     $$('#slate-tabs button').forEach(function (b) {
       b.addEventListener('click', function () {
         $$('#slate-tabs button').forEach(function (x) { x.setAttribute('aria-selected', String(x === b)); });
@@ -354,7 +358,7 @@
     }
     var next = up[0];
     $('#next').innerHTML = next
-      ? '<a class="next" href="' + esc(next.u) + '" target="_blank" rel="noopener"><span><span class="label">' + (next.s === 'live' ? 'Live now' : 'Next up') + '</span>' +
+      ? '<a class="next" href="event.html?k=' + esc(next.k) + '"><span><span class="label">' + (next.s === 'live' ? 'Live now' : 'Next up') + '</span>' +
         '<h2 class="display">' + matchup(next).replace(/<em>vs<\/em>/, 'vs') + '</h2><p>' +
         esc((next.s === 'live' ? '' : day(next.d) + ' · ' + clock(next.d).text + ' ' + tzName + ' · ') + kind(next) + (place(next) ? ' · ' + place(next) : '')) + '</p></span>' + swatch(sides(next)) + '</a>'
       : '';
@@ -393,6 +397,115 @@
         var x = D.schools[r]; if (!x) return '';
         return '<a href="school.html?s=' + esc(r) + '">' + swatch([x]) + '<span><b>' + esc(x.n + (x.m ? ' ' + x.m : '')) + '</b><small>' + esc([x.city, x.st].filter(Boolean).join(', ')) + '</small></span></a>';
       }).join('');
+    }
+  }
+
+  function slugFor(team, st) {
+    var hit = schoolList.filter(function (x) { return x.s.n === team.n && (!st || x.s.st === st); })[0];
+    return hit ? hit.slug : null;
+  }
+  function gamesWith(team, st, skip) {
+    return D.events.filter(function (e) {
+      return e.k !== skip && e.st === st && e.t.some(function (t) { return t.n === team.n; });
+    });
+  }
+  function initEvent() {
+    var e = D.events.filter(function (x) { return x.k === params.get('k'); })[0] ||
+      D.events.filter(function (x) { return x.s === 'up' && x.t.length > 1 && x.lv === 'Varsity'; })[0];
+    var t = sides(e), plain = t.map(function (x) { return x.n; }).join(' vs ');
+    document.title = plain + ' — NFHS Network concept';
+    var past = new Date(e.d).getTime() < Date.now();
+
+    // stage: both schools' colours, crests on white so any colour pairing reads
+    var c1 = t[0].c || '#3a4150', c2 = t[1] ? (t[1].c || '#566076') : c1;
+    var stage = $('#stage');
+    stage.style.background = t[1] ? 'linear-gradient(105deg,' + c1 + ' calc(50% - 2px),#0a0c11 calc(50% - 2px),#0a0c11 calc(50% + 2px),' + c2 + ' calc(50% + 2px))' : c1;
+    var badge = e.s === 'live' ? '<span class="badge"><span class="dot"></span>LIVE</span>'
+      : e.s === 'vod' ? '<span class="badge quiet">REPLAY' + (e.dur ? ' · ' + runtime(e.dur).toUpperCase() : '') + '</span>' : '';
+    stage.innerHTML = t.map(function (x) {
+      return '<div class="crest">' + (x.l ? '<img src="img/logos/' + x.l + '.png" alt="">' : esc(initials(x.n))) + '</div>';
+    }).join('') + badge;
+
+    $('#g-kind').textContent = kind(e) + (e.t.length < 2 ? (e.mt ? ' · Multi-team event' : ' · Opponent TBA') : '');
+    $('#g-title').innerHTML = matchup(e).replace(/<em>vs<\/em>/, 'vs');
+    $('#g-when').innerHTML = (e.s === 'live' ? 'On now' : esc(day(e.d)) + ' · ' + esc(clock(e.d).text) + ' <span>' + esc(tzName) + '</span>') +
+      (place(e) ? ' <span>·</span> ' + esc(place(e)) : '');
+
+    // countdown only while the start is still ahead of the viewer's clock
+    if (e.s === 'up' && !past) {
+      var box = $('#g-count'); box.hidden = false;
+      var tick = function () {
+        var left = Math.max(0, new Date(e.d).getTime() - Date.now()) / 1000;
+        var v = { d: Math.floor(left / 86400), h: Math.floor(left % 86400 / 3600), m: Math.floor(left % 3600 / 60), s: Math.floor(left % 60) };
+        $$('[data-u]', box).forEach(function (n) { n.textContent = v[n.dataset.u]; });
+      };
+      tick(); setInterval(tick, 1000);
+    }
+
+    var real = '<a class="btn btn-ghost" href="' + esc(e.u) + '" target="_blank" rel="noopener">Open on nfhsnetwork.com</a>';
+    $('#g-cta').innerHTML = (e.s === 'live'
+      ? '<a class="btn btn-solid" href="' + esc(e.u) + '" target="_blank" rel="noopener">Watch live</a>'
+      : e.s === 'vod'
+        ? '<a class="btn btn-solid" href="' + esc(e.u) + '" target="_blank" rel="noopener">Watch the replay' + (e.dur ? ' · ' + runtime(e.dur) : '') + '</a>'
+        : '<a class="btn btn-solid" href="plans.html?plan=family">Subscribe to watch</a>') + (e.s === 'up' ? real : '');
+
+    // calendar file, built in the browser
+    if (e.s === 'up') {
+      var cal = $('#g-cal'); cal.hidden = false;
+      cal.addEventListener('click', function () {
+        var z = function (d) { return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); };
+        var start = new Date(e.d), end = new Date(start.getTime() + 2 * 3600 * 1000);
+        var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NFHS Network concept//EN', 'BEGIN:VEVENT', 'UID:' + e.k + '@nfhsnetwork.com',
+          'DTSTAMP:' + z(new Date()), 'DTSTART:' + z(start), 'DTEND:' + z(end), 'SUMMARY:' + plain + ' (' + kind(e) + ')',
+          'LOCATION:' + place(e).replace(/,/g, '\\,'), 'URL:' + e.u, 'DESCRIPTION:Watch on NFHS Network: ' + e.u, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+        a.download = plain.replace(/[^A-Za-z0-9]+/g, '-').toLowerCase() + '.ics';
+        document.body.appendChild(a); a.click(); a.remove();
+        cal.textContent = 'Calendar file saved';
+      });
+    }
+    $('#g-share').addEventListener('click', function () {
+      var b = this, data = { title: plain, text: plain + ' on NFHS Network', url: location.href };
+      if (navigator.share) { navigator.share(data).catch(function () {}); return; }
+      if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(function () { b.textContent = 'Link copied'; }, function () { b.textContent = 'Copy failed'; });
+    });
+    $('#g-follow').innerHTML = e.t.map(function (x) {
+      var slug = slugFor(x, e.st); if (!slug) return '';
+      return '<button class="tool" type="button" data-follow="' + esc(slug) + '" aria-pressed="' + follows.has(slug) + '">' + (follows.has(slug) ? 'Following ' : 'Follow ') + esc(x.n) + '</button>';
+    }).join('');
+    $('#g-follow').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-follow]'); if (!b) return;
+      var on = follows.toggle(b.dataset.follow);
+      b.setAttribute('aria-pressed', String(on)); b.textContent = (on ? 'Following ' : 'Follow ') + D.schools[b.dataset.follow].n;
+    });
+
+    // the pass that covers this game
+    var home = D.schools[e.hs] ? D.schools[e.hs].n : t[t.length - 1].n, fam = PLANS[1];
+    $('#g-pass').innerHTML = '<span class="label">The pass for this game</span><h2>' + esc(fam.name) + '</h2>' +
+      '<p>Every ' + esc(home) + ' broadcast, all sports, live and on demand, on up to 6 devices.</p>' +
+      '<div class="price"><b class="num">$' + fam.yr.toFixed(2) + '</b><span>/year</span></div>' +
+      '<p>Works out to $' + (fam.yr / 12).toFixed(2) + ' a month, or $' + fam.mo.toFixed(2) + ' billed monthly.</p>' +
+      '<a class="btn btn-ink" href="plans.html?plan=family">Choose Family</a>' +
+      '<small>A share of every annual pass goes back to the school. <a href="plans.html">Compare all three plans</a></small>';
+
+    // more from each school, then other games in the same state and sport
+    $('#g-more').innerHTML = e.t.map(function (x) {
+      var list = gamesWith(x, e.st, e.k).sort(function (a, b) { return (a.s === 'vod') - (b.s === 'vod'); }).slice(0, 5);
+      var slug = slugFor(x, e.st);
+      if (!list.length) return '';
+      return '<div><h2 class="display h-sm">' + (slug ? '<a href="school.html?s=' + esc(slug) + '">More ' + esc(x.n) + '</a>' : 'More ' + esc(x.n)) + '</h2><div class="list">' +
+        list.map(function (g) { return row(g, true); }).join('') + '</div></div>';
+    }).join('');
+    if (!$('#g-more').children.length) $('#g-more').parentElement.hidden = true;
+    if ($('#g-more').children.length === 1) $('#g-more').style.gridTemplateColumns = 'minmax(0,760px)';
+    var also = D.events.filter(function (g) {
+      return g.k !== e.k && g.st === e.st && g.sp === e.sp && g.s !== 'vod' && !g.t.some(function (x) { return t.some(function (y) { return y.n === x.n; }); });
+    }).slice(0, 6);
+    if (also.length) {
+      $('#g-also-sec').hidden = false;
+      $('#g-also-h').textContent = 'More ' + e.sp.toLowerCase() + ' in ' + e.st;
+      $('#g-also').innerHTML = also.map(function (g) { return row(g, true); }).join('');
     }
   }
 
@@ -437,5 +550,6 @@
     if (page === 'watch') initWatch();
     if (page === 'school') initSchool();
     if (page === 'plans') initPlans();
+    if (page === 'event') initEvent();
   });
 })();
