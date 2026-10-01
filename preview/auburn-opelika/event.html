@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Event — Auburn-Opelika</title>
+<meta name="description" content="Event details.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..600,0..100;1,9..144,400..600,0..100&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ao.css?v=4">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer src="data.js?v=4"></script>
+<script defer src="details.js?v=4"></script>
+<script defer src="ao.js?v=4"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<div class="concept">Concept redesign by <a href="https://williamsdigital.io">Williams Digital</a>. Not affiliated with Auburn-Opelika Tourism. Listings and events are a snapshot of <a href="https://www.aotourism.com">aotourism.com</a> from October 1, 2026.</div>
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a class="logo" href="index.html" aria-label="Auburn-Opelika Tourism, home"><img src="img/ao-logo.svg" width="124" height="49" alt="Auburn-Opelika Tourism"></a>
+    <nav class="nav" aria-label="Main">
+      <a href="events.html" data-nav="events" aria-current="page">Events</a><a href="explore.html?cat=todo" data-nav="todo">Things to do</a><a href="explore.html?cat=food" data-nav="food">Eat & drink</a><a href="explore.html?cat=sleep" data-nav="sleep">Stay</a><a href="plan.html" data-nav="plan">Plan</a>
+      <span class="sep" aria-hidden="true"></span>
+      <a href="groups.html">Meetings, sports &amp; weddings</a>
+    </nav>
+    <a class="trip-btn" href="trip.html">My trip <b data-trip-count>0</b></a>
+    <button class="menu-btn" type="button" data-menu-open aria-controls="drawer">Menu</button>
+  </div>
+</header>
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="drawer-top">
+    <img src="img/ao-logo.svg" width="110" height="43" alt="">
+    <button class="menu-btn" style="display:inline-flex;align-items:center" type="button" data-menu-close>Close</button>
+  </div>
+  <nav aria-label="Menu">
+    <a href="events.html">Events <small>What's on</small></a>
+    <a href="explore.html?cat=todo">Things to do <small>Arts, parks, shops</small></a>
+    <a href="explore.html?cat=food">Eat &amp; drink <small>Restaurants, bars, trucks</small></a>
+    <a href="explore.html?cat=sleep">Stay <small>Hotels, inns, camping</small></a>
+    <a href="plan.html">Plan <small>Getting here, game day</small></a>
+    <a href="groups.html">Groups <small>Meetings, sports, weddings</small></a>
+  </nav>
+  <a class="btn btn-lemon" href="trip.html">My trip (<span data-trip-count>0</span>)</a>
+</div>
+<main id="main">
+<div class="wrap" style="padding-top:26px">
+  <p class="crumbs" style="color:var(--mute)"><a href="index.html" style="color:inherit">Home</a> / <a href="events.html" style="color:inherit">Events</a></p>
+  <div id="event"></div>
+</div>
+
+<section class="sec tint" id="near-sec" hidden>
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">Before or after</p><h2 style="font-size:clamp(28px,3.6vw,44px)">Eat and drink <em>nearby.</em></h2></div></div>
+    <div class="scroller" id="near"></div>
+  </div>
+</section>
+
+<section class="sec-tight" id="same-sec" hidden>
+  <div class="wrap">
+    <div class="sec-head"><div><p class="eyebrow">Same day</p><h2 style="font-size:clamp(28px,3.6vw,44px)" id="same-h">Also on</h2></div></div>
+    <div class="evs" id="same"></div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var e = AO.event(AO.qs('id')) || AO.events.find(function (x) { return x.d >= AO.today() && x.m && !x.e; }) || AO.events[0];
+  var desc = (window.AO_DETAIL && AO_DETAIL.e[e.i]) || e.s, esc = AO.esc;
+  document.title = e.n + ' — Auburn-Opelika events';
+  var place = e.p ? AO.place(e.p) : null;
+  var addr = [e.a, e.y ? e.y + ', AL' : ''].filter(Boolean).join(', ');
+  var dir = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent((e.l ? e.l + ', ' : '') + addr);
+  var saved = AO.trip.has('e', e.i);
+  var whenTxt = e.e ? AO.fmt(e.d, true) + ' to ' + AO.fmt(e.e, true) : AO.fmt(e.d, true);
+
+  document.getElementById('event').innerHTML =
+    '<div class="detail"><div>' +
+      (e.m ? '<img class="ev-hero" src="' + AO.src(e.m, 1200, 800) + '" alt="' + esc(e.n) + '">' : '') +
+      '<p class="meta" style="display:flex;gap:8px;flex-wrap:wrap;margin:0">' + e.c.map(function (c) {
+        return '<a class="tag' + (c === 'free' ? ' tag-free' : '') + '" style="text-decoration:none" href="events.html?cat=' + c + '">' + esc(AO.ECAT[c]) + '</a>'; }).join('') + '</p>' +
+      '<h1>' + esc(e.n) + '</h1>' +
+      '<div class="prose">' + desc.split(/\n\n+/).map(function (t) { return '<p>' + esc(t) + '</p>'; }).join('') + '</div>' +
+    '</div>' +
+    '<aside class="facts" aria-label="Event details"><dl>' +
+      '<div><dt>When</dt><dd>' + esc(whenTxt) + (e.rc ? '<br><span style="color:var(--mute);font-size:14.5px">' + esc(e.rc.charAt(0).toUpperCase() + e.rc.slice(1)) + '</span>' : '') + '</dd></div>' +
+      (e.tm ? '<div><dt>Time</dt><dd>' + esc(e.tm) + '</dd></div>' : '') +
+      (e.l || addr ? '<div><dt>Where</dt><dd>' + (place ? '<a href="place.html?id=' + place.i + '">' + esc(e.l) + '</a>' : esc(e.l)) + (addr ? '<br><span style="color:var(--mute);font-size:14.5px">' + esc(addr) + '</span>' : '') + '</dd></div>' : '') +
+      (e.ad ? '<div><dt>Admission</dt><dd>' + esc(e.ad) + '</dd></div>' : '') +
+    '</dl>' +
+      '<button class="btn save save-wide" type="button" data-kind="e" data-id="' + e.i + '" data-label="1" aria-pressed="' + saved + '"><span>' + (saved ? 'Saved to my trip' : 'Save to my trip') + '</span></button>' +
+      '<button class="btn btn-line" type="button" id="ics">Add to calendar</button>' +
+      (e.k ? '<a class="btn btn-line" href="' + esc(e.k) + '" rel="noopener">Tickets &amp; details</a>' : '') +
+      (addr ? '<a class="btn btn-line" href="' + dir + '" rel="noopener">Get directions</a>' : '') +
+      (e.la ? '<div class="minimap" id="emap"></div>' : '') +
+      '<p class="note" style="margin-top:14px">Listing from <a href="https://www.aotourism.com' + esc(e.u) + '">aotourism.com</a>. Confirm details with the host before you go.</p>' +
+    '</aside></div>';
+
+  if (e.la && document.getElementById('emap')) {
+    var map = AO.map(document.getElementById('emap'));
+    if (map) { map.setView([e.la, e.lo], 15); AO.pin({ la: e.la, lo: e.lo, t: e.t }).addTo(map); }
+  }
+
+  // .ics download: timed when the listing has a clean start time, otherwise all-day
+  document.getElementById('ics').addEventListener('click', function () {
+    var pad = function (n) { return ('0' + n).slice(-2); }, day = e.d.replace(/-/g, '');
+    var m = /^(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(e.tm || ''), lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Auburn-Opelika Tourism concept//EN', 'BEGIN:VEVENT',
+      'UID:ao-' + e.i + '-' + day + '@aotourism.com', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z'];
+    if (m) {
+      var h = (+m[1] % 12) + (/pm/i.test(m[3]) ? 12 : 0), s = day + 'T' + pad(h) + m[2] + '00';
+      var m2 = /[–-]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(e.tm), h2 = m2 ? (+m2[1] % 12) + (/pm/i.test(m2[3]) ? 12 : 0) : h + 1;
+      lines.push('DTSTART;TZID=America/Chicago:' + s, 'DTEND;TZID=America/Chicago:' + day + 'T' + pad(Math.min(h2, 23)) + (m2 ? m2[2] : m[2]) + '00');
+    } else {
+      lines.push('DTSTART;VALUE=DATE:' + day, 'DTEND;VALUE=DATE:' + AO.add(e.e || e.d, 1).replace(/-/g, ''));
+    }
+    var clean = function (s) { return String(s).replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n'); };
+    lines.push('SUMMARY:' + clean(e.n), 'LOCATION:' + clean([e.l, addr].filter(Boolean).join(', ')), 'DESCRIPTION:' + clean(e.s), 'URL:https://www.aotourism.com' + e.u, 'END:VEVENT', 'END:VCALENDAR');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\r\n')], { type: 'text/calendar' }));
+    a.download = e.n.replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '.ics';
+    document.body.appendChild(a); a.click(); a.remove();
+    AO.toast('Calendar file downloaded.');
+  });
+
+  if (e.la) {
+    var food = ['eat', 'bites', 'bars', 'trucks'];
+    var near = AO.uniq(AO.places).filter(function (x) { return x.la && x.i !== e.p && x.c.some(function (c) { return food.indexOf(c) > -1; }) && x.c.indexOf('trucks') < 0; })
+      .map(function (x) { return { p: x, d: AO.miles(e.la, e.lo, x.la, x.lo) }; })
+      .filter(function (x) { return x.d <= 0.75; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 10);
+    if (near.length >= 3) {
+      document.getElementById('near-sec').hidden = false;
+      document.getElementById('near').innerHTML = near.map(function (x) { return AO.placeCard(x.p, { dist: x.d }); }).join('');
+    }
+  }
+  var same = AO.events.filter(function (x) { return x.i !== e.i && x.d === e.d && !x.e; }).slice(0, 5);
+  if (same.length && !e.e) {
+    document.getElementById('same-sec').hidden = false;
+    document.getElementById('same-h').innerHTML = 'Also on <em>' + AO.fmt(e.d) + '</em>';
+    document.getElementById('same').innerHTML = same.map(function (x) { return AO.eventRow(x); }).join('');
+  }
+  AO.trip.paint();
+});
+</script>
+</main>
+<footer class="ftr">
+  <div class="wrap">
+    <div class="ftr-grid">
+      <div>
+        <a class="logo" href="index.html" aria-label="Auburn-Opelika Tourism, home"><img src="img/ao-logo.svg" width="150" height="59" alt="Auburn-Opelika Tourism"></a>
+        <address>312 N Gay Street, Suite A<br>Auburn, AL 36830<br><a href="tel:3345013281">334.501.3281</a><br><a href="mailto:visit@aotourism.com">visit@aotourism.com</a></address>
+      </div>
+      <div class="hide-m">
+        <h4>Visit</h4>
+        <ul>
+          <li><a href="events.html">Events</a></li>
+          <li><a href="explore.html?cat=todo">Things to do</a></li>
+          <li><a href="explore.html?cat=food">Eat &amp; drink</a></li>
+          <li><a href="explore.html?cat=sleep">Places to stay</a></li>
+          <li><a href="plan.html">Plan your visit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Planners</h4>
+        <ul>
+          <li><a href="groups.html#meetings">Meetings</a></li>
+          <li><a href="groups.html#sports">Sports</a></li>
+          <li><a href="groups.html#weddings">Weddings &amp; events</a></li>
+          <li><a href="https://www.aotourism.com/volunteer/">Volunteer AO</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Auburn-Opelika Tourism</h4>
+        <ul>
+          <li><a href="https://www.aotourism.com/about-us/">About us</a></li>
+          <li><a href="https://www.aotourism.com/contact/">Contact</a></li>
+          <li><a href="https://www.aotourism.com/articles/">News</a></li>
+          <li><a href="https://www.aotourism.com/newsletter/">E-newsletter</a></li>
+          <li><a href="https://instagram.com/auburnopelika/">Instagram</a></li>
+          <li><a href="https://www.facebook.com/AuburnOpelika">Facebook</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="ftr-base">
+      <span>Independent design concept by <a href="https://williamsdigital.io">Williams Digital</a>. Not affiliated with or endorsed by Auburn-Opelika Tourism. Photos, listings and copy belong to Auburn-Opelika Tourism and its partners.</span>
+      <span>#AUBURNOPELIKA</span>
+    </div>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
