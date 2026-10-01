@@ -527,9 +527,17 @@
     }).catch(function () {});
     store.setting('policies').then(function (v) {
       $('#poShip').value = v.ship_days || '';
+      $('#poArea').value = v.ship_area || '';
+      $('#poDelivery').value = v.delivery_days || '';
+      $('#poCustom').value = v.custom_weeks || '';
       $('#poReturn').value = v.return_days || '';
+      $('#poOutcome').value = v.return_outcome || '';
+      $('#poDamaged').value = v.damaged_days || '';
+      $('#poCare').value = v.care_days || '';
       $('#poDeposit').value = v.deposit || '';
       $('#poNotice').value = v.notice_hours || '';
+      $('#poNoticeOut').value = v.notice_outcome || '';
+      $('#poLate').value = v.late_minutes || '';
       $('#poNoshow').value = v.noshow || '';
     }).catch(function () {});
   }
@@ -544,9 +552,17 @@
       }),
       store.saveSetting('policies', {
         ship_days: $('#poShip').value.trim(),
+        ship_area: $('#poArea').value.trim(),
+        delivery_days: $('#poDelivery').value.trim(),
+        custom_weeks: $('#poCustom').value.trim(),
         return_days: $('#poReturn').value.trim(),
+        return_outcome: $('#poOutcome').value.trim(),
+        damaged_days: $('#poDamaged').value.trim(),
+        care_days: $('#poCare').value.trim(),
         deposit: $('#poDeposit').value.trim(),
         notice_hours: $('#poNotice').value.trim(),
+        notice_outcome: $('#poNoticeOut').value.trim(),
+        late_minutes: $('#poLate').value.trim(),
         noshow: $('#poNoshow').value.trim()
       })
     ]).then(function () { toast('Saved.'); })

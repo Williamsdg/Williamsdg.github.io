@@ -9,7 +9,8 @@
 --   2. Paste this whole file into the project's SQL editor and run it.
 --   3. Create a user for Elana under Authentication, then run the INSERT at the
 --      bottom of this file with that user's id to grant her admin access.
---   4. Put the project URL and the publishable (anon) key into admin/config.js.
+--   4. Put the project URL and the publishable (anon) key into
+--      assets/sc-config.js (one file; the site and the admin both read it).
 --
 -- There are no secrets in this file. It is safe to commit.
 
@@ -150,7 +151,7 @@ create policy media_admin_write on storage.objects
 insert into public.settings (key, value) values
   ('contact',  '{"phone":"","hours":"","booking_url":""}'::jsonb),
   ('nonprofit','{"name":"","mission":"","body":"","involve":"","contact":""}'::jsonb),
-  ('policies', '{"ship_days":"","return_days":"","deposit":"","notice_hours":"","noshow":""}'::jsonb)
+  ('policies', '{"ship_days":"","ship_area":"","delivery_days":"","custom_weeks":"","return_days":"","return_outcome":"","damaged_days":"","care_days":"","deposit":"","notice_hours":"","notice_outcome":"","late_minutes":"","noshow":""}'::jsonb)
 on conflict (key) do nothing;
 
 -- ───────────────────────── grant access ─────────────────────────
