@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Follow Through · player development for basketball staffs</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#171A21">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F2EA; --card:#FFFFFF; --ink:#171A21; --ink2:#454C5A; --line:#DAD4C5; --soft:#ECE8DC;
+  --accent:#B8400E; --accent-bg:#FBEDE5; --ok:#1B6E45; --ok-bg:#E4F2EA; --warn:#8A5200; --warn-bg:#FBF0D9;
+  --bad:#A8261D; --bad-bg:#FBE9E7; --priv:#4B36B8; --priv-bg:#EEEBFB;
+  --disp:"Archivo",system-ui,sans-serif; --body:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.5 var(--body)}
+h1,h2,h3{font-family:var(--disp);font-stretch:85%;font-weight:800;line-height:1.1;margin:0;letter-spacing:-.01em}
+h1{font-size:30px} h2{font-size:20px} h3{font-size:16px}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--priv);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+.top{background:var(--ink);color:#fff}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding-top:12px;padding-bottom:12px}
+.brand{display:flex;align-items:center;gap:10px;font:800 19px/1 var(--disp);font-stretch:80%;text-transform:uppercase;letter-spacing:.04em;margin-right:auto}
+.brand svg{flex:none}
+.tag{font:700 10px/1 var(--mono);letter-spacing:.08em;background:#fff;color:var(--ink);padding:4px 6px;border-radius:3px}
+.top label{font-size:12px;color:#C9CED8;display:flex;flex-direction:column;gap:3px;min-width:0}
+.top select{background:#242934;color:#fff;border:1px solid #4A5160;border-radius:6px;padding:7px 8px;max-width:100%;height:44px;font-size:16px}
+.tabs{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.tabs .wrap{display:flex;gap:4px;overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:13px 10px 10px;font-weight:600;color:var(--ink2);white-space:nowrap}
+.tabs button[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+main{padding:22px 0 60px}
+.eyebrow{font:700 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin-bottom:6px}
+.lede{color:var(--ink2);max-width:62ch;margin-top:6px}
+.grid{display:grid;gap:12px}
+.tiles{grid-template-columns:repeat(2,minmax(0,1fr));margin:18px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile b{display:block;font:800 30px/1 var(--disp);font-stretch:80%}
+.tile span{font-size:13px;color:var(--ink2)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card + .card,.card + .sec,.sec + .sec{margin-top:14px}
+.cols > .card{margin-top:0}
+.sec > h2{margin:26px 0 10px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.sp{justify-content:space-between}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 8px;border-radius:99px;background:var(--soft);color:var(--ink)}
+.chip.bad{background:var(--bad-bg);color:var(--bad)} .chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)} .chip.priv{background:var(--priv-bg);color:var(--priv)}
+.btn{background:var(--ink);color:#fff;border:1px solid var(--ink);border-radius:8px;padding:10px 14px;font-weight:600;min-height:44px}
+.btn.ghost{background:var(--card);color:var(--ink);border-color:var(--line)}
+.btn.sm{min-height:36px;padding:6px 10px;font-size:13px}
+.btn.accent{background:var(--accent);border-color:var(--accent)}
+.link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.num{font:700 13px/1 var(--mono);background:var(--ink);color:#fff;border-radius:5px;min-width:30px;height:26px;display:inline-grid;place-items:center;padding:0 4px;flex:none}
+.muted{color:var(--ink2)} .small{font-size:13px}
+.bar{height:8px;background:var(--soft);border-radius:99px;overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:99px}
+.bar.low i{background:var(--bad)} .bar.mid i{background:var(--warn)}
+.trend{display:inline-flex;align-items:flex-end;gap:3px;height:22px}
+.trend i{width:6px;background:var(--ink2);border-radius:2px 2px 0 0}
+.roster{display:grid;gap:8px}
+.pl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;align-items:center;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.pl:hover{border-color:var(--ink2)}
+.pl .who{min-width:0} .pl .who b{display:block;overflow-wrap:anywhere}
+.pl .stats{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;font-size:13px}
+.pl .stats > span > span:first-child{color:var(--ink2);display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.pl .stats .bar{display:block}
+.pl .flags{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+.item{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0;padding-top:0}
+.item .t{font-weight:600;overflow-wrap:anywhere}
+.dots{display:flex;gap:4px}
+.dot{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:700 10px/1 var(--mono);background:var(--soft);color:var(--ink2);border:1.5px solid transparent}
+.dot.d{background:var(--ok);color:#fff} .dot.m{background:#fff;border-color:var(--bad);color:var(--bad)} .dot.x{background:none;border:1.5px dashed var(--line)}
+.dot.now{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--ink)}
+.cols{display:grid;gap:14px}
+ul.plain{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+ul.plain li{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.lock{background:var(--priv-bg);border:1px solid #CFC7F2;color:#2C1F78;border-radius:10px;padding:14px}
+.lock h3{color:var(--priv)}
+.note{background:var(--warn-bg);border:1px solid #E6CF9A;color:#4A2E00;border-radius:8px;padding:10px 12px;font-size:13px}
+.note.bad{background:var(--bad-bg);border-color:#EDB8B3;color:#6B140E}
+form.f{display:grid;gap:12px}
+.f label{display:grid;gap:4px;font-weight:600;font-size:13px}
+.f input[type=text],.f input[type=number],.f input[type=date],.f select,.f textarea{border:1px solid #A9A28F;border-radius:8px;padding:10px;background:#fff;width:100%;min-height:44px;font-weight:400;font-size:16px}
+.f textarea{min-height:76px;resize:vertical}
+.f fieldset{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:0;min-width:0}
+.f legend{font-weight:600;font-size:13px;padding:0 4px}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 10px}
+.checks label,.radio label{display:flex;align-items:center;gap:8px;font-weight:400;font-size:15px;min-height:36px}
+.checks input,.radio input{width:20px;height:20px;flex:none;accent-color:var(--ink)}
+.two{display:grid;gap:12px}
+.task{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.task + .task{margin-top:8px}
+.task .t{font-weight:600;overflow-wrap:anywhere}
+.check{width:48px;height:48px;border-radius:12px;border:2px solid var(--ink);background:#fff;display:grid;place-items:center;font:800 20px/1 var(--disp);color:transparent}
+.check[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.stepper{display:flex;align-items:center;gap:6px}
+.stepper button{width:44px;height:44px;border-radius:10px;border:2px solid var(--ink);background:#fff;font:800 20px/1 var(--disp)}
+.stepper b{font:700 15px/1 var(--mono);min-width:44px;text-align:center}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px 8px 0;border-top:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);border-top:0}
+.scroll{overflow-x:auto}
+.switch{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.switch:first-of-type{border-top:0}
+.switch button{flex:none;width:52px;height:30px;border-radius:99px;border:2px solid var(--ink);background:#fff;position:relative}
+.switch button::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--ink)}
+.switch button[aria-checked="true"]{background:var(--priv);border-color:var(--priv)}
+.switch button[aria-checked="true"]::after{left:25px;background:#fff}
+.switch button:disabled{opacity:.45;cursor:not-allowed}
+footer{color:var(--ink2);font-size:12px;padding:0 0 40px}
+svg.spark{width:100%;height:auto;display:block;color:var(--ink)}
+@media (min-width:720px){
+  h1{font-size:38px}
+  .tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .pl{grid-template-columns:auto minmax(150px,1.1fr) minmax(0,2.4fr)}
+  .pl .stats{grid-column:auto;grid-template-columns:1.3fr .7fr 1fr 1fr .8fr}
+  .cols.c2{grid-template-columns:1fr 1fr} .cols.c32{grid-template-columns:3fr 2fr}
+  .item{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+  .two{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const KEY='ft-demo-v1';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const fromIso=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const TODAY=new Date();TODAY.setHours(0,0,0,0);
+const T=iso(TODAY);
+const dow=(TODAY.getDay()+6)%7; // Monday = 0
+const WEEK=[...Array(7)].map((_,i)=>iso(addDays(TODAY,i-dow)));
+const DAYL=['M','T','W','T','F','S','S'];
+const DAYN=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const ago=d=>Math.round((TODAY-fromIso(d))/864e5);
+const agoTxt=n=>n===0?'Today':n===1?'Yesterday':`${n} days ago`;
+const nice=d=>fromIso(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+
+const COACH='Coach Renner', MED='Sam Ortega, ATC';
+const OWNERS=['Coach Renner','Coach Abara','Coach Dill'];
+// count:true = required work in this category counts toward the weekly athletic-hours limit
+const CATS={
+  skill:{label:'Skill work',count:true}, film:{label:'Film',count:true}, strength:{label:'Strength',count:true},
+  academics:{label:'Academics'}, recovery:{label:'Treatment and recovery'}, leadership:{label:'Leadership'}, standards:{label:'Standards'}
+};
+const PHASES={
+  pre:{label:'Preseason',limit:20}, in:{label:'In season',limit:20}, off7:{label:'Postseason week off',limit:0},
+  spring:{label:'Spring',limit:8}, summer:{label:'Summer',limit:8}
+};
+const TEMPLATES=[
+  {title:'Form shooting before practice',cat:'skill',cad:'daily',n:1,unit:'sessions',min:15},
+  {title:'Watch your clips and reply with one takeaway',cat:'film',cad:'weekly',n:2,unit:'sessions',min:15},
+  {title:'Study hall',cat:'academics',cad:'weekly',n:6,unit:'hrs',min:0},
+  {title:'Treatment before practice',cat:'recovery',cad:'daily',n:1,unit:'sessions',min:0}
+];
+
+function seed(){
+  let s=7;const rnd=()=>{s=(s*1103515245+12345)%2147483648;return s/2147483648};
+  const players=[
+    ['p1','Marcus Ellery',1,'G','Sr',.95,22],['p2','Deon Whitaker',3,'G','So',.82,20],['p3','Tobias Lindqvist',5,'F','Jr',.9,21],
+    ['p12','Eli Navarro',4,'G','Fr',.77,18],['p4','Jalen Okoro',10,'G','Fr',.74,17],['p5','Caleb Brandt',12,'C','Jr',.58,21],
+    ['p6','Andre Vasquez',14,'F','So',.88,19],['p7','Isaiah Pruitt',20,'G','Sr',.97,22],['p8','Noah Castellan',22,'F','Fr',.4,18],
+    ['p9','Kwame Addo',24,'C','So',.8,20],['p10','Luke Hensley',30,'G','Jr',.69,21],['p11','Darius Monroe',33,'F','Sr',.86,23]
+  ].map(([id,name,num,pos,yr,rel,age])=>({id,name,num,pos,yr,rel,age,
+    hist:[0,1,2].map(()=>Math.max(.15,Math.min(1,rel+(rnd()-.5)*.25))),seenAgo:rel<.5?4:1,court:[],off:[]}));
+  const FOC={
+    G:[['Shoot it the same way every time off the catch','Decide earlier in ball screens'],['Be the loudest voice in transition defense']],
+    F:[['Finish through contact with the left hand','Sprint to the corner, every possession'],['Own your film: bring one question to every session']],
+    C:[['Hold your spot in the post without fouling','Make 75% at the line'],['Be early: first one taped, first one on the floor']]
+  };
+  let nid=1;const items=[],logs=[];
+  const add=(pid,o)=>{const it={id:'i'+(nid++),pid,kind:'required',cad:'weekly',n:1,unit:'sessions',min:0,owner:'Coach Abara',...o};items.push(it);return it};
+  for(const p of players){
+    [p.court,p.off]=FOC[p.pos].map(a=>a.slice());
+    if(p.pos==='G'){add(p.id,{title:'Form shooting before practice',cat:'skill',cad:'daily',min:15});add(p.id,{title:'Ball-screen reads with Coach Abara',cat:'skill',n:2,min:30})}
+    if(p.pos==='F'){add(p.id,{title:'Corner threes: 50 makes after practice',cat:'skill',cad:'daily',min:15});add(p.id,{title:'Left-hand finishing series',cat:'skill',n:3,min:20,owner:'Coach Dill'})}
+    if(p.pos==='C'){add(p.id,{title:'Free throws: 50 makes after practice',cat:'skill',cad:'daily',min:10});add(p.id,{title:'Post footwork with Coach Dill',cat:'skill',n:2,min:30,owner:'Coach Dill'})}
+    add(p.id,{title:'Watch your clips and reply with one takeaway',cat:'film',n:2,min:15,owner:'Coach Dill'});
+    if(p.yr==='Fr'||p.yr==='So')add(p.id,{title:'Study hall',cat:'academics',n:p.yr==='Fr'?6:4,unit:'hrs',owner:'Coach Dill'});
+    if(p.id==='p5'||p.id==='p9')add(p.id,{title:'Treatment before practice',cat:'recovery',cad:'daily',owner:MED});
+    if(p.id==='p8'||p.id==='p10')add(p.id,{title:'Hip mobility circuit',cat:'strength',n:3,min:15});
+    if(p.id==='p2')add(p.id,{title:'Extra conditioning block',cat:'strength',n:3,min:45,owner:COACH});
+    if(p.id==='p1')add(p.id,{title:'Lead the guards through Thursday film',cat:'leadership',cad:'once',due:WEEK[3],owner:COACH});
+    if(p.id==='p7')add(p.id,{title:'Sit down with a freshman this week',cat:'leadership',cad:'once',due:WEEK[4],owner:COACH});
+    add(p.id,{title:'Open gym shooting, 7 to 9 pm',cat:'skill',kind:'suggested',n:3,owner:COACH});
+  }
+  for(const it of items){
+    if(it.kind!=='required')continue;
+    const p=players.find(x=>x.id===it.pid),last=p.rel<.5?dow-3:dow;
+    if(it.cad==='daily'){for(let i=0;i<=last;i++)if(i!==6&&rnd()<p.rel)logs.push({i:it.id,d:WEEK[i]})}
+    else if(it.cad==='weekly'){const k=Math.min(it.n,Math.round(it.n*(dow+1)/7*(p.rel+(rnd()-.5)*.3)));for(let j=0;j<k&&last>=0;j++)logs.push({i:it.id,d:WEEK[Math.min(last,j)]})}
+    else if(it.due<=T&&rnd()<p.rel)logs.push({i:it.id,d:it.due});
+  }
+  const meetings=[],notes=[];
+  players.forEach((p,k)=>{
+    meetings.push({pid:p.id,d:iso(addDays(TODAY,-34)),type:'Preseason',by:COACH,text:'Set role and two priorities for the year. Agreed the focus areas on this page.'});
+    meetings.push({pid:p.id,d:iso(addDays(TODAY,-[3,6,9,17,5,19,8,2,16,11,4,7][k])),type:'1-on-1',by:OWNERS[k%3],text:'Checked in on the week. Reviewed two clips together.'});
+  });
+  notes.push({pid:'p1',d:iso(addDays(TODAY,-1)),from:COACH,text:'Saw the extra form work show up Tuesday night. Keep leading the guards the way you did in film.'});
+  notes.push({pid:'p8',d:iso(addDays(TODAY,-5)),from:'Coach Dill',text:'Missed two study hall blocks last week. Come see me before practice Monday.'});
+  const E=(arr)=>arr.map((w,i)=>({d:iso(addDays(TODAY,-37+i*7)),w}));
+  const body={
+    p1:{optIn:true,share:false,goal:'Maintain',lo:188,hi:193,status:'',entries:E([190,191,190.5,189.5,190,191])},
+    p2:{optIn:true,share:false,goal:'Gain',lo:178,hi:184,status:'',entries:E([174,174.5,175.5,176,176.5,177])},
+    p3:{optIn:true,share:false,goal:'Maintain',lo:214,hi:220,status:'',entries:E([216,217,216,215.5,217,216.5])},
+    p5:{optIn:true,share:true,goal:'Gain',lo:238,hi:244,status:'On plan. Keep the recovery meal after practice.',entries:E([233,234,234.5,235.5,236,237])},
+    p6:{optIn:true,share:false,goal:'Gain',lo:205,hi:211,status:'',entries:E([201,202,202,203,203.5,204])},
+    p9:{optIn:true,share:false,goal:'Reduce',lo:248,hi:254,status:'',entries:E([262,261,260.5,260,259.5,254])},
+    p11:{optIn:true,share:false,goal:'Maintain',lo:224,hi:230,status:'',entries:E([227,226,227.5,228,227,226.5])},
+    p7:{optIn:false,share:false,entries:[]},p8:{optIn:true,share:false,entries:[]},p10:{optIn:true,share:false,entries:[]},
+    p12:{optIn:true,share:false,entries:[]},p4:{optIn:false,share:false,entries:[]}
+  };
+  const referrals=[
+    {id:'r1',pid:'p8',from:COACH,d:iso(addDays(TODAY,-2)),status:'open',reply:'',text:'Noah gets moved off his spot in the post. I would like him stronger by conference play. What is realistic?'},
+    {id:'r2',pid:'p5',from:COACH,d:iso(addDays(TODAY,-40)),status:'answered',reply:'Plan set with Caleb. He has chosen to share a status line with coaches.',text:'Caleb wears down late in games. Can you look at how he is fueling?'}
+  ];
+  const audit=[
+    {ts:iso(addDays(TODAY,-2))+' 14:10',who:MED,pid:'p9',what:'Recorded a weigh-in'},
+    {ts:iso(addDays(TODAY,-2))+' 14:02',who:MED,pid:'p5',what:'Recorded a weigh-in'}
+  ];
+  return {week:WEEK[0],phase:'in',dayOff:6,team:{pre:16,in:15,off7:0,spring:4,summer:4},role:{t:'coach'},
+    players,items,logs,meetings,notes,body,referrals,audit,nid};
+}
+
+let S;
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&r.week===WEEK[0])return r}catch(e){}return seed()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+S=load();
+let U={view:'board',pid:null};
+
+/* ---------- derived ---------- */
+const P=id=>S.players.find(p=>p.id===id);
+const itemsOf=(pid,kind)=>S.items.filter(i=>i.pid===pid&&i.kind===kind);
+const counts=it=>it.kind==='required'&&!!CATS[it.cat].count;
+function occ(it){
+  if(counts(it)&&PHASES[S.phase].limit===0)return{total:0,soFar:0,paused:true,days:[]};
+  if(it.cad==='daily'){const days=WEEK.map((_,i)=>!(counts(it)&&i===S.dayOff));
+    return{total:days.filter(Boolean).length,soFar:days.filter((v,i)=>v&&i<=dow).length,days}}
+  if(it.cad==='weekly')return{total:it.n,soFar:Math.floor(it.n*(dow+1)/7),days:[]};
+  return{total:1,soFar:it.due<=T?1:0,days:[]};
+}
+const done=it=>it.cad==='once'?S.logs.filter(l=>l.i===it.id).length:S.logs.filter(l=>l.i===it.id&&WEEK.includes(l.d)).length;
+function week(pid){
+  let d=0,sf=0;for(const it of itemsOf(pid,'required')){const o=occ(it);sf+=o.soFar;d+=Math.min(done(it),o.soFar)}
+  return{done:d,soFar:sf,pct:sf?d/sf:1};
+}
+function hours(pid){
+  let m=0;for(const it of itemsOf(pid,'required'))if(counts(it))m+=it.min*occ(it).total;
+  return Math.round((S.team[S.phase]+m/60)*100)/100;
+}
+function lastSeen(pid){
+  const ids=new Set(itemsOf(pid,'required').map(i=>i.id));
+  const ds=S.logs.filter(l=>ids.has(l.i)).map(l=>l.d).sort();
+  return ds.length?ago(ds[ds.length-1]):P(pid).seenAgo;
+}
+const lastMeet=pid=>{const ds=S.meetings.filter(m=>m.pid===pid).map(m=>m.d).sort();return ds.length?ago(ds[ds.length-1]):null};
+function flags(pid){
+  const f=[],w=week(pid),ls=lastSeen(pid),lm=lastMeet(pid),lim=PHASES[S.phase].limit;
+  if(w.soFar>=3&&w.pct<.6)f.push(['bad','Behind this week']);
+  if(ls>=3)f.push(['warn',`No check-in for ${ls} days`]);
+  if(lm===null||lm>14)f.push(['warn','1-on-1 overdue']);
+  if(hours(pid)>lim)f.push(['bad','Over the hour limit']);
+  return f;
+}
+function weightFlag(b){
+  const e=b.entries;if(!e||e.length<2)return null;
+  const a=e[e.length-2],z=e[e.length-1],days=Math.max(1,ago(a.d)-ago(z.d)),pct=(z.w-a.w)/a.w*100/(days/7);
+  return Math.abs(pct)>1.5?pct:null;
+}
+const log=(who,pid,what)=>{const n=new Date();S.audit.unshift({ts:`${T} ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`,who,pid,what})};
+
+/* ---------- shared pieces ---------- */
+const chips=f=>f.map(([c,t])=>`<span class="chip ${c}">${esc(t)}</span>`).join('');
+const barCls=p=>p<.6?'low':p<.8?'mid':'';
+function progress(it,forCoach){
+  const o=occ(it),d=done(it);
+  if(o.paused)return`<span class="chip">Paused: no required athletic work this week</span>`;
+  if(it.cad==='daily'){
+    const have=new Set(S.logs.filter(l=>l.i===it.id).map(l=>l.d));
+    return`<div class="dots" role="img" aria-label="${d} of ${o.soFar} done so far this week">`+WEEK.map((dt,i)=>{
+      const c=!o.days[i]?'x':have.has(dt)?'d':i<dow?'m':'';
+      return`<span class="dot ${c}${i===dow?' now':''}">${DAYL[i]}</span>`}).join('')+`</div>`;
+  }
+  if(it.cad==='once')return d?`<span class="chip ok">Done</span>`:`<span class="chip ${it.due<T?'bad':''}">Due ${nice(it.due)}</span>`;
+  return`<span class="chip ${d>=o.total?'ok':forCoach&&d<o.soFar?'bad':''}">${d} of ${it.n} ${esc(it.unit)}</span>`;
+}
+const cadTxt=it=>it.cad==='daily'?'Every day':it.cad==='once'?'One time':`${it.n} ${it.unit} a week`;
+function spark(b){
+  const e=b.entries,ws=e.map(x=>x.w).concat([b.lo,b.hi]),mn=Math.min(...ws)-2,mx=Math.max(...ws)+2;
+  const X=i=>20+i*(260/Math.max(1,e.length-1)),Y=w=>80-(w-mn)/(mx-mn)*70;
+  return`<svg class="spark" viewBox="0 0 300 90" role="img" aria-label="Weight trend against the agreed range of ${b.lo} to ${b.hi} pounds">
+    <rect x="0" y="${Y(b.hi)}" width="300" height="${Y(b.lo)-Y(b.hi)}" fill="#DCD6F6"/>
+    <polyline fill="none" stroke="currentColor" stroke-width="2" points="${e.map((x,i)=>X(i)+','+Y(x.w)).join(' ')}"/>
+    ${e.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x.w)}" r="3.5" fill="currentColor"/>`).join('')}</svg>
+    <p class="small muted">Shaded band is the agreed range, ${b.lo} to ${b.hi} lb. Latest: ${e[e.length-1].w} lb on ${nice(e[e.length-1].d)}.</p>`;
+}
+
+/* ---------- coach ---------- */
+function vBoard(){
+  const lim=PHASES[S.phase].limit,rows=S.players.map(p=>({p,w:week(p.id),f:flags(p.id),h:hours(p.id)}));
+  const tot=rows.reduce((a,r)=>[a[0]+r.w.done,a[1]+r.w.soFar],[0,0]);
+  const att=rows.filter(r=>r.f.length);
+  return`<p class="eyebrow">${DAYN[dow]}, ${nice(T)} · ${PHASES[S.phase].label}</p>
+  <h1>Who is following through</h1>
+  <p class="lede">Required work only. Suggested work and body and fuel plans are not shown here by design.</p>
+  <div class="grid tiles">
+    <div class="tile"><b>${tot[1]?Math.round(tot[0]/tot[1]*100):100}%</b><span>of required work done so far this week</span></div>
+    <div class="tile"><b>${att.length}</b><span>players need a conversation</span></div>
+    <div class="tile"><b>${rows.filter(r=>{const m=lastMeet(r.p.id);return m===null||m>14}).length}</b><span>1-on-1s overdue (14+ days)</span></div>
+    <div class="tile"><b>${rows.filter(r=>r.h>lim).length}</b><span>over the ${lim}-hour weekly limit</span></div>
+  </div>
+  <div class="row sp"><h2>Roster</h2><button class="btn accent" data-a="go" data-v="assign">Assign work</button></div>
+  <div class="roster" style="margin-top:10px">${rows.map(({p,w,f,h})=>`
+    <button class="pl" data-a="player" data-id="${p.id}">
+      <span class="num">${p.num}</span>
+      <span class="who"><b>${esc(p.name)}</b><span class="small muted">${p.pos} · ${p.yr}</span></span>
+      <span class="stats">
+        <span><span>This week</span><span class="bar ${barCls(w.pct)}" style="margin:6px 0 2px"><i style="width:${Math.round(w.pct*100)}%"></i></span>${w.done} of ${w.soFar} so far</span>
+        <span><span>4 weeks</span><span class="trend" role="img" aria-label="Last four weeks: ${p.hist.concat(w.pct).map(x=>Math.round(x*100)+'%').join(', ')}">${p.hist.concat(w.pct).map(x=>`<i style="height:${Math.max(3,Math.round(x*22))}px"></i>`).join('')}</span></span>
+        <span><span>Last check-in</span>${agoTxt(lastSeen(p.id))}</span>
+        <span><span>Last 1-on-1</span>${lastMeet(p.id)===null?'None':agoTxt(lastMeet(p.id))}</span>
+        <span><span>Hours</span>${h} / ${lim}</span>
+      </span>
+      ${f.length?`<span class="flags">${chips(f)}</span>`:''}
+    </button>`).join('')}</div>`;
+}
+function bodyCardCoach(p){
+  const b=S.body[p.id],mine=S.referrals.filter(r=>r.pid===p.id);
+  let msg;
+  if(p.age<18)msg='Under 18. Body and fuel plans are switched off in the app; medical staff handle this directly with guardian consent.';
+  else if(!b.optIn)msg=`${p.name.split(' ')[0]} has not opted in to a body and fuel plan.`;
+  else if(b.share&&b.status)msg=`Shared by ${p.name.split(' ')[0]}: “${b.status}”`;
+  else if(b.lo)msg=`A plan is in place with performance staff. ${p.name.split(' ')[0]} has not shared it with coaches.`;
+  else msg='No plan on file yet.';
+  return`<div class="lock"><h3>Body and fuel</h3>
+    <p style="margin-top:6px">${esc(msg)}</p>
+    <p class="small" style="margin-top:8px">Weight, body composition and eating plans are set by ${esc(MED)}, not by coaches. Tell performance staff what you need on the floor and they build the plan with the player.</p>
+    ${mine.map(r=>`<p class="small" style="margin-top:8px"><b>Your request, ${nice(r.d)}:</b> ${esc(r.text)}<br><b>${r.status==='open'?'Waiting on performance staff.':'Reply: '+esc(r.reply)}</b></p>`).join('')}
+    <form class="f" data-f="refer" data-id="${p.id}" style="margin-top:12px">
+      <label>What do you need from this player physically?<textarea name="text" required placeholder="Example: needs to hold his spot in the post for 30 minutes a night"></textarea></label>
+      <div><button class="btn sm">Send to performance staff</button></div>
+    </form></div>`;
+}
+function vPlayer(){
+  const p=P(U.pid),w=week(p.id),lim=PHASES[S.phase].limit,h=hours(p.id),req=itemsOf(p.id,'required'),sug=itemsOf(p.id,'suggested');
+  const foc=(k,title)=>`<div class="card"><h3>${title}</h3><ul class="plain">${p[k].map((t,i)=>`<li><span>${esc(t)}</span><button class="link small" data-a="unfocus" data-k="${k}" data-i="${i}" aria-label="Remove focus: ${esc(t)}">Remove</button></li>`).join('')||'<li class="muted">None set.</li>'}</ul>
+    ${p[k].length<3?`<form class="f" data-f="focus" data-k="${k}" style="margin-top:10px"><label>Add a focus (three at most)<input type="text" name="text" required maxlength="90"></label><div><button class="btn sm ghost">Add</button></div></form>`:'<p class="small muted" style="margin-top:8px">Three is the limit. Remove one to add another.</p>'}</div>`;
+  return`<button class="link" data-a="go" data-v="board">← Team board</button>
+  <div class="row" style="margin:12px 0 4px"><span class="num">${p.num}</span><h1>${esc(p.name)}</h1></div>
+  <p class="muted">${p.pos} · ${p.yr} · ${w.done} of ${w.soFar} required items done so far this week</p>
+  <div class="row" style="margin-top:8px">${chips(flags(p.id))}</div>
+  <div class="sec"><h2>Development plan</h2><div class="cols c2">${foc('court','On the court')}${foc('off','Off the court')}</div></div>
+  <div class="sec"><div class="row sp" style="margin:26px 0 10px"><h2>Required this week</h2><button class="btn sm accent" data-a="assignFor" data-id="${p.id}">Assign work</button></div>
+    <div class="card">${req.map(it=>`<div class="item"><div><div class="t">${esc(it.title)}</div>
+      <div class="small muted">${CATS[it.cat].label} · ${cadTxt(it)}${it.min?` · ${it.min} min`:''} · ${esc(it.owner)} · <button class="link small" data-a="rm" data-id="${it.id}" aria-label="Remove ${esc(it.title)}">Remove</button></div></div>${progress(it,true)}</div>`).join('')||'<p class="muted">Nothing assigned.</p>'}</div>
+    <p class="small ${h>lim?'note bad':'muted'}" style="margin-top:10px"><b>${h} of ${lim} hours.</b> Team activity (${S.team[S.phase]} hrs) plus required skill, film and strength work above. A planning aid, not a compliance record.</p>
+  </div>
+  <div class="sec"><h2>Suggested</h2><div class="card">${sug.map(it=>`<div class="item"><div><div class="t">${esc(it.title)}</div><div class="small muted">${CATS[it.cat].label} · <button class="link small" data-a="rm" data-id="${it.id}" aria-label="Remove ${esc(it.title)}">Remove</button></div></div><span class="chip priv">Not reported to staff</span></div>`).join('')||'<p class="muted">Nothing suggested.</p>'}
+    <p class="small muted" style="margin-top:10px">Voluntary work stays voluntary only if it is not reported back to coaches and carries no reward or penalty. Players can keep their own private log.</p></div></div>
+  <div class="sec"><h2>Performance</h2>${bodyCardCoach(p)}</div>
+  <div class="sec"><h2>Conversations</h2><div class="cols c2">
+    <div class="card"><h3>Meetings</h3>
+      <form class="f" data-f="meet" data-id="${p.id}" style="margin:10px 0"><label>Type<select name="type"><option>1-on-1</option><option>Preseason</option><option>Midseason</option><option>Postseason</option></select></label>
+      <label>What you agreed<textarea name="text" required></textarea></label><div><button class="btn sm">Log meeting</button></div></form>
+      ${S.meetings.filter(m=>m.pid===p.id).sort((a,b)=>b.d.localeCompare(a.d)).map(m=>`<div class="item"><div><div class="t">${esc(m.type)} · ${nice(m.d)}</div><div class="small muted">${esc(m.by)}</div><p class="small">${esc(m.text)}</p></div></div>`).join('')}</div>
+    <div class="card"><h3>Notes to ${esc(p.name.split(' ')[0])}</h3><p class="small muted">Players log more honestly when someone answers what they log.</p>
+      <form class="f" data-f="note" data-id="${p.id}" style="margin:10px 0"><label>Message<textarea name="text" required></textarea></label><div><button class="btn sm">Send note</button></div></form>
+      ${S.notes.filter(n=>n.pid===p.id).sort((a,b)=>b.d.localeCompare(a.d)).map(n=>`<div class="item"><div><div class="small muted">${esc(n.from)} · ${nice(n.d)}</div><p>${esc(n.text)}</p></div></div>`).join('')}</div>
+  </div></div>`;
+}
+function vAssign(){
+  return`<p class="eyebrow">Assign</p><h1>Assign work</h1>
+  <p class="lede">Basketball, film, strength, academic, treatment and leadership work. Weight and eating plans are not assigned here; send those to performance staff from a player's page.</p>
+  <div class="card" style="margin-top:16px"><form class="f" data-f="assign" id="assignForm">
+    <div class="row">${TEMPLATES.map((t,i)=>`<button type="button" class="btn sm ghost" data-a="tpl" data-i="${i}">${esc(t.title)}</button>`).join('')}</div>
+    <label>What you are asking for<input type="text" name="title" required maxlength="90" placeholder="Example: 50 made free throws after practice"></label>
+    <div class="two">
+      <label>Category<select name="cat">${Object.entries(CATS).map(([k,c])=>`<option value="${k}">${c.label}</option>`).join('')}</select></label>
+      <label>Staff owner<select name="owner">${OWNERS.map(o=>`<option>${o}</option>`).join('')}</select></label>
+    </div>
+    <fieldset class="radio"><legend>Type</legend>
+      <label><input type="radio" name="kind" value="required" checked> Required. Players check it off and staff see it.</label>
+      <label><input type="radio" name="kind" value="suggested"> Suggested. Voluntary, and never reported to staff.</label></fieldset>
+    <div class="two">
+      <label>How often<select name="cad"><option value="daily">Every day</option><option value="weekly" selected>A number of times a week</option><option value="once">One time</option></select></label>
+      <label>Times a week (or hours, for study hall)<input type="number" name="n" min="1" max="20" value="2"></label>
+      <label>Counted in<select name="unit"><option>sessions</option><option>hrs</option></select></label>
+      <label>Minutes per session<input type="number" name="min" min="0" max="180" value="15"></label>
+      <label>Due date (one-time work)<input type="date" name="due" value="${WEEK[Math.min(6,dow+1)]}"></label>
+    </div>
+    <fieldset><legend>Players</legend><p style="margin-bottom:6px"><button type="button" class="link small" data-a="all">Select everyone</button></p>
+      <div class="checks">${S.players.map(p=>`<label><input type="checkbox" name="pid" value="${p.id}" ${U.pre===p.id?'checked':''}> ${esc(p.name)}</label>`).join('')}</div></fieldset>
+    <div id="assignPreview" aria-live="polite"></div>
+    <div><button class="btn accent">Assign</button></div>
+  </form></div>`;
+}
+function assignPreview(){
+  const f=document.getElementById('assignForm'),box=document.getElementById('assignPreview');if(!f||!box)return;
+  const d=new FormData(f),pids=d.getAll('pid'),it={kind:d.get('kind'),cat:d.get('cat'),cad:d.get('cad'),n:+d.get('n')||1,min:+d.get('min')||0,due:d.get('due')||T};
+  if(it.kind==='suggested'){box.innerHTML=`<p class="note">Suggested work has no completion tracking for staff and does not count toward required hours.</p>`;return}
+  if(!counts(it)||!pids.length){box.innerHTML='';return}
+  const add=Math.round(it.min*occ(it).total/60*100)/100,lim=PHASES[S.phase].limit,over=pids.filter(id=>hours(id)+add>lim).map(id=>P(id).name);
+  box.innerHTML=over.length?`<p class="note bad"><b>This adds ${add} required hours a week.</b> It would put ${esc(over.join(', '))} over the ${lim}-hour limit for ${PHASES[S.phase].label.toLowerCase()}. Check with compliance before assigning.</p>`
+    :`<p class="note">This adds ${add} required hours a week. Everyone selected stays within the ${lim}-hour limit.</p>`;
+}
+function vSettings(){
+  return`<p class="eyebrow">Season</p><h1>Season settings</h1>
+  <p class="lede">The phase sets the weekly limit on required athletic hours. Defaults follow NCAA Division I; change them to match your division and your compliance office's reading.</p>
+  <div class="card" style="margin-top:16px"><form class="f" data-f="settings">
+    <div class="two">
+      <label>Phase<select name="phase">${Object.entries(PHASES).map(([k,v])=>`<option value="${k}" ${k===S.phase?'selected':''}>${v.label} · ${v.limit} hrs a week</option>`).join('')}</select></label>
+      <label>Required day off<select name="dayOff">${DAYN.map((d,i)=>`<option value="${i}" ${i===S.dayOff?'selected':''}>${d}</option>`).join('')}</select></label>
+      <label>Team activity hours a week in this phase<input type="number" name="team" min="0" max="20" step="0.5" value="${S.team[S.phase]}"></label>
+    </div>
+    <div><button class="btn">Save</button></div></form></div>
+  <div class="card"><h3>What the app does with these</h3><ul class="plain small">
+    <li>Daily skill, film and strength work is never expected on the required day off.</li>
+    <li>In the postseason week off, required athletic work is paused. Academics and treatment continue.</li>
+    <li>Assigning work that would put a player over the limit shows a warning before you confirm.</li></ul></div>
+  <div class="card"><h3>Sample data</h3><p class="small muted">Everything here is a fictional roster stored in this browser only.</p><p style="margin-top:10px"><button class="btn sm ghost" data-a="reset">Reset the sample data</button></p></div>`;
+}
+
+/* ---------- performance staff ---------- */
+function vPlans(){
+  return`<p class="eyebrow">Performance staff</p><h1>Body and fuel plans</h1>
+  <p class="lede">Only you and each player see these numbers. Coaches see a status line, and only when the player chooses to share it.</p>
+  <div class="roster" style="margin-top:16px">${S.players.map(p=>{const b=S.body[p.id],wf=b.lo?weightFlag(b):null;
+    const st=p.age<18?'<span class="chip">Under 18: off</span>':!b.optIn?'<span class="chip">Not opted in</span>':!b.lo?'<span class="chip warn">Opted in, no plan yet</span>':`<span class="chip">${esc(b.goal)} · ${b.lo} to ${b.hi} lb</span>`;
+    return`<button class="pl" data-a="plan" data-id="${p.id}" ${p.age<18||!b.optIn?'disabled':''}>
+      <span class="num">${p.num}</span><span class="who"><b>${esc(p.name)}</b><span class="small muted">${p.pos} · ${p.yr}</span></span>
+      <span class="flags" style="grid-column:auto">${st}${wf!==null?`<span class="chip bad">Changed ${wf>0?'+':''}${wf.toFixed(1)}% in a week</span>`:''}${b.share?'<span class="chip priv">Status shared with coaches</span>':''}</span></button>`}).join('')}</div>`;
+}
+function vPlan(){
+  const p=P(U.pid),b=S.body[p.id],wf=b.lo?weightFlag(b):null;
+  return`<button class="link" data-a="go" data-v="plans">← All plans</button>
+  <div class="row" style="margin:12px 0 4px"><span class="num">${p.num}</span><h1>${esc(p.name)}</h1></div>
+  ${wf!==null?`<p class="note bad" style="margin-top:10px"><b>Weight changed ${wf>0?'+':''}${wf.toFixed(1)}% in a week.</b> More than 1.5% a week is outside safe-change guidance. This alert goes to you only.</p>`:''}
+  <div class="cols c32" style="margin-top:14px">
+    <div class="card"><h3>Trend</h3>${b.lo&&b.entries.length?spark(b):'<p class="muted" style="margin-top:6px">No entries yet.</p>'}
+      <form class="f" data-f="entry" data-id="${p.id}" style="margin-top:12px"><label>Record a weigh-in (lb), taken privately<input type="number" name="w" step="0.5" min="100" max="400" required></label><div><button class="btn sm">Save entry</button></div></form></div>
+    <div class="card"><h3>Plan</h3><form class="f" data-f="plan" data-id="${p.id}" style="margin-top:8px">
+      <label>Direction<select name="goal">${['Maintain','Gain','Reduce'].map(g=>`<option ${b.goal===g?'selected':''}>${g}</option>`).join('')}</select></label>
+      <div class="two"><label>Range, low (lb)<input type="number" name="lo" required value="${b.lo||''}"></label><label>Range, high (lb)<input type="number" name="hi" required value="${b.hi||''}"></label></div>
+      <label>Status line for coaches (no numbers)<input type="text" name="status" maxlength="120" value="${esc(b.status||'')}"></label>
+      <p class="small muted">${b.share?'The player is sharing this line with coaches.':'The player is not sharing this with coaches, so they will not see it.'}</p>
+      <div><button class="btn sm">Save plan</button></div></form></div>
+  </div>`;
+}
+function vRequests(){
+  return`<p class="eyebrow">Performance staff</p><h1>Requests from coaches</h1>
+  <p class="lede">Coaches describe what they need on the floor. You decide whether a plan is appropriate and build it with the player.</p>
+  <div style="margin-top:16px">${S.referrals.map(r=>`<div class="card"><div class="row sp"><h3>${esc(P(r.pid).name)}</h3><span class="chip ${r.status==='open'?'warn':'ok'}">${r.status==='open'?'Open':'Answered'}</span></div>
+    <p class="small muted">${esc(r.from)} · ${nice(r.d)}</p><p style="margin-top:6px">${esc(r.text)}</p>
+    ${r.status==='open'?`<form class="f" data-f="reply" data-id="${r.id}" style="margin-top:10px"><label>Reply to the coach (no numbers)<textarea name="text" required></textarea></label><div><button class="btn sm">Send reply</button></div></form>`:`<p style="margin-top:8px"><b>Your reply:</b> ${esc(r.reply)}</p>`}</div>`).join('')}</div>`;
+}
+function vAudit(){
+  return`<p class="eyebrow">Performance staff</p><h1>Access log</h1><p class="lede">Every view and change to body and fuel data. Players see their own entries from this log.</p>
+  <div class="card scroll" style="margin-top:16px"><table><thead><tr><th>When</th><th>Who</th><th>Player</th><th>Action</th></tr></thead><tbody>
+  ${S.audit.map(a=>`<tr><td>${esc(a.ts)}</td><td>${esc(a.who)}</td><td>${esc(P(a.pid).name)}</td><td>${esc(a.what)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ---------- player ---------- */
+function vToday(){
+  const p=P(S.role.pid),w=week(p.id),req=itemsOf(p.id,'required'),sug=itemsOf(p.id,'suggested');
+  const note=S.notes.filter(n=>n.pid===p.id).sort((a,b)=>b.d.localeCompare(a.d))[0];
+  const task=(it,priv)=>{const o=occ(it),d=done(it),today=S.logs.some(l=>l.i===it.id&&l.d===T);let ctl;
+    if(o.paused)ctl=`<span class="check" aria-hidden="true"></span>`;
+    else if(it.cad==='weekly')ctl=`<div class="stepper"><button data-a="minus" data-id="${it.id}" aria-label="Take one off ${esc(it.title)}">−</button><b>${d}/${it.n}</b><button data-a="plus" data-id="${it.id}" aria-label="Add one to ${esc(it.title)}">+</button></div>`;
+    else{const on=it.cad==='once'?d>0:today,off=it.cad==='daily'&&!o.days[dow];
+      ctl=off?`<span class="chip">Day off</span>`:`<button class="check" data-a="tog" data-id="${it.id}" aria-pressed="${on}" aria-label="${esc(it.title)}">✓</button>`}
+    return`<div class="task" style="${it.cad==='weekly'?'grid-template-columns:minmax(0,1fr) auto':''}">${it.cad==='weekly'?'':ctl}<div><div class="t">${esc(it.title)}</div>
+      <div class="small muted">${cadTxt(it)}${it.min?` · ${it.min} min`:''} · ${priv?'Only you see this':'Seen by '+esc(it.owner)+' and coaches'}</div>
+      ${o.paused?'<div class="small muted">Paused this week.</div>':it.cad==='daily'&&!priv?`<div style="margin-top:6px">${progress(it)}</div>`:''}</div>${it.cad==='weekly'?ctl:''}</div>`};
+  return`<p class="eyebrow">${DAYN[dow]}, ${nice(T)}</p><h1>${esc(p.name.split(' ')[0])}, here is today</h1>
+  <p class="lede">${w.done} of ${w.soFar} done so far this week.</p>
+  ${note?`<div class="card" style="margin-top:14px"><p class="small muted">${esc(note.from)} · ${nice(note.d)}</p><p>${esc(note.text)}</p></div>`:''}
+  <div class="sec"><h2>Required</h2>${req.map(it=>task(it,false)).join('')||'<p class="muted">Nothing required.</p>'}</div>
+  <div class="sec"><h2>Suggested</h2><p class="small muted" style="margin-bottom:10px">Voluntary. Your log here is private: staff and teammates cannot see whether you did it, and nothing rides on it.</p>${sug.map(it=>task(it,true)).join('')}</div>`;
+}
+function vMyPlan(){
+  const p=P(S.role.pid),b=S.body[p.id];
+  return`<p class="eyebrow">My plan</p><h1>What we agreed</h1>
+  <div class="cols c2" style="margin-top:16px">
+    <div class="card"><h3>On the court</h3><ul class="plain">${p.court.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>
+    <div class="card"><h3>Off the court</h3><ul class="plain">${p.off.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div></div>
+  <div class="sec"><h2>Body and fuel</h2><div class="lock">${p.age<18?'<p>Body and fuel plans are switched off in the app for players under 18.</p>':!b.optIn?'<p>You have not opted in. You can change that on the Privacy tab at any time.</p>':b.lo&&b.entries.length?`<h3>${esc(b.goal)} · set with ${esc(MED)}</h3>${spark(b)}`:'<p>You have opted in. Performance staff will set a plan with you.</p>'}
+    <p class="small" style="margin-top:8px">Coaches cannot see these numbers.</p></div></div>
+  <div class="sec"><h2>Meetings</h2><div class="card">${S.meetings.filter(m=>m.pid===p.id).sort((a,b)=>b.d.localeCompare(a.d)).map(m=>`<div class="item"><div><div class="t">${esc(m.type)} · ${nice(m.d)}</div><div class="small muted">${esc(m.by)}</div><p class="small">${esc(m.text)}</p></div></div>`).join('')}</div></div>`;
+}
+function vPrivacy(){
+  const p=P(S.role.pid),b=S.body[p.id],minor=p.age<18;
+  return`<p class="eyebrow">Privacy</p><h1>Who sees what</h1>
+  <div class="card scroll" style="margin-top:16px"><table><thead><tr><th>Your information</th><th>Coaches</th><th>Performance staff</th></tr></thead><tbody>
+    <tr><td>Required work you check off</td><td>Yes</td><td>Treatment items only</td></tr>
+    <tr><td>Suggested work you log</td><td>No</td><td>No</td></tr>
+    <tr><td>Weight and body numbers</td><td>No</td><td>${b.optIn&&!minor?'Yes':'No'}</td></tr>
+    <tr><td>Body and fuel status line</td><td>${b.share&&b.optIn?'Yes':'No'}</td><td>${b.optIn&&!minor?'Yes':'No'}</td></tr></tbody></table></div>
+  <div class="card"><h3>Your choices</h3>${minor?'<p class="note" style="margin-top:8px">You are under 18, so body and fuel plans are switched off in the app.</p>':''}
+    <div class="switch"><button role="switch" aria-checked="${b.optIn&&!minor}" data-a="sw" data-k="optIn" ${minor?'disabled':''} aria-label="Take part in a body and fuel plan"></button><div><b>Take part in a body and fuel plan</b><p class="small muted">Run by ${esc(MED)}. Opting out carries no penalty and you can change this at any time.</p></div></div>
+    <div class="switch"><button role="switch" aria-checked="${b.share&&b.optIn&&!minor}" data-a="sw" data-k="share" ${minor||!b.optIn?'disabled':''} aria-label="Share a status line with coaches"></button><div><b>Share a status line with coaches</b><p class="small muted">A short sentence written by performance staff. Never your numbers.</p></div></div></div>
+  <div class="card"><h3>Who has looked at your body and fuel data</h3>${S.audit.filter(a=>a.pid===p.id).map(a=>`<div class="item"><div><div class="t">${esc(a.who)}</div><div class="small muted">${esc(a.ts)} · ${esc(a.what)}</div></div></div>`).join('')||'<p class="muted" style="margin-top:6px">No one.</p>'}</div>`;
+}
+
+/* ---------- shell ---------- */
+const NAV={coach:[['board','Team board'],['assign','Assign'],['settings','Season']],med:[['plans','Plans'],['requests','Requests'],['audit','Access log']],player:[['today','Today'],['myplan','My plan'],['privacy','Privacy']]};
+const VIEWS={board:vBoard,player:vPlayer,assign:vAssign,settings:vSettings,plans:vPlans,plan:vPlan,requests:vRequests,audit:vAudit,today:vToday,myplan:vMyPlan,privacy:vPrivacy};
+const PARENT={player:'board',plan:'plans'};
+function render(){
+  const r=S.role,rv=r.t==='player'?'player:'+r.pid:r.t,cur=PARENT[U.view]||U.view;
+  document.getElementById('app').innerHTML=`<header class="top"><div class="wrap">
+    <div class="brand"><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="11.5" fill="none" stroke="#fff" stroke-width="2"/><path d="M7 14.5l4 4 8-10" fill="none" stroke="#F0824F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Follow Through<span class="tag">SAMPLE</span></div>
+    <label>Viewing as<select data-c="role"><option value="coach" ${rv==='coach'?'selected':''}>Head coach · ${COACH}</option><option value="med" ${rv==='med'?'selected':''}>Athletic trainer · ${MED}</option>
+      ${S.players.map(p=>`<option value="player:${p.id}" ${rv==='player:'+p.id?'selected':''}>Player · ${esc(p.name)}</option>`).join('')}</select></label>
+  </div></header>
+  <nav class="tabs" aria-label="Sections"><div class="wrap">${NAV[r.t].map(([v,l])=>`<button data-a="go" data-v="${v}" ${cur===v?'aria-current="page"':''}>${l}</button>`).join('')}</div></nav>
+  <main><div class="wrap">${VIEWS[U.view]()}</div></main>
+  <footer><div class="wrap">Cedar Hollow University is a fictional program and every player here is invented. Hour limits are a planning aid; confirm them with your compliance office.</div></footer>`;
+  if(U.view==='assign')assignPreview();
+}
+function go(v,pid){U={view:v,pid:pid||null,pre:U.pre};render();window.scrollTo(0,0)}
+const commit=()=>{save();render()};
+
+const A={
+  go:el=>{U.pre=null;go(el.dataset.v)},
+  player:el=>go('player',el.dataset.id),
+  assignFor:el=>{U.pre=el.dataset.id;go('assign')},
+  plan:el=>{log(MED,el.dataset.id,'Viewed plan');save();go('plan',el.dataset.id)},
+  rm:el=>{S.items=S.items.filter(i=>i.id!==el.dataset.id);S.logs=S.logs.filter(l=>l.i!==el.dataset.id);commit()},
+  unfocus:el=>{P(U.pid)[el.dataset.k].splice(+el.dataset.i,1);commit()},
+  tog:el=>{const it=S.items.find(i=>i.id===el.dataset.id),has=l=>l.i===it.id&&(it.cad==='once'||l.d===T);
+    if(S.logs.some(has))S.logs=S.logs.filter(l=>!has(l));else S.logs.push({i:it.id,d:T});commit()},
+  plus:el=>{S.logs.push({i:el.dataset.id,d:T});commit()},
+  minus:el=>{const k=S.logs.map(l=>l.i===el.dataset.id&&WEEK.includes(l.d)).lastIndexOf(true);if(k>=0)S.logs.splice(k,1);commit()},
+  sw:el=>{const b=S.body[S.role.pid],k=el.dataset.k;b[k]=!b[k];if(k==='optIn'&&!b.optIn)b.share=false;commit()},
+  tpl:el=>{const t=TEMPLATES[+el.dataset.i],f=document.getElementById('assignForm');for(const k of['title','cat','cad','n','unit','min'])f.elements[k].value=t[k];assignPreview()},
+  all:()=>{document.querySelectorAll('#assignForm [name=pid]').forEach(c=>c.checked=true);assignPreview()},
+  reset:()=>{S=seed();U={view:'board',pid:null};commit()}
+};
+const F={
+  assign:d=>{const pids=d.getAll('pid');if(!pids.length){document.getElementById('assignPreview').innerHTML='<p class="note bad">Pick at least one player.</p>';return false}
+    for(const pid of pids)S.items.push({id:'i'+(S.nid++),pid,title:d.get('title').trim(),cat:d.get('cat'),kind:d.get('kind'),cad:d.get('cad'),n:Math.max(1,+d.get('n')||1),unit:d.get('unit'),min:Math.max(0,+d.get('min')||0),due:d.get('due')||T,owner:d.get('owner')});
+    save();go(pids.length===1?'player':'board',pids.length===1?pids[0]:null);return false},
+  focus:(d,el)=>{P(U.pid)[el.dataset.k].push(d.get('text').trim())},
+  meet:(d,el)=>{S.meetings.push({pid:el.dataset.id,d:T,type:d.get('type'),by:COACH,text:d.get('text').trim()})},
+  note:(d,el)=>{S.notes.push({pid:el.dataset.id,d:T,from:COACH,text:d.get('text').trim()})},
+  refer:(d,el)=>{S.referrals.unshift({id:'r'+(S.nid++),pid:el.dataset.id,from:COACH,d:T,status:'open',reply:'',text:d.get('text').trim()})},
+  settings:d=>{S.phase=d.get('phase');S.dayOff=+d.get('dayOff');S.team[S.phase]=Math.max(0,+d.get('team')||0)},
+  entry:(d,el)=>{S.body[el.dataset.id].entries.push({d:T,w:+d.get('w')});log(MED,el.dataset.id,'Recorded a weigh-in')},
+  plan:(d,el)=>{const b=S.body[el.dataset.id],lo=+d.get('lo'),hi=+d.get('hi');Object.assign(b,{goal:d.get('goal'),lo:Math.min(lo,hi),hi:Math.max(lo,hi),status:d.get('status').trim()});log(MED,el.dataset.id,'Updated plan')},
+  reply:(d,el)=>{const r=S.referrals.find(x=>x.id===el.dataset.id);r.reply=d.get('text').trim();r.status='answered'}
+};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;
+  const fn=A[el.dataset.a];if(!fn){console.error('No action: '+el.dataset.a);return}fn(el)});
+document.addEventListener('submit',e=>{const el=e.target.closest('[data-f]');if(!el)return;e.preventDefault();
+  const fn=F[el.dataset.f];if(!fn){console.error('No form handler: '+el.dataset.f);return}
+  if(fn(new FormData(el),el)!==false)commit()});
+document.addEventListener('change',e=>{
+  if(e.target.matches('[data-c=role]')){const v=e.target.value;
+    S.role=v.startsWith('player:')?{t:'player',pid:v.slice(7)}:{t:v};save();U.pre=null;go(NAV[S.role.t][0][0]);return}
+  if(e.target.closest('#assignForm'))assignPreview();
+  // changing phase in settings shows that phase's team hours before saving
+  if(e.target.name==='phase'&&e.target.form?.dataset.f==='settings')e.target.form.elements.team.value=S.team[e.target.value];
+});
+document.addEventListener('input',e=>{if(e.target.closest('#assignForm'))assignPreview()});
+U.view=NAV[S.role.t][0][0];
+render();
+</script>
+</body>
+</html>
