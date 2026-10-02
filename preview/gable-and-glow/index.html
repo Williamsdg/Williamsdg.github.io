@@ -1,0 +1,808 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Gable &amp; Glow | Holiday Light Installation (Demo Site)</title>
+<meta name="description" content="A demo website for a holiday light installer: satellite roofline quotes, plan and color visualizer, online payments. Gable & Glow is a fictional company.">
+<meta name="theme-color" content="#070B16">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070B16'/%3E%3Cpath d='M5 22 L16 8 L27 22' fill='none' stroke='%23FFDCA0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --night:#070B16; --night-2:#0B1222; --panel:#111A2E; --panel-2:#16213A;
+  --line:rgba(255,255,255,.10); --line-2:rgba(255,255,255,.18);
+  --text:#F6F2E9; --soft:#B9C0CF; --muted:#8A93A6;
+  --glow:#FFDCA0; --glow-deep:#F2B552;
+  --red:#D91A2A; --red-hi:#F0303F; --green:#58B947; --vulcan:#5C8BFF;
+  --r:16px; --wrap:1180px;
+  --serif:"Fraunces",Georgia,serif; --sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--night);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--serif);font-weight:600;letter-spacing:-.015em;line-height:1.08;margin:0}
+h2{font-size:clamp(30px,4.2vw,48px)}
+h3{font-size:22px}
+p{margin:0}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 24px}
+section{padding:88px 0;position:relative}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--glow);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--glow);box-shadow:0 0 12px 3px rgba(255,220,160,.55)}
+.lede{color:var(--soft);font-size:18px;max-width:640px;margin-top:16px}
+.sec-head{margin-bottom:44px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 24px;border-radius:999px;border:1px solid transparent;font-weight:600;font-size:15.5px;text-decoration:none;cursor:pointer;transition:transform .15s,background .15s,border-color .15s;white-space:nowrap}
+.btn:active{transform:scale(.98)}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 8px 26px -8px rgba(217,26,42,.7)}
+.btn-red:hover{background:var(--red-hi)}
+.btn-ghost{border-color:var(--line-2);color:var(--text);background:rgba(255,255,255,.04)}
+.btn-ghost:hover{background:rgba(255,255,255,.09)}
+.btn-glow{background:var(--glow);color:#1B1304}
+.btn-glow:hover{background:#FFE9C2}
+.btn-sm{min-height:42px;padding:0 18px;font-size:14.5px}
+:focus-visible{outline:2px solid var(--glow);outline-offset:3px;border-radius:6px}
+
+/* preview ribbon */
+.ribbon{background:#0E0E1C;color:#A1A1AA;font-size:12.5px;text-align:center;padding:7px 16px;border-bottom:1px solid var(--line)}
+.ribbon a{color:#A5B4FC;text-decoration:none;font-weight:600}
+
+/* header */
+header.site{position:sticky;top:0;z-index:60;background:rgba(7,11,22,.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;gap:22px;height:74px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;flex:none}
+.brand img{height:54px;width:auto;filter:drop-shadow(0 0 1px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(120,160,255,.4))}
+.brand span{font-family:var(--serif);font-weight:700;font-size:17px;line-height:1.05;letter-spacing:.02em;text-transform:uppercase;color:#F0303F}
+.brand span b{display:block;color:#58B947;font-weight:700}
+.nav-links{display:flex;gap:22px;margin-left:auto;font-size:14.5px;font-weight:500}
+.nav-links a{text-decoration:none;color:var(--soft);padding:8px 0;white-space:nowrap}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{display:flex;gap:10px;align-items:center}
+.nav-phone{font-weight:600;text-decoration:none;font-size:15px;white-space:nowrap}
+.menu-btn{display:none;width:46px;height:46px;border-radius:12px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);cursor:pointer;align-items:center;justify-content:center}
+.menu-btn span,.menu-btn span::before,.menu-btn span::after{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;position:relative;content:""}
+.menu-btn span::before{position:absolute;top:-6px}.menu-btn span::after{position:absolute;top:6px}
+.drawer{display:none;border-top:1px solid var(--line);padding:10px 24px 22px;background:var(--night)}
+.drawer a{display:block;padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;font-weight:500;font-size:17px}
+.drawer.open{display:block}
+
+/* bulb strand */
+.strand{height:34px;margin-top:-1px;position:relative;z-index:59;pointer-events:none}
+.strand svg{width:100%;height:34px;display:block}
+.bulb{transition:fill .5s}
+@keyframes twinkle{0%,100%{opacity:1}50%{opacity:.55}}
+.tw{animation:twinkle 3.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.tw{animation:none}html{scroll-behavior:auto}}
+
+/* hero */
+.hero{padding:0;min-height:min(86vh,820px);display:flex;align-items:flex-end;isolation:isolate;margin-top:-34px}
+.hero-bg{position:absolute;inset:0;z-index:-2;background:#05070E}
+.hero-bg img{width:100%;height:100%;object-fit:cover;object-position:50% 38%}
+.hero::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,11,22,.80) 0%,rgba(7,11,22,.45) 48%,rgba(7,11,22,0) 78%),linear-gradient(180deg,rgba(7,11,22,.55) 0%,rgba(7,11,22,.12) 34%,rgba(7,11,22,.72) 70%,var(--night) 100%)}
+.hero-in{padding-top:150px;padding-bottom:54px;width:100%}
+.hero h1{font-size:clamp(42px,7.4vw,92px);max-width:900px;text-shadow:0 2px 30px rgba(0,0,0,.6)}
+.hero h1 em{font-style:normal;color:var(--glow);text-shadow:0 0 34px rgba(255,205,120,.55)}
+.hero p.sub{font-size:clamp(17px,2vw,20px);color:#E7E3DA;max-width:600px;margin-top:20px;text-shadow:0 1px 14px rgba(0,0,0,.8)}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.trust{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:46px;border:1px solid var(--line);border-radius:var(--r);background:rgba(9,14,27,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.trust div{padding:18px 20px;border-right:1px solid var(--line)}
+.trust div:last-child{border-right:0}
+.trust b{display:block;font-family:var(--serif);font-size:21px;font-weight:600;color:var(--glow)}
+.trust span{font-size:13.5px;color:var(--soft)}
+
+/* how */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:28px;color:var(--text)}
+.step .n{font-family:var(--serif);font-size:15px;color:var(--glow);letter-spacing:.08em}
+.step h3{margin:10px 0 8px}
+.step p{color:var(--soft);font-size:15.5px}
+.incl{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+.incl li{list-style:none;background:rgba(88,185,71,.09);border:1px solid rgba(88,185,71,.28);border-radius:12px;padding:14px 16px;font-size:14.5px;font-weight:500;color:var(--text)}
+.incl{padding:0;margin-bottom:0}
+.incl li::before{content:"✓";color:var(--green);font-weight:700;margin-right:8px}
+
+/* plans + visualizer */
+.alt{background:var(--night-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.viz{display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:stretch}
+.stage{background:linear-gradient(180deg,#081027 0%,#0B1630 62%,#0A1322 100%);border:1px solid var(--line);border-radius:22px;padding:14px;position:relative;overflow:hidden;min-width:0}
+.stage svg{width:100%;height:auto;display:block}
+.stage-cap{position:absolute;left:22px;top:18px;font-size:12.5px;color:var(--soft);background:rgba(7,11,22,.7);border:1px solid var(--line);padding:5px 12px;border-radius:999px}
+.plan-tabs{display:flex;flex-direction:column;gap:12px;min-width:0}
+.plan{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;cursor:pointer;color:var(--text);transition:border-color .2s,background .2s}
+.plan[aria-pressed="true"]{border-color:var(--glow);background:var(--panel-2);box-shadow:0 0 0 1px var(--glow) inset}
+.plan .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.plan h3{font-size:23px}
+.plan .tag{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#1B1304;background:var(--glow);padding:3px 10px;border-radius:999px;white-space:nowrap}
+.plan p{color:var(--soft);font-size:15px;margin-top:8px}
+.plan .fine{font-size:13.5px;color:var(--glow);margin-top:10px;font-weight:500}
+.price-note{margin-top:22px;padding:18px 22px;border-radius:var(--r);border:1px dashed var(--line-2);color:var(--soft);font-size:15.5px}
+.price-note b{color:var(--text)}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sw{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);cursor:pointer;font-size:14px;font-weight:500;color:var(--text)}
+.sw[aria-pressed="true"]{border-color:var(--glow);background:rgba(255,220,160,.12)}
+.sw i{display:flex;gap:2px}
+.sw i b{width:9px;height:13px;border-radius:50% 50% 50% 50%/62% 62% 38% 38%;display:block}
+
+/* packages */
+.pkgs{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.pkg{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:28px;display:flex;flex-direction:column;color:var(--text)}
+.pkg .k{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.pkg .was{color:var(--muted);text-decoration:line-through;font-size:15px;margin-top:14px}
+.pkg .now{font-family:var(--serif);font-size:46px;font-weight:600;line-height:1;color:var(--glow)}
+.pkg .save{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;color:var(--green)}
+.pkg ul{padding:0;margin:20px 0 0;list-style:none;border-top:1px solid var(--line);flex:1}
+.pkg li{padding:11px 0;border-bottom:1px solid var(--line);font-size:15px;color:var(--soft)}
+.pkg li b{color:var(--text);font-weight:600}
+.pkg .fit{margin-top:16px;font-size:13.5px;color:var(--muted)}
+
+/* colours */
+.colors{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.color{border-radius:14px;overflow:hidden;background:var(--panel);border:1px solid var(--line);cursor:pointer;padding:0;text-align:left;color:var(--text);display:flex;flex-direction:column}
+.color img{aspect-ratio:8/5.2;object-fit:cover;width:100%}
+.color div{padding:12px 14px 14px}
+.color b{font-family:var(--serif);font-size:17px;font-weight:600;display:block}
+.color span{font-size:13px;color:var(--soft);display:block;margin-top:3px;line-height:1.45}
+.color[aria-pressed="true"]{border-color:var(--glow);box-shadow:0 0 0 1px var(--glow) inset}
+.stock{margin-top:20px;color:var(--soft);font-size:15px}
+
+/* halloween */
+.hallo{background:radial-gradient(900px 420px at 12% 0%,rgba(168,85,247,.20),transparent 70%),radial-gradient(800px 420px at 92% 100%,rgba(255,138,31,.16),transparent 70%),var(--night-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
+.quad{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quad img{border-radius:12px;aspect-ratio:9/6.4;object-fit:cover;width:100%}
+.swap{display:flex;align-items:center;gap:12px;margin-top:26px;flex-wrap:wrap}
+.swap span{padding:10px 16px;border-radius:12px;border:1px solid var(--line-2);font-weight:600;font-size:14.5px;background:rgba(7,11,22,.5)}
+.swap i{color:var(--muted);font-style:normal}
+
+/* year-round */
+.cards2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.yr{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;color:var(--text)}
+.yr img{width:100%;height:230px;object-fit:cover}
+.yr div{padding:26px 28px 30px}
+.yr p{color:var(--soft);margin-top:10px;font-size:15.5px}
+
+/* gallery */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.chip{min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line-2);background:transparent;cursor:pointer;font-weight:500;font-size:14.5px;color:var(--soft)}
+.chip[aria-pressed="true"]{background:var(--text);color:#0B1020;border-color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.grid button{padding:0;border:0;background:#0B1222;border-radius:12px;overflow:hidden;cursor:zoom-in;aspect-ratio:4/3;display:block}
+.grid img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.grid button:hover img{transform:scale(1.04)}
+.more{display:flex;justify-content:center;margin-top:22px}
+.lb{position:fixed;inset:0;background:rgba(3,5,10,.95);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.lb img{max-width:100%;max-height:86vh;border-radius:10px}
+.lb button{position:absolute;width:50px;height:50px;border-radius:50%;border:1px solid var(--line-2);background:rgba(20,26,44,.9);color:#fff;font-size:22px;cursor:pointer}
+.lb .x{top:16px;right:16px}.lb .p{left:14px;top:50%;margin-top:-25px}.lb .nx{right:14px;top:50%;margin-top:-25px}
+
+/* quote tool */
+.quote{background:linear-gradient(180deg,var(--night-2),var(--night));border-top:1px solid var(--line)}
+.qbox{display:grid;grid-template-columns:1.2fr .8fr;gap:0;border:1px solid var(--line-2);border-radius:22px;overflow:hidden;background:var(--panel)}
+.qmap{position:relative;min-height:560px;background:#0A1020;min-width:0}
+#roofMap{position:absolute;inset:0}
+.addr{position:absolute;z-index:500;left:14px;right:14px;top:14px}
+.addr input{width:100%;height:52px;border-radius:14px;border:1px solid rgba(255,255,255,.25);background:rgba(7,11,22,.92);padding:0 16px;font-size:16px;color:#fff}
+.addr input::placeholder{color:#9AA3B5}
+.sugg{margin-top:6px;background:rgba(7,11,22,.97);border:1px solid var(--line-2);border-radius:14px;overflow:hidden}
+.sugg button{display:block;width:100%;text-align:left;padding:13px 16px;background:none;border:0;border-bottom:1px solid var(--line);cursor:pointer;font-size:15px;color:#fff}
+.sugg button:last-child{border-bottom:0}
+.sugg button:hover{background:rgba(255,255,255,.07)}
+.mtools{position:absolute;z-index:500;left:14px;right:14px;bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.readout{background:rgba(7,11,22,.92);border:1px solid rgba(255,220,160,.5);border-radius:14px;padding:8px 16px;margin-right:auto;color:#fff}
+.readout b{font-family:var(--serif);font-size:26px;color:var(--glow);line-height:1}
+.readout span{font-size:12.5px;color:var(--soft);display:block}
+.mbtn{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(7,11,22,.92);cursor:pointer;font-weight:600;font-size:14px;color:#fff}
+.hint{position:absolute;z-index:450;left:50%;top:78px;transform:translateX(-50%);width:max-content;background:rgba(7,11,22,.9);border:1px solid var(--line-2);padding:10px 16px;border-radius:14px;text-align:center;font-size:15px;max-width:min(330px,calc(100% - 28px));pointer-events:none;color:#fff}
+.qform{padding:30px;display:flex;flex-direction:column;gap:14px;color:var(--text);min-width:0}
+.qform h3{font-size:25px}
+.est{border-radius:14px;border:1px solid rgba(255,220,160,.4);background:rgba(255,220,160,.07);padding:16px 18px}
+.est .lab{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--glow)}
+.est .fig{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1.1;margin-top:4px;color:var(--text)}
+.est p{font-size:13.5px;color:var(--soft);margin-top:6px}
+label.f{display:block;font-size:13px;font-weight:600;color:var(--soft)}
+.f input,.f select,.f textarea{display:block;width:100%;margin-top:6px;height:48px;border-radius:12px;border:1px solid var(--line-2);background:var(--night);padding:0 14px;font-size:16px;color:var(--text)}
+.f select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#B9C0CF 50%),linear-gradient(135deg,#B9C0CF 50%,transparent 50%);background-position:calc(100% - 20px) 21px,calc(100% - 14px) 21px;background-size:6px 6px;background-repeat:no-repeat;padding-right:38px}
+.f textarea{height:84px;padding:12px 14px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fineprint{font-size:12.5px;color:var(--muted)}
+.done{padding:26px;border-radius:14px;background:rgba(88,185,71,.1);border:1px solid rgba(88,185,71,.4);color:var(--text)}
+.done h3{font-size:22px;margin-bottom:8px}
+.done p{color:var(--soft);font-size:15px}
+.leaflet-container{background:#0A1020;font-family:var(--sans)}
+
+/* savings */
+.save4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.sv{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:26px;color:var(--text)}
+.sv .big{font-family:var(--serif);font-size:38px;font-weight:600;color:var(--glow);line-height:1}
+.sv h3{font-size:19px;margin:12px 0 6px}
+.sv p{font-size:14.5px;color:var(--soft)}
+
+/* takedown */
+.td{display:grid;grid-template-columns:.9fr 1.1fr;gap:36px;align-items:start}
+.notice{border-left:4px solid var(--glow);background:rgba(255,220,160,.07);padding:16px 20px;border-radius:0 12px 12px 0;font-size:15px;color:var(--text);margin-top:22px}
+.notice b{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--glow);margin-bottom:4px}
+.lookup{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;color:var(--text)}
+.result{margin-top:14px;font-size:15px;color:var(--soft)}
+.result b{font-family:var(--serif);font-size:26px;color:var(--glow);display:block;line-height:1.2}
+.zones{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.zone{display:grid;grid-template-columns:92px 150px 1fr;gap:16px;padding:16px 20px;border-bottom:1px solid var(--line);align-items:center;color:var(--text)}
+.zone:last-child{border-bottom:0}
+.zone.on{background:rgba(255,220,160,.1)}
+.zone .z{font-weight:700;font-size:13px;letter-spacing:.1em;color:var(--glow)}
+.zone .d{font-family:var(--serif);font-size:18px;font-weight:600}
+.zone .c{font-size:14px;color:var(--soft)}
+.rules{margin:18px 0 0;padding:0;list-style:none;font-size:14.5px;color:var(--soft)}
+.rules li{padding:8px 0 8px 22px;position:relative}
+.rules li::before{content:"";position:absolute;left:2px;top:17px;width:7px;height:7px;border-radius:50%;background:var(--glow)}
+
+/* give */
+.give{background:radial-gradient(700px 380px at 85% 10%,rgba(217,26,42,.22),transparent 70%),var(--night-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.give .wrap{max-width:860px;text-align:center}
+.give .eyebrow{justify-content:center}
+.give p{color:var(--soft);font-size:18px;margin:18px auto 28px;max-width:680px}
+
+/* faq */
+.faq{max-width:860px}
+details{border-bottom:1px solid var(--line)}
+summary{list-style:none;cursor:pointer;padding:22px 44px 22px 0;font-family:var(--serif);font-size:20px;font-weight:600;position:relative;color:var(--text)}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";position:absolute;right:6px;top:18px;font-size:26px;color:var(--glow);font-family:var(--sans);font-weight:400}
+details[open] summary::after{content:"–"}
+details p{color:var(--soft);padding:0 0 22px;max-width:720px}
+
+/* contact / footer */
+.contact{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.ct{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:26px;text-decoration:none;color:var(--text);display:block;min-width:0}
+.ct small{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--glow)}
+.ct b{display:block;font-family:var(--serif);font-size:22px;font-weight:600;margin-top:8px;overflow-wrap:anywhere}
+.ct b.em{font-size:17px;padding:4px 0}
+.ct span{font-size:14px;color:var(--soft)}
+footer{border-top:1px solid var(--line);padding:38px 0 120px;color:var(--muted);font-size:13.5px}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+footer img{height:92px;width:auto;filter:drop-shadow(0 0 1px rgba(255,255,255,.85))}
+footer a{color:var(--soft)}
+
+/* sticky mobile bar */
+.dock{display:none;position:fixed;left:0;right:0;bottom:0;z-index:70;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(7,11,22,.95);border-top:1px solid var(--line);gap:10px}
+.dock .btn{flex:1;min-height:50px}
+
+/* pay modal */
+.modal{position:fixed;inset:0;z-index:210;background:rgba(3,5,10,.8);display:flex;align-items:center;justify-content:center;padding:18px}
+.sheet{width:100%;max-width:460px;background:var(--panel);border:1px solid var(--line-2);border-radius:20px;padding:28px;color:var(--text);max-height:92vh;overflow:auto}
+.sheet h3{font-size:25px}
+.sheet .demo{font-size:12.5px;color:#C7D2FE;background:rgba(99,102,241,.16);border:1px solid rgba(99,102,241,.4);padding:8px 12px;border-radius:10px;margin:14px 0}
+.inv{border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.inv div{display:flex;justify-content:space-between;font-size:14.5px;padding:5px 0;color:var(--soft)}
+.inv div.t{border-top:1px solid var(--line);margin-top:8px;padding-top:12px;color:var(--text);font-weight:700;font-size:17px}
+.methods{display:grid;gap:8px}
+.method{display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:left;padding:14px 16px;border-radius:12px;border:1px solid var(--line-2);background:var(--night);cursor:pointer;color:var(--text);min-height:60px}
+.method[aria-pressed="true"]{border-color:var(--glow);box-shadow:0 0 0 1px var(--glow) inset}
+.method b{display:block;font-size:15px}.method span{font-size:13px;color:var(--soft)}
+.method em{font-style:normal;font-weight:700;color:var(--glow);white-space:nowrap}
+.sheet .btn{width:100%;margin-top:16px}
+.sheet .close{float:right;width:44px;height:44px;margin:-10px -10px 0 0;border-radius:50%;border:0;background:rgba(255,255,255,.06);cursor:pointer;font-size:20px;color:var(--text)}
+
+@media (max-width:1080px){
+  .nav-links{display:none}.menu-btn{display:flex}.nav-cta{margin-left:auto}
+  .colors{grid-template-columns:repeat(3,1fr)}
+  .save4{grid-template-columns:1fr 1fr}
+  .incl{grid-template-columns:1fr 1fr}
+}
+@media (max-width:860px){
+  section{padding:64px 0}
+  .wrap{padding:0 18px}
+  .nav{height:64px;gap:12px}.brand img{height:44px}.brand span{font-size:14px}
+  .nav-phone,.nav-cta .btn-ghost,.nav-cta .btn-red{display:none}
+  .hero{min-height:0}.hero-in{padding-top:230px;padding-bottom:30px}
+  .trust{grid-template-columns:1fr 1fr}
+  .trust div:nth-child(2){border-right:0}.trust div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  .trust div{padding:14px 16px}.trust b{font-size:18px}
+  .steps,.pkgs,.cards2,.contact,.viz,.split,.td,.qbox{grid-template-columns:1fr}
+  .pkgs{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px;padding:0 18px 8px;gap:12px;scrollbar-width:none}
+  .pkgs::-webkit-scrollbar{display:none}
+  .pkg{flex:0 0 84%;scroll-snap-align:center}
+  .colors{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px;padding:0 18px 8px;gap:12px;scrollbar-width:none}
+  .colors::-webkit-scrollbar{display:none}
+  .color{flex:0 0 62%;scroll-snap-align:center}
+  .grid{grid-template-columns:1fr 1fr}
+  .qmap{min-height:440px}
+  .qform{padding:22px 18px}
+  .est .fig{font-size:27px}
+  .mbtn{padding:0 12px}.readout{padding:6px 12px}.readout b{font-size:22px}
+  .zone{grid-template-columns:70px 1fr;gap:4px 12px}.zone .c{grid-column:1/-1}
+  .dock{display:flex;transition:transform .25s}.dock.off{transform:translateY(110%)}
+  .swatches{flex-wrap:nowrap;overflow-x:auto;margin:14px -14px 0;padding:0 14px 4px;scrollbar-width:none}.swatches::-webkit-scrollbar{display:none}.sw{flex:none}
+  .stage{position:sticky;top:72px;z-index:5;box-shadow:0 18px 30px -12px rgba(0,0,0,.8)}
+  .step{padding:20px 22px}.steps{gap:10px}
+  .hero-cta{display:none}
+  .hero-bg img{object-position:34% 40%}
+  .ct b.em{font-size:15.5px;font-family:var(--sans)}
+  footer .links{display:none}
+  .sec-head{margin-bottom:30px}
+  .plan{padding:16px 18px}
+}
+@media (max-width:420px){
+  .save4{grid-template-columns:1fr}
+  .row2{grid-template-columns:1fr}
+  .incl{grid-template-columns:1fr}
+  .hero-cta .btn{flex:1 1 100%}
+}
+
+/* ---- demo additions ---- */
+.brand .mk{width:44px;height:44px;flex:none}
+.brand span{color:var(--text);text-transform:none;font-size:21px;letter-spacing:-.01em;font-weight:600}
+.brand span b{display:inline;color:var(--glow);font-weight:600}
+.hero{display:block;min-height:min(92vh,880px);margin-top:-34px;background:linear-gradient(180deg,#050816 0%,#0A1330 60%,#111C33 84%,#111C33 100%)}
+.hero::after{background:linear-gradient(180deg,rgba(5,8,22,.75) 0%,rgba(5,8,22,.25) 38%,rgba(7,11,22,0) 60%,rgba(7,11,22,0) 86%,var(--night) 100%)}
+.scene{position:absolute;left:0;right:0;bottom:104px;z-index:-2;height:62%}
+.scene svg{width:100%;height:100%;display:block}
+.hero-in{padding-top:118px;padding-bottom:0}
+.hero h1{max-width:800px;font-size:clamp(38px,5.2vw,68px)}
+.hero p.sub{max-width:480px}
+.trustwrap{position:absolute;left:0;right:0;bottom:24px;padding:0 24px}
+.trustwrap .trust{max-width:calc(var(--wrap) - 48px);margin:0 auto}
+.snow{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.snow i{position:absolute;top:-10px;width:4px;height:4px;border-radius:50%;background:#fff;opacity:.7;animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(900px)}}
+@media (prefers-reduced-motion:reduce){.snow{display:none}}
+.color svg{width:100%;height:auto;display:block;background:linear-gradient(180deg,#081027,#0B1630)}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tile{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(180deg,#081027,#0B1630);position:relative}
+.tile svg{width:100%;height:auto;display:block}
+.tile span{position:absolute;left:12px;bottom:10px;font-size:12.5px;color:var(--soft);background:rgba(7,11,22,.75);padding:4px 10px;border-radius:999px;border:1px solid var(--line)}
+.swapnote{margin-top:18px;padding:16px 20px;border-radius:14px;border:1px dashed rgba(99,102,241,.6);background:rgba(99,102,241,.1);color:#D9DCFF;font-size:15px}
+.swapnote b{color:#fff}
+.yr .art{background:linear-gradient(180deg,#081027,#0B1630)}
+.yr .art svg{width:100%;height:230px;display:block}
+.quad2{border-radius:18px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(180deg,#130B26,#0B1630)}
+.quad2 svg{width:100%;height:auto;display:block}
+.ribbon b{color:#fff}
+@media (max-width:860px){
+  .hero{min-height:590px}
+  .scene{bottom:0}
+  .hero-in{padding-top:96px;padding-bottom:0}
+  .hero-cta{display:none}
+  .tile span{position:static;display:block;border:0;border-radius:0;background:none;padding:8px 10px 10px;font-size:12px;line-height:1.3}
+  .scene{height:52%}
+  .trustwrap{display:none}
+  .tiles{grid-template-columns:1fr 1fr}
+  .brand span{font-size:18px}.brand .mk{width:38px;height:38px}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><filter id="glowF" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg>
+
+<div class="ribbon">Demo site by Williams Digital. <b>Gable &amp; Glow is a fictional company</b>; names, prices and details are placeholders. · <a href="admin/">Open the admin dashboard</a> · <a href="for-installers/">What you get</a></div>
+
+<header class="site">
+  <div class="wrap nav">
+    <a class="brand" href="#top" aria-label="Gable and Glow home"><svg class="mk" viewBox="0 0 44 44" aria-hidden="true"><rect width="44" height="44" rx="10" fill="#111A2E"/><path d="M8 30 L22 12 L36 30" fill="none" stroke="#2A3550" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><g fill="#FFDCA0"><circle cx="8" cy="30" r="2.4"/><circle cx="12.7" cy="24" r="2.4"/><circle cx="17.3" cy="18" r="2.4"/><circle cx="22" cy="12" r="2.4"/><circle cx="26.7" cy="18" r="2.4"/><circle cx="31.3" cy="24" r="2.4"/><circle cx="36" cy="30" r="2.4"/></g></svg><span>Gable <b>&amp;</b> Glow</span></a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#plans">Plans</a><a href="#colors">Colors</a><a href="#gallery">Gallery</a><a href="#year-round">Year-round</a><a href="#savings">Savings</a><a href="#takedown">Take-down</a><a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="nav-phone" href="#contact">(555) 010-0142</a>
+      <button class="btn btn-ghost btn-sm" type="button" data-pay>Pay online</button>
+      <a class="btn btn-red btn-sm" href="#quote">Get a quote</a>
+      <button class="menu-btn" type="button" aria-label="Menu" aria-expanded="false" id="menuBtn"><span></span></button>
+    </div>
+  </div>
+  <div class="drawer" id="drawer">
+    <a href="#plans">Plans &amp; pricing</a><a href="#colors">Color options</a><a href="#halloween">Halloween to Christmas swap</a><a href="#gallery">Gallery</a><a href="#year-round">Permanent &amp; landscape lighting</a><a href="#savings">Ways to save</a><a href="#takedown">Take-down schedule</a><a href="#faq">FAQ</a>
+    <a href="#" data-pay>Pay online</a>
+  </div>
+</header>
+<div class="strand" aria-hidden="true"><svg id="strand" preserveAspectRatio="none"></svg></div>
+
+<main id="top">
+<section class="hero">
+  <div class="scene" aria-hidden="true"><svg id="heroScene" viewBox="0 0 1600 560" preserveAspectRatio="xMidYMax slice"></svg></div>
+  <div class="snow" id="snow" aria-hidden="true"></div>
+  <div class="wrap hero-in">
+    <h1>The brightest house on the block, <em>without the ladder.</em></h1>
+    <p class="sub">We design it, hang it, keep it lit all season, then take it down and store it. See your price from a satellite view of your own roof.</p>
+    <div class="hero-cta">
+      <a class="btn btn-red" href="#quote">Price my roofline</a>
+      <a class="btn btn-ghost" href="#plans">See the plans</a>
+    </div>
+  </div>
+  <div class="trustwrap"><div class="trust">
+    <div><b>All-inclusive</b><span>Design, lights, install, removal, storage</span></div>
+    <div><b>24-hour fixes</b><span>If a strand goes out, we are back within a day</span></div>
+    <div><b>No site visit</b><span>Quoted from satellite, usually same day</span></div>
+    <div><b>From $649</b><span>Sample pricing for this demo</span></div>
+  </div></div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">How it works</div><h2>Three steps. None of them involve a ladder.</h2></div>
+    <div class="steps">
+      <div class="step"><div class="n">01</div><h3>Trace your roof</h3><p>Type your address, find your home on the satellite view and tap along the edges you want lit. You get a ballpark on the spot.</p></div>
+      <div class="step"><div class="n">02</div><h3>We build it</h3><p>Commercial-grade bulbs cut to fit your roofline, hung by an insured crew. Pick a color scheme or mix your own.</p></div>
+      <div class="step"><div class="n">03</div><h3>We take it down</h3><p>In January we remove everything, label it and store it for next season. Your garage stays empty.</p></div>
+    </div>
+    <ul class="incl">
+      <li>All lights and clips supplied</li><li>Commercial-grade, custom-cut strands</li><li>Season-long service calls included</li><li>Take-down and storage included</li>
+    </ul>
+  </div>
+</section>
+
+<section id="plans" class="alt">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">Plans &amp; pricing</div><h2>Pick how bright you want to go.</h2><p class="lede">Tap a plan to see what gets lit. Then try a color scheme on the same house.</p></div>
+    <div class="viz">
+      <div class="stage">
+        <div class="stage-cap" id="stageCap">The Roofline · Warm White</div>
+        <svg id="house" viewBox="0 0 640 410" role="img" aria-label="Illustration of a house showing which rooflines each plan lights"></svg>
+        <div class="swatches" id="swatches" aria-label="Color scheme"></div>
+      </div>
+      <div class="plan-tabs">
+        <button class="plan" type="button" data-plan="1" aria-pressed="true"><div class="top"><h3>The Roofline</h3></div><p>The classic outline. Front gutters, peaks, gables and dormers.</p><div class="fine">Most homes $649–$1,100</div></button>
+        <button class="plan" type="button" data-plan="2" aria-pressed="false"><div class="top"><h3>The Full Front</h3><span class="tag">Most popular</span></div><p>Everything in The Roofline plus ridges, hips and every roof edge you can see from the street.</p><div class="fine">Most homes $1,100–$1,700</div></button>
+        <button class="plan" type="button" data-plan="3" aria-pressed="false"><div class="top"><h3>The Whole Property</h3></div><p>Roof, windows, doorway, shrubs, trees and the walkway. If it holds a clip, it gets a bulb.</p><div class="fine">Quoted per home</div></button>
+        <div class="price-note"><b>Every plan is all-inclusive:</b> design, materials, installation, service calls, take-down and storage. Returning customers save 15% from year two.</div>
+        <a class="btn btn-red" href="#quote">Price my home</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="packages">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">Packages</div><h2>Bundles that fit most homes.</h2><p class="lede">The quote tool below matches your measured roofline to one of these automatically.</p></div>
+    <div class="pkgs">
+      <div class="pkg"><div class="k">Starter</div><div class="was">Separately $1,390</div><div class="now">$1,150</div><div class="save">You save $240</div><ul><li><b>Up to 150 ft</b> of warm white C9 roofline</li><li><b>1</b> lit 48" wreath</li><li><b>1</b> dusk-to-dawn timer</li></ul><div class="fit">Fits most single-story homes.</div></div>
+      <div class="pkg"><div class="k">Showpiece</div><div class="was">Separately $2,010</div><div class="now">$1,700</div><div class="save">You save $310</div><ul><li><b>Up to 225 ft</b> of warm white C9 roofline</li><li><b>1</b> lit 48" wreath</li><li><b>1</b> dusk-to-dawn timer</li><li><b>6 sets</b> of mini lights for shrubs</li></ul><div class="fit">Fits most two-story fronts.</div></div>
+      <div class="pkg"><div class="k">Whole Block</div><div class="was">Separately $3,240</div><div class="now">$2,750</div><div class="save">You save $490</div><ul><li><b>Up to 300 ft</b> of C9 roofline in any color</li><li><b>2</b> lit 48" wreaths with bows</li><li><b>1</b> dusk-to-dawn timer</li><li><b>12 sets</b> of mini lights for shrubs or a tree</li></ul><div class="fit">For the house people drive past on purpose.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="colors" class="alt">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">Color options</div><h2>Ten schemes. Try them all.</h2><p class="lede">Tap one to see it on the plan house above and across the top of this page.</p></div>
+    <div class="colors" id="colorCards"></div>
+    <div class="swapnote"><b>In your build:</b> each card shows a real photo of that scheme on one of your installs. These illustrations are stand-ins.</div>
+  </div>
+</section>
+
+<section id="halloween" class="hallo">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow">Halloween to Christmas</div>
+      <h2>One install. Two holidays.</h2>
+      <p class="lede">We hang your lights in October in purple, orange and green, then come back in early November and swap the bulbs to your Christmas colors. One trip up the ladder for the clips, two seasons of curb appeal.</p>
+      <div class="swap"><span>🎃 October</span><i>→ bulb swap in early November →</i><span>🎄 December</span></div>
+      <a class="btn btn-glow" href="#quote" style="margin-top:28px" data-prefill="Halloween to Christmas swap">Add the swap to my quote</a>
+    </div>
+    <div class="quad2"><svg id="halloHouse" viewBox="0 0 640 410" aria-hidden="true"></svg></div>
+  </div>
+</section>
+
+<section id="year-round">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">Beyond December</div><h2>Lighting you never take down.</h2></div>
+    <div class="cards2">
+      <div class="yr"><div class="art"><svg id="permHouse" viewBox="0 120 640 250" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg></div><div><h3>Permanent roofline lighting</h3><p>A slim LED track tucked under the eave, controlled from your phone. Warm white most nights, team colors on game day, red and green in December. Nothing to hang or take down again.</p></div></div>
+      <div class="yr"><div class="art"><svg id="pathHouse" viewBox="0 70 640 345" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg></div><div><h3>Pathway and landscape lighting</h3><p>Low brass fixtures along walks and beds, and uplights on the trees and stonework worth showing off. Warm, quiet, and on a timer.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="gallery" class="alt">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">Gallery</div><h2>Recent installs.</h2></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="swapnote"><b>In your build:</b> this is your photo gallery, with filters for warm white, color, commercial and trees, and a full-screen viewer. Send us the photos on your phone and we sort them.</div>
+  </div>
+</section>
+
+<section id="quote" class="quote">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">Instant ballpark</div><h2>Find your roof. Trace it. Get a number.</h2><p class="lede">Type any U.S. address, tap along the edges you want lit, and the site matches you to a package. No site visit needed.</p></div>
+    <div class="qbox">
+      <div class="qmap">
+        <div id="roofMap" aria-label="Satellite map"></div>
+        <div class="addr"><input id="addrInput" type="text" autocomplete="off" placeholder="Start with a street address" aria-label="Street address"><div class="sugg" id="sugg" hidden></div></div>
+        <div class="hint" id="mapHint">Enter an address above to see the home from the air.</div>
+        <div class="mtools">
+          <div class="readout"><b id="ftOut">0 ft</b><span id="ftSub">Tap the roof edges to measure</span></div>
+          <button class="mbtn" type="button" id="undoBtn">Undo</button>
+          <button class="mbtn" type="button" id="newLineBtn">New line</button>
+          <button class="mbtn" type="button" id="clearBtn">Clear</button>
+        </div>
+      </div>
+      <form class="qform" id="qForm" novalidate>
+        <h3>Your quote request</h3>
+        <div class="est"><div class="lab" id="estLab">Starting point</div><div class="fig" id="estFig">From $649</div><p id="estNote">Trace your roofline for a closer number.</p></div>
+        <div class="row2">
+          <label class="f">Plan<select id="qPlan"><option>Not sure yet</option><option>The Roofline</option><option>The Full Front</option><option>The Whole Property</option><option>Halloween to Christmas swap</option><option>Permanent roofline lighting</option><option>Landscape lighting</option></select></label>
+          <label class="f">Color<select id="qColor"></select></label>
+        </div>
+        <label class="f">Name<input id="qName" type="text" autocomplete="name" required></label>
+        <div class="row2">
+          <label class="f">Phone<input id="qPhone" type="tel" autocomplete="tel" inputmode="tel" required></label>
+          <label class="f">Email<input id="qEmail" type="email" autocomplete="email"></label>
+        </div>
+        <label class="f">Anything else?<textarea id="qNotes" placeholder="Trees, shrubs, wreaths, a steep roof…"></textarea></label>
+        <button class="btn btn-red" type="submit">Send my quote request</button>
+        <p class="fineprint" id="qErr">Ballpark figures use this demo's sample package prices.</p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section id="savings">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">Ways to save</div><h2>Four ways to bring the number down.</h2></div>
+    <div class="save4">
+      <div class="sv"><div class="big">$75</div><h3>Early bird</h3><p>Book before October 15 and take $75 off your install.</p></div>
+      <div class="sv"><div class="big">15%</div><h3>Returning customer</h3><p>Your lights are already cut to fit, so year two costs less.</p></div>
+      <div class="sv"><div class="big">$75</div><h3>Refer a neighbor</h3><p>You both get a $75 credit when they book.</p></div>
+      <div class="sv"><div class="big">Monthly</div><h3>Pay over time</h3><p>Split your total into equal monthly payments on a card.</p></div>
+    </div>
+    <div style="margin-top:26px;display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-glow" type="button" data-pay>Pay a deposit or invoice online</button></div>
+  </div>
+</section>
+
+<section id="takedown" class="alt">
+  <div class="wrap td">
+    <div>
+      <div class="eyebrow">Take-down schedule</div>
+      <h2>When do my lights come down?</h2>
+      <p class="lede">Take-downs start the first week of January and run by zone. Everything is down by the end of the month, weather permitting.</p>
+      <div class="notice" id="tdNotice"><b>Latest update</b><span id="tdNoticeText">We are on schedule. Zone windows below are current.</span></div>
+      <div class="lookup">
+        <label class="f">Find your zone<select id="citySel"><option value="">Choose your neighborhood</option></select></label>
+        <div class="result" id="zoneResult">Pick your area to see your window.</div>
+      </div>
+      <ul class="rules">
+        <li>Please leave timers and controllers where our crew can reach them.</li>
+        <li>Need them down early for a move or a roof repair? Tell us and we will fit you in.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="zones" id="zones"></div>
+      <p class="fineprint" style="margin-top:12px">Sample zones for this demo. Windows can shift with weather.</p>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap faq">
+    <div class="sec-head"><div class="eyebrow">FAQ</div><h2>Good questions</h2></div>
+    <details><summary>What does it cost?</summary><p>Roofline-only installs start at $649 in this demo. Trace your roof in the quote tool for a ballpark matched to your home.</p></details>
+    <details><summary>What is included?</summary><p>Design, all materials, installation, service calls during the season, take-down in January and storage until next year.</p></details>
+    <details><summary>Who owns the lights?</summary><p>We do. They are leased with the service, which is why storage, repairs and replacements are on us.</p></details>
+    <details><summary>What if a strand goes out?</summary><p>Text us a photo. We are back within 24 hours at no charge.</p></details>
+    <details><summary>Can I pay online?</summary><p>Yes. Deposits, balances and monthly plans can all be paid by card or bank transfer from a link we text you.</p></details>
+    <details><summary>Do you need to come measure?</summary><p>Usually not. We measure from satellite imagery and confirm the details by phone.</p></details>
+  </div>
+</section>
+
+<section id="contact" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">Say hello</div><h2>Tell us about your house.</h2></div>
+    <div class="contact">
+      <div class="ct"><small>Call or text</small><b>(555) 010-0142</b><span>Tap-to-call on the real site</span></div>
+      <div class="ct"><small>Email</small><b class="em">hello@gableandglow.example</b><span>Replies within one business day</span></div>
+      <a class="ct" href="#quote"><small>Fastest</small><b>Trace your roof</b><span>Ballpark in about a minute</span></a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div style="font-family:var(--serif);font-size:20px;color:var(--text)">Gable <span style="color:var(--glow)">&amp;</span> Glow</div>
+    <div class="links"><a href="#plans">Plans</a> · <a href="#colors">Colors</a> · <a href="#gallery">Gallery</a> · <a href="#takedown">Take-down</a> · <a href="#faq">FAQ</a></div>
+    <div>Demo site built by <a href="https://williamsdigital.io">Williams Digital</a>. Fictional company.</div>
+  </div>
+</footer>
+
+<div class="dock"><a class="btn btn-ghost" href="#plans">Plans</a><a class="btn btn-red" href="#quote">Get a quote</a></div>
+
+<div class="modal" id="payModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+    <button class="close" type="button" aria-label="Close" id="payClose">✕</button>
+    <h3 id="payTitle">Pay online</h3>
+    <div class="demo">Demo only. This shows how checkout would work. No payment is taken.</div>
+    <div id="payBody">
+      <label class="f">Invoice or quote number<input id="invNo" type="text" value="GG-1042" inputmode="text"></label>
+      <div class="inv"><div><span>Sample invoice</span><span>Showpiece package</span></div><div><span>Install total</span><span>$1,700.00</span></div><div><span>Deposit paid</span><span>−$500.00</span></div><div class="t"><span>Balance due</span><span>$1,200.00</span></div></div>
+      <div class="methods" id="methods">
+        <button class="method" type="button" data-m="card" aria-pressed="true"><div><b>Card, Apple Pay or Google Pay</b><span>Paid instantly</span></div><em>$1,200.00</em></button>
+        <button class="method" type="button" data-m="bank" aria-pressed="false"><div><b>Bank transfer (ACH)</b><span>Straight from a checking account</span></div><em>$1,200.00</em></button>
+        <button class="method" type="button" data-m="easy" aria-pressed="false"><div><b>Pay over time</b><span>Split into monthly payments</span></div><em>4 × $300.00</em></button>
+      </div>
+      <button class="btn btn-red" type="button" id="payGo">Continue to secure checkout</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="houses.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var LS={get:function(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+var H=window.GGHouses, SCHEMES=H.SCHEMES;
+var state={plan:1,scheme:SCHEMES[0]};
+
+/* ---------- header strand ---------- */
+var strand=$('#strand');
+function drawStrand(){
+  var w=strand.clientWidth||window.innerWidth, n=Math.max(10,Math.round(w/46)), h='', c=state.scheme.c;
+  strand.setAttribute('viewBox','0 0 '+w+' 34');
+  var d='M0 2';
+  for(var i=0;i<n;i++){var x0=i*w/n,x1=(i+1)*w/n;d+=' Q'+((x0+x1)/2)+' 14 '+x1+' 2'}
+  h+='<path d="'+d+'" fill="none" stroke="#2A3550" stroke-width="1.5"/>';
+  for(var j=0;j<n;j++){var x=(j+.5)*w/n,col=c[j%c.length];
+    h+='<rect x="'+(x-2.5)+'" y="7" width="5" height="5" rx="1" fill="#2A3550"/><path class="bulb'+(j%3===0?' tw':'')+'" style="animation-delay:'+(j%7)*0.4+'s;filter:drop-shadow(0 0 6px '+col+')" d="M'+(x-4.5)+' 14 Q'+(x-5.5)+' 24 '+x+' 31 Q'+(x+5.5)+' 24 '+(x+4.5)+' 14 Q'+x+' 10 '+(x-4.5)+' 14Z" fill="'+col+'"/>';}
+  strand.innerHTML=h;
+}
+
+/* ---------- scenes ---------- */
+var houseEl=$('#house');
+H.mount(houseEl,'manor');
+function drawHouse(){
+  H.light(houseEl,state.plan,state.scheme.c,true);
+  $('#stageCap').textContent=['','The Roofline','The Full Front','The Whole Property'][state.plan]+' · '+state.scheme.name;
+}
+$$('.plan').forEach(function(b){b.addEventListener('click',function(){state.plan=+b.getAttribute('data-plan');$$('.plan').forEach(function(x){x.setAttribute('aria-pressed',x===b)});drawHouse()})});
+
+if(window.innerWidth>860)$('#heroScene').setAttribute('preserveAspectRatio','xMidYMax meet');
+H.hero($('#heroScene'),SCHEMES[0].c);
+var sn='';for(var s=0;s<26;s++){sn+='<i style="left:'+(s*3.9+Math.random()*3)+'%;animation-duration:'+(9+Math.random()*9).toFixed(1)+'s;animation-delay:-'+(Math.random()*14).toFixed(1)+'s;opacity:'+(0.25+Math.random()*0.5).toFixed(2)+';width:'+(2+Math.round(Math.random()*3))+'px;height:'+(2+Math.round(Math.random()*3))+'px"></i>'}
+$('#snow').innerHTML=sn;
+
+function chipHTML(sc){return '<i>'+sc.c.slice(0,3).map(function(x){return '<b style="background:'+x+'"></b>'}).join('')+'</i>'}
+function setScheme(id,scroll){
+  state.scheme=SCHEMES.filter(function(x){return x.id===id})[0]||SCHEMES[0];
+  $$('[data-scheme]').forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-scheme')===state.scheme.id)});
+  drawHouse();drawStrand();
+  var sel=$('#qColor');if(sel)sel.value=state.scheme.name;
+  if(scroll)$('#plans .stage').scrollIntoView({block:'center'});
+}
+$('#swatches').innerHTML=SCHEMES.map(function(x){return '<button class="sw" type="button" data-scheme="'+x.id+'" aria-pressed="false">'+chipHTML(x)+x.name+'</button>'}).join('');
+var TYPES=['farm','ranch','cottage','manor'];
+$('#colorCards').innerHTML=SCHEMES.map(function(x,i){return '<button class="color" type="button" data-scheme="'+x.id+'" data-card aria-pressed="false"><svg viewBox="0 40 640 330" data-type="'+TYPES[i%4]+'" data-i="'+i+'" aria-hidden="true"></svg><div><b>'+x.name+'</b><span>'+x.desc+'</span></div></button>'}).join('');
+$$('#colorCards svg').forEach(function(el){H.mount(el,el.getAttribute('data-type'));H.light(el,2,SCHEMES[+el.getAttribute('data-i')].c,false)});
+$('#qColor').innerHTML='<option>Not sure yet</option>'+SCHEMES.map(function(x){return '<option>'+x.name+'</option>'}).join('');
+$$('[data-scheme]').forEach(function(b){b.addEventListener('click',function(){setScheme(b.getAttribute('data-scheme'),b.hasAttribute('data-card')&&window.innerWidth>860)})});
+setScheme('warm-white');$('#qColor').value='Not sure yet';
+var rz;window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(drawStrand,150)});
+
+H.mount($('#halloHouse'),'cottage');H.light($('#halloHouse'),3,['#A855F7','#FF8A1F','#35C759'],false);
+H.mount($('#permHouse'),'ranch');H.light($('#permHouse'),1,['#F0303F','#F2F7FF','#3B74FF'],false,7);
+H.mount($('#pathHouse'),'farm');H.light($('#pathHouse'),0,['#FFD98A'],false);H.pathLights($('#pathHouse'));
+var TILES=[['manor',3,'warm-white','Whole Property · Warm White'],['ranch',2,'candy-cane','Full Front · Candy Cane'],['farm',2,'pure-white','Full Front · Pure White'],['cottage',3,'multi','Whole Property · Classic Multicolor'],['farm',1,'red-green','Roofline · Red & Green'],['ranch',3,'icy-blue','Whole Property · Icy Blue']];
+$('#tiles').innerHTML=TILES.map(function(t,i){return '<div class="tile"><svg viewBox="0 30 640 350" data-i="'+i+'" aria-hidden="true"></svg><span>'+t[3]+'</span></div>'}).join('');
+$$('#tiles svg').forEach(function(el){var t=TILES[+el.getAttribute('data-i')];H.mount(el,t[0]);H.light(el,t[1],SCHEMES.filter(function(x){return x.id===t[2]})[0].c,false)});
+
+/* ---------- dock + menu ---------- */
+if('IntersectionObserver' in window){var dock=$('.dock');new IntersectionObserver(function(en){dock.classList.toggle('off',en[0].isIntersecting)},{threshold:.08}).observe($('#quote'))}
+var drawer=$('#drawer'),menuBtn=$('#menuBtn');
+menuBtn.addEventListener('click',function(){var o=drawer.classList.toggle('open');menuBtn.setAttribute('aria-expanded',o)});
+$$('#drawer a').forEach(function(a){a.addEventListener('click',function(){drawer.classList.remove('open');menuBtn.setAttribute('aria-expanded',false)})});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')$('#payModal').hidden=true});
+
+/* ---------- take-down zones (sample) ---------- */
+var ZONES=[
+ {z:'North',d:'Jan 3 – 8',a:['Northgate','Lakeview','Pine Hollow']},
+ {z:'East',d:'Jan 8 – 14',a:['Old Town','Eastbrook','Mill Creek']},
+ {z:'South',d:'Jan 14 – 21',a:['Southridge','Willow Bend','The Meadows']},
+ {z:'West',d:'Jan 21 – 28',a:['Westfield','Cedar Park','Stonegate']}
+];
+$('#zones').innerHTML=ZONES.map(function(z,i){return '<div class="zone" data-zi="'+i+'"><div class="z">'+z.z.toUpperCase()+'</div><div class="d">'+z.d+'</div><div class="c">'+z.a.join(', ')+'</div></div>'}).join('');
+var cities=[];ZONES.forEach(function(z,i){z.a.forEach(function(a){cities.push([a,i])})});cities.sort(function(a,b){return a[0]<b[0]?-1:1});
+$('#citySel').innerHTML+=cities.map(function(c){return '<option value="'+c[1]+'">'+c[0]+'</option>'}).join('');
+$('#citySel').addEventListener('change',function(){
+  var v=this.value;$$('.zone').forEach(function(el){el.classList.toggle('on',el.getAttribute('data-zi')===v)});
+  $('#zoneResult').innerHTML=v===''?'Pick your area to see your window.':'<b>'+ZONES[v].d+'</b>'+ZONES[v].z+' zone. Weather permitting.';
+});
+var site=LS.get('gg_site',null);
+if(site&&site.notice)$('#tdNoticeText').textContent=site.notice;
+
+/* ---------- satellite quote tool ---------- */
+var map=L.map('roofMap',{zoomControl:false,attributionControl:true,scrollWheelZoom:false}).setView([37.8,-95.5],4);
+L.control.zoom({position:'topright'}).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'}).addTo(map);
+map.attributionControl.setPrefix(false);
+map.getContainer().addEventListener('click',function(){map.scrollWheelZoom.enable()});
+var lines=[[]],layer=L.layerGroup().addTo(map),located=false,pin=null,addrText='',addrLL=null;
+function feet(){var m=0;lines.forEach(function(ln){for(var i=1;i<ln.length;i++)m+=map.distance(ln[i-1],ln[i])});return Math.round(m*3.28084)}
+function redraw(){
+  layer.clearLayers();
+  lines.forEach(function(ln){
+    if(ln.length>1)L.polyline(ln,{color:'#FFDCA0',weight:4,opacity:.95}).addTo(layer);
+    ln.forEach(function(p){L.circleMarker(p,{radius:5,color:'#070B16',weight:2,fillColor:'#FFDCA0',fillOpacity:1,interactive:false}).addTo(layer)});
+  });
+  estimate();
+}
+function estimate(){
+  var raw=feet(),ft=Math.round(raw*1.1); // +10% for peaks and pitch, same allowance the dashboard uses
+  $('#ftOut').textContent=raw+' ft';
+  $('#ftSub').textContent=raw?'Measured roofline':(located?'Tap the roof edges to measure':'Find the home first');
+  var lab=$('#estLab'),fig=$('#estFig'),note=$('#estNote');
+  if(!raw){lab.textContent='Starting point';fig.textContent='From $649';note.textContent='Trace your roofline for a closer number.';return}
+  lab.textContent='Ballpark · about '+ft+' ft with peaks and pitch';
+  if(ft<=150){fig.textContent='$1,150 · Starter';note.textContent='Up to 150 ft of warm white C9 roofline, a lit 48" wreath and a timer. Roofline-only installs start at $649.'}
+  else if(ft<=225){fig.textContent='$1,700 · Showpiece';note.textContent='Up to 225 ft of warm white C9 roofline, a lit 48" wreath, a timer and 6 sets of mini lights.'}
+  else if(ft<=300){fig.textContent='$2,750 · Whole Block';note.textContent='Up to 300 ft of C9 roofline in any color, two lit wreaths with bows, a timer and 12 sets of mini lights.'}
+  else{fig.textContent='Custom quote';note.textContent='Over 300 ft is priced as a custom design. Send this and we will have your number within a day.'}
+}
+map.on('click',function(e){
+  if(!located){$('#addrInput').focus();return}
+  lines[lines.length-1].push(e.latlng);$('#mapHint').hidden=true;redraw();
+});
+$('#undoBtn').addEventListener('click',function(){var ln=lines[lines.length-1];if(ln.length)ln.pop();else if(lines.length>1){lines.pop()}redraw()});
+$('#newLineBtn').addEventListener('click',function(){if(lines[lines.length-1].length)lines.push([])});
+$('#clearBtn').addEventListener('click',function(){lines=[[]];redraw()});
+
+var GEO='https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/',sugg=$('#sugg'),tmr,seq=0;
+function goTo(lat,lng,label){
+  located=true;addrText=label;addrLL=[lat,lng];lines=[[]];redraw();
+  map.setView([lat,lng],20);
+  if(pin)map.removeLayer(pin);
+  pin=L.circleMarker([lat,lng],{radius:9,color:'#fff',weight:2,fillColor:'#D91A2A',fillOpacity:.9,interactive:false}).addTo(map);
+  var h=$('#mapHint');h.hidden=false;h.textContent='Tap each corner of the roof edges you want lit. Pinch or use + to zoom.';
+  sugg.hidden=true;$('#addrInput').value=label;$('#addrInput').blur();
+}
+$('#addrInput').addEventListener('input',function(){
+  var q=this.value.trim();clearTimeout(tmr);
+  if(q.length<4){sugg.hidden=true;return}
+  tmr=setTimeout(function(){
+    var my=++seq;
+    fetch(GEO+'suggest?f=json&maxSuggestions=5&countryCode=USA&text='+encodeURIComponent(q))
+      .then(function(r){return r.json()}).then(function(j){
+        if(my!==seq)return;
+        var sg=(j.suggestions||[]).filter(function(x){return !x.isCollection});
+        if(!sg.length){sugg.innerHTML='<button type="button" disabled>No match yet. Keep typing the street address.</button>';sugg.hidden=false;return}
+        sugg.innerHTML=sg.map(function(x,i){return '<button type="button" data-k="'+i+'">'+x.text.replace(/, USA$/,'').replace(/</g,'&lt;')+'</button>'}).join('');
+        sugg.hidden=false;sugg._s=sg;
+      }).catch(function(){sugg.innerHTML='<button type="button" disabled>Address search is unavailable right now.</button>';sugg.hidden=false});
+  },280);
+});
+sugg.addEventListener('click',function(e){
+  var b=e.target.closest('button[data-k]');if(!b)return;var sg=sugg._s[+b.getAttribute('data-k')];
+  fetch(GEO+'findAddressCandidates?f=json&maxLocations=1&outFields=Match_addr&magicKey='+encodeURIComponent(sg.magicKey)+'&SingleLine='+encodeURIComponent(sg.text))
+    .then(function(r){return r.json()}).then(function(j){var c=(j.candidates||[])[0];if(c)goTo(c.location.y,c.location.x,sg.text.replace(/, USA$/,''))});
+});
+
+/* ---------- quote submit (saved in this browser so it appears in the demo dashboard) ---------- */
+$('#qForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  var name=$('#qName').value.trim(),phone=$('#qPhone').value.trim(),err=$('#qErr');
+  if(!name||phone.replace(/\D/g,'').length<10){err.textContent='Please add a name and a 10-digit phone number.';err.style.color='#FF9AA3';(name?$('#qPhone'):$('#qName')).focus();return}
+  var req={id:'R'+Date.now(),at:new Date().toISOString(),name:name,phone:phone,email:$('#qEmail').value.trim(),address:addrText||'(no address given)',ll:addrLL,lines:lines.filter(function(l){return l.length>1}).map(function(l){return l.map(function(p){return [p.lat,p.lng]})}),feet:feet(),plan:$('#qPlan').value,color:$('#qColor').value,notes:$('#qNotes').value.trim(),ballpark:$('#estFig').textContent,status:'new',source:'Website'};
+  var all=LS.get('gg_requests',[]);all.unshift(req);LS.set('gg_requests',all);
+  this.innerHTML='<div class="done"><h3>Got it, '+name.split(' ')[0].replace(/</g,'&lt;')+'.</h3><p>Your request is in'+(req.feet?', with the '+req.feet+' ft you traced':'')+'.</p></div><p class="fineprint">Demo note: this request was saved in your browser and now shows in the <a href="admin/" style="color:var(--glow)">demo dashboard</a>. On a live site it goes straight to you.</p>';
+});
+$$('[data-prefill]').forEach(function(a){a.addEventListener('click',function(){var sl=$('#qPlan');if(sl)sl.value=a.getAttribute('data-prefill')})});
+
+/* ---------- pay modal ---------- */
+var pm=$('#payModal');
+$$('[data-pay]').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();drawer.classList.remove('open');pm.hidden=false})});
+$('#payClose').addEventListener('click',function(){pm.hidden=true});
+pm.addEventListener('click',function(e){if(e.target===pm)pm.hidden=true});
+$$('#methods .method').forEach(function(b){b.addEventListener('click',function(){$$('#methods .method').forEach(function(x){x.setAttribute('aria-pressed',x===b)})})});
+$('#payGo').addEventListener('click',function(){
+  var m=$('#methods .method[aria-pressed="true"]').getAttribute('data-m');
+  var t={card:'card details on a secure, hosted checkout page',bank:'a bank login on a secure, hosted checkout page',easy:'a card to keep on file for four monthly payments of $300.00'}[m];
+  $('#payBody').innerHTML='<div class="done"><h3>This is where checkout opens.</h3><p>On a live site the customer enters '+t+', gets an emailed receipt, and the invoice flips to paid in the dashboard automatically.</p></div>';
+});
+})();
+</script>
+</body>
+</html>

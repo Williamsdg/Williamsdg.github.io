@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard | Gable &amp; Glow (Demo)</title>
+<meta name="theme-color" content="#070B16">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070B16'/%3E%3Cpath d='M5 22 L16 8 L27 22' fill='none' stroke='%23FFDCA0' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--night:#070B16;--side:#0B1222;--panel:#111A2E;--panel-2:#16213A;--line:rgba(255,255,255,.10);--line-2:rgba(255,255,255,.2);--text:#F6F2E9;--soft:#B9C0CF;--muted:#8A93A6;--glow:#FFDCA0;--red:#D91A2A;--green:#58B947;--amber:#F5B041;--blue:#7CA2FF;--serif:"Fraunces",Georgia,serif;--sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--night);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;letter-spacing:-.01em}
+h1{font-size:28px}h2{font-size:20px}
+p{margin:0}
+:focus-visible{outline:2px solid var(--glow);outline-offset:2px;border-radius:6px}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+aside{background:var(--side);border-right:1px solid var(--line);padding:20px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.logo{display:flex;align-items:center;gap:10px;padding:0 8px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.logo img{height:44px;width:auto;filter:drop-shadow(0 0 1px rgba(255,255,255,.9))}
+.logo span{font-family:var(--serif);font-size:17px;font-weight:600;line-height:1.15;color:var(--text)}
+.logo span b{display:block;color:var(--muted);font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.tabs{display:flex;flex-direction:column;gap:4px}
+.tab{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:46px;padding:0 12px;border-radius:10px;border:0;background:none;cursor:pointer;text-align:left;font-weight:500;color:var(--soft);font-size:15px}
+.tab:hover{background:rgba(255,255,255,.05)}
+.tab[aria-selected="true"]{background:var(--panel-2);color:var(--text)}
+.tab .ct{font-size:12px;font-weight:700;background:var(--red);color:#fff;border-radius:999px;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.side-foot{margin-top:auto;font-size:12.5px;color:var(--muted);padding:12px 8px 0;border-top:1px solid var(--line)}
+.side-foot a{color:var(--soft)}
+.link-btn{background:none;border:0;color:var(--blue);cursor:pointer;padding:6px 0;font-size:12.5px;text-decoration:underline}
+main{padding:26px 30px 90px;min-width:0}
+.demo{background:rgba(99,102,241,.14);border:1px solid rgba(99,102,241,.4);color:#C7D2FE;font-size:13px;padding:9px 14px;border-radius:10px;margin-bottom:22px}
+.demo a{color:#fff}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.head p{color:var(--soft);margin-top:4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line-2);background:rgba(255,255,255,.04);cursor:pointer;font-weight:600;font-size:14.5px;text-decoration:none;color:var(--text);white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.09)}
+.btn-red{background:var(--red);border-color:var(--red);color:#fff}.btn-red:hover{background:#F0303F}
+.btn-glow{background:var(--glow);border-color:var(--glow);color:#1B1304}.btn-glow:hover{background:#FFE9C2}
+.btn-sm{min-height:44px;padding:0 14px;font-size:13.5px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.tile small{font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tile b{display:block;font-family:var(--serif);font-size:30px;font-weight:600;line-height:1.15;margin-top:4px}
+.tile span{font-size:13px;color:var(--soft)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.rowi{display:grid;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line);align-items:center}
+.rowi:last-child{border-bottom:0}
+.req{grid-template-columns:1.5fr 1fr .8fr auto}
+.job{grid-template-columns:1.4fr .9fr 1fr auto}
+.pay{grid-template-columns:1.3fr .7fr .8fr auto}
+.rowi b{font-weight:600}
+.rowi .sub{font-size:13px;color:var(--soft);display:block}
+.pill{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+.p-new{background:rgba(217,26,42,.2);color:#FF9AA3}
+.p-quoted{background:rgba(245,176,65,.18);color:var(--amber)}
+.p-ok{background:rgba(88,185,71,.18);color:#8BE07A}
+.p-info{background:rgba(124,162,255,.18);color:var(--blue)}
+.p-mute{background:rgba(255,255,255,.08);color:var(--soft)}
+.acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+/* builder */
+.builder{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;align-items:start}
+.mapbox{position:relative;height:560px;border-radius:14px;overflow:hidden;border:1px solid var(--line-2);background:#0A1020}
+#bMap{position:absolute;inset:0}
+.mtop{position:absolute;z-index:500;left:12px;right:60px;top:12px}
+.mtop input{width:100%;height:46px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(7,11,22,.92);padding:0 14px;font-size:16px;color:#fff}
+.sugg{margin-top:6px;background:rgba(7,11,22,.97);border:1px solid var(--line-2);border-radius:10px;overflow:hidden}
+.sugg button{display:block;width:100%;text-align:left;padding:12px 14px;background:none;border:0;border-bottom:1px solid var(--line);cursor:pointer;color:#fff;font-size:14.5px}
+.sugg button:last-child{border-bottom:0}
+.mbot{position:absolute;z-index:500;left:12px;right:12px;bottom:22px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.read{background:rgba(7,11,22,.92);border:1px solid rgba(255,220,160,.5);border-radius:10px;padding:6px 14px;margin-right:auto;color:#fff}
+.read b{font-family:var(--serif);font-size:24px;color:var(--glow);line-height:1.1}
+.read span{display:block;font-size:12px;color:var(--soft)}
+.mb{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(7,11,22,.92);cursor:pointer;font-weight:600;font-size:13.5px;color:#fff}
+.form{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;color:var(--text)}
+.who{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.who b{font-size:17px}.who span{display:block;font-size:13.5px;color:var(--soft)}
+label.f{display:block;font-size:12.5px;font-weight:600;color:var(--soft)}
+.f input,.f select,.f textarea{display:block;width:100%;margin-top:5px;height:44px;border-radius:10px;border:1px solid var(--line-2);background:var(--night);padding:0 12px;font-size:16px;color:var(--text)}
+.f select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#B9C0CF 50%),linear-gradient(135deg,#B9C0CF 50%,transparent 50%);background-position:calc(100% - 18px) 19px,calc(100% - 12px) 19px;background-size:6px 6px;background-repeat:no-repeat;padding-right:34px}
+.f textarea{height:110px;padding:10px 12px;resize:vertical;line-height:1.5}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.sec{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--glow);margin:18px 0 10px}
+.chk{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14.5px;cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:#D91A2A;flex:none}
+.sum{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.sum div{display:flex;justify-content:space-between;padding:4px 0;font-size:14.5px;color:var(--soft)}
+.sum div.t{color:var(--text);font-size:19px;font-weight:700;border-top:1px solid var(--line);margin-top:8px;padding-top:12px}
+.sum div.t span:last-child{font-family:var(--serif);font-size:26px;color:var(--glow)}
+.sugpk{margin-top:10px;font-size:13.5px;background:rgba(255,220,160,.08);border:1px solid rgba(255,220,160,.35);border-radius:10px;padding:10px 12px;color:var(--text)}
+.sugpk button{margin-left:6px}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.zhead{padding:12px 18px;background:var(--panel-2);font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--glow);display:flex;justify-content:space-between;border-bottom:1px solid var(--line)}
+.zhead span{color:var(--soft);letter-spacing:0;text-transform:none;font-weight:500}
+.prov{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:22px}
+.pv{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--panel);font-size:13.5px;color:var(--soft)}
+.pv b{display:block;color:var(--text);font-size:15px;margin-bottom:2px}
+.pv.rec{border-color:var(--glow)}
+.pv.rec b::after{content:"Recommended";margin-left:8px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--glow);color:#1B1304;padding:2px 8px;border-radius:999px;vertical-align:middle}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#F6F2E9;color:#0B1020;padding:13px 20px;border-radius:12px;font-weight:600;font-size:14.5px;z-index:900;max-width:92vw;box-shadow:0 20px 50px rgba(0,0,0,.6);visibility:hidden;opacity:0;transition:opacity .2s}
+.toast.on{visibility:visible;opacity:1}
+.leaflet-container{background:#0A1020;font-family:var(--sans)}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  aside{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;z-index:800;flex-direction:row;padding:6px 6px calc(6px + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--line)}
+  .logo,.side-foot{display:none}
+  .tabs{flex-direction:row;width:100%;gap:2px}
+  .tab{flex:1;flex-direction:column;justify-content:center;gap:2px;font-size:11.5px;min-height:52px;padding:0 2px;text-align:center;position:relative}
+  .tab .ct{position:absolute;top:3px;right:8%;min-width:18px;height:18px;font-size:10.5px}
+  main{padding:16px 14px 110px}
+  h1{font-size:24px}
+  .tiles{grid-template-columns:1fr 1fr}
+  .tile b{font-size:24px}
+  .req,.job,.pay{grid-template-columns:1fr auto;gap:8px 12px}
+  .rowi .c3{grid-column:1/-1;grid-row:2}
+  .acts{grid-column:1/-1;justify-content:flex-start}
+  .builder{grid-template-columns:1fr}
+  .mapbox{height:420px}
+  .prov{grid-template-columns:1fr 1fr}
+  .toast{bottom:86px}
+  .mhead{display:flex!important}
+}
+.mhead{display:none;align-items:center;gap:10px;margin-bottom:14px}
+.mhead img{height:38px;width:auto;filter:drop-shadow(0 0 1px rgba(255,255,255,.9))}
+.mhead b{font-family:var(--serif);font-size:15px}
+.mhead a{margin-left:auto;font-size:13px;color:var(--soft)}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="logo"><svg viewBox="0 0 44 44" width="40" height="40" aria-hidden="true"><rect width="44" height="44" rx="10" fill="#111A2E"/><path d="M8 30 L22 12 L36 30" fill="none" stroke="#2A3550" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><g fill="#FFDCA0"><circle cx="8" cy="30" r="2.4"/><circle cx="12.7" cy="24" r="2.4"/><circle cx="17.3" cy="18" r="2.4"/><circle cx="22" cy="12" r="2.4"/><circle cx="26.7" cy="18" r="2.4"/><circle cx="31.3" cy="24" r="2.4"/><circle cx="36" cy="30" r="2.4"/></g></svg><span>Gable &amp; Glow<b>Dashboard</b></span></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="requests" aria-selected="true">Requests <span class="ct" id="ctNew">0</span></button>
+    <button class="tab" role="tab" data-tab="builder" aria-selected="false">Quote builder</button>
+    <button class="tab" role="tab" data-tab="jobs" aria-selected="false">Jobs</button>
+    <button class="tab" role="tab" data-tab="payments" aria-selected="false">Payments</button>
+    <button class="tab" role="tab" data-tab="site" aria-selected="false">Website</button>
+  </div>
+  <div class="side-foot"><a href="../">← View the website</a><br><button class="link-btn" type="button" id="resetBtn">Reset demo data</button></div>
+</aside>
+
+<main>
+  <div class="mhead"><svg viewBox="0 0 44 44" width="40" height="40" aria-hidden="true"><rect width="44" height="44" rx="10" fill="#111A2E"/><path d="M8 30 L22 12 L36 30" fill="none" stroke="#2A3550" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><g fill="#FFDCA0"><circle cx="8" cy="30" r="2.4"/><circle cx="12.7" cy="24" r="2.4"/><circle cx="17.3" cy="18" r="2.4"/><circle cx="22" cy="12" r="2.4"/><circle cx="26.7" cy="18" r="2.4"/><circle cx="31.3" cy="24" r="2.4"/><circle cx="36" cy="30" r="2.4"/></g></svg><b>Gable &amp; Glow Dashboard</b><a href="../">View site</a></div>
+  <div class="demo">Demo dashboard by Williams Digital for a fictional company. Customers are samples, and no emails or charges are sent. Quote requests you submit on the <a href="../#quote">demo site</a> appear under Requests.</div>
+
+  <!-- REQUESTS -->
+  <section id="v-requests">
+    <div class="head"><div><h1>Quote requests</h1><p>Everything from the website form lands here, newest first.</p></div></div>
+    <div class="tiles">
+      <div class="tile"><small>New</small><b id="tNew">0</b><span>Waiting on a quote</span></div>
+      <div class="tile"><small>Quoted</small><b id="tQuoted">0</b><span>Waiting on the customer</span></div>
+      <div class="tile"><small>Booked</small><b id="tBooked">0</b><span>Deposit received</span></div>
+      <div class="tile"><small>Roofline traced</small><b id="tFeet">0 ft</b><span>Measured without a site visit</span></div>
+    </div>
+    <div class="card" id="reqList"></div>
+  </section>
+
+  <!-- BUILDER -->
+  <section id="v-builder" hidden>
+    <div class="head"><div><h1>Quote builder</h1><p>Measure the roofline from the satellite view, price it, and send it. No drive out.</p></div></div>
+    <div class="builder">
+      <div class="mapbox">
+        <div id="bMap"></div>
+        <div class="mtop"><input id="bAddr" type="text" autocomplete="off" placeholder="Search an address" aria-label="Search an address"><div class="sugg" id="bSugg" hidden></div></div>
+        <div class="mbot">
+          <div class="read"><b id="bFt">0 ft</b><span>Click roof corners to measure</span></div>
+          <button class="mb" type="button" id="bUndo">Undo</button>
+          <button class="mb" type="button" id="bNew">New line</button>
+          <button class="mb" type="button" id="bClear">Clear</button>
+        </div>
+      </div>
+      <div class="form">
+        <div class="who"><b id="bWho">New quote</b><span id="bWhoSub">Pick a request, or search any address on the map.</span></div>
+        <div class="g2">
+          <label class="f">Measured roofline (ft)<input id="bMeasured" type="number" inputmode="numeric" min="0" value="0"></label>
+          <label class="f">Peaks &amp; pitch allowance<select id="bPitch"><option value="0">None</option><option value="10" selected>+10%</option><option value="15">+15%</option><option value="20">+20%</option></select></label>
+        </div>
+        <div class="sugpk" id="bPkg" hidden></div>
+        <div class="sec">Line items</div>
+        <div class="g3">
+          <label class="f">Wreaths<input id="bWreath" type="number" inputmode="numeric" min="0" value="0"></label>
+          <label class="f">Mini-light sets<input id="bMini" type="number" inputmode="numeric" min="0" value="0"></label>
+          <label class="f">Timers<input id="bTimer" type="number" inputmode="numeric" min="0" value="1"></label>
+        </div>
+        <div class="sec">Discounts</div>
+        <label class="f">Returning customer<select id="bReturn"><option value="0">First year (none)</option><option value="15">15% off (year two onward)</option></select></label>
+        <label class="chk"><input type="checkbox" id="bCash"> Early bird ($75 off)</label>
+        <label class="chk"><input type="checkbox" id="bRef"> Refer-a-neighbor credit ($75 off)</label>
+        <div class="sum" id="bSum"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+          <button class="btn btn-red" type="button" id="bSend">Send quote + pay link</button>
+          <button class="btn" type="button" id="bSave">Save draft</button>
+        </div>
+        <p class="note">Unit rates are sample numbers. You set your own once under Website → Pricing, and every quote uses them.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOBS -->
+  <section id="v-jobs" hidden>
+    <div class="head"><div><h1>Jobs</h1><p>Installs first, then the January take-down list grouped by zone, with unpaid balances flagged.</p></div></div>
+    <div class="card" id="jobList"></div>
+  </section>
+
+  <!-- PAYMENTS -->
+  <section id="v-payments" hidden>
+    <div class="head"><div><h1>Payments</h1><p>Deposits, balances and monthly plans in one list.</p></div></div>
+    <div class="tiles">
+      <div class="tile"><small>Collected</small><b id="pCol">$0</b><span>This season</span></div>
+      <div class="tile"><small>Outstanding</small><b id="pOut">$0</b><span>Balances due</span></div>
+      <div class="tile"><small>Pay over time</small><b id="pEasy">0</b><span>Active monthly plans</span></div>
+      <div class="tile"><small>Unpaid at take-down</small><b id="pFlag">0</b><span>Flagged on the jobs list</span></div>
+    </div>
+    <div class="card" id="payList"></div>
+    <div class="prov">
+      <div class="pv rec"><b>Stripe</b>Card, Apple Pay, bank transfer and monthly plans. Pay links go out by text or email.</div>
+      <div class="pv"><b>Square</b>Good fit if you already take cards in person with a Square reader.</div>
+      <div class="pv"><b>PayPal + Venmo</b>Familiar to customers. Higher fees and no clean monthly plans.</div>
+      <div class="pv"><b>Your current tool</b>Already invoicing in Jobber, Housecall Pro or QuickBooks? The site hands customers off to it.</div>
+    </div>
+  </section>
+
+  <!-- SITE -->
+  <section id="v-site" hidden>
+    <div class="head"><div><h1>Website</h1><p>Change what customers see without calling anyone.</p></div></div>
+    <div class="builder">
+      <div class="form">
+        <h2>Take-down update</h2>
+        <p class="note" style="margin:6px 0 12px">Shows at the top of the take-down schedule. Running behind because of weather? Say so here and it is live in seconds.</p>
+        <label class="f">Message<textarea id="sNotice"></textarea></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-red" type="button" id="sPublish">Publish to the website</button><a class="btn" href="../#takedown" target="_blank" rel="noopener">View on site</a></div>
+      </div>
+      <div class="form">
+        <h2>Pricing</h2>
+        <p class="note" style="margin:6px 0 12px">Sample rates for the demo. Yours go here and drive the quote builder.</p>
+        <div class="g2">
+          <label class="f">Starting price ($)<input id="rMin" type="number" inputmode="numeric"></label>
+          <label class="f">C9 roofline ($ per ft)<input id="rFt" type="number" inputmode="decimal" step="0.25"></label>
+          <label class="f">60" wreath ($)<input id="rWreath" type="number" inputmode="numeric"></label>
+          <label class="f">Mini-light set ($)<input id="rMini" type="number" inputmode="numeric"></label>
+          <label class="f">Timer ($)<input id="rTimer" type="number" inputmode="numeric"></label>
+          <label class="f">Deposit (%)<input id="rDep" type="number" inputmode="numeric"></label>
+        </div>
+        <button class="btn btn-glow" type="button" id="rSave" style="margin-top:14px">Save rates</button>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)},$$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var LS={get:function(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function money(n){return '$'+Math.round(n).toLocaleString('en-US')}
+function toast(t){var el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){el.classList.remove('on')},4200)}
+
+/* ---------- sample data (fictional customers) ---------- */
+var ZONES=[['North zone','Jan 3 – 8'],['East zone','Jan 8 – 14'],['South zone','Jan 14 – 21'],['West zone','Jan 21 – 28']];
+var SEED={
+ rates:{min:649,ft:7,wreath:240,mini:40,timer:25,dep:50},
+ requests:[
+  {id:'S1',name:'Sample · Dana R.',phone:'(555) 010-0142',address:'Sample home 1',ll:[33.395842,-86.885092],feet:0,plan:'The Full Front',color:'Warm White',notes:'Two front gables and a dormer. Wants a wreath.',status:'new',source:'Website',lines:[]},
+  {id:'S2',name:'Sample · Marcus T.',phone:'(555) 010-0177',address:'Sample home 2',ll:[33.435423,-86.648018],feet:0,plan:'Halloween to Christmas swap',color:'Harvest',notes:'Halloween first, then swap.',status:'new',source:'Website',lines:[]},
+  {id:'S3',name:'Sample · Priya N.',phone:'(555) 010-0119',address:'Sample home 3',ll:[33.654915,-86.547622],feet:188,plan:'The Roofline',color:'Candy Cane',notes:'',status:'quoted',source:'Phone',lines:[],quote:1700},
+  {id:'S4',name:'Sample · Whitfield Dental',phone:'(555) 010-0101',address:'Sample storefront',ll:[33.312961,-86.801359],feet:262,plan:'Not sure yet',color:'Pure White',notes:'Commercial storefront.',status:'booked',source:'Website',lines:[],quote:2750}
+ ],
+ jobs:[
+  {id:'J1',name:'Sample · Whitfield Dental',area:'Old Town',zone:1,plan:'Whole Block',stage:'install',date:'Oct 14',balance:1375},
+  {id:'J2',name:'Sample · Lena K.',area:'Lakeview',zone:0,plan:'The Full Front',stage:'install',date:'Oct 16',balance:0},
+  {id:'J3',name:'Sample · Omar S.',area:'Northgate',zone:0,plan:'The Roofline',stage:'up',date:'Installed Oct 2',balance:0},
+  {id:'J4',name:'Sample · The Hallorans',area:'Southridge',zone:2,plan:'The Whole Property',stage:'up',date:'Installed Oct 3',balance:600},
+  {id:'J5',name:'Sample · Grace B.',area:'Eastbrook',zone:1,plan:'Starter',stage:'up',date:'Installed Oct 5',balance:0},
+  {id:'J6',name:'Sample · Tri-County Realty',area:'Westfield',zone:3,plan:'Showpiece',stage:'up',date:'Installed Oct 6',balance:850}
+ ],
+ invoices:[
+  {id:'GG-1042',name:'Sample · Whitfield Dental',total:2750,paid:1375,kind:'Deposit paid',method:'Card'},
+  {id:'GG-1041',name:'Sample · Lena K.',total:1480,paid:1480,kind:'Paid in full',method:'Bank transfer'},
+  {id:'GG-1040',name:'Sample · The Hallorans',total:3000,paid:2400,kind:'Pay over time 4 of 5',method:'Monthly plan'},
+  {id:'GG-1039',name:'Sample · Omar S.',total:765,paid:765,kind:'Paid in full',method:'Cash'},
+  {id:'GG-1038',name:'Sample · Tri-County Realty',total:1700,paid:850,kind:'Deposit paid',method:'Card'},
+  {id:'GG-1037',name:'Sample · Grace B.',total:1150,paid:1150,kind:'Paid in full',method:'Card'}
+ ]
+};
+var S=LS.get('gg_admin',null)||JSON.parse(JSON.stringify(SEED));
+function save(){LS.set('gg_admin',S)}
+function pullSite(){ // merge requests submitted on the preview site
+  var web=LS.get('gg_requests',[]),ids={};S.requests.forEach(function(r){ids[r.id]=1});
+  web.slice().reverse().forEach(function(r){if(!ids[r.id])S.requests.unshift(r)});save();
+}
+pullSite();
+
+/* ---------- tabs ---------- */
+function show(tab){
+  $$('.tab').forEach(function(b){b.setAttribute('aria-selected',b.getAttribute('data-tab')===tab)});
+  ['requests','builder','jobs','payments','site'].forEach(function(t){$('#v-'+t).hidden=t!==tab});
+  if(tab==='builder'){initMap();setTimeout(function(){map.invalidateSize()},60)}
+  window.scrollTo(0,0);
+}
+$$('.tab').forEach(function(b){b.addEventListener('click',function(){show(b.getAttribute('data-tab'))})});
+
+/* ---------- requests ---------- */
+var PILL={new:['p-new','New'],quoted:['p-quoted','Quoted'],booked:['p-ok','Booked']};
+function drawRequests(){
+  var n=0,q=0,b=0,ft=0;
+  S.requests.forEach(function(r){if(r.status==='new')n++;if(r.status==='quoted')q++;if(r.status==='booked')b++;ft+=r.feet||0});
+  $('#tNew').textContent=n;$('#tQuoted').textContent=q;$('#tBooked').textContent=b;$('#tFeet').textContent=ft.toLocaleString('en-US')+' ft';
+  $('#ctNew').textContent=n;$('#ctNew').hidden=!n;
+  $('#reqList').innerHTML=S.requests.length?S.requests.map(function(r){
+    var p=PILL[r.status]||PILL.new;
+    return '<div class="rowi req"><div><b>'+esc(r.name)+'</b><span class="sub">'+esc(r.address)+'</span><span class="sub">'+esc(r.phone)+(r.email?' · '+esc(r.email):'')+'</span></div>'+
+      '<div class="c3"><span class="sub" style="color:var(--text)">'+esc(r.plan)+' · '+esc(r.color)+'</span><span class="sub">'+(r.feet?r.feet+' ft traced by customer':'Not measured yet')+(r.notes?' · “'+esc(r.notes)+'”':'')+'</span></div>'+
+      '<div><span class="pill '+p[0]+'">'+p[1]+'</span>'+(r.quote?'<span class="sub">'+money(r.quote)+'</span>':'')+'</div>'+
+      '<div class="acts"><button class="btn btn-sm '+(r.status==='new'?'btn-red':'')+'" type="button" data-open="'+esc(r.id)+'">'+(r.status==='new'?'Measure + quote':'Open')+'</button></div></div>';
+  }).join(''):'<div class="empty">No requests yet.</div>';
+}
+$('#reqList').addEventListener('click',function(e){var b=e.target.closest('[data-open]');if(b)openReq(b.getAttribute('data-open'))});
+
+/* ---------- quote builder ---------- */
+var map,layer,lines=[[]],cur=null,pin=null;
+function initMap(){
+  if(map)return;
+  map=L.map('bMap',{zoomControl:false}).setView([33.45,-86.75],11);
+  L.control.zoom({position:'topright'}).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'}).addTo(map);
+  map.attributionControl.setPrefix(false);
+  layer=L.layerGroup().addTo(map);
+  map.on('click',function(e){lines[lines.length-1].push(e.latlng);redraw(true)});
+}
+function measured(){var m=0;lines.forEach(function(ln){for(var i=1;i<ln.length;i++)m+=map.distance(ln[i-1],ln[i])});return Math.round(m*3.28084)}
+function redraw(sync){
+  layer.clearLayers();
+  lines.forEach(function(ln){
+    if(ln.length>1)L.polyline(ln,{color:'#FFDCA0',weight:4}).addTo(layer);
+    ln.forEach(function(p){L.circleMarker(p,{radius:5,color:'#070B16',weight:2,fillColor:'#FFDCA0',fillOpacity:1,interactive:false}).addTo(layer)});
+  });
+  if(sync){$('#bMeasured').value=measured()}
+  calc();
+}
+$('#bUndo').addEventListener('click',function(){var ln=lines[lines.length-1];if(ln.length)ln.pop();else if(lines.length>1)lines.pop();redraw(true)});
+$('#bNew').addEventListener('click',function(){if(lines[lines.length-1].length)lines.push([])});
+$('#bClear').addEventListener('click',function(){lines=[[]];redraw(true)});
+function calc(){
+  var R=S.rates,ft=+$('#bMeasured').value||0,bill=Math.round(ft*(1+(+$('#bPitch').value)/100));
+  $('#bFt').textContent=ft+' ft';
+  var items=[['C9 roofline, '+bill+' ft × $'+R.ft,bill*R.ft],['Wreaths × '+(+$('#bWreath').value||0),(+$('#bWreath').value||0)*R.wreath],['Mini-light sets × '+(+$('#bMini').value||0),(+$('#bMini').value||0)*R.mini],['Timers × '+(+$('#bTimer').value||0),(+$('#bTimer').value||0)*R.timer]];
+  var sub=items.reduce(function(a,i){return a+i[1]},0),usedMin=false;
+  if(calc.pkg){sub=calc.pkg[1];items=[[calc.pkg[0]+' (package price)',sub]]}
+  else if(sub<R.min){sub=R.min;usedMin=true}
+  var disc=[],tot=sub,ret=+$('#bReturn').value;
+  if(ret){var d=tot*ret/100;disc.push(['Returning customer '+ret+'%',-d]);tot-=d}
+  if($('#bRef').checked){disc.push(['Referral credit',-75]);tot-=75}
+  if($('#bCash').checked){disc.push(['Early bird',-75]);tot-=75}
+  tot=Math.max(0,Math.round(tot));
+  var dep=Math.round(tot*R.dep/100);
+  $('#bSum').innerHTML=items.filter(function(i){return i[1]>0}).map(function(i){return '<div><span>'+esc(i[0])+'</span><span>'+money(i[1])+'</span></div>'}).join('')+
+    (usedMin?'<div><span>Starting price applies</span><span>'+money(R.min)+'</span></div>':'')+
+    disc.map(function(i){return '<div><span>'+esc(i[0])+'</span><span>−'+money(-i[1])+'</span></div>'}).join('')+
+    '<div class="t"><span>Quote total</span><span>'+money(tot)+'</span></div><div><span>Deposit to book ('+R.dep+'%)</span><span>'+money(dep)+'</span></div>';
+  var pk=bill<=0?null:bill<=150?['Starter',1150,'up to 150 ft, 1 wreath, 1 timer']:bill<=225?['Showpiece',1700,'up to 225 ft, 1 wreath, 1 timer, 6 mini sets']:bill<=300?['Whole Block',2750,'up to 300 ft any color, 2 wreaths, 1 timer, 12 mini sets']:null;
+  var box=$('#bPkg');
+  if(calc.pkg){box.hidden=false;box.innerHTML='Using <b>'+calc.pkg[0]+'</b> at '+money(calc.pkg[1])+'. <button class="btn btn-sm" type="button" data-pk="off">Price by line item instead</button>'}
+  else if(pk){box.hidden=false;box.innerHTML=bill+' ft fits <b>'+pk[0]+'</b> ('+pk[2]+') at '+money(pk[1])+'. <button class="btn btn-sm" type="button" data-pk="on">Use package price</button>';box._pk=pk}
+  else{box.hidden=true}
+  calc.total=tot;calc.dep=dep;
+}
+$('#bPkg').addEventListener('click',function(e){var b=e.target.closest('[data-pk]');if(!b)return;calc.pkg=b.getAttribute('data-pk')==='on'?this._pk:null;calc()});
+['bMeasured','bPitch','bWreath','bMini','bTimer','bReturn','bCash','bRef'].forEach(function(id){$('#'+id).addEventListener('input',function(){if(id==='bMeasured'||id==='bPitch')calc.pkg=null;calc()})});
+function openReq(id){
+  cur=S.requests.filter(function(r){return r.id===id})[0];if(!cur)return;
+  show('builder');
+  $('#bWho').textContent=cur.name;$('#bWhoSub').textContent=cur.address+' · '+cur.plan+' · '+cur.color;
+  $('#bAddr').value=cur.address;calc.pkg=null;
+  lines=(cur.lines&&cur.lines.length)?cur.lines.map(function(l){return l.map(function(p){return L.latLng(p[0],p[1])})}):[[]];
+  if(!lines[lines.length-1].length&&lines.length>1){}else if(lines[lines.length-1].length)lines.push([]);
+  if(pin)map.removeLayer(pin);
+  if(cur.ll){map.setView(cur.ll,20);pin=L.circleMarker(cur.ll,{radius:9,color:'#fff',weight:2,fillColor:'#D91A2A',fillOpacity:.9,interactive:false}).addTo(map)}
+  $('#bReturn').value='0';$('#bCash').checked=false;$('#bRef').checked=false;$('#bWreath').value=/wreath/i.test(cur.notes||'')?1:0;$('#bMini').value=0;$('#bTimer').value=1;
+  redraw(!!(cur.lines&&cur.lines.length));
+  if(!(cur.lines&&cur.lines.length)){$('#bMeasured').value=cur.feet||0;calc()}
+}
+$('#bSave').addEventListener('click',function(){toast('Draft saved.')});
+$('#bSend').addEventListener('click',function(){
+  if(!calc.total){toast('Measure the roofline or add line items first.');return}
+  var name=cur?cur.name:'New customer';
+  if(cur){cur.status='quoted';cur.quote=calc.total;cur.feet=+$('#bMeasured').value||cur.feet}
+  var num='GG-'+(1043+S.invoices.filter(function(i){return +i.id.slice(4)>1042}).length);
+  S.invoices.unshift({id:num,name:name,total:calc.total,paid:0,kind:'Quote sent',method:'Awaiting deposit'});
+  save();drawAll();
+  toast('Quote '+num+' ready: '+money(calc.total)+', deposit '+money(calc.dep)+'. Live build texts and emails the pay link.');
+});
+/* address search (demo uses Esri; a live build uses Google Maps) */
+var GEO='https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/',bs=$('#bSugg'),tm,seq=0;
+$('#bAddr').addEventListener('input',function(){
+  var q=this.value.trim();clearTimeout(tm);if(q.length<4){bs.hidden=true;return}
+  tm=setTimeout(function(){var my=++seq;
+    fetch(GEO+'suggest?f=json&maxSuggestions=5&countryCode=USA&text='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(j){
+      if(my!==seq)return;var s=(j.suggestions||[]).filter(function(x){return !x.isCollection});if(!s.length){bs.hidden=true;return}
+      bs.innerHTML=s.map(function(x,i){return '<button type="button" data-k="'+i+'">'+esc(x.text.replace(/, USA$/,''))+'</button>'}).join('');bs._s=s;bs.hidden=false;
+    }).catch(function(){bs.hidden=true});
+  },280);
+});
+bs.addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(!b)return;var s=bs._s[+b.getAttribute('data-k')];
+  fetch(GEO+'findAddressCandidates?f=json&maxLocations=1&magicKey='+encodeURIComponent(s.magicKey)+'&SingleLine='+encodeURIComponent(s.text)).then(function(r){return r.json()}).then(function(j){
+    var c=(j.candidates||[])[0];if(!c)return;bs.hidden=true;$('#bAddr').value=s.text.replace(/, USA$/,'');
+    cur=null;$('#bWho').textContent='New quote';$('#bWhoSub').textContent=$('#bAddr').value;lines=[[]];redraw(true);
+    map.setView([c.location.y,c.location.x],20);if(pin)map.removeLayer(pin);
+    pin=L.circleMarker([c.location.y,c.location.x],{radius:9,color:'#fff',weight:2,fillColor:'#D91A2A',fillOpacity:.9,interactive:false}).addTo(map);
+  })});
+
+/* ---------- jobs ---------- */
+function drawJobs(){
+  var h='<div class="zhead">Installs coming up<span>Next 7 days</span></div>';
+  S.jobs.filter(function(j){return j.stage==='install'}).forEach(function(j){
+    h+='<div class="rowi job"><div><b>'+esc(j.name)+'</b><span class="sub">'+esc(j.area)+' · '+esc(j.plan)+'</span></div><div class="c3"><span class="pill p-info">Install '+esc(j.date)+'</span></div><div>'+(j.balance?'<span class="sub">Balance '+money(j.balance)+'</span>':'<span class="sub">Paid in full</span>')+'</div><div class="acts"><button class="btn btn-sm" type="button" data-done="'+j.id+'">Mark installed</button></div></div>'});
+  ZONES.forEach(function(z,zi){
+    var js=S.jobs.filter(function(j){return j.zone===zi&&j.stage!=='install'}).sort(function(a,b){return (a.balance>0)-(b.balance>0)});
+    if(!js.length)return;
+    h+='<div class="zhead">Take-down · '+z[0]+'<span>'+z[1]+'</span></div>';
+    js.forEach(function(j){h+='<div class="rowi job"><div><b>'+esc(j.name)+'</b><span class="sub">'+esc(j.area)+' · '+esc(j.plan)+'</span></div><div class="c3">'+(j.stage==='down'?'<span class="pill p-ok">Down + stored</span>':'<span class="pill p-mute">'+esc(j.date)+'</span>')+'</div><div>'+(j.balance?'<span class="pill p-quoted">Unpaid '+money(j.balance)+'</span><span class="sub">Balance due before take-down</span>':'<span class="sub">Paid in full</span>')+'</div><div class="acts">'+(j.stage==='down'?'':'<button class="btn btn-sm" type="button" data-done="'+j.id+'">Mark taken down</button>')+'</div></div>'});
+  });
+  $('#jobList').innerHTML=h;
+}
+$('#jobList').addEventListener('click',function(e){var b=e.target.closest('[data-done]');if(!b)return;var j=S.jobs.filter(function(x){return x.id===b.getAttribute('data-done')})[0];
+  if(j.stage==='install'){j.stage='up';j.date='Installed today';toast(j.name+' marked installed.')}else{j.stage='down';toast(j.name+' taken down and stored.')}save();drawJobs()});
+
+/* ---------- payments ---------- */
+function drawPay(){
+  var col=0,out=0,easy=0;
+  S.invoices.forEach(function(i){col+=i.paid;out+=i.total-i.paid;if(/Pay over time/.test(i.kind))easy++});
+  $('#pCol').textContent=money(col);$('#pOut').textContent=money(out);$('#pEasy').textContent=easy;
+  $('#pFlag').textContent=S.jobs.filter(function(j){return j.balance>0&&j.stage==='up'}).length;
+  $('#payList').innerHTML=S.invoices.map(function(i){
+    var due=i.total-i.paid,cls=due===0?'p-ok':i.paid===0?'p-new':'p-quoted';
+    return '<div class="rowi pay"><div><b>'+esc(i.name)+'</b><span class="sub">'+esc(i.id)+' · '+esc(i.method)+'</span></div><div class="c3"><span class="pill '+cls+'">'+esc(i.kind)+'</span></div><div><b>'+money(i.total)+'</b><span class="sub">'+(due?money(due)+' due':'Nothing due')+'</span></div><div class="acts">'+(due?'<button class="btn btn-sm" type="button" data-link="'+esc(i.id)+'">Copy pay link</button><button class="btn btn-sm" type="button" data-cash="'+esc(i.id)+'">Record cash</button>':'')+'</div></div>'}).join('');
+}
+$('#payList').addEventListener('click',function(e){
+  var l=e.target.closest('[data-link]'),c=e.target.closest('[data-cash]');
+  if(l)toast('Pay link for '+l.getAttribute('data-link')+' copied. In the live build it opens Stripe checkout.');
+  if(c){var i=S.invoices.filter(function(x){return x.id===c.getAttribute('data-cash')})[0];i.paid=i.total;i.kind='Paid in full';i.method='Cash';
+    S.jobs.forEach(function(j){if(j.name===i.name)j.balance=0});save();drawAll();toast(i.id+' marked paid in cash.')}
+});
+
+/* ---------- site ---------- */
+var DEF_NOTICE="We are on schedule. Zone windows below are current.";
+function drawSite(){
+  var st=LS.get('gg_site',{});$('#sNotice').value=st.notice||DEF_NOTICE;
+  var R=S.rates;$('#rMin').value=R.min;$('#rFt').value=R.ft;$('#rWreath').value=R.wreath;$('#rMini').value=R.mini;$('#rTimer').value=R.timer;$('#rDep').value=R.dep;
+}
+$('#sPublish').addEventListener('click',function(){var st=LS.get('gg_site',{});st.notice=$('#sNotice').value.trim()||DEF_NOTICE;LS.set('gg_site',st);toast('Published. Open “View on site” to see it on the take-down schedule.')});
+$('#rSave').addEventListener('click',function(){S.rates={min:+$('#rMin').value||0,ft:+$('#rFt').value||0,wreath:+$('#rWreath').value||0,mini:+$('#rMini').value||0,timer:+$('#rTimer').value||0,dep:+$('#rDep').value||0};save();toast('Rates saved. New quotes use them.')});
+
+$('#resetBtn').addEventListener('click',function(){try{localStorage.removeItem('gg_admin');localStorage.removeItem('gg_requests');localStorage.removeItem('gg_site')}catch(e){}S=JSON.parse(JSON.stringify(SEED));drawAll();drawSite();toast('Demo data reset.')});
+function drawAll(){drawRequests();drawJobs();drawPay()}
+drawAll();drawSite();
+})();
+</script>
+</body>
+</html>
