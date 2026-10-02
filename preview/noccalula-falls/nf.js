@@ -105,7 +105,7 @@
       var go=s.querySelector('.btn'),ready=sel&&slot&&(paid+qt)>0;
       go.setAttribute('aria-disabled',String(!ready));
       go.style.opacity=ready?1:.55;
-      s.querySelector('[data-hint]').textContent=ready?'You’ll finish on the park’s secure checkout. Your night and arrival time carry over.':'Choose a night and an arrival time to continue.';
+      s.querySelector('[data-hint]').textContent=ready?'Next you’ll confirm this night and time on the park’s secure EventHub checkout.':'Choose a night and an arrival time to continue.';
     }
     var go=document.querySelector('.sum .btn');
     go.addEventListener('click',function(e){if(go.getAttribute('aria-disabled')==='true'){e.preventDefault();document.querySelector('.panel-b').scrollIntoView({behavior:'smooth'})}});
