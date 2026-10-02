@@ -158,6 +158,8 @@
     loadArticles('journal');
     loadNonprofit();
     loadSettings();
+    loadBookings();
+    loadBlackouts();
   }
 
   function showAuth(msg, kind) {
@@ -493,6 +495,88 @@
       var a = articles[k].filter(function (x) { return x.id === ae.dataset.editArticle; })[0];
       if (a) openSheet({ table: 'articles', id: a.id, kind: k, title: 'Edit', html: articleForm(a) });
     }
+  });
+
+  /* ─────────────────────── consultations ─────────────────────── */
+
+  function fmtSlot(d, t) {
+    var dt = new Date(d + 'T12:00:00Z');
+    var day = dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+    var hh = parseInt(String(t).slice(0, 2), 10), mm = String(t).slice(3, 5);
+    var ap = hh >= 12 ? 'pm' : 'am', h12 = hh % 12 === 0 ? 12 : hh % 12;
+    return day + ' · ' + h12 + ':' + mm + ' ' + ap;
+  }
+
+  function loadBookings() {
+    store.list('bookings').then(function (rows) {
+      var host = $('#bkRows');
+      var today = new Date().toISOString().slice(0, 10);
+      rows = (rows || []).filter(function (b) { return b.slot_date >= today; })
+                         .sort(function (a, b) {
+                           return (a.slot_date + a.slot_start) < (b.slot_date + b.slot_start) ? -1 : 1; });
+      if (!rows.length) {
+        host.innerHTML = '<div class="empty"><h3>Nothing booked yet</h3>' +
+          '<p>Consultations booked on the website will appear here.</p></div>';
+        return;
+      }
+      host.innerHTML = rows.map(function (b) {
+        var pill = b.status === 'paid'
+          ? '<span class="pill live">Deposit paid</span>'
+          : (b.status === 'held' ? '<span class="pill draft">Awaiting deposit</span>'
+                                 : '<span class="pill out">' + esc(b.status) + '</span>');
+        return '<div class="row"><div class="thumb ph">' +
+          esc(String(b.slot_start).slice(0, 5)) + '</div>' +
+          '<div><h3>' + esc(b.name || '—') + '</h3><div class="meta">' + pill +
+          ' &nbsp; ' + esc(fmtSlot(b.slot_date, b.slot_start)) + ' · ' + esc(b.email || '') +
+          (b.phone ? ' · ' + esc(b.phone) : '') +
+          (b.notes ? '<br>' + esc(b.notes) : '') + '</div></div>' +
+          '<div class="acts"><a class="btn ghost sm" href="mailto:' + esc(b.email || '') + '">Email</a></div>' +
+          '</div>';
+      }).join('');
+    }).catch(function (e) { toast('Could not load bookings: ' + e.message); });
+  }
+
+  function loadBlackouts() {
+    store.list('blackouts').then(function (rows) {
+      var host = $('#boRows');
+      rows = (rows || []).sort(function (a, b) { return a.day < b.day ? -1 : 1; });
+      if (!rows.length) { host.innerHTML = ''; return; }
+      host.innerHTML = rows.map(function (b) {
+        var when = b.start_time
+          ? String(b.start_time).slice(0, 5) + '–' + String(b.end_time || '').slice(0, 5)
+          : 'All day';
+        return '<div class="row"><div class="thumb ph">OFF</div>' +
+          '<div><h3>' + esc(b.day) + '</h3><div class="meta">' + esc(when) +
+          (b.reason ? ' · ' + esc(b.reason) : '') + '</div></div>' +
+          '<div class="acts"><button class="btn danger sm" data-unblock="' + esc(b.id) + '">Unblock</button></div>' +
+          '</div>';
+      }).join('');
+    }).catch(function () {});
+  }
+
+  var boForm = $('#boForm');
+  if (boForm) boForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var day = $('#boDay').value;
+    if (!day) { toast('Pick a date first.'); return; }
+    var from = $('#boFrom').value, to = $('#boTo').value;
+    if (from && !to) { toast('Give an end time too, or leave both empty for the whole day.'); return; }
+    store.save('blackouts', {
+      day: day,
+      start_time: from || null,
+      end_time: to || null,
+      reason: $('#boWhy').value.trim() || null
+    }).then(function () {
+      toast('Blocked.'); boForm.reset(); loadBlackouts();
+    }).catch(function (err) { toast('Could not block that: ' + err.message); });
+  });
+
+  document.addEventListener('click', function (e) {
+    var u = e.target.closest('[data-unblock]');
+    if (!u) return;
+    store.remove('blackouts', u.dataset.unblock).then(function () {
+      toast('Unblocked.'); loadBlackouts();
+    }).catch(function (err) { toast('Could not unblock: ' + err.message); });
   });
 
   /* ─────────────────────── non-profit & settings ─────────────────────── */

@@ -155,7 +155,7 @@
         '<div class="why">Why: a ' + c[0].toLowerCase() + ' ' + c[1] + '.</div>' +
         bangsNote() +
         '<div class="qpick">' + (sensitive ? consult + card(1) + card(2) : card(1) + card(2) + consult) + '</div>' +
-        '<div class="hero-cta"><a class="btn" href="#consult">Book a private consultation <span class="arr">→</span></a>' +
+        '<div class="hero-cta"><a class="btn" href="consultation.html">Book a private consultation <span class="arr">→</span></a>' +
         '<button class="btn ghost" type="button" data-restart>Start again</button></div></div>';
       $('[data-restart]', stage).addEventListener('click', function () { ans = {}; i = 0; render(); });
     }

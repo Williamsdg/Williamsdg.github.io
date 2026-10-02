@@ -15,5 +15,11 @@
  */
 window.SC_CONFIG = {
   SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: ''
+  SUPABASE_ANON_KEY: '',
+
+  /* Stripe Payment Link for the $250 consultation deposit.
+   * Create it in Stripe (Payment links -> new link, $250, one-off) and paste the
+   * URL here. Until then the booking page holds the slot and tells the client a
+   * payment link will be emailed - it never implies a card was charged. */
+  DEPOSIT_PAYMENT_URL: ''
 };

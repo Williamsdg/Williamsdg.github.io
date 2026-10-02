@@ -162,3 +162,78 @@ on conflict (key) do nothing;
 --
 -- Until at least one row exists here, nobody can write anything — which is the
 -- intended default.
+
+-- ═══════════════════════════════════════════════════════════════════
+-- CONSULTATIONS  (added 2026-10-02, from Elana's revision notes §6)
+-- Rules she specified: Monday–Friday, 10:00–16:00 America/Chicago,
+-- 90-minute appointments, so the latest start is 14:30. $250 deposit,
+-- nonrefundable, credited against a wig bought during the consultation.
+-- ═══════════════════════════════════════════════════════════════════
+
+create table if not exists public.bookings (
+  id             uuid primary key default gen_random_uuid(),
+  created_at     timestamptz not null default now(),
+  -- the slot, stored as a date + local start time in the salon's timezone
+  slot_date      date not null,
+  slot_start     time not null,
+  duration_min   int  not null default 90,
+  status         text not null default 'held'
+                 check (status in ('held','paid','cancelled','completed','no_show')),
+  name           text not null,
+  email          text not null,
+  phone          text,
+  notes          text,
+  -- deposit
+  deposit_cents  int  not null default 25000,
+  deposit_ref    text,            -- Stripe payment/session reference
+  terms_ack_at   timestamptz,     -- she asked that the terms be acknowledged
+  unique (slot_date, slot_start)  -- prevents overlapping bookings outright
+);
+
+-- Dates or specific times the salon is unavailable, managed from the admin.
+create table if not exists public.blackouts (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+  day         date not null,
+  start_time  time,          -- null = the whole day is blocked
+  end_time    time,
+  reason      text
+);
+
+alter table public.bookings  enable row level security;
+alter table public.blackouts enable row level security;
+
+-- The public page needs to know which slots are gone, but must never see
+-- who booked them. It reads availability through this view instead.
+create or replace view public.slots_taken as
+  select slot_date, slot_start
+  from public.bookings
+  where status in ('held','paid','completed');
+
+grant select on public.slots_taken to anon, authenticated;
+
+-- Blackouts are not sensitive; the calendar needs them to grey days out.
+drop policy if exists blackouts_public_read on public.blackouts;
+create policy blackouts_public_read on public.blackouts
+  for select to anon, authenticated using (true);
+
+drop policy if exists blackouts_admin_all on public.blackouts;
+create policy blackouts_admin_all on public.blackouts
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- Anyone may request a booking; nobody but an admin may read them back.
+-- This is deliberate: bookings carry names, emails and phone numbers.
+drop policy if exists bookings_public_insert on public.bookings;
+create policy bookings_public_insert on public.bookings
+  for insert to anon, authenticated with check (
+    status = 'held'
+    and extract(isodow from slot_date) between 1 and 5
+    and slot_start >= time '10:00' and slot_start <= time '14:30'
+  );
+
+drop policy if exists bookings_admin_all on public.bookings;
+create policy bookings_admin_all on public.bookings
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+create index if not exists bookings_day_idx  on public.bookings (slot_date, slot_start);
+create index if not exists blackouts_day_idx on public.blackouts (day);
