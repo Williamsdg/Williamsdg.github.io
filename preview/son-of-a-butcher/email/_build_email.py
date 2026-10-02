@@ -28,14 +28,18 @@ def h2(text):
 def link(url, text):
     return f'<a href="{url}" style="color:{INDIGO};font-weight:bold;text-decoration:none">{text}</a>'
 
+NUM = {'hero':'TOP LEFT','team':'TOP RIGHT','journal':'BOTTOM LEFT','phones':'BOTTOM RIGHT'}
+
 def shot(img, caption, url, with_images):
     """A screenshot with its caption. In the draft version the image is replaced by a live link."""
     if with_images:
         return f'''<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 22px">
 <tr><td><a href="{url}" style="text-decoration:none"><img src="{IMG}{img}.jpg" width="576" alt="{caption}" style="display:block;width:100%;max-width:576px;height:auto;border:1px solid #e5e7eb;border-radius:8px"></a></td></tr>
 <tr><td style="font-size:12.5px;color:{MUTE};padding-top:8px;line-height:1.5">{caption}</td></tr></table>'''
+    n = NUM.get(img)
+    tag = f'<span style="font-size:11px;font-weight:bold;letter-spacing:1.5px;color:{INDIGO}">SCREENSHOT BELOW · {n}</span><br>' if n else ''
     return f'''<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px">
-<tr><td bgcolor="#f7f7fb" style="background-color:#f7f7fb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 18px;font-size:13.5px;color:{BODY};line-height:1.5">{caption}<br>{link(url, 'See it live →')}</td></tr></table>'''
+<tr><td bgcolor="#f7f7fb" style="background-color:#f7f7fb;border:1px solid #e5e7eb;border-left:4px solid {INDIGO};border-radius:8px;padding:14px 18px;font-size:13.5px;color:{BODY};line-height:1.5">{tag}{caption}<br>{link(url, 'See it live →')}</td></tr></table>'''
 
 def button(url, text):
     return f'''<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 24px"><tr>
@@ -79,6 +83,7 @@ def email(with_images):
         para('Congratulations on Tasting Table naming The Son of a Butcher <b>the best butcher shop in Alabama</b> this summer. That’s a well-earned one.'),
         para('I’m Dylan Williams, a web designer here in Birmingham. The shop has something most places don’t: a real story, a brand people remember, and a team with opinions worth hearing. The website is still a standard Toast template, and it doesn’t do much of that justice. So rather than pitch you an idea, <b>I built one</b>, using your own photography, words and product lists.'),
         button(SITE, 'View the live concept →'),
+        ('' if with_images else para('<i>A screenshot of the concept is at the bottom of this email.</i>', '0 0 16px')),
         s('hero', 'The homepage. Your logo turns in the gold seal, and the header shows whether you’re open right now.', SITE),
 
         h2('A quick tour'),
@@ -128,6 +133,7 @@ Congratulations on Tasting Table naming The Son of a Butcher the best butcher sh
 I'm Dylan Williams, a web designer here in Birmingham. The shop has something most places don't: a real story, a brand people remember, and a team with opinions worth hearing. The website is still a standard Toast template, and it doesn't do much of that justice. So rather than pitch you an idea, I built one, using your own photography, words and product lists.
 
 View the live concept: {SITE}
+(A screenshot of the concept is at the bottom of this email.)
 
 A QUICK TOUR
 - The counters: Meat, Seafood and Cheese & Specialty as tabbed menus that name your producers.
