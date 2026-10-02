@@ -81,10 +81,15 @@
       { k: 'length', q: 'Which length feels like you?', help: 'You can always go shorter later — longer is harder.', opts: [
         ['chin', 'Chin length', 'Crisp and easy'], ['shoulder', 'Shoulder length', 'The most versatile'],
         ['chest', 'Mid-chest', 'Soft movement'], ['long', 'Long', 'Past the chest']] },
+      { k: 'bangs', q: 'Bangs, or no bangs?', help: 'Either is easy to plan for — it just changes where we start.', opts: [
+        ['yes', 'Bangs', 'A fringe, however you like to wear it'],
+        ['no', 'No bangs', 'Open forehead, hair back off the face'],
+        ['either', 'Open to either', 'Show me both and I’ll decide']] },
       { k: 'colour', q: 'Which colour family?', help: 'We’ll narrow the exact shade together in person.', swatch: true, opts: [
         ['black', 'Black', '', 'linear-gradient(#0E0C0B,#2A221C)'], ['brown', 'Brown', '', 'linear-gradient(#2A1B12,#7A5236)'],
         ['blonde', 'Blonde', '', 'linear-gradient(#6B5236,#D8B27A)'], ['red', 'Red & copper', '', 'linear-gradient(#3A1E12,#C06A3A)'],
-        ['grey', 'Grey & silver', '', 'linear-gradient(#5E5A55,#DAD7D2)']] },
+        ['grey', 'Grey & silver', '', 'linear-gradient(#5E5A55,#DAD7D2)'],
+        ['colourful', 'Colourful', 'Vivid shades, creative blends, unique colour', 'linear-gradient(135deg,#DD1D6F,#FAA4D9 45%,#5EAEA2)']] },
       { k: 'priority', q: 'What matters most to you?', help: 'Pick the one you’d never compromise on.', opts: [
         ['secure', 'Feeling secure', 'Stays put without glue'], ['hairline', 'A natural hairline', 'Nobody looks twice'],
         ['comfort', 'All-day comfort', 'Soft and breathable on top'], ['versatile', 'Styling freedom', 'Ponytails and updos']] }
@@ -100,7 +105,7 @@
       topper: ['Hair topper', 'clips into your own hair to add coverage on top without a full wig']
     };
     var LEN = { chin: 'Chin-length', shoulder: 'Shoulder-length', chest: 'Mid-chest', long: 'Long' };
-    var COL = { black: 'Black', brown: 'Brown', blonde: 'Blonde', red: 'Copper', grey: 'Silver' };
+    var COL = { black: 'Black', brown: 'Brown', blonde: 'Blonde', red: 'Copper', grey: 'Silver', colourful: 'Colourful' };
 
     function render() {
       var s = steps[i];
@@ -129,6 +134,13 @@
       if (ans.priority === 'hairline') return 'lacefront';
       return 'glueless';
     }
+    // Most pieces are listed without a fringe. Where bangs would mean cutting one in,
+    // say so plainly rather than implying it comes that way.
+    function bangsNote() {
+      if (ans.bangs === 'yes') return '<div class="why">On bangs: a few pieces come with a fringe, but most do not — we usually cut one in for you during your consultation, which is included.</div>';
+      if (ans.bangs === 'either') return '<div class="why">On bangs: we’ll show you both. If you want a fringe, we cut it in during your consultation.</div>';
+      return '';
+    }
     function result() {
       bar.style.transform = 'scaleX(1)'; stepN.textContent = 'Your starting point'; nav.hidden = true;
       var c = CAP[capFor()], sensitive = ans.reason === 'loss' || ans.reason === 'thin';
@@ -141,6 +153,7 @@
           ? 'We’d love to meet you privately first — the right fit matters more than any product page. Here’s where we’d begin.'
           : 'Here’s where we’d begin. Bring these to a consultation, or browse the shop.') + '</p>' +
         '<div class="why">Why: a ' + c[0].toLowerCase() + ' ' + c[1] + '.</div>' +
+        bangsNote() +
         '<div class="qpick">' + (sensitive ? consult + card(1) + card(2) : card(1) + card(2) + consult) + '</div>' +
         '<div class="hero-cta"><a class="btn" href="#consult">Book a private consultation <span class="arr">→</span></a>' +
         '<button class="btn ghost" type="button" data-restart>Start again</button></div></div>';
