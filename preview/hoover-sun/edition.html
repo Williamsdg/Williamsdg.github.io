@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Print Edition · Hoover Sun</title>
+<meta name="description" content="Local news, schools, sports, business, events and people from Hoover, Alabama. Concept redesign preview.">
+<meta name="theme-color" content="#8e2a24">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231c1a19'/%3E%3Ctext x='32' y='47' font-family='Arial Black,Arial' font-weight='900' font-size='44' text-anchor='middle' fill='%23fff'%3ES%3C/text%3E%3Ccircle cx='49' cy='16' r='7' fill='%23e9a23b'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Barlow+Condensed:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css?v=1">
+</head>
+<body data-page="edition">
+<div id="chrome"></div>
+<main class="wrap" id="main">
+  <header class="sec-head"><span class="kicker">The paper</span><h1>Print edition</h1><p>Every page of the monthly Hoover Sun, mailed to Hoover homes and readable right here, with no app and no third-party reader.</p></header>
+  <div id="viewer" style="margin-bottom:44px"></div>
+  <div class="shead"><h2>Past issues</h2></div>
+  <div class="issues" id="issues" style="margin-bottom:56px"></div>
+  <div class="shead"><h2>Pick up a copy</h2><a href="mailto:svillar@starnesmedia.com">Add your location →</a></div>
+  <ul class="pickup" style="margin-bottom:60px">
+    <li>Ahepa 3 Senior Apartments</li><li>Aldridge Gardens</li><li>Aspire Physical Recovery Center at Hoover</li><li>Bluff Park Diner</li><li>Hoover City Hall</li><li>Faulkner University</li><li>Galleria Woods</li><li>Greenvale Pediatrics</li><li>Hoover Area Chamber of Commerce</li><li>Hoover High School</li><li>Hoover Public Library</li><li>Hoover Recreation Center</li><li>Hoover Senior Center</li><li>Hyatt Regency Birmingham – The Wynfrey Hotel</li><li>Kasey Davis Dentistry</li><li>Lakeview Estates</li><li>MedCenter Hoover</li><li>Morningside of Riverchase</li><li>RealtySouth Alford Avenue</li><li>Rittenhouse Village</li><li>Holiday Retirement – Rocky Ridge</li><li>Spain Park High School</li><li>The Preserve</li><li>Wild Roast Cafe</li>
+  </ul>
+</main>
+<div id="foot"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="assets/seed.js?v=1"></script>
+<script src="assets/store.js?v=1"></script>
+<script src="assets/site.js?v=1"></script>
+<script>
+(function(){
+  var H=HS,e=H.esc;
+  if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  var cur=new URLSearchParams(location.search).get('i');
+  function issues(){ return H.read('issues').filter(function(i){return i.status==='published';}).sort(function(a,b){return a.month<b.month?1:-1;}); }
+  function render(){
+    var list=issues(); if(!list.length){ document.getElementById('viewer').innerHTML='<p class="empty">No issues yet.</p>'; return; }
+    var is=list.filter(function(i){return i.id===cur;})[0]||list[0];
+    document.getElementById('issues').innerHTML=list.map(function(i){ return '<a href="?i='+i.id+'" data-i="'+i.id+'" class="'+(i.id===is.id?'on':'')+'"><div class="cv">'+(i.cover?'<img src="'+H.src(i.cover)+'"'+H.imgAttr(i.cover)+' alt="">':'No cover')+'</div><b>'+e(i.title)+'</b></a>'; }).join('');
+    document.querySelectorAll('[data-i]').forEach(function(a){ a.onclick=function(x){ x.preventDefault(); cur=a.dataset.i; history.replaceState(null,'','?i='+cur); render(); document.getElementById('viewer').scrollIntoView({behavior:'smooth'}); }; });
+    var v=document.getElementById('viewer');
+    if(is.pdf){
+      v.innerHTML='<div class="reader"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap"><b style="font:700 20px/1.2 var(--serif)">'+e(is.title)+'</b><a class="btn sm" style="border-color:#fff;color:#fff" id="dl">Download PDF</a></div><canvas id="pg"></canvas><div class="bar"><button id="pv" aria-label="Previous page">‹</button><span id="pn">Loading…</span><button id="nx" aria-label="Next page">›</button></div></div>';
+      H.getBlob(is.pdf.slice(4)).then(function(b){
+        if(!b||!window.pdfjsLib){ document.getElementById('pn').textContent='This PDF isn’t available in this browser.'; return; }
+        var u=URL.createObjectURL(b); document.getElementById('dl').href=u; document.getElementById('dl').download=H.slugify(is.title)+'.pdf';
+        pdfjsLib.getDocument(u).promise.then(function(doc){
+          var n=1, busy=false, c=document.getElementById('pg');
+          function draw(){ if(busy) return; busy=true; doc.getPage(n).then(function(p){ var w=Math.min(v.clientWidth-40,900), vp=p.getViewport({scale:1}), s=(w/vp.width)*(window.devicePixelRatio||1), vp2=p.getViewport({scale:s}); c.width=vp2.width; c.height=vp2.height; c.style.width=w+'px'; return p.render({canvasContext:c.getContext('2d'),viewport:vp2}).promise; }).then(function(){ busy=false; document.getElementById('pn').textContent='Page '+n+' of '+doc.numPages; document.getElementById('pv').disabled=n<=1; document.getElementById('nx').disabled=n>=doc.numPages; }); }
+          document.getElementById('pv').onclick=function(){ if(n>1){n--;draw();} };
+          document.getElementById('nx').onclick=function(){ if(n<doc.numPages){n++;draw();} };
+          addEventListener('keydown',function(k){ if(k.key==='ArrowRight') document.getElementById('nx').click(); if(k.key==='ArrowLeft') document.getElementById('pv').click(); });
+          draw();
+        });
+      });
+    } else {
+      v.innerHTML='<div class="reader" style="display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:32px;align-items:center" id="legacy"><img src="'+H.src(is.cover)+'"'+H.imgAttr(is.cover)+' alt="'+e(is.title)+' cover" style="width:100%;border-radius:3px;box-shadow:0 20px 40px rgba(0,0,0,.4)"><div><span class="kicker" style="color:var(--sun)">In print now</span><h2 style="font:600 36px/1.1 var(--serif);margin:10px 0 12px">The '+e(is.title)+' issue</h2><p style="color:#d6cec6;font-size:16px;max-width:460px">This issue was published before the new reader. New issues uploaded from the newsroom dashboard open page by page right here.</p><div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">'+(is.external?'<a class="btn solid" target="_blank" rel="noopener" href="'+e(is.external)+'">Read the full issue</a>':'')+'<a class="btn" style="border-color:#fff;color:#fff" href="mailto:svillar@starnesmedia.com?subject=Mail%20me%20the%20Hoover%20Sun">Get it mailed to you</a></div></div></div>'+
+        '<style>@media(max-width:700px){#legacy{grid-template-columns:1fr!important}#legacy img{max-width:220px;margin:0 auto}}</style>';
+    }
+    H.hydrate();
+  }
+  render(); H.live(render);
+})();
+</script>
+
+</body>
+</html>
