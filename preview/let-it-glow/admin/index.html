@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Dashboard | Let It Glow (Concept)</title>
+<meta name="theme-color" content="#FBF6EC">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23FBF6EC'/%3E%3Cellipse cx='16' cy='14' rx='6' ry='8' fill='none' stroke='%2321883F' stroke-width='3'/%3E%3Crect x='12.5' y='22' width='7' height='6' fill='none' stroke='%2321883F' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Roboto+Slab:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--cream:#FBF6EC;--cream-2:#F4ECDB;--card:#fff;--rule:#E6DBC5;--rule-2:#CFC4AE;--ink:#1A1A1A;--body:#4A4658;--quiet:#6A6577;--red:#C22E20;--red-hi:#A92316;--red-text:#B0261A;--green:#1B7A36;--amber:#7A4E00;--blue:#1F5FA8;--slab:"Roboto Slab",Georgia,serif;--sans:"Quicksand",system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--cream);color:var(--body);font-family:var(--sans);font-weight:500;font-size:15.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--slab);font-weight:800;margin:0;color:var(--ink);letter-spacing:-.01em}
+h1{font-size:28px}h2{font-size:20px}h3{font-size:17px;font-weight:700}
+p{margin:0}
+:focus-visible{outline:3px solid #21883F;outline-offset:2px;border-radius:6px}
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+aside{background:#fff;border-right:1px solid var(--rule);padding:22px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.logo{padding:0 8px 18px;border-bottom:1px solid var(--rule);margin-bottom:14px}
+.logo img{height:32px;width:auto;display:block}
+.logo b{display:block;margin-top:8px;font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--quiet)}
+.tabs{display:flex;flex-direction:column;gap:4px}
+.tab{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:46px;padding:0 12px;border-radius:10px;border:0;background:none;cursor:pointer;text-align:left;font-weight:700;color:var(--body);font-size:15.5px;white-space:nowrap}
+.tab:hover{background:var(--cream)}
+.tab[aria-selected="true"]{background:var(--cream-2);color:var(--ink)}
+.tab .ct{font-size:12px;font-weight:700;background:var(--red);color:#fff;border-radius:999px;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.side-foot{margin-top:auto;font-size:13px;color:var(--quiet);padding:12px 8px 0;border-top:1px solid var(--rule)}
+.side-foot a{color:var(--body);font-weight:700}
+.link-btn{background:none;border:0;color:var(--blue);cursor:pointer;padding:8px 0;font-size:13px;text-decoration:underline;font-weight:600}
+main{padding:26px 30px 90px;min-width:0}
+.demo{background:#EEF0FF;border:1px solid #C3C8F5;color:#2F3470;font-size:13.5px;padding:9px 14px;border-radius:10px;margin-bottom:22px}
+.demo a{color:#2F3470;font-weight:700}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.head p{margin-top:4px;max-width:640px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--rule-2);background:#fff;cursor:pointer;font-weight:700;font-size:14.5px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn:hover{background:var(--cream)}
+.btn-red{background:var(--red);border-color:var(--red);color:#fff}.btn-red:hover{background:var(--red-hi)}
+.tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
+.tile{min-width:0;background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:14px 16px;text-align:left;cursor:pointer;color:var(--body);position:relative}
+.tile[aria-pressed="true"]{border-color:var(--red);box-shadow:0 0 0 1px var(--red) inset}
+.tile small{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet);display:block}
+.tile b{display:block;font-family:var(--slab);font-size:28px;font-weight:800;line-height:1.15;margin-top:2px;color:var(--ink)}
+.tile span{font-size:13px;display:block}
+.tiles.four{grid-template-columns:repeat(4,1fr)}
+.tiles.four .tile{cursor:default}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:14px;overflow:hidden}
+.card+.card{margin-top:16px}
+.rowi{display:grid;gap:14px;padding:14px 18px;border-bottom:1px solid var(--rule);align-items:center;grid-template-columns:1.4fr 1.1fr .8fr auto}
+.rowi:last-child{border-bottom:0}
+.rowi b{font-weight:700;color:var(--ink)}
+.sub{font-size:13.5px;color:var(--body);display:block}
+.pill{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.p-inquiry{background:#FBE3DF;color:#8E1B10}
+.p-quoted{background:#FFF0CF;color:#6B4400}
+.p-scheduled{background:#E1ECFA;color:#174A85}
+.p-installed{background:#DFF2E3;color:#14602A}
+.p-takedown{background:#EDE4F7;color:#553088}
+.p-stored{background:#ECE8DF;color:#4A4658}
+.p-year{background:#1A1A1A;color:#fff;margin-left:6px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.empty{padding:28px;text-align:center;color:var(--quiet)}
+.zhead{padding:11px 18px;background:var(--cream-2);font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--rule)}
+.zhead span{color:var(--body);letter-spacing:0;text-transform:none;font-weight:600}
+label.f{display:block;font-size:13px;font-weight:700;color:var(--body)}
+.f input,.f select,.f textarea,.search{display:block;width:100%;margin-top:5px;height:44px;border-radius:10px;border:1px solid var(--rule-2);background:#fff;padding:0 12px;font-size:16px;color:var(--ink);font-weight:500}
+.f select,select.crew{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#4A4658 50%),linear-gradient(135deg,#4A4658 50%,transparent 50%);background-position:calc(100% - 18px) 19px,calc(100% - 12px) 19px;background-size:6px 6px;background-repeat:no-repeat;padding-right:34px}
+select.crew{height:44px;border-radius:10px;border:1px solid var(--rule-2);background-color:#fff;padding-left:12px;font-size:15px;font-weight:700;color:var(--ink)}
+.f textarea{height:92px;padding:10px 12px;resize:vertical;line-height:1.5}
+.search{margin:0 0 14px;max-width:380px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sec{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red-text);margin:20px 0 10px}
+.note{font-size:13px;color:var(--quiet);margin-top:8px}
+/* inventory */
+.inv{grid-template-columns:1.5fr .7fr .7fr .7fr 1fr}
+.inv.hd{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--quiet);background:var(--cream-2)}
+.bar{height:8px;border-radius:99px;background:var(--cream-2);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:#21883F}
+.bar i.low{background:var(--red)}
+.low-t{color:var(--red-text);font-weight:700}
+.m-only{display:none}
+/* job sheet */
+.scrim{position:fixed;inset:0;background:rgba(20,16,8,.45);z-index:900}
+.sheet{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--cream);z-index:901;overflow:auto;padding:22px 22px 40px;box-shadow:-20px 0 60px rgba(0,0,0,.25)}
+.sheet .x{float:right;width:44px;height:44px;border-radius:50%;border:1px solid var(--rule-2);background:#fff;cursor:pointer;font-size:18px;color:var(--ink)}
+.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:16px 0 4px}
+.steps div{font-size:11px;font-weight:700;text-align:center;color:var(--quiet);padding-top:10px;border-top:4px solid var(--rule)}
+.steps div.on{border-color:#21883F;color:var(--ink)}
+.mapbox{position:relative;height:320px;border-radius:14px;overflow:hidden;border:1px solid var(--rule-2);background:#0A1020;margin-top:10px}
+#jMap{position:absolute;inset:0}
+.mtop{position:absolute;z-index:500;left:10px;right:56px;top:10px}
+.mtop input{width:100%;height:44px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(7,11,22,.92);padding:0 12px;font-size:16px;color:#fff}
+.mtop input::placeholder{color:#A6AEBF}
+.sugg{margin-top:6px;background:rgba(7,11,22,.97);border:1px solid rgba(255,255,255,.22);border-radius:10px;overflow:hidden}
+.sugg button{display:block;width:100%;text-align:left;padding:12px;background:none;border:0;border-bottom:1px solid rgba(255,255,255,.12);cursor:pointer;color:#fff;font-size:14.5px}
+.mbot{position:absolute;z-index:500;left:10px;right:10px;bottom:20px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.read{background:rgba(7,11,22,.92);border:1px solid rgba(255,186,67,.6);border-radius:10px;padding:5px 12px;margin-right:auto;color:#fff}
+.read b{font-family:var(--slab);font-size:20px;color:#FFD98A;display:block;line-height:1.15}
+.read span{font-size:12px;color:#C6CAD6}
+.mb{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(7,11,22,.92);cursor:pointer;font-weight:700;font-size:13.5px;color:#fff}
+.load{display:grid;grid-template-columns:1fr 84px;gap:8px 10px;align-items:center}
+.load span{font-size:14.5px;color:var(--ink);font-weight:600}
+.load small{display:block;font-size:12.5px;color:var(--quiet);font-weight:500}
+.load input{height:44px;border-radius:10px;border:1px solid var(--rule-2);background:#fff;padding:0 10px;font-size:16px;width:100%;color:var(--ink)}
+.hist{font-size:14px;padding:8px 0;border-bottom:1px solid var(--rule)}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1A1A1A;color:#fff;padding:13px 20px;border-radius:12px;font-weight:700;font-size:14.5px;z-index:999;max-width:92vw;box-shadow:0 20px 50px rgba(0,0,0,.4);visibility:hidden;opacity:0;transition:opacity .2s}
+.toast.on{visibility:visible;opacity:1}
+.leaflet-container{background:#0A1020;font-family:var(--sans)}
+.mhead{display:none}
+@media (max-width:900px){
+  .app{display:block}
+  aside{position:sticky;top:0;height:auto;z-index:800;flex-direction:row;padding:8px 10px;border-right:0;border-bottom:1px solid var(--rule);overflow-x:auto;scrollbar-width:none}
+  aside::-webkit-scrollbar{display:none}
+  .logo,.side-foot{display:none}
+  .tabs{flex-direction:row;gap:6px}
+  .tab{min-height:44px;padding:0 14px;font-size:14.5px;border:1px solid var(--rule);border-radius:999px;flex:none}
+  .tab[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  main{padding:16px 14px 60px}
+  .mhead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .mhead img{height:26px;width:auto}
+  .mhead a{margin-left:auto;font-size:13.5px;font-weight:700;color:var(--body);padding:10px 0}
+  h1{font-size:24px}
+  .tiles{grid-template-columns:repeat(3,1fr);gap:8px}
+  .tiles.four{grid-template-columns:1fr 1fr}
+  .tile{padding:10px 12px}.tile b{font-size:22px}.tile span{display:none}
+  .rowi{grid-template-columns:1fr auto;gap:6px 12px}
+  .rowi .c3{grid-column:1/-1;grid-row:2}
+  .acts{grid-column:1/-1;justify-content:flex-start}
+  .inv{grid-template-columns:1fr auto}
+  .inv.hd{display:none}
+  .d-only{display:none}.m-only{display:block;margin-top:6px}
+  .sheet{padding:16px 14px 40px}
+  .toast{bottom:18px}
+}
+@media (max-width:380px){.tiles{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="logo"><img src="../img/logo.png" alt="Let It Glow" width="168" height="32"><b>Dashboard</b></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="pipeline" aria-selected="true">Pipeline <span class="ct" id="ctNew">0</span></button>
+    <button class="tab" role="tab" data-tab="schedule" aria-selected="false">Schedule</button>
+    <button class="tab" role="tab" data-tab="service" aria-selected="false">Stay-Lit calls <span class="ct" id="ctSvc">0</span></button>
+    <button class="tab" role="tab" data-tab="inventory" aria-selected="false">Inventory</button>
+    <button class="tab" role="tab" data-tab="clients" aria-selected="false">Clients</button>
+    <button class="tab" role="tab" data-tab="site" aria-selected="false">Website</button>
+  </div>
+  <div class="side-foot"><a href="../">← View the website</a><br><button class="link-btn" type="button" id="resetBtn">Reset sample data</button></div>
+</aside>
+
+<main>
+  <div class="mhead"><img src="../img/logo.png" alt="Let It Glow" width="137" height="26"><a href="../">View site</a></div>
+  <div class="demo">Dashboard concept by Williams Digital. Every customer, crew, quantity and date here is a sample, and nothing is emailed or texted. Requests you send from the <a href="../#quote">concept site</a> land in the Pipeline.</div>
+
+  <!-- PIPELINE -->
+  <section id="v-pipeline">
+    <div class="head"><div><h1>Pipeline</h1><p>Every job from first inquiry to stored lights. Tap a stage to filter.</p></div>
+      <div class="acts"><button class="btn" type="button" data-kindf="all" aria-pressed="true">All</button><button class="btn" type="button" data-kindf="holiday" aria-pressed="false">Holiday</button><button class="btn" type="button" data-kindf="year" aria-pressed="false">Year-round</button></div></div>
+    <div class="tiles" id="stageTiles"></div>
+    <div class="card" id="jobList"></div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section id="v-schedule" hidden>
+    <div class="head"><div><h1>Schedule</h1><p>Installs and takedowns by day, with the crew on each and the notes they need at the property.</p></div></div>
+    <div class="card" id="schedList"></div>
+  </section>
+
+  <!-- SERVICE -->
+  <section id="v-service" hidden>
+    <div class="head"><div><h1>Stay-Lit calls</h1><p>Each service issue is attached to the install it belongs to, so the crew knows the house, the design and what is on it.</p></div></div>
+    <div class="tiles four">
+      <div class="tile"><small>Open</small><b id="svOpen">0</b><span>Waiting on a visit</span></div>
+      <div class="tile"><small>Fixed this season</small><b id="svDone">0</b><span>Closed out</span></div>
+      <div class="tile"><small>Unattached</small><b id="svLoose">0</b><span>From the website, no install matched</span></div>
+      <div class="tile"><small>Installs up</small><b id="svUp">0</b><span>Covered by Stay-Lit right now</span></div>
+    </div>
+    <div class="card" id="svcList"></div>
+  </section>
+
+  <!-- INVENTORY -->
+  <section id="v-inventory" hidden>
+    <div class="head"><div><h1>Inventory</h1><p>What is on hand, what is committed to booked jobs, and where it lives. Committed counts come from each job's load list.</p></div></div>
+    <div class="card" id="invList"></div>
+    <p class="note">Open any job to edit its load list. Stored jobs keep their bin number so next year's install pulls the same custom-cut strands.</p>
+  </section>
+
+  <!-- CLIENTS -->
+  <section id="v-clients" hidden>
+    <div class="head"><div><h1>Clients</h1><p>Contacts, approved designs and past jobs in one place, for follow-up and repeat business.</p></div></div>
+    <input class="search" id="cSearch" type="search" placeholder="Search name, phone or neighborhood" aria-label="Search clients">
+    <div class="card" id="cliList"></div>
+  </section>
+
+  <!-- SITE -->
+  <section id="v-site" hidden>
+    <div class="head"><div><h1>Website</h1><p>Change the booking message customers see without calling anyone.</p></div></div>
+    <div class="card" style="padding:20px;max-width:640px">
+      <h2>Season message</h2>
+      <p class="note" style="margin:6px 0 12px">Shows above the last "Get Your Free Quote" button on the site. Update it when the year rolls over or the calendar fills.</p>
+      <label class="f">Message<textarea id="sSeason"></textarea></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-red" type="button" id="sPublish">Publish to the website</button><a class="btn" href="../#faq" target="_blank" rel="noopener">View on site</a></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="jName" hidden>
+  <button class="x" type="button" id="jClose" aria-label="Close">✕</button>
+  <h2 id="jName"></h2>
+  <p class="sub" id="jSub"></p>
+  <div class="steps" id="jSteps"></div>
+  <div class="sec">Property</div>
+  <div class="mapbox">
+    <div id="jMap"></div>
+    <div class="mtop"><input id="jAddr" type="text" autocomplete="off" placeholder="Search the address" aria-label="Search the address"><div class="sugg" id="jSugg" hidden></div></div>
+    <div class="mbot"><div class="read"><b id="jFt">0 ft</b><span id="jFtSub">Click roof corners to measure</span></div><button class="mb" type="button" id="jUndo">Undo</button><button class="mb" type="button" id="jNew">New line</button><button class="mb" type="button" id="jClear">Clear</button></div>
+  </div>
+  <label class="f" style="margin-top:12px">Property notes for the crew<textarea id="jNotes"></textarea></label>
+  <div class="sec">Quote &amp; schedule</div>
+  <div class="g2">
+    <label class="f">Quote ($)<input id="jQuote" type="number" inputmode="numeric" min="0"></label>
+    <label class="f">Package / project<input id="jPlan" type="text"></label>
+    <label class="f">Install date<input id="jDate" type="date"></label>
+    <label class="f">Crew<select id="jCrew"></select></label>
+    <label class="f">Takedown date<input id="jDown" type="date"></label>
+    <label class="f">Storage bin<input id="jBin" type="text" placeholder="e.g. B-14"></label>
+  </div>
+  <label class="f" style="margin-top:10px">Approved design<input id="jDesign" type="text" placeholder="Warm white roofline, two wreaths…"></label>
+  <div class="sec">Load list</div>
+  <div class="load" id="jLoad"></div>
+  <div class="sec">Stay-Lit history</div>
+  <div id="jHist"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:22px">
+    <button class="btn btn-red" type="button" id="jAdvance"></button>
+    <button class="btn" type="button" id="jSave">Save</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)},$$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var LS={get:function(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function money(n){return '$'+Math.round(n).toLocaleString('en-US')}
+function day(iso){return iso?new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}):''}
+function toast(t){var el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){el.classList.remove('on')},4200)}
+
+var STAGES=[['inquiry','Inquiry','Needs a quote'],['quoted','Quoted','Waiting on customer'],['scheduled','Scheduled','Install booked'],['installed','Installed','Up, Stay-Lit active'],['takedown','Takedown','Coming down'],['stored','Stored','Labeled and binned']];
+var NEXT={inquiry:'Mark quoted',quoted:'Book the install',scheduled:'Mark installed',installed:'Start takedown',takedown:'Mark stored',stored:''};
+var CREWS=['Unassigned','Crew 1','Crew 2'];
+var CENTERS={Homewood:[33.4718,-86.8008],'Mountain Brook':[33.5007,-86.7522],'Vestavia Hills':[33.4487,-86.7878],Hoover:[33.4054,-86.8114],Greystone:[33.418,-86.67],Birmingham:[33.5186,-86.8104]};
+
+/* ---------- sample data: fictional customers, sample quantities ---------- */
+var SEED={
+ items:[
+  {k:'c9ww',n:'C9 warm white strand',u:'ft',on:6000,loc:'Shelf A'},
+  {k:'c9mc',n:'C9 multicolor strand',u:'ft',on:1500,loc:'Shelf A'},
+  {k:'c9rg',n:'C9 red & green strand',u:'ft',on:1200,loc:'Shelf A'},
+  {k:'mini',n:'Mini-light sets',u:'sets',on:220,loc:'Shelf B'},
+  {k:'net',n:'Net lights for shrubs',u:'nets',on:14,loc:'Shelf B'},
+  {k:'wr',n:'Lit wreaths',u:'',on:40,loc:'Rack C'},
+  {k:'gar',n:'Garland',u:'ft',on:600,loc:'Rack C'},
+  {k:'bow',n:'Red velvet bows',u:'',on:80,loc:'Rack C'},
+  {k:'clip',n:'Roof clips',u:'bags',on:90,loc:'Bin wall'},
+  {k:'tmr',n:'Timers',u:'',on:70,loc:'Bin wall'},
+  {k:'cord',n:'Extension cords',u:'',on:110,loc:'Bin wall'}
+ ],
+ jobs:[
+  {id:'J1',name:'Sample · Dana R.',phone:'(205) 555-0142',area:'Homewood',kind:'holiday',plan:'Signature Shine',stage:'inquiry',feet:0,notes:'Two front gables and a dormer. Wants a wreath over the door.',source:'Website',items:{}},
+  {id:'J2',name:'Sample · Marcus T.',phone:'(205) 555-0177',area:'Vestavia Hills',kind:'year',plan:'Permanent Lighting',stage:'inquiry',feet:0,notes:'Asked about color-changing roofline LEDs before spring.',source:'Website',items:{}},
+  {id:'J3',name:'Sample · Priya N.',phone:'(205) 555-0119',area:'Mountain Brook',kind:'holiday',plan:'Grand Display',stage:'quoted',quote:3400,feet:310,notes:'Steep roof on the left wing. Three large oaks in the front yard.',design:'Warm white roofline, three tree wraps, garland on the porch rail',source:'Phone',items:{}},
+  {id:'J4',name:'Sample · Corner Café',phone:'(205) 555-0101',area:'Homewood',kind:'year',plan:'Café Lighting',stage:'quoted',quote:2200,feet:0,notes:'Patio strings, owner wants install before a private event.',source:'Website',items:{}},
+  {id:'J5',name:'Sample · Lena K.',phone:'(205) 555-0163',area:'Homewood',kind:'holiday',plan:'Signature Shine',stage:'scheduled',quote:1850,date:'2026-10-06',crew:'Crew 1',down:'2027-01-05',feet:205,notes:'Gate code on file. Outlet is on the right side of the porch. Dog in the back yard.',design:'Warm white roofline, two shrubs netted',items:{c9ww:205,net:2,clip:3,tmr:1,cord:3}},
+  {id:'J6',name:'Sample · Whitfield Dental',phone:'(205) 555-0188',area:'Hoover',kind:'holiday',plan:'Commercial',stage:'scheduled',quote:3900,date:'2026-10-06',crew:'Crew 2',down:'2027-01-07',feet:380,notes:'Install after 5:30 pm, once the lot empties. Roof access by ladder at the rear.',design:'Multicolor roofline and window frames, wreath over the sign',items:{c9mc:380,wr:1,bow:1,clip:5,tmr:2,cord:6}},
+  {id:'J7',name:'Sample · The Hallorans',phone:'(205) 555-0126',area:'Greystone',kind:'holiday',plan:'Grand Display',stage:'scheduled',quote:4600,date:'2026-10-08',crew:'Crew 1',down:'2027-01-08',feet:420,notes:'Long driveway, bring the tall ladder. Timers go in the garage.',design:'Warm white roofline, driveway tree wraps, lit wreaths in six windows',items:{c9ww:420,mini:48,wr:6,bow:6,net:6,clip:6,tmr:3,cord:8}},
+  {id:'J8',name:'Sample · Grace B.',phone:'(205) 555-0134',area:'Vestavia Hills',kind:'holiday',plan:'Classic Glow',stage:'scheduled',quote:950,date:'2026-10-13',crew:'Unassigned',down:'2027-01-06',feet:140,notes:'Hillside lot. Park on the street.',design:'Warm white front roofline',items:{c9ww:140,clip:2,tmr:1,cord:2}},
+  {id:'J9',name:'Sample · Omar S.',phone:'(205) 555-0155',area:'Homewood',kind:'holiday',plan:'Signature Shine',stage:'installed',quote:1600,date:'2026-10-01',crew:'Crew 1',down:'2027-01-05',feet:190,notes:'Returning customer. Strands are cut to fit, bin B-07.',design:'Red and green roofline, one wrapped tree',bin:'B-07',items:{c9rg:190,mini:12,net:4,clip:3,tmr:1,cord:3}},
+  {id:'J10',name:'Sample · Tri-County Realty',phone:'(205) 555-0110',area:'Birmingham',kind:'holiday',plan:'Commercial',stage:'installed',quote:2800,date:'2026-10-02',crew:'Crew 2',down:'2027-01-07',feet:260,notes:'Storefront on a busy street. Cones are in the truck.',design:'Warm white roofline, garland and bows around the sign',items:{c9ww:260,gar:40,bow:4,clip:4,tmr:1,cord:4}},
+  {id:'J11',name:'Sample · The Ansleys',phone:'(205) 555-0172',area:'Mountain Brook',kind:'holiday',plan:'Signature Shine',stage:'stored',quote:2100,date:'2025-11-18',crew:'Crew 1',feet:230,notes:'Last season. Ready for a returning-customer call.',design:'Warm white roofline, wreaths on the gate posts',bin:'A-12',items:{}}
+ ],
+ tickets:[
+  {id:'T1',job:'J9',name:'Sample · Omar S.',issue:'A few bulbs are out',where:'Left gable',at:'2026-10-03',status:'open',source:'Text'},
+  {id:'T2',job:'J10',name:'Sample · Tri-County Realty',issue:'The timer isn\'t working',where:'Front outlet',at:'2026-10-02',status:'done',source:'Phone'}
+ ]
+};
+var S=LS.get('lig_admin',null)||JSON.parse(JSON.stringify(SEED));
+function save(){LS.set('lig_admin',S)}
+function job(id){return S.jobs.filter(function(j){return j.id===id})[0]}
+function pullSite(){ /* merge what was submitted on the concept site */
+  var ids={};S.jobs.forEach(function(j){ids[j.id]=1});
+  LS.get('lig_requests',[]).slice().reverse().forEach(function(r){
+    if(ids[r.id])return;
+    var area='Birmingham';Object.keys(CENTERS).forEach(function(c){if(r.address&&r.address.indexOf(c)>-1)area=c});
+    S.jobs.unshift({id:r.id,name:r.name,phone:r.phone,email:r.email,area:area,address:r.address,ll:r.ll,lines:r.lines,feet:r.feet||0,kind:r.kind==='year'?'year':'holiday',
+      plan:r.kind==='year'?r.type:(r.level||'Not sure yet'),stage:'inquiry',notes:[(r.areas||[]).join(', '),r.notes].filter(Boolean).join('. '),source:'Website',items:{}});
+  });
+  var tids={};S.tickets.forEach(function(t){tids[t.id]=1});
+  LS.get('lig_service',[]).slice().reverse().forEach(function(t){
+    if(tids[t.id])return;
+    var m=S.jobs.filter(function(j){return j.stage==='installed'&&j.name.toLowerCase().indexOf(t.name.toLowerCase())>-1})[0];
+    S.tickets.unshift({id:t.id,job:m?m.id:'',name:t.name,phone:t.phone,issue:t.issue,where:t.where,at:t.at.slice(0,10),status:'open',source:'Website'});
+  });
+  save();
+}
+pullSite();
+
+/* ---------- tabs ---------- */
+var TABS=['pipeline','schedule','service','inventory','clients','site'];
+function show(tab){
+  $$('.tab').forEach(function(b){b.setAttribute('aria-selected',b.getAttribute('data-tab')===tab)});
+  TABS.forEach(function(t){$('#v-'+t).hidden=t!==tab});
+  window.scrollTo(0,0);
+}
+$$('.tab').forEach(function(b){b.addEventListener('click',function(){show(b.getAttribute('data-tab'))})});
+
+/* ---------- pipeline ---------- */
+var fStage='',fKind='all';
+function pill(j){var s=STAGES.filter(function(x){return x[0]===j.stage})[0];return '<span class="pill p-'+j.stage+'">'+s[1]+'</span>'+(j.kind==='year'?'<span class="pill p-year">Year-round</span>':'')}
+function jobRow(j,mid){
+  return '<div class="rowi"><div><b>'+esc(j.name)+'</b><span class="sub">'+esc(j.area)+' · '+esc(j.plan)+'</span><span class="sub">'+esc(j.phone||'')+'</span></div>'+
+    '<div class="c3">'+mid+'</div><div>'+pill(j)+(j.quote?'<span class="sub">'+money(j.quote)+'</span>':'')+'</div>'+
+    '<div class="acts"><button class="btn'+(j.stage==='inquiry'?' btn-red':'')+'" type="button" data-open="'+esc(j.id)+'">'+(j.stage==='inquiry'?'Measure + quote':'Open')+'</button></div></div>';
+}
+function drawPipeline(){
+  var pool=S.jobs.filter(function(j){return fKind==='all'||j.kind===fKind});
+  $('#stageTiles').innerHTML=STAGES.map(function(s){var n=pool.filter(function(j){return j.stage===s[0]}).length;
+    return '<button class="tile" type="button" data-stage="'+s[0]+'" aria-pressed="'+(fStage===s[0])+'"><small>'+s[1]+'</small><b>'+n+'</b><span>'+s[2]+'</span></button>'}).join('');
+  var list=pool.filter(function(j){return !fStage||j.stage===fStage});
+  $('#jobList').innerHTML=list.length?list.map(function(j){
+    var mid=j.stage==='inquiry'?'<span class="sub">'+(j.feet?j.feet+' ft traced by the customer':'Not measured yet')+' · via '+esc(j.source||'Phone')+'</span>':
+      j.stage==='quoted'?'<span class="sub">'+(j.feet?j.feet+' ft measured':'No roofline measured')+'</span>':
+      j.stage==='stored'?'<span class="sub">Bin '+esc(j.bin||'not set')+' · last install '+day(j.date)+'</span>':
+      '<span class="sub">'+(j.stage==='scheduled'?'Install ':'Installed ')+day(j.date)+' · '+esc(j.crew||'Unassigned')+'</span>';
+    if(j.notes)mid+='<span class="sub">'+esc(j.notes)+'</span>';
+    return jobRow(j,mid)}).join(''):'<div class="empty">Nothing in this stage.</div>';
+  var n=S.jobs.filter(function(j){return j.stage==='inquiry'}).length;$('#ctNew').textContent=n;$('#ctNew').hidden=!n;
+}
+$('#stageTiles').addEventListener('click',function(e){var b=e.target.closest('[data-stage]');if(!b)return;var s=b.getAttribute('data-stage');fStage=fStage===s?'':s;drawPipeline()});
+$$('[data-kindf]').forEach(function(b){b.addEventListener('click',function(){fKind=b.getAttribute('data-kindf');$$('[data-kindf]').forEach(function(x){x.setAttribute('aria-pressed',x===b);x.classList.toggle('btn-red',x===b)});drawPipeline()})});
+$('[data-kindf="all"]').classList.add('btn-red');
+
+/* ---------- schedule ---------- */
+function crewSel(j){return '<select class="crew" data-crew="'+esc(j.id)+'" aria-label="Crew for '+esc(j.name)+'">'+CREWS.map(function(c){return '<option'+(c===(j.crew||'Unassigned')?' selected':'')+'>'+c+'</option>'}).join('')+'</select>'}
+function drawSchedule(){
+  var h='',ins=S.jobs.filter(function(j){return j.stage==='scheduled'&&j.date}).sort(function(a,b){return a.date<b.date?-1:1});
+  var downs=S.jobs.filter(function(j){return (j.stage==='installed'||j.stage==='takedown')&&j.down}).sort(function(a,b){return a.down<b.down?-1:1});
+  function group(list,key,label){
+    var last='';list.forEach(function(j){
+      if(j[key]!==last){last=j[key];var n=list.filter(function(x){return x[key]===last}).length;h+='<div class="zhead">'+label+' · '+day(last)+'<span>'+n+(n===1?' job':' jobs')+'</span></div>'}
+      h+='<div class="rowi"><div><b>'+esc(j.name)+'</b><span class="sub">'+esc(j.area)+' · '+esc(j.plan)+(j.feet?' · '+j.feet+' ft':'')+'</span></div><div class="c3"><span class="sub">'+esc(j.notes||'No property notes yet.')+'</span></div><div>'+crewSel(j)+'</div><div class="acts"><button class="btn" type="button" data-open="'+esc(j.id)+'">Load list</button></div></div>';
+    });
+  }
+  group(ins,'date','Install');group(downs,'down','Takedown');
+  $('#schedList').innerHTML=h||'<div class="empty">Nothing booked yet.</div>';
+}
+$('#schedList').addEventListener('change',function(e){var s=e.target.closest('[data-crew]');if(!s)return;var j=job(s.getAttribute('data-crew'));j.crew=s.value;save();drawPipeline();toast(j.name+' assigned to '+s.value+'.')});
+
+/* ---------- stay-lit ---------- */
+function drawService(){
+  var open=S.tickets.filter(function(t){return t.status==='open'});
+  $('#svOpen').textContent=open.length;$('#svDone').textContent=S.tickets.length-open.length;
+  $('#svLoose').textContent=open.filter(function(t){return !t.job}).length;
+  $('#svUp').textContent=S.jobs.filter(function(j){return j.stage==='installed'}).length;
+  $('#ctSvc').textContent=open.length;$('#ctSvc').hidden=!open.length;
+  var up=S.jobs.filter(function(j){return j.stage==='installed'});
+  $('#svcList').innerHTML=S.tickets.length?S.tickets.slice().sort(function(a,b){return (a.status==='done')-(b.status==='done')}).map(function(t){
+    var j=t.job&&job(t.job);
+    var att=j?'<span class="sub">'+esc(j.area)+' · '+esc(j.design||j.plan)+' · installed '+day(j.date)+' by '+esc(j.crew||'crew')+'</span>':
+      '<select class="crew" data-attach="'+esc(t.id)+'" aria-label="Attach to an install"><option value="">Attach to an install…</option>'+up.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select>';
+    return '<div class="rowi"><div><b>'+esc(t.name)+'</b><span class="sub">'+esc(t.issue)+(t.where?' · '+esc(t.where):'')+'</span><span class="sub">Reported '+day(t.at)+' by '+esc((t.source||'phone').toLowerCase())+'</span></div><div class="c3">'+att+'</div>'+
+      '<div><span class="pill '+(t.status==='open'?'p-inquiry':'p-installed')+'">'+(t.status==='open'?'Open':'Fixed')+'</span></div>'+
+      '<div class="acts">'+(j?'<button class="btn" type="button" data-open="'+esc(j.id)+'">Open install</button>':'')+(t.status==='open'?'<button class="btn btn-red" type="button" data-fix="'+esc(t.id)+'">Mark fixed</button>':'')+'</div></div>'}).join(''):'<div class="empty">No service calls.</div>';
+}
+$('#svcList').addEventListener('click',function(e){var b=e.target.closest('[data-fix]');if(!b)return;var t=S.tickets.filter(function(x){return x.id===b.getAttribute('data-fix')})[0];t.status='done';save();drawService();toast('Marked fixed. The live build texts the customer.')});
+$('#svcList').addEventListener('change',function(e){var s=e.target.closest('[data-attach]');if(!s||!s.value)return;var t=S.tickets.filter(function(x){return x.id===s.getAttribute('data-attach')})[0];t.job=s.value;save();drawService();toast('Attached to '+job(s.value).name+'.')});
+
+/* ---------- inventory ---------- */
+function committed(k){var n=0;S.jobs.forEach(function(j){if(j.stage==='scheduled'||j.stage==='installed'||j.stage==='takedown')n+=(j.items&&j.items[k])||0});return n}
+function drawInventory(){
+  $('#invList').innerHTML='<div class="rowi inv hd"><div>Item</div><div>On hand</div><div>Committed</div><div>Available</div><div>Location</div></div>'+S.items.map(function(i){
+    var c=committed(i.k),a=i.on-c,low=a<i.on*.15,u=i.u?' '+i.u:'';
+    return '<div class="rowi inv"><div><b>'+esc(i.n)+'</b><div class="bar"><i class="'+(low?'low':'')+'" style="width:'+Math.max(0,Math.min(100,Math.round(a/i.on*100)))+'%"></i></div><span class="sub m-only">'+i.on.toLocaleString('en-US')+u+' on hand · '+c.toLocaleString('en-US')+' committed · '+esc(i.loc)+'</span></div>'+
+      '<div class="d-only">'+i.on.toLocaleString('en-US')+u+'</div><div class="d-only">'+c.toLocaleString('en-US')+u+'</div>'+
+      '<div class="'+(low?'low-t':'')+'"><b'+(low?' style="color:inherit"':'')+'>'+a.toLocaleString('en-US')+u+'</b>'+(low?' · low':'')+'</div><div class="d-only">'+esc(i.loc)+'</div></div>'}).join('');
+}
+
+/* ---------- clients ---------- */
+function drawClients(){
+  var q=$('#cSearch').value.trim().toLowerCase(),by={};
+  S.jobs.forEach(function(j){(by[j.name]=by[j.name]||[]).push(j)});
+  var names=Object.keys(by).filter(function(n){var j=by[n][0];return !q||(n+' '+(j.phone||'')+' '+j.area).toLowerCase().indexOf(q)>-1}).sort();
+  $('#cliList').innerHTML=names.length?names.map(function(n){var js=by[n],j=js[0],d=js.filter(function(x){return x.design})[0];
+    return '<div class="rowi"><div><b>'+esc(n)+'</b><span class="sub">'+esc(j.phone||'')+(j.email?' · '+esc(j.email):'')+'</span><span class="sub">'+esc(j.area)+'</span></div>'+
+      '<div class="c3"><span class="sub">'+(d?'Approved design: '+esc(d.design):'No design on file yet')+'</span>'+(j.bin?'<span class="sub">Lights stored in bin '+esc(j.bin)+'</span>':'')+'</div>'+
+      '<div>'+pill(j)+'</div><div class="acts"><button class="btn" type="button" data-open="'+esc(j.id)+'">Open</button></div></div>'}).join(''):'<div class="empty">No clients match.</div>';
+}
+$('#cSearch').addEventListener('input',drawClients);
+
+/* ---------- job sheet ---------- */
+var cur=null,map,layer,lines=[[]],pin=null;
+function initMap(){
+  if(map)return;
+  map=L.map('jMap',{zoomControl:false}).setView(CENTERS.Homewood,13);
+  L.control.zoom({position:'topright'}).addTo(map);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:21,maxNativeZoom:19,attribution:'Imagery © Esri, Maxar, Earthstar Geographics'}).addTo(map);
+  map.attributionControl.setPrefix(false);
+  layer=L.layerGroup().addTo(map);
+  map.on('click',function(e){lines[lines.length-1].push(e.latlng);redraw(true)});
+}
+function measured(){var m=0;lines.forEach(function(ln){for(var i=1;i<ln.length;i++)m+=map.distance(ln[i-1],ln[i])});return Math.round(m*3.28084)}
+function redraw(sync){
+  layer.clearLayers();
+  lines.forEach(function(ln){
+    if(ln.length>1)L.polyline(ln,{color:'#FFBA43',weight:4}).addTo(layer);
+    ln.forEach(function(p){L.circleMarker(p,{radius:5,color:'#070B16',weight:2,fillColor:'#FFD98A',fillOpacity:1,interactive:false}).addTo(layer)});
+  });
+  if(sync&&cur)cur.feet=measured();
+  $('#jFt').textContent=((cur&&cur.feet)||0)+' ft';
+}
+$('#jUndo').addEventListener('click',function(){var ln=lines[lines.length-1];if(ln.length)ln.pop();else if(lines.length>1)lines.pop();redraw(true)});
+$('#jNew').addEventListener('click',function(){if(lines[lines.length-1].length)lines.push([])});
+$('#jClear').addEventListener('click',function(){lines=[[]];redraw(true)});
+function setPin(ll){if(pin)map.removeLayer(pin);pin=L.circleMarker(ll,{radius:9,color:'#fff',weight:2,fillColor:'#C22E20',fillOpacity:.9,interactive:false}).addTo(map)}
+function openJob(id){
+  cur=job(id);if(!cur)return;
+  $('#scrim').hidden=false;$('#sheet').hidden=false;$('#sheet').scrollTop=0;
+  $('#jName').textContent=cur.name;
+  $('#jSub').textContent=[cur.area,cur.phone,cur.email,cur.kind==='year'?'Year-round project':'Holiday lighting'].filter(Boolean).join(' · ');
+  var si=STAGES.map(function(s){return s[0]}).indexOf(cur.stage);
+  $('#jSteps').innerHTML=STAGES.map(function(s,i){return '<div class="'+(i<=si?'on':'')+'">'+s[1]+'</div>'}).join('');
+  $('#jNotes').value=cur.notes||'';$('#jQuote').value=cur.quote||'';$('#jPlan').value=cur.plan||'';$('#jDate').value=cur.date||'';$('#jDown').value=cur.down||'';$('#jBin').value=cur.bin||'';$('#jDesign').value=cur.design||'';
+  $('#jCrew').innerHTML=CREWS.map(function(c){return '<option'+(c===(cur.crew||'Unassigned')?' selected':'')+'>'+c+'</option>'}).join('');
+  $('#jAddr').value=cur.address&&cur.address.charAt(0)!=='('?cur.address:'';
+  $('#jFtSub').textContent=cur.lines&&cur.lines.length?'Traced by the customer':'Click roof corners to measure';
+  $('#jLoad').innerHTML=S.items.map(function(i){return '<span>'+esc(i.n)+(i.u?' ('+i.u+')':'')+'<small>'+esc(i.loc)+'</small></span><input type="number" inputmode="numeric" min="0" data-item="'+i.k+'" value="'+((cur.items&&cur.items[i.k])||0)+'" aria-label="'+esc(i.n)+' quantity">'}).join('');
+  var ts=S.tickets.filter(function(t){return t.job===cur.id});
+  $('#jHist').innerHTML=ts.length?ts.map(function(t){return '<div class="hist"><b style="color:var(--ink)">'+esc(t.issue)+'</b>'+(t.where?' · '+esc(t.where):'')+'<br>'+day(t.at)+' · '+(t.status==='open'?'Open':'Fixed')+'</div>'}).join(''):'<p class="note" style="margin:0">No service calls on this install.</p>';
+  var a=$('#jAdvance');a.textContent=NEXT[cur.stage];a.hidden=!NEXT[cur.stage];
+  initMap();
+  setTimeout(function(){
+    map.invalidateSize();
+    lines=(cur.lines&&cur.lines.length)?cur.lines.map(function(l){return l.map(function(p){return L.latLng(p[0],p[1])})}).concat([[]]):[[]];
+    if(pin){map.removeLayer(pin);pin=null}
+    if(cur.ll){map.setView(cur.ll,20);setPin(cur.ll)}else map.setView(CENTERS[cur.area]||CENTERS.Homewood,15);
+    redraw(false);
+  },60);
+}
+function closeJob(){$('#scrim').hidden=true;$('#sheet').hidden=true;cur=null}
+function readJob(){
+  cur.notes=$('#jNotes').value.trim();cur.quote=+$('#jQuote').value||0;cur.plan=$('#jPlan').value.trim();cur.date=$('#jDate').value;cur.down=$('#jDown').value;cur.bin=$('#jBin').value.trim();cur.design=$('#jDesign').value.trim();cur.crew=$('#jCrew').value;
+  cur.items={};$$('#jLoad input').forEach(function(i){if(+i.value>0)cur.items[i.getAttribute('data-item')]=+i.value});
+  cur.lines=lines.filter(function(l){return l.length>1}).map(function(l){return l.map(function(p){return [p.lat,p.lng]})});
+}
+$('#jClose').addEventListener('click',closeJob);$('#scrim').addEventListener('click',closeJob);
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&cur)closeJob()});
+$('#jSave').addEventListener('click',function(){readJob();save();drawAll();toast('Saved.');closeJob()});
+$('#jAdvance').addEventListener('click',function(){
+  readJob();
+  if(cur.stage==='inquiry'&&!cur.quote){toast('Add the quote amount first.');$('#jQuote').focus();return}
+  if(cur.stage==='quoted'&&!cur.date){toast('Pick an install date first.');$('#jDate').focus();return}
+  if(cur.stage==='takedown'&&!cur.bin){toast('Add the storage bin so next year\'s crew can find the strands.');$('#jBin').focus();return}
+  var i=STAGES.map(function(s){return s[0]}).indexOf(cur.stage),n=cur.name;cur.stage=STAGES[i+1][0];
+  var msg={quoted:'Quote saved for '+n+'. The live build emails it to the customer.',scheduled:n+' booked for '+day(cur.date)+'.',installed:n+' marked installed. Stay-Lit is active.',takedown:'Takedown started for '+n+'.',stored:n+' stored in bin '+cur.bin+'.'}[cur.stage];
+  save();drawAll();closeJob();toast(msg);
+});
+document.addEventListener('click',function(e){var b=e.target.closest('[data-open]');if(b)openJob(b.getAttribute('data-open'))});
+/* address search (concept uses Esri imagery; the live build uses Google Maps on your account) */
+var GEO='https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/',js=$('#jSugg'),tm,seq=0;
+$('#jAddr').addEventListener('input',function(){
+  var q=this.value.trim();clearTimeout(tm);if(q.length<4){js.hidden=true;return}
+  tm=setTimeout(function(){var my=++seq;
+    fetch(GEO+'suggest?f=json&maxSuggestions=4&countryCode=USA&location=-86.80,33.47&text='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(j){
+      if(my!==seq)return;var s=(j.suggestions||[]).filter(function(x){return !x.isCollection});if(!s.length){js.hidden=true;return}
+      js.innerHTML=s.map(function(x,i){return '<button type="button" data-k="'+i+'">'+esc(x.text.replace(/, USA$/,''))+'</button>'}).join('');js._s=s;js.hidden=false;
+    }).catch(function(){js.hidden=true});
+  },280);
+});
+js.addEventListener('click',function(e){var b=e.target.closest('[data-k]');if(!b)return;var s=js._s[+b.getAttribute('data-k')];
+  fetch(GEO+'findAddressCandidates?f=json&maxLocations=1&magicKey='+encodeURIComponent(s.magicKey)+'&SingleLine='+encodeURIComponent(s.text)).then(function(r){return r.json()}).then(function(j){
+    var c=(j.candidates||[])[0];if(!c||!cur)return;js.hidden=true;var label=s.text.replace(/, USA$/,'');$('#jAddr').value=label;
+    cur.address=label;cur.ll=[c.location.y,c.location.x];lines=[[]];redraw(true);map.setView(cur.ll,20);setPin(cur.ll);
+  })});
+
+/* ---------- website ---------- */
+var DEF="Spots for this season's installations are filling fast. Reserve yours today and let our team create a display that makes your home or business glow.";
+$('#sSeason').value=(LS.get('lig_site',{}).season)||DEF;
+$('#sPublish').addEventListener('click',function(){LS.set('lig_site',{season:$('#sSeason').value.trim()||DEF});toast('Published. Open "View on site" and scroll to the last section.')});
+
+$('#resetBtn').addEventListener('click',function(){try{['lig_admin','lig_requests','lig_service','lig_site'].forEach(function(k){localStorage.removeItem(k)})}catch(e){}S=JSON.parse(JSON.stringify(SEED));$('#sSeason').value=DEF;drawAll();toast('Sample data reset.')});
+function drawAll(){drawPipeline();drawSchedule();drawService();drawInventory();drawClients()}
+drawAll();
+})();
+</script>
+</body>
+</html>
