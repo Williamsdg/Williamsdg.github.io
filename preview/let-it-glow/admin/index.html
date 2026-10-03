@@ -139,6 +139,20 @@ select.crew{height:44px;border-radius:10px;border:1px solid var(--rule-2);backgr
   .toast{bottom:18px}
 }
 @media (max-width:380px){.tiles{grid-template-columns:1fr 1fr}}
+.pill+.pill,.sub+.pill{margin-top:4px}
+.m-draft,.m-sent{background:#ECE8DF;color:#4A4658}
+.m-expired,.m-dep{background:#FBE3DF;color:#8E1B10}
+.m-bal{background:#FFF0CF;color:#6B4400}
+.m-paid{background:#DFF2E3;color:#14602A}
+.xrow{display:grid;grid-template-columns:1fr 96px 44px;gap:8px;margin-top:8px}
+.xrow input{height:44px;border-radius:10px;border:1px solid var(--rule-2);background:#fff;padding:0 12px;font-size:16px;color:var(--ink);min-width:0;width:100%}
+.xdel{height:44px;border-radius:10px;border:1px solid var(--rule-2);background:#fff;cursor:pointer;color:var(--ink)}
+.qsum{margin-top:14px;background:#fff;border:1px solid var(--rule);border-radius:12px;padding:6px 14px}
+.qsum div{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule);font-size:14.5px}
+.qsum div:last-child{border-bottom:0}
+.qsum b{font-family:var(--slab);font-size:22px;color:var(--ink)}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs img{width:104px;height:78px;object-fit:cover;border-radius:10px;border:1px solid var(--rule-2)}
 </style>
 </head>
 <body>
@@ -148,21 +162,22 @@ select.crew{height:44px;border-radius:10px;border:1px solid var(--rule-2);backgr
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="pipeline" aria-selected="true">Pipeline <span class="ct" id="ctNew">0</span></button>
     <button class="tab" role="tab" data-tab="schedule" aria-selected="false">Schedule</button>
+    <button class="tab" role="tab" data-tab="payments" aria-selected="false">Payments <span class="ct" id="ctPay">0</span></button>
     <button class="tab" role="tab" data-tab="service" aria-selected="false">Stay-Lit calls <span class="ct" id="ctSvc">0</span></button>
     <button class="tab" role="tab" data-tab="inventory" aria-selected="false">Inventory</button>
     <button class="tab" role="tab" data-tab="clients" aria-selected="false">Clients</button>
     <button class="tab" role="tab" data-tab="site" aria-selected="false">Website</button>
   </div>
-  <div class="side-foot"><a href="../">← View the website</a><br><button class="link-btn" type="button" id="resetBtn">Reset sample data</button></div>
+  <div class="side-foot"><a href="../crew/">Crew view (phone) →</a><br><a href="../">← View the website</a><br><button class="link-btn" type="button" id="resetBtn">Reset sample data</button></div>
 </aside>
 
 <main>
-  <div class="mhead"><img src="../img/logo.png" alt="Let It Glow" width="137" height="26"><a href="../">View site</a></div>
-  <div class="demo">Dashboard concept by Williams Digital. Every customer, crew, quantity and date here is a sample, and nothing is emailed or texted. Requests you send from the <a href="../#quote">concept site</a> land in the Pipeline.</div>
+  <div class="mhead"><img src="../img/logo.png" alt="Let It Glow" width="137" height="26"><a href="../crew/">Crew view</a></div>
+  <div class="demo">Dashboard concept by Williams Digital. Every customer, crew, price, quantity and date here is a sample, and nothing is emailed, texted or charged. Requests you send from the <a href="../#quote">concept site</a> land in the Pipeline. Installers use the <a href="../crew/">crew view</a>.</div>
 
   <!-- PIPELINE -->
   <section id="v-pipeline">
-    <div class="head"><div><h1>Pipeline</h1><p>Every job from first inquiry to stored lights. Tap a stage to filter.</p></div>
+    <div class="head"><div><h1>Pipeline</h1><p>Inquiry → approved quote → deposit → install → final payment → takedown → storage → rebook. Tap a stage to filter.</p></div>
       <div class="acts"><button class="btn" type="button" data-kindf="all" aria-pressed="true">All</button><button class="btn" type="button" data-kindf="holiday" aria-pressed="false">Holiday</button><button class="btn" type="button" data-kindf="year" aria-pressed="false">Year-round</button></div></div>
     <div class="tiles" id="stageTiles"></div>
     <div class="card" id="jobList"></div>
@@ -170,8 +185,21 @@ select.crew{height:44px;border-radius:10px;border:1px solid var(--rule-2);backgr
 
   <!-- SCHEDULE -->
   <section id="v-schedule" hidden>
-    <div class="head"><div><h1>Schedule</h1><p>Installs and takedowns by day, with the crew on each and the notes they need at the property.</p></div></div>
+    <div class="head"><div><h1>Schedule</h1><p>Installs and takedowns by day, with the crew on each and the notes they need at the property.</p></div><a class="btn" href="../crew/">Open crew view</a></div>
     <div class="card" id="schedList"></div>
+  </section>
+
+  <!-- PAYMENTS -->
+  <section id="v-payments" hidden>
+    <div class="head"><div><h1>Payments</h1><p>Which quotes are approved, which deposits are in, and who still owes a balance.</p></div></div>
+    <div class="tiles four">
+      <div class="tile"><small>Collected</small><b id="pCol">$0</b><span>Deposits and balances</span></div>
+      <div class="tile"><small>Outstanding</small><b id="pOut">$0</b><span>On approved quotes</span></div>
+      <div class="tile"><small>Deposit due</small><b id="pDep">0</b><span>Approved, not booked yet</span></div>
+      <div class="tile"><small>Awaiting approval</small><b id="pWait">0</b><span>Quotes sent</span></div>
+    </div>
+    <div class="card" id="payList"></div>
+    <p class="note">Deposit is set at <span id="depPct"></span>% as a sample. In the live build the pay link opens a secure checkout (Stripe or the processor you already use) and the status here updates on its own.</p>
   </section>
 
   <!-- SERVICE -->
@@ -219,6 +247,20 @@ select.crew{height:44px;border-radius:10px;border:1px solid var(--rule-2);backgr
   <h2 id="jName"></h2>
   <p class="sub" id="jSub"></p>
   <div class="steps" id="jSteps"></div>
+
+  <div class="sec">Quote</div>
+  <div class="g2">
+    <label class="f">Package / project<select id="jPkg"></select></label>
+    <label class="f">Package price ($)<input id="jBase" type="number" inputmode="numeric" min="0"></label>
+  </div>
+  <div id="jExtras"></div>
+  <div class="g2" style="margin-top:10px">
+    <label class="f">Add an upgrade<select id="jAddUp"></select></label>
+    <label class="f">Quote good until<input id="jExp" type="date"></label>
+  </div>
+  <div class="qsum" id="jSum"></div>
+  <div class="acts" style="justify-content:flex-start;margin-top:12px" id="jMoney"></div>
+
   <div class="sec">Property</div>
   <div class="mapbox">
     <div id="jMap"></div>
@@ -226,16 +268,16 @@ select.crew{height:44px;border-radius:10px;border:1px solid var(--rule-2);backgr
     <div class="mbot"><div class="read"><b id="jFt">0 ft</b><span id="jFtSub">Click roof corners to measure</span></div><button class="mb" type="button" id="jUndo">Undo</button><button class="mb" type="button" id="jNew">New line</button><button class="mb" type="button" id="jClear">Clear</button></div>
   </div>
   <label class="f" style="margin-top:12px">Property notes for the crew<textarea id="jNotes"></textarea></label>
-  <div class="sec">Quote &amp; schedule</div>
+  <label class="f" style="margin-top:10px">Approved design<input id="jDesign" type="text" placeholder="Warm white roofline, two wreaths…"></label>
+  <div id="jPhotos"></div>
+
+  <div class="sec">Schedule</div>
   <div class="g2">
-    <label class="f">Quote ($)<input id="jQuote" type="number" inputmode="numeric" min="0"></label>
-    <label class="f">Package / project<input id="jPlan" type="text"></label>
     <label class="f">Install date<input id="jDate" type="date"></label>
     <label class="f">Crew<select id="jCrew"></select></label>
     <label class="f">Takedown date<input id="jDown" type="date"></label>
     <label class="f">Storage bin<input id="jBin" type="text" placeholder="e.g. B-14"></label>
   </div>
-  <label class="f" style="margin-top:10px">Approved design<input id="jDesign" type="text" placeholder="Warm white roofline, two wreaths…"></label>
   <div class="sec">Load list</div>
   <div class="load" id="jLoad"></div>
   <div class="sec">Stay-Lit history</div>
@@ -248,64 +290,27 @@ select.crew{height:44px;border-radius:10px;border:1px solid var(--rule-2);backgr
 <div class="toast" id="toast" role="status"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="data.js"></script>
 <script>
 (function(){
 'use strict';
 var $=function(s,r){return (r||document).querySelector(s)},$$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
-var LS={get:function(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function money(n){return '$'+Math.round(n).toLocaleString('en-US')}
-function day(iso){return iso?new Date(iso+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}):''}
-function toast(t){var el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){el.classList.remove('on')},4200)}
+var G=window.LIG,LS=G.LS,esc=G.esc,money=G.money,day=G.day,STAGES=G.STAGES,CREWS=G.CREWS,CENTERS=G.CENTERS;
+function toast(t){var el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){el.classList.remove('on')},4600)}
+var NEXT={inquiry:'Send quote',quoted:'Book the install',scheduled:'Mark installed',installed:'Start takedown',takedown:'Mark stored',stored:''};
 
-var STAGES=[['inquiry','Inquiry','Needs a quote'],['quoted','Quoted','Waiting on customer'],['scheduled','Scheduled','Install booked'],['installed','Installed','Up, Stay-Lit active'],['takedown','Takedown','Coming down'],['stored','Stored','Labeled and binned']];
-var NEXT={inquiry:'Mark quoted',quoted:'Book the install',scheduled:'Mark installed',installed:'Start takedown',takedown:'Mark stored',stored:''};
-var CREWS=['Unassigned','Crew 1','Crew 2'];
-var CENTERS={Homewood:[33.4718,-86.8008],'Mountain Brook':[33.5007,-86.7522],'Vestavia Hills':[33.4487,-86.7878],Hoover:[33.4054,-86.8114],Greystone:[33.418,-86.67],Birmingham:[33.5186,-86.8104]};
-
-/* ---------- sample data: fictional customers, sample quantities ---------- */
-var SEED={
- items:[
-  {k:'c9ww',n:'C9 warm white strand',u:'ft',on:6000,loc:'Shelf A'},
-  {k:'c9mc',n:'C9 multicolor strand',u:'ft',on:1500,loc:'Shelf A'},
-  {k:'c9rg',n:'C9 red & green strand',u:'ft',on:1200,loc:'Shelf A'},
-  {k:'mini',n:'Mini-light sets',u:'sets',on:220,loc:'Shelf B'},
-  {k:'net',n:'Net lights for shrubs',u:'nets',on:14,loc:'Shelf B'},
-  {k:'wr',n:'Lit wreaths',u:'',on:40,loc:'Rack C'},
-  {k:'gar',n:'Garland',u:'ft',on:600,loc:'Rack C'},
-  {k:'bow',n:'Red velvet bows',u:'',on:80,loc:'Rack C'},
-  {k:'clip',n:'Roof clips',u:'bags',on:90,loc:'Bin wall'},
-  {k:'tmr',n:'Timers',u:'',on:70,loc:'Bin wall'},
-  {k:'cord',n:'Extension cords',u:'',on:110,loc:'Bin wall'}
- ],
- jobs:[
-  {id:'J1',name:'Sample · Dana R.',phone:'(205) 555-0142',area:'Homewood',kind:'holiday',plan:'Signature Shine',stage:'inquiry',feet:0,notes:'Two front gables and a dormer. Wants a wreath over the door.',source:'Website',items:{}},
-  {id:'J2',name:'Sample · Marcus T.',phone:'(205) 555-0177',area:'Vestavia Hills',kind:'year',plan:'Permanent Lighting',stage:'inquiry',feet:0,notes:'Asked about color-changing roofline LEDs before spring.',source:'Website',items:{}},
-  {id:'J3',name:'Sample · Priya N.',phone:'(205) 555-0119',area:'Mountain Brook',kind:'holiday',plan:'Grand Display',stage:'quoted',quote:3400,feet:310,notes:'Steep roof on the left wing. Three large oaks in the front yard.',design:'Warm white roofline, three tree wraps, garland on the porch rail',source:'Phone',items:{}},
-  {id:'J4',name:'Sample · Corner Café',phone:'(205) 555-0101',area:'Homewood',kind:'year',plan:'Café Lighting',stage:'quoted',quote:2200,feet:0,notes:'Patio strings, owner wants install before a private event.',source:'Website',items:{}},
-  {id:'J5',name:'Sample · Lena K.',phone:'(205) 555-0163',area:'Homewood',kind:'holiday',plan:'Signature Shine',stage:'scheduled',quote:1850,date:'2026-10-06',crew:'Crew 1',down:'2027-01-05',feet:205,notes:'Gate code on file. Outlet is on the right side of the porch. Dog in the back yard.',design:'Warm white roofline, two shrubs netted',items:{c9ww:205,net:2,clip:3,tmr:1,cord:3}},
-  {id:'J6',name:'Sample · Whitfield Dental',phone:'(205) 555-0188',area:'Hoover',kind:'holiday',plan:'Commercial',stage:'scheduled',quote:3900,date:'2026-10-06',crew:'Crew 2',down:'2027-01-07',feet:380,notes:'Install after 5:30 pm, once the lot empties. Roof access by ladder at the rear.',design:'Multicolor roofline and window frames, wreath over the sign',items:{c9mc:380,wr:1,bow:1,clip:5,tmr:2,cord:6}},
-  {id:'J7',name:'Sample · The Hallorans',phone:'(205) 555-0126',area:'Greystone',kind:'holiday',plan:'Grand Display',stage:'scheduled',quote:4600,date:'2026-10-08',crew:'Crew 1',down:'2027-01-08',feet:420,notes:'Long driveway, bring the tall ladder. Timers go in the garage.',design:'Warm white roofline, driveway tree wraps, lit wreaths in six windows',items:{c9ww:420,mini:48,wr:6,bow:6,net:6,clip:6,tmr:3,cord:8}},
-  {id:'J8',name:'Sample · Grace B.',phone:'(205) 555-0134',area:'Vestavia Hills',kind:'holiday',plan:'Classic Glow',stage:'scheduled',quote:950,date:'2026-10-13',crew:'Unassigned',down:'2027-01-06',feet:140,notes:'Hillside lot. Park on the street.',design:'Warm white front roofline',items:{c9ww:140,clip:2,tmr:1,cord:2}},
-  {id:'J9',name:'Sample · Omar S.',phone:'(205) 555-0155',area:'Homewood',kind:'holiday',plan:'Signature Shine',stage:'installed',quote:1600,date:'2026-10-01',crew:'Crew 1',down:'2027-01-05',feet:190,notes:'Returning customer. Strands are cut to fit, bin B-07.',design:'Red and green roofline, one wrapped tree',bin:'B-07',items:{c9rg:190,mini:12,net:4,clip:3,tmr:1,cord:3}},
-  {id:'J10',name:'Sample · Tri-County Realty',phone:'(205) 555-0110',area:'Birmingham',kind:'holiday',plan:'Commercial',stage:'installed',quote:2800,date:'2026-10-02',crew:'Crew 2',down:'2027-01-07',feet:260,notes:'Storefront on a busy street. Cones are in the truck.',design:'Warm white roofline, garland and bows around the sign',items:{c9ww:260,gar:40,bow:4,clip:4,tmr:1,cord:4}},
-  {id:'J11',name:'Sample · The Ansleys',phone:'(205) 555-0172',area:'Mountain Brook',kind:'holiday',plan:'Signature Shine',stage:'stored',quote:2100,date:'2025-11-18',crew:'Crew 1',feet:230,notes:'Last season. Ready for a returning-customer call.',design:'Warm white roofline, wreaths on the gate posts',bin:'A-12',items:{}}
- ],
- tickets:[
-  {id:'T1',job:'J9',name:'Sample · Omar S.',issue:'A few bulbs are out',where:'Left gable',at:'2026-10-03',status:'open',source:'Text'},
-  {id:'T2',job:'J10',name:'Sample · Tri-County Realty',issue:'The timer isn\'t working',where:'Front outlet',at:'2026-10-02',status:'done',source:'Phone'}
- ]
-};
-var S=LS.get('lig_admin',null)||JSON.parse(JSON.stringify(SEED));
-function save(){LS.set('lig_admin',S)}
+var S=G.load();
+function save(){G.save(S)}
 function job(id){return S.jobs.filter(function(j){return j.id===id})[0]}
+function newInv(){S.invSeq=(S.invSeq||1011)+1;return 'LIG-'+(S.invSeq-1)}
 function pullSite(){ /* merge what was submitted on the concept site */
   var ids={};S.jobs.forEach(function(j){ids[j.id]=1});
   LS.get('lig_requests',[]).slice().reverse().forEach(function(r){
     if(ids[r.id])return;
     var area='Birmingham';Object.keys(CENTERS).forEach(function(c){if(r.address&&r.address.indexOf(c)>-1)area=c});
-    S.jobs.unshift({id:r.id,name:r.name,phone:r.phone,email:r.email,area:area,address:r.address,ll:r.ll,lines:r.lines,feet:r.feet||0,kind:r.kind==='year'?'year':'holiday',
-      plan:r.kind==='year'?r.type:(r.level||'Not sure yet'),stage:'inquiry',notes:[(r.areas||[]).join(', '),r.notes].filter(Boolean).join('. '),source:'Website',items:{}});
+    var pk={'Simple & Elegant':'Classic Glow','Festive & Bright':'Signature Shine','Griswold':'Grand Display'}[r.level]||(r.kind==='year'?r.type:'Signature Shine');
+    S.jobs.unshift({id:r.id,inv:newInv(),name:r.name,phone:r.phone,email:r.email,area:area,address:r.address,ll:r.ll,lines:r.lines,feet:r.feet||0,kind:r.kind==='year'?'year':'holiday',
+      stage:'inquiry',notes:[(r.areas||[]).join(', '),r.notes].filter(Boolean).join('. '),source:'Website',items:{},q:{pkg:pk,base:0,extras:[],status:'draft',expires:''},paid:0});
   });
   var tids={};S.tickets.forEach(function(t){tids[t.id]=1});
   LS.get('lig_service',[]).slice().reverse().forEach(function(t){
@@ -318,7 +323,7 @@ function pullSite(){ /* merge what was submitted on the concept site */
 pullSite();
 
 /* ---------- tabs ---------- */
-var TABS=['pipeline','schedule','service','inventory','clients','site'];
+var TABS=['pipeline','schedule','payments','service','inventory','clients','site'];
 function show(tab){
   $$('.tab').forEach(function(b){b.setAttribute('aria-selected',b.getAttribute('data-tab')===tab)});
   TABS.forEach(function(t){$('#v-'+t).hidden=t!==tab});
@@ -329,11 +334,7 @@ $$('.tab').forEach(function(b){b.addEventListener('click',function(){show(b.getA
 /* ---------- pipeline ---------- */
 var fStage='',fKind='all';
 function pill(j){var s=STAGES.filter(function(x){return x[0]===j.stage})[0];return '<span class="pill p-'+j.stage+'">'+s[1]+'</span>'+(j.kind==='year'?'<span class="pill p-year">Year-round</span>':'')}
-function jobRow(j,mid){
-  return '<div class="rowi"><div><b>'+esc(j.name)+'</b><span class="sub">'+esc(j.area)+' · '+esc(j.plan)+'</span><span class="sub">'+esc(j.phone||'')+'</span></div>'+
-    '<div class="c3">'+mid+'</div><div>'+pill(j)+(j.quote?'<span class="sub">'+money(j.quote)+'</span>':'')+'</div>'+
-    '<div class="acts"><button class="btn'+(j.stage==='inquiry'?' btn-red':'')+'" type="button" data-open="'+esc(j.id)+'">'+(j.stage==='inquiry'?'Measure + quote':'Open')+'</button></div></div>';
-}
+function payPill(j){var p=G.pay(j);return p[0]==='none'?'':'<span class="pill m-'+p[0]+'">'+esc(p[1])+'</span>'}
 function drawPipeline(){
   var pool=S.jobs.filter(function(j){return fKind==='all'||j.kind===fKind});
   $('#stageTiles').innerHTML=STAGES.map(function(s){var n=pool.filter(function(j){return j.stage===s[0]}).length;
@@ -341,32 +342,71 @@ function drawPipeline(){
   var list=pool.filter(function(j){return !fStage||j.stage===fStage});
   $('#jobList').innerHTML=list.length?list.map(function(j){
     var mid=j.stage==='inquiry'?'<span class="sub">'+(j.feet?j.feet+' ft traced by the customer':'Not measured yet')+' · via '+esc(j.source||'Phone')+'</span>':
-      j.stage==='quoted'?'<span class="sub">'+(j.feet?j.feet+' ft measured':'No roofline measured')+'</span>':
+      j.stage==='quoted'?'<span class="sub">'+(j.feet?j.feet+' ft measured':'No roofline measured')+(j.q.expires?' · quote good until '+day(j.q.expires):'')+'</span>':
       j.stage==='stored'?'<span class="sub">Bin '+esc(j.bin||'not set')+' · last install '+day(j.date)+'</span>':
       '<span class="sub">'+(j.stage==='scheduled'?'Install ':'Installed ')+day(j.date)+' · '+esc(j.crew||'Unassigned')+'</span>';
     if(j.notes)mid+='<span class="sub">'+esc(j.notes)+'</span>';
-    return jobRow(j,mid)}).join(''):'<div class="empty">Nothing in this stage.</div>';
+    var t=G.total(j);
+    return '<div class="rowi"><div><b>'+esc(j.name)+'</b><span class="sub">'+esc(j.area)+' · '+esc(j.q.pkg)+'</span><span class="sub">'+esc(j.phone||'')+'</span></div>'+
+      '<div class="c3">'+mid+'</div><div>'+pill(j)+(t?'<span class="sub">'+money(t)+'</span>':'')+payPill(j)+'</div>'+
+      '<div class="acts">'+(j.stage==='stored'&&!j.renewed?'<button class="btn btn-red" type="button" data-rebook="'+esc(j.id)+'">Invite to rebook</button>':'')+
+      '<button class="btn'+(j.stage==='inquiry'?' btn-red':'')+'" type="button" data-open="'+esc(j.id)+'">'+(j.stage==='inquiry'?'Measure + quote':'Open')+'</button></div></div>'}).join(''):'<div class="empty">Nothing in this stage.</div>';
   var n=S.jobs.filter(function(j){return j.stage==='inquiry'}).length;$('#ctNew').textContent=n;$('#ctNew').hidden=!n;
 }
 $('#stageTiles').addEventListener('click',function(e){var b=e.target.closest('[data-stage]');if(!b)return;var s=b.getAttribute('data-stage');fStage=fStage===s?'':s;drawPipeline()});
 $$('[data-kindf]').forEach(function(b){b.addEventListener('click',function(){fKind=b.getAttribute('data-kindf');$$('[data-kindf]').forEach(function(x){x.setAttribute('aria-pressed',x===b);x.classList.toggle('btn-red',x===b)});drawPipeline()})});
 $('[data-kindf="all"]').classList.add('btn-red');
+/* renewal: a new seasonal job that keeps last year's design, measurements and bin */
+$('#jobList').addEventListener('click',function(e){
+  var b=e.target.closest('[data-rebook]');if(!b)return;var o=job(b.getAttribute('data-rebook'));o.renewed=true;
+  S.jobs.unshift({id:'J'+Date.now(),inv:newInv(),name:o.name,phone:o.phone,email:o.email,area:o.area,address:o.address,ll:o.ll,lines:o.lines,feet:o.feet,kind:o.kind,stage:'quoted',
+    notes:'Returning customer. Strands are cut to fit'+(o.bin?', bin '+o.bin:'')+'.',design:o.design,bin:o.bin,source:'Rebook invite',items:{},
+    q:{pkg:o.q.pkg,base:o.q.base,extras:(o.q.extras||[]).slice(),status:'sent',expires:G.plus(14)},paid:0});
+  save();drawAll();toast('Rebook quote created for '+o.name+' with last year\'s design. The live build texts them the link.');
+});
 
 /* ---------- schedule ---------- */
-function crewSel(j){return '<select class="crew" data-crew="'+esc(j.id)+'" aria-label="Crew for '+esc(j.name)+'">'+CREWS.map(function(c){return '<option'+(c===(j.crew||'Unassigned')?' selected':'')+'>'+c+'</option>'}).join('')+'</select>'}
 function drawSchedule(){
   var h='',ins=S.jobs.filter(function(j){return j.stage==='scheduled'&&j.date}).sort(function(a,b){return a.date<b.date?-1:1});
   var downs=S.jobs.filter(function(j){return (j.stage==='installed'||j.stage==='takedown')&&j.down}).sort(function(a,b){return a.down<b.down?-1:1});
   function group(list,key,label){
     var last='';list.forEach(function(j){
-      if(j[key]!==last){last=j[key];var n=list.filter(function(x){return x[key]===last}).length;h+='<div class="zhead">'+label+' · '+day(last)+'<span>'+n+(n===1?' job':' jobs')+'</span></div>'}
-      h+='<div class="rowi"><div><b>'+esc(j.name)+'</b><span class="sub">'+esc(j.area)+' · '+esc(j.plan)+(j.feet?' · '+j.feet+' ft':'')+'</span></div><div class="c3"><span class="sub">'+esc(j.notes||'No property notes yet.')+'</span></div><div>'+crewSel(j)+'</div><div class="acts"><button class="btn" type="button" data-open="'+esc(j.id)+'">Load list</button></div></div>';
+      if(j[key]!==last){last=j[key];var n=list.filter(function(x){return x[key]===last}).length;h+='<div class="zhead">'+label+' · '+day(last)+(last===G.plus(0)?' · today':'')+'<span>'+n+(n===1?' job':' jobs')+'</span></div>'}
+      h+='<div class="rowi"><div><b>'+esc(j.name)+'</b><span class="sub">'+esc(j.area)+' · '+esc(j.q.pkg)+(j.feet?' · '+j.feet+' ft':'')+'</span></div><div class="c3"><span class="sub">'+esc(j.notes||'No property notes yet.')+'</span></div>'+
+        '<div><select class="crew" data-crew="'+esc(j.id)+'" aria-label="Crew for '+esc(j.name)+'">'+CREWS.map(function(c){return '<option'+(c===(j.crew||'Unassigned')?' selected':'')+'>'+c+'</option>'}).join('')+'</select></div>'+
+        '<div class="acts"><button class="btn" type="button" data-open="'+esc(j.id)+'">Load list</button></div></div>';
     });
   }
   group(ins,'date','Install');group(downs,'down','Takedown');
   $('#schedList').innerHTML=h||'<div class="empty">Nothing booked yet.</div>';
 }
 $('#schedList').addEventListener('change',function(e){var s=e.target.closest('[data-crew]');if(!s)return;var j=job(s.getAttribute('data-crew'));j.crew=s.value;save();drawPipeline();toast(j.name+' assigned to '+s.value+'.')});
+
+/* ---------- payments ---------- */
+function drawPay(){
+  var col=0,out=0,dep=0,wait=0;
+  var list=S.jobs.filter(function(j){return G.total(j)>0});
+  list.forEach(function(j){col+=j.paid||0;var p=G.pay(j)[0];if(j.q.status==='approved')out+=G.due(j);if(p==='dep')dep++;if(p==='sent')wait++});
+  $('#pCol').textContent=money(col);$('#pOut').textContent=money(out);$('#pDep').textContent=dep;$('#pWait').textContent=wait;$('#depPct').textContent=G.DEP;
+  $('#ctPay').textContent=dep;$('#ctPay').hidden=!dep;
+  var order={dep:0,bal:1,sent:2,expired:3,draft:4,paid:5};
+  $('#payList').innerHTML=list.length?list.slice().sort(function(a,b){return order[G.pay(a)[0]]-order[G.pay(b)[0]]}).map(function(j){
+    var p=G.pay(j),t=G.total(j);
+    var acts=p[0]==='dep'?'<button class="btn btn-red" type="button" data-pay="dep" data-j="'+esc(j.id)+'">Record deposit</button>':
+      p[0]==='bal'?'<button class="btn btn-red" type="button" data-pay="bal" data-j="'+esc(j.id)+'">Record balance</button>':
+      (p[0]==='sent'||p[0]==='expired')?'<button class="btn" type="button" data-pay="approve" data-j="'+esc(j.id)+'">Mark approved</button>':'';
+    return '<div class="rowi"><div><b>'+esc(j.name)+'</b><span class="sub">'+esc(j.inv||'')+' · '+esc(j.q.pkg)+'</span></div>'+
+      '<div class="c3"><span class="sub">'+money(j.paid||0)+' paid of '+money(t)+'</span><div class="bar"><i style="width:'+Math.round((j.paid||0)/t*100)+'%"></i></div></div>'+
+      '<div><span class="pill m-'+p[0]+'">'+esc(p[1])+'</span></div>'+
+      '<div class="acts">'+(j.q.status!=='draft'?'<a class="btn" href="../quote/?id='+encodeURIComponent(j.id)+'" target="_blank" rel="noopener">Customer link</a>':'')+acts+'</div></div>'}).join(''):'<div class="empty">No quotes yet.</div>';
+}
+function recordPay(j,kind){
+  if(kind==='approve'){j.q.status='approved';toast(j.name+' approved. Deposit of '+money(G.deposit(j))+' is now due.')}
+  else if(kind==='dep'){j.paid=G.deposit(j);toast('Deposit of '+money(j.paid)+' recorded for '+j.name+'. Ready to book.')}
+  else{j.paid=G.total(j);toast(j.name+' is paid in full.')}
+  save();drawAll();
+}
+$('#payList').addEventListener('click',function(e){var b=e.target.closest('[data-pay]');if(b)recordPay(job(b.getAttribute('data-j')),b.getAttribute('data-pay'))});
 
 /* ---------- stay-lit ---------- */
 function drawService(){
@@ -378,7 +418,7 @@ function drawService(){
   var up=S.jobs.filter(function(j){return j.stage==='installed'});
   $('#svcList').innerHTML=S.tickets.length?S.tickets.slice().sort(function(a,b){return (a.status==='done')-(b.status==='done')}).map(function(t){
     var j=t.job&&job(t.job);
-    var att=j?'<span class="sub">'+esc(j.area)+' · '+esc(j.design||j.plan)+' · installed '+day(j.date)+' by '+esc(j.crew||'crew')+'</span>':
+    var att=j?'<span class="sub">'+esc(j.area)+' · '+esc(j.design||j.q.pkg)+' · installed '+day(j.date)+' by '+esc(j.crew||'crew')+'</span>':
       '<select class="crew" data-attach="'+esc(t.id)+'" aria-label="Attach to an install"><option value="">Attach to an install…</option>'+up.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select>';
     return '<div class="rowi"><div><b>'+esc(t.name)+'</b><span class="sub">'+esc(t.issue)+(t.where?' · '+esc(t.where):'')+'</span><span class="sub">Reported '+day(t.at)+' by '+esc((t.source||'phone').toLowerCase())+'</span></div><div class="c3">'+att+'</div>'+
       '<div><span class="pill '+(t.status==='open'?'p-inquiry':'p-installed')+'">'+(t.status==='open'?'Open':'Fixed')+'</span></div>'+
@@ -402,9 +442,9 @@ function drawClients(){
   var q=$('#cSearch').value.trim().toLowerCase(),by={};
   S.jobs.forEach(function(j){(by[j.name]=by[j.name]||[]).push(j)});
   var names=Object.keys(by).filter(function(n){var j=by[n][0];return !q||(n+' '+(j.phone||'')+' '+j.area).toLowerCase().indexOf(q)>-1}).sort();
-  $('#cliList').innerHTML=names.length?names.map(function(n){var js=by[n],j=js[0],d=js.filter(function(x){return x.design})[0];
-    return '<div class="rowi"><div><b>'+esc(n)+'</b><span class="sub">'+esc(j.phone||'')+(j.email?' · '+esc(j.email):'')+'</span><span class="sub">'+esc(j.area)+'</span></div>'+
-      '<div class="c3"><span class="sub">'+(d?'Approved design: '+esc(d.design):'No design on file yet')+'</span>'+(j.bin?'<span class="sub">Lights stored in bin '+esc(j.bin)+'</span>':'')+'</div>'+
+  $('#cliList').innerHTML=names.length?names.map(function(n){var js=by[n],j=js[0],d=js.filter(function(x){return x.design})[0],b=js.filter(function(x){return x.bin})[0];
+    return '<div class="rowi"><div><b>'+esc(n)+'</b><span class="sub">'+esc(j.phone||'')+(j.email?' · '+esc(j.email):'')+'</span><span class="sub">'+esc(j.area)+(js.length>1?' · '+js.length+' seasons on file':'')+'</span></div>'+
+      '<div class="c3"><span class="sub">'+(d?'Approved design: '+esc(d.design):'No design on file yet')+'</span>'+(b?'<span class="sub">Lights stored in bin '+esc(b.bin)+'</span>':'')+'</div>'+
       '<div>'+pill(j)+'</div><div class="acts"><button class="btn" type="button" data-open="'+esc(j.id)+'">Open</button></div></div>'}).join(''):'<div class="empty">No clients match.</div>';
 }
 $('#cSearch').addEventListener('input',drawClients);
@@ -434,23 +474,57 @@ $('#jUndo').addEventListener('click',function(){var ln=lines[lines.length-1];if(
 $('#jNew').addEventListener('click',function(){if(lines[lines.length-1].length)lines.push([])});
 $('#jClear').addEventListener('click',function(){lines=[[]];redraw(true)});
 function setPin(ll){if(pin)map.removeLayer(pin);pin=L.circleMarker(ll,{radius:9,color:'#fff',weight:2,fillColor:'#C22E20',fillOpacity:.9,interactive:false}).addTo(map)}
+
+/* quote block */
+function drawQuote(){
+  var q=cur.q;
+  $('#jExtras').innerHTML=(q.extras||[]).map(function(x,i){return '<div class="xrow"><input type="text" value="'+esc(x[0])+'" data-xn="'+i+'" aria-label="Upgrade name"><input type="number" inputmode="numeric" min="0" value="'+(+x[1]||0)+'" data-xp="'+i+'" aria-label="Upgrade price"><button class="xdel" type="button" data-xd="'+i+'" aria-label="Remove '+esc(x[0])+'">✕</button></div>'}).join('');
+  var t=G.total(cur),p=G.pay(cur);
+  $('#jSum').innerHTML='<div><span>Quote total</span><b>'+money(t)+'</b></div><div><span>Deposit to book ('+G.DEP+'%)</span><span>'+money(G.deposit(cur))+'</span></div><div><span>Paid so far</span><span>'+money(cur.paid||0)+'</span></div><div><span>Status</span><span class="pill m-'+p[0]+'">'+esc(p[1])+'</span></div>';
+  var h='';
+  if(q.status!=='draft')h+='<a class="btn" href="../quote/?id='+encodeURIComponent(cur.id)+'" target="_blank" rel="noopener">Open customer link</a>';
+  if(p[0]==='sent'||p[0]==='expired')h+='<button class="btn" type="button" data-m="approve">Mark approved</button>';
+  if(p[0]==='dep')h+='<button class="btn" type="button" data-m="dep">Record deposit</button>';
+  if(p[0]==='bal')h+='<button class="btn" type="button" data-m="bal">Record balance</button>';
+  $('#jMoney').innerHTML=h;
+}
+function readQuote(){
+  cur.q.pkg=$('#jPkg').value;cur.q.base=+$('#jBase').value||0;cur.q.expires=$('#jExp').value;
+  $$('#jExtras [data-xn]').forEach(function(i){cur.q.extras[+i.getAttribute('data-xn')][0]=i.value});
+  $$('#jExtras [data-xp]').forEach(function(i){cur.q.extras[+i.getAttribute('data-xp')][1]=+i.value||0});
+}
+$('#jBase').addEventListener('input',function(){readQuote();drawQuote()});
+$('#jExtras').addEventListener('change',function(){readQuote();drawQuote()});
+$('#jExtras').addEventListener('click',function(e){var b=e.target.closest('[data-xd]');if(!b)return;readQuote();cur.q.extras.splice(+b.getAttribute('data-xd'),1);drawQuote()});
+$('#jAddUp').addEventListener('change',function(){if(this.value==='')return;readQuote();var u=G.UPGRADES[+this.value];cur.q.extras.push(u?[u[0],u[1]]:['Custom item',0]);this.value='';drawQuote()});
+$('#jMoney').addEventListener('click',function(e){var b=e.target.closest('[data-m]');if(!b)return;readJob();var j=cur;recordPay(j,b.getAttribute('data-m'));cur=j;drawQuote();stepper()});
+
+function stepper(){
+  var si=STAGES.map(function(s){return s[0]}).indexOf(cur.stage);
+  $('#jSteps').innerHTML=STAGES.map(function(s,i){return '<div class="'+(i<=si?'on':'')+'">'+s[1]+'</div>'}).join('');
+  var a=$('#jAdvance');a.textContent=NEXT[cur.stage];a.hidden=!NEXT[cur.stage];
+}
 function openJob(id){
   cur=job(id);if(!cur)return;
   $('#scrim').hidden=false;$('#sheet').hidden=false;$('#sheet').scrollTop=0;
   $('#jName').textContent=cur.name;
-  $('#jSub').textContent=[cur.area,cur.phone,cur.email,cur.kind==='year'?'Year-round project':'Holiday lighting'].filter(Boolean).join(' · ');
-  var si=STAGES.map(function(s){return s[0]}).indexOf(cur.stage);
-  $('#jSteps').innerHTML=STAGES.map(function(s,i){return '<div class="'+(i<=si?'on':'')+'">'+s[1]+'</div>'}).join('');
-  $('#jNotes').value=cur.notes||'';$('#jQuote').value=cur.quote||'';$('#jPlan').value=cur.plan||'';$('#jDate').value=cur.date||'';$('#jDown').value=cur.down||'';$('#jBin').value=cur.bin||'';$('#jDesign').value=cur.design||'';
+  $('#jSub').textContent=[cur.area,cur.phone,cur.email,cur.kind==='year'?'Year-round project':'Holiday lighting',cur.inv].filter(Boolean).join(' · ');
+  stepper();
+  $('#jPkg').innerHTML=G.PACKAGES.map(function(p){return '<option'+(p===cur.q.pkg?' selected':'')+'>'+p+'</option>'}).join('');
+  $('#jBase').value=cur.q.base||'';$('#jExp').value=cur.q.expires||'';
+  $('#jAddUp').innerHTML='<option value="">Choose…</option>'+G.UPGRADES.map(function(u,i){return '<option value="'+i+'">'+esc(u[0])+' · '+money(u[1])+'</option>'}).join('')+'<option value="x">Custom item</option>';
+  drawQuote();
+  $('#jNotes').value=cur.notes||'';$('#jDate').value=cur.date||'';$('#jDown').value=cur.down||'';$('#jBin').value=cur.bin||'';$('#jDesign').value=cur.design||'';
   $('#jCrew').innerHTML=CREWS.map(function(c){return '<option'+(c===(cur.crew||'Unassigned')?' selected':'')+'>'+c+'</option>'}).join('');
   $('#jAddr').value=cur.address&&cur.address.charAt(0)!=='('?cur.address:'';
-  $('#jFtSub').textContent=cur.lines&&cur.lines.length?'Traced by the customer':'Click roof corners to measure';
+  $('#jFtSub').textContent=cur.lines&&cur.lines.length?'Traced roofline':'Click roof corners to measure';
+  $('#jPhotos').innerHTML=(cur.photos&&cur.photos.length)?'<div class="sec">Completion photos from the crew</div><div class="thumbs">'+cur.photos.map(function(p){return '<img src="'+p+'" alt="Completion photo">'}).join('')+'</div>':'';
   $('#jLoad').innerHTML=S.items.map(function(i){return '<span>'+esc(i.n)+(i.u?' ('+i.u+')':'')+'<small>'+esc(i.loc)+'</small></span><input type="number" inputmode="numeric" min="0" data-item="'+i.k+'" value="'+((cur.items&&cur.items[i.k])||0)+'" aria-label="'+esc(i.n)+' quantity">'}).join('');
   var ts=S.tickets.filter(function(t){return t.job===cur.id});
   $('#jHist').innerHTML=ts.length?ts.map(function(t){return '<div class="hist"><b style="color:var(--ink)">'+esc(t.issue)+'</b>'+(t.where?' · '+esc(t.where):'')+'<br>'+day(t.at)+' · '+(t.status==='open'?'Open':'Fixed')+'</div>'}).join(''):'<p class="note" style="margin:0">No service calls on this install.</p>';
-  var a=$('#jAdvance');a.textContent=NEXT[cur.stage];a.hidden=!NEXT[cur.stage];
   initMap();
   setTimeout(function(){
+    if(!cur)return;
     map.invalidateSize();
     lines=(cur.lines&&cur.lines.length)?cur.lines.map(function(l){return l.map(function(p){return L.latLng(p[0],p[1])})}).concat([[]]):[[]];
     if(pin){map.removeLayer(pin);pin=null}
@@ -460,7 +534,8 @@ function openJob(id){
 }
 function closeJob(){$('#scrim').hidden=true;$('#sheet').hidden=true;cur=null}
 function readJob(){
-  cur.notes=$('#jNotes').value.trim();cur.quote=+$('#jQuote').value||0;cur.plan=$('#jPlan').value.trim();cur.date=$('#jDate').value;cur.down=$('#jDown').value;cur.bin=$('#jBin').value.trim();cur.design=$('#jDesign').value.trim();cur.crew=$('#jCrew').value;
+  readQuote();
+  cur.notes=$('#jNotes').value.trim();cur.date=$('#jDate').value;cur.down=$('#jDown').value;cur.bin=$('#jBin').value.trim();cur.design=$('#jDesign').value.trim();cur.crew=$('#jCrew').value;
   cur.items={};$$('#jLoad input').forEach(function(i){if(+i.value>0)cur.items[i.getAttribute('data-item')]=+i.value});
   cur.lines=lines.filter(function(l){return l.length>1}).map(function(l){return l.map(function(p){return [p.lat,p.lng]})});
 }
@@ -469,11 +544,21 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&cur)closeJo
 $('#jSave').addEventListener('click',function(){readJob();save();drawAll();toast('Saved.');closeJob()});
 $('#jAdvance').addEventListener('click',function(){
   readJob();
-  if(cur.stage==='inquiry'&&!cur.quote){toast('Add the quote amount first.');$('#jQuote').focus();return}
-  if(cur.stage==='quoted'&&!cur.date){toast('Pick an install date first.');$('#jDate').focus();return}
+  var p=G.pay(cur)[0];
+  if(cur.stage==='inquiry'){
+    if(!G.total(cur)){toast('Add the package price first.');$('#jBase').focus();return}
+    cur.q.status='sent';if(!cur.q.expires)cur.q.expires=G.plus(14);
+  }
+  if(cur.stage==='quoted'){
+    if(p==='sent'||p==='expired'||p==='draft'){toast('The customer has not approved this quote yet. Send them the customer link, or mark it approved.');return}
+    if(p==='dep'){toast('Deposit of '+money(G.deposit(cur))+' is still due. Record it before booking.');return}
+    if(!cur.date){toast('Pick an install date first.');$('#jDate').focus();return}
+  }
   if(cur.stage==='takedown'&&!cur.bin){toast('Add the storage bin so next year\'s crew can find the strands.');$('#jBin').focus();return}
   var i=STAGES.map(function(s){return s[0]}).indexOf(cur.stage),n=cur.name;cur.stage=STAGES[i+1][0];
-  var msg={quoted:'Quote saved for '+n+'. The live build emails it to the customer.',scheduled:n+' booked for '+day(cur.date)+'.',installed:n+' marked installed. Stay-Lit is active.',takedown:'Takedown started for '+n+'.',stored:n+' stored in bin '+cur.bin+'.'}[cur.stage];
+  var bal=G.due(cur);
+  var msg={quoted:'Quote '+cur.inv+' sent to '+n+' for '+money(G.total(cur))+'. Open the customer link to see what they see.',scheduled:n+' booked for '+day(cur.date)+'.',
+    installed:n+' marked installed. Stay-Lit is active.'+(bal?' Balance of '+money(bal)+' is now due.':''),takedown:'Takedown started for '+n+'.'+(bal?' Heads up: '+money(bal)+' is still unpaid.':''),stored:n+' stored in bin '+cur.bin+'.'}[cur.stage];
   save();drawAll();closeJob();toast(msg);
 });
 document.addEventListener('click',function(e){var b=e.target.closest('[data-open]');if(b)openJob(b.getAttribute('data-open'))});
@@ -499,9 +584,12 @@ var DEF="Spots for this season's installations are filling fast. Reserve yours t
 $('#sSeason').value=(LS.get('lig_site',{}).season)||DEF;
 $('#sPublish').addEventListener('click',function(){LS.set('lig_site',{season:$('#sSeason').value.trim()||DEF});toast('Published. Open "View on site" and scroll to the last section.')});
 
-$('#resetBtn').addEventListener('click',function(){try{['lig_admin','lig_requests','lig_service','lig_site'].forEach(function(k){localStorage.removeItem(k)})}catch(e){}S=JSON.parse(JSON.stringify(SEED));$('#sSeason').value=DEF;drawAll();toast('Sample data reset.')});
-function drawAll(){drawPipeline();drawSchedule();drawService();drawInventory();drawClients()}
+$('#resetBtn').addEventListener('click',function(){S=G.reset();save();$('#sSeason').value=DEF;drawAll();toast('Sample data reset.')});
+function drawAll(){drawPipeline();drawSchedule();drawPay();drawService();drawInventory();drawClients()}
 drawAll();
+/* pick up approvals, payments and crew updates made in another tab */
+window.addEventListener('storage',function(){if(!cur){S=G.load();drawAll()}});
+window.addEventListener('focus',function(){if(!cur){S=G.load();drawAll()}});
 })();
 </script>
 </body>
