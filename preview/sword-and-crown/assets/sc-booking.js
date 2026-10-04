@@ -14,7 +14,9 @@
 
   var TZ = 'America/Chicago';
   var OPEN = 10 * 60;          // 10:00
-  var CLOSE = 16 * 60;         // 16:00
+  // Her 2026-10-04 correction: 4:00 p.m. is the latest appointment START, not the
+  // latest finish. A 3.5-hour booking starting at 16:00 legitimately runs to 19:30.
+  var LAST_START = 16 * 60;    // 16:00
   var DURATION = 90;
   var DEPOSIT = 25000;         // cents
   var DAYS_AHEAD = 28;
@@ -83,7 +85,7 @@
   // Every legal start time: 10:00, 11:30, 13:00, 14:30
   function slotsForDay() {
     var out = [];
-    for (var t = OPEN; t + DURATION <= CLOSE; t += DURATION) out.push(t);
+    for (var t = OPEN; t <= LAST_START; t += DURATION) out.push(t);
     return out;
   }
 
