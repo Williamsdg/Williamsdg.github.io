@@ -261,8 +261,8 @@
     var max = 1, k; for (k in counts) if (counts[k] > max) max = counts[k];
     $$('[data-st]', box).forEach(function (el) {
       var c = counts[el.getAttribute('data-st')] || 0, st = el.getAttribute('data-st');
-      el.style.fill = c ? 'rgba(6,81,134,' + (0.22 + 0.78 * Math.sqrt(c / max)).toFixed(2) + ')' : '#e4e0d4';
-      el.style.stroke = st === sel ? '#00d26a' : '#fff'; el.style.strokeWidth = st === sel ? 4 : 1;
+      el.style.fill = c ? 'rgba(27,90,62,' + (0.22 + 0.78 * Math.sqrt(c / max)).toFixed(2) + ')' : '#e6dcc3';
+      el.style.stroke = st === sel ? '#c41230' : '#fff'; el.style.strokeWidth = st === sel ? 4 : 1;
       el.style.cursor = c ? 'pointer' : 'default';
       var t = el.querySelector('title'); if (!t) { t = document.createElementNS('http://www.w3.org/2000/svg', 'title'); el.appendChild(t); }
       t.textContent = st + ': ' + c;
