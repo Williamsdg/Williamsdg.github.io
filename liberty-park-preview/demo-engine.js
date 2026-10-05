@@ -1,5 +1,5 @@
 /* ============================================
-   LIBERTY PARK MANAGEMENT SERVICES
+   JUNIPER GLEN MANAGEMENT SERVICES
    Demo Engine — Shared Rendering Utilities
    ============================================ */
 
