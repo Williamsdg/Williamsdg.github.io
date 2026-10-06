@@ -4,6 +4,11 @@
   var qs = new URLSearchParams(location.search);
   if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && qs.get('api')) API = qs.get('api');
 
+  // Members who signed up before online enrollment existed already pay through
+  // Stripe. Their link (?member=existing) collects the same paperwork but never
+  // sends them to checkout.
+  var existing = qs.get('member') === 'existing';
+
   var form = document.getElementById('enrollForm');
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return [].slice.call((root || document).querySelectorAll(sel)); };
@@ -14,6 +19,12 @@
   fetch(API, { method: 'GET' }).then(function (r) { return r.json(); }).then(function (d) {
     if (d && d.testMode) $('#testNote').hidden = false;
   }).catch(function () {});
+
+  if (existing) {
+    document.getElementById('lede').textContent = 'You’re already a Senn Medicine member, so this just completes your paperwork: your details, then your membership agreement. It takes about five minutes, and you won’t be charged again.';
+    document.getElementById('step3Label').textContent = 'Done';
+    document.getElementById('submitFine').textContent = 'You won’t be charged. Your membership payment is already set up. Your details go straight into your paperwork. We don’t keep a copy on this website.';
+  }
 
   // ---- plan preselect -------------------------------------------------------
   var plan = qs.get('plan');
@@ -102,6 +113,7 @@
       plan: form.elements.plan.value,
       who: who,
       medicare: checked('medicare'),
+      existingMember: existing,
       website: val('website'),
       patient: {
         firstName: val('p_first'), lastName: val('p_last'), dob: val('p_dob'),
@@ -200,6 +212,16 @@
       var note = $('#emailedNote');
       note.textContent = 'We’ve emailed ' + names + ' a link to sign their own paperwork. Their membership is complete once they’ve signed.';
       note.hidden = false;
+    }
+    if (!d.payment) {
+      // Existing member: nothing to pay.
+      $('#payHead').textContent = signed ? 'Signed. You’re all set.' : 'Paperwork sent. You’re all set.';
+      $('#payPlan').textContent = d.plan;
+      $('#payPrice').textContent = 'Your membership payment is already on file. Nothing more to pay.';
+      $('#payBtn').hidden = true;
+      $('#payFine').hidden = true;
+      $('#payAfter').textContent = 'Our office will be in touch to schedule your first visit. A signed copy of your paperwork is emailed to you as soon as everyone has signed.';
+      return;
     }
     $('#payPlan').textContent = d.payment.plan;
     $('#payPrice').textContent = d.payment.price;
