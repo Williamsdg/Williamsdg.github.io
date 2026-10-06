@@ -21,5 +21,22 @@ window.SC_CONFIG = {
    * Create it in Stripe (Payment links -> new link, $250, one-off) and paste the
    * URL here. Until then the booking page holds the slot and tells the client a
    * payment link will be emailed - it never implies a card was charged. */
-  DEPOSIT_PAYMENT_URL: ''
+  DEPOSIT_PAYMENT_URL: '',
+
+  /* Shopify — the system of record for inventory.
+   * SHOPIFY_DOMAIN is the store's own address, e.g. your-store.myshopify.com
+   * (find it in the Shopify admin URL, not her custom domain).
+   *
+   * SHOPIFY_STOREFRONT_TOKEN is the PUBLIC Storefront API token. It is designed
+   * to sit in browser JavaScript and can only read published products.
+   * Shopify admin -> Settings -> Apps and sales channels -> Develop apps ->
+   * Create an app -> Configure Storefront API scopes -> tick
+   *   unauthenticated_read_product_listings
+   *   unauthenticated_read_product_inventory
+   * -> Install -> copy the Storefront API access token.
+   *
+   * NEVER put the Admin API token here. That one can read orders and customers. */
+  SHOPIFY_DOMAIN: '',
+  SHOPIFY_STOREFRONT_TOKEN: '',
+  SHOPIFY_API_VERSION: '2025-01'
 };
