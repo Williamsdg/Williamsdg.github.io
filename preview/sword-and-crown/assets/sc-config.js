@@ -36,7 +36,7 @@ window.SC_CONFIG = {
    * -> Install -> copy the Storefront API access token.
    *
    * NEVER put the Admin API token here. That one can read orders and customers. */
-  SHOPIFY_DOMAIN: '',
+  SHOPIFY_DOMAIN: 'sword-and-crown-salon-and-studio.myshopify.com',
   SHOPIFY_STOREFRONT_TOKEN: '',
   SHOPIFY_API_VERSION: '2025-01'
 };
