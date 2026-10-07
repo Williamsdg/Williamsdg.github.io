@@ -114,6 +114,7 @@
       who: who,
       medicare: checked('medicare'),
       existingMember: existing,
+      demo: qs.get('demo') === '1',   // honoured only for a williamsdigital.io address; makes test-mode paperwork
       website: val('website'),
       patient: {
         firstName: val('p_first'), lastName: val('p_last'), dob: val('p_dob'),
