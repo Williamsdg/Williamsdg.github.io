@@ -23,6 +23,7 @@
   if (existing) {
     document.getElementById('lede').textContent = 'You’re already a Senn Medicine member, so this just completes your paperwork: your details, then your membership agreement. It takes about five minutes, and you won’t be charged again.';
     document.getElementById('step3Label').textContent = 'Done';
+    $('#stepSign .step-p').textContent = 'This is Senn Medicine’s membership agreement and privacy acknowledgment, already filled in with your details. Read through and sign, and you’re done.';
     document.getElementById('submitFine').textContent = 'You won’t be charged. Your membership payment is already set up. Your details go straight into your paperwork. We don’t keep a copy on this website.';
   }
 
