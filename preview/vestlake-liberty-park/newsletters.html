@@ -46,7 +46,8 @@
   .archive-toolbar select { width: auto; min-width: 140px; }
 
   .nl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .nl-card { background: white; border: 1px solid var(--border-light); border-radius: var(--radius); overflow: hidden; transition: var(--transition); }
+  .nl-card { background: white; border: 1px solid var(--border-light); border-radius: var(--radius); overflow: hidden; transition: var(--transition); cursor: pointer; }
+  .nl-card:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   .nl-card:hover { box-shadow: var(--shadow); border-color: var(--border); transform: translateY(-2px); }
   .nl-cover { aspect-ratio: 8.5/11; background: linear-gradient(135deg, var(--forest) 0%, var(--forest-light) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 16px; position: relative; overflow: hidden; }
   .nl-cover::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--gold); }
@@ -174,7 +175,7 @@
       Object.keys(years).sort(function (a, b) { return b - a; }).forEach(function (y) {
         html += '<div class="year-section"><h3>' + y + '</h3><div class="nl-grid">';
         years[y].forEach(function (n, i) {
-          html += '<div class="nl-card' + alts[i % 3] + '">' +
+          html += '<div class="nl-card' + alts[i % 3] + '" data-nl="' + n.id + '" role="link" tabindex="0" aria-label="Read ' + esc(n.title) + '">' +
             '<div class="nl-cover"><div class="nc-mo">' + MONTHS[n.issue_month - 1].slice(0, 3) + '</div><div class="nc-yr">' + n.issue_year + '</div><div class="nc-sub">Vestlake Community News</div></div>' +
             '<div class="nl-meta"><h4>' + esc(n.title) + '</h4>' +
             '<div class="nl-date">' + (n.page_count ? n.page_count + ' pages · ' : '') + size(n.pdf_size) + '</div>' +
@@ -183,7 +184,19 @@
         });
         html += '</div></div>';
       });
-      document.getElementById('nlArchive').innerHTML = html;
+      var archive = document.getElementById('nlArchive');
+      archive.innerHTML = html;
+      /* whole card opens the reader; the Download/Read links keep their own behavior */
+      archive.addEventListener('click', function (ev) {
+        if (ev.target.closest('a')) return;
+        var card = ev.target.closest('.nl-card');
+        if (card && card.dataset.nl) location.href = 'document.html?nl=' + card.dataset.nl;
+      });
+      archive.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Enter' && ev.key !== ' ') return;
+        var card = ev.target.closest('.nl-card');
+        if (card && ev.target === card && card.dataset.nl) { ev.preventDefault(); location.href = 'document.html?nl=' + card.dataset.nl; }
+      });
     })
     .catch(function () {
       document.getElementById('nlArchive').innerHTML = '<p style="color:var(--text-muted);font-size:14px;">The newsletter archive could not be loaded. Please refresh the page.</p>';
