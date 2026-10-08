@@ -111,8 +111,9 @@
           if (show) visibleRows++;
         });
         var hasRows = cat.querySelectorAll('.doc-row').length > 0;
-        cat.style.display = (hasRows && visibleRows === 0) ? 'none' : '';
-        if (visibleRows > 0 || !hasRows) anyVisible = true;
+        var isEmpty = cat.dataset.empty === '1';
+        cat.style.display = (isEmpty || (hasRows && visibleRows === 0)) ? 'none' : '';
+        if (visibleRows > 0 || (!hasRows && !isEmpty)) anyVisible = true;
       });
       var empty = document.getElementById('docSearchEmpty');
       if (empty) empty.hidden = anyVisible || !q;
