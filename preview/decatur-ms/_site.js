@@ -13,7 +13,7 @@
           limbs:'Tuesdays',limbsNote:'Yard debris and cut limbs at the curb.',
           due:'Due the 10th',dueNote:'Service is disconnected the first working day after the 10th. Reconnection is $50.',
           hours:'8:00 a.m. – 12:00 p.m., closed for lunch, then 1:00 – 5:00 p.m.',
-          cutoffs:'Monday, October 13 · Wednesday, November 12 · Friday, December 11'},
+          cutoffs:''}  /* computed in apply() when the Town has not set one */,
     news:[],
     depts:{police:true,fire:true,works:true,chamber:false}
   };
@@ -131,6 +131,79 @@
     if(sec) sec.hidden = shown===0;
   }
 
+
+  /* ---- dates -------------------------------------------------------------
+     The Board meets the first Tuesday at 6 p.m. Bills are due the 10th and
+     service is cut off the first WORKING day after it, so weekends and
+     federal holidays have to be skipped — Oct 12 is Columbus Day and Nov 11
+     is Veterans Day, which is why those months land a day later than a naive
+     calculation suggests. Everything is computed from today so the pages
+     never show a meeting that has already happened. */
+  var DAY=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function nthWeekday(y,m,wd,n){ var d=new Date(y,m,1),c=0;
+    while(true){ if(d.getDay()===wd && ++c===n) return d; d.setDate(d.getDate()+1); } }
+  function lastWeekday(y,m,wd){ var d=new Date(y,m+1,0);
+    while(d.getDay()!==wd) d.setDate(d.getDate()-1); return d; }
+  function holidays(y){
+    var l=[new Date(y,0,1), nthWeekday(y,0,1,3), nthWeekday(y,1,1,3), lastWeekday(y,4,1),
+           new Date(y,5,19), new Date(y,6,4), nthWeekday(y,8,1,1), nthWeekday(y,9,1,2),
+           new Date(y,10,11), nthWeekday(y,10,4,4), new Date(y,11,25)];
+    var o={}; for(var i=0;i<l.length;i++) o[l[i].getFullYear()+'-'+l[i].getMonth()+'-'+l[i].getDate()]=1;
+    return o;
+  }
+  var _hol={};
+  function isOff(d){
+    if(d.getDay()===0||d.getDay()===6) return true;
+    var y=d.getFullYear(); if(!_hol[y]) _hol[y]=holidays(y);
+    return !!_hol[y][y+'-'+d.getMonth()+'-'+d.getDate()];
+  }
+  function cutoffFor(y,m){ var d=new Date(y,m,11); while(isOff(d)) d.setDate(d.getDate()+1); return d; }
+  function cutoffList(n,now){
+    now=now||new Date(); var out=[],y=now.getFullYear(),m=now.getMonth();
+    if(now.getDate()>10){ m++; }
+    for(var i=0;i<n;i++){ var mm=m+i, yy=y+Math.floor(mm/12); mm=((mm%12)+12)%12;
+      out.push({due:new Date(yy,mm,10), cut:cutoffFor(yy,mm)}); }
+    return out;
+  }
+  function boardFor(y,m){ return nthWeekday(y,m,2,1); }     /* first Tuesday */
+  function nextBoard(now){
+    now=now||new Date();
+    var t=boardFor(now.getFullYear(),now.getMonth()), end=new Date(t); end.setHours(18,0,0,0);
+    if(now>end){ var m=now.getMonth()+1, y=now.getFullYear()+Math.floor(m/12); t=boardFor(y,m%12); }
+    return t;
+  }
+  function boardList(n,now){
+    var out=[],d=nextBoard(now);
+    for(var i=0;i<n;i++){ var m=d.getMonth()+i, y=d.getFullYear()+Math.floor(m/12);
+      out.push(boardFor(y,((m%12)+12)%12)); }
+    return out;
+  }
+  function fLong(d){ return DAY[d.getDay()]+', '+MON[d.getMonth()]+' '+d.getDate(); }
+  function fShort(d){ return DAY[d.getDay()].slice(0,3)+', '+MON[d.getMonth()].slice(0,3)+' '+d.getDate()+', '+d.getFullYear(); }
+  function fMD(d){ return MON[d.getMonth()].slice(0,3)+' '+d.getDate(); }
+
+  function renderDates(){
+    var b=nextBoard();
+    setText('wdBoardWhen', fLong(b)+' at 6:00 p.m.');
+    setText('wdAgendaPosts', (function(){ var a=new Date(b); a.setDate(a.getDate()-4); return DAY[a.getDay()]+', '+fMD(a); })());
+
+    var ul=document.getElementById('wdCutoffList');
+    if(ul){ var rows=cutoffList(6), h='';
+      for(var i=0;i<rows.length;i++)
+        h+='<li><span class="k">'+MON[rows[i].due.getMonth()]+'</span>'
+          +'<span class="v">Due '+fMD(rows[i].due)+' &middot; cut-off '+DAY[rows[i].cut.getDay()]+' '+fMD(rows[i].cut)+'</span></li>';
+      ul.innerHTML=h;
+    }
+    var bl=document.getElementById('wdBoardUpcoming');
+    if(bl){ var ms=boardList(4), h2='';
+      for(var j=0;j<ms.length;j++)
+        h2+='<li><span class="w">'+fShort(ms[j])+'</span><span class="p">Regular Meeting &middot; 6:00 p.m. &middot; Town Hall</span></li>';
+      bl.innerHTML=h2;
+    }
+  }
+
   function apply(){
     var d=load();
     renderBanner(d);
@@ -138,12 +211,16 @@
     setText('wdGarbage',d.week.garbage); setText('wdGarbageNote',d.week.garbageNote);
     setText('wdLimbs',d.week.limbs);     setText('wdLimbsNote',d.week.limbsNote);
     setText('wdDue',d.week.due);         setText('wdDueNote',d.week.dueNote);
-    setText('wdHours',d.week.hours);     setText('wdCutoffs',d.week.cutoffs);
+    setText('wdHours',d.week.hours);
+    setText('wdCutoffs', d.week.cutoffs || cutoffList(3).map(function(r){
+      return DAY[r.cut.getDay()]+', '+MON[r.cut.getMonth()]+' '+r.cut.getDate(); }).join(' \u00b7 '));
+    renderDates();
     renderNews(d);
     renderDepts(d);
   }
 
-  window.WDSite={KEY:KEY,DEFAULTS:DEFAULTS,load:load,save:save,reset:reset,apply:apply,LEVELS:LEVELS};
+  window.WDSite={KEY:KEY,DEFAULTS:DEFAULTS,load:load,save:save,reset:reset,apply:apply,LEVELS:LEVELS,
+    nextBoard:nextBoard,boardList:boardList,cutoffList:cutoffList,renderDates:renderDates};
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',apply);
   else apply();
