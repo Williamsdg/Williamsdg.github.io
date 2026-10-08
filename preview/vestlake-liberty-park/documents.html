@@ -119,10 +119,10 @@
         <h4>Governing Docs</h4>
         <div class="qa-count" id="count-governing">…</div>
       </a>
-      <a class="qa-card" href="#cat-minutes">
-        <div class="qa-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg></div>
+      <a class="qa-card" href="#cat-minutes-resident">
+        <div class="qa-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg></div>
         <h4>Meeting Minutes</h4>
-        <div class="qa-count" id="count-minutes">…</div>
+        <div class="qa-count">Residents only</div>
       </a>
       <a class="qa-card" href="#cat-finance">
         <div class="qa-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M5 9l7-7 7 7"/></svg></div>
@@ -175,6 +175,29 @@
       <div class="doc-list" id="list-minutes">
         <p class="empty-note" style="padding:18px 24px;font-size:14px;color:var(--text-muted);margin:0;">Loading…</p>
       </div>
+    </div>
+
+    <!-- Minutes — residents only (password-gated) -->
+    <div class="doc-category" id="cat-minutes-resident">
+      <div class="doc-cat-header">
+        <div class="cat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+        </div>
+        <div>
+          <h3>Board Meeting Minutes</h3>
+          <div class="cat-meta">For Vestlake residents &mdash; enter the community password to view</div>
+        </div>
+      </div>
+      <div class="doc-list" id="minutes-gate">
+        <form id="minutesForm" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:20px 24px;">
+          <input type="password" id="minutesPw" autocomplete="off" placeholder="Community password"
+            style="flex:1;min-width:200px;min-height:46px;padding:0 14px;font-size:15px;border:1px solid var(--border-light);border-radius:8px;font-family:inherit;" aria-label="Community password">
+          <button type="submit" style="min-height:46px;padding:0 24px;background:var(--forest);color:#fff;font-weight:600;font-size:15px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;">Unlock</button>
+          <p id="minutesErr" style="flex-basis:100%;margin:0;font-size:13.5px;color:#b3261e;" role="alert"></p>
+        </form>
+      </div>
+      <div class="doc-list" id="list-minutes-resident" style="display:none;"></div>
+      <p id="minutesUnlockedNote" style="display:none;padding:10px 24px 16px;font-size:13px;color:var(--text-muted);margin:0;">Unlocked for this visit &mdash; download links are valid for about an hour. <a href="#" id="minutesLock" style="color:var(--forest);">Lock again</a></p>
     </div>
 
     <!-- Financials -->
@@ -270,6 +293,56 @@
         if (list) list.innerHTML = note('Documents could not be loaded. Please refresh the page.');
       });
     });
+
+  /* ===== Residents-only minutes gate ===== */
+  var gate = document.getElementById('minutesForm');
+  if (gate) {
+    var FN = SB + '/functions/v1/vl-minutes';
+    var errEl = document.getElementById('minutesErr');
+    var listEl = document.getElementById('list-minutes-resident');
+    var gateEl = document.getElementById('minutes-gate');
+    var noteEl = document.getElementById('minutesUnlockedNote');
+    var renderMinutes = function (docs) {
+      listEl.innerHTML = docs.length ? docs.map(function (d) {
+        return '<div class="doc-row">' +
+          '<div class="doc-icon"><span class="ext">PDF</span></div>' +
+          '<div class="doc-info"><h4>' + esc(d.title) + '</h4><div class="doc-meta">' + esc(d.meta || '') + '</div></div>' +
+          '<div class="doc-size">' + size(d.size) + '</div>' +
+          '<div class="doc-actions"><a href="' + esc(d.url) + '" download>Download</a><a href="' + esc(d.url) + '" target="_blank" rel="noopener">Read</a></div>' +
+        '</div>';
+      }).join('') : note('No minutes have been posted yet.');
+      gateEl.style.display = 'none';
+      listEl.style.display = '';
+      noteEl.style.display = '';
+    };
+    var tryUnlock = function (pw, silent) {
+      return fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY, Authorization: 'Bearer ' + KEY }, body: JSON.stringify({ password: pw }) })
+        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+        .then(function (res) {
+          if (res.ok && res.body && res.body.docs) {
+            try { sessionStorage.setItem('vl_resident_pw', pw); } catch (e) {}
+            renderMinutes(res.body.docs);
+          } else if (!silent) {
+            errEl.textContent = (res.body && res.body.error) || 'Something went wrong. Please try again.';
+          }
+        })
+        .catch(function () { if (!silent) errEl.textContent = 'Could not reach the server. Please try again.'; });
+    };
+    gate.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errEl.textContent = '';
+      var pw = document.getElementById('minutesPw').value;
+      if (pw) tryUnlock(pw, false);
+    });
+    document.getElementById('minutesLock').addEventListener('click', function (e) {
+      e.preventDefault();
+      try { sessionStorage.removeItem('vl_resident_pw'); } catch (e2) {}
+      listEl.style.display = 'none'; noteEl.style.display = 'none'; gateEl.style.display = '';
+      document.getElementById('minutesPw').value = '';
+    });
+    var saved = null; try { saved = sessionStorage.getItem('vl_resident_pw'); } catch (e) {}
+    if (saved) tryUnlock(saved, true);
+  }
 })();
 </script>
 <script src="site.js" defer></script>

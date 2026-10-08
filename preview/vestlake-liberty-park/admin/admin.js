@@ -14,6 +14,7 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 const CATEGORIES = { board: 'Board', social: 'Social', facility: 'Facility', deadline: 'Deadline', holiday: 'Holiday' };
 const DOC_CATS = { governing: 'Governing Documents', minutes: 'Board Meeting Minutes', financial: 'Financial Reports', forms: 'Forms & Resident Guides' };
 const DOCS_BUCKET = 'vestlake-documents';
+const MINUTES_BUCKET = 'vestlake-minutes'; // private — board minutes, residents-only (shared password on the public site)
 
 let profile = null;      // vl_staff row for the signed-in user
 let duplicateSeed = null; // event values carried into #/events/new by Duplicate
@@ -615,11 +616,13 @@ async function renderDocuments() {
   const row = (d) => `
     <div class="row">
       <div class="row-main">
-        <div class="title">${esc(d.title)} <span class="pill ${d.status}">${d.status}</span></div>
+        <div class="title">${esc(d.title)} <span class="pill ${d.status}">${d.status}</span>${d.resident_only ? ' <span class="pill draft" title="Behind the community password on the public site">🔒 residents</span>' : ''}</div>
         <div class="meta">${d.meta ? esc(d.meta) + ' · ' : ''}${d.page_count ? d.page_count + ' pages · ' : ''}${fmtSize(d.pdf_size) || 'PDF'}</div>
       </div>
       <div class="row-actions">
-        <a href="${esc(d.pdf_path)}" target="_blank" rel="noopener">Open PDF</a>
+        ${d.resident_only && !/^https?:/.test(d.pdf_path || '')
+          ? `<a href="#" data-sign="${esc(d.pdf_path)}">Open PDF</a>`
+          : `<a href="${esc(d.pdf_path)}" target="_blank" rel="noopener">Open PDF</a>`}
         <a href="#/documents/${d.id}">Edit</a>
         ${d.status !== 'archived'
           ? `<button type="button" class="danger" data-archive="${d.id}" data-name="${esc(d.title)}">Archive</button>`
@@ -646,6 +649,20 @@ async function renderDocuments() {
     await sb.from('vl_documents').update({ status: 'draft', updated_by: profile.full_name }).eq('id', b.dataset.restore);
     toast('Restored as a draft');
     renderDocuments();
+  }));
+  content.querySelectorAll('[data-sign]').forEach((a) => a.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      const res = await fetch(SUPABASE_URL + '/storage/v1/object/sign/' + MINUTES_BUCKET + '/' + a.dataset.sign, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token, apikey: ANON_KEY },
+        body: JSON.stringify({ expiresIn: 3600 }),
+      });
+      const j = await res.json();
+      if (!res.ok || !j.signedURL) throw new Error(j.message || 'Could not open the PDF.');
+      window.open(SUPABASE_URL + '/storage/v1' + j.signedURL, '_blank', 'noopener');
+    } catch (e) { toast(e.message || 'Could not open the PDF.'); }
   }));
 }
 
@@ -709,14 +726,28 @@ async function renderDocumentForm(id) {
       updated_by: profile.full_name,
     };
     try {
+      // Board minutes are residents-only: stored in the private bucket, served via the
+      // community-password gate on the public site. Everything else stays public.
+      const isMinutes = v.category === 'minutes';
+      v.resident_only = isMinutes;
       if (pendingFile) {
         const stamp = Date.now().toString(36);
         const safe = v.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
         const path = safe + '-' + stamp + '.pdf';
-        await uploadToBucket(DOCS_BUCKET, pendingFile, path);
-        v.pdf_path = SUPABASE_URL + '/storage/v1/object/public/' + DOCS_BUCKET + '/' + path;
+        if (isMinutes) {
+          await uploadToBucket(MINUTES_BUCKET, pendingFile, path);
+          v.pdf_path = path;
+        } else {
+          await uploadToBucket(DOCS_BUCKET, pendingFile, path);
+          v.pdf_path = SUPABASE_URL + '/storage/v1/object/public/' + DOCS_BUCKET + '/' + path;
+        }
         v.pdf_size = pendingFile.size;
         v.page_count = await countPdfPages(pendingFile);
+      } else if (id && isMinutes && /^https?:/.test(doc.pdf_path || '')) {
+        // moving an existing public-bucket file under the resident gate needs a re-upload
+        throw new Error('To move this document into Board Meeting Minutes (residents only), please choose its PDF again so it can be stored privately.');
+      } else if (id && !isMinutes && doc.resident_only && !/^https?:/.test(doc.pdf_path || '')) {
+        throw new Error('To move this document out of Board Meeting Minutes, please choose its PDF again so it can be stored publicly.');
       }
       let res;
       if (id) res = await sb.from('vl_documents').update(v).eq('id', id);
