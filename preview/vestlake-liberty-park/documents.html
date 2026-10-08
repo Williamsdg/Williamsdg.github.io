@@ -105,12 +105,37 @@
 <section class="page-header" id="main">
   <div class="container">
     <h1>Community Documents</h1>
-    <p>Governing documents, board meeting minutes, financial reports, ARC guidelines, and community forms. Everything in one place.</p>
+    <p>Governing documents, board meeting minutes, financial reports, ARC guidelines, and community forms &mdash; for Vestlake residents.</p>
   </div>
 </section>
 
-<section class="section section-cream">
+<!-- Residents gate: the whole documents library sits behind the community password -->
+<section class="section section-cream" id="docsGate">
+  <div class="container" style="max-width:560px;">
+    <div class="doc-category" style="margin:0;">
+      <div class="doc-cat-header">
+        <div class="cat-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+        </div>
+        <div>
+          <h3>Residents Only</h3>
+          <div class="cat-meta">Enter the community password to open the document library</div>
+        </div>
+      </div>
+      <form id="docsPwForm" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:20px 24px;">
+        <input type="password" id="docsPw" autocomplete="off" placeholder="Community password"
+          style="flex:1;min-width:200px;min-height:46px;padding:0 14px;font-size:15px;border:1px solid var(--border-light);border-radius:8px;font-family:inherit;" aria-label="Community password">
+        <button type="submit" style="min-height:46px;padding:0 24px;background:var(--forest);color:#fff;font-weight:600;font-size:15px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;">Unlock</button>
+        <p id="docsPwErr" style="flex-basis:100%;margin:0;font-size:13.5px;color:#b3261e;" role="alert"></p>
+      </form>
+      <p style="padding:0 24px 18px;margin:0;font-size:13px;color:var(--text-muted);">The password is shared in the community newsletter. Questions? Contact the management office.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section section-cream" id="docsContent" style="display:none;padding-top:0;">
   <div class="container">
+    <p style="margin:0 0 18px;font-size:13px;color:var(--text-muted);">Unlocked for this visit &mdash; minutes download links are valid for about an hour. <a href="#" id="docsLock" style="color:var(--forest);">Lock again</a></p>
 
     <!-- Quick Access -->
     <div class="quick-access">
@@ -161,22 +186,6 @@
     </div>
     <p id="docSearchEmpty" hidden style="color:var(--text-muted);font-size:14px;margin:-8px 0 20px;">No documents match your search.</p>
 
-    <!-- Minutes -->
-    <div class="doc-category" id="cat-minutes">
-      <div class="doc-cat-header">
-        <div class="cat-icon">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16"/></svg>
-        </div>
-        <div>
-          <h3>Board Meeting Minutes</h3>
-          <div class="cat-meta">Monthly board meeting records and annual meeting minutes</div>
-        </div>
-      </div>
-      <div class="doc-list" id="list-minutes">
-        <p class="empty-note" style="padding:18px 24px;font-size:14px;color:var(--text-muted);margin:0;">Loading…</p>
-      </div>
-    </div>
-
     <!-- Minutes — residents only (password-gated) -->
     <div class="doc-category" id="cat-minutes-resident">
       <div class="doc-cat-header">
@@ -185,19 +194,12 @@
         </div>
         <div>
           <h3>Board Meeting Minutes</h3>
-          <div class="cat-meta">For Vestlake residents &mdash; enter the community password to view</div>
+          <div class="cat-meta">Monthly board meeting records and annual meeting minutes</div>
         </div>
       </div>
-      <div class="doc-list" id="minutes-gate">
-        <form id="minutesForm" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:20px 24px;">
-          <input type="password" id="minutesPw" autocomplete="off" placeholder="Community password"
-            style="flex:1;min-width:200px;min-height:46px;padding:0 14px;font-size:15px;border:1px solid var(--border-light);border-radius:8px;font-family:inherit;" aria-label="Community password">
-          <button type="submit" style="min-height:46px;padding:0 24px;background:var(--forest);color:#fff;font-weight:600;font-size:15px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;">Unlock</button>
-          <p id="minutesErr" style="flex-basis:100%;margin:0;font-size:13.5px;color:#b3261e;" role="alert"></p>
-        </form>
+      <div class="doc-list" id="list-minutes-resident">
+        <p class="empty-note" style="padding:18px 24px;font-size:14px;color:var(--text-muted);margin:0;">Loading&hellip;</p>
       </div>
-      <div class="doc-list" id="list-minutes-resident" style="display:none;"></div>
-      <p id="minutesUnlockedNote" style="display:none;padding:10px 24px 16px;font-size:13px;color:var(--text-muted);margin:0;">Unlocked for this visit &mdash; download links are valid for about an hour. <a href="#" id="minutesLock" style="color:var(--forest);">Lock again</a></p>
     </div>
 
     <!-- Financials -->
@@ -251,98 +253,117 @@
   var CATS = ['governing', 'minutes', 'financial', 'forms'];
   var EMPTY = {
     governing: 'Additional governing documents will be posted as they are provided by the Association.',
-    minutes: 'Board meeting minutes will be posted here as they are provided by the Association.',
+    minutes: 'No minutes have been posted yet.',
     financial: 'Budgets and financial reports will be posted here as they are provided by the Association.',
     forms: 'Resident forms will be posted here as they are provided by the Association.'
   };
   function esc(t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; }
   function size(b) { if (!b) return 'PDF'; return b > 950 * 1024 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB'; }
   function note(msg) { return '<p style="padding:18px 24px;font-size:14px;color:var(--text-muted);margin:0;">' + msg + '</p>'; }
-  fetch(SB + '/rest/v1/vl_documents?status=eq.published&select=*&order=doc_date.desc.nullslast', { headers: { apikey: KEY } })
-    .then(function (r) { return r.json(); })
-    .then(function (rows) {
-      if (!Array.isArray(rows)) rows = [];
-      CATS.forEach(function (key) {
-        var docs = rows.filter(function (d) { return d.category === key; });
-        var list = document.getElementById('list-' + key);
-        var count = document.getElementById('count-' + key);
-        if (count) count.textContent = docs.length ? docs.length + (docs.length === 1 ? ' document' : ' documents') : 'Coming soon';
-        if (!list) return;
-        list.innerHTML = docs.length ? docs.map(function (d) {
-          var meta = [d.meta, d.page_count ? d.page_count + (d.page_count === 1 ? ' page' : ' pages') : null].filter(Boolean).join(' \u00b7 ');
-          return '<div class="doc-row">' +
-            '<div class="doc-icon"><span class="ext">PDF</span></div>' +
-            '<div class="doc-info"><h4>' + esc(d.title) + '</h4><div class="doc-meta">' + esc(meta) + '</div></div>' +
-            '<div class="doc-size">' + size(d.pdf_size) + '</div>' +
-            '<div class="doc-actions"><a href="' + esc(d.pdf_path) + '" download>Download</a><a href="document.html?id=' + d.id + '">Read</a></div>' +
-          '</div>';
-        }).join('') : note(EMPTY[key]);
-        /* Hide a category (and its quick-access card) entirely when it has no published documents */
-        var catEl = list.closest('.doc-category');
-        if (catEl) {
-          catEl.style.display = docs.length ? '' : 'none';
-          if (docs.length) { delete catEl.dataset.empty; } else { catEl.dataset.empty = '1'; }
-          var card = document.querySelector('.qa-card[href="#' + catEl.id + '"]');
-          if (card) card.style.display = docs.length ? '' : 'none';
-        }
-      });
-    })
-    .catch(function () {
-      CATS.forEach(function (key) {
-        var list = document.getElementById('list-' + key);
-        if (list) list.innerHTML = note('Documents could not be loaded. Please refresh the page.');
-      });
-    });
 
-  /* ===== Residents-only minutes gate ===== */
-  var gate = document.getElementById('minutesForm');
-  if (gate) {
-    var FN = SB + '/functions/v1/vl-minutes';
-    var errEl = document.getElementById('minutesErr');
-    var listEl = document.getElementById('list-minutes-resident');
-    var gateEl = document.getElementById('minutes-gate');
-    var noteEl = document.getElementById('minutesUnlockedNote');
-    var renderMinutes = function (docs) {
-      listEl.innerHTML = docs.length ? docs.map(function (d) {
-        return '<div class="doc-row">' +
-          '<div class="doc-icon"><span class="ext">PDF</span></div>' +
-          '<div class="doc-info"><h4>' + esc(d.title) + '</h4><div class="doc-meta">' + esc(d.meta || '') + '</div></div>' +
-          '<div class="doc-size">' + size(d.size) + '</div>' +
-          '<div class="doc-actions"><a href="' + esc(d.url) + '" download>Download</a><a href="' + esc(d.url) + '" target="_blank" rel="noopener">Read</a></div>' +
-        '</div>';
-      }).join('') : note('No minutes have been posted yet.');
-      gateEl.style.display = 'none';
-      listEl.style.display = '';
-      noteEl.style.display = '';
-    };
-    var tryUnlock = function (pw, silent) {
-      return fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: KEY, Authorization: 'Bearer ' + KEY }, body: JSON.stringify({ password: pw }) })
-        .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
-        .then(function (res) {
-          if (res.ok && res.body && res.body.docs) {
-            try { sessionStorage.setItem('vl_resident_pw', pw); } catch (e) {}
-            renderMinutes(res.body.docs);
-          } else if (!silent) {
-            errEl.textContent = (res.body && res.body.error) || 'Something went wrong. Please try again.';
+  var gateSec = document.getElementById('docsGate');
+  var contentSec = document.getElementById('docsContent');
+  var form = document.getElementById('docsPwForm');
+  var errEl = document.getElementById('docsPwErr');
+
+  /* public categories (everything except resident-only minutes) */
+  function loadPublicDocs() {
+    fetch(SB + '/rest/v1/vl_documents?status=eq.published&select=*&order=doc_date.desc.nullslast', { headers: { apikey: KEY } })
+      .then(function (r) { return r.json(); })
+      .then(function (rows) {
+        if (!Array.isArray(rows)) rows = [];
+        CATS.forEach(function (key) {
+          if (key === 'minutes') return; /* rendered from the gate response */
+          var docs = rows.filter(function (d) { return d.category === key; });
+          var list = document.getElementById('list-' + key);
+          var count = document.getElementById('count-' + key);
+          if (count) count.textContent = docs.length ? docs.length + (docs.length === 1 ? ' document' : ' documents') : 'Coming soon';
+          if (!list) return;
+          list.innerHTML = docs.length ? docs.map(function (d) {
+            var meta = [d.meta, d.page_count ? d.page_count + (d.page_count === 1 ? ' page' : ' pages') : null].filter(Boolean).join(' \u00b7 ');
+            return '<div class="doc-row">' +
+              '<div class="doc-icon"><span class="ext">PDF</span></div>' +
+              '<div class="doc-info"><h4>' + esc(d.title) + '</h4><div class="doc-meta">' + esc(meta) + '</div></div>' +
+              '<div class="doc-size">' + size(d.pdf_size) + '</div>' +
+              '<div class="doc-actions"><a href="' + esc(d.pdf_path) + '" download>Download</a><a href="document.html?id=' + d.id + '">Read</a></div>' +
+            '</div>';
+          }).join('') : note(EMPTY[key]);
+          var catEl = list.closest('.doc-category');
+          if (catEl) {
+            catEl.style.display = docs.length ? '' : 'none';
+            if (docs.length) { delete catEl.dataset.empty; } else { catEl.dataset.empty = '1'; }
+            var card = document.querySelector('.qa-card[href="#' + catEl.id + '"]');
+            if (card) card.style.display = docs.length ? '' : 'none';
           }
-        })
-        .catch(function () { if (!silent) errEl.textContent = 'Could not reach the server. Please try again.'; });
-    };
-    gate.addEventListener('submit', function (e) {
-      e.preventDefault();
-      errEl.textContent = '';
-      var pw = document.getElementById('minutesPw').value;
-      if (pw) tryUnlock(pw, false);
-    });
-    document.getElementById('minutesLock').addEventListener('click', function (e) {
-      e.preventDefault();
-      try { sessionStorage.removeItem('vl_resident_pw'); } catch (e2) {}
-      listEl.style.display = 'none'; noteEl.style.display = 'none'; gateEl.style.display = '';
-      document.getElementById('minutesPw').value = '';
-    });
-    var saved = null; try { saved = sessionStorage.getItem('vl_resident_pw'); } catch (e) {}
-    if (saved) tryUnlock(saved, true);
+        });
+      })
+      .catch(function () {
+        CATS.forEach(function (key) {
+          var list = document.getElementById('list-' + key);
+          if (list) list.innerHTML = note('Documents could not be loaded. Please refresh the page.');
+        });
+      });
   }
+
+  /* resident-only minutes (signed URLs from the gate response) */
+  function renderMinutes(docs) {
+    var list = document.getElementById('list-minutes-resident');
+    if (!list) return;
+    list.innerHTML = docs.length ? docs.map(function (d) {
+      return '<div class="doc-row">' +
+        '<div class="doc-icon"><span class="ext">PDF</span></div>' +
+        '<div class="doc-info"><h4>' + esc(d.title) + '</h4><div class="doc-meta">' + esc(d.meta || '') + '</div></div>' +
+        '<div class="doc-size">' + size(d.size) + '</div>' +
+        '<div class="doc-actions"><a href="' + esc(d.url) + '" download>Download</a><a href="' + esc(d.url) + '" target="_blank" rel="noopener">Read</a></div>' +
+      '</div>';
+    }).join('') : note(EMPTY.minutes);
+    var catEl = document.getElementById('cat-minutes-resident');
+    var card = document.querySelector('.qa-card[href="#cat-minutes-resident"]');
+    if (catEl) catEl.style.display = docs.length ? '' : 'none';
+    if (card) card.style.display = docs.length ? '' : 'none';
+  }
+
+  function openLibrary(docs) {
+    gateSec.style.display = 'none';
+    contentSec.style.display = '';
+    loadPublicDocs();
+    renderMinutes(docs);
+  }
+
+  function tryUnlock(pw, silent) {
+    return fetch(SB + '/functions/v1/vl-minutes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: KEY, Authorization: 'Bearer ' + KEY },
+      body: JSON.stringify({ password: pw })
+    })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        if (res.ok && res.body && res.body.docs) {
+          try { sessionStorage.setItem('vl_resident_pw', pw); } catch (e) {}
+          openLibrary(res.body.docs);
+        } else if (!silent) {
+          errEl.textContent = (res.body && res.body.error) || 'Something went wrong. Please try again.';
+        }
+      })
+      .catch(function () { if (!silent) errEl.textContent = 'Could not reach the server. Please try again.'; });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    errEl.textContent = '';
+    var pw = document.getElementById('docsPw').value;
+    if (pw) tryUnlock(pw, false);
+  });
+  document.getElementById('docsLock').addEventListener('click', function (e) {
+    e.preventDefault();
+    try { sessionStorage.removeItem('vl_resident_pw'); } catch (e2) {}
+    contentSec.style.display = 'none';
+    gateSec.style.display = '';
+    document.getElementById('docsPw').value = '';
+    window.scrollTo(0, 0);
+  });
+  var saved = null; try { saved = sessionStorage.getItem('vl_resident_pw'); } catch (e) {}
+  if (saved) tryUnlock(saved, true);
 })();
 </script>
 <script src="site.js" defer></script>
