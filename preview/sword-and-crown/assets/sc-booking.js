@@ -24,6 +24,21 @@
   var root = document.getElementById('bk');
   if (!root) return;
 
+  /* Each department opens on different days, per her 2026-10-04 notes:
+       consultation  Mon-Fri      (the wig consultation page)
+       nano-brows    Tue, Thu     (Natalie)
+       head-spa      Mon, Wed, Fri (Constantina)
+     1 = Monday ... 7 = Sunday, matching Postgres isodow. The database can
+     override these once department_hours is populated from the admin. */
+  var DEPT = root.getAttribute('data-department') || 'consultation';
+  var DEFAULT_DAYS = {
+    'consultation': [1, 2, 3, 4, 5],
+    'nano-brows':   [2, 4],
+    'head-spa':     [1, 3, 5],
+    'styling':      []
+  };
+  var OPEN_DAYS = DEFAULT_DAYS[DEPT] || [1, 2, 3, 4, 5];
+
   var elDays = document.getElementById('bkDays');
   var elSlots = document.getElementById('bkSlots');
   var form = document.getElementById('bkForm');
@@ -109,7 +124,7 @@
 
   function dayIsBookable(iso) {
     var wd = weekdayOf(iso);
-    if (wd > 5) return false;                               // Mon–Fri only
+    if (OPEN_DAYS.indexOf(wd) === -1) return false;          // this department's days
     var s = slotsForDay();
     for (var i = 0; i < s.length; i++) if (slotFree(iso, s[i])) return true;
     return false;
@@ -131,7 +146,7 @@
     var html = '', first = null, shown = 0;
     for (var n = 0; n <= DAYS_AHEAD && shown < 14; n++) {
       var iso = isoPlusDays(today.iso, n);
-      if (weekdayOf(iso) > 5) continue;
+      if (OPEN_DAYS.indexOf(weekdayOf(iso)) === -1) continue;
       var ok = dayIsBookable(iso), l = label(iso);
       if (ok && !first) first = iso;
       html += '<button type="button" role="tab" class="bk-day" data-day="' + iso + '"' +
@@ -165,9 +180,23 @@
     if (b && !b.disabled) { selectDay(b.dataset.day); form.hidden = true; }
   });
 
+  // Her eligibility notice must be acknowledged before a tattoo slot can be
+  // picked. This is a medical-suitability gate, not a formality.
+  var elig = document.getElementById('eligAck');
+  function eligOK() { return !elig || elig.checked; }
+  if (elig) {
+    var gate = document.getElementById('bkGate');
+    var sync = function () { if (gate) gate.classList.toggle('locked', !elig.checked); };
+    elig.addEventListener('change', sync); sync();
+  }
+
   elSlots.addEventListener('click', function (e) {
     var b = e.target.closest('.bk-slot');
     if (!b || b.disabled) return;
+    if (!eligOK()) {
+      alert('Please read and tick the eligibility notice above before choosing a time.');
+      elig.focus(); return;
+    }
     Array.prototype.forEach.call(elSlots.querySelectorAll('.bk-slot'), function (x) {
       x.classList.toggle('on', x === b);
     });
@@ -205,7 +234,7 @@
 
     var row = {
       slot_date: chosen.day, slot_start: chosen.start, duration_min: DURATION,
-      status: 'held', name: name, email: email,
+      status: 'held', department: DEPT, name: name, email: email,
       phone: document.getElementById('bkPhone').value.trim() || null,
       notes: document.getElementById('bkNotes').value.trim() || null,
       deposit_cents: DEPOSIT, terms_ack_at: new Date().toISOString()
@@ -266,6 +295,15 @@
     var CFG = window.SC_CONFIG, base = CFG.SUPABASE_URL.replace(/\/+$/, '') + '/rest/v1/';
     var h = { apikey: CFG.SUPABASE_ANON_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_ANON_KEY };
     var from = today.iso, to = isoPlusDays(today.iso, DAYS_AHEAD);
+    // Let the admin override the built-in days for this department.
+    fetch(base + 'department_hours?select=*&department=eq.' + encodeURIComponent(DEPT), { headers: h })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) {
+        if (rows && rows[0] && Array.isArray(rows[0].weekdays) && rows[0].weekdays.length) {
+          OPEN_DAYS = rows[0].weekdays;
+        }
+      }).catch(function () {});
+
     Promise.all([
       fetch(base + 'slots_taken?select=*&slot_date=gte.' + from + '&slot_date=lte.' + to, { headers: h })
         .then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }),

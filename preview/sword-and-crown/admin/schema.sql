@@ -237,3 +237,136 @@ create policy bookings_admin_all on public.bookings
 
 create index if not exists bookings_day_idx  on public.bookings (slot_date, slot_start);
 create index if not exists blackouts_day_idx on public.blackouts (day);
+
+-- ═══════════════════════════════════════════════════════════════════
+-- SERVICES, STAFF AND REQUESTS  (2026-10-09, from her 10-04 notes)
+-- Three departments, each with independently editable availability and
+-- its own menu:
+--   nano-brows  Natalie Henderson      Tue/Thu + special, calendar
+--   head-spa    Constantina A.         Mon/Wed/Fri, calendar
+--   styling     technician-managed     request form, internal calendar
+-- Across everything, 16:00 America/Chicago is the latest START.
+-- ═══════════════════════════════════════════════════════════════════
+
+create table if not exists public.staff (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+  slug        text unique not null,
+  name        text not null,
+  role        text,
+  bio         text,
+  photo_url   text,
+  active      boolean not null default true,
+  sort        int not null default 0
+);
+
+create table if not exists public.services (
+  id            uuid primary key default gen_random_uuid(),
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  department    text not null check (department in ('nano-brows','head-spa','styling')),
+  name          text not null,
+  description   text,
+  duration_min  int  not null default 60 check (duration_min > 0),
+  price_cents   int  check (price_cents is null or price_cents >= 0),
+  deposit_cents int  not null default 0 check (deposit_cents >= 0),
+  -- some services ask the client to pick a variant, e.g. Nano Brows vs
+  -- Restorative Tattooing on a shared consultation slot
+  options       text[],
+  staff_id      uuid references public.staff(id) on delete set null,
+  bookable      boolean not null default true,   -- false = by request only
+  published     boolean not null default false,
+  sort          int not null default 0,
+  photo_url     text
+);
+
+-- Which weekdays each department opens. 1=Mon .. 7=Sun, per Postgres isodow.
+create table if not exists public.department_hours (
+  department  text primary key check (department in ('nano-brows','head-spa','styling')),
+  weekdays    int[] not null,
+  open_time   time not null default '10:00',
+  last_start  time not null default '16:00',
+  by_request  boolean not null default false
+);
+
+insert into public.department_hours (department, weekdays, open_time, last_start, by_request) values
+  ('nano-brows', '{2,4}',       '10:00','16:00', false),  -- Tuesday, Thursday
+  ('head-spa',   '{1,3,5}',     '10:00','16:00', false),  -- Mon, Wed, Fri
+  ('styling',    '{1,2,3,4,5}', '10:00','16:00', true)    -- request form only
+on conflict (department) do nothing;
+
+-- Appointment requests from the styling form. She asked that these be saved
+-- here FIRST, with email only as a notification, so nothing is lost if a
+-- mailbox bounces or is not set up yet.
+create table if not exists public.requests (
+  id          uuid primary key default gen_random_uuid(),
+  created_at  timestamptz not null default now(),
+  name        text not null,
+  phone       text not null,
+  email       text not null,
+  service     text not null,
+  details     text,
+  status      text not null default 'new'
+              check (status in ('new','contacted','booked','closed')),
+  staff_note  text
+);
+
+alter table public.staff             enable row level security;
+alter table public.services          enable row level security;
+alter table public.department_hours  enable row level security;
+alter table public.requests          enable row level security;
+
+drop policy if exists staff_public_read on public.staff;
+create policy staff_public_read on public.staff
+  for select to anon, authenticated using (active = true);
+
+drop policy if exists services_public_read on public.services;
+create policy services_public_read on public.services
+  for select to anon, authenticated using (published = true);
+
+drop policy if exists dephours_public_read on public.department_hours;
+create policy dephours_public_read on public.department_hours
+  for select to anon, authenticated using (true);
+
+-- Anyone may submit a request; only an admin may read them back. They carry
+-- names, phone numbers and what someone wants done to their hair.
+drop policy if exists requests_public_insert on public.requests;
+create policy requests_public_insert on public.requests
+  for insert to anon, authenticated with check (status = 'new');
+
+drop policy if exists requests_admin_all on public.requests;
+create policy requests_admin_all on public.requests
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists staff_admin_all on public.staff;
+create policy staff_admin_all on public.staff
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists services_admin_all on public.services;
+create policy services_admin_all on public.services
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists dephours_admin_all on public.department_hours;
+create policy dephours_admin_all on public.department_hours
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop trigger if exists services_touch on public.services;
+create trigger services_touch before update on public.services
+  for each row execute function public.touch_updated_at();
+
+create index if not exists services_dept_idx on public.services (department, published, sort);
+create index if not exists requests_new_idx  on public.requests (status, created_at desc);
+
+-- bookings needs to know which service and which technician, so two
+-- appointments with the same person cannot overlap.
+alter table public.bookings add column if not exists service_id uuid references public.services(id) on delete set null;
+alter table public.bookings add column if not exists staff_id   uuid references public.staff(id) on delete set null;
+alter table public.bookings add column if not exists department text;
+
+-- The original unique(slot_date, slot_start) assumed one chair. With three
+-- departments it must be per technician instead.
+alter table public.bookings drop constraint if exists bookings_slot_date_slot_start_key;
+create unique index if not exists bookings_staff_slot_uniq
+  on public.bookings (staff_id, slot_date, slot_start) where staff_id is not null;
+create unique index if not exists bookings_consult_slot_uniq
+  on public.bookings (slot_date, slot_start) where staff_id is null;
