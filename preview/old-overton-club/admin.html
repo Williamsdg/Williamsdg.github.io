@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Staff Portal · Old Overton Club (concept)</title>
+<meta name="description" content="Staff and admin portal concept for Old Overton Club. Built by Williams Digital. Sample data only.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal.css?v=1">
+<style>@media print{.side,.topbar,.tabbar,.demo-bar,.days,.btn,.more,.toast,form{display:none!important}.app{display:block}.main{padding:0}body{background:#fff}.panel{border:0;padding:0}}</style>
+<!--
+  OLD OVERTON CLUB — staff portal concept. Williams Digital, 2026-10-09.
+  UNSOLICITED CONCEPT, not affiliated with the club. All members, bookings, orders,
+  balances and event dates are SAMPLE data. Nothing is sent anywhere.
+-->
+</head>
+<body class="admin">
+<div class="demo-bar">Staff portal concept with sample members, bookings and prices. <a href="member.html">See the member side</a> · <button type="button" data-act="reset">Reset the demo</button></div>
+
+<div class="app">
+  <aside class="side">
+    <a class="logo" href="index.html" aria-label="Old Overton Club website"><img src="img/logo-white.png" alt="Old Overton" width="520" height="485"></a>
+    <div class="who">Staff Portal</div>
+    <nav id="sideNav" aria-label="Portal"></nav>
+    <div class="foot">
+      <span>Signed in as the Club Office</span>
+      <a href="index.html">Club website</a>
+      <a href="member.html">Member portal</a>
+    </div>
+  </aside>
+  <div>
+    <div class="topbar"><a href="index.html" aria-label="Old Overton Club website"><img src="img/logo-white.png" alt="Old Overton" width="520" height="485"></a><span>Staff Portal<br>Club Office</span></div>
+    <main class="main" id="view"></main>
+  </div>
+</div>
+
+<nav class="tabbar" id="tabbar" aria-label="Portal" style="grid-template-columns:repeat(5,1fr)"></nav>
+<div class="more" id="more" aria-hidden="true"><h2>Staff Portal</h2><div id="moreList"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="portal.js?v=1"></script>
+<script>
+(function(){
+  var O=OOC,E=O.esc;
+  var ICON={
+    today:'<path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z"/>',
+    tee:'<path d="M12 21V4l7 3.5-7 3.5"/><ellipse cx="12" cy="21" rx="6" ry="1.4"/>',
+    dining:'<path d="M6 3v8a2 2 0 0 0 4 0V3M8 11v10M16 3c-2 2-2 8 0 9v9"/>',
+    orders:'<path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2"/>',
+    more:'<path d="M4 7h16M4 12h16M4 17h16"/>'
+  };
+  var NAV=[['today','Today'],['tee','Tee Sheet'],['dining','Dining Room'],['courts','Court Sheet'],['scores','Scores'],['orders','Shop Orders'],['events','Events & RSVPs'],['gate','Gate List'],['members','Members'],['notices','Notices']];
+  var TABS=['today','tee','dining','orders'];
+  var ui={teeDate:O.today(),dnDate:O.today(),dnRoom:'All',ctDate:O.today(),ctSel:null,gateDate:O.today(),ordTab:'Queue',q:'',teeReason:'Course maintenance',teeAll:window.innerWidth>900,ctReason:'Clinic'};
+  var ROSTER=[['1007','James & Anne Calloway'],['1011','Robert Pruitt'],['1015','Margaret Ashby'],['1019','William & Sara Langford'],['1023','Andrew Mercer'],['1028','Thomas Bledsoe'],['1031','Susan Tillman'],['1036','Walter Garrison'],['1040','Laura Weatherly'],['1042','Charles Whitmore'],['1047','Henry Kimbrough'],['1052','Elizabeth Ramsey'],['1058','Thomas Northcutt'],['1063','Helen Sterling'],['1069','Benjamin Hargrove'],['1074','Sarah Ellison'],['1080','Edward Thackeray'],['1085','Katherine Marlowe'],['1091','Eleanor Beaumont'],['1096','Kenneth Dunaway'],['1102','Rebecca Lockhart'],['1108','Jonathan Fairchild']];
+
+  function route(){var h=location.hash.replace('#','');return NAV.some(function(n){return n[0]===h})?h:'today'}
+  function head(eyebrow,title,sub,extra){return '<div class="page-head"><div><p class="eyebrow">'+eyebrow+'</p><h1>'+title+'</h1>'+(sub?'<p>'+sub+'</p>':'')+'</div>'+(extra||'')+'</div>'}
+  function opt(list,sel){return list.map(function(v){var val=Array.isArray(v)?v[0]:v,lab=Array.isArray(v)?v[1]:v;return '<option value="'+E(val)+'"'+(String(val)===String(sel)?' selected':'')+'>'+E(lab)+'</option>'}).join('')}
+  function pill(s){var c=/Verified|Confirmed|Ready|Picked|Seated|Arrived/.test(s)?'ok':/Pending|New|Expected/.test(s)?'warn':/Rejected/.test(s)?'bad':'';return '<span class="pill '+c+'">'+E(s)+'</span>'}
+  function counts(){var s=O.load();return {scores:s.rounds.filter(function(r){return r.status==='Pending'}).length+s.tennis.filter(function(r){return r.status==='Pending'}).length,orders:s.orders.filter(function(o){return o.status==='New'}).length}}
+
+  function chrome(r){
+    var c=counts(),badge={scores:c.scores,orders:c.orders};
+    document.getElementById('sideNav').innerHTML=NAV.map(function(n){return '<a href="#'+n[0]+'" class="'+(n[0]===r?'on':'')+'">'+n[1]+(badge[n[0]]?'<b>'+badge[n[0]]+'</b>':'')+'</a>'}).join('');
+    document.getElementById('tabbar').innerHTML=TABS.map(function(k){var n=NAV.filter(function(x){return x[0]===k})[0];return '<a href="#'+k+'" class="'+(k===r?'on':'')+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+ICON[k]+'</svg>'+(k==='dining'?'Dining':k==='orders'?'Orders':n[1])+(badge[k]?'<em>'+badge[k]+'</em>':'')+'</a>'}).join('')+'<button type="button" data-act="more" class="'+(TABS.indexOf(r)<0?'on':'')+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+ICON.more+'</svg>More'+(c.scores?'<em>'+c.scores+'</em>':'')+'</button>';
+    document.getElementById('moreList').innerHTML=NAV.map(function(n){return '<a href="#'+n[0]+'">'+n[1]+'<small>'+(badge[n[0]]?badge[n[0]]+' waiting':n[0]===r?'You are here':'')+'</small></a>'}).join('')+'<a href="member.html">Member portal<small></small></a><a href="index.html">Club website<small></small></a>';
+  }
+
+  var V={};
+
+  V.today=function(){
+    var s=O.load(),t=O.today(),tee=O.teeDay(t),groups=0,players=0;
+    tee.forEach(function(x){groups+=x.groups.length;players+=x.used});
+    var dn=O.diningDay(t),covers=dn.reduce(function(a,d){return a+d.party},0),ct=0;
+    O.COURT_HOURS.forEach(function(h){O.COURTS.forEach(function(c){if(O.courtCell(t,h,c).state==='booked')ct++})});
+    var g=s.guests.filter(function(x){return x.date===t}),arr=g.filter(function(x){return x.arrived}).length,c=counts();
+    var need=[];
+    s.orders.filter(function(o){return o.status==='New'}).forEach(function(o){need.push(['Shop order to prepare',E(o.member)+' · '+E(o.pickup)+' · '+O.money(o.total),'orders'])});
+    s.rounds.filter(function(r){return r.status==='Pending'}).forEach(function(r){need.push(['Golf score to verify',E(r.member)+' · '+r.total+' from the '+E(r.tee)+' tees','scores'])});
+    s.tennis.filter(function(r){return r.status==='Pending'}).forEach(function(r){need.push(['Tennis result to verify',E(r.member)+' and '+E(r.opp),'scores'])});
+    return head(O.long(t),'Today at <em>Old Overton</em>','The whole club on one screen: the tee sheet, the dining rooms, the courts, the shops and the gate.')+
+    '<div class="grid g3" style="margin-bottom:18px">'+
+      '<a class="stat dark" href="#tee"><b>'+players+'</b><span>Golfers on the tee sheet</span><small>'+groups+' groups today</small></a>'+
+      '<a class="stat" href="#dining"><b>'+covers+'</b><span>Covers booked</span><small>'+dn.length+' reservations today</small></a>'+
+      '<a class="stat" href="#courts"><b>'+ct+'</b><span>Court hours reserved</span><small>Across nine courts</small></a>'+
+      '<a class="stat" href="#orders"><b>'+c.orders+'</b><span>Orders to prepare</span><small>Golf Shop and Tennis Shop</small></a>'+
+      '<a class="stat" href="#scores"><b>'+c.scores+'</b><span>Scores to verify</span><small>Golf and tennis</small></a>'+
+      '<a class="stat" href="#gate"><b>'+arr+' / '+g.length+'</b><span>Guests arrived</span><small>Old Overton Gate</small></a>'+
+    '</div>'+
+    '<div class="grid g2"><div class="panel"><h2>Needs attention</h2><p class="sub">Things waiting on staff.</p>'+
+      (need.length?'<ul class="list">'+need.map(function(n){return '<li><div class="what"><b>'+n[0]+'</b><small>'+n[1]+'</small></div><a class="btn sm" href="#'+n[2]+'">Open</a></li>'}).join('')+'</ul>':'<p class="empty">All caught up.</p>')+'</div>'+
+      '<div class="panel dark"><h2>Member activity</h2><p class="sub">Live from the member portal.</p><ul class="list">'+s.log.slice(0,8).map(function(l){return '<li><div class="what"><b style="font-weight:500">'+E(l.text)+'</b><small>'+O.ago(l.when)+'</small></div></li>'}).join('')+'</ul></div></div>';
+  };
+
+  V.tee=function(){
+    var slots=O.teeDay(ui.teeDate),groups=0,players=0,open=0;
+    slots.forEach(function(x){groups+=x.groups.length;players+=x.used;if(!x.block&&x.open===4)open++});
+    var rows=slots.map(function(x){
+      if(x.block)return '<tr><td class="t">'+O.t12(x.time)+'</td><td data-l="Players" colspan="2"><span class="pill dk">Blocked</span> '+E(x.block.reason)+'</td><td class="act"><button class="btn sm line" type="button" data-act="tee-unblock" data-time="'+x.time+'">Reopen</button></td></tr>';
+      if(!x.groups.length)return !ui.teeAll?'':'<tr><td class="t">'+O.t12(x.time)+'</td><td data-l="Players" colspan="2" style="color:var(--ok);font-weight:600">Open</td><td class="act"><button class="btn sm line" type="button" data-act="tee-block" data-time="'+x.time+'">Block</button></td></tr>';
+      return x.groups.map(function(g,i){return '<tr><td class="t">'+(i?'':O.t12(x.time))+'</td><td data-l="Players">'+E(g.players.join(', '))+(g.member===O.ME.name?' <span class="pill ok">Booked online</span>':'')+'</td><td data-l="Round">'+g.holes+' holes · '+E(g.cart)+'</td><td class="act"><button class="btn sm danger" type="button" data-act="tee-cancel" data-id="'+g.id+'" data-sample="'+(g.sample?1:0)+'">Cancel</button></td></tr>'}).join('');
+    }).join('');
+    return head('Golf Shop','Tee <em>Sheet</em>','Every group on the first tee. Block times for maintenance, outings or frost delays.')+
+      O.dayStrip(ui.teeDate,0,8)+
+      '<div class="grid g4" style="margin-bottom:18px"><div class="stat dark"><b>'+players+'</b><span>Golfers</span></div><div class="stat"><b>'+groups+'</b><span>Groups</span></div><div class="stat"><b>'+open+'</b><span>Open times</span></div><div class="stat"><label class="f" for="tr">Reason when blocking</label><select class="in" id="tr" data-change="tee-reason" style="margin:0">'+opt(['Course maintenance','Tournament','Golf outing','Frost delay'],ui.teeReason)+'</select></div></div>'+
+      '<div class="panel"><h2>'+O.long(ui.teeDate)+'</h2><p class="sub">Times booked in the member portal appear here immediately.</p><div class="tabs"><button type="button" data-act="tee-all" data-v="0" aria-pressed="'+(!ui.teeAll)+'">Booked and blocked</button><button type="button" data-act="tee-all" data-v="1" aria-pressed="'+ui.teeAll+'">All times</button></div><div class="tbl-wrap"><table class="tbl stack"><thead><tr><th>Time</th><th>Players</th><th>Round</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+  };
+
+  V.dining=function(){
+    var all=O.diningDay(ui.dnDate),list=all.filter(function(d){return ui.dnRoom==='All'||d.venue===ui.dnRoom});
+    var by=function(v){return all.filter(function(d){return d.venue===v}).reduce(function(a,d){return a+d.party},0)};
+    return head('Food &amp; Beverage','Dining <em>Room</em>','Reservations for The Overton Grill, The Overlook Dining Room and The Hillside Terrace.')+
+      O.dayStrip(ui.dnDate,0,8)+
+      '<div class="grid g4" style="margin-bottom:18px"><div class="stat dark"><b>'+all.reduce(function(a,d){return a+d.party},0)+'</b><span>Total covers</span></div>'+O.ROOMS.map(function(v){return '<div class="stat"><b>'+by(v)+'</b><span>'+E(v.replace('The ',''))+'</span></div>'}).join('')+'</div>'+
+      '<div class="panel"><div class="tabs">'+['All'].concat(O.ROOMS).map(function(v){return '<button type="button" data-act="dn-room" data-room="'+E(v)+'" aria-pressed="'+(ui.dnRoom===v)+'">'+E(v==='All'?'All rooms':v.replace('The ',''))+'</button>'}).join('')+'</div>'+
+      (list.length?'<div class="tbl-wrap"><table class="tbl stack"><thead><tr><th>Time</th><th>Member</th><th>Room</th><th class="num">Party</th><th>Note</th><th>Status</th><th></th></tr></thead><tbody>'+list.map(function(d){
+        return '<tr><td class="t">'+O.t12(d.time)+'</td><td data-l="Member">'+E(d.member)+(d.sample?'':' <span class="pill ok">Booked online</span>')+'</td><td data-l="Room">'+E(d.venue)+'</td><td class="num" data-l="Party">'+d.party+'</td><td data-l="Note">'+(E(d.note)||'–')+'</td><td>'+pill(d.status)+'</td><td class="act"><div class="row">'+(d.status==='Seated'?'':'<button class="btn sm" type="button" data-act="dn-seat" data-id="'+d.id+'" data-sample="'+(d.sample?1:0)+'">Seat</button>')+'<button class="btn sm danger" type="button" data-act="dn-cancel" data-id="'+d.id+'" data-sample="'+(d.sample?1:0)+'">Cancel</button></div></td></tr>'}).join('')+'</tbody></table></div>':'<p class="empty">No reservations.</p>')+'</div>';
+  };
+
+  V.courts=function(){
+    var g='<div class="h"></div>'+O.COURTS.map(function(c){return '<div class="h">Court '+c+'<small>'+O.courtType(c)+'</small></div>'}).join('');
+    O.COURT_HOURS.forEach(function(h){
+      g+='<div class="tm">'+O.hr12(h)+'</div>';
+      O.COURTS.forEach(function(c){
+        var x=O.courtCell(ui.ctDate,h,c),a='data-hour="'+h+'" data-court="'+c+'"';
+        if(x.state==='block')g+='<button type="button" class="cell blk" data-act="ct-unblock" '+a+' aria-label="Court '+c+' at '+O.hr12(h)+', blocked for '+E(x.reason)+'. Tap to reopen">'+E(x.reason)+'</button>';
+        else if(x.state==='booked')g+='<button type="button" class="cell '+(x.mine?'mine':'bk')+'" data-act="ct-show" '+a+'>'+E(x.b.member.split(' ').slice(-1)[0])+'</button>';
+        else g+='<button type="button" class="cell" data-act="ct-block" '+a+' aria-label="Court '+c+' at '+O.hr12(h)+', open. Tap to block">Open</button>';
+      });
+    });
+    var det='';
+    if(ui.ctSel){var x=O.courtCell(ui.ctDate,ui.ctSel.hour,ui.ctSel.court);if(x.state==='booked')det='<div class="panel" id="ctDet" style="margin-bottom:18px;border-color:var(--bronze)"><div class="row" style="justify-content:space-between"><div><h2>Court '+ui.ctSel.court+' at '+O.hr12(ui.ctSel.hour)+'</h2><p class="sub" style="margin:0">'+E(x.b.member)+' · '+E(x.b.kind)+(x.b.opp?' with '+E(x.b.opp):'')+'</p></div><div class="row"><button class="btn sm danger" type="button" data-act="ct-cancel" data-id="'+x.b.id+'" data-sample="'+(x.b.sample?1:0)+'">Cancel reservation</button><button class="btn sm line" type="button" data-act="ct-close">Close</button></div></div></div>'}
+    return head('Tennis Shop','Court <em>Sheet</em>','Tap an open hour to block it for a clinic or lesson. Tap a reservation to see who has it.')+
+      O.dayStrip(ui.ctDate,0,8)+det+
+      '<div class="panel"><div class="row" style="justify-content:space-between;margin-bottom:14px"><div><h2>'+O.long(ui.ctDate)+'</h2></div><div style="min-width:220px"><label class="f" for="cr">Block open hours for</label><select class="in" id="cr" data-change="ct-reason" style="margin:0">'+opt(['Clinic','Ladies Clinic','Junior Clinic','Private lesson','Court maintenance','Tennis Mixer'],ui.ctReason)+'</select></div></div><div class="tbl-wrap"><div class="cgrid">'+g+'</div></div></div>';
+  };
+
+  V.scores=function(){
+    var s=O.load(),pg=s.rounds.filter(function(r){return r.status==='Pending'}),pt=s.tennis.filter(function(r){return r.status==='Pending'});
+    var done=s.rounds.filter(function(r){return r.status!=='Pending'}).sort(function(a,b){return a.date<b.date?1:-1}).slice(0,10);
+    return head('Golf Shop &amp; Tennis Shop','Scores to <em>Verify</em>','Members post their own scores. Staff verify them before they count.')+
+      '<div class="grid g2" style="margin-bottom:18px"><div class="panel"><h2>Golf rounds</h2><p class="sub">'+pg.length+' waiting.</p>'+
+        (pg.length?'<ul class="list">'+pg.map(function(r){return '<li><div class="what"><b>'+E(r.member)+': '+r.total+'</b><small>'+O.nice(r.date)+' · '+E(r.tee)+' tees · differential '+r.diff.toFixed(1)+'</small></div><div class="row"><button class="btn sm" type="button" data-act="rd-ok" data-id="'+r.id+'">Verify</button><button class="btn sm danger" type="button" data-act="rd-no" data-id="'+r.id+'">Reject</button></div></li>'}).join('')+'</ul>':'<p class="empty">No golf scores waiting.</p>')+'</div>'+
+      '<div class="panel"><h2>Tennis results</h2><p class="sub">'+pt.length+' waiting.</p>'+
+        (pt.length?'<ul class="list">'+pt.map(function(r){return '<li><div class="what"><b>'+E(r.member)+' and '+E(r.opp)+'</b><small>'+O.nice(r.date)+' · '+E(r.kind)+' · '+r.sets.map(function(p){return p[0]+'–'+p[1]}).join(', ')+'</small></div><div class="row"><button class="btn sm" type="button" data-act="tn-ok" data-id="'+r.id+'">Verify</button><button class="btn sm danger" type="button" data-act="tn-no" data-id="'+r.id+'">Reject</button></div></li>'}).join('')+'</ul>':'<p class="empty">No tennis results waiting.</p>')+'</div></div>'+
+      '<div class="panel"><h2>Recently reviewed rounds</h2><p class="sub">The last ten.</p><div class="tbl-wrap"><table class="tbl stack"><thead><tr><th>Date</th><th>Member</th><th>Tees</th><th class="num">Score</th><th class="num">Diff.</th><th></th></tr></thead><tbody>'+
+      done.map(function(r){return '<tr><td data-l="Date">'+O.nice(r.date)+'</td><td data-l="Member">'+E(r.member)+'</td><td data-l="Tees">'+E(r.tee)+'</td><td class="num t" data-l="Score">'+r.total+'</td><td class="num" data-l="Differential">'+r.diff.toFixed(1)+'</td><td>'+pill(r.status)+'</td></tr>'}).join('')+'</tbody></table></div></div>';
+  };
+
+  V.orders=function(){
+    var s=O.load(),h=head('Golf Shop &amp; Tennis Shop','Shop <em>Orders</em>','Orders placed in the member portal for pickup at the counter, and the items on sale.')+
+      '<div class="tabs">'+['Queue','Catalogue'].map(function(t){return '<button type="button" data-act="ord-tab" data-tab="'+t+'" aria-pressed="'+(ui.ordTab===t)+'">'+t+'</button>'}).join('')+'</div>';
+    if(ui.ordTab==='Queue'){
+      var col=function(st,next,lab){var l=s.orders.filter(function(o){return o.status===st});return '<div class="panel"><h2>'+st+'</h2><p class="sub">'+l.length+' order'+(l.length===1?'':'s')+'.</p>'+(l.length?'<ul class="list">'+l.map(function(o){return '<li style="flex-direction:column;align-items:stretch;gap:8px"><div class="what"><b>'+E(o.member)+'</b><small>'+E(o.items.map(function(i){return i.qty+' × '+i.name}).join(', '))+'</small><small>'+O.nice(o.when)+' · '+E(o.pickup)+' · '+O.money(o.total)+'</small></div>'+(next?'<button class="btn sm" type="button" data-act="ord-next" data-id="'+o.id+'" data-next="'+next+'">'+lab+'</button>':'')+'</li>'}).join('')+'</ul>':'<p class="empty">None.</p>')+'</div>'};
+      h+='<div class="grid g3">'+col('New','Ready for pickup','Mark ready for pickup')+col('Ready for pickup','Picked up','Mark picked up')+col('Picked up')+'</div>';
+    } else {
+      h+='<div class="panel"><h2>Catalogue</h2><p class="sub">Change a price or take an item off sale. The member shop updates straight away.</p><div class="tbl-wrap"><table class="tbl stack"><thead><tr><th>Item</th><th>Shop</th><th>Price</th><th>On sale</th></tr></thead><tbody>'+
+        O.products().map(function(p){return '<tr><td data-l="Item"><b style="font-weight:600">'+E(p.brand)+'</b> '+E(p.name)+'</td><td data-l="Shop">'+E(p.shop)+'</td><td><input class="in" type="number" min="0" step="1" value="'+p.price+'" data-change="price" data-sku="'+p.sku+'" aria-label="Price of '+E(p.brand+' '+p.name)+'" style="max-width:110px;margin:0"></td><td class="act"><button class="btn sm '+(p.off?'line':'')+'" type="button" data-act="stock" data-sku="'+p.sku+'">'+(p.off?'Off sale':'On sale')+'</button></td></tr>'}).join('')+'</tbody></table></div><p class="note">Sample items and sample prices.</p></div>';
+    }
+    return h;
+  };
+
+  V.events=function(){
+    var s=O.load(),ev=O.events().filter(function(e){return e.date>=O.today()}),days=[];for(var i=1;i<90;i++){var d=O.iso(O.day(i));days.push([d,O.long(d)])}
+    return head('Membership &amp; Events','Events &amp; <em>RSVPs</em>','Head counts for the kitchen and the event team, as members reply.')+
+      '<div class="grid g21"><div class="panel"><h2>Upcoming</h2><p class="sub">Head counts update as members RSVP.</p><div class="tbl-wrap"><table class="tbl stack"><thead><tr><th>Event</th><th>When</th><th class="num">Families</th><th class="num">Adults</th><th class="num">Children</th><th class="num">Total</th></tr></thead><tbody>'+
+      ev.map(function(e){var r=s.rsvps.filter(function(x){return x.event===e.id}),a=r.reduce(function(n,x){return n+x.adults},0),k=r.reduce(function(n,x){return n+x.kids},0);
+        return '<tr><td data-l="Event"><b style="font-weight:600">'+E(e.name)+'</b><br><small style="color:var(--ink2)">'+E(e.where)+(r.length?' · '+E(r.map(function(x){return x.member}).join(', ')):'')+'</small></td><td data-l="When" style="white-space:nowrap">'+O.long(e.date)+'<br><small style="color:var(--ink2)">'+O.t12(e.time)+'</small></td><td class="num" data-l="Families">'+r.length+'</td><td class="num" data-l="Adults">'+a+'</td><td class="num" data-l="Children">'+k+'</td><td class="num t" data-l="Total">'+(a+k)+'</td></tr>'}).join('')+'</tbody></table></div></div>'+
+      '<div class="panel"><h2>Add an event</h2><p class="sub">It appears in the member portal for RSVPs.</p><form data-form="event"><label class="f" for="en">Event name</label><input class="in" id="en" name="name" required autocomplete="off">'+
+      '<div class="fgrid"><div><label class="f" for="ed">Date</label><select class="in" id="ed" name="date">'+opt(days,days[13][0])+'</select></div><div><label class="f" for="et">Time</label><select class="in" id="et" name="time">'+opt([['09:00','9:00 am'],['11:00','11:00 am'],['11:30','11:30 am'],['16:00','4:00 pm'],['18:00','6:00 pm'],['18:30','6:30 pm'],['19:00','7:00 pm']],'18:00')+'</select></div></div>'+
+      '<label class="f" for="ew">Where</label><select class="in" id="ew" name="where">'+opt(['The Overlook Dining Room','The Hillside Terrace','The Overton Grill','The Pool','Tennis Courts','First Tee','The Clubhouse'],'The Overlook Dining Room')+'</select><button class="btn brass" type="submit">Publish event</button></form></div></div>';
+  };
+
+  V.gate=function(){
+    var s=O.load(),g=s.guests.filter(function(x){return x.date===ui.gateDate}).sort(function(a,b){return a.name<b.name?-1:1});
+    return head('Old Overton Gate','Gate <em>List</em>','Guests registered by members, for the guard at the Old Overton Gate.','<button class="btn line" type="button" data-act="print">Print list</button>')+
+      O.dayStrip(ui.gateDate,0,8)+
+      '<div class="grid g21"><div class="panel"><h2>'+O.long(ui.gateDate)+'</h2><p class="sub">'+g.length+' guest'+(g.length===1?'':'s')+' expected.</p>'+
+      (g.length?'<div class="tbl-wrap"><table class="tbl stack"><thead><tr><th>Guest</th><th>Host member</th><th>Visiting for</th><th>Status</th><th></th></tr></thead><tbody>'+g.map(function(x){return '<tr><td data-l="Guest"><b style="font-weight:600">'+E(x.name)+'</b></td><td data-l="Host">'+E(x.member)+'</td><td data-l="For">'+E(x.reason)+'</td><td>'+pill(x.arrived?'Arrived':'Expected')+'</td><td class="act">'+(x.arrived?'':'<button class="btn sm" type="button" data-act="gate-in" data-id="'+x.id+'">Mark arrived</button>')+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="empty">No guests registered for this day.</p>')+'</div>'+
+      '<div class="panel"><h2>Add a guest</h2><p class="sub">For a member who calls the club office.</p><form data-form="gate"><label class="f" for="gn">Guest name</label><input class="in" id="gn" name="name" required autocomplete="off"><label class="f" for="gm">Host member</label><select class="in" id="gm" name="member">'+opt(ROSTER.map(function(r){return r[1]}),ROSTER[0][1])+'</select><label class="f" for="gr">Visiting for</label><select class="in" id="gr" name="reason">'+opt(['Golf','Dining','Tennis','Pool','Event'],'Golf')+'</select><button class="btn brass" type="submit">Add to list</button></form></div></div>';
+  };
+
+  V.members=function(){
+    var s=O.load(),q=ui.q.toLowerCase();
+    var rows=ROSTER.filter(function(r){return !q||(r[0]+' '+r[1]).toLowerCase().indexOf(q)>-1}).map(function(r){
+      var me=r[1]===O.ME.name,seedN=+r[0],bal=me?s.charges.reduce(function(a,c){return a+c.amt},0):((seedN*37)%640)+(seedN%9)*11.5,rounds=me?s.rounds.filter(function(x){return x.member===O.ME.name}).length:(seedN*7)%9;
+      return '<tr><td data-l="No." style="font-variant-numeric:tabular-nums">'+r[0]+'</td><td data-l="Member"><b style="font-weight:600">'+E(r[1])+'</b>'+(me?' <span class="pill ok">Demo member</span>':'')+'</td><td class="num" data-l="Rounds this month">'+rounds+'</td><td class="num" data-l="Balance">'+O.money(bal)+'</td><td class="act"><button class="btn sm line" type="button" data-act="stmt">Statement</button></td></tr>'}).join('');
+    return head('Club Office','Members','Sample roster. Search by name or member number.')+
+      '<div class="panel"><label class="f" for="mq">Search</label><input class="in" id="mq" type="search" value="'+E(ui.q)+'" data-input="q" placeholder="Name or member number" autocomplete="off"><div class="tbl-wrap"><table class="tbl stack"><thead><tr><th>No.</th><th>Member</th><th class="num">Rounds this month</th><th class="num">Balance</th><th></th></tr></thead><tbody id="mRows">'+rows+'</tbody></table></div></div>';
+  };
+
+  V.notices=function(){
+    var s=O.load();
+    return head('Club Office','Notices','Post a notice and it appears on every member\'s home screen.')+
+      '<div class="grid g2"><div class="panel"><h2>Post a notice</h2><p class="sub">Course conditions, closures, reminders.</p><form data-form="notice"><label class="f" for="nt">Headline</label><input class="in" id="nt" name="title" required autocomplete="off"><label class="f" for="nb">Message</label><textarea class="in" id="nb" name="body" required></textarea><button class="btn brass" type="submit">Post to members</button></form></div>'+
+      '<div class="panel"><h2>Live notices</h2><p class="sub">Showing in the member portal now.</p>'+(s.notices.length?'<ul class="list">'+s.notices.map(function(n){return '<li><div class="what"><b>'+E(n.title)+'</b><small>'+O.nice(n.when)+' · '+E(n.body)+'</small></div><button class="btn sm danger" type="button" data-act="nt-del" data-id="'+n.id+'">Remove</button></li>'}).join('')+'</ul>':'<p class="empty">No notices posted.</p>')+'</div></div>';
+  };
+
+  function render(keep){var r=route();chrome(r);document.getElementById('view').innerHTML=V[r]();document.getElementById('more').classList.remove('open');if(!keep)window.scrollTo(0,0)}
+  function data(form){var o={};[].forEach.call(form.elements,function(el){if(el.name)o[el.name]=el.value.trim()});return o}
+  function drop(list,id,sample){var s=O.load();if(sample==='1')s.removed[id]=true;else s[list]=s[list].filter(function(x){return x.id!==id});O.save()}
+
+  document.addEventListener('click',function(e){
+    var el=e.target.closest('[data-act]');if(!el)return;var a=el.dataset.act,s=O.load(),d=el.dataset;
+    if(a==='more'){document.getElementById('more').classList.toggle('open');return}
+    if(a==='reset'){O.reset();render();O.toast('Demo reset to the starting sample data.');return}
+    if(a==='day'){var r=route();ui[r==='tee'?'teeDate':r==='dining'?'dnDate':r==='courts'?'ctDate':'gateDate']=d.date;ui.ctSel=null;render(true);return}
+    if(a==='tee-all'){ui.teeAll=d.v==='1';render(true);return}
+    if(a==='tee-block'){s.blocks.tee.push({date:ui.teeDate,time:d.time,reason:ui.teeReason});O.save();render(true);O.toast(O.t12(d.time)+' blocked: '+ui.teeReason+'.');return}
+    if(a==='tee-unblock'){s.blocks.tee=s.blocks.tee.filter(function(b){return !(b.date===ui.teeDate&&b.time===d.time)});O.save();render(true);O.toast(O.t12(d.time)+' reopened.');return}
+    if(a==='tee-cancel'){drop('tee',d.id,d.sample);render(true);O.toast('Group removed from the tee sheet.');return}
+    if(a==='dn-room'){ui.dnRoom=d.room;render(true);return}
+    if(a==='dn-seat'){if(d.sample==='1'){s.seated=s.seated||{};s.seated[d.id]=true}else s.dining.filter(function(x){return x.id===d.id})[0].status='Seated';O.save();render(true);O.toast('Party seated.');return}
+    if(a==='dn-cancel'){drop('dining',d.id,d.sample);render(true);O.toast('Reservation cancelled.');return}
+    if(a==='ct-block'){s.blocks.court.push({date:ui.ctDate,hour:+d.hour,court:+d.court,reason:ui.ctReason});O.save();render(true);O.toast('Court '+d.court+' at '+O.hr12(+d.hour)+' blocked: '+ui.ctReason+'.');return}
+    if(a==='ct-unblock'){s.blocks.court=s.blocks.court.filter(function(b){return !(b.date===ui.ctDate&&b.hour===+d.hour&&b.court===+d.court)});O.save();render(true);O.toast('Court '+d.court+' at '+O.hr12(+d.hour)+' reopened.');return}
+    if(a==='ct-show'){ui.ctSel={hour:+d.hour,court:+d.court};render(true);var p=document.getElementById('ctDet');if(p)p.scrollIntoView({block:'center',behavior:'smooth'});return}
+    if(a==='ct-close'){ui.ctSel=null;render(true);return}
+    if(a==='ct-cancel'){drop('courts',d.id,d.sample);ui.ctSel=null;render(true);O.toast('Court reservation cancelled.');return}
+    if(a==='rd-ok'||a==='rd-no'){var r1=s.rounds.filter(function(x){return x.id===d.id})[0];r1.status=a==='rd-ok'?'Verified':'Rejected';O.save();render(true);O.toast(r1.member+'\'s '+r1.total+' '+(a==='rd-ok'?'verified.':'rejected.'));return}
+    if(a==='tn-ok'||a==='tn-no'){var t1=s.tennis.filter(function(x){return x.id===d.id})[0];t1.status=a==='tn-ok'?'Verified':'Rejected';var cb=s.courts.filter(function(x){return x.id===t1.court})[0];if(cb)cb.status=t1.status;O.save();render(true);O.toast('Tennis result '+(a==='tn-ok'?'verified.':'rejected.'));return}
+    if(a==='ord-tab'){ui.ordTab=d.tab;render(true);return}
+    if(a==='ord-next'){var o=s.orders.filter(function(x){return x.id===d.id})[0];o.status=d.next;O.save();render(true);O.toast(o.member+'\'s order: '+d.next.toLowerCase()+'.');return}
+    if(a==='stock'){s.stock[d.sku]=s.stock[d.sku]||{};s.stock[d.sku].off=!s.stock[d.sku].off;O.save();render(true);return}
+    if(a==='gate-in'){s.guests.filter(function(x){return x.id===d.id})[0].arrived=true;O.save();render(true);O.toast('Guest marked as arrived.');return}
+    if(a==='nt-del'){s.notices=s.notices.filter(function(x){return x.id!==d.id});O.save();render(true);O.toast('Notice removed.');return}
+    if(a==='print'){window.print();return}
+    if(a==='stmt'){O.toast('In the finished portal this opens the member\'s full statement.');return}
+  });
+  document.addEventListener('change',function(e){
+    var c=e.target.dataset.change,s=O.load();
+    if(c==='tee-reason')ui.teeReason=e.target.value;
+    if(c==='ct-reason')ui.ctReason=e.target.value;
+    if(c==='price'){var v=Math.max(0,+e.target.value||0);s.stock[e.target.dataset.sku]=s.stock[e.target.dataset.sku]||{};s.stock[e.target.dataset.sku].price=v;O.save();O.toast('Price updated to '+O.money(v)+'.')}
+  });
+  document.addEventListener('input',function(e){
+    if(e.target.dataset.input==='q'){ui.q=e.target.value;var tmp=document.createElement('div');tmp.innerHTML=V.members();document.getElementById('mRows').innerHTML=tmp.querySelector('#mRows').innerHTML}
+  });
+  document.addEventListener('submit',function(e){
+    var f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();var k=f.dataset.form,d=data(f),s=O.load();
+    if(k==='event'){if(!d.name){O.toast('Please name the event.');return}s.events.push({id:O.uid(),name:d.name,date:d.date,time:d.time,where:d.where});O.save();render(true);O.toast(d.name+' published to members.')}
+    if(k==='gate'){if(!d.name){O.toast('Please enter the guest\'s name.');return}s.guests.push({id:O.uid(),date:ui.gateDate,name:d.name,reason:d.reason,member:d.member,arrived:false});O.save();render(true);O.toast(d.name+' added to the gate list.')}
+    if(k==='notice'){if(!d.title||!d.body){O.toast('Please add a headline and a message.');return}s.notices.unshift({id:O.uid(),when:O.today(),title:d.title,body:d.body});O.save();render(true);O.toast('Notice posted to members.')}
+  });
+
+  window.addEventListener('hashchange',function(){render()});
+  window.addEventListener('storage',function(){location.reload()});
+  render();
+})();
+</script>
+</body>
+</html>
