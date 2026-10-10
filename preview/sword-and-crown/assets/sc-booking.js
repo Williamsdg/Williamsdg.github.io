@@ -17,7 +17,7 @@
   // Her 2026-10-04 correction: 4:00 p.m. is the latest appointment START, not the
   // latest finish. A 3.5-hour booking starting at 16:00 legitimately runs to 19:30.
   var LAST_START = 16 * 60;    // 16:00
-  var DURATION = 90;
+  var DURATION = 90;   // default; a chosen service overrides it below
   var DEPOSIT = 25000;         // cents
   var DAYS_AHEAD = 28;
 
@@ -190,6 +190,31 @@
     elig.addEventListener('change', sync); sync();
   }
 
+  /* Her instruction: each service carries its own appointment length rather
+     than one length for the whole department. Choosing a service sets the
+     slot length before the calendar is drawn. */
+  var chosenService = null;
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pick]');
+    if (!b) return;
+    var row = b.closest('[data-duration]');
+    if (!row) return;
+    DURATION = parseInt(row.getAttribute('data-duration'), 10) || DURATION;
+    chosenService = {
+      name: row.getAttribute('data-name') || '',
+      minutes: DURATION,
+      price_cents: parseInt(row.getAttribute('data-price'), 10) || null
+    };
+    document.querySelectorAll('[data-duration]').forEach(function (r) {
+      r.classList.toggle('picked', r === row);
+    });
+    var label = document.getElementById('bkService');
+    if (label) label.textContent = chosenService.name + ' · ' + DURATION + ' minutes';
+    renderDays();
+    var bk = document.getElementById('bk');
+    if (bk) bk.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   elSlots.addEventListener('click', function (e) {
     var b = e.target.closest('.bk-slot');
     if (!b || b.disabled) return;
@@ -235,6 +260,7 @@
     var row = {
       slot_date: chosen.day, slot_start: chosen.start, duration_min: DURATION,
       status: 'held', department: DEPT, name: name, email: email,
+      notes: (chosenService ? '[' + chosenService.name + '] ' : '') + ($('#bkNotes').value.trim() || ''),
       phone: document.getElementById('bkPhone').value.trim() || null,
       notes: document.getElementById('bkNotes').value.trim() || null,
       deposit_cents: DEPOSIT, terms_ack_at: new Date().toISOString()
