@@ -157,9 +157,14 @@
     loadArticles('wig-bible');
     loadArticles('journal');
     loadNonprofit();
+    loadInsurance();
     loadSettings();
     loadBookings();
     loadBlackouts();
+    loadServices();
+    loadStaff();
+    loadDepartments();
+    loadRequests();
   }
 
   function showAuth(msg, kind) {
@@ -435,7 +440,14 @@
 
   function commit(published) {
     var row;
-    if (sheetState.table === 'products') {
+    if (sheetState.table === 'services') {
+      row = readService(sheetState.id);
+      if (!row.name) { toast('Give it a name first.'); return; }
+    } else if (sheetState.table === 'staff') {
+      row = readStaff(sheetState.id);
+      if (!row.name) { toast('Give them a name first.'); return; }
+      row.active = published;            // publish == active for a person
+    } else if (sheetState.table === 'products') {
       row = readProduct(sheetState.id);
       if (!row.name) { toast('Give it a name first.'); return; }
     } else {
@@ -449,6 +461,8 @@
       closeSheet();
       toast(published ? 'Published — it is on the website now.' : 'Saved as a draft.');
       if (sheetState.table === 'products') loadProducts();
+      else if (sheetState.table === 'services') loadServices();
+      else if (sheetState.table === 'staff') loadStaff();
       else loadArticles(sheetState.kind);
     }).catch(function (e) { toast('Could not save: ' + e.message); });
   }
@@ -463,6 +477,8 @@
       closeSheet();
       toast('Deleted.');
       if (sheetState.table === 'products') loadProducts();
+      else if (sheetState.table === 'services') loadServices();
+      else if (sheetState.table === 'staff') loadStaff();
       else loadArticles(sheetState.kind);
     }).catch(function (e) { toast('Could not delete: ' + e.message); });
   });
@@ -472,7 +488,11 @@
     var nb = e.target.closest('[data-new]');
     if (nb) {
       var what = nb.dataset.new;
-      if (what === 'product') {
+      if (what === 'service') {
+        openSheet({ table: 'services', title: 'New service', html: serviceForm(null) });
+      } else if (what === 'staff') {
+        openSheet({ table: 'staff', title: 'New technician', html: staffForm(null) });
+      } else if (what === 'product') {
         openSheet({ table: 'products', title: 'New product', html: productForm(null) });
       } else {
         openSheet({
@@ -481,6 +501,19 @@
           html: articleForm(null)
         });
       }
+      return;
+    }
+    if (nb && false) {}
+    var se = e.target.closest('[data-edit-service]');
+    if (se) {
+      var sv = services.filter(function (x) { return x.id === se.dataset.editService; })[0];
+      if (sv) openSheet({ table: 'services', id: sv.id, title: 'Edit service', html: serviceForm(sv) });
+      return;
+    }
+    var te = e.target.closest('[data-edit-staff]');
+    if (te) {
+      var tf = staff.filter(function (x) { return x.id === te.dataset.editStaff; })[0];
+      if (tf) openSheet({ table: 'staff', id: tf.id, title: 'Edit technician', html: staffForm(tf) });
       return;
     }
     var pe = e.target.closest('[data-edit-product]');
@@ -495,6 +528,242 @@
       var a = articles[k].filter(function (x) { return x.id === ae.dataset.editArticle; })[0];
       if (a) openSheet({ table: 'articles', id: a.id, kind: k, title: 'Edit', html: articleForm(a) });
     }
+  });
+
+  /* ─────────────────────── services & staff ─────────────────────── */
+
+  var DEPT_LABEL = { 'nano-brows':'Nano brows', 'head-spa':'Head spa', 'styling':'Styling' };
+  var DOW = ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var svcDep = 'all', services = [], staff = [];
+
+  function dur(mins) {
+    if (!mins) return '';
+    if (mins < 60) return mins + ' min';
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return h + (m ? '.' + Math.round(m / 6) : '') + ' hr';
+  }
+
+  $('#svcFilters') && $('#svcFilters').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    svcDep = b.dataset.dep;
+    $$('#svcFilters button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    renderServices();
+  });
+
+  function loadServices() {
+    store.list('services').then(function (rows) { services = rows || []; renderServices(); })
+      .catch(function () {});
+  }
+
+  function renderServices() {
+    var host = $('#svcRows'); if (!host) return;
+    var rows = svcDep === 'all' ? services : services.filter(function (s) { return s.department === svcDep; });
+    rows.sort(function (a, b) { return (a.department + String(a.sort)).localeCompare(b.department + String(b.sort)); });
+    if (!rows.length) {
+      host.innerHTML = '<div class="empty"><h3>No services yet</h3>' +
+        '<p>Add the first one and it appears on that department&rsquo;s page as soon as you publish it.</p></div>';
+      return;
+    }
+    host.innerHTML = rows.map(function (s) {
+      var who = staff.filter(function (t) { return t.id === s.staff_id; })[0];
+      var pill = s.published ? '<span class="pill live">Live</span>' : '<span class="pill draft">Draft</span>';
+      if (!s.bookable) pill += ' <span class="pill out">By request</span>';
+      return '<div class="row"><div class="thumb ph">' + esc(dur(s.duration_min)) + '</div>' +
+        '<div><h3>' + esc(s.name) + '</h3><div class="meta">' + pill + ' &nbsp; ' +
+        esc(DEPT_LABEL[s.department] || s.department) +
+        (s.price_cents != null ? ' · ' + money(s.price_cents) : ' · no price yet') +
+        (s.deposit_cents ? ' · ' + money(s.deposit_cents) + ' deposit' : '') +
+        (who ? ' · ' + esc(who.name) : '') + '</div></div>' +
+        '<div class="acts"><button class="btn ghost sm" data-edit-service="' + esc(s.id) + '">Edit</button></div></div>';
+    }).join('');
+  }
+
+  function serviceForm(s) {
+    s = s || {};
+    var staffOpts = '<option value="">Not assigned</option>' + staff.map(function (t) {
+      return '<option value="' + esc(t.id) + '"' + (s.staff_id === t.id ? ' selected' : '') + '>' + esc(t.name) + '</option>';
+    }).join('');
+    return '' +
+      '<div class="field"><label for="s_name">Service name</label>' +
+      '<input id="s_name" type="text" value="' + esc(s.name) + '"></div>' +
+      '<div class="grid3">' +
+        '<div class="field"><label for="s_dep">Department</label><select id="s_dep">' +
+          Object.keys(DEPT_LABEL).map(function (k) {
+            return '<option value="' + k + '"' + (s.department === k ? ' selected' : '') + '>' + DEPT_LABEL[k] + '</option>';
+          }).join('') + '</select></div>' +
+        '<div class="field"><label for="s_dur">Appointment length (minutes)</label>' +
+        '<input id="s_dur" type="number" min="5" step="5" value="' + esc(s.duration_min || 60) + '"></div>' +
+        '<div class="field"><label for="s_sort">Order on the page</label>' +
+        '<input id="s_sort" type="number" value="' + esc(s.sort || 0) + '"></div>' +
+      '</div>' +
+      '<div class="grid2">' +
+        '<div class="field"><label for="s_price">Price</label>' +
+        '<input id="s_price" type="text" value="' + (s.price_cents != null ? esc(money(s.price_cents)) : '') + '" placeholder="$0.00"></div>' +
+        '<div class="field"><label for="s_dep_amt">Deposit required</label>' +
+        '<input id="s_dep_amt" type="text" value="' + (s.deposit_cents ? esc(money(s.deposit_cents)) : '') + '" placeholder="Leave blank for none"></div>' +
+      '</div>' +
+      '<div class="field"><label for="s_desc">Description</label>' +
+      '<textarea id="s_desc" placeholder="What the appointment includes, in your words.">' + esc(s.description) + '</textarea></div>' +
+      '<div class="grid2">' +
+        '<div class="field"><label for="s_staff">Technician</label><select id="s_staff">' + staffOpts + '</select>' +
+        '<p class="hint">Assigning someone is what prevents double-booking them.</p></div>' +
+        '<div class="field"><label for="s_photo">Photo (link)</label>' +
+        '<input id="s_photo" type="url" value="' + esc(s.photo_url) + '" placeholder="https://…"></div>' +
+      '</div>' +
+      '<div class="field"><label for="s_opts">Client chooses from (optional)</label>' +
+      '<input id="s_opts" type="text" value="' + esc((s.options || []).join(', ')) + '" placeholder="Nano Brows, Restorative Tattooing">' +
+      '<p class="hint">Comma separated. Shows as a dropdown on the service, like your consultation.</p></div>' +
+      '<div class="check"><input type="checkbox" id="s_bookable"' + (s.bookable === false ? '' : ' checked') + '>' +
+      '<label for="s_bookable">Clients can book this online. Untick for by-request only.</label></div>';
+  }
+
+  function readService(id) {
+    var opts = $('#s_opts').value.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+    return {
+      id: id || undefined,
+      name: $('#s_name').value.trim(),
+      department: $('#s_dep').value,
+      duration_min: parseInt($('#s_dur').value, 10) || 60,
+      sort: parseInt($('#s_sort').value, 10) || 0,
+      price_cents: parseMoney($('#s_price').value),
+      deposit_cents: parseMoney($('#s_dep_amt').value) || 0,
+      description: $('#s_desc').value.trim() || null,
+      staff_id: $('#s_staff').value || null,
+      photo_url: $('#s_photo').value.trim() || null,
+      options: opts.length ? opts : null,
+      bookable: $('#s_bookable').checked
+    };
+  }
+
+  function loadStaff() {
+    store.list('staff').then(function (rows) { staff = rows || []; renderStaff(); renderServices(); })
+      .catch(function () {});
+  }
+
+  function renderStaff() {
+    var host = $('#staffRows'); if (!host) return;
+    if (!staff.length) {
+      host.innerHTML = '<div class="empty"><h3>No technicians yet</h3>' +
+        '<p>Add your team so services can be assigned to them.</p></div>';
+      return;
+    }
+    host.innerHTML = staff.map(function (t) {
+      return '<div class="row">' +
+        (t.photo_url ? '<img class="thumb" src="' + esc(t.photo_url) + '" alt="">' : '<div class="thumb ph">' + esc((t.name || '?').slice(0, 2).toUpperCase()) + '</div>') +
+        '<div><h3>' + esc(t.name) + '</h3><div class="meta">' +
+        (t.active ? '<span class="pill live">Active</span>' : '<span class="pill draft">Hidden</span>') +
+        (t.role ? ' &nbsp; ' + esc(t.role) : '') + '</div></div>' +
+        '<div class="acts"><button class="btn ghost sm" data-edit-staff="' + esc(t.id) + '">Edit</button></div></div>';
+    }).join('');
+  }
+
+  function staffForm(t) {
+    t = t || {};
+    return '' +
+      '<div class="grid2">' +
+        '<div class="field"><label for="t_name">Name</label><input id="t_name" type="text" value="' + esc(t.name) + '"></div>' +
+        '<div class="field"><label for="t_role">Role</label><input id="t_role" type="text" value="' + esc(t.role) + '" placeholder="Licensed cosmetologist"></div>' +
+      '</div>' +
+      '<div class="field"><label for="t_photo">Photo (link)</label><input id="t_photo" type="url" value="' + esc(t.photo_url) + '"></div>' +
+      '<div class="field"><label for="t_bio">Short bio</label><textarea id="t_bio">' + esc(t.bio) + '</textarea></div>' +
+      '<div class="check"><input type="checkbox" id="t_active"' + (t.active === false ? '' : ' checked') + '>' +
+      '<label for="t_active">Currently working here</label></div>';
+  }
+
+  function readStaff(id) {
+    var n = $('#t_name').value.trim();
+    return {
+      id: id || undefined, name: n,
+      slug: (id ? undefined : n.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')),
+      role: $('#t_role').value.trim() || null,
+      photo_url: $('#t_photo').value.trim() || null,
+      bio: $('#t_bio').value.trim() || null,
+      active: $('#t_active').checked
+    };
+  }
+
+  /* ───────────── department days ───────────── */
+  function loadDepartments() {
+    store.list('department_hours').then(function (rows) {
+      var host = $('#depRows'); if (!host) return;
+      var have = {};
+      (rows || []).forEach(function (r) { have[r.department] = r; });
+      var defaults = { 'nano-brows': [2,4], 'head-spa': [1,3,5], 'styling': [1,2,3,4,5] };
+      host.innerHTML = Object.keys(DEPT_LABEL).map(function (d) {
+        var r = have[d] || { department: d, weekdays: defaults[d], open_time: '10:00', last_start: '16:00' };
+        var boxes = [1,2,3,4,5,6,7].map(function (n) {
+          return '<label class="daybox"><input type="checkbox" data-dep="' + d + '" data-day="' + n + '"' +
+            ((r.weekdays || []).indexOf(n) > -1 ? ' checked' : '') + '><span>' + DOW[n] + '</span></label>';
+        }).join('');
+        return '<div class="row dep-row"><div><h3>' + DEPT_LABEL[d] + '</h3>' +
+          '<div class="daybar">' + boxes + '</div></div>' +
+          '<div class="acts"><label class="mini">Latest start' +
+          '<input type="time" data-dep-last="' + d + '" value="' + String(r.last_start || '16:00').slice(0,5) + '"></label>' +
+          '<button class="btn ghost sm" data-save-dep="' + d + '">Save</button></div></div>';
+      }).join('');
+    }).catch(function () {});
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-save-dep]');
+    if (!b) return;
+    var d = b.dataset.saveDep;
+    var days = $$('input[data-dep="' + d + '"]:checked').map(function (i) { return parseInt(i.dataset.day, 10); });
+    if (!days.length) { toast('Pick at least one day, or the department can never be booked.'); return; }
+    var last = ($('input[data-dep-last="' + d + '"]') || {}).value || '16:00';
+    store.save('department_hours', { department: d, weekdays: days, last_start: last })
+      .then(function () { toast(DEPT_LABEL[d] + ' days saved.'); })
+      .catch(function (err) { toast('Could not save: ' + err.message); });
+  });
+
+  /* ───────────── appointment requests ───────────── */
+  var reqSt = 'new', requests = [];
+
+  $('#reqFilters') && $('#reqFilters').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    reqSt = b.dataset.st;
+    $$('#reqFilters button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    renderRequests();
+  });
+
+  function loadRequests() {
+    store.list('requests').then(function (rows) { requests = rows || []; renderRequests(); })
+      .catch(function () {});
+  }
+
+  function renderRequests() {
+    var host = $('#reqRows'); if (!host) return;
+    var rows = reqSt === 'all' ? requests : requests.filter(function (r) { return r.status === reqSt; });
+    rows.sort(function (a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
+    if (!rows.length) {
+      host.innerHTML = '<div class="empty"><h3>Nothing here</h3>' +
+        '<p>Requests from the styling page land here the moment someone sends one.</p></div>';
+      return;
+    }
+    host.innerHTML = rows.map(function (r) {
+      var when = r.created_at ? new Date(r.created_at).toLocaleDateString(undefined,
+        { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      return '<div class="row"><div class="thumb ph">' + esc((r.name || '?').slice(0, 2).toUpperCase()) + '</div>' +
+        '<div><h3>' + esc(r.name) + '</h3><div class="meta">' +
+        '<span class="pill ' + (r.status === 'new' ? 'draft' : 'live') + '">' + esc(r.status) + '</span>' +
+        ' &nbsp; ' + esc(r.service) + ' · ' + esc(when) + '<br>' +
+        '<a href="tel:' + esc(r.phone) + '">' + esc(r.phone) + '</a> · ' +
+        '<a href="mailto:' + esc(r.email) + '">' + esc(r.email) + '</a>' +
+        (r.details ? '<br>' + esc(r.details) : '') + '</div></div>' +
+        '<div class="acts">' +
+          (r.status === 'new' ? '<button class="btn ghost sm" data-req="contacted" data-id="' + esc(r.id) + '">Contacted</button>' : '') +
+          (r.status !== 'booked' ? '<button class="btn pink sm" data-req="booked" data-id="' + esc(r.id) + '">Booked</button>' : '') +
+          '<button class="btn ghost sm" data-req="closed" data-id="' + esc(r.id) + '">Close</button>' +
+        '</div></div>';
+    }).join('');
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-req]');
+    if (!b) return;
+    store.save('requests', { id: b.dataset.id, status: b.dataset.req })
+      .then(function () { toast('Marked ' + b.dataset.req + '.'); loadRequests(); })
+      .catch(function (err) { toast('Could not update: ' + err.message); });
   });
 
   /* ─────────────────────── consultations ─────────────────────── */
@@ -581,6 +850,15 @@
 
   /* ─────────────────────── non-profit & settings ─────────────────────── */
 
+  function loadInsurance() {
+    store.setting('insurance').then(function (v) {
+      if (!$('#inLede')) return;
+      $('#inLede').value = v.lede || ''; $('#inBody').value = v.body || '';
+      $('#inProvide').value = v.provide || ''; $('#inCannot').value = v.cannot || '';
+      $('#inSteps').value = v.steps || ''; $('#inDisc').value = v.disclaimer || '';
+    }).catch(function () {});
+  }
+
   function loadNonprofit() {
     store.setting('nonprofit').then(function (v) {
       $('#npName').value = v.name || '';
@@ -593,6 +871,13 @@
 
   $('#npForm').addEventListener('submit', function (e) {
     e.preventDefault();
+    if ($('#inBody')) {
+      store.saveSetting('insurance', {
+        lede: $('#inLede').value.trim(), body: $('#inBody').value.trim(),
+        provide: $('#inProvide').value.trim(), cannot: $('#inCannot').value.trim(),
+        steps: $('#inSteps').value.trim(), disclaimer: $('#inDisc').value.trim()
+      }).catch(function () {});
+    }
     store.saveSetting('nonprofit', {
       name: $('#npName').value.trim(),
       mission: $('#npMission').value.trim(),

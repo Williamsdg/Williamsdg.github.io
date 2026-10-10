@@ -130,11 +130,36 @@
     });
   }
 
+  /* ──────────────── insurance reimbursement ──────────────── */
+  function hydrateInsurance() {
+    var host = document.getElementById('insPage');
+    if (!host) return;
+    SC.setting('insurance').then(function (v) {
+      if (!v || !v.body) return;                 // keep the waiting state
+      var put = function (id, text, md) {
+        var n = document.getElementById(id);
+        if (!n || !text) return;
+        if (md) n.innerHTML = SC.markdown(text); else n.textContent = text;
+        var blk = n.closest('[data-ins-block]');
+        if (blk) blk.removeAttribute('hidden');
+      };
+      if (v.lede) { var l = document.getElementById('insLede'); if (l) l.textContent = v.lede; }
+      put('insBody', v.body, true);
+      put('insProvide', v.provide, true);
+      put('insCannot', v.cannot, true);
+      put('insSteps', v.steps, true);
+      put('insDisclaimer', v.disclaimer);
+      var p = document.getElementById('insPending');
+      if (p) p.remove();
+    });
+  }
+
   ready(function () {
     hydrateShop();
     hydrateList('.bible-grid', 'wig-bible', bibleCard, 6);
     hydrateList('.jr-grid', 'journal', journalCard, 12);
     hydratePolicies();
     hydrateNonprofit();
+    hydrateInsurance();
   });
 })();
