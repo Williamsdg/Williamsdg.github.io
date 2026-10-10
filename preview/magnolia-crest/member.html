@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Member Portal · Magnolia Crest Country Club (concept)</title>
+<meta name="description" content="Member portal concept for Magnolia Crest, a fictional country club. Built by Williams Digital. Sample data only.">
+<meta name="theme-color" content="#08130E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,100..900,0..100,0..1;1,9..144,100..900,0..100,0..1&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="club.css?v=2">
+<!--
+  MAGNOLIA CREST — member portal concept, v2. Williams Digital, 2026-10-09.
+  Magnolia Crest is a FICTIONAL club. The member, every other member, all bookings,
+  prices and dates are sample data. Nothing is sent anywhere.
+-->
+</head>
+<body>
+<div class="splash" id="splash" aria-hidden="true"></div>
+<div class="demo-bar">Member portal concept for a fictional club, with sample data. <a href="staff.html">See the staff side</a> · <button type="button" data-act="reset">Reset the demo</button></div>
+
+<div class="app">
+  <aside class="side">
+    <a class="logo" href="index.html" aria-label="Magnolia Crest website" id="sideLogo"></a>
+    <div class="who">Member Portal</div>
+    <nav id="sideNav" aria-label="Portal"></nav>
+    <div class="foot"><span id="whoami"></span><a href="index.html">Club website</a><a href="staff.html">Staff portal</a></div>
+  </aside>
+  <div>
+    <div class="topbar"><a href="index.html" aria-label="Magnolia Crest website" id="topLogo"></a><span>Member Portal<br>No. 0182</span></div>
+    <main class="main" id="view"></main>
+  </div>
+</div>
+
+<nav class="tabbar" id="tabbar" aria-label="Portal" style="grid-template-columns:repeat(5,1fr)"></nav>
+<div class="more" id="more" aria-hidden="true"><h2>Member Portal</h2><div id="moreList"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="club.js?v=2"></script>
+<script>
+(function(){
+  var O=MC,E=O.esc,ME=O.ME.name,STATIC=/[?&]static/.test(location.search);
+  var sp=document.getElementById('splash');sp.innerHTML=O.MARK;if(STATIC)sp.className='splash done';else{setTimeout(function(){sp.classList.add('done')},850)}
+  document.getElementById('sideLogo').innerHTML=O.MARK+'<b>Magnolia<br>Crest</b>';document.getElementById('topLogo').innerHTML=O.MARK+'Magnolia Crest';
+  var ICON={
+    home:'<path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z"/>',
+    tee:'<path d="M12 21V4l7 3.5-7 3.5"/><ellipse cx="12" cy="21" rx="6" ry="1.4"/>',
+    dining:'<path d="M6 3v8a2 2 0 0 0 4 0V3M8 11v10M16 3c-2 2-2 8 0 9v9"/>',
+    courts:'<circle cx="12" cy="12" r="9"/><path d="M5 6c3 3 3 9 0 12M19 6c-3 3-3 9 0 12"/>',
+    more:'<path d="M4 7h16M4 12h16M4 17h16"/>'
+  };
+  var NAV=[['home','Home'],['tee','Tee Times'],['dining','Dining'],['courts','Courts'],['scores','Post a Score'],['shop','Shop for Pickup'],['events','Events'],['guests','Guests & Gate'],['concierge','Concierge'],['account','Card & Statement']];
+  var TABS=['home','tee','dining','courts'];
+  var ui={teeDate:O.today(),teeSel:null,course:O.COURSES[0],ctDate:O.today(),ctSel:null,ctGroup:'Clay',shopTab:'Golf Shop',bag:[],scoreTab:'golf',scoreMatch:'',flip:false};
+
+  function route(){var h=location.hash.replace('#','');return NAV.some(function(n){return n[0]===h})?h:'home'}
+  function head(eyebrow,title,sub,extra){return '<div class="page-head"><div><p class="eyebrow">'+eyebrow+'</p><h1>'+title+'</h1>'+(sub?'<p>'+sub+'</p>':'')+'</div>'+(extra||'')+'</div>'}
+  function opt(list,sel){return list.map(function(v){var val=Array.isArray(v)?v[0]:v,lab=Array.isArray(v)?v[1]:v;return '<option value="'+E(val)+'"'+(String(val)===String(sel)?' selected':'')+'>'+E(lab)+'</option>'}).join('')}
+  function pill(s){var c=/Verified|Confirmed|Ready|Picked|Seated|Resolved/.test(s)?'ok':/Pending|New|Open/.test(s)?'warn':/Rejected/.test(s)?'bad':'';return '<span class="pill '+c+'">'+E(s)+'</span>'}
+  function balance(){return O.load().charges.reduce(function(a,c){return a+c.amt},0)}
+  function bagCount(){return ui.bag.reduce(function(a,i){return a+i.qty},0)}
+  function days(n,from){var a=[];for(var i=from||0;i<(from||0)+n;i++){var d=O.iso(O.day(i));a.push([d,O.nice(d)])}return a}
+
+  function chrome(r){
+    document.getElementById('sideNav').innerHTML=NAV.map(function(n){return '<a href="#'+n[0]+'" class="'+(n[0]===r?'on':'')+'">'+n[1]+(n[0]==='shop'&&bagCount()?'<b>'+bagCount()+'</b>':'')+'</a>'}).join('');
+    document.getElementById('whoami').textContent=ME+' · No. '+O.ME.no;
+    document.getElementById('tabbar').innerHTML=TABS.map(function(k){var n=NAV.filter(function(x){return x[0]===k})[0];return '<a href="#'+k+'" class="'+(k===r?'on':'')+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+ICON[k]+'</svg>'+n[1]+'</a>'}).join('')+'<button type="button" data-act="more" class="'+(TABS.indexOf(r)<0?'on':'')+'"><svg viewBox="0 0 24 24" aria-hidden="true">'+ICON.more+'</svg>More'+(bagCount()?'<em>'+bagCount()+'</em>':'')+'</button>';
+    document.getElementById('moreList').innerHTML=NAV.map(function(n){return '<a href="#'+n[0]+'">'+n[1]+'<small>'+(n[0]===r?'You are here':'')+'</small></a>'}).join('')+'<a href="index.html">Club website<small></small></a><a href="staff.html">Staff portal<small></small></a>';
+  }
+
+  var V={};
+
+  V.home=function(){
+    var s=O.load(),t=O.today(),h=new Date().getHours(),up=[];
+    s.tee.filter(function(b){return b.member===ME&&b.date>=t}).forEach(function(b){up.push({d:b.date,k:b.time,t:'Tee time, '+O.t12(b.time),x:b.course+' · '+b.players.length+' player'+(b.players.length>1?'s':'')+' · '+b.cart,go:'tee'})});
+    s.dining.filter(function(b){return b.member===ME&&b.date>=t}).forEach(function(b){up.push({d:b.date,k:b.time,t:'Table reserved, '+O.t12(b.time),x:b.venue+' · party of '+b.party,go:'dining'})});
+    s.courts.filter(function(b){return b.member===ME&&b.date>=t}).forEach(function(b){up.push({d:b.date,k:('0'+b.hour).slice(-2),t:b.kind+', '+O.hr12(b.hour),x:'Court '+b.court+' ('+O.courtType(b.court)+')'+(b.opp?' · with '+b.opp:''),go:'courts'})});
+    s.rsvps.filter(function(v){return v.member===ME}).forEach(function(v){var e=O.events().filter(function(x){return x.id===v.event})[0];if(e&&e.date>=t)up.push({d:e.date,k:e.time,t:e.name+', '+O.t12(e.time),x:e.where+' · '+v.adults+' adults'+(v.kids?', '+v.kids+' children':''),go:'events'})});
+    s.guests.filter(function(g){return g.member===ME&&g.date>=t}).forEach(function(g){up.push({d:g.date,k:'00',t:'Guest at the gate: '+g.name,x:g.reason,go:'guests'})});
+    up.sort(function(a,b){return (a.d+a.k)<(b.d+b.k)?-1:1});
+    var nt=s.tee.filter(function(b){return b.member===ME&&b.date>=t}).sort(function(a,b){return (a.date+a.time)<(b.date+b.time)?-1:1})[0];
+    var idx=O.index(ME),ready=s.orders.filter(function(o){return o.member===ME&&o.status!=='Picked up'}).length;
+    var owe=s.courts.filter(function(b){return b.member===ME&&b.date<t&&/match/.test(b.kind)&&!b.score}).length;
+    var rs=s.rounds.filter(function(r){return r.member===ME&&r.status==='Verified'}).sort(function(a,b){return a.date<b.date?-1:1}),tot=rs.map(function(r){return r.total});
+    return head(O.ME.tier+' member · No. '+O.ME.no,(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+', <em>'+O.ME.first+'</em>','Everything you have coming up at the Crest, in one place.')+
+    '<div class="grid g4" style="margin-bottom:18px">'+
+      '<a class="stat dark" href="#tee"><b>'+(nt?O.t12(nt.time).replace(' ','<small style="display:inline;font-size:16px;margin-left:4px">')+'</small>':'None')+'</b><span>Next tee time</span><small>'+(nt?O.nice(nt.date)+' · '+E(nt.course):'Book a round')+'</small></a>'+
+      '<a class="stat" href="#scores"><b '+(idx==null?'':'data-count="'+idx.toFixed(1)+'"')+'>'+(idx==null?'–':'0')+'</b><span>Handicap index</span><small>Estimate from verified rounds</small></a>'+
+      '<a class="stat" href="#account"><b data-count="'+Math.round(balance())+'" data-pre="$">$0</b><span>Account balance</span><small>Current statement</small></a>'+
+      '<a class="stat" href="#shop"><b data-count="'+ready+'">0</b><span>Shop orders</span><small>'+(ready?'Awaiting pickup':'Nothing waiting')+'</small></a>'+
+    '</div>'+
+    (owe?'<div class="panel" style="margin-bottom:18px;border-left:3px solid var(--brass)"><div class="row" style="justify-content:space-between"><div><b>You have '+owe+' match'+(owe>1?'es':'')+' without a score.</b><br><span style="color:var(--ink2)">Post it so the racquet shop can update the ladder.</span></div><a class="btn sm" href="#scores" data-act="score-tab" data-tab="racquets">Post a result</a></div></div>':'')+
+    '<div class="grid g21">'+
+      '<div class="panel"><h2>Coming up</h2><p class="sub">Your tee times, tables, courts, events and guests.</p>'+
+        (up.length?'<ul class="list">'+up.map(function(u){return '<li><div class="what"><b>'+E(u.t)+'</b><small>'+O.nice(u.d)+' · '+E(u.x)+'</small></div><a class="btn sm line" href="#'+u.go+'">View</a></li>'}).join('')+'</ul>':'<p class="empty">Nothing booked yet.</p>')+
+        '<div class="row" style="margin-top:16px"><a class="btn" href="#tee">Book a tee time</a><a class="btn line" href="#dining">Reserve a table</a><a class="btn line" href="#courts">Reserve a court</a></div>'+
+      '</div>'+
+      '<div class="grid" style="align-content:start">'+
+        '<div class="panel dark"><h2>From the club</h2><p class="sub">Posted by the club office.</p>'+s.notices.map(function(n){return '<div class="notice"><b>'+E(n.title)+'</b><small>'+O.nice(n.when)+'</small><p>'+E(n.body)+'</p></div>'}).join('')+'</div>'+
+        '<div class="panel"><h2>Your game</h2><p class="sub">Last '+tot.length+' verified rounds'+(tot.length?', low of '+Math.min.apply(0,tot):'')+'.</p><svg class="spark" viewBox="0 0 300 64" preserveAspectRatio="none" role="img" aria-label="Scores for your last rounds: '+tot.join(', ')+'"><path d="'+O.spark(tot.map(function(v){return -v}),300,64)+'"/></svg><div class="row" style="justify-content:space-between;font-size:13.5px;color:var(--ink2)"><span>'+(rs[0]?O.nice(rs[0].date):'')+'</span><span>'+(rs.length?O.nice(rs[rs.length-1].date):'')+'</span></div></div>'+
+      '</div>'+
+    '</div>';
+  };
+
+  V.tee=function(){
+    var s=O.load(),slots=O.teeDay(ui.teeDate,ui.course),now=new Date(),nowT=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+    var mine=s.tee.filter(function(b){return b.member===ME&&b.date>=O.today()}).sort(function(a,b){return (a.date+a.time)<(b.date+b.time)?-1:1});
+    var sel=ui.teeSel?O.teeSlot(ui.teeDate,ui.teeSel,ui.course):null;
+    var grid=slots.map(function(x,i){
+      var past=ui.teeDate===O.today()&&x.time<nowT;
+      var cls=x.mine?'mine':x.block?'blocked':(x.open===0||past)?'full':x.open<4?'part':'';
+      var lab=x.mine?'Your tee time':x.block?E(x.block.reason):past?'Passed':x.open===0?'Full':x.open===4?'Open':x.open+' spot'+(x.open>1?'s':'')+' open';
+      var can=!x.mine&&!x.block&&!past&&x.open>0;
+      return '<button type="button" style="--i:'+i+'" class="slot '+cls+(ui.teeSel===x.time?' sel':'')+'" '+(can?'data-act="tee-pick" data-time="'+x.time+'"':'disabled')+'><b>'+O.t12(x.time)+'</b><span>'+lab+'</span></button>';
+    }).join('');
+    var form='';
+    if(sel&&sel.open>0){
+      var n=[];for(var i=1;i<=sel.open;i++)n.push([i,i+(i>1?' players':' player')]);
+      form='<div class="panel pop" id="teeForm" style="margin-bottom:18px;border-color:var(--bronze)"><h2>'+O.long(ui.teeDate)+' at '+O.t12(sel.time)+'</h2><p class="sub">'+E(ui.course)+'. '+(sel.groups.length?'Joining '+E(sel.groups.map(function(g){return g.players.join(', ')}).join(', '))+'.':'The tee is yours.')+' '+sel.open+' spot'+(sel.open>1?'s':'')+' available.</p>'+
+      '<form data-form="tee"><div class="fgrid">'+
+        '<div><label class="f" for="tp">Players</label><select class="in" id="tp" name="n" data-change="tee-n">'+opt(n,Math.min(2,sel.open))+'</select></div>'+
+        '<div><label class="f" for="th">Round</label><select class="in" id="th" name="holes">'+opt([[18,'18 holes'],[9,'9 holes']],18)+'</select></div>'+
+        '<div class="full" id="teeNames"></div>'+
+        '<div><label class="f" for="tc">How you will play</label><select class="in" id="tc" name="cart">'+opt(['Cart','Walking','Caddie'],'Cart')+'</select></div>'+
+        '<div><label class="f" for="tr">Range before</label><select class="in" id="tr" name="range">'+opt(['No thanks','Reserve a bay 30 minutes before'],'No thanks')+'</select></div>'+
+      '</div><div class="row"><button class="btn brass" type="submit">Confirm tee time</button><button class="btn line" type="button" data-act="tee-clear">Cancel</button></div></form>'+
+      '<p class="note">Guests you add here go on the gate list automatically. '+O.ME.tier+' members may book fourteen days ahead.</p></div>';
+    }
+    return head('Golf','Tee <em>Times</em>','Choose a course and a day, then a time. Open times are shown in green.')+
+      '<div class="seg2" role="group" aria-label="Course">'+O.COURSES.map(function(c){return '<button type="button" data-act="course" data-c="'+c+'" aria-pressed="'+(ui.course===c)+'">'+c+'</button>'}).join('')+'</div>'+
+      O.dayStrip(ui.teeDate,0,14)+form+
+      '<div class="grid g21"><div class="panel"><h2>'+O.long(ui.teeDate)+'</h2><p class="sub">'+E(ui.course)+', first tee. Times every ten minutes.</p><div class="slots">'+grid+'</div></div>'+
+      '<div class="panel"><h2>Your tee times</h2><p class="sub">Upcoming rounds.</p>'+
+        (mine.length?'<ul class="list">'+mine.map(function(b){return '<li><div class="what"><b>'+O.nice(b.date)+' at '+O.t12(b.time)+'</b><small>'+E(b.course)+' · '+E(b.players.join(', '))+' · '+b.holes+' holes · '+E(b.cart)+'</small></div><button class="btn sm danger" type="button" data-act="tee-cancel" data-id="'+b.id+'">Cancel</button></li>'}).join('')+'</ul>':'<p class="empty">No rounds booked.</p>')+
+        '<p class="note">After your round, <a href="#scores">post your score</a>.</p></div></div>';
+  };
+  function teeNames(){
+    var box=document.getElementById('teeNames');if(!box)return;var n=+document.getElementById('tp').value,h='';
+    for(var i=2;i<=n;i++)h+='<label class="f" for="pn'+i+'">Player '+i+'</label><div class="fgrid" style="grid-template-columns:140px 1fr"><select class="in" name="pt'+i+'" aria-label="Player '+i+' type"><option>Member</option><option>Guest</option></select><input class="in" id="pn'+i+'" name="pn'+i+'" placeholder="Name" autocomplete="off"></div>';
+    box.innerHTML=h;
+  }
+
+  V.dining=function(){
+    var s=O.load(),ds=days(14).map(function(d,i){return [d[0],d[1]+(i>1?'':', '+O.long(d[0]).split(', ')[1])]});
+    var mine=s.dining.filter(function(b){return b.member===ME&&b.date>=O.today()}).sort(function(a,b){return (a.date+a.time)<(b.date+b.time)?-1:1});
+    var times=O.DINE_TIMES.map(function(t){return [t,O.t12(t)]}),party=[];for(var p=1;p<=14;p++)party.push([p,p+(p>1?' guests':' guest')]);
+    return head('Clubhouse','Dining <em>Reservations</em>','Three rooms, one kitchen. Your table is held under your member number.')+
+    '<div class="grid g2"><div class="panel"><h2>Reserve a table</h2><p class="sub">The Cellar seats fourteen at one long table.</p><form data-form="dining"><div class="fgrid">'+
+      '<div class="full"><label class="f" for="dv">Dining room</label><select class="in" id="dv" name="venue">'+opt(O.ROOMS,O.ROOMS[0])+'</select></div>'+
+      '<div><label class="f" for="dd">Date</label><select class="in" id="dd" name="date">'+opt(ds,O.iso(O.day(1)))+'</select></div>'+
+      '<div><label class="f" for="dt">Time</label><select class="in" id="dt" name="time">'+opt(times,'19:00')+'</select></div>'+
+      '<div><label class="f" for="dp">Party</label><select class="in" id="dp" name="party">'+opt(party,2)+'</select></div>'+
+      '<div><label class="f" for="ds">Seating</label><select class="in" id="ds" name="seat">'+opt(['No preference','By the fireplace','On the porch','A quiet corner'],'No preference')+'</select></div>'+
+      '<div class="full"><label class="f" for="dn">Occasion, allergies or requests</label><input class="in" id="dn" name="note" placeholder="Optional" autocomplete="off"></div>'+
+    '</div><button class="btn brass" type="submit">Reserve</button></form></div>'+
+    '<div class="panel"><h2>Your reservations</h2><p class="sub">Upcoming tables.</p>'+
+      (mine.length?'<ul class="list">'+mine.map(function(b){return '<li><div class="what"><b>'+O.nice(b.date)+' at '+O.t12(b.time)+'</b><small>'+E(b.venue)+' · party of '+b.party+(b.note?' · '+E(b.note):'')+'</small></div><div class="row">'+pill(b.status)+'<button class="btn sm danger" type="button" data-act="dine-cancel" data-id="'+b.id+'">Cancel</button></div></li>'}).join('')+'</ul>':'<p class="empty">No tables reserved.</p>')+
+    '</div></div>';
+  };
+
+  V.courts=function(){
+    var s=O.load(),t=O.today(),nowH=new Date().getHours(),G=O.COURT_GROUPS.filter(function(g){return g.k===ui.ctGroup})[0],cs=[];
+    for(var c=G.from;c<=G.to;c++)cs.push(c);
+    var g='<div class="h"></div>'+cs.map(function(c){return '<div class="h">Court '+c+'<small>'+G.k+'</small></div>'}).join('');
+    O.COURT_HOURS.forEach(function(h){
+      g+='<div class="tm">'+O.hr12(h)+'</div>';
+      cs.forEach(function(c){
+        var x=O.courtCell(ui.ctDate,h,c),past=ui.ctDate===t&&h<=nowH;
+        if(x.state==='block')g+='<div class="cell blk">'+E(x.reason)+'</div>';
+        else if(x.state==='booked')g+='<div class="cell '+(x.mine?'mine':'bk')+'">'+(x.mine?'Yours':'Reserved')+'</div>';
+        else if(past)g+='<div class="cell bk">–</div>';
+        else g+='<button type="button" class="cell" data-act="ct-pick" data-hour="'+h+'" data-court="'+c+'" aria-label="Court '+c+' at '+O.hr12(h)+', open">Open</button>';
+      });
+    });
+    var form='',pk=ui.ctGroup==='Pickleball';
+    if(ui.ctSel)form='<div class="panel pop" id="ctForm" style="margin-bottom:18px;border-color:var(--bronze)"><h2>Court '+ui.ctSel.court+', '+O.long(ui.ctDate)+' at '+O.hr12(ui.ctSel.hour)+'</h2><p class="sub">'+O.courtType(ui.ctSel.court)+' court. One hour.</p><form data-form="court"><div class="fgrid">'+
+      '<div><label class="f" for="ck">Reservation</label><select class="in" id="ck" name="kind">'+opt(['Singles match','Doubles match','Practice','Lesson with a pro'],pk?'Doubles match':'Singles match')+'</select></div>'+
+      '<div><label class="f" for="co">Playing with</label><input class="in" id="co" name="opp" placeholder="Opponent or partners" autocomplete="off"></div>'+
+      '</div><div class="row"><button class="btn brass" type="submit">Reserve court</button><button class="btn line" type="button" data-act="ct-clear">Cancel</button></div></form></div>';
+    var mine=s.courts.filter(function(b){return b.member===ME}).sort(function(a,b){return (a.date+('0'+a.hour).slice(-2))<(b.date+('0'+b.hour).slice(-2))?1:-1});
+    return head('Racquets','Courts &amp; <em>Matches</em>','Eight clay courts, four hard courts and six pickleball courts. Tap an open hour to reserve it.')+
+      '<div class="seg2" role="group" aria-label="Court type">'+O.COURT_GROUPS.map(function(x){return '<button type="button" data-act="ct-group" data-g="'+x.k+'" aria-pressed="'+(ui.ctGroup===x.k)+'">'+x.k+' '+x.from+'–'+x.to+'</button>'}).join('')+'</div>'+
+      O.dayStrip(ui.ctDate,0,8)+form+
+      '<div class="panel" style="margin-bottom:18px"><h2>'+O.long(ui.ctDate)+'</h2><p class="sub">'+G.k+' courts. Scroll sideways to see every court.</p><div class="tbl-wrap"><div class="cgrid" style="--n:'+cs.length+'">'+g+'</div></div></div>'+
+      '<div class="panel"><h2>Your courts and matches</h2><p class="sub">Report a result once a match has been played.</p>'+
+      (mine.length?'<ul class="list">'+mine.map(function(b){var past=b.date<t||(b.date===t&&b.hour<=nowH),isM=/match/.test(b.kind);
+        return '<li><div class="what"><b>'+E(b.kind)+(b.opp?' with '+E(b.opp):'')+'</b><small>'+O.nice(b.date)+' at '+O.hr12(b.hour)+' · Court '+b.court+' ('+O.courtType(b.court)+')'+(b.score?' · '+E(b.score):'')+'</small></div><div class="row">'+(b.status?pill(b.status):'')+(past?(isM&&!b.score?'<a class="btn sm" href="#scores" data-act="score-match" data-id="'+b.id+'">Report result</a>':''):'<button class="btn sm danger" type="button" data-act="ct-cancel" data-id="'+b.id+'">Cancel</button>')+'</div></li>'}).join('')+'</ul>':'<p class="empty">No courts reserved.</p>')+
+      '<p class="note">Squash courts and lessons are booked through the <a href="#concierge">concierge</a>.</p></div>';
+  };
+
+  V.scores=function(){
+    var s=O.load(),T=[['golf','Golf round'],['racquets','Racquets match'],['swim','Swim time']];
+    var tabs='<div class="tabs">'+T.map(function(t){return '<button type="button" data-act="score-tab" data-tab="'+t[0]+'" aria-pressed="'+(ui.scoreTab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>';
+    var ds=days(8,-7).reverse(),body;
+    if(ui.scoreTab==='golf'){
+      var holes=function(from){var h='<div class="holes">';for(var i=from;i<from+9;i++)h+='<div class="hole"><small>Hole '+(i+1)+'</small><i>Par '+O.PAR[i]+'</i><input type="number" inputmode="numeric" min="1" max="15" name="h'+i+'" aria-label="Hole '+(i+1)+' score" data-hole></div>';return h+'</div>'};
+      var rounds=s.rounds.filter(function(r){return r.member===ME}).sort(function(a,b){return a.date<b.date?1:-1}),ix=O.index(ME);
+      body='<div class="grid g2"><div class="panel"><h2>Post a round</h2><p class="sub">Enter each hole. Totals, score to par and your differential are worked out for you.</p><form data-form="round"><div class="fgrid">'+
+        '<div><label class="f" for="rd">Date played</label><select class="in" id="rd" name="date">'+opt(ds,O.today())+'</select></div>'+
+        '<div><label class="f" for="rt">Tees</label><select class="in" id="rt" name="tee" data-change="round-calc">'+opt(O.TEES.map(function(t){return [t.n,t.n+' · '+t.y.toLocaleString('en-US')+' yds · '+t.r.toFixed(1)+'/'+t.s]}),'Member')+'</select></div>'+
+        '<div><label class="f" for="rp">Putts</label><input class="in" id="rp" name="putts" type="number" inputmode="numeric" min="0" max="72" placeholder="Optional"></div>'+
+        '<div><label class="f" for="rw">Played with</label><input class="in" id="rw" name="partner" placeholder="Optional" autocomplete="off"></div></div>'+
+        '<label class="f">Front nine</label>'+holes(0)+'<label class="f" style="margin-top:12px">Back nine</label>'+holes(9)+
+        '<div class="totals" style="grid-template-columns:repeat(5,1fr)"><div><b id="rOut">–</b><span>Out</span></div><div><b id="rIn">–</b><span>In</span></div><div><b id="rTot">–</b><span>Total</span></div><div><b id="rPar">–</b><span>To par</span></div><div><b id="rDiff">–</b><span>Diff.</span></div></div>'+
+        '<p class="note" id="rMix" style="margin:-6px 0 14px"></p>'+
+        '<div class="row"><button class="btn brass" type="submit">Post score</button><button class="btn line" type="button" data-act="round-fill">Fill a sample round</button></div></form>'+
+        '<p class="note">Scores go to the Golf Shop for verification before they count toward your index.</p></div>'+
+        '<div class="panel"><h2>Your rounds</h2><p class="sub">Handicap index estimate: <b>'+(ix==null?'–':ix.toFixed(1))+'</b></p><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Tees</th><th class="num">Score</th><th class="num">Putts</th><th class="num">Diff.</th><th></th></tr></thead><tbody>'+
+        rounds.map(function(r){return '<tr><td style="white-space:nowrap">'+O.nice(r.date)+'</td><td>'+E(r.tee==='Championship'?'Champ.':r.tee)+'</td><td class="num t">'+r.total+'</td><td class="num">'+(r.putts||'–')+'</td><td class="num">'+r.diff.toFixed(1)+'</td><td>'+pill(r.status)+'</td></tr>'}).join('')+'</tbody></table></div></div></div>';
+    } else if(ui.scoreTab==='racquets'){
+      var open=s.courts.filter(function(b){return b.member===ME&&/match/.test(b.kind)&&!b.score&&b.date<=O.today()});
+      var matches=open.map(function(b){return [b.id,O.nice(b.date)+' · '+O.courtType(b.court)+' · '+b.kind+(b.opp?' with '+b.opp:'')]});matches.push(['other','A match not on the court sheet']);
+      var hist=s.results.filter(function(x){return x.member===ME}).sort(function(a,b){return a.date<b.date?1:-1});
+      var setRow=function(who,k){return '<div>'+who+'</div>'+[1,2,3].map(function(n){return '<input class="in" type="number" inputmode="numeric" min="0" max="30" name="'+k+n+'" aria-label="'+who+', game '+n+'">'}).join('')};
+      body='<div class="grid g2"><div class="panel"><h2>Report a match</h2><p class="sub">Tennis, pickleball or squash. Leave the third column empty if it was not played.</p><form data-form="result">'+
+        '<label class="f" for="xm">Match</label><select class="in" id="xm" name="match" data-change="x-match">'+opt(matches,ui.scoreMatch||matches[0][0])+'</select>'+
+        '<div id="xOther" hidden><div class="fgrid"><div><label class="f" for="xs">Sport</label><select class="in" id="xs" name="sport">'+opt(['Tennis','Pickleball','Squash'],'Tennis')+'</select></div><div><label class="f" for="xk">Format</label><select class="in" id="xk" name="kind">'+opt(['Singles match','Doubles match'],'Singles match')+'</select></div><div class="full"><label class="f" for="xo">Opponent</label><input class="in" id="xo" name="opp" autocomplete="off"></div></div></div>'+
+        '<div class="sets"><div></div><div class="hd">1</div><div class="hd">2</div><div class="hd">3</div>'+setRow('You','a')+setRow('Opponent','b')+'</div>'+
+        '<div class="row" style="margin-top:14px"><button class="btn brass" type="submit">Submit result</button></div></form>'+
+        '<p class="note">Results go to the racquet shop and feed the club ladders.</p></div>'+
+        '<div class="panel"><h2>Your results</h2><p class="sub">Matches you have reported.</p>'+
+        (hist.length?'<ul class="list">'+hist.map(function(x){return '<li><div class="what"><b>'+E(x.sport)+': '+E(x.kind.toLowerCase())+' with '+E(x.opp)+'</b><small>'+O.nice(x.date)+' · '+x.sets.map(function(p){return p[0]+'–'+p[1]}).join(', ')+'</small></div>'+pill(x.status)+'</li>'}).join('')+'</ul>':'<p class="empty">No results yet.</p>')+'</div></div>';
+    } else {
+      var sw=s.swims.filter(function(x){return x.member===ME}).sort(function(a,b){return a.date<b.date?1:-1}),best={};
+      sw.forEach(function(x){if(!best[x.event]||x.time<best[x.event])best[x.event]=x.time});
+      body='<div class="grid g2"><div class="panel"><h2>Log a swim</h2><p class="sub">For the swim team board and your own personal bests.</p><form data-form="swim"><div class="fgrid">'+
+        '<div><label class="f" for="se">Event</label><select class="in" id="se" name="event">'+opt(['50 Free','100 Free','200 Free','50 Back','50 Breast','50 Fly','100 IM'],'100 Free')+'</select></div>'+
+        '<div><label class="f" for="sd">Date</label><select class="in" id="sd" name="date">'+opt(ds,O.today())+'</select></div>'+
+        '<div><label class="f" for="sm">Minutes</label><input class="in" id="sm" name="min" type="number" inputmode="numeric" min="0" max="59" value="1"></div>'+
+        '<div><label class="f" for="ss">Seconds</label><input class="in" id="ss" name="sec" type="number" inputmode="decimal" min="0" max="59.99" step="0.01" placeholder="07.80"></div>'+
+        '</div><button class="btn brass" type="submit">Log time</button></form></div>'+
+        '<div class="panel"><h2>Your times</h2><p class="sub">Personal bests are marked.</p>'+
+        (sw.length?'<ul class="list">'+sw.map(function(x){return '<li><div class="what"><b>'+E(x.event)+' · '+E(x.time)+'</b><small>'+O.nice(x.date)+'</small></div>'+(best[x.event]===x.time?'<span class="pill ok">Personal best</span>':'')+'</li>'}).join('')+'</ul>':'<p class="empty">No swims logged.</p>')+'</div></div>';
+    }
+    return head('Golf, racquets &amp; swim','Post a <em>Score</em>','Golf rounds hole by hole, match results for the ladders, and swim times.')+tabs+body;
+  };
+  function roundCalc(){
+    var ins=document.querySelectorAll('[data-hole]');if(!ins.length)return null;var v=[].map.call(ins,function(i){return +i.value||0});
+    var out=v.slice(0,9).reduce(function(a,b){return a+b},0),inn=v.slice(9).reduce(function(a,b){return a+b},0),full=v.every(function(x){return x>0}),tot=out+inn;
+    var set=function(id,t){document.getElementById(id).textContent=t};
+    set('rOut',out||'–');set('rIn',inn||'–');set('rTot',tot||'–');
+    var par=O.PAR.reduce(function(a,b){return a+b},0),tp=tot-par,d=full?O.diff(tot,document.getElementById('rt').value):null;
+    set('rPar',full?(tp===0?'E':(tp>0?'+':'')+tp):'–');set('rDiff',d==null?'–':d.toFixed(1));
+    var m={e:0,b:0,p:0,g:0,d:0};v.forEach(function(x,i){if(!x)return;var k=x-O.PAR[i];if(k<=-2)m.e++;else if(k===-1)m.b++;else if(k===0)m.p++;else if(k===1)m.g++;else m.d++});
+    set('rMix',full?(m.e?m.e+' eagle'+(m.e>1?'s':'')+' · ':'')+m.b+' birdie'+(m.b===1?'':'s')+' · '+m.p+' pars · '+m.g+' bogeys · '+m.d+' doubles or worse':'');
+    return full?{total:tot,diff:d}:null;
+  }
+
+  V.shop=function(){
+    var s=O.load(),tabs=['Golf Shop','Racquet Shop','Pool Hut','Bag'];
+    var h=head('Pro Shops','Shop for <em>Pickup</em>','Order from the Golf Shop, the Racquet Shop or the Pool Hut and collect it at the counter. Charged to your member account.')+
+      '<div class="tabs">'+tabs.map(function(t){return '<button type="button" data-act="shop-tab" data-tab="'+t+'" aria-pressed="'+(ui.shopTab===t)+'">'+(t==='Bag'?'Your bag ('+bagCount()+')':t)+'</button>'}).join('')+'</div>';
+    if(ui.shopTab!=='Bag'){
+      h+='<div class="prods">'+O.products().filter(function(p){return p.shop===ui.shopTab}).map(function(p,i){
+        return '<article class="prod'+(p.off?' off':'')+'" style="--i:'+i*4+'"><div class="tile'+(i%2?' t2':'')+'">'+E(p.brand)+'</div><div class="bd"><b>'+E(p.name)+'</b><span class="pr">'+O.money(p.price).replace('.00','')+'</span>'+
+          (p.sizes?'<select class="in" aria-label="Size for '+E(p.name)+'" id="sz-'+p.sku+'">'+opt(p.sizes.map(function(z){return [z,'Size '+z]}),p.sizes[1])+'</select>':'')+
+          (p.off?'<button class="btn sm" disabled>Out of stock</button>':'<button class="btn sm" type="button" data-act="bag-add" data-sku="'+p.sku+'">Add to bag</button>')+'</div></article>'}).join('')+'</div>'+
+        '<p class="note">Sample items and prices for a fictional club.</p>';
+    } else {
+      var tot=ui.bag.reduce(function(a,i){return a+i.qty*i.price},0),shops={};ui.bag.forEach(function(i){shops[i.shop]=1});
+      var mine=s.orders.filter(function(o){return o.member===ME});
+      h+='<div class="grid g2"><div class="panel"><h2>Your bag</h2><p class="sub">Pickup at '+(Object.keys(shops).join(' and ')||'the shop counter')+'.</p>'+
+        (ui.bag.length?'<ul class="list">'+ui.bag.map(function(i,n){return '<li><div class="what"><b>'+E(i.name)+'</b><small>'+(i.size?'Size '+E(i.size)+' · ':'')+O.money(i.price)+' each</small></div><div class="qty"><button type="button" data-act="bag-qty" data-n="'+n+'" data-d="-1" aria-label="One fewer">−</button><span>'+i.qty+'</span><button type="button" data-act="bag-qty" data-n="'+n+'" data-d="1" aria-label="One more">+</button></div></li>'}).join('')+'</ul>'+
+          '<div class="sum"><span>Charged to member account No. '+O.ME.no+'</span><b>'+O.money(tot)+'</b></div><button class="btn brass" type="button" data-act="order">Place order for pickup</button>'
+          :'<p class="empty">Your bag is empty.</p><div class="row"><button class="btn line" type="button" data-act="shop-tab" data-tab="Golf Shop">Golf Shop</button><button class="btn line" type="button" data-act="shop-tab" data-tab="Racquet Shop">Racquet Shop</button></div>')+'</div>'+
+        '<div class="panel"><h2>Your orders</h2><p class="sub">We will mark it ready when it is at the counter.</p>'+
+        (mine.length?'<ul class="list">'+mine.map(function(o){return '<li><div class="what"><b>'+E(o.items.map(function(i){return i.qty+' × '+i.name}).join(', '))+'</b><small>'+O.nice(o.when)+' · '+E(o.pickup)+' · '+O.money(o.total)+'</small></div>'+pill(o.status)+'</li>'}).join('')+'</ul>':'<p class="empty">No orders yet.</p>')+'</div></div>';
+    }
+    return h;
+  };
+
+  V.events=function(){
+    var s=O.load(),ev=O.events().filter(function(e){return e.date>=O.today()});
+    var num=function(max,from){var a=[];for(var i=from;i<=max;i++)a.push(i);return a};
+    return head('The calendar','Events &amp; <em>RSVPs</em>','Suppers, tournaments and the things your children will remember. Let us know who is coming.')+
+      '<div class="grid g2">'+ev.map(function(e){var v=s.rsvps.filter(function(x){return x.event===e.id&&x.member===ME})[0],all=s.rsvps.filter(function(x){return x.event===e.id}),n=all.reduce(function(a,x){return a+x.adults+x.kids},0);
+        return '<div class="panel"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2>'+E(e.name)+'</h2><p class="sub">'+O.long(e.date)+' at '+O.t12(e.time)+' · '+E(e.where)+'</p></div>'+(v?'<span class="pill ok">Attending</span>':'')+'</div>'+
+        '<div class="meter" aria-hidden="true"><i style="width:'+Math.min(100,8+n*6)+'%"></i></div><p class="note" style="margin:0 0 14px">'+n+' attending so far</p>'+
+        '<form data-form="rsvp" data-id="'+e.id+'"><div class="fgrid"><div><label class="f" for="a'+e.id+'">Adults</label><select class="in" id="a'+e.id+'" name="adults">'+opt(num(8,1),v?v.adults:2)+'</select></div><div><label class="f" for="k'+e.id+'">Children</label><select class="in" id="k'+e.id+'" name="kids">'+opt(num(8,0),v?v.kids:0)+'</select></div></div>'+
+        '<div class="row"><button class="btn '+(v?'line':'brass')+'" type="submit">'+(v?'Update RSVP':'RSVP')+'</button>'+(v?'<button class="btn danger" type="button" data-act="rsvp-cancel" data-id="'+v.id+'">Cancel RSVP</button>':'')+'</div></form></div>'}).join('')+'</div>';
+  };
+
+  V.guests=function(){
+    var s=O.load(),mine=s.guests.filter(function(g){return g.member===ME&&g.date>=O.today()}).sort(function(a,b){return a.date<b.date?-1:1});
+    return head('Guests','Guests &amp; <em>the Gate</em>','Add your guest here and the gatehouse will have their name before they arrive.')+
+    '<div class="grid g2"><div class="panel"><h2>Register a guest</h2><p class="sub">Their name goes on the gate list for that day.</p><form data-form="guest"><div class="fgrid">'+
+      '<div class="full"><label class="f" for="gn">Guest name</label><input class="in" id="gn" name="name" required autocomplete="off"></div>'+
+      '<div><label class="f" for="gd">Date</label><select class="in" id="gd" name="date">'+opt(days(14),O.today())+'</select></div>'+
+      '<div><label class="f" for="gr">Visiting for</label><select class="in" id="gr" name="reason">'+opt(['Golf','Dining','Racquets','Pool','Event','Cottage stay'],'Golf')+'</select></div>'+
+    '</div><button class="btn brass" type="submit">Add to gate list</button></form></div>'+
+    '<div class="panel"><h2>Your guests</h2><p class="sub">Expected at the gate.</p>'+
+      (mine.length?'<ul class="list">'+mine.map(function(g){return '<li><div class="what"><b>'+E(g.name)+'</b><small>'+O.nice(g.date)+' · '+E(g.reason)+'</small></div><div class="row">'+(g.arrived?'<span class="pill ok">Arrived</span>':'<button class="btn sm danger" type="button" data-act="guest-cancel" data-id="'+g.id+'">Remove</button>')+'</div></li>'}).join('')+'</ul>':'<p class="empty">No guests expected.</p>')+'</div></div>';
+  };
+
+  V.concierge=function(){
+    var s=O.load(),mine=s.requests.filter(function(q){return q.member===ME}).sort(function(a,b){return b.when-a.when});
+    return head('Concierge','Ask <em>the club</em>','A squash court, a lesson, a cake in the kitchen, your clubs cleaned by Saturday. A person reads every one of these.')+
+    '<div class="grid g2"><div class="panel"><h2>New request</h2><p class="sub">Usually answered within the hour.</p><form data-form="request">'+
+      '<label class="f" for="qt">About</label><select class="in" id="qt" name="topic">'+opt(['Golf','Racquets','Dining','Pool','Spa and wellness','Cottages','Locker room','Billing','Something else'],'Golf')+'</select>'+
+      '<label class="f" for="qb">Your request</label><textarea class="in" id="qb" name="body" required></textarea>'+
+      '<button class="btn brass" type="submit">Send to the concierge</button></form></div>'+
+    '<div class="panel"><h2>Your requests</h2><p class="sub">Replies appear here.</p>'+
+      (mine.length?'<ul class="list">'+mine.map(function(q){return '<li style="flex-direction:column;align-items:stretch;gap:6px"><div class="row" style="justify-content:space-between"><div class="what"><b>'+E(q.topic)+'</b><small>'+O.ago(q.when)+'</small></div>'+pill(q.status)+'</div><div>'+E(q.body)+'</div>'+(q.reply?'<div class="thread"><small>The club replied</small>'+E(q.reply)+'</div>':'')+'</li>'}).join('')+'</ul>':'<p class="empty">No requests yet.</p>')+'</div></div>';
+  };
+
+  function qr(){var r=17,h='';for(var y=0;y<21;y++)for(var x=0;x<21;x++){var f=function(a,b){return x>=a&&x<a+7&&y>=b&&y<b+7},fi=f(0,0)||f(14,0)||f(0,14),on;if(fi){var lx=x%14,ly=y%14;lx=x>=14?x-14:x;ly=y>=14?y-14:y;on=lx===0||lx===6||ly===0||ly===6||(lx>=2&&lx<=4&&ly>=2&&ly<=4)}else{r=(r*1103515245+12345)&0x7fffffff;on=(r>>8)%5<2}h+='<i'+(on?'':' class="o"')+'></i>'}return h}
+  V.account=function(){
+    var s=O.load(),rows=s.charges.slice().sort(function(a,b){return a.date<b.date?1:-1});
+    return head('Account','Card &amp; <em>Statement</em>','Your member card for the gate and the shops, and the charges to account No. '+O.ME.no+'.')+
+      '<div class="grid g2" style="margin-bottom:18px"><div class="panel"><h2>Member card</h2><p class="sub">Tap the card to show your code at the gate or the counter.</p><div class="mcard-wrap"><button type="button" class="mcard'+(ui.flip?' flip':'')+'" data-act="flip" aria-label="Member card for '+E(ME)+', number '+O.ME.no+'. Tap to turn over.">'+
+        '<span class="face"><span class="row" style="justify-content:space-between;align-items:flex-start"><span class="mk-w">'+O.MARK.replace('<svg ','<svg class="mk" ')+'</span><small>'+O.ME.tier+' member</small></span><span class="nm">'+E(ME)+'</span><span class="row" style="justify-content:space-between"><span class="no">MC · 1924 · '+O.ME.no+'</span><small>Since 2019</small></span></span>'+
+        '<span class="face back"><span class="qr" aria-hidden="true">'+qr()+'</span><small>Show at the gate</small></span></button></div></div>'+
+      '<div class="panel dark"><h2>Balance due</h2><p class="sub">Current statement</p><p style="font-family:var(--display);font-size:68px;line-height:1;margin:6px 0 20px;color:var(--brass)" data-count="'+balance().toFixed(2)+'" data-pre="$">$0.00</p><div class="row"><button class="btn brass" type="button" data-act="pay">Pay balance</button><button class="btn line" type="button" data-act="pdf">Download statement</button></div><p class="note" style="color:var(--mist)">Dining minimum this quarter</p><div class="meter"><i style="width:72%"></i></div><p class="note" style="color:var(--mist);margin-top:4px">$432 of $600</p></div></div>'+
+      '<div class="panel"><h2>Charges</h2><p class="sub">Shop orders appear here as soon as they are placed.</p><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Description</th><th class="num">Amount</th></tr></thead><tbody>'+
+      rows.map(function(c){return '<tr><td style="white-space:nowrap">'+O.nice(c.date)+'</td><td>'+E(c.desc)+'</td><td class="num">'+O.money(c.amt)+'</td></tr>'}).join('')+'</tbody></table></div></div>';
+  };
+
+  /* ---------- render ---------- */
+  var main=document.getElementById('view');
+  function render(keep){
+    var r=route();chrome(r);main.innerHTML=V[r]();document.getElementById('more').classList.remove('open');
+    if(r==='tee')teeNames();if(r==='scores'&&ui.scoreTab==='racquets')xMatch();
+    main.classList.remove('enter');
+    if(!keep){void main.offsetWidth;if(!STATIC)main.classList.add('enter');window.scrollTo(0,0);O.countUp(main)}
+    else [].forEach.call(main.querySelectorAll('[data-count]'),function(el){var v=parseFloat(el.dataset.count),dec=(el.dataset.count.split('.')[1]||'').length;el.textContent=(el.dataset.pre||'')+(dec?v.toFixed(dec):Math.round(v).toLocaleString('en-US'))});
+  }
+  function xMatch(){var m=document.getElementById('xm');if(m)document.getElementById('xOther').hidden=m.value!=='other'}
+  function data(form){var o={};[].forEach.call(form.elements,function(el){if(el.name)o[el.name]=el.value.trim()});return o}
+  function done(msg){render(true);O.toast(msg);O.burst()}
+
+  document.addEventListener('click',function(e){
+    var el=e.target.closest('[data-act]');if(!el)return;var a=el.dataset.act,s=O.load();
+    if(a==='more'){document.getElementById('more').classList.toggle('open');return}
+    if(a==='reset'){O.reset();ui.bag=[];ui.teeSel=ui.ctSel=null;render();O.toast('Demo reset to the starting sample data.');return}
+    if(a==='day'){if(route()==='tee'){ui.teeDate=el.dataset.date;ui.teeSel=null}else{ui.ctDate=el.dataset.date;ui.ctSel=null}render(true);return}
+    if(a==='course'){ui.course=el.dataset.c;ui.teeSel=null;render(true);return}
+    if(a==='ct-group'){ui.ctGroup=el.dataset.g;ui.ctSel=null;render(true);return}
+    if(a==='tee-pick'){ui.teeSel=el.dataset.time;render(true);var f=document.getElementById('teeForm');if(f)f.scrollIntoView({block:'center',behavior:'smooth'});return}
+    if(a==='tee-clear'){ui.teeSel=null;render(true);return}
+    if(a==='tee-cancel'){var b=s.tee.filter(function(x){return x.id===el.dataset.id})[0];s.tee=s.tee.filter(function(x){return x.id!==el.dataset.id});s.guests=s.guests.filter(function(g){return g.tee!==el.dataset.id});O.save();if(b)O.log(ME+' cancelled the '+O.t12(b.time)+' tee time on '+O.long(b.date));render(true);O.toast('Tee time cancelled.');return}
+    if(a==='dine-cancel'){s.dining=s.dining.filter(function(x){return x.id!==el.dataset.id});O.save();O.log(ME+' cancelled a dining reservation');render(true);O.toast('Reservation cancelled.');return}
+    if(a==='ct-pick'){ui.ctSel={hour:+el.dataset.hour,court:+el.dataset.court};render(true);var c=document.getElementById('ctForm');if(c)c.scrollIntoView({block:'center',behavior:'smooth'});return}
+    if(a==='ct-clear'){ui.ctSel=null;render(true);return}
+    if(a==='ct-cancel'){s.courts=s.courts.filter(function(x){return x.id!==el.dataset.id});O.save();O.log(ME+' cancelled a court reservation');render(true);O.toast('Court released.');return}
+    if(a==='score-tab'){ui.scoreTab=el.dataset.tab;if(route()==='scores')render(true);return}
+    if(a==='score-match'){ui.scoreTab='racquets';ui.scoreMatch=el.dataset.id;return}
+    if(a==='round-fill'){var smp=[5,5,4,3,5,4,4,6,4,5,4,3,5,5,4,3,6,4];[].forEach.call(document.querySelectorAll('[data-hole]'),function(i,n){i.value=smp[n]});document.getElementById('rp').value=31;roundCalc();return}
+    if(a==='shop-tab'){ui.shopTab=el.dataset.tab;render(true);return}
+    if(a==='bag-add'){var p=O.products().filter(function(x){return x.sku===el.dataset.sku})[0],z=document.getElementById('sz-'+p.sku),size=z?z.value:'';
+      var ex=ui.bag.filter(function(i){return i.sku===p.sku&&i.size===size})[0];if(ex)ex.qty++;else ui.bag.push({sku:p.sku,name:p.brand+' '+p.name,price:p.price,size:size,qty:1,shop:p.shop});render(true);O.toast(p.name+' added to your bag.');return}
+    if(a==='bag-qty'){var it=ui.bag[+el.dataset.n];it.qty+=+el.dataset.d;if(it.qty<1)ui.bag.splice(+el.dataset.n,1);render(true);return}
+    if(a==='order'){var tot=ui.bag.reduce(function(x,i){return x+i.qty*i.price},0),sh={};ui.bag.forEach(function(i){sh[i.shop]=1});var where=Object.keys(sh).join(' and ');
+      s.orders.unshift({id:O.uid(),when:O.today(),member:ME,items:ui.bag.map(function(i){return {name:i.name+(i.size?' ('+i.size+')':''),qty:i.qty,price:i.price}}),total:tot,pickup:where,status:'New'});
+      s.charges.push({id:O.uid(),date:O.today(),desc:where+', order for pickup',amt:tot});O.save();O.log(ME+' placed a '+where+' order for pickup ('+O.money(tot)+')');ui.bag=[];done('Order placed. We will let you know when it is ready.');return}
+    if(a==='rsvp-cancel'){s.rsvps=s.rsvps.filter(function(x){return x.id!==el.dataset.id});O.save();render(true);O.toast('RSVP cancelled.');return}
+    if(a==='guest-cancel'){s.guests=s.guests.filter(function(x){return x.id!==el.dataset.id});O.save();render(true);O.toast('Guest removed from the gate list.');return}
+    if(a==='flip'){ui.flip=!ui.flip;el.classList.toggle('flip',ui.flip);return}
+    if(a==='pay'){O.toast('In the finished portal this opens secure card or bank payment.');return}
+    if(a==='pdf'){O.toast('In the finished portal this downloads your statement as a PDF.');return}
+  });
+  document.addEventListener('change',function(e){var c=e.target.dataset.change;if(c==='tee-n')teeNames();if(c==='round-calc')roundCalc();if(c==='x-match')xMatch()});
+  document.addEventListener('input',function(e){if(e.target.hasAttribute('data-hole'))roundCalc()});
+
+  document.addEventListener('submit',function(e){
+    var f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();var k=f.dataset.form,d=data(f),s=O.load();
+    if(k==='tee'){
+      var slot=O.teeSlot(ui.teeDate,ui.teeSel,ui.course),n=Math.min(+d.n,slot.open),pl=[ME],id=O.uid();
+      for(var i=2;i<=n;i++){var nm=d['pn'+i]||('Player '+i),g=d['pt'+i]==='Guest';pl.push((g?'Guest: ':'')+nm);if(g&&d['pn'+i])s.guests.push({id:O.uid(),tee:id,date:ui.teeDate,name:nm,reason:'Golf, '+O.t12(ui.teeSel)+' tee time',member:ME,arrived:false})}
+      s.tee.push({id:id,date:ui.teeDate,time:ui.teeSel,course:ui.course,players:pl,holes:+d.holes,cart:d.cart,member:ME});O.save();
+      O.log(ME+' booked '+O.t12(ui.teeSel)+' on the '+ui.course+', '+O.long(ui.teeDate)+', for '+n+' player'+(n>1?'s':'')+(d.cart==='Caddie'?' with a caddie':''));
+      var t=ui.teeSel;ui.teeSel=null;done('Tee time confirmed: '+O.long(ui.teeDate)+' at '+O.t12(t)+'.');
+    }
+    if(k==='dining'){var note=[d.seat!=='No preference'?d.seat:'',d.note].filter(Boolean).join(' · ');s.dining.push({id:O.uid(),date:d.date,time:d.time,venue:d.venue,party:+d.party,note:note,member:ME,status:'Confirmed'});O.save();O.log(ME+' reserved '+d.venue+' for '+d.party+' on '+O.long(d.date)+' at '+O.t12(d.time));done('Table reserved at '+d.venue+'.')}
+    if(k==='court'){s.courts.push({id:O.uid(),date:ui.ctDate,hour:ui.ctSel.hour,court:ui.ctSel.court,kind:d.kind,opp:d.opp,member:ME,score:null,status:''});O.save();O.log(ME+' reserved Court '+ui.ctSel.court+' ('+O.courtType(ui.ctSel.court)+') on '+O.long(ui.ctDate)+' at '+O.hr12(ui.ctSel.hour));var c=ui.ctSel;ui.ctSel=null;done('Court '+c.court+' reserved for '+O.hr12(c.hour)+'.')}
+    if(k==='round'){var r=roundCalc();if(!r){O.toast('Please enter a score for all 18 holes.');return}
+      s.rounds.push({id:O.uid(),date:d.date,course:O.COURSES[0],tee:d.tee,total:r.total,putts:+d.putts||0,diff:r.diff,member:ME,status:'Pending'});O.save();O.log(ME+' posted a golf score of '+r.total+' ('+d.tee+' tees)');done('Score of '+r.total+' posted. Sent to the Golf Shop for verification.')}
+    if(k==='result'){var sets=[];[1,2,3].forEach(function(n){if(d['a'+n]!==''&&d['b'+n]!=='')sets.push([+d['a'+n],+d['b'+n]])});if(sets.length<1){O.toast('Please enter at least one game score.');return}
+      var m=s.courts.filter(function(b){return b.id===d.match})[0],txt=sets.map(function(p){return p[0]+'–'+p[1]}).join(', '),sport=m?(O.courtType(m.court)==='Pickleball'?'Pickleball':'Tennis'):d.sport;
+      if(m){m.score=txt;m.status='Pending'}
+      s.results.push({id:O.uid(),court:m?m.id:null,date:m?m.date:O.today(),sport:sport,kind:m?m.kind:d.kind,member:ME,opp:m?(m.opp||'Opponent'):(d.opp||'Opponent'),sets:sets,status:'Pending'});O.save();ui.scoreMatch='';O.log(ME+' reported a '+sport.toLowerCase()+' result: '+txt);done('Result submitted to the racquet shop.')}
+    if(k==='swim'){var sec=parseFloat(d.sec);if(isNaN(sec)){O.toast('Please enter the seconds.');return}var tm=(+d.min||0)+':'+(sec<10?'0':'')+sec.toFixed(2);s.swims.push({id:O.uid(),date:d.date,event:d.event,time:tm,member:ME});O.save();O.log(ME+' logged a '+d.event+' in '+tm);done(d.event+' logged at '+tm+'.')}
+    if(k==='rsvp'){var id2=f.dataset.id,v=s.rsvps.filter(function(x){return x.event===id2&&x.member===ME})[0],ev=O.events().filter(function(x){return x.id===id2})[0];
+      if(v){v.adults=+d.adults;v.kids=+d.kids}else s.rsvps.push({id:O.uid(),event:id2,adults:+d.adults,kids:+d.kids,member:ME});O.save();O.log(ME+' RSVP\'d to '+ev.name+' ('+d.adults+' adults, '+d.kids+' children)');done('You are on the list for '+ev.name+'.')}
+    if(k==='guest'){if(!d.name){O.toast('Please enter your guest\'s name.');return}s.guests.push({id:O.uid(),date:d.date,name:d.name,reason:d.reason,member:ME,arrived:false});O.save();O.log(ME+' added '+d.name+' to the gate list for '+O.long(d.date));done(d.name+' is on the gate list for '+O.nice(d.date).toLowerCase()+'.')}
+    if(k==='request'){if(!d.body){O.toast('Please tell us what you need.');return}s.requests.push({id:O.uid(),when:Date.now(),topic:d.topic,body:d.body,member:ME,status:'Open',reply:''});O.save();O.log(ME+' sent a concierge request ('+d.topic+')');done('Sent. The concierge will reply here.')}
+  });
+
+  window.addEventListener('hashchange',function(){render()});
+  window.addEventListener('storage',function(){location.reload()});
+  render();
+})();
+</script>
+</body>
+</html>
