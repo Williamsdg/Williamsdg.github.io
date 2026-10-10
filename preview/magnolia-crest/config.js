@@ -1,0 +1,68 @@
+/* Magnolia Crest Country Club — portal configuration.
+   Magnolia Crest is a FICTIONAL club: everything in this file is invented. */
+window.CLUB={
+  id:'mc',key:'mc-portal-demo-v3',
+  name:'Magnolia Crest',full:'Magnolia Crest Country Club',short:'the Crest',fictional:true,
+  site:'index.html',
+  mark:'<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="28.5" fill="none" stroke="#C9A557"/><circle cx="30" cy="30" r="24.5" fill="none" stroke="#C9A557" stroke-width=".6" stroke-dasharray=".1 2.4" stroke-linecap="round"/><g fill="#F4EEE3" transform="translate(30 38) scale(.34)"><path d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z"/><path d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z" transform="rotate(-38)" opacity=".86"/><path d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z" transform="rotate(38)" opacity=".86"/><path d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z" transform="rotate(-76)" opacity=".7"/><path d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z" transform="rotate(76)" opacity=".7"/></g></svg>',
+  wordmark:'Magnolia<br>Crest',
+  me:{name:'Dylan Williams',first:'Dylan',no:'0182',tier:'Founders',since:2019},
+  household:[{name:'Dylan Williams',role:'Member'},{name:'A. Williams',role:'Spouse'},{name:'J. Williams',role:'Junior, age 12'},{name:'E. Williams',role:'Junior, age 9'}],
+  tiers:[{n:'Founders',days:14},{n:'Full Golf',days:7},{n:'Sporting',days:3}],
+  courses:['Magnolia Course','Crest Course'],
+  par:[4,5,4,3,4,4,3,5,4,4,4,3,5,4,4,3,5,4],
+  tees:[{n:'Championship',r:72.4,s:138,y:7124},{n:'Member',r:70.1,s:132,y:6626},{n:'Forward',r:67.8,s:125,y:5700}],
+  myTee:'Member',
+  teeStart:400,teeEnd:990,
+  rooms:['The Veranda Grille','The 1924 Room',"Founders' Cellar"],
+  seating:['No preference','By the fireplace','On the porch','A quiet corner'],
+  courtGroups:[{k:'Clay',from:1,to:8},{k:'Hard',from:9,to:12},{k:'Pickleball',from:13,to:18}],
+  clinics:['Ladies Clinic','Junior Academy','Pickleball Ladder','Private lesson','Court maintenance','Round Robin'],
+  sports:['Tennis','Pickleball','Squash'],
+  swim:true,
+  shops:['Golf Shop','Racquet Shop','Pool Hut'],
+  products:[
+    {sku:'g1',shop:'Golf Shop',brand:'Crest Collection',name:'Magnolia Logo Polo',price:96,sizes:['S','M','L','XL']},
+    {sku:'g2',shop:'Golf Shop',brand:'Crest Collection',name:'Quarter-Zip Pullover',price:138,sizes:['S','M','L','XL']},
+    {sku:'g3',shop:'Golf Shop',brand:'1924',name:'Rope Cap',price:34},
+    {sku:'g4',shop:'Golf Shop',brand:'Tour',name:'Golf Balls, one dozen',price:56},
+    {sku:'g5',shop:'Golf Shop',brand:'Heritage',name:'Leather Headcover',price:84},
+    {sku:'g6',shop:'Golf Shop',brand:'Sunday',name:'Carry Bag',price:285},
+    {sku:'g7',shop:'Golf Shop',brand:'Caddie',name:'Glove',price:28,sizes:['S','M','ML','L']},
+    {sku:'g8',shop:'Golf Shop',brand:'Founders',name:'Bag Tag, engraved',price:42},
+    {sku:'r1',shop:'Racquet Shop',brand:'Center Court',name:'Racquet Restringing',price:36},
+    {sku:'r2',shop:'Racquet Shop',brand:'Har-Tru',name:'Tennis Balls, one can',price:6},
+    {sku:'r3',shop:'Racquet Shop',brand:'Dink',name:'Pickleball Paddle',price:165},
+    {sku:'r4',shop:'Racquet Shop',brand:'Crest Collection',name:'Court Skirt',price:72,sizes:['XS','S','M','L']},
+    {sku:'r5',shop:'Racquet Shop',brand:'Crest Collection',name:'Performance Visor',price:30},
+    {sku:'r6',shop:'Racquet Shop',brand:'Veranda',name:'Logo Tumbler',price:36},
+    {sku:'p1',shop:'Pool Hut',brand:'Camp Crest',name:'Swim Team Towel',price:44},
+    {sku:'p2',shop:'Pool Hut',brand:'Camp Crest',name:'Goggles',price:22}
+  ],
+  events:[
+    {id:'e1',name:'Supper Club on the Veranda',dow:5,after:3,time:'18:30',where:'The Veranda Grille'},
+    {id:'e2',name:'Mixed Doubles Round Robin',dow:3,after:6,time:'18:30',where:'Center Court'},
+    {id:'e3',name:'Member-Guest Invitational',dow:6,after:10,time:'08:00',where:'Magnolia Course'},
+    {id:'e4',name:'Oyster Roast',dow:6,after:20,time:'17:00',where:'Magnolia Lawn'},
+    {id:'e5',name:"Founders' Day Dinner",dow:4,after:34,time:'19:00',where:'The 1924 Room'},
+    {id:'e6',name:'Holiday Tree Lighting',dow:0,after:55,time:'17:30',where:'The Front Porch'}
+  ],
+  venues:['The 1924 Room','The Veranda Grille','Magnolia Lawn',"Founders' Cellar",'The Pool','Center Court','Magnolia Course','Crest Course'],
+  fees:{guest:95,cart:28,caddie:110,lateCancel:25,noShow:50},cancelHours:24,diningMin:600,
+  gate:'the gatehouse',gateTitle:'Front gate',
+  guestReasons:['Golf','Dining','Racquets','Pool','Event','Cottage stay'],
+  concierge:['Golf','Racquets','Dining','Pool','Spa and wellness','Cottages','Locker room','Billing','Something else'],
+  notices:[['Course notes','Greens rolling 11.5. Cart path only on Magnolia 4 and 12. The Crest Course is walking only today.'],['Supper Club','Friday on the Veranda: a low-country boil and a jazz trio. RSVPs are open under Events.']],
+  copy:{
+    tee:'Choose a course and a day, then a time. Open times are shown in green.',
+    courts:'Eight clay courts, four hard courts and six pickleball courts. Tap an open hour to reserve it.',
+    courtsNote:'Squash courts and lessons are booked through the concierge.',
+    dining:'Three rooms, one kitchen. Your table is held under your member number.',
+    guests:'Add your guest here and the gatehouse will have their name before they arrive.',
+    sample:'Sample items, prices and fees for a fictional club.'
+  },
+  roster:[['0107','James & Anne Caldwell','Founders'],['0111','Robert Pruitt','Full Golf'],['0115','Margaret Ashby','Sporting'],['0119','William & Sara Langford','Full Golf'],['0123','Andrew Mercer','Sporting'],['0128','Thomas Bledsoe','Full Golf'],['0131','Susan Tillman','Sporting'],['0136','Walter Garrison','Founders'],['0140','Laura Weatherly','Full Golf'],['0147','Henry Kimbrough','Full Golf'],['0152','Elizabeth Ramsey','Sporting'],['0158','Thomas Northcutt','Full Golf'],['0163','Helen Sterling','Sporting'],['0169','Benjamin Hargrove','Founders'],['0174','Sarah Ellison','Sporting'],['0180','Edward Thackeray','Full Golf'],['0182','Dylan Williams','Founders'],['0185','Katherine Marlowe','Full Golf'],['0191','Eleanor Beaumont','Sporting'],['0196','Kenneth Dunaway','Full Golf'],['0202','Rebecca Lockhart','Sporting'],['0208','Jonathan Fairchild','Full Golf']],
+  /* cross-device sync is off until a Supabase project is set here (see the note in club.js) */
+  sync:{url:'',key:''},
+  theme:{}
+};
