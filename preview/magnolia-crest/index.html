@@ -78,16 +78,35 @@ html.js .in .mask>span,html.js .mask.in>span{transform:none}
 .cursor.on{display:block;opacity:1}
 .cursor.big{width:72px;height:72px;margin:-36px 0 0 -36px;background:#E6CB8A22}
 
-/* intro */
-.intro{position:fixed;inset:0;z-index:300;background:var(--ink);display:grid;place-items:center;transition:transform 1.1s cubic-bezier(.7,0,.2,1),visibility 0s 1.1s}
-.intro.done{transform:translateY(-101%);visibility:hidden}
-.intro svg{width:min(240px,52vw);height:auto;overflow:visible}
-.intro .ring{fill:none;stroke:var(--gold);stroke-width:1;stroke-dasharray:760;stroke-dashoffset:760;animation:draw 1.5s .1s var(--ease) forwards}
-.intro .pt{transform-box:fill-box;transform-origin:50% 100%;transform:scale(0);animation:bloom .8s var(--ease) forwards;animation-delay:calc(.35s + var(--i)*.09s)}
-.intro text{opacity:0;animation:fade .8s 1s forwards}
+/* intro: the club seal is drawn, pressed, then opens like an iris onto the hero */
+.intro{position:fixed;inset:0;z-index:300;display:grid;place-items:center;overflow:hidden;cursor:pointer;--r:-4px;--cx:50%;--cy:50%;--s:1;
+  background:#040A07 radial-gradient(ellipse 70% 60% at 50% 48%,#12291E 0%,#040A07 72%);
+  -webkit-mask:radial-gradient(circle at var(--cx) var(--cy),transparent var(--r),#000 calc(var(--r) + 2px));mask:radial-gradient(circle at var(--cx) var(--cy),transparent var(--r),#000 calc(var(--r) + 2px))}
+.intro.quick{--s:.42}
+.intro.done{visibility:hidden}
+.seal{width:min(440px,74vw,58svh);height:auto;overflow:visible;filter:drop-shadow(0 2px 1px #000000b3) drop-shadow(0 0 34px #C9A55729);animation:settle calc(var(--s)*2.7s) var(--ease) both}
+@keyframes settle{from{transform:scale(1.14) rotate(-7deg)}to{transform:none}}
+.intro.press .seal{animation:press .55s cubic-bezier(.3,0,.2,1)}
+@keyframes press{0%{transform:none}32%{transform:scale(.945)}100%{transform:none}}
+.intro.leaving .seal{animation:none;transform:scale(1.5);opacity:0;transition:transform 1.25s cubic-bezier(.6,0,.2,1),opacity .6s ease .1s}
+.s-ring{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw calc(var(--s)*var(--t,1.2s)) var(--ease) forwards;animation-delay:calc(var(--s)*var(--d,0s))}
+.s-fade{opacity:0;animation:fade calc(var(--s)*.9s) ease forwards;animation-delay:calc(var(--s)*var(--d,0s))}
+.s-spin{transform-origin:200px 200px;opacity:0;animation:spinA calc(var(--s)*1.5s) var(--ease) forwards;animation-delay:calc(var(--s)*.75s)}
+.s-spin.b{animation-name:spinB;animation-delay:calc(var(--s)*.95s)}
+@keyframes spinA{from{opacity:0;transform:rotate(-46deg)}to{opacity:1;transform:none}}
+@keyframes spinB{from{opacity:0;transform:rotate(46deg)}to{opacity:1;transform:none}}
+.s-leaf{fill:url(#foil);stroke:none;transform-box:fill-box;transform-origin:50% 50%;opacity:0;animation:leaf calc(var(--s)*.55s) var(--ease) forwards;animation-delay:calc(var(--s)*(1.1s + var(--i)*.055s))}
+@keyframes leaf{from{opacity:0;scale:.1}to{opacity:1;scale:1}}
+.s-pt{transform-box:fill-box;transform-origin:50% 100%;opacity:0;animation:bloom calc(var(--s)*.8s) var(--ease) forwards;animation-delay:calc(var(--s)*(1.6s + var(--i)*.09s))}
+@keyframes bloom{from{opacity:0;scale:.05}to{opacity:1;scale:1}}
 @keyframes draw{to{stroke-dashoffset:0}}
-@keyframes bloom{to{transform:scale(1)}}
 @keyframes fade{to{opacity:1}}
+.ripple{position:absolute;left:50%;top:50%;width:min(440px,74vw,58svh);aspect-ratio:1;margin:calc(min(440px,74vw,58svh)/-2) 0 0 calc(min(440px,74vw,58svh)/-2);border-radius:50%;border:1px solid #E6CB8A;opacity:0;pointer-events:none}
+.intro.press .ripple{animation:ripple 1.1s ease-out forwards}
+.intro.press .ripple.b{animation-delay:.14s}
+@keyframes ripple{from{opacity:.55;transform:scale(1)}to{opacity:0;transform:scale(1.75)}}
+.intro-skip{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);font-size:10.5px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#A9B8AD;opacity:0;animation:fade .8s 1.4s forwards;white-space:nowrap}
+.intro.leaving .intro-skip,.intro.leaving .ripple{display:none}
 html:not(.js) .intro{display:none}
 
 /* header */
@@ -116,7 +135,8 @@ html:not(.js) .intro{display:none}
 .photos{position:absolute;inset:-4% 0;z-index:-3;will-change:transform}
 .photos-in{position:absolute;inset:0;animation:drift 38s ease-in-out infinite alternate}
 @keyframes drift{from{transform:scale(1.02)}to{transform:scale(1.1) translate3d(-1.2%,-1%,0)}}
-.ph{position:absolute;inset:0;background-size:cover;background-position:50% 62%;opacity:0;transition:opacity 1.6s ease;will-change:opacity}
+.ph{position:absolute;inset:0;background-size:cover;background-position:50% 62%;opacity:0;transform:scale(1.14);transition:opacity 1.6s ease,transform 3s var(--ease);will-change:opacity}
+.ready .ph,html:not(.js) .ph{transform:none}
 .ph.noon{background-position:50% 22%}
 .hero::before{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;background:
   linear-gradient(180deg,#040A07d9 0%,#040A0766 20%,#040A0733 44%,#040A0799 74%,var(--ink) 100%),
@@ -482,18 +502,30 @@ html.static *,html.static *::before,html.static *::after{transition:none!importa
 </head>
 <body>
 
-<div class="intro" id="intro" aria-hidden="true">
-  <svg viewBox="0 0 260 260">
-    <circle class="ring" cx="130" cy="130" r="120"/>
-    <g fill="#F4EEE3" transform="translate(130 142)">
-      <path class="pt" style="--i:0" d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z"/>
-      <path class="pt" style="--i:1" d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z" transform="rotate(-38)" opacity=".86"/>
-      <path class="pt" style="--i:2" d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z" transform="rotate(38)" opacity=".86"/>
-      <path class="pt" style="--i:3" d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z" transform="rotate(-76)" opacity=".7"/>
-      <path class="pt" style="--i:4" d="M0 0C-16-18-14-52 0-70 14-52 16-18 0 0Z" transform="rotate(76)" opacity=".7"/>
+<div class="intro" id="intro">
+  <span class="ripple" aria-hidden="true"></span><span class="ripple b" aria-hidden="true"></span>
+  <svg class="seal" id="seal" viewBox="0 0 400 400" role="img" aria-label="Magnolia Crest Country Club seal">
+    <defs>
+      <linearGradient id="foil" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="400" y2="400" spreadMethod="reflect"><stop offset="0" stop-color="#F6E6B4"/><stop offset=".3" stop-color="#C9A557"/><stop offset=".52" stop-color="#8F712C"/><stop offset=".72" stop-color="#E6CB8A"/><stop offset="1" stop-color="#F6E6B4"/><animateTransform attributeName="gradientTransform" type="translate" from="-800 0" to="800 0" dur="5.5s" repeatCount="indefinite"/></linearGradient>
+      <path id="sealTop" d="M56 200A144 144 0 0 1 344 200"/>
+      <path id="sealBot" d="M38 200A162 162 0 0 0 362 200"/>
+    </defs>
+    <g fill="none" stroke="url(#foil)">
+      <circle class="s-ring" style="--len:1206;--d:0s;--t:1.3s" cx="200" cy="200" r="192" stroke-width="2.2" transform="rotate(-90 200 200)"/>
+      <circle class="s-fade" style="--d:.55s" cx="200" cy="200" r="183" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="0.1 9.48"/>
+      <circle class="s-ring" style="--len:1093;--d:.25s;--t:1.2s" cx="200" cy="200" r="174" stroke-width="1" transform="rotate(90 200 200)"/>
+      <circle class="s-ring" style="--len:779;--d:.5s;--t:1.1s" cx="200" cy="200" r="124" stroke-width="1" transform="rotate(-90 200 200)"/>
+      <circle class="s-fade" style="--d:.9s" cx="200" cy="200" r="117" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="0.1 5.03"/>
+      <g><path class="s-ring" style="--len:250;--d:1.05s;--t:1.1s" d="M184.7 286.7A88 88 0 0 1 187.8 112.9"/><g transform="rotate(220 177.0 292.2)"><ellipse class="s-leaf" style="--i:0" cx="177.0" cy="292.2" rx="10.5" ry="3.9"/></g><g transform="rotate(168 180.4 278.6)"><ellipse class="s-leaf" style="--i:0" cx="180.4" cy="278.6" rx="10.5" ry="3.9"/></g><g transform="rotate(233 156.9 284.6)"><ellipse class="s-leaf" style="--i:1" cx="156.9" cy="284.6" rx="10.5" ry="3.9"/></g><g transform="rotate(181 163.2 272.2)"><ellipse class="s-leaf" style="--i:1" cx="163.2" cy="272.2" rx="10.5" ry="3.9"/></g><g transform="rotate(246 138.9 272.8)"><ellipse class="s-leaf" style="--i:2" cx="138.9" cy="272.8" rx="10.5" ry="3.9"/></g><g transform="rotate(194 147.9 262.0)"><ellipse class="s-leaf" style="--i:2" cx="147.9" cy="262.0" rx="10.5" ry="3.9"/></g><g transform="rotate(259 124.1 257.2)"><ellipse class="s-leaf" style="--i:3" cx="124.1" cy="257.2" rx="10.5" ry="3.9"/></g><g transform="rotate(207 135.3 248.7)"><ellipse class="s-leaf" style="--i:3" cx="135.3" cy="248.7" rx="10.5" ry="3.9"/></g><g transform="rotate(272 113.2 238.6)"><ellipse class="s-leaf" style="--i:4" cx="113.2" cy="238.6" rx="10.5" ry="3.9"/></g><g transform="rotate(220 126.0 232.9)"><ellipse class="s-leaf" style="--i:4" cx="126.0" cy="232.9" rx="10.5" ry="3.9"/></g><g transform="rotate(285 106.7 218.1)"><ellipse class="s-leaf" style="--i:5" cx="106.7" cy="218.1" rx="10.5" ry="3.9"/></g><g transform="rotate(233 120.5 215.5)"><ellipse class="s-leaf" style="--i:5" cx="120.5" cy="215.5" rx="10.5" ry="3.9"/></g><g transform="rotate(298 105.1 196.7)"><ellipse class="s-leaf" style="--i:6" cx="105.1" cy="196.7" rx="10.5" ry="3.9"/></g><g transform="rotate(246 119.0 197.2)"><ellipse class="s-leaf" style="--i:6" cx="119.0" cy="197.2" rx="10.5" ry="3.9"/></g><g transform="rotate(311 108.2 175.4)"><ellipse class="s-leaf" style="--i:7" cx="108.2" cy="175.4" rx="10.5" ry="3.9"/></g><g transform="rotate(259 121.8 179.0)"><ellipse class="s-leaf" style="--i:7" cx="121.8" cy="179.0" rx="10.5" ry="3.9"/></g><g transform="rotate(324 116.1 155.4)"><ellipse class="s-leaf" style="--i:8" cx="116.1" cy="155.4" rx="10.5" ry="3.9"/></g><g transform="rotate(272 128.5 162.0)"><ellipse class="s-leaf" style="--i:8" cx="128.5" cy="162.0" rx="10.5" ry="3.9"/></g><g transform="rotate(337 128.3 137.7)"><ellipse class="s-leaf" style="--i:9" cx="128.3" cy="137.7" rx="10.5" ry="3.9"/></g><g transform="rotate(285 138.9 146.9)"><ellipse class="s-leaf" style="--i:9" cx="138.9" cy="146.9" rx="10.5" ry="3.9"/></g><g transform="rotate(350 144.2 123.1)"><ellipse class="s-leaf" style="--i:10" cx="144.2" cy="123.1" rx="10.5" ry="3.9"/></g><g transform="rotate(298 152.4 134.5)"><ellipse class="s-leaf" style="--i:10" cx="152.4" cy="134.5" rx="10.5" ry="3.9"/></g><g transform="rotate(363 162.9 112.6)"><ellipse class="s-leaf" style="--i:11" cx="162.9" cy="112.6" rx="10.5" ry="3.9"/></g><g transform="rotate(311 168.4 125.4)"><ellipse class="s-leaf" style="--i:11" cx="168.4" cy="125.4" rx="10.5" ry="3.9"/></g><g transform="rotate(376 183.5 106.4)"><ellipse class="s-leaf" style="--i:12" cx="183.5" cy="106.4" rx="10.5" ry="3.9"/></g><g transform="rotate(324 185.9 120.2)"><ellipse class="s-leaf" style="--i:12" cx="185.9" cy="120.2" rx="10.5" ry="3.9"/></g></g><g transform="translate(400 0) scale(-1 1)"><path class="s-ring" style="--len:250;--d:1.05s;--t:1.1s" d="M184.7 286.7A88 88 0 0 1 187.8 112.9"/><g transform="rotate(220 177.0 292.2)"><ellipse class="s-leaf" style="--i:0" cx="177.0" cy="292.2" rx="10.5" ry="3.9"/></g><g transform="rotate(168 180.4 278.6)"><ellipse class="s-leaf" style="--i:0" cx="180.4" cy="278.6" rx="10.5" ry="3.9"/></g><g transform="rotate(233 156.9 284.6)"><ellipse class="s-leaf" style="--i:1" cx="156.9" cy="284.6" rx="10.5" ry="3.9"/></g><g transform="rotate(181 163.2 272.2)"><ellipse class="s-leaf" style="--i:1" cx="163.2" cy="272.2" rx="10.5" ry="3.9"/></g><g transform="rotate(246 138.9 272.8)"><ellipse class="s-leaf" style="--i:2" cx="138.9" cy="272.8" rx="10.5" ry="3.9"/></g><g transform="rotate(194 147.9 262.0)"><ellipse class="s-leaf" style="--i:2" cx="147.9" cy="262.0" rx="10.5" ry="3.9"/></g><g transform="rotate(259 124.1 257.2)"><ellipse class="s-leaf" style="--i:3" cx="124.1" cy="257.2" rx="10.5" ry="3.9"/></g><g transform="rotate(207 135.3 248.7)"><ellipse class="s-leaf" style="--i:3" cx="135.3" cy="248.7" rx="10.5" ry="3.9"/></g><g transform="rotate(272 113.2 238.6)"><ellipse class="s-leaf" style="--i:4" cx="113.2" cy="238.6" rx="10.5" ry="3.9"/></g><g transform="rotate(220 126.0 232.9)"><ellipse class="s-leaf" style="--i:4" cx="126.0" cy="232.9" rx="10.5" ry="3.9"/></g><g transform="rotate(285 106.7 218.1)"><ellipse class="s-leaf" style="--i:5" cx="106.7" cy="218.1" rx="10.5" ry="3.9"/></g><g transform="rotate(233 120.5 215.5)"><ellipse class="s-leaf" style="--i:5" cx="120.5" cy="215.5" rx="10.5" ry="3.9"/></g><g transform="rotate(298 105.1 196.7)"><ellipse class="s-leaf" style="--i:6" cx="105.1" cy="196.7" rx="10.5" ry="3.9"/></g><g transform="rotate(246 119.0 197.2)"><ellipse class="s-leaf" style="--i:6" cx="119.0" cy="197.2" rx="10.5" ry="3.9"/></g><g transform="rotate(311 108.2 175.4)"><ellipse class="s-leaf" style="--i:7" cx="108.2" cy="175.4" rx="10.5" ry="3.9"/></g><g transform="rotate(259 121.8 179.0)"><ellipse class="s-leaf" style="--i:7" cx="121.8" cy="179.0" rx="10.5" ry="3.9"/></g><g transform="rotate(324 116.1 155.4)"><ellipse class="s-leaf" style="--i:8" cx="116.1" cy="155.4" rx="10.5" ry="3.9"/></g><g transform="rotate(272 128.5 162.0)"><ellipse class="s-leaf" style="--i:8" cx="128.5" cy="162.0" rx="10.5" ry="3.9"/></g><g transform="rotate(337 128.3 137.7)"><ellipse class="s-leaf" style="--i:9" cx="128.3" cy="137.7" rx="10.5" ry="3.9"/></g><g transform="rotate(285 138.9 146.9)"><ellipse class="s-leaf" style="--i:9" cx="138.9" cy="146.9" rx="10.5" ry="3.9"/></g><g transform="rotate(350 144.2 123.1)"><ellipse class="s-leaf" style="--i:10" cx="144.2" cy="123.1" rx="10.5" ry="3.9"/></g><g transform="rotate(298 152.4 134.5)"><ellipse class="s-leaf" style="--i:10" cx="152.4" cy="134.5" rx="10.5" ry="3.9"/></g><g transform="rotate(363 162.9 112.6)"><ellipse class="s-leaf" style="--i:11" cx="162.9" cy="112.6" rx="10.5" ry="3.9"/></g><g transform="rotate(311 168.4 125.4)"><ellipse class="s-leaf" style="--i:11" cx="168.4" cy="125.4" rx="10.5" ry="3.9"/></g><g transform="rotate(376 183.5 106.4)"><ellipse class="s-leaf" style="--i:12" cx="183.5" cy="106.4" rx="10.5" ry="3.9"/></g><g transform="rotate(324 185.9 120.2)"><ellipse class="s-leaf" style="--i:12" cx="185.9" cy="120.2" rx="10.5" ry="3.9"/></g></g>
     </g>
-    <text x="130" y="196" text-anchor="middle" fill="#E6CB8A" font-family="Instrument Sans,sans-serif" font-size="11" font-weight="600" letter-spacing="5">EST. 1924</text>
+    <g fill="url(#foil)">
+      <g class="s-spin a"><text font-family="Fraunces,Georgia,serif" font-size="25" font-weight="500" letter-spacing="8.5"><textPath href="#sealTop" startOffset="50%" text-anchor="middle">MAGNOLIA CREST</textPath></text></g>
+      <g class="s-spin b"><text font-family="Fraunces,Georgia,serif" font-size="15.5" font-weight="500" letter-spacing="5.2"><textPath href="#sealBot" startOffset="50%" text-anchor="middle">COUNTRY CLUB · EST. 1924</textPath></text></g>
+      <path class="s-fade" style="--d:1.3s" d="M40 200l8-8 8 8-8 8ZM344 200l8-8 8 8-8 8Z"/>
+      <g transform="translate(200 238) scale(1.24)"><path class="s-pt" style="--i:0" d="M0 0C-13-15-12-44 0-60 12-44 13-15 0 0Z" transform="rotate(0)"/><path class="s-pt" style="--i:1" d="M0 0C-13-15-12-44 0-60 12-44 13-15 0 0Z" transform="rotate(-36)"/><path class="s-pt" style="--i:2" d="M0 0C-13-15-12-44 0-60 12-44 13-15 0 0Z" transform="rotate(36)"/><path class="s-pt" style="--i:3" d="M0 0C-13-15-12-44 0-60 12-44 13-15 0 0Z" transform="rotate(-72)" opacity=".82"/><path class="s-pt" style="--i:4" d="M0 0C-13-15-12-44 0-60 12-44 13-15 0 0Z" transform="rotate(72)" opacity=".82"/><circle class="s-fade" style="--d:2.1s" r="6.5" cy="-3" fill="#08130E" stroke="url(#foil)" stroke-width="1.4"/></g>
+    </g>
   </svg>
+  <span class="intro-skip" aria-hidden="true">Tap to enter</span>
 </div>
 
 <div class="progress" id="progress"></div>
@@ -773,10 +805,29 @@ html.static *,html.static *::before,html.static *::after{transition:none!importa
   var root=document.documentElement,clamp=function(v,a,b){return Math.max(a,Math.min(b,v))};
 
   /* ---------- intro (always escapes on the wall clock) ---------- */
-  var intro=$('#intro');
-  function ready(){intro.classList.add('done');document.body.classList.add('ready')}
+  var intro=$('#intro'),sealEl=$('#seal'),revealed=false,seen=false;
+  try{seen=sessionStorage.getItem('mc-seal')==='1';sessionStorage.setItem('mc-seal','1')}catch(e){}
+  function reveal(){
+    if(revealed)return;revealed=true;root.style.overflow='';
+    var b=sealEl.getBoundingClientRect(),cx=b.left+b.width/2,cy=b.top+b.height/2,R=Math.hypot(Math.max(cx,innerWidth-cx),Math.max(cy,innerHeight-cy))+8,t0=null;
+    intro.style.setProperty('--cx',cx+'px');intro.style.setProperty('--cy',cy+'px');
+    intro.classList.add('leaving');document.body.classList.add('ready');
+    (function open(ts){if(!t0)t0=ts;var k=clamp((ts-t0)/1350,0,1),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;intro.style.setProperty('--r',(e*R)+'px');if(k<1)requestAnimationFrame(open);else intro.classList.add('done')})(performance.now());
+    setTimeout(function(){intro.classList.add('done')},2200); /* wall-clock escape if the tab is throttled */
+  }
+  function stamp(){if(revealed||intro.classList.contains('press'))return;intro.classList.add('press');setTimeout(reveal,620)}
   if(STATIC||RM){intro.style.display='none';document.body.classList.add('ready')}
-  else{setTimeout(ready,2300);setTimeout(ready,4500)}
+  else{
+    if(seen)intro.classList.add('quick');
+    root.style.overflow='hidden';
+    /* hold the seal until it has finished drawing AND the hero photograph for this hour is in */
+    var hNow=new Date().getHours()+new Date().getMinutes()/60,shot=hNow<4.6||hNow>=19?'dusk':hNow<9.9?'dawn':hNow<15.2?'noon':'gold',drawn=false,loaded=false,pre=new Image();
+    function go(){if(drawn&&loaded)stamp()}
+    pre.onload=pre.onerror=function(){loaded=true;go()};pre.src='img/hero-'+shot+(innerWidth<=700?'-m':'')+'.webp';
+    setTimeout(function(){drawn=true;go()},seen?1250:2750);
+    setTimeout(stamp,seen?2600:5200);
+    intro.addEventListener('click',reveal);addEventListener('keydown',function(e){if(e.key==='Escape'||e.key==='Enter')reveal()});
+  }
 
   /* ---------- split hero letters ---------- */
   $$('[data-split]').forEach(function(el,r){var t=el.textContent;el.textContent='';t.split('').forEach(function(c,i){var s=document.createElement('span');s.className='ch';s.style.setProperty('--i',i+r*8);s.textContent=c;s.setAttribute('aria-hidden','true');el.appendChild(s)})});
