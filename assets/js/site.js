@@ -70,13 +70,26 @@
   // Mobile sticky CTA: hide near footer / when a primary CTA is visible
   var mcta = document.querySelector('.m-cta');
   if (mcta && 'IntersectionObserver' in window) {
-    var targets = document.querySelectorAll('.cta, .site-foot, .hero .actions, .page-hero .actions');
+    var targets = document.querySelectorAll('.cta, .site-foot, .hero .actions, .page-hero .actions, .inquiry');
     var visible = new Set();
     var mio = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) { en.isIntersecting ? visible.add(en.target) : visible.delete(en.target); });
       mcta.classList.toggle('hide', visible.size > 0);
     });
     targets.forEach(function (t) { mio.observe(t); });
+  }
+
+  // Short inquiry form: send in place, fall back to a normal POST if fetch is unavailable
+  var inq = document.querySelector('[data-inquiry]');
+  if (inq && window.fetch && window.FormData) {
+    inq.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var st = inq.querySelector('.f-status'), b = inq.querySelector('button[type=submit]');
+      b.disabled = true; st.className = 'f-status'; st.textContent = 'Sending…';
+      fetch(inq.action, { method: 'POST', body: new FormData(inq), headers: { Accept: 'application/json' } })
+        .then(function (res) { if (!res.ok) throw new Error(res.status); inq.classList.add('sent'); st.className = 'f-status ok'; st.textContent = 'Got it. Dylan will reply within one business day.'; })
+        .catch(function () { b.disabled = false; st.className = 'f-status err'; st.textContent = 'That did not send. Please call (205) 202-9193 or email Dylan@williamsdigital.io.'; });
+    });
   }
 
   var y = document.getElementById('yr'); if (y) y.textContent = new Date().getFullYear();
