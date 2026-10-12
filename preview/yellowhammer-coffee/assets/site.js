@@ -30,7 +30,12 @@
     }
     return { open: false, text: 'Closed' };
   }
-  YH.status = status; YH.now = now; YH.clock = clock;
+  function today(loc, t) {
+    t = t || now();
+    var h = loc.hours[t.d];
+    return h ? 'Today: ' + clock(h[0]) + ' to ' + clock(h[1]) : 'Closed today';
+  }
+  YH.status = status; YH.now = now; YH.clock = clock; YH.today = today;
   YH.byslug = {};
   YH.locs.forEach(function (l) { YH.byslug[l.slug] = l; });
 
@@ -70,6 +75,61 @@
     window.matchMedia('(min-width: 941px)').addEventListener('change', function (e) { if (e.matches) setNav(false); });
   }
 
+  // ---- home: menu tabs (arrow keys move between them)
+  var tabs = $$('.mtab');
+  function showTab(tab, focus) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) tab.focus();
+  }
+  tabs.forEach(function (tab, i) {
+    tab.addEventListener('click', function () { showTab(tab); });
+    tab.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (d) { e.preventDefault(); showTab(tabs[(i + d + tabs.length) % tabs.length], true); }
+    });
+  });
+
+  // ---- home: on phones the board shows four rows until asked for the rest
+  $$('[data-boardmore]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var board = b.closest('.board');
+      board.classList.add('is-all');
+      var first = $('.board__extra .row', board);
+      if (first) first.focus();
+    });
+  });
+
+  // ---- locations: pointing at (or tabbing to) a row shows that store beside the list
+  var prev = $('[data-prev]');
+  if (prev) {
+    var P = prev.querySelector('[data-prev-img]').getAttribute('src').replace(/[^/]+$/, '');
+    var pick = function (slug) {
+      var l = YH.byslug[slug];
+      if (!l) return;
+      $$('.frow').forEach(function (r) { if (r.getAttribute('data-pick') === slug) r.setAttribute('aria-current', 'true'); else r.removeAttribute('aria-current'); });
+      var img = $('[data-prev-img]', prev);
+      img.src = P + l.img; img.alt = l.alt;
+      $('[data-prev-name]', prev).textContent = l.name;
+      $('[data-prev-addr]', prev).textContent = l.street + (l.where ? ', ' + l.where : '');
+      $('[data-prev-today]', prev).textContent = today(l) + '. ' + status(l).text + '.';
+      $('[data-prev-tags]', prev).textContent = l.tags;
+      var o = $('[data-prev-order]', prev);
+      o.hidden = !l.order; if (l.order) o.href = l.order;
+      $('[data-prev-more]', prev).href = slug + '.html';
+    };
+    $$('.frow').forEach(function (r) {
+      var slug = r.getAttribute('data-pick');
+      r.addEventListener('mouseenter', function () { pick(slug); });
+      r.addEventListener('focus', function () { pick(slug); });
+    });
+    pick($('.frow').getAttribute('data-pick'));
+  }
+
   // ---- video: the poster becomes the player
   $$('[data-video]').forEach(function (box) {
     var b = $('button', box);
@@ -100,6 +160,8 @@
         $$('.ch', li).forEach(function (c) { c.hidden = sf && !$('li[data-sf]', c); });
       });
       $$('[data-sec]').forEach(function (sec) { sec.hidden = !$('.mi:not([hidden])', sec); });
+      var food = $('[data-food]'), band = $('[data-sec-divider]');
+      if (food && band) band.hidden = !$('.mi:not([hidden])', food);
       mnone.hidden = any;
     };
     ms.addEventListener('input', filter);
@@ -111,7 +173,7 @@
   $$('form[data-steps]').forEach(function (form) {
     var steps = $$('[data-step]', form), at = 0;
     var card = form.parentNode, done = $('[data-done]', card);
-    var bars = $$('.steps i', form), note = $('[data-stepnote]', form);
+    var bars = $$('.steps li', form), note = $('[data-stepnote]', form);
 
     function fail(box, msg) { box.classList.add('bad'); $('.err', box).textContent = msg; }
     function clear(box) { box.classList.remove('bad'); $('.err', box).textContent = ''; }

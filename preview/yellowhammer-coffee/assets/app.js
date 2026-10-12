@@ -50,7 +50,7 @@
       '<div class="a-pad"><button class="a-cta" data-act="tab" data-tab="order"><span>Start an order</span></button>' + again +
       '<div class="a-sec"><h3 class="a-h">On the fall menu <button data-act="cat" data-cat="fall">See all</button></h3><div class="a-rail">' + rail + '</div></div>' +
       '<div class="a-sec"><h3 class="a-h">Rewards <button data-act="tab" data-tab="rewards">Details</button></h3>' +
-      '<button class="a-card" data-act="tab" data-tab="rewards"><b>128 points</b><div class="a-bar"><i style="width:64%"></i></div><span class="a-muted">Your points and rewards status, at a glance.</span></button></div>' +
+      '<button class="a-card" data-act="tab" data-tab="rewards"><b>Your points</b><div class="a-bar"><i style="width:64%"></i></div><span class="a-muted">Your points and rewards status, at a glance.</span></button></div>' +
       '</div></div>';
   }
   function sub(en) {
@@ -76,8 +76,8 @@
   }
   function rewards() {
     return '<div class="a-scr"><div class="a-head" style="padding-bottom:14px"><h2 class="d">Rewards</h2></div><div class="a-pad" style="text-align:center">' +
-      '<span class="a-sample">Sample account</span><div class="a-ring" style="--pct:64%;margin-top:18px"><div><b>128</b><span>points</span></div></div>' +
-      '<p style="font-weight:800">Every order adds to your points.</p><p class="a-muted" style="margin-top:6px">Your points and your rewards status, in one place.</p>' +
+      '<span class="a-sample">Sample account</span><div class="a-ring" style="--pct:64%;margin-top:18px"><div><b>YH</b><span>your points</span></div></div>' +
+      '<p style="font-weight:800">Your points and your rewards status, in one place.</p><p class="a-muted" style="margin-top:6px">This sample account has no real balance. Yours shows here.</p>' +
       '<div class="a-sec"><button class="a-cta" data-act="tab" data-tab="order"><span>Start an order</span></button></div></div></div>';
   }
   function account() {
