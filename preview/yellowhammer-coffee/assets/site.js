@@ -52,8 +52,9 @@
       if (out) out.textContent = s.text;
     });
     $$('[data-opencount]').forEach(function (el) {
-      var n = $$('[data-loc]', el.closest('.board')).length;
-      var o = $$('.is-open[data-loc]', el.closest('.board')).length;
+      var scope = el.closest('[data-count-scope],.board');
+      var n = $$('[data-loc]', scope).length;
+      var o = $$('.is-open[data-loc]', scope).length;
       el.textContent = o === 0 ? 'All closed right now' : o === n ? 'All ' + n + ' open right now' : o + ' of ' + n + ' open right now';
     });
     $$('[data-clock]').forEach(function (el) { el.textContent = DAY[t.d] + ', ' + clock(t.m) + ' in Mobile'; });
@@ -222,6 +223,14 @@
           if (c !== e.target && (e.target.value === 'none' || c.value === 'none')) c.checked = false;
         });
       }
+    });
+    // catering: "Three ways to get it" starts the quote with that way already chosen
+    $$('[data-receive]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        $$('input[name=receive]', form).forEach(function (r) {
+          if (r.value === a.getAttribute('data-receive')) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+      });
     });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
