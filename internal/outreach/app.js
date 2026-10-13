@@ -33,10 +33,14 @@
   };
 
   async function pickBase() {
+    // Dev only: a ?api= override is honoured when it points at this machine. Never a remote host —
+    // the page posts the password and session token to whatever base it picks.
     const override = new URLSearchParams(location.search).get('api');
-    if (override) { base = override; localStorage.setItem(LS.base, base); return; }
+    const local = u => { try { return /^(localhost|127\.0\.0\.1)$/.test(new URL(u).hostname); } catch { return false; } };
+    if (override && local(override)) { base = override; localStorage.setItem(LS.base, base); return; }
     const saved = localStorage.getItem(LS.base);
-    for (const b of [...new Set([saved, ...API_BASES].filter(Boolean))]) {
+    const allowed = b => API_BASES.includes(b) || local(b);
+    for (const b of [...new Set([saved, ...API_BASES].filter(b => b && allowed(b)))]) {
       try { const r = await fetch(b + '/api/login', { method: 'OPTIONS' }); if (r.ok || r.status === 204) { base = b; localStorage.setItem(LS.base, b); return; } } catch { /* next */ }
     }
   }
