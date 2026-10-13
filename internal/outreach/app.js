@@ -119,47 +119,53 @@
     const { campaigns } = await api.get('/api/campaigns');
     state.campaigns = campaigns;
     const s = state.status;
-    const today = s ? `<div class="grid c3">
-      <div class="kpi"><b>${s.today.email}/${s.today.email_cap}</b><span>Emails today</span></div>
-      <div class="kpi"><b>${s.today.sms}/${s.today.sms_cap}</b><span>Texts today</span></div>
-      <div class="kpi"><b>${s.jobs.queued + s.jobs.running}</b><span>Jobs in flight${s.jobs.failed ? ` · <em style="color:#fca5a5">${s.jobs.failed} failed</em>` : ''}</span></div>
-      <div class="kpi"><b>${s.apollo_credits ?? '—'}</b><span>Apollo credits</span></div>
+    const today = s ? `<div class="kpis">
+      <div class="kpi"><b>${s.today.email}<small>of ${s.today.email_cap}</small></b><span>Emails sent today</span></div>
+      <div class="kpi"><b>${s.today.sms}<small>of ${s.today.sms_cap}</small></b><span>Texts sent today</span></div>
+      <div class="kpi"><b>${s.jobs.queued + s.jobs.running}</b><span>${s.jobs.queued + s.jobs.running === 1 ? 'Job' : 'Jobs'} running${s.jobs.failed ? ` · <em>${s.jobs.failed} failed</em>` : ''}</span></div>
+      <div class="kpi"><b>${s.apollo_credits == null ? '—' : s.apollo_credits.toLocaleString()}</b><span>Apollo credits left</span></div>
     </div>` : '';
     const rows = campaigns.map(c => {
       const k = c.counts || {}; const max = c.max_businesses || 1;
       const pct = Math.min(100, Math.round(((k.drafted || 0) + (k.sent || 0)) / max * 100));
-      return `<div class="panel" data-id="${c.id}">
-        <div class="row"><h3 style="margin:0">${esc(c.name)}</h3><span class="stage">${esc(c.category)} · ${esc(c.city)} · up to ${c.max_businesses}</span><span class="spacer"></span>
-          <span class="pill" style="background:${c.status === 'running' ? 'var(--ok);color:#06240f' : c.status === 'paused' ? 'var(--warn);color:#2a1a00' : 'var(--line)'}">${c.status}${c.pause_reason ? ` — ${esc(c.pause_reason)}` : ''}</span></div>
+      const stateLabel = c.status === 'running' ? 'Running' : c.status === 'paused' ? `Paused${c.pause_reason ? ' — ' + esc(c.pause_reason) : ''}` : c.status === 'done' ? 'Finished' : 'Not started';
+      return `<div class="panel campaign" data-id="${c.id}">
+        <div class="row"><h3 class="title">${esc(c.name)}</h3><span class="state ${c.status}">${stateLabel}</span><span class="spacer"></span><span class="meta">${esc(c.category)} in ${esc(c.city)} · up to ${c.max_businesses} businesses</span></div>
         <div class="bar"><i style="width:${pct}%"></i></div>
-        <div class="steps"><span>Found <b>${k.found || 0}</b></span><span>Graded <b>${k.graded || 0}</b></span><span>Contacts <b>${k.contacted || 0}</b></span><span>Drafted <b>${k.drafted || 0}</b></span><span>Sent <b>${k.sent || 0}</b></span><span>Replied <b>${k.replied || 0}</b></span><span class="spacer"></span><span>Est ${money(c.est_cost_cents)} · spent <b>${money(c.spent_cents)}</b></span></div>
-        <div class="row" style="margin-top:12px">
+        <div class="steps"><span>Found <b>${k.found || 0}</b></span><span>Graded <b>${k.graded || 0}</b></span><span>Contacts <b>${k.contacted || 0}</b></span><span>Drafted <b>${k.drafted || 0}</b></span><span>Sent <b>${k.sent || 0}</b></span><span>Replied <b>${k.replied || 0}</b></span><span class="spacer"></span><span>Spent <b>${money(c.spent_cents)}</b> of ~${money(c.est_cost_cents)}</span></div>
+        <div class="row">
           ${c.status === 'running' ? `<button class="btn small" data-act="pause">Pause</button>` : `<button class="btn small primary" data-act="run">${c.status === 'draft' ? 'Run' : 'Resume'}</button>`}
           <a class="btn small" href="#businesses?campaign=${c.id}">Businesses</a>
           <a class="btn small" href="#queue?campaign=${c.id}">Queue</a>
           <button class="btn small ghost" data-act="apify" title="Run the Apify Maps scraper now on businesses still missing an email">Run Apify now</button>
         </div></div>`;
-    }).join('') || '<p class="muted">No campaigns yet.</p>';
+    }).join('') || '<p class="empty">No campaigns yet — create one above and press Run.</p>';
 
     $('#view').innerHTML = `<h1>Campaigns</h1>${today}
       <div class="panel"><h2 style="margin-top:0">New campaign</h2>
-      <form id="newCampaign" class="grid c3">
-        <div><label>Name</label><input name="name" placeholder="Roofers — Birmingham" required></div>
-        <div><label>Category (as you'd type it into Google Maps)</label><input name="category" placeholder="roofing contractor" required></div>
-        <div><label>City</label><input name="city" placeholder="Birmingham, AL" required></div>
-        <div><label>Max businesses</label><input name="max_businesses" type="number" value="40" min="1" max="120"></div>
-        <div><label>Offer line</label><input name="offer_line" value="websites from $2,500"></div>
-        <div><label>Apollo credit cap</label><input name="apollo_credit_cap" type="number" value="40" min="0"></div>
-        <div><label>Apify result cap</label><input name="apify_result_cap" type="number" value="100" min="0"></div>
-        <div><label>Follow-ups</label><select name="auto_approve_followups"><option value="">Review each follow-up</option><option value="1">Auto-approve follow-ups</option></select></div>
-        <div style="align-self:end"><div class="small muted" id="estimate">Estimated cost: $1.68 + Apollo credits</div><button class="btn primary" type="submit" style="margin-top:6px">Create campaign</button></div>
+      <form id="newCampaign">
+        <div class="form-grid">
+          <div><label for="nc-name">Campaign name</label><input id="nc-name" name="name" placeholder="Roofers in Birmingham" required></div>
+          <div><label for="nc-cat">What to search for</label><input id="nc-cat" name="category" placeholder="roofing contractor" required><div class="hint">Written the way you'd type it into Google Maps</div></div>
+          <div><label for="nc-city">Where</label><input id="nc-city" name="city" placeholder="Birmingham, AL" required></div>
+          <div><label for="nc-max">How many businesses</label><input id="nc-max" name="max_businesses" type="number" value="40" min="1" max="120"></div>
+          <div><label for="nc-offer">Offer line in every message</label><input id="nc-offer" name="offer_line" value="websites from $2,500"></div>
+          <div><label for="nc-fu">Follow-ups</label><select id="nc-fu" name="auto_approve_followups"><option value="">Show me each follow-up first</option><option value="1">Send follow-ups without asking</option></select></div>
+        </div>
+        <details class="limits"><summary>Spending limits</summary>
+          <div class="form-grid">
+            <div><label for="nc-apollo">Apollo credits this campaign may use</label><input id="nc-apollo" name="apollo_credit_cap" type="number" value="40" min="0"><div class="hint">One credit reveals one owner's email</div></div>
+            <div><label for="nc-apify">Apify lookups this campaign may use</label><input id="nc-apify" name="apify_result_cap" type="number" value="100" min="0"><div class="hint">Only for businesses still missing an email</div></div>
+          </div>
+        </details>
+        <div class="form-foot"><span class="est" id="estimate"></span><button class="btn primary" type="submit">Create campaign</button></div>
       </form></div>
       <h2>Your campaigns</h2>${rows}`;
 
     const form = $('#newCampaign');
     const est = () => {
       const m = +form.max_businesses.value || 0, a = +form.apify_result_cap.value || 0;
-      $('#estimate').textContent = `Estimated cost: ${money(Math.round(m * 3.2 + a * 0.4))} (Places + Apify) + up to ${form.apollo_credit_cap.value || 0} Apollo credits`;
+      $('#estimate').innerHTML = `About <b>${money(Math.round(m * 3.2 + a * 0.4))}</b> in Google and Apify fees, plus up to <b>${form.apollo_credit_cap.value || 0}</b> Apollo credits`;
     };
     form.addEventListener('input', est); est();
     form.addEventListener('submit', async e => {
