@@ -211,7 +211,7 @@
     const r = await api.get(`/api/businesses/${id}`);
     const b = r.business, a = r.audit;
     $('#drawerTitle').textContent = b.name;
-    const findings = (a?.findings || []).map(f => `<div>• ${esc(f.text)}</div>`).join('');
+    const findings = (a?.findings || []).filter(f => f.measured !== false).map(f => `<div>• ${esc(f.text)}</div>`).join('');
     $('#drawerBody').innerHTML = `
       <div class="row"><span>${fitEl(b.fit_score)} fit</span><span>${gradeEl(a?.grade)} ${a?.site_score != null ? a.site_score + '/100' : ''}</span><span class="stage">${stageLabel(b.stage)} · ${chan(b.channel)}</span></div>
       <p class="small muted">${esc(b.address || '')}${b.phone ? ` · ${esc(b.phone)}` : ''}${b.website ? ` · <a href="${esc(b.website)}" target="_blank" rel="noopener">${esc(b.domain || b.website)}</a>` : ''}${b.maps_url ? ` · <a href="${esc(b.maps_url)}" target="_blank" rel="noopener">Maps</a>` : ''}</p>
@@ -266,7 +266,7 @@
         <div>
           <h3>${esc(b.name)} <span class="small muted">${esc([b.city, b.state].filter(Boolean).join(', '))}</span></h3>
           <div class="small muted">To: ${esc(c.first_name || c.name || '')} ${esc(c.email || c.phone || '')} <span class="dim">via ${esc(c.source || '')}${c.email_verified ? ' · verified' : ''}</span> · <a href="#" data-open="${b.id}">details</a></div>
-          <div class="findings">${(a?.findings || []).map(f => `<div>• ${esc(f.text)}</div>`).join('') || '<div class="muted">No measured findings</div>'}</div>
+          <div class="findings">${(a?.findings || []).filter(f => f.measured !== false).map(f => `<div>• ${esc(f.text)}</div>`).join('') || '<div class="muted">No measured findings</div>'}</div>
           ${m.channel === 'email' ? `<label>Subject</label><input class="subject" value="${esc(m.subject || '')}">` : ''}
           <label>${m.channel === 'email' ? 'Body (blank line = new paragraph; last paragraph is the closing line)' : 'Text (STOP line is added automatically)'}</label>
           <textarea class="body">${esc(m.body_text)}</textarea>
