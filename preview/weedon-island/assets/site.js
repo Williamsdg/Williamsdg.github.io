@@ -83,13 +83,14 @@
   function tideURL(begin, days, interval){
     return "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?product=predictions&application=WeedonConcept&datum=MLLW&units=english&time_zone=lst_ldt&format=json&station="+TIDE_STATION+"&begin_date="+begin+"&range="+(days*24)+"&interval="+interval;
   }
+  function getJSON(u){ return fetch(u).then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); }).catch(function(){ return new Promise(function(res){setTimeout(res,1500);}).then(function(){ return fetch(u).then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); }); }); }); }
   function parseNOAA(s){ var a=s.split(/[- :]/); return {y:+a[0],m:+a[1],d:+a[2],h:+a[3],min:+a[4]}; }
   function tideLabel(t){ return t.type==="H"?"High":"Low"; }
   function loadTides(){
     var spots = document.querySelectorAll("[data-tide]"); var chart = document.querySelector("[data-tide-chart]");
     if (!spots.length && !chart) return;
     var p = nyParts(new Date()), begin = ymd(p), mNow = p.h*60+p.min;
-    fetch(tideURL(begin,2,"hilo")).then(function(r){return r.json();}).then(function(j){
+    getJSON(tideURL(begin,2,"hilo")).then(function(j){
       var list = (j.predictions||[]).map(function(x){ var q=parseNOAA(x.t); return {q:q,v:+x.v,type:x.type,today:q.d===p.d}; });
       var next = list.filter(function(x){ return !x.today || x.q.h*60+x.q.min > mNow; });
       spots.forEach(function(el){
@@ -103,7 +104,7 @@
       spots.forEach(function(el){ el.innerHTML = '<span class="status st-info">Tides</span><div><div class="board-what">Check the tide before you paddle</div><div class="board-detail">The trail is easiest at mid to high tide. <a href="https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id='+TIDE_STATION+'">See today\'s NOAA tide table</a>.</div></div>'; });
     });
     if (chart) {
-      fetch(tideURL(begin,1,"30")).then(function(r){return r.json();}).then(function(j){
+      getJSON(tideURL(begin,1,"30")).then(function(j){
         var pts = (j.predictions||[]).map(function(x){ var q=parseNOAA(x.t); return {x:q.h*60+q.min, v:+x.v}; }).filter(function(o){return o.x<=1440;});
         if (pts.length < 10) throw new Error("short");
         var W=720,H=220,P=34, vmax=Math.max.apply(null,pts.map(function(o){return o.v;}))+0.3, vmin=Math.min(0,Math.min.apply(null,pts.map(function(o){return o.v;}))-0.2);
