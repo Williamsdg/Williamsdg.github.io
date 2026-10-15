@@ -64,7 +64,7 @@
     else if (mNow < 7*60) { st=["Opens 7 a.m.","st-closed"]; what="Opens at 7 a.m."; det="Today it closes about <strong>"+fmtTime(t.close)+"</strong>, 15 minutes before sunset."; }
     else if (mNow < mClose) { st=["Open now","st-open"]; what="Open until about "+fmtTime(t.close); det="That's 15 minutes before sunset at "+fmtTime(t.sunset)+" The exact time is posted at the entrance."; }
     else { var tp = nyParts(new Date(now.getTime()+864e5)), tt = closingTime(tp); st=["Closed now","st-closed"]; what="Closed for the night"; det="Opens tomorrow at 7 a.m. and closes about <strong>"+fmtTime(tt.close)+"</strong>"; }
-    ps.innerHTML = '<span class="status '+st[1]+'">'+st[0]+'</span><div><div class="board-what">Preserve, trails &amp; boardwalks</div><div class="board-detail">'+what+'. '+det+'</div></div>';
+    ps.innerHTML = '<span class="status '+st[1]+'">'+st[0]+'</span><div><div class="board-what">Preserve, trails &amp; boardwalks</div><div class="board-detail">'+sent(what)+' '+sent(det)+'</div></div>';
 
     // center
     var cs = el.querySelector("[data-center]");
