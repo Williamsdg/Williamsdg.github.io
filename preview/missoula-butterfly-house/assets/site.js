@@ -225,6 +225,15 @@
     });
   }
 
+  /* ---------- membership picker (support) ---------- */
+  var pk = document.querySelector("[data-picker]");
+  if (pk) pk.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-pick]"); if (!b) return;
+    var k = b.getAttribute("data-pick");
+    pk.querySelectorAll("[data-pick]").forEach(function (x) { x.setAttribute("aria-pressed", x === b); });
+    document.querySelectorAll("[data-pick-panel]").forEach(function (p) { p.hidden = p.getAttribute("data-pick-panel") !== k; });
+  });
+
   /* ---------- events page ---------- */
   var cal = document.querySelector("[data-cal]");
   function renderCal(list) {
