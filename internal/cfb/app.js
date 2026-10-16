@@ -49,6 +49,7 @@
     var out = Object.assign({}, M.DEFAULTS, s);
     out.weights = Object.assign({}, M.DEFAULTS.weights, s.weights || {});
     if (out.second == null) out.second = true;
+    if (out.propEdge == null) out.propEdge = 3;
     return out;
   }
   function saveSettings() { store.set('settings', state.settings); }
@@ -85,6 +86,7 @@
     });
     if (p === 'ratings/sp') return d.map(function (r) { return { team: r.team, conference: r.conference, rating: r.rating, ranking: r.ranking, offense: { rating: r.offense && r.offense.rating }, defense: { rating: r.defense && r.defense.rating } }; });
     if (p === 'ratings/fpi') return d.map(function (r) { return { team: r.team, conference: r.conference, fpi: r.fpi }; });
+    if (p === 'games/players') return window.CFBProps.slimBox(d);
     if (p === 'ppa/teams') return d.map(function (r) { return { team: r.team, conference: r.conference, offense: { overall: r.offense && r.offense.overall }, defense: { overall: r.defense && r.defense.overall } }; });
     return d;
   }
@@ -422,7 +424,8 @@
     var p = predictGame(g, ctx);
     openSheet('<div class="eyebrow">// ' + esc(kickoff(g)) + (g.venue ? ' · ' + esc(g.venue) : '') + '</div><h2 id="sheetTitle" style="margin:6px 0 0">' + esc(g.awayTeam) + ' at ' + esc(g.homeTeam) + '</h2>' +
       (g.notes ? '<p class="small soft">' + esc(g.notes) + '</p>' : '') + predictionBlock(g, p) +
-      '<p style="margin-top:18px"><button class="btn small" id="toMatchup">Open in Matchup to try a different line</button></p>');
+      '<p style="margin-top:18px" class="row-btns"><button class="btn small" id="toProps">Player props for this game</button> <button class="btn small" id="toMatchup">Open in Matchup to try a different line</button></p>');
+    $('#toProps').addEventListener('click', function () { state.props.gid = g.id; store.set('propsGid', g.id); closeSheet(); location.hash = '#props'; });
     $('#toMatchup').addEventListener('click', function () {
       state.matchup = { home: g.homeTeam, away: g.awayTeam, neutral: !!g.neutralSite, line: p.market && p.market.spread != null ? String(p.market.spread) : '' };
       store.set('matchup', state.matchup); closeSheet(); location.hash = '#matchup';
@@ -593,6 +596,7 @@
       num('hfa', 'Home-field advantage (points)', 0.5, 'Not applied at neutral sites.') +
       num('sigma', 'Spread of outcomes (points)', 0.5, 'Turns a margin into win odds. Vegas misses by about 15.') +
       num('eloPerPt', 'Elo points per point of margin', 1, 'Fit on 2025 results: 23.') +
+      num('propEdge', 'Prop value threshold (EV %)', 0.5, 'A prop is tagged Value when its expected value is at least this.') +
       '<label class="check" style="margin-top:8px"><input type="checkbox" id="second"' + (S.second ? ' checked' : '') + '> Show gmalbert’s published picks as a second opinion</label>' +
       '<div class="keybox" style="margin-top:12px"><button class="btn small" id="resetDefaults" type="button">Reset to defaults</button></div></div>';
     h += '<div class="panel"><h3>Where this comes from</h3><ul class="credits small">' +
@@ -601,6 +605,9 @@
       '<li><b><a href="https://github.com/blaizerlahman/CFB-Model" target="_blank" rel="noopener">blaizerlahman/CFB-Model</a></b>: predicting the margin from team strength, talent and SP+, and the hit rate by size of disagreement with Vegas.</li>' +
       '<li><b><a href="https://github.com/sportsdataverse/cfbfastR" target="_blank" rel="noopener">sportsdataverse/cfbfastR</a></b>: play-by-play efficiency (EPA per play) as a strength signal.</li>' +
       '<li><b><a href="https://github.com/gmalbert/college-football-predictions" target="_blank" rel="noopener">gmalbert/college-football-predictions</a></b>: using the market as the anchor, removing the bookmaker margin from moneylines, walk-forward testing, and its daily published picks.</li>' +
+      '<li><b><a href="https://github.com/LeSingh1/edge-ncaaf" target="_blank" rel="noopener">LeSingh1/edge-ncaaf</a></b>: player props from a recency-weighted game log, line to over-probability, quarter-Kelly sizing. Its calibrator is not used because it was trained on made-up lines.</li>' +
+      '<li><b><a href="https://github.com/fongster87/CFB-Player-Betting" target="_blank" rel="noopener">fongster87/CFB-Player-Betting</a></b>: adjusting passing, rushing and receiving yards for the opponent’s defense and the game script.</li>' +
+      '<li><b><a href="https://github.com/popcawn/cfb-td-predictor" target="_blank" rel="noopener">popcawn/cfb-td-predictor</a></b>: anytime-TD odds from the Vegas-implied total, split by carries and catches with shrunk TD rates.</li>' +
       '</ul><p class="small muted">Ideas were rebuilt in JavaScript. No code was copied. ' + (state.secondMeta ? 'gmalbert picks file: model ' + esc(state.secondMeta.model_version) + ', release status “' + esc(state.secondMeta.release_status) + '”, updated ' + esc(new Date(state.secondMeta.generated_at).toLocaleString('en-US')) + '.' : '') + '</p></div>';
     h += '</div>';
     view.innerHTML = h;
@@ -618,15 +625,218 @@
       el.addEventListener('input', function () { $('#wv_' + c.key).textContent = el.value; });
       el.addEventListener('change', function () { S.weights[c.key] = +el.value; saveSettings(); rebuildAll(); });
     });
-    ['edgeMin', 'hfa', 'sigma', 'eloPerPt'].forEach(function (k) {
+    ['edgeMin', 'hfa', 'sigma', 'eloPerPt', 'propEdge'].forEach(function (k) {
       $('#n_' + k).addEventListener('change', function () { var v = parseFloat(this.value); if (isFinite(v) && v > 0 || (k === 'hfa' && v === 0)) { S[k] = v; saveSettings(); rebuildAll(); } });
     });
     $('#second').addEventListener('change', function () { S.second = this.checked; saveSettings(); if (S.second) loadSecond(); else { state.second = null; } });
-    $('#resetDefaults').addEventListener('click', function () { var sec = S.second; state.settings = Object.assign({}, M.DEFAULTS, { weights: Object.assign({}, M.DEFAULTS.weights), second: sec }); saveSettings(); rebuildAll(); renderSettings(); });
+    $('#resetDefaults').addEventListener('click', function () { var sec = S.second; state.settings = Object.assign({}, M.DEFAULTS, { weights: Object.assign({}, M.DEFAULTS.weights), second: sec, propEdge: 3 }); saveSettings(); rebuildAll(); renderSettings(); });
+  }
+
+  /* ---------- player props ---------- */
+  var PR = window.CFBProps;
+  var PROP_CAL = [ // walk-forward test on 2025 + 2026 FBS box scores (see props.js)
+    ['Passing yards', '1,646', '30 / 51 / 70', '71 vs 73'],
+    ['Passing TDs', '1,646', '31 / 47 / 64', '1.0 vs 1.1'],
+    ['Rushing yards', '3,102', '32 / 52 / 71', '32 vs 33'],
+    ['Receiving yards', '5,186', '35 / 54 / 71', '28 vs 29'],
+    ['Receptions', '5,186', '26 / 52 / 74', '1.7 vs 1.8'],
+    ['Rush + rec yards', '3,102', '32 / 53 / 71', '34 vs 35']
+  ];
+  var MARKETS = { QB: ['passYds', 'passTD', 'rushYds'], RB: ['rushYds', 'rushRec', 'rec'], WR: ['recYds', 'rec'] };
+  state.props = { gid: store.get('propsGid', null), showAllTD: {} };
+
+  function loadTeamBox(year, team) {
+    return cfbd('games/players?year=' + year + '&team=' + encodeURIComponent(team) + '&seasonType=both', year >= currentSeason() ? 6 * HOUR : 30 * 24 * HOUR);
+  }
+  function propLines(gid) { return store.get('pl:' + gid, {}) || {}; }
+  function savePropLine(gid, key, v) { var all = propLines(gid); if (v) all[key] = v; else delete all[key]; store.set('pl:' + gid, all); }
+  function modelLine(proj) { return Math.floor(PR.quantile(proj, 0.5)) + 0.5; }
+  function amText(am) { return am == null ? '–' : (am > 0 ? '+' : '') + am; }
+
+  function playersFor(logs, team, before) {
+    var tl = logs.teams[team]; if (!tl) return [];
+    var tg = tl.games.filter(function (g) { return g.t < before; });
+    if (!tg.length) return [];
+    var recent = tg.slice(-3), lastGid = tg[tg.length - 1].gid;
+    var out = [];
+    Object.keys(logs.players).forEach(function (pid) {
+      var p = logs.players[pid];
+      var mine = p.games.filter(function (g) { return g.team === team && g.t < before; });
+      if (!mine.length || p.team !== team) return;
+      var a = { att: 0, car: 0, rec: 0 };
+      recent.forEach(function (tgm) { var g = mine.filter(function (x) { return x.gid === tgm.gid; })[0]; if (g) { a.att += g.r[2]; a.car += g.r[6]; a.rec += g.r[9]; } });
+      Object.keys(a).forEach(function (k) { a[k] /= recent.length; });
+      var role = a.att >= 10 && a.att > a.car ? 'QB' : (a.car >= 5 && a.car >= a.rec ? 'RB' : (a.rec >= 1.5 ? 'WR' : null));
+      if (!role) return;
+      var last = mine.filter(function (g) { return g.gid === lastGid; })[0];
+      out.push({ p: Object.assign({}, p, { games: mine }), role: role, use: role === 'QB' ? a.att : role === 'RB' ? a.car : a.rec, missedLast: !last });
+    });
+    var lim = { QB: 2, RB: 3, WR: 5 };
+    return ['QB', 'RB', 'WR'].reduce(function (acc, r) {
+      return acc.concat(out.filter(function (x) { return x.role === r; }).sort(function (x, y) { return y.use - x.use; }).slice(0, lim[r]));
+    }, []);
+  }
+
+  function miniBars(proj, line, games) {
+    var vals = proj.log.slice(-8), gs = games.slice(-8);
+    if (!vals.length) return '';
+    var max = Math.max.apply(null, vals.concat([line || 0, proj.mean, 1])) * 1.1, W = 160, H = 40, bw = W / 8;
+    var ref = line != null ? line : modelLine(proj);
+    var bars = vals.map(function (v, i) {
+      var h = Math.max(2, Math.max(0, v) / max * H), x = i * bw + 2, over = v > ref;
+      var g = gs[i], tip = (g ? 'Wk ' + g.week + ' vs ' + esc(g.opp) + ': ' : '') + '<b>' + v + '</b>';
+      return '<rect x="' + x + '" y="' + (H - h) + '" width="' + (bw - 4) + '" height="' + h + '" rx="2" fill="' + (over ? 'var(--indigo)' : '#4b4b63') + '"/><rect x="' + (i * bw) + '" y="0" width="' + bw + '" height="' + H + '" fill="transparent" data-tip="' + esc(tip) + '"/>';
+    }).join('');
+    var ly = H - ref / max * H;
+    return '<svg class="mini" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" aria-label="Last ' + vals.length + ' games: ' + vals.join(', ') + '">' + bars +
+      '<line x1="0" x2="' + W + '" y1="' + ly + '" y2="' + ly + '" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/></svg>';
+  }
+
+  function propResult(proj, v, actual) {
+    if (!v || v.line === '' || v.line == null || !isFinite(+v.line)) return '<span class="muted">Type the book’s line to get odds. Model’s even line: <b>' + modelLine(proj) + '</b></span>';
+    var line = +v.line, odds = isFinite(+v.odds) && Math.abs(+v.odds) >= 100 ? +v.odds : -110;
+    var pr = PR.probs(proj, line), side = pr.over >= pr.under ? 'over' : 'under', pw = pr[side], pl = side === 'over' ? pr.under : pr.over;
+    var dec = PR.amToDec(odds), evv = pw * (dec - 1) - pl, kel = Math.max(0, evv / (dec - 1)) * 0.25;
+    var thr = (state.settings.propEdge || 3) / 100, value = evv >= thr;
+    var h = '<span class="pp"><b>Over ' + pct(pr.over) + '</b> · Under ' + pct(pr.under) + (pr.push > 0.005 ? ' · Push ' + pct(pr.push) : '') + '</span> ' +
+      '<span class="chip ' + (value ? 'pick' : '') + '" data-tip="' + esc('Fair price for the ' + side + ': ' + amText(PR.probToAm(pw / (pw + pl))) + '<br>Expected value at ' + amText(odds) + ': ' + (evv * 100).toFixed(1) + '% per bet' + (kel > 0 ? '<br>Quarter-Kelly: ' + (kel * 100).toFixed(1) + '% of bankroll' : '')) + '">' +
+      (value ? 'Value: ' + (side === 'over' ? 'Over ' : 'Under ') + line : 'No value') + ' · EV ' + (evv >= 0 ? '+' : '') + (evv * 100).toFixed(1) + '%</span>';
+    if (actual != null) {
+      var res = actual === line ? 'P' : ((actual > line) === (side === 'over') ? 'W' : 'L');
+      h += ' <span class="chip ' + res + '">Actual ' + actual + '</span>';
+    }
+    return h;
+  }
+
+  function renderProps() {
+    var year = currentSeason();
+    withSeason(year, function (ctx) {
+      if (!state.week || !weekList(ctx).some(function (w) { return w.v === state.week; })) state.week = defaultWeek(ctx);
+      var games = gamesFor(ctx, state.week).slice().sort(function (a, b) {
+        if (!!a.completed !== !!b.completed) return a.completed ? 1 : -1;
+        return (a.startDate || '').localeCompare(b.startDate || '');
+      });
+      if (!games.length) { view.innerHTML = '<div class="empty">No games this week.</div>'; return; }
+      var g = games.filter(function (x) { return x.id === state.props.gid; })[0] || games[0];
+      state.props.gid = g.id; store.set('propsGid', g.id);
+      var wl = weekList(ctx);
+      var head = '<div class="eyebrow">// ' + year + ' · ' + esc((wl.filter(function (w) { return w.v === state.week; })[0] || {}).label || '') + ' · Player props</div><h1>Player props</h1>' +
+        '<p class="lede">Pick a game, then type the line and price from your sportsbook. You get the model’s projection, the chance of the over, a fair price, and whether the bet is worth it.</p>' +
+        '<div class="toolbar"><div class="fld"><label class="f" for="pWeek">Week</label><select id="pWeek">' + wl.map(function (w) { return '<option value="' + w.v + '"' + (w.v === state.week ? ' selected' : '') + '>' + esc(w.label) + '</option>'; }).join('') + '</select></div>' +
+        '<div class="fld grow full"><label class="f" for="pGame">Game</label><select id="pGame">' + games.map(function (x) {
+          return '<option value="' + x.id + '"' + (x.id === g.id ? ' selected' : '') + '>' + esc(x.awayTeam + ' at ' + x.homeTeam + ' · ' + (x.completed ? 'Final' : kickoff(x))) + '</option>';
+        }).join('') + '</select></div></div>';
+      view.innerHTML = head + '<div class="empty"><span class="spin" aria-hidden="true"></span> Loading box scores…</div>';
+      bindTop();
+      Promise.all([loadTeamBox(year, g.homeTeam), loadTeamBox(year, g.awayTeam)]).then(function (res) {
+        if (currentView() !== 'props' || state.props.gid !== g.id) return;
+        var seen = {}, box = [];
+        res.forEach(function (arr) { (arr || []).forEach(function (b) { if (!seen[b.id]) { seen[b.id] = 1; box.push(b); } }); });
+        var meta = {}; ctx.games.forEach(function (x) { meta[x.id] = x; });
+        var logs = PR.buildLogs(box, meta);
+        var before = g.startDate ? Date.parse(g.startDate) : Date.now();
+        var mk = M.marketFromLines(ctx.lineById[g.id]);
+        var im = mk && mk.spread != null && mk.total != null ? PR.implied(mk.spread, mk.total) : null;
+        var lines = propLines(g.id);
+        var html = head;
+        if (g.completed) html += '<div class="note info">This game is final. Projections use only games before kickoff, and each row shows what actually happened.</div>';
+        if (!im) html += '<div class="note">No Vegas line for this game yet, so projections skip the game-script adjustment and touchdown odds are unavailable.</div>';
+        [[g.awayTeam, g.homeTeam, im && im.away, mk ? mk.spread : null], [g.homeTeam, g.awayTeam, im && im.home, mk ? -mk.spread : null]].forEach(function (side) {
+          var team = side[0], opp = side[1], ip = side[2], fav = side[3];
+          var list = playersFor(logs, team, before);
+          html += '<h2>' + esc(team) + (ip != null ? ' <span class="soft small" style="font-weight:500">· Vegas-implied ' + f1(ip) + ' pts</span>' : '') + '</h2>';
+          var ofP = PR.oppFactor(logs, opp, 'passYds', before, PR.P.league), ofR = PR.oppFactor(logs, opp, 'rushYds', before, PR.P.league);
+          html += '<p class="small soft">' + esc(opp) + ' allows ' + pct(ofP) + ' of the average team’s passing yards and ' + pct(ofR) + ' of its rushing yards.</p>';
+          if (!list.length) { html += '<div class="empty">No player history for ' + esc(team) + ' yet.</div>'; return; }
+          html += '<div class="pcards">' + list.map(function (it) {
+            var p = it.p, played = PR.gamesBefore(p, before);
+            var actualG, allG = logs.players[p.id] ? logs.players[p.id].games : [];
+            actualG = g.completed ? allG.filter(function (x) { return x.gid === g.id; })[0] : null;
+            var rows = MARKETS[it.role].map(function (stat) {
+              var proj = PR.project(p, stat, { logs: logs, before: before, opp: opp, impliedPts: ip, lg: PR.P.league });
+              if (!proj || !proj.n) return '';
+              var key = p.id + ':' + stat, v = lines[key] || {};
+              var lo = PR.quantile(proj, 0.1), hi = PR.quantile(proj, 0.9);
+              var actual = g.completed ? (actualG ? PR.statOf(actualG.r, stat) : null) : null;
+              var dec = stat === 'passTD' || stat === 'rec' ? 1 : 0;
+              return '<div class="prow" data-key="' + esc(key) + '" data-stat="' + stat + '" data-pid="' + esc(p.id) + '">' +
+                '<div class="ptop"><span class="pm">' + esc(PR.P.stats[stat].label) + '</span><span class="pproj" data-tip="' + esc('Recent form ' + f1(proj.base) + ' × opponent ' + f1(Math.pow(proj.oppF, PR.P.stats[stat].opp)) + ' × game script ' + f1(Math.pow(Math.max(.3, proj.volF), PR.P.stats[stat].vol)) + ' × usual regression ' + (PR.P.stats[stat].cal || 1)) + '">' + proj.mean.toFixed(dec) + '</span></div>' +
+                '<div class="pmid"><span class="small muted">Likely ' + Math.max(0, Math.round(lo)) + '–' + Math.round(hi) + '</span>' + miniBars(proj, v.line !== '' && v.line != null && isFinite(+v.line) ? +v.line : null, played) + '</div>' +
+                '<div class="pin"><label>Line<input type="text" inputmode="decimal" class="pl-line" value="' + esc(v.line == null ? '' : v.line) + '" placeholder="' + modelLine(proj) + '"></label>' +
+                '<label>Odds<input type="text" inputmode="numeric" class="pl-odds" value="' + esc(v.odds == null ? '' : v.odds) + '" placeholder="-110"></label></div>' +
+                '<div class="pres">' + propResult(proj, v, actual) + '</div></div>';
+            }).join('');
+            var lastNote = it.missedLast ? '<span class="chip L">Missed last game</span>' : '';
+            return '<div class="pcard"><div class="phead"><b>' + esc(p.name) + '</b><span class="chip">' + (it.role === 'WR' ? 'WR / TE' : it.role) + '</span><span class="small muted">' + played.length + ' games</span>' + lastNote + '</div>' + rows + '</div>';
+          }).join('') + '</div>';
+          // anytime TD
+          if (ip != null) {
+            var td = PR.tdTable(logs, team, ip, fav, before, PR.P.league).filter(function (r) { return r.p >= 0.01; });
+            var showAll = state.props.showAllTD[team];
+            var shown = showAll ? td : td.slice(0, 8);
+            html += '<h3 style="margin-top:18px">Anytime touchdown · ' + esc(team) + '</h3><div class="tbl-wrap"><table class="tdt"><thead><tr><th class="l">Player</th><th>Chance</th><th>Fair odds</th><th>Book odds</th><th>EV</th>' + (g.completed ? '<th>Scored</th>' : '') + '</tr></thead><tbody>' +
+              shown.map(function (r) {
+                var key = r.id + ':td', v = lines[key] || {};
+                var ag = g.completed ? (logs.players[r.id] ? logs.players[r.id].games.filter(function (x) { return x.gid === g.id; })[0] : null) : null;
+                return '<tr data-key="' + esc(key) + '" data-p="' + r.p + '"><td class="l"><b>' + esc(r.name) + '</b>' + (r.idle ? ' <span class="small muted" data-tip="No touches or missed last game, scaled down">idle</span>' : '') + '</td><td class="num">' + pct(r.p, 1) + '</td><td class="num">' + amText(r.fair) + '</td>' +
+                  '<td class="num"><input type="text" inputmode="numeric" class="td-odds" value="' + esc(v.odds == null ? '' : v.odds) + '" placeholder="+250" aria-label="Book odds for ' + esc(r.name) + '"></td><td class="num td-ev">' + tdEv(r.p, v.odds) + '</td>' +
+                  (g.completed ? '<td class="num">' + (ag ? (ag.r[8] + ag.r[11] > 0 ? '<span class="pos">Yes</span>' : 'No') : '<span class="muted">DNP</span>') + '</td>' : '') + '</tr>';
+              }).join('') + '</tbody></table></div>' +
+              (td.length > 8 ? '<p><button class="btn small td-more" data-team="' + esc(team) + '">' + (showAll ? 'Show fewer' : 'Show all ' + td.length + ' players') + '</button></p>' : '');
+          }
+        });
+        html += '<h2>How well it’s calibrated</h2><div class="panel"><p class="small soft">Every player game in 2025 and 2026 was re-predicted from earlier games only. Lines were placed where the model saw a 30%, 50% and 70% chance of the over. The middle column shows how often the over actually hit.</p>' +
+          '<div class="tbl-wrap"><table><thead><tr><th class="l">Stat</th><th>Player games</th><th>Over hit at 30 / 50 / 70%</th><th data-tip="Average miss, model vs plain season average">Avg miss vs season avg</th></tr></thead><tbody>' +
+          PROP_CAL.map(function (r) { return '<tr><td class="l">' + r[0] + '</td><td class="num">' + r[1] + '</td><td class="num">' + r[2] + '</td><td class="num">' + r[3] + '</td></tr>'; }).join('') +
+          '</tbody></table></div><p class="small soft" style="margin-top:10px">Anytime TD: fit on 2025 and tested on 2026, it scored 8% better than guessing the average rate, about what the popcawn model reports. The probabilities are honest, but the projections are only a little sharper than a season average. Sportsbooks have the same data, so real value is rare. Treat a “Value” tag as a reason to look closer, not a lock.</p></div>';
+        view.innerHTML = html; bindTop(); bindRows(g, logs, before, ctx);
+      }, errorView);
+    });
+    function bindTop() {
+      var w = $('#pWeek'), s = $('#pGame');
+      if (w) w.addEventListener('change', function () { state.week = this.value; state.props.gid = null; renderProps(); });
+      if (s) s.addEventListener('change', function () { state.props.gid = +this.value; renderProps(); });
+    }
+  }
+  function tdEv(p, odds) {
+    if (odds == null || odds === '' || !isFinite(+odds) || Math.abs(+odds) < 100) return '<span class="muted">–</span>';
+    var e = PR.ev(p, +odds).ev, thr = (state.settings.propEdge || 3) / 100;
+    return '<span class="' + (e >= thr ? 'pos' : e < 0 ? 'neg' : '') + '">' + (e >= 0 ? '+' : '') + (e * 100).toFixed(1) + '%</span>';
+  }
+  function bindRows(g, logs, before, ctx) {
+    var mk = M.marketFromLines(ctx.lineById[g.id]);
+    var im = mk && mk.spread != null && mk.total != null ? PR.implied(mk.spread, mk.total) : null;
+    $$('.prow').forEach(function (row) {
+      var key = row.getAttribute('data-key'), stat = row.getAttribute('data-stat'), pid = row.getAttribute('data-pid');
+      var p = logs.players[pid], team = p.team, opp = team === g.homeTeam ? g.awayTeam : g.homeTeam;
+      var ip = im ? (team === g.homeTeam ? im.home : im.away) : null;
+      var mine = Object.assign({}, p, { games: p.games.filter(function (x) { return x.team === team; }) });
+      var proj = PR.project(mine, stat, { logs: logs, before: before, opp: opp, impliedPts: ip, lg: PR.P.league });
+      var ag = g.completed ? p.games.filter(function (x) { return x.gid === g.id; })[0] : null;
+      var actual = g.completed ? (ag ? PR.statOf(ag.r, stat) : null) : null;
+      var li = $('.pl-line', row), oi = $('.pl-odds', row), t;
+      function upd() {
+        var v = { line: li.value.trim().replace('−', '-'), odds: oi.value.trim().replace('−', '-') };
+        savePropLine(g.id, key, (v.line || v.odds) ? v : null);
+        $('.pres', row).innerHTML = propResult(proj, v, actual);
+        var svg = $('svg.mini', row);
+        if (svg) svg.outerHTML = miniBars(proj, v.line !== '' && isFinite(+v.line) ? +v.line : null, PR.gamesBefore(mine, before));
+      }
+      [li, oi].forEach(function (inp) { inp.addEventListener('input', function () { clearTimeout(t); t = setTimeout(upd, 250); }); });
+    });
+    $$('table.tdt tbody tr').forEach(function (tr) {
+      var key = tr.getAttribute('data-key'), p = +tr.getAttribute('data-p'), inp = $('.td-odds', tr);
+      inp.addEventListener('input', function () {
+        var o = inp.value.trim().replace('−', '-');
+        savePropLine(g.id, key, o ? { odds: o } : null);
+        $('.td-ev', tr).innerHTML = tdEv(p, o);
+      });
+    });
+    $$('.td-more').forEach(function (b) { b.addEventListener('click', function () { var t = b.getAttribute('data-team'); state.props.showAllTD[t] = !state.props.showAllTD[t]; renderProps(); }); });
   }
 
   /* ---------- router ---------- */
-  var VIEWS = { slate: renderSlate, matchup: renderMatchup, ratings: renderRatings, backtest: renderBacktest, settings: renderSettings };
+  var VIEWS = { slate: renderSlate, props: renderProps, matchup: renderMatchup, ratings: renderRatings, backtest: renderBacktest, settings: renderSettings };
   function currentView() { var v = (location.hash || '#slate').slice(1); return VIEWS[v] ? v : 'slate'; }
   function route() {
     var v = currentView();
