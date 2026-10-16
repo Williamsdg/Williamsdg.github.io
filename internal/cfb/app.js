@@ -2,7 +2,9 @@
 (function () {
   'use strict';
   var M = window.CFBModel;
-  var API = 'https://api.collegefootballdata.com';
+  // CollegeFootballData through the Williams Digital proxy (Vercel project wd-cfb-proxy). The key lives on the server,
+  // so nobody has to paste one and the link can be shared. Responses are cached at Vercel's edge.
+  var API = 'https://wd-cfb-proxy.vercel.app/api/cfbd';
   var GM_URL = 'https://raw.githubusercontent.com/gmalbert/college-football-predictions/HEAD/data_files/best_bets_today.json';
   var LS = 'wdcfb:';
   var HOUR = 3600e3;
@@ -53,7 +55,7 @@
     return out;
   }
   function saveSettings() { store.set('settings', state.settings); }
-  function getKey() { return store.get('key', '') || mem.key || ''; }
+  store.del('key'); // keys pasted into older versions of the page are no longer needed
 
   var state = {
     settings: loadSettings(),
@@ -69,8 +71,7 @@
   };
 
   /* ---------- API layer: cache-first, slimmed payloads, monthly call counter ---------- */
-  function bumpUsage() { var k = 'usage:' + monthKey(); store.set(k, (store.get(k, 0) || 0) + 1); }
-  function usage() { return store.get('usage:' + monthKey(), 0) || 0; }
+  function callsLeft() { var c = store.get('callsLeft', null); return c && c.m === monthKey() ? c.n : null; }
 
   function pick(o, keys) { var r = {}; keys.forEach(function (k) { if (o[k] !== undefined) r[k] = o[k]; }); return r; }
   var GAME_KEYS = ['id', 'season', 'week', 'seasonType', 'startDate', 'startTimeTBD', 'completed', 'neutralSite', 'conferenceGame', 'venue', 'notes',
@@ -97,12 +98,12 @@
     var ck = 'c:' + path;
     var hit = mem[ck] || store.get(ck, null);
     if (!force && hit && Date.now() - hit.t < ttl) { mem[ck] = hit; return Promise.resolve(hit.d); }
-    var key = getKey();
-    if (!key) return Promise.reject(new Error('NO_KEY'));
-    return fetch(API + '/' + path, { headers: { Authorization: 'Bearer ' + key, Accept: 'application/json' } })
+    var parts = path.split('?');
+    return fetch(API + '?path=' + encodeURIComponent(parts[0]) + (parts[1] ? '&' + parts[1] : ''))
       .then(function (r) {
-        bumpUsage();
-        if (r.status === 401 || r.status === 403) throw new Error('BAD_KEY');
+        var left = r.headers.get('X-CallLimit-Remaining');
+        if (left != null && isFinite(+left)) store.set('callsLeft', { n: +left, m: monthKey() });
+        if (r.status === 403) throw new Error('ORIGIN');
         if (r.status === 429) { if (hit) return { stale: hit.d }; throw new Error('LIMIT'); }
         if (!r.ok) { if (hit) return { stale: hit.d }; throw new Error('HTTP ' + r.status + ' on /' + path.split('?')[0]); }
         return r.json();
@@ -137,7 +138,7 @@
     })).then(function (res) {
       var data = {}, errs = [];
       res.forEach(function (r) { if (r.e) errs.push(r); else data[r.n] = r.d; });
-      var fatal = res.filter(function (r) { return r.e && (r.e.message === 'NO_KEY' || r.e.message === 'BAD_KEY'); })[0];
+      var fatal = res.filter(function (r) { return r.e && r.e.message === 'ORIGIN'; })[0];
       if (fatal) throw fatal.e;
       if (!data.games) throw (errs[0] && errs[0].e) || new Error('Could not load games');
       state.raw[year] = data;
@@ -180,7 +181,7 @@
     var el = document.getElementById('status');
     var busy = Object.keys(state.loading).length;
     var t = state.updatedAt ? new Date(state.updatedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
-    el.innerHTML = busy ? '<span class="spin" aria-hidden="true"></span> Loading' : (t ? '<span class="st-l">Data </span>' + esc(t) + '<span class="st-l"> · ' + usage() + '/1000 calls</span>' : '');
+    el.innerHTML = busy ? '<span class="spin" aria-hidden="true"></span> Loading' : (t ? '<span class="st-l">Data </span>' + esc(t) + (callsLeft() != null ? '<span class="st-l"> · ' + callsLeft() + ' calls left</span>' : '') : '');
   }
   var tip = document.getElementById('tip');
   function showTip(html, x, y) {
@@ -274,33 +275,16 @@
   function kpi(label, v, s) { return '<div class="kpi"><div class="label">' + esc(label) + '</div><div class="v">' + esc(v) + '</div>' + (s ? '<div class="s">' + esc(s) + '</div>' : '') + '</div>'; }
 
   /* ---------- views ---------- */
-  function needKey() {
-    view.innerHTML = '<div class="onboard"><div class="eyebrow">// Private · Williams Digital</div><h1>College football predictor</h1>' +
-      '<p class="lede">This page pulls live data from CollegeFootballData and blends SP+, FPI, Elo, SRS, play-by-play efficiency, roster talent, an in-house power rating and the Vegas line into a prediction for every game.</p>' +
-      '<div class="panel"><h3>Connect your data key</h3><ol><li>Search your email for “CFBD API Key Request”, or get a free key at <a href="https://collegefootballdata.com/key" target="_blank" rel="noopener">collegefootballdata.com/key</a>.</li>' +
-      '<li>Paste it below. It is saved only in this browser and is never sent anywhere except CollegeFootballData.</li></ol>' +
-      '<form id="keyForm" class="keybox" autocomplete="off"><input id="keyIn" type="password" autocomplete="new-password" placeholder="Paste API key" aria-label="API key" required><button class="btn primary" type="submit">Save and load</button></form>' +
-      '<p class="err" id="keyErr"></p></div></div>';
-    $('#keyForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var k = $('#keyIn').value.trim().replace(/^Bearer\s+/i, '');
-      if (!k) return;
-      if (!store.set('key', k)) mem.key = k;
-      $('#keyErr').textContent = '';
-      route();
-    });
-  }
   function loadingView(msg) { view.innerHTML = '<div class="empty"><span class="spin" aria-hidden="true"></span> ' + esc(msg || 'Loading the season…') + '</div>'; }
   function errorView(e) {
-    if (e && e.message === 'NO_KEY') return needKey();
-    if (e && e.message === 'BAD_KEY') { store.del('key'); delete mem.key; needKey(); $('#keyErr').textContent = 'CollegeFootballData rejected that key. Paste it again.'; return; }
-    var msg = e && e.message === 'LIMIT' ? 'The monthly limit of 1,000 calls has been reached. Cached data will return when it is available.' : (e && e.message) || 'Something went wrong.';
+    var msg = e && e.message === 'LIMIT' ? 'The monthly limit of 1,000 data calls has been reached. Cached data will return when it is available.'
+      : e && e.message === 'ORIGIN' ? 'This page only loads data on williamsdigital.io.'
+      : (e && e.message) || 'Something went wrong.';
     view.innerHTML = '<div class="empty"><p class="err">' + esc(msg) + '</p><button class="btn" id="retry">Try again</button></div>';
     $('#retry').addEventListener('click', function () { route(); });
   }
 
   function withSeason(year, fn) {
-    if (!getKey()) return needKey();
     if (state.ctx[year]) return fn(state.ctx[year]);
     loadingView('Loading the ' + year + ' season…');
     loadSeason(year).then(function () { route(); }, errorView);
@@ -582,13 +566,12 @@
   }
 
   function renderSettings() {
-    var S = state.settings, has = !!getKey();
+    var S = state.settings, left = callsLeft();
     var size = 0; store.keys().forEach(function (k) { try { size += (localStorage.getItem(LS + k) || '').length; } catch (e) { } });
-    var h = '<div class="eyebrow">// Settings</div><h1>Settings</h1><p class="lede">Saved in this browser only.</p><div class="grid2">';
-    h += '<div class="panel"><h3>Data key</h3><p class="soft small">' + (has ? 'A CollegeFootballData key is saved in this browser.' : 'No key saved yet.') + ' The free tier allows 1,000 calls a month. A full refresh uses 7, and data is cached for hours, so normal use stays far below that.</p>' +
-      '<form id="keyForm" class="keybox" autocomplete="off"><input id="keyIn" type="password" autocomplete="new-password" placeholder="' + (has ? 'Paste a new key to replace it' : 'Paste API key') + '" aria-label="API key"><button class="btn primary" type="submit">Save</button>' + (has ? '<button class="btn" type="button" id="keyDel">Remove</button>' : '') + '</form>' +
-      '<p class="small soft" style="margin-top:12px">Calls from this browser this month: <b>' + usage() + '</b> · cached data ' + (size / 1024 / 1024).toFixed(1) + ' MB</p>' +
-      '<div class="keybox"><button class="btn small" id="clearCache" type="button">Clear cached data</button></div><p class="err" id="keyErr"></p></div>';
+    var h = '<div class="eyebrow">// Settings</div><h1>Settings</h1><p class="lede">These settings are saved in this browser only, so anyone you share the link with keeps their own.</p><div class="grid2">';
+    h += '<div class="panel"><h3>Data</h3><p class="soft small">Data comes from CollegeFootballData through a Williams Digital server, so there is no key to enter and the link can be shared. The server caches every response for hours, so extra viewers barely touch the free tier’s 1,000 calls a month.</p>' +
+      '<p class="small soft" style="margin-top:12px">' + (left != null ? 'Calls left this month: <b>' + left + '</b> · ' : '') + 'cached in this browser: ' + (size / 1024 / 1024).toFixed(1) + ' MB</p>' +
+      '<div class="keybox"><button class="btn small" id="clearCache" type="button">Clear cached data</button></div></div>';
     h += '<div class="panel"><h3>Signal weights</h3><p class="soft small">How much each signal counts in the blend. Set one to 0 to switch it off. Picks compare the blend <em>without</em> Vegas against the line.</p>' +
       M.COMPONENTS.map(function (c) { return '<div class="wrow"><label for="w_' + c.key + '" data-tip="' + esc(c.src) + '">' + esc(c.label) + '</label><input type="range" min="0" max="50" step="1" id="w_' + c.key + '" value="' + S.weights[c.key] + '"><span class="wv" id="wv_' + c.key + '">' + S.weights[c.key] + '</span></div>'; }).join('') + '</div>';
     h += '<div class="panel"><h3>Model tuning</h3>' +
@@ -600,7 +583,7 @@
       '<label class="check" style="margin-top:8px"><input type="checkbox" id="second"' + (S.second ? ' checked' : '') + '> Show gmalbert’s published picks as a second opinion</label>' +
       '<div class="keybox" style="margin-top:12px"><button class="btn small" id="resetDefaults" type="button">Reset to defaults</button></div></div>';
     h += '<div class="panel"><h3>Where this comes from</h3><ul class="credits small">' +
-      '<li><b><a href="https://github.com/CFBD/cfbd-python" target="_blank" rel="noopener">CFBD/cfbd-python</a></b>: the same CollegeFootballData API, called straight from this page.</li>' +
+      '<li><b><a href="https://github.com/CFBD/cfbd-python" target="_blank" rel="noopener">CFBD/cfbd-python</a></b>: the same CollegeFootballData API, reached through a small Williams Digital server that holds the key.</li>' +
       '<li><b><a href="https://github.com/zachringnight/cfbmodel" target="_blank" rel="noopener">zachringnight/cfbmodel</a></b>: blending Elo, SP+, FPI and SRS, and confidence tiers from how much the signals agree.</li>' +
       '<li><b><a href="https://github.com/blaizerlahman/CFB-Model" target="_blank" rel="noopener">blaizerlahman/CFB-Model</a></b>: predicting the margin from team strength, talent and SP+, and the hit rate by size of disagreement with Vegas.</li>' +
       '<li><b><a href="https://github.com/sportsdataverse/cfbfastR" target="_blank" rel="noopener">sportsdataverse/cfbfastR</a></b>: play-by-play efficiency (EPA per play) as a strength signal.</li>' +
@@ -612,13 +595,6 @@
     h += '</div>';
     view.innerHTML = h;
     function num(k, label, step, hint) { return '<div style="margin-bottom:12px"><label class="f" for="n_' + k + '">' + esc(label) + '</label><input type="number" id="n_' + k + '" step="' + step + '" value="' + S[k] + '"><div class="small muted" style="margin-top:4px">' + esc(hint) + '</div></div>'; }
-    $('#keyForm').addEventListener('submit', function (e) {
-      e.preventDefault(); var k = $('#keyIn').value.trim().replace(/^Bearer\s+/i, ''); if (!k) return;
-      if (!store.set('key', k)) mem.key = k; state.ctx = {}; state.raw = {};
-      $('#keyErr').textContent = 'Saved. Testing…';
-      loadSeason(currentSeason(), true).then(function () { $('#keyErr').textContent = 'Key works. Data loaded.'; }, function (err) { $('#keyErr').textContent = err.message === 'BAD_KEY' ? 'CollegeFootballData rejected that key.' : err.message; });
-    });
-    if ($('#keyDel')) $('#keyDel').addEventListener('click', function () { store.del('key'); delete mem.key; renderSettings(); });
     $('#clearCache').addEventListener('click', function () { store.keys().forEach(function (k) { if (k.indexOf('c:') === 0 || k === 'gm') store.del(k); }); mem = {}; state.ctx = {}; state.raw = {}; renderSettings(); });
     M.COMPONENTS.forEach(function (c) {
       var el = $('#w_' + c.key);
@@ -842,7 +818,6 @@
     var v = currentView();
     $$('#nav a').forEach(function (a) { var on = a.getAttribute('data-view') === v; a.classList.toggle('active', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     closeSheet();
-    if (v !== 'settings' && !getKey()) return needKey();
     VIEWS[v]();
   }
   window.addEventListener('hashchange', function () { route(); window.scrollTo(0, 0); });
