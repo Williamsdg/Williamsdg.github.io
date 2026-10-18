@@ -133,8 +133,11 @@
       document.body.classList.add('modal-open');
       wrap._last = last;
       wrap.addEventListener('click', function (e) { if (e.target === wrap || e.target.closest('[data-close]')) UI.closeModal(); });
-      var f = wrap.querySelector('[autofocus]') || wrap.querySelector('input,select,textarea,button:not(.modal-x)');
-      setTimeout(function () { f && f.focus(); }, 30);
+      var dlg = wrap.querySelector('.modal'); dlg.setAttribute('tabindex', '-1');
+      var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+      // on phones focus the sheet itself so the keyboard doesn't jump up before the person chooses a field
+      var f = touch ? dlg : (wrap.querySelector('[autofocus]') || wrap.querySelector('input,select,textarea,button:not(.modal-x)'));
+      setTimeout(function () { f && f.focus({ preventScroll: true }); }, 30);
       return wrap;
     },
     closeModal: function () {

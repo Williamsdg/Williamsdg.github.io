@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/app.css?v=1">
+<link rel="stylesheet" href="assets/app.css?v=2">
 <style>
 .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
 .filters .chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
@@ -86,7 +86,14 @@
 .tl-row .flags label{display:flex;gap:6px;align-items:center;cursor:pointer;font-weight:600}
 .tl-row .flags input{width:18px;height:18px;accent-color:var(--blue-ink)}
 .tl-row .note{grid-column:2 / -1}
-@media (max-width:700px){.tl-row{grid-template-columns:24px 1fr 1fr}.tl-row .nm{grid-column:2 / -1}.tl-row .ctl{grid-column:2 / -1;justify-content:flex-end}.tl-row .n{grid-row:span 2}}
+@media (max-width:700px){
+  .tl-row{grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px}
+  .tl-row .n{grid-column:1;grid-row:1;text-align:left;align-self:center;font-size:13.5px;color:var(--navy)}
+  .tl-row .n::before{content:"Step "}
+  .tl-row .ctl{grid-column:2;grid-row:1;justify-content:flex-end}
+  .tl-row .nm{grid-column:1 / -1;grid-row:2}
+  .tl-row .note,.tl-row .flags{grid-column:1 / -1}
+}
 .bars{display:grid;gap:10px}
 .bars div{display:grid;grid-template-columns:120px 1fr 34px;gap:10px;align-items:center;font-size:14px}
 .bars .prog{height:8px}
@@ -156,8 +163,8 @@
   <a href="#messages" data-r="messages"><svg class="ic"><use href="#i-chat"/></svg>Messages<span class="dot" id="tab-unread" hidden></span></a>
 </nav>
 
-<script src="assets/store.js?v=1"></script>
-<script src="assets/ui.js?v=1"></script>
+<script src="assets/store.js?v=2"></script>
+<script src="assets/ui.js?v=2"></script>
 <script>
 (function () {
   var $ = function (s, r) { return (r || document).querySelector(s); };
@@ -219,7 +226,7 @@
   }
   function asgBadge(a) {
     var cls = { draft: '', sent: 'b-warn', accepted: 'b-blue', declined: 'b-bad', onsite: 'b-ok', done: 'b-navy' }[a.status];
-    var label = UI.asgLabel[a.status] + (a.status === 'onsite' && a.checkIn ? ' since ' + UI.time(a.checkIn.slice(11, 16)) : '');
+    var label = UI.asgLabel[a.status] + (a.status === 'onsite' && a.checkIn ? '<span class="since"> since ' + UI.time(a.checkIn.slice(11, 16)) + '</span>' : '');
     return '<span class="badge ' + cls + '">' + label + '</span>';
   }
   function toolBadge(t) {
@@ -243,7 +250,7 @@
     return '<button class="pcard" type="button" data-photo="' + p.id + ':' + ph.id + '">' +
       '<span class="ph"><img src="' + esc(ph.src) + '" alt="' + esc(ph.what) + '" loading="lazy">' + (ph.client ? '' : '<span class="flag">' + ic('eyeoff') + 'Team only</span>') + '</span>' +
       '<span class="pb"><b>' + esc(ph.what) + '</b>' + (ph.why ? '<span class="why">Why: ' + esc(ph.why) + '</span>' : '') +
-      '<span class="who">' + UI.avatar(ph.by, 22) + '<span>' + esc(personName(ph.by)) + ' · ' + UI.when(ph.at) + (st ? ' · ' + esc(st.name) : '') + '</span></span></span></button>';
+      '<span class="who">' + UI.avatar(ph.by, 22) + '<span>' + esc(personName(ph.by)) + ' · ' + UI.when(ph.at) + (st ? '<span class="stg"> · ' + esc(st.name) + '</span>' : '') + '</span></span></span></button>';
   }
   function allPhotos() {
     var out = [];
@@ -263,7 +270,7 @@
 
   // ---------- router ----------
   var lastRoute = '';
-  var state = { pfilter: 'open', pdiv: 'all', afilter: 'upcoming', tview: 'all', tstatus: 'all', hq: '', hperson: '', hinternal: true };
+  var state = { attnAll: false, pfilter: 'open', pdiv: 'all', afilter: 'upcoming', tview: 'all', tstatus: 'all', hq: '', hperson: '', hinternal: true };
   function route() {
     var h = (location.hash || '#today').slice(1).split('/');
     return { name: h[0] || 'today', id: h[1], tab: h[2] };
@@ -283,8 +290,15 @@
     $('#nav-unread').hidden = !n; $('#nav-unread').textContent = n; $('#tab-unread').hidden = !n;
     var fn = { today: vToday, projects: vProjects, project: vProject, assign: vAssign, history: vHistory, messages: vMessages, tools: vTools, crew: vCrew }[r.name] || vToday;
     var scrollY = window.scrollY;
+    view.classList.remove('has-thread');
     fn(r);
-    if (key !== lastRoute) { window.scrollTo(0, 0); lastRoute = key; } else window.scrollTo(0, scrollY);
+    if (key !== lastRoute) {
+      lastRoute = key;
+      var phone = window.matchMedia('(max-width:900px)').matches;
+      // on phones a conversation opens at the latest message, like any chat app
+      if (phone && ((r.name === 'messages' && r.id) || (r.name === 'project' && r.tab === 'messages'))) window.scrollTo(0, document.documentElement.scrollHeight);
+      else window.scrollTo(0, 0);
+    } else window.scrollTo(0, scrollY);
   }
   window.addEventListener('hashchange', render);
   IO.on(function (type, msg) { if (type === 'error') UI.toast(msg, 'error'); else render(); });
@@ -335,13 +349,14 @@
         '<section class="card"><div class="card-h"><h2>' + (role === 'pm' ? 'Your projects' : 'Open projects') + '</h2><a class="btn btn-ghost btn-sm more" href="#projects">All projects</a></div><div class="card-b"><ul class="list">' +
           mine.map(function (p) {
             var cur = IO.currentStage(p);
-            return '<li><a class="row" href="#project/' + p.id + '"><div class="grow"><b>' + esc(p.title) + ' <span class="muted small" style="font-weight:500">· ' + esc(IO.client(p.client).name) + '</span></b>' +
-              '<div class="sub">' + (cur ? 'Now: ' + esc(cur.name) + ' · ends ' + UI.short(cur.end) : 'All stages done') + '</div><div class="prog" style="margin-top:8px;max-width:360px"><i style="width:' + IO.progress(p) + '%"></i></div></div>' + projState(p) + '</a></li>';
+            return '<li><a class="prow" href="#project/' + p.id + '"><span class="prow-h"><b>' + esc(p.title) + '</b>' + projState(p) + '</span>' +
+              '<div class="sub">' + esc(IO.client(p.client).name) + ' · ' + (cur ? 'Now: ' + esc(cur.name) + ', ends ' + UI.short(cur.end) : 'All stages done') + '</div><div class="prog"><i style="width:' + IO.progress(p) + '%"></i></div></a></li>';
           }).join('') +
         '</ul></div></section>' +
       '</div><div>' +
         '<section class="card"><div class="card-h"><h2>Needs attention</h2><span class="badge plain" style="margin-left:auto">' + attn.length + '</span></div><div class="card-b"><ul class="list attn">' +
-          (attn.length ? attn.join('') : '<li class="empty"><b>All clear</b>Nothing is waiting on you.</li>') +
+          (attn.length ? attn.slice(0, state.attnAll ? attn.length : 4).join('') : '<li class="empty"><b>All clear</b>Nothing is waiting on you.</li>') +
+          (attn.length > 4 ? '<li class="more-row"><button class="btn btn-line btn-sm" type="button" data-attn-more>' + (state.attnAll ? 'Show fewer' : 'Show all ' + attn.length) + '</button></li>' : '') +
         '</ul></div></section>' +
         '<section class="card"><div class="card-h"><h2>Latest photos</h2><a class="btn btn-ghost btn-sm more" href="#history">Job history</a></div><div class="card-b"><div class="thumbs">' +
           photos.map(function (x) { return '<button type="button" data-photo="' + x.p.id + ':' + x.ph.id + '"><img src="' + esc(x.ph.src) + '" alt="' + esc(x.ph.what) + '" loading="lazy"><span>' + esc(x.p.title) + '</span></button>'; }).join('') +
@@ -367,7 +382,7 @@
     });
     var chips = [['open', 'Open'], ['mine', 'My projects'], ['active', 'In progress'], ['scheduled', 'Scheduled'], ['planning', 'Planning'], ['complete', 'Complete'], ['all', 'All']];
     view.innerHTML = '<div class="page-head"><div><h1>Projects</h1><p>Flooring and remodeling jobs, with each one’s timeline, photos, crew and tools.</p></div><div class="actions"><button class="btn btn-primary" type="button" data-act="new-project">' + ic('plus') + 'New project</button></div></div>' +
-      '<div class="filters">' + chips.map(function (c) { return '<button class="chip" type="button" data-pf="' + c[0] + '" aria-pressed="' + (state.pfilter === c[0]) + '">' + c[1] + '</button>'; }).join('') +
+      '<div class="filters scroll">' + chips.map(function (c) { return '<button class="chip" type="button" data-pf="' + c[0] + '" aria-pressed="' + (state.pfilter === c[0]) + '">' + c[1] + '</button>'; }).join('') +
       '<label class="sr" for="pdiv">Division</label><select id="pdiv"><option value="all">Both divisions</option><option' + (state.pdiv === 'Flooring' ? ' selected' : '') + '>Flooring</option><option' + (state.pdiv === 'Remodeling' ? ' selected' : '') + '>Remodeling</option></select></div>' +
       (list.length ? '<div class="pj-grid">' + list.map(projCard).join('') + '</div>' : '<div class="card empty">' + ic('folder') + '<b>No projects match</b>Try another filter.</div>');
     $$('[data-pf]').forEach(function (b) { b.addEventListener('click', function () { state.pfilter = b.dataset.pf; render(); }); });
@@ -392,11 +407,11 @@
     var tools = db().tools.filter(function (t) { return t.project === p.id && t.status === 'site'; });
     var tabs = [['overview', 'Overview'], ['photos', 'Photos', p.photos.length], ['messages', 'Messages', unread(p) ? unread(p) + ' new' : ''], ['crew', 'Crew', p.crew.length], ['tools', 'Tools on site', tools.length]];
     view.innerHTML =
-      '<div class="page-head"><div><div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap"><span class="div-tag div-' + p.division + '">' + p.division + '</span><span class="muted small" style="font-weight:700">' + p.id + '</span>' + projState(p) + '</div>' +
+      '<div class="page-head act3"><div><div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap"><span class="div-tag div-' + p.division + '">' + p.division + '</span><span class="muted small" style="font-weight:700">' + p.id + '</span>' + projState(p) + '</div>' +
         '<h1>' + esc(p.title) + '</h1><p>' + esc(cl.name) + ' · ' + esc(p.address) + '</p></div>' +
         '<div class="actions"><a class="btn btn-line" href="client.html?p=' + p.id + '">' + ic('eye') + 'Client view</a><button class="btn btn-line" type="button" data-act="upload" data-p="' + p.id + '">' + ic('camera') + 'Add photos</button><button class="btn btn-primary" type="button" data-act="new-asg" data-p="' + p.id + '">' + ic('send') + 'Send assignment</button></div></div>' +
       timelineBlock(p) +
-      '<nav class="tabs" aria-label="Project sections">' + tabs.map(function (t) { return '<a href="#project/' + p.id + '/' + t[0] + '"' + (tab === t[0] ? ' aria-current="page"' : '') + '>' + t[1] + (t[2] ? ' <span class="n">' + t[2] + '</span>' : '') + '</a>'; }).join('') + '</nav>' +
+      '<nav class="tabs sticky" aria-label="Project sections">' + tabs.map(function (t) { return '<a href="#project/' + p.id + '/' + t[0] + '"' + (tab === t[0] ? ' aria-current="page"' : '') + '>' + t[1] + (t[2] ? ' <span class="n">' + t[2] + '</span>' : '') + '</a>'; }).join('') + '</nav>' +
       '<div id="tabview"></div>';
     var tv = $('#tabview');
     ({ overview: tOverview, photos: tPhotos, messages: tMessages, crew: tCrew, tools: tTools }[tab] || tOverview)(p, tv, tools);
@@ -511,18 +526,18 @@
 
   function toolTable(tools, compact) {
     var today = IO.day(0);
-    return '<table class="tbl"><thead><tr><th>Tool</th><th>Status</th>' + (compact ? '' : '<th>Where</th>') + '<th>With</th><th>Due back</th><th>Condition</th><th><span class="sr">Action</span></th></tr></thead><tbody>' +
+    return '<table class="tbl cmp tools"><thead><tr><th>Tool</th><th>Status</th>' + (compact ? '' : '<th>Where</th>') + '<th>With</th><th>Due back</th><th>Condition</th><th><span class="sr">Action</span></th></tr></thead><tbody>' +
       tools.map(function (t) {
         var p = t.project ? IO.project(t.project) : null;
         var act = t.status === 'shop' ? '<button class="btn btn-line btn-sm" type="button" data-act="checkout" data-t="' + t.id + '">Check out</button>' :
           (t.status === 'site' ? '<button class="btn btn-line btn-sm" type="button" data-act="return" data-t="' + t.id + '">Return to shop</button>' :
           (t.status === 'repair' ? '<button class="btn btn-line btn-sm" type="button" data-act="return" data-t="' + t.id + '">Back from repair</button>' : '<button class="btn btn-line btn-sm" type="button" data-act="return" data-t="' + t.id + '">Mark found</button>'));
         return '<tr><td class="first"><div class="who"><div><b>' + esc(t.name) + '</b><span>' + esc(t.tag) + ' · ' + esc(t.cat) + '</span></div></div></td>' +
-          '<td data-l="Status">' + toolBadge(t) + '</td>' +
-          (compact ? '' : '<td data-l="Where">' + (p ? '<a href="#project/' + p.id + '/tools"><b style="font-weight:600">' + esc(p.title) + '</b></a><div class="muted small">' + esc(p.city) + '</div>' : (t.status === 'repair' ? 'Repair shop' : (t.status === 'missing' ? 'Unknown' : 'Shop'))) + '</td>') +
+          '<td data-l="Status" class="st">' + toolBadge(t) + '</td>' +
+          (compact ? '' : '<td data-l="Where" class="full">' + (p ? '<a href="#project/' + p.id + '/tools"><b style="font-weight:600">' + esc(p.title) + '</b></a><div class="muted small">' + esc(p.city) + '</div>' : (t.status === 'repair' ? 'Repair shop' : (t.status === 'missing' ? 'Unknown' : 'Shop'))) + '</td>') +
           '<td data-l="With">' + (t.holder ? esc(personName(t.holder)) : '—') + '</td>' +
           '<td data-l="Due back" class="nowrap"' + (t.status === 'site' && t.due && t.due < today ? ' style="color:var(--bad);font-weight:700"' : '') + '>' + (t.due && (t.status === 'site' || t.status === 'repair') ? UI.date(t.due) : '—') + '</td>' +
-          '<td data-l="Condition">' + esc(t.cond) + '</td><td>' + act + '</td></tr>';
+          '<td data-l="Condition">' + esc(t.cond) + '</td><td class="act">' + act + '</td></tr>';
       }).join('') + '</tbody></table>';
   }
 
@@ -542,7 +557,7 @@
     list.forEach(function (a) { (byDate[a.date] = byDate[a.date] || []).push(a); });
     var chips = [['upcoming', 'Upcoming'], ['waiting', 'Awaiting reply'], ['drafts', 'Drafts'], ['done', 'Past']];
     view.innerHTML = '<div class="page-head"><div><h1>Assignments</h1><p>Send a contractor the job, the address, the access notes and what to bring. They confirm from their phone.</p></div><div class="actions"><a class="btn btn-line" href="crew.html">' + ic('phone') + 'Contractor app</a><button class="btn btn-primary" type="button" data-act="new-asg">' + ic('plus') + 'New assignment</button></div></div>' +
-      '<div class="filters">' + chips.map(function (c) { return '<button class="chip" type="button" data-af="' + c[0] + '" aria-pressed="' + (f === c[0]) + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="filters scroll">' + chips.map(function (c) { return '<button class="chip" type="button" data-af="' + c[0] + '" aria-pressed="' + (f === c[0]) + '">' + c[1] + '</button>'; }).join('') + '</div>' +
       (list.length ? Object.keys(byDate).map(function (d) {
         return '<section class="card"><div class="card-h"><h2>' + UI.date(d, 'full') + '</h2><span class="muted small" style="margin-left:auto">' + byDate[d].length + ' job' + (byDate[d].length > 1 ? 's' : '') + '</span></div><div class="card-b"><ul class="list">' + byDate[d].map(asgRow).join('') + '</ul></div></section>';
       }).join('') : '<div class="card empty">' + ic('send') + '<b>Nothing here</b>Create an assignment to send a crew to a job.</div>');
@@ -587,7 +602,7 @@
       '<form id="asg-form" novalidate><div class="f2"><div class="fld"><label for="af-c">Contractor</label><select id="af-c" name="who">' + crewOptions(prefC) + '</select></div>' +
       '<div class="fld"><label for="af-p">Project</label><select id="af-p" name="project">' + projs.map(function (p) { return '<option value="' + p.id + '"' + (p.id === pid ? ' selected' : '') + '>' + esc(p.title) + ' — ' + esc(p.city) + '</option>'; }).join('') + '</select></div></div>' +
       '<div class="tl-now" id="af-site" style="margin:0 0 14px"></div>' +
-      '<div class="f3"><div class="fld"><label for="af-d">Date</label><input id="af-d" name="date" type="date" value="' + IO.day(1) + '" required></div><div class="fld"><label for="af-s">Start</label><input id="af-s" name="start" type="time" value="08:00" required></div><div class="fld"><label for="af-e">End</label><input id="af-e" name="end" type="time" value="16:00" required></div></div>' +
+      '<div class="f3 f-when"><div class="fld"><label for="af-d">Date</label><input id="af-d" name="date" type="date" value="' + IO.day(1) + '" required></div><div class="fld"><label for="af-s">Start</label><input id="af-s" name="start" type="time" value="08:00" required></div><div class="fld"><label for="af-e">End</label><input id="af-e" name="end" type="time" value="16:00" required></div></div>' +
       '<div class="fld"><label for="af-scope">Scope of work</label><textarea id="af-scope" name="scope" required placeholder="What should be finished by the end of the day?"></textarea></div>' +
       '<div class="fld"><span class="lbl">Company tools to have on site <span class="hint">— checked out to this project</span></span><div class="checks" id="af-tools"></div></div>' +
       '<div class="fld"><label for="af-b">Bring <span class="hint">— separate with commas</span></label><input id="af-b" name="bring" placeholder="Thinset, spacers, drop cloths"></div>' +
@@ -598,7 +613,7 @@
       var p = IO.project(f.project.value);
       $('#af-site').innerHTML = ic('pin') + '<div><b>' + esc(p.address) + '</b><span class="muted">' + esc(p.access || 'No access notes yet.') + '</span></div>';
       var avail = db().tools.filter(function (t) { return t.status === 'shop' || t.project === p.id; });
-      $('#af-tools').innerHTML = avail.map(function (t) { return '<label><input type="checkbox" name="tool" value="' + t.id + '"' + (t.project === p.id ? ' checked' : '') + '> ' + esc(t.name) + ' <span class="muted small">' + esc(t.tag) + (t.project === p.id ? ' · already on site' : '') + '</span></label>'; }).join('') || '<span class="muted small">No tools in the shop right now.</span>';
+      $('#af-tools').innerHTML = avail.map(function (t) { return '<label><input type="checkbox" name="tool" value="' + t.id + '"' + (t.project === p.id ? ' checked' : '') + '><span><span class="chk-name">' + esc(t.name) + '</span><span class="chk-sub">' + esc(t.tag) + (t.project === p.id ? ' · already on this site' : ' · in the shop') + '</span></span></label>'; }).join('') || '<span class="muted small">No tools in the shop right now.</span>';
       prev();
     }
     function draft() {
@@ -686,6 +701,7 @@
     var sel = r.id ? IO.project(r.id) : null;
     var wide = window.matchMedia('(min-width:901px)').matches;
     if (!sel && wide && convs.length) sel = convs[0].p;
+    view.classList.toggle('has-thread', !!r.id);
     view.innerHTML = '<div class="page-head"><div><h1>Messages</h1><p>One thread per project. Clients write from their project page; replies show up there instantly.</p></div></div>' +
       '<div class="inbox' + (r.id ? ' has-sel' : '') + '"><section class="card inbox-list" aria-label="Conversations">' + convs.map(function (x) {
         var cl = IO.client(x.p.client), u = unread(x.p);
@@ -715,7 +731,7 @@
         return '<section class="card site-card"><div class="card-h"><div><h2><a href="#project/' + p.id + '/tools" style="color:inherit;text-decoration:none">' + esc(p.title) + '</a></h2><div class="muted small">' + esc(p.address) + ' · ' + ts.length + ' tool' + (ts.length > 1 ? 's' : '') + '</div></div><button class="btn btn-line btn-sm more" type="button" data-act="return-all" data-p="' + p.id + '">Return all to shop</button></div><div class="card-b flush-sm">' + toolTable(ts, true) + '</div></section>';
       }).join('');
     } else {
-      view.innerHTML = head + '<div class="filters">' + [['all', 'All'], ['shop', 'In shop'], ['site', 'On site'], ['overdue', 'Overdue'], ['repair', 'Repair'], ['missing', 'Missing']].map(function (c) { return '<button class="chip" type="button" data-ts="' + c[0] + '" aria-pressed="' + (state.tstatus === c[0]) + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+      view.innerHTML = head + '<div class="filters scroll">' + [['all', 'All'], ['shop', 'In shop'], ['site', 'On site'], ['overdue', 'Overdue'], ['repair', 'Repair'], ['missing', 'Missing']].map(function (c) { return '<button class="chip" type="button" data-ts="' + c[0] + '" aria-pressed="' + (state.tstatus === c[0]) + '">' + c[1] + '</button>'; }).join('') + '</div>' +
         '<section class="card flush-sm"><div class="card-b flush-sm">' + (list.length ? toolTable(list) : '<div class="empty"><b>No tools in this group</b></div>') + '</div></section>';
     }
     $$('[data-tv]').forEach(function (b) { b.addEventListener('click', function () { state.tview = b.dataset.tv; render(); }); });
@@ -728,7 +744,7 @@
     var pid = projectId || projs[0].id;
     var p0 = IO.project(pid);
     UI.modal('<h2 id="modal-title">Check out ' + (toolId ? esc(IO.tool(toolId).name) : 'a tool') + '</h2><p class="sub">The tool shows on the job site’s inventory until it’s returned.</p><form id="co-form">' +
-      (toolId ? '' : '<div class="fld"><span class="lbl">Tools in the shop</span><div class="checks">' + (shopTools.length ? shopTools.map(function (t) { return '<label><input type="checkbox" name="tool" value="' + t.id + '"> ' + esc(t.name) + ' <span class="muted small">' + esc(t.tag) + '</span></label>'; }).join('') : '<span class="muted small">Everything is checked out.</span>') + '</div></div>') +
+      (toolId ? '' : '<div class="fld"><span class="lbl">Tools in the shop</span><div class="checks">' + (shopTools.length ? shopTools.map(function (t) { return '<label><input type="checkbox" name="tool" value="' + t.id + '"><span><span class="chk-name">' + esc(t.name) + '</span><span class="chk-sub">' + esc(t.tag) + ' · ' + esc(t.cat) + '</span></span></label>'; }).join('') : '<span class="muted small">Everything is checked out.</span>') + '</div></div>') +
       '<div class="fld"><label for="co-p">Job site</label><select id="co-p" name="project">' + projs.map(function (p) { return '<option value="' + p.id + '"' + (p.id === pid ? ' selected' : '') + '>' + esc(p.title) + ' — ' + esc(p.city) + '</option>'; }).join('') + '</select></div>' +
       '<div class="f2"><div class="fld"><label for="co-h">Who has it</label><select id="co-h" name="holder">' + peopleOptions(p0.crew[0] || 'u-jordan', p0) + '</select></div><div class="fld"><label for="co-d">Due back</label><input id="co-d" name="due" type="date" value="' + IO.day(3) + '" required></div></div>' +
       '<div class="modal-foot"><button class="btn btn-line" type="button" data-close>Cancel</button><button class="btn btn-primary" type="submit">Check out</button></div></form>');
@@ -764,15 +780,15 @@
     var today = IO.day(0);
     view.innerHTML = '<div class="page-head"><div><h1>Contractors</h1><p>The subcontractors you hire, their jobs with you' + (isAdmin() ? ', and how they performed.' : '.') + '</p></div><div class="actions"><button class="btn btn-primary" type="button" data-act="add-crew">' + ic('plus') + 'Add contractor</button></div></div>' +
       (isAdmin() ? '<p style="display:flex;gap:8px;align-items:center;margin:-6px 0 14px"><span class="admin-only">' + ic('lock') + 'Admin only</span><span class="muted small">Ratings and private notes are hidden from project managers and never shown to contractors.</span></p>' : '<div class="lock-note" style="margin-bottom:14px">' + ic('lock') + '<div><b style="color:var(--ink)">Ratings are visible to admins only.</b><br>You can see contact details and job history. Ask Tre if you need a recommendation.</div></div>') +
-      '<section class="card flush-sm"><div class="card-b flush-sm"><table class="tbl"><thead><tr><th>Contractor</th><th>Phone</th><th>Jobs done</th><th>Next job</th>' + (isAdmin() ? '<th>Rating</th><th>Would rehire</th>' : '') + '</tr></thead><tbody>' +
+      '<section class="card flush-sm"><div class="card-b flush-sm"><table class="tbl cmp"><thead><tr><th>Contractor</th><th>Phone</th><th>Jobs done</th><th>Next job</th>' + (isAdmin() ? '<th>Rating</th><th>Would rehire</th>' : '') + '</tr></thead><tbody>' +
       ids.map(function (id) {
         var c = IO.contractor(id), rs = IO.ratingSummary(id);
         var done = db().assignments.filter(function (a) { return a.who === id && a.status === 'done'; }).length + (rs ? rs.n : 0);
         var nxt = db().assignments.filter(function (a) { return a.who === id && a.date >= today && a.status !== 'done' && a.status !== 'declined'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; })[0];
         return '<tr><td class="first"><a class="who" href="#crew/' + id + '">' + UI.avatar(id, 38) + '<div><b>' + esc(c.name) + '</b><span>' + esc(c.trade) + '</span></div></a></td>' +
-          '<td data-l="Phone" class="nowrap"><a href="tel:' + c.phone.replace(/\D/g, '') + '" style="color:var(--blue-ink);font-weight:600">' + esc(c.phone) + '</a></td>' +
+          '<td data-l="Phone" class="nowrap span2"><a href="tel:' + c.phone.replace(/\D/g, '') + '" style="color:var(--blue-ink);font-weight:600">' + esc(c.phone) + '</a></td>' +
           '<td data-l="Jobs done">' + done + '</td><td data-l="Next job">' + (nxt ? UI.date(nxt.date) : '<span class="muted">—</span>') + '</td>' +
-          (isAdmin() ? '<td data-l="Rating" class="nowrap">' + (rs ? UI.stars(rs.overall) + ' <b style="margin-left:4px">' + rs.overall.toFixed(1) + '</b>' : '<span class="muted">Not rated</span>') + '</td><td data-l="Would rehire">' + (rs ? '<span class="badge ' + (rs.rehire >= 80 ? 'b-ok' : (rs.rehire >= 50 ? 'b-warn' : 'b-bad')) + '">' + rs.rehire + '%</span>' : '—') + '</td>' : '') + '</tr>';
+          (isAdmin() ? '<td data-l="Rating" class="nowrap span2">' + (rs ? UI.stars(rs.overall) + ' <b style="margin-left:4px">' + rs.overall.toFixed(1) + '</b>' : '<span class="muted">Not rated</span>') + '</td><td data-l="Would rehire">' + (rs ? '<span class="badge ' + (rs.rehire >= 80 ? 'b-ok' : (rs.rehire >= 50 ? 'b-warn' : 'b-bad')) + '">' + rs.rehire + '%</span>' : '—') + '</td>' : '') + '</tr>';
       }).join('') + '</tbody></table></div></section>';
   }
 
@@ -859,7 +875,7 @@
           '<input class="nm" type="text" aria-label="Stage ' + (i + 1) + ' name" value="' + esc(s.name) + '" data-k="name">' +
           '<input type="date" aria-label="Stage ' + (i + 1) + ' start" value="' + s.start + '" data-k="start"><input type="date" aria-label="Stage ' + (i + 1) + ' end" value="' + s.end + '" data-k="end">' +
           '<span class="ctl"><button class="icon-btn" type="button" data-mv="-1" aria-label="Move up"' + (i === 0 ? ' disabled' : '') + '>' + ic('up') + '</button><button class="icon-btn" type="button" data-mv="1" aria-label="Move down"' + (i === rows.length - 1 ? ' disabled' : '') + '>' + ic('down') + '</button><button class="icon-btn" type="button" data-del aria-label="Remove stage">' + ic('trash') + '</button></span>' +
-          '<input class="note" type="text" aria-label="Stage ' + (i + 1) + ' note for the client" placeholder="Note for the client (optional)" value="' + esc(s.note) + '" data-k="note">' +
+          '<input class="note" type="text" aria-label="Stage ' + (i + 1) + ' note for the client" placeholder="Note for the client (optional)" value="' + esc(s.note) + '" data-k="note"' + (s.note ? '' : ' hidden') + '>' + (s.note ? '' : '<button class="tl-note-add note" type="button" data-note-add>' + ic('plus') + ' Add a note for the client</button>') +
           '<span class="flags"><label><input type="checkbox" data-k="done"' + (s.done ? ' checked' : '') + '> Done</label><label><input type="checkbox" data-k="client"' + (s.client ? ' checked' : '') + '> Show to client</label></span></div>';
       }).join('') || '<div class="empty"><b>No stages</b>Add one or start from a template.</div>';
     }
@@ -985,6 +1001,8 @@
     if ((t = e.target.closest('[data-rate]')) && isAdmin()) { e.preventDefault(); var rk = t.dataset.rate.split(':'); location.hash = '#crew/' + rk[0]; setTimeout(function () { rateForm(rk[0], rk[1]); }, 60); return; }
     if ((t = e.target.closest('[data-asg]'))) { e.preventDefault(); asgDetail(t.dataset.asg); return; }
     if ((t = e.target.closest('[data-hq]'))) { state.hq = t.dataset.hq; return; }
+    if ((t = e.target.closest('[data-attn-more]'))) { state.attnAll = !state.attnAll; render(); return; }
+    if ((t = e.target.closest('[data-note-add]'))) { var ni = t.parentElement.querySelector('.note'); ni.hidden = false; t.remove(); ni.focus(); return; }
     if ((t = e.target.closest('[data-quick]'))) { var ta = t.closest('form').querySelector('textarea'); ta.value = t.dataset.quick; ta.focus(); return; }
     if ((t = e.target.closest('[data-ph-vis]'))) {
       var k1 = t.dataset.phVis.split(':'), p1 = IO.project(k1[0]), ph1 = p1.photos.find(function (x) { return x.id === k1[1]; });
