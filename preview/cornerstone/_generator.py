@@ -624,8 +624,7 @@ about = hero(
         <p class="cap__d">I-CAR Platinum Pro-Level 3 with more than 150 I-CAR courses completed. Farmers
         University Gold Star Certification, including a perfect score in Advanced School.</p></div>
       <div class="cap"><div class="cap__n">/ 02</div><h3 class="cap__t">Licensing</h3>
-        <p class="cap__d">Licensed in Alabama, Mississippi, Florida and Georgia, with reciprocal
-        licensing across approximately 25 additional states.</p></div>
+        <p class="cap__d">Licensed in Alabama, Mississippi, Florida, and Georgia.</p></div>
       <div class="cap"><div class="cap__n">/ 03</div><h3 class="cap__t">Arbitration &amp; Training</h3>
         <p class="cap__d">Arbitrator for Arbitration Forums. Developed claims training curriculum and
         mentored auto physical damage adjusters.</p></div>
@@ -640,8 +639,6 @@ about = hero(
         <p class="eyebrow">Central Florida</p>
         <h2 class="h-lg">Alex Franklin.</h2>
         <p class="lede">Central Florida Manager</p>
-        <p style="font-family:'Archivo',sans-serif;font-weight:700;font-size:15px">
-          <a href="tel:+18139563709" style="text-decoration:none;color:var(--red)">813-956-3709</a></p>
       </div>
       <div class="rv" data-rv-delay="80">
         <p>Alex brings more than 23 years of claims handling experience and has worked as an independent
@@ -838,8 +835,6 @@ contact = hero(
             <dt>Email</dt><dd><a href="mailto:{EMAIL}" style="color:var(--red);font-weight:600;text-decoration:none">{EMAIL}</a></dd>
             <dt>Location</dt><dd>Prattville, Alabama</dd>
             <dt>Service Area</dt><dd>Alabama &middot; Florida &middot; Georgia &middot; Mississippi &middot; Tennessee</dd>
-            <dt>Central Florida</dt><dd>Alex Franklin &mdash;
-              <a href="tel:+18139563709" style="color:var(--red);font-weight:600;text-decoration:none">813-956-3709</a></dd>
           </dl>
         </div>
         <div class="caps" style="margin-top:30px">
