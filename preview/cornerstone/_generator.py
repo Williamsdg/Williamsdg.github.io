@@ -12,6 +12,7 @@ IMG = {
   "fleetlot": u("1492168732976-2676c584c675", 1200),      # aerial trailer yard
   "cat":      u("1621922688758-359fc864071e", 1200),      # CAT dozer
   "clay":     "assets/photos/clay.jpg",                   # REAL: Clay, supplied 2026-10-20
+  "alex":     "assets/photos/alex.jpg",                   # REAL: Alex, supplied 2026-10-22
   "engine":   u("1625047509248-ec889cbff17f", 1200),      # mechanic inspecting engine
   "lift":     u("1727893304219-063d142ce6f3", 1200),      # car on a shop lift
   "shop":     u("1727893119356-1702fe921cf9", 1200),      # bright body shop
@@ -642,6 +643,8 @@ about = hero(
         <p class="eyebrow">Central Florida</p>
         <h2 class="h-lg">Alex Franklin.</h2>
         <p class="lede">Associate Consultant</p>
+        <img class="portrait" src="assets/photos/alex.jpg" width="566" height="792"
+             alt="Alex Franklin, Associate Consultant at Cornerstone Claims Adjusters" loading="lazy" />
       </div>
       <div class="rv" data-rv-delay="80">
         <p>Alex brings more than 23 years of claims handling experience and has worked as an independent
