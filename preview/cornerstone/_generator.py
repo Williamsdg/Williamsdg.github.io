@@ -8,12 +8,13 @@ def u(p, w=1400, q=72): return U % (p, w, q)
 
 IMG = {
   "hero":     "assets/fleet-hero.jpg",                    # their own fleet photo
-  "damage":   u("1597328290883-50c5787b7c7e", 1200),      # crushed hood detail
+  "damage":   "assets/photos/cornerstone-5044.jpg",       # REAL: Clay at a stripped front end
   "fleetlot": u("1492168732976-2676c584c675", 1200),      # aerial trailer yard
   "cat":      u("1621922688758-359fc864071e", 1200),      # CAT dozer
-  "engine":   u("1625047509248-ec889cbff17f", 1200),      # mechanic inspecting engine
-  "lift":     u("1727893304219-063d142ce6f3", 1200),      # car on a shop lift
-  "shop":     u("1727893119356-1702fe921cf9", 1200),      # bright body shop
+  "clay":     "assets/photos/clay.jpg",                   # REAL: Clay, supplied 2026-10-20
+  "engine":   "assets/photos/cornerstone-5045.jpg",       # REAL: Clay at an exposed front end
+  "lift":     "assets/photos/cornerstone-5048.jpg",       # REAL: Clay in the shop, unit on a lift
+  "shop":     "assets/photos/cornerstone-5047.jpg",       # REAL: Clay in the paint-mixing room
   "semi":     u("1592805144716-feeccccef5ac", 1800, 70),  # tractor unit, dusk
   "quarry":   u("1523848309072-c199db53f137", 1800),      # machines at excavation
   "collision":u("1556086744-7502d61b1af5",    1800),      # collision scene
@@ -68,7 +69,7 @@ def head(title, desc):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/cornerstone.css" />
+<link rel="stylesheet" href="assets/cornerstone.css?v=20261021" />
 </head>
 <body>
 '''
@@ -191,17 +192,17 @@ def serve_band():
 
 SERVICES6 = [
  ("Vehicle Appraisals", "Auto, light truck, motorcycle, RV and specialty vehicle damage assessment.",
-  "appraisal-services.html#vehicle", IMG["damage"], "Close detail of collision damage to a vehicle front end"),
+  "appraisal-services.html#vehicle", IMG["damage"], "Clay Grigsby appraising a damaged vehicle front end"),
  ("Commercial &amp; Fleet", "Commercial trucks, trailers, fleet vehicles and business-owned equipment.",
   "fleet-commercial.html", IMG["dumptruck"], "A commercial dump truck on a work site"),
  ("Heavy Equipment", "Construction, agricultural and specialized equipment damage appraisal.",
   "appraisal-services.html#heavy", IMG["rock"], "An excavator working a rocky site"),
  ("Mechanical &amp; Fuel Claims", "Mechanical causation, accident-related failures and fuel-contamination investigations.",
-  "appraisal-services.html#mechanical", IMG["engine"], "Technician inspecting a vehicle engine bay"),
+  "appraisal-services.html#mechanical", IMG["engine"], "Clay Grigsby inspecting an exposed front end and radiator support"),
  ("Estimate &amp; Repair Review", "Estimate audits, supplements, post-repair inspections and repair-quality evaluations.",
-  "claims-consulting.html#review", IMG["lift"], "A vehicle raised on a workshop lift"),
+  "claims-consulting.html#review", IMG["lift"], "Clay Grigsby inspecting a unit raised in a repair shop"),
  ("Dispute &amp; Claims Consulting", "Independent analysis when repair facilities, owners, insurers or other parties disagree.",
-  "claims-consulting.html", IMG["shop"], "A bright automotive repair workshop"),
+  "claims-consulting.html", IMG["shop"], "Clay Grigsby reviewing a repair in the paint-mixing room"),
 ]
 
 def svc_cards():
@@ -550,7 +551,7 @@ service_page(
   "When an Estimate<br>Isn&rsquo;t Enough.",
   "Independent analysis for the files that do not resolve on their own &mdash; disputed repairs, "
   "questionable damage, competing estimates and losses with real exposure attached.",
-  IMG["damage"], "Close detail of collision damage to a vehicle front end",
+  IMG["damage"], "Clay Grigsby appraising a damaged vehicle front end",
   "The shop says one thing.<br>The owner says another.",
   "Cornerstone is frequently brought in after the disagreement has already started. The work is to "
   "establish what the evidence actually supports, document it properly, and put it in a form that holds "
@@ -605,6 +606,8 @@ about = hero(
         <p class="eyebrow">Founder</p>
         <h2 class="h-lg">Clay Grigsby.</h2>
         <p class="lede">Owner &middot; Alabama and Florida Panhandle Manager</p>
+        <img class="portrait" src="assets/photos/clay.jpg" width="558" height="798"
+             alt="Clay Grigsby, founder of Cornerstone Claims Adjusters" loading="lazy" />
       </div>
       <div class="rv" data-rv-delay="80">
         <p>Clay founded Cornerstone Claims Adjusters in the autumn of 2021, bringing more than 25 years
@@ -652,6 +655,29 @@ about = hero(
           <li>Smith System Instructor</li><li>NATMI Accident Investigation</li>
         </ul>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect paper2" id="onthejob">
+  <div class="wrap">
+    {shead("On the job", "Cornerstone at work.",
+      '<p class="lede">Real assignments, photographed on site. Vehicle identifiers and third-party '
+      'markings have been obscured.</p>')}
+    <div class="shots rv">
+      <figure class="shot"><img src="assets/photos/cornerstone-5038.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5044.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5048.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5033.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5045.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5047.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5036.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5039.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5049.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5034.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5046.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5037.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
+      <figure class="shot"><img src="assets/photos/cornerstone-5035.jpg" alt="Clay Grigsby working a Cornerstone assignment" loading="lazy" width="1800" height="1350" /></figure>
     </div>
   </div>
 </section>
