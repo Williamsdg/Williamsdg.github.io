@@ -14,8 +14,8 @@
  *   • the admin runs in preview mode, saving only to the current browser
  */
 window.SC_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: '',
+  SUPABASE_URL: 'https://mqiahgfmvkslqtdfwzkq.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaWFoZ2ZtdmtzbHF0ZGZ3emtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5NDA3MzUsImV4cCI6MjEwODUxNjczNX0.PZ3mNJsRTIHfV4VLM-MoljzMl19C7Yi02kEaYVLCgSM',
 
   /* Stripe Payment Link for the $250 consultation deposit.
    * Create it in Stripe (Payment links -> new link, $250, one-off) and paste the
