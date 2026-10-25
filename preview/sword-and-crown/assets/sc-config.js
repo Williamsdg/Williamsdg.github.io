@@ -23,6 +23,14 @@ window.SC_CONFIG = {
    * payment link will be emailed - it never implies a card was charged. */
   DEPOSIT_PAYMENT_URL: '',
 
+  // Vagaro booking widgets. Paste each embed snippet Vagaro generates (the
+  // whole thing, <script> tag included) as a string. Empty = the page keeps
+  // its call-or-text fallback. Keys match data-vagaro="…" on the pages.
+  VAGARO_EMBEDS: {
+    spa: '',        // head-spa.html — Constantina's books
+    consult: ''     // nano-brows.html — Natalie's consultation calendar
+  },
+
   /* Shopify — the system of record for inventory.
    * SHOPIFY_DOMAIN is the store's own address, e.g. your-store.myshopify.com
    * (find it in the Shopify admin URL, not her custom domain).
@@ -38,5 +46,5 @@ window.SC_CONFIG = {
    * NEVER put the Admin API token here. That one can read orders and customers. */
   SHOPIFY_DOMAIN: 'sword-and-crown-salon-and-studio.myshopify.com',
   SHOPIFY_STOREFRONT_TOKEN: '',
-  SHOPIFY_API_VERSION: '2025-01'
+  SHOPIFY_API_VERSION: '2026-07'
 };

@@ -46,6 +46,17 @@
     return '<div class="empty"><h3>Nothing here yet</h3><p>' + esc(what) + '</p></div>';
   }
 
+  /* An empty collection and a collection that failed to load are different
+     things, and "Nothing here yet" is a confident lie about the second. A dead
+     feed looked exactly like an intentional coming-soon message, which is how
+     this kind of fault survives for days without anybody noticing. */
+  function failState() {
+    return '<div class="empty"><h3>We can’t load the collection</h3>' +
+      '<p>This is our end, not yours — the pieces are still here. ' +
+      'Please call us on <a href="tel:+12052596911">(205) 259-6911</a> ' +
+      'and we’ll talk you through what’s in.</p></div>';
+  }
+
   /* ── the fit scale she asked for ───────────────────────────────── */
   function fitScale(idx) {
     if (idx == null) return '';
@@ -141,9 +152,30 @@
       if (bar) bar.innerHTML = '';
       return;
     }
-    S.products(opts.query, 60).then(function (rows) {
-      if (!rows || !rows.length) { grid.innerHTML = emptyState(opts.emptyText); return; }
-      all = rows; buildFilters(); render();
+    S.products(opts.query).then(function (rows) {
+      if (rows === null) { grid.innerHTML = failState(); return; }   // the call failed
+      if (rows.length) { all = rows; buildFilters(); render(); return; }
+
+      /* Shopify's search matched nothing — which is NOT the same as an empty
+         store. If her products are typed "Wig" where this query asks for
+         "Wigs", every piece is there and the page still says "Nothing here
+         yet". That exact mismatch is what emptied a collection on another
+         Shopify build, so check for near matches before believing it. */
+      if (!opts.match) { grid.innerHTML = emptyState(opts.emptyText); return; }
+      S.products(null).then(function (every) {
+        if (every === null) { grid.innerHTML = failState(); return; }
+        var near = every.filter(function (p) {
+          var hay = ((p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase();
+          return opts.match.some(function (w) { return hay.indexOf(w) > -1; });
+        });
+        if (!near.length) { grid.innerHTML = emptyState(opts.emptyText); return; }
+        if (window.console) {
+          console.warn('[sc-shop] "' + opts.query + '" matched nothing, but ' +
+            near.length + ' product(s) match on type/tags. Check the ' +
+            'product_type spelling in Shopify.');
+        }
+        all = near; buildFilters(); render();
+      });
     });
   }
 
@@ -174,8 +206,9 @@
       grid.innerHTML = emptyState('The boutique opens as soon as the first pieces are listed.');
       render(); return;
     }
-    S.products(null, 60).then(function (rows) {
-      all = rows || []; render();
+    S.products(null).then(function (rows) {
+      if (rows === null) { grid.innerHTML = failState(); return; }
+      all = rows; render();
     });
   }
 
@@ -204,6 +237,10 @@
     if (!S.live) { notFound('The shop isn’t connected yet.'); return; }
 
     S.product(handle).then(function (p) {
+      if (p === false) {
+        notFound('We can’t load this piece right now — call us on (205) 259-6911.');
+        return;
+      }
       if (!p) { notFound('We couldn’t find that piece.'); return; }
       document.title = p.title + ' — Sword & Crown Salon and Studio';
       if (title) title.textContent = p.title;
@@ -237,8 +274,9 @@
                 : '') +
               '<a class="btn ghost" href="consultation.html">Book a consultation</a>' +
             '</div>' +
-            '<p class="hint" style="margin-top:18px">Not sure if it’s right for you? ' +
-            'A consultation includes a fitting and a face-framing cut for the wig you choose.</p>' +
+            '<p class="hint" style="margin-top:18px"><b>Every wig purchase includes a complimentary ' +
+            'Fringe Benefits service and The Shape-Up Cut</b> — bangs or face-framing detail, and a ' +
+            'maintenance trim, done for you at the salon.</p>' +
           '</div>' +
         '</div>';
     });
@@ -253,6 +291,7 @@
     collection({
       gridId: 'wigGrid', barId: 'wigFilters', countId: 'wigCount',
       query: 'product_type:Wigs OR product_type:Toppers OR tag:wig',
+      match: ['wig', 'topper'],
       emptyText: 'The collection goes live as the first wigs are washed, set and photographed.'
     });
     boutique();

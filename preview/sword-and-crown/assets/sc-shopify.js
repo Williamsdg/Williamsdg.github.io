@@ -18,7 +18,10 @@ window.SCShop = (function () {
   var CFG = window.SC_CONFIG || {};
   var DOMAIN = CFG.SHOPIFY_DOMAIN || '';          // e.g. your-store.myshopify.com
   var TOKEN = CFG.SHOPIFY_STOREFRONT_TOKEN || '';
-  var VERSION = CFG.SHOPIFY_API_VERSION || '2025-01';
+  /* Shopify supports a stable version for ~12 months, then silently serves the
+     oldest supported one instead — so a stale pin drifts without erroring.
+     Keep this within a year of today. */
+  var VERSION = CFG.SHOPIFY_API_VERSION || '2026-07';
   var LIVE = !!(DOMAIN && TOKEN);
 
   function gql(query, variables) {
@@ -36,7 +39,19 @@ window.SCShop = (function () {
         return r.json();
       })
       .then(function (j) {
-        if (j.errors && j.errors.length) throw new Error(j.errors[0].message);
+        /* Shopify returns BOTH `data` and `errors` when a single field is
+           denied — `quantityAvailable` and `totalInventory` raise ACCESS_DENIED
+           unless the token carries `unauthenticated_read_product_inventory`.
+           Throwing here would blank the entire shop over one inaccessible
+           field, so keep whatever came back and only fail when there is
+           genuinely nothing to use. */
+        if (j.errors && j.errors.length) {
+          if (window.console) {
+            console.warn('[sc-shopify] partial response — ' +
+              j.errors.map(function (e) { return e.message; }).join(' | '));
+          }
+          if (!j.data) throw new Error(j.errors[0].message);
+        }
         return j.data;
       })
       .catch(function (e) {
@@ -108,30 +123,56 @@ window.SCShop = (function () {
     wigKeys: WIG_KEYS,
     clothingKeys: CLOTHING_KEYS,
 
-    /* `filter` is Shopify search syntax, e.g. "product_type:Wigs" */
+    /* `filter` is Shopify search syntax, e.g. "product_type:Wigs".
+     *
+     * Shopify returns at most 250 nodes per page. Elana expects 150–200
+     * products at launch and growing (2026-10-20), so a single page would
+     * quietly truncate the collection — and the filters are built from
+     * whatever we fetched, so she would be filtering only part of her own
+     * catalogue with nothing anywhere reporting it. Page until Shopify says
+     * there is no more.
+     */
     products: function (filter, limit) {
-      return gql(
-        'query($n:Int!,$q:String){products(first:$n,query:$q,sortKey:CREATED_AT,reverse:true)' +
-        '{nodes{' + PRODUCT_FIELDS + '}}}',
-        { n: limit || 48, q: filter || null }
-      ).then(function (d) {
-        if (!d || !d.products) return null;
-        return d.products.nodes.map(shape);
-      });
+      var want = limit || 300;
+      var out = [];
+      function page(after) {
+        return gql(
+          'query($n:Int!,$q:String,$after:String){products(first:$n,query:$q,after:$after,' +
+          'sortKey:CREATED_AT,reverse:true){pageInfo{hasNextPage endCursor}' +
+          'nodes{' + PRODUCT_FIELDS + '}}}',
+          { n: Math.min(want - out.length, 250), q: filter || null, after: after || null }
+        ).then(function (d) {
+          /* A first page that fails is a failure (null, so the caller shows the
+             can't-load state). A later page that fails keeps what we already
+             have rather than throwing the whole collection away. */
+          if (!d || !d.products) return out.length ? out : null;
+          out = out.concat(d.products.nodes.map(shape));
+          var pi = d.products.pageInfo;
+          if (pi && pi.hasNextPage && out.length < want) return page(pi.endCursor);
+          return out;
+        });
+      }
+      return page(null);
     },
 
+    /* Resolves to the product, `null` when the handle genuinely isn't in the
+       catalogue, or `false` when the request itself failed — the caller must
+       not tell a visitor a piece doesn't exist because our shop is down. */
     product: function (handle) {
       return gql(
         'query($h:String!){product(handle:$h){' + PRODUCT_FIELDS + '}}',
         { h: handle }
-      ).then(function (d) { return d && d.product ? shape(d.product) : null; });
+      ).then(function (d) {
+        if (d === null) return false;
+        return d.product ? shape(d.product) : null;
+      });
     },
 
     collection: function (handle, limit) {
       return gql(
         'query($h:String!,$n:Int!){collection(handle:$h){title products(first:$n)' +
         '{nodes{' + PRODUCT_FIELDS + '}}}}',
-        { h: handle, n: limit || 48 }
+        { h: handle, n: limit || 250 }
       ).then(function (d) {
         if (!d || !d.collection) return null;
         return { title: d.collection.title, products: d.collection.products.nodes.map(shape) };
