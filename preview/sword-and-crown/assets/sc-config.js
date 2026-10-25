@@ -28,7 +28,8 @@ window.SC_CONFIG = {
   // its call-or-text fallback. Keys match data-vagaro="…" on the pages.
   VAGARO_EMBEDS: {
     spa: '',        // head-spa.html — Constantina's books
-    consult: ''     // nano-brows.html — Natalie's consultation calendar
+    consult: '',    // nano-brows.html — Natalie's consultation calendar
+    wig: ''         // consultation.html — Elana's 90-minute wig consultations
   },
 
   /* Shopify — the system of record for inventory.
