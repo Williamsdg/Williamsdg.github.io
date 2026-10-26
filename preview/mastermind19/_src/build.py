@@ -113,7 +113,7 @@ HOME = f'''
 </section>
 
 <section class="manifesto ivory"><div class="wrap">
- <figure><img src="img/course.webp" srcset="img/course-m.webp 900w, img/course.webp 1200w" sizes="(max-width:900px) 92vw, 40vw" alt="A golf hole at sunrise, bunkers guarding the green beside the water" loading="lazy" width="1200" height="800"></figure>
+ <figure class="framed"><img src="img/course.webp" srcset="img/course-m.webp 900w, img/course.webp 1200w" sizes="(max-width:900px) 92vw, 40vw" alt="A golf hole at sunrise, bunkers guarding the green beside the water" loading="lazy" width="1200" height="800"></figure>
  <div>
   <p class="kicker">Where Business &amp; Birdies Collide</p>
   <p class="pull">Let’s be real, you’re not joining just to swing a club. You’re here to <strong>grow your net worth</strong>, build deep connections, and unlock business breakthroughs with people who play the same game you do in business and on the course.</p>
@@ -138,7 +138,10 @@ HOME = f'''
  {SCORECARD}
 </div></section>
 
-<section class="band"><img src="img/members.webp" srcset="img/members-m.webp 900w, img/members.webp 1600w" sizes="100vw" alt="Five members on a tee box with the mountains behind" loading="lazy" width="1600" height="1121"><div class="wrap"><blockquote>We’re building a network of high-performing business owners who just happen to close deals over birdies and bourbon.<cite>Where Business &amp; Birdies Collide</cite></blockquote></div></section>
+<section class="photo dark2"><div class="wrap">
+ <figure class="framed"><img src="img/members-duo.webp" srcset="img/members-duo-m.webp 800w, img/members-duo.webp 1110w" sizes="(max-width:900px) 92vw, 46vw" alt="Five members on a tee box with the mountains behind" loading="lazy" width="1110" height="778"></figure>
+ <blockquote>We’re building a network of high-performing business owners who just happen to close deals over birdies and bourbon.<cite>Where Business &amp; Birdies Collide</cite></blockquote>
+</div></section>
 
 <section class="founder dark"><div class="wrap">
  <div><p class="kicker">Our Founder</p><p class="name">Ryan Pineda<small>Founder of Mastermind19, Las Vegas, NV</small></p></div>
@@ -176,8 +179,8 @@ MEMBERSHIP = f'''
  <div class="long-spreads">
   <article><div data-hole="1"></div><div><h3>M19 Online Community</h3><p>Connect with other members, access private clubs, &amp; monthly business trainings.</p></div><p class="aside">Monthly business trainings.</p></article>
   <article><div data-hole="2"></div><div><h3>Member-Only Tournaments</h3><p>Competitive &amp; casual formats to network &amp; claim bragging rights.</p></div><p class="aside">Competitive &amp; casual formats.</p></article>
-  <article><div data-hole="3"></div><div><h3>Bucket List Golf Trips</h3><p>Epic golf trips across the world with masterminds built in to grow your business.</p></div><figure><img src="img/course-m.webp" alt="A golf hole at sunrise beside the water" loading="lazy" width="900" height="600"></figure></article>
-  <article><div data-hole="4"></div><div><h3>Vegas Golf &amp; Mastermind Day</h3><p>Play a round and mastermind with our founder Ryan &amp; other M19 members in Las Vegas, NV.</p></div><figure><img src="img/members-m.webp" alt="Five members on a tee box with the mountains behind" loading="lazy" width="900" height="631"></figure></article>
+  <article><div data-hole="3"></div><div><h3>Bucket List Golf Trips</h3><p>Epic golf trips across the world with masterminds built in to grow your business.</p></div><figure class="framed"><img src="img/course-m.webp" alt="A golf hole at sunrise beside the water" loading="lazy" width="900" height="600"></figure></article>
+  <article><div data-hole="4"></div><div><h3>Vegas Golf &amp; Mastermind Day</h3><p>Play a round and mastermind with our founder Ryan &amp; other M19 members in Las Vegas, NV.</p></div><figure class="framed"><img src="img/members-duo-m.webp" alt="Five members on a tee box with the mountains behind" loading="lazy" width="800" height="561"></figure></article>
  </div>
 </div></section>
 
@@ -212,7 +215,7 @@ EXPERIENCES = f'''
  <div class="long-spreads" style="border-top:0">
   <article><div data-hole="3"></div><div><h3>Bucket List Golf Trips</h3><p>Epic golf trips across the world with masterminds built in to grow your business. We tee it up at bucket-list courses, then head into strategy sessions where real deals and breakthroughs happen.</p></div><p class="aside">Bucket list courses, elite networking, and real business breakthroughs wrapped in once-in-a-lifetime golf trips.</p></article>
   <article><div data-hole="2"></div><div><h3>Member-Only Tournaments</h3><p>Competitive &amp; casual formats to network &amp; claim bragging rights.</p></div><p class="aside">Do I have to be good at golf? No. Most of our members are solid players, but this group is about connection.</p></article>
-  <article><div data-hole="4"></div><div><h3>Vegas Golf &amp; Mastermind Day</h3><p>Play a round and mastermind with our founder Ryan &amp; other M19 members in Las Vegas, NV.</p></div><figure><img src="img/members-m.webp" alt="Five members on a tee box with the mountains behind" loading="lazy" width="900" height="631"></figure></article>
+  <article><div data-hole="4"></div><div><h3>Vegas Golf &amp; Mastermind Day</h3><p>Play a round and mastermind with our founder Ryan &amp; other M19 members in Las Vegas, NV.</p></div><figure class="framed"><img src="img/members-duo-m.webp" alt="Five members on a tee box with the mountains behind" loading="lazy" width="800" height="561"></figure></article>
   <article><div data-hole="1"></div><div><h3>M19 Online Community</h3><p>Connect with other members, access private clubs, &amp; monthly business trainings.</p></div><p class="aside">Monthly business trainings.</p></article>
  </div>
 </div></section>
