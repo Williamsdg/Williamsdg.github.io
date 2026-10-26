@@ -35,7 +35,7 @@ FOOTER = f'''</main>
 </div></footer>
 <div class="concept">Website concept by <a href="https://williamsdigital.io">Williams Digital</a>. Not affiliated with Mastermind19. Copy and photographs are from mastermind19.com. The form sends nothing. <a href="pitch.html">See the proposal</a></div>
 <div class="mcta"><a class="btn gold" href="apply.html">Apply for membership</a></div>
-<script src="site.js?v=2"></script>
+<script src="site.js?v=3"></script>
 </body>
 </html>
 '''
@@ -61,7 +61,7 @@ def page(file, title, desc, body, cls=''):
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Jost:wght@300..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site.css?v=2">
+<link rel="stylesheet" href="site.css?v=3">
 </head>
 <body class="has-mcta {cls}">
 ''' + header(cur) + body + FOOTER
