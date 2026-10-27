@@ -192,7 +192,7 @@ def serve_band():
             f'<ul class="serve__list">{lis}</ul></div></section>')
 
 SERVICES6 = [
- ("Vehicle Appraisals", "Auto, light truck, motorcycle, RV and specialty vehicle damage assessment.",
+ ("Vehicle Appraisals", "Auto, light truck, motorcycle, RV, boat and specialty vehicle damage assessment.",
   "appraisal-services.html#vehicle", IMG["damage"], "Close detail of collision damage to a vehicle front end"),
  ("Commercial &amp; Fleet", "Commercial trucks, trailers, fleet vehicles and business-owned equipment.",
   "fleet-commercial.html", IMG["dumptruck"], "A commercial dump truck on a work site"),
@@ -214,8 +214,8 @@ def svc_cards():
     return f'<div class="svc rv">{cs}</div>'
 
 TESTIMONIALS = [
- ("For over 20 years Clay has been challenging each and every time he has come to our shop. However, "
-  "he has always been fair and handled supplements and issues promptly.", "Scott H.", "Body Shop Owner"),
+ ("For over 20 years Clay has always been fair and handled supplements and issues promptly.",
+  "Scott H.", "Body Shop Owner"),
  ("Clay works with integrity. He is a very effective adjuster, meaning he gets the job done and "
   "motivates others to do the same.", "MC", "Claims Manager"),
  ("Clay is a valuable resource for industry knowledge. He was always willing to help someone with "
@@ -410,7 +410,7 @@ home = hero(
         <p class="eyebrow">Service Area</p>
         <h2 class="h-lg">Regional Expertise.<br>Responsive Service.</h2>
         <p class="lede">Licensed independent claims appraisal throughout Alabama, Florida, Georgia and
-        Mississippi, with service into Tennessee and specialized commercial and consulting assignments
+        Mississippi, as well as Tennessee, with specialized commercial and consulting assignments
         available based on the needs of the client.</p>
         <ul class="statelist">
           <li><span class="ab">AL</span> Alabama</li>
@@ -480,7 +480,7 @@ service_page(
   "and documentation that stands when someone disagrees with it.",
   IMG["quarry"], "Heavy machinery working an excavation site",
   "What is damaged, what caused it,<br>and what it takes to fix it.",
-  "Every appraisal answers the same four questions, whether the unit is a light truck or a tracked "
+  "Every appraisal answers the same three questions, whether the unit is a light truck or a tracked "
   "excavator. The difference is knowing what you are looking at &mdash; and being able to show your work.",
   [("vehicle","Auto &amp; Commercial Vehicle Appraisals",
     "Damage assessment and repair estimating on automobiles, light trucks, vans and commercial vehicles, "
@@ -650,11 +650,11 @@ about = hero(
         <p>Alex brings more than 23 years of claims handling experience and has worked as an independent
         adjuster since January 2022.</p>
         <p>He is a licensed claims adjuster in Florida, I-CAR Level 3 Platinum
-        certified, ASE Pro Level 3 and ASE B-6 certified, a Smith System defensive driving instructor, and
+        certified, ASE B-6 certified, a Smith System defensive driving instructor, and
         NATMI-trained in accident investigation.</p>
         <ul class="tags">
           <li>Licensed in Florida</li><li>I-CAR Level 3 Platinum</li>
-          <li>ASE Pro Level 3</li><li>ASE B-6</li>
+          <li>ASE B-6</li>
           <li>Smith System Instructor</li><li>NATMI Accident Investigation</li>
         </ul>
       </div>
@@ -750,6 +750,7 @@ assign_form = f'''{WIRING}
   {f_text("dol","Date of Loss", False, typ="date")}
   {f_text("unit","Vehicle / Equipment Details", True, full=True,
       ph="Year, make, model, VIN or serial number, mileage or hours")}
+  {f_text("vowner","Vehicle Owner", False, full=True, ph="Registered owner, if different from the contact above")}
   {f_text("location","Where Is the Unit?", True, full=True, ph="City, state and site, shop or facility name")}
   {f_text("owner","Contact for Access", False, full=True, ph="Who we should call to arrange the inspection")}
   {f_area("issue","Explain the Issue", True,
