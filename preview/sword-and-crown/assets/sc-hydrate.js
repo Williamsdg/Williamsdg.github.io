@@ -155,7 +155,7 @@
   }
 
   ready(function () {
-    hydrateShop();
+    // hydrateShop() retired 2026-10-27: the homepage row reads Shopify via sc-shop-ui.js home()
     hydrateList('.bible-grid', 'wig-bible', bibleCard, 6);
     hydrateList('.jr-grid', 'journal', journalCard, 12);
     hydratePolicies();

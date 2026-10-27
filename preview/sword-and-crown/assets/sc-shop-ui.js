@@ -35,11 +35,19 @@
     var price = p.available
       ? (p.price != null ? money(p.price) : 'price on request')
       : 'Sold out';
-    return '<a class="pcard rv" href="product.html?p=' + encodeURIComponent(p.handle) + '">' +
+    return '<a class="pcard rv" data-cat="' + catOf(p) + '" href="product.html?p=' + encodeURIComponent(p.handle) + '">' +
       '<div class="ph col' + (img ? ' has-img' : '') + '">' + img + '</div>' +
       '<b>' + esc(p.title) + '</b>' +
       '<small>' + esc(sub) + '</small>' +
       '<span class="price">' + esc(price) + '</span></a>';
+  }
+
+  /* wigs / toppers / other — the three tabs on the homepage row */
+  function catOf(p) {
+    var type = (p.type || '').toLowerCase().trim();
+    var tags = (p.tags || []).map(function (t) { return String(t).toLowerCase().trim(); });
+    var has = function (w) { return type === w || type === w + 's' || tags.indexOf(w) > -1 || tags.indexOf(w + 's') > -1; };
+    return has('topper') ? 'toppers' : has('wig') ? 'wigs' : 'other';
   }
 
   function emptyState(what) {
@@ -188,6 +196,24 @@
     });
   }
 
+  /* ── homepage "Meet your new crown" row ─────────────────────────
+     The four newest wigs/toppers from Shopify replace the four sample cards;
+     the editorial photo tile at the end stays. With nothing typed Wigs or
+     Toppers in Shopify yet, the samples stay exactly as shipped. */
+  function home() {
+    var row = document.getElementById('homeShop');
+    if (!row || !S.live) return;
+    function belongs(p) { return catOf(p) !== 'other'; }
+    S.products('product_type:Wigs OR product_type:Toppers OR tag:wig').then(function (rows) {
+      if (!rows) return;
+      rows = rows.filter(belongs);
+      if (!rows.length) return;
+      var keep = row.querySelector('.shop-edit');
+      row.innerHTML = rows.slice(0, 4).map(card).join('') + (keep ? keep.outerHTML : '');
+      row.setAttribute('data-sc-live', 'true');
+    });
+  }
+
   /* ── boutique: five category tiles, filtered in place ──────────── */
   function boutique() {
     var grid = document.getElementById('boutiqueGrid');
@@ -327,5 +353,6 @@
     });
     boutique();
     product();
+    home();
   });
 })();
