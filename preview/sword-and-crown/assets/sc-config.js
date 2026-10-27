@@ -44,8 +44,11 @@ window.SC_CONFIG = {
    *   unauthenticated_read_product_inventory
    * -> Install -> copy the Storefront API access token.
    *
-   * NEVER put the Admin API token here. That one can read orders and customers. */
-  SHOPIFY_DOMAIN: 'sword-and-crown-salon-and-studio.myshopify.com',
-  SHOPIFY_STOREFRONT_TOKEN: '',
+   * This one comes from the Headless sales channel (Headless -> storefront ->
+   * Storefront API -> Public access token). The "pretty" myshopify handle also
+   * answers, but hmhe4p-ns is the store's real one.
+   * NEVER put the Admin API token or the Headless PRIVATE token here. */
+  SHOPIFY_DOMAIN: 'hmhe4p-ns.myshopify.com',
+  SHOPIFY_STOREFRONT_TOKEN: '81671a15aca6ce673478955aed572422',
   SHOPIFY_API_VERSION: '2026-07'
 };

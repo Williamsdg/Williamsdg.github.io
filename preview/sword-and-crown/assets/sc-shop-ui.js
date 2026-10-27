@@ -165,8 +165,10 @@
       S.products(null).then(function (every) {
         if (every === null) { grid.innerHTML = failState(); return; }
         var near = every.filter(function (p) {
-          var hay = ((p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase();
-          return opts.match.some(function (w) { return hay.indexOf(w) > -1; });
+          /* whole words only: "Wig Storage Containers" (type "wig supplies")
+             is not a wig and must not become the whole collection */
+          var words = ((p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase().split(/[^a-z]+/);
+          return opts.match.some(function (w) { return words.indexOf(w) > -1 || words.indexOf(w + 's') > -1; });
         });
         if (!near.length) { grid.innerHTML = emptyState(opts.emptyText); return; }
         if (window.console) {
@@ -186,10 +188,22 @@
     var tabs = document.getElementById('boutiqueTabs');
     var all = [], cat = new URLSearchParams(location.search).get('c') || 'all';
 
+    /* Her Shopify types (2026-10-27): jewelry, accessories, hair accessories,
+       clothing, hair tools, clothing accessories, cosmetics, Hats, purse,
+       phone accessories, gifts, sticker, wig supplies, hair care. The tabs are
+       the page's words; this maps each to the words her store actually uses. */
+    var CATS = {
+      apparel: ['clothing', 'shirts', 'jacket', 'hats', 'trucker hat'],
+      jewelry: ['jewelry', 'earrings', 'necklace', 'bracelet', 'rings'],
+      accessories: ['accessories', 'purse', 'bags', 'sunglasses', 'scarf', 'keychain', 'sticker'],
+      gifts: ['gifts', 'gift'],
+      products: ['cosmetics', 'hair tools', 'hair care', 'wig supplies', 'makeup']
+    };
     function render() {
+      var words = CATS[cat] || [cat.toLowerCase()];
       var rows = cat === 'all' ? all : all.filter(function (p) {
         var hay = ((p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase();
-        return hay.indexOf(cat.toLowerCase()) > -1;
+        return words.some(function (w) { return hay.indexOf(w) > -1; });
       });
       grid.innerHTML = rows.length ? rows.map(card).join('')
         : emptyState('Nothing in this category yet.');
