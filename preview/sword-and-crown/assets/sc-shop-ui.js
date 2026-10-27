@@ -241,6 +241,14 @@
     care: 'Care'
   };
 
+  /* wig or topper by TYPE or an exact tag — the complimentary-cut line is a
+     wig promise and must not appear on a scarf */
+  function isWig(p) {
+    var type = (p.type || '').toLowerCase().trim();
+    var tags = (p.tags || []).map(function (t) { return String(t).toLowerCase().trim(); });
+    return ['wig', 'wigs', 'topper', 'toppers'].some(function (w) { return type === w || tags.indexOf(w) > -1; });
+  }
+
   function product() {
     var host = document.getElementById('productPage');
     if (!host) return;
@@ -295,9 +303,11 @@
                 : '') +
               '<a class="btn ghost" href="consultation.html">Book a consultation</a>' +
             '</div>' +
-            '<p class="hint" style="margin-top:18px"><b>Every wig purchase includes a complimentary ' +
-            'Fringe Benefits service and The Shape-Up Cut</b> — bangs or face-framing detail, and a ' +
-            'maintenance trim, done for you at the salon.</p>' +
+            (isWig(p)
+              ? '<p class="hint" style="margin-top:18px"><b>Every wig purchase includes a complimentary ' +
+                'Fringe Benefits service and The Shape-Up Cut</b> — bangs or face-framing detail, and a ' +
+                'maintenance trim, done for you at the salon.</p>'
+              : '') +
           '</div>' +
         '</div>';
     });

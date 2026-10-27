@@ -133,7 +133,7 @@ window.SCShop = (function () {
      * there is no more.
      */
     products: function (filter, limit) {
-      var want = limit || 300;
+      var want = limit || 1000;   // her store passed 250 on 2026-10-27; 4 pages max
       var out = [];
       function page(after) {
         return gql(
