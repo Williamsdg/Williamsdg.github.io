@@ -152,8 +152,20 @@
       if (bar) bar.innerHTML = '';
       return;
     }
+    /* A product belongs in this collection only if its TYPE is one of the match
+       words (singular or plural) or a tag is exactly one of them. "wig supplies"
+       (Wig Storage Containers) contains the word but is not a wig. */
+    function belongs(p) {
+      if (!opts.match) return true;
+      var type = (p.type || '').toLowerCase().trim();
+      var tags = (p.tags || []).map(function (t) { return String(t).toLowerCase().trim(); });
+      return opts.match.some(function (w) {
+        return type === w || type === w + 's' || tags.indexOf(w) > -1 || tags.indexOf(w + 's') > -1;
+      });
+    }
     S.products(opts.query).then(function (rows) {
       if (rows === null) { grid.innerHTML = failState(); return; }   // the call failed
+      rows = rows.filter(belongs);   // Shopify's search can over-match on partial words
       if (rows.length) { all = rows; buildFilters(); render(); return; }
 
       /* Shopify's search matched nothing — which is NOT the same as an empty
@@ -164,12 +176,7 @@
       if (!opts.match) { grid.innerHTML = emptyState(opts.emptyText); return; }
       S.products(null).then(function (every) {
         if (every === null) { grid.innerHTML = failState(); return; }
-        var near = every.filter(function (p) {
-          /* whole words only: "Wig Storage Containers" (type "wig supplies")
-             is not a wig and must not become the whole collection */
-          var words = ((p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase().split(/[^a-z]+/);
-          return opts.match.some(function (w) { return words.indexOf(w) > -1 || words.indexOf(w + 's') > -1; });
-        });
+        var near = every.filter(belongs);
         if (!near.length) { grid.innerHTML = emptyState(opts.emptyText); return; }
         if (window.console) {
           console.warn('[sc-shop] "' + opts.query + '" matched nothing, but ' +
