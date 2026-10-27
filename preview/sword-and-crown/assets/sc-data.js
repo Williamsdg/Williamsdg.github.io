@@ -99,7 +99,11 @@ window.SC = (function () {
     article: function (kind, slug) {
       return get('articles?select=*&published=eq.true&kind=eq.' +
         encodeURIComponent(kind) + '&slug=eq.' + encodeURIComponent(slug) + '&limit=1')
-        .then(function (rows) { return rows && rows[0] ? rows[0] : null; });
+        .then(function (rows) {
+          // null = the request failed, false = nothing published under that slug
+          if (!rows) return null;
+          return rows[0] || false;
+        });
     },
 
     setting: function (key) {
