@@ -26,10 +26,7 @@
 
   /* ── product card ──────────────────────────────────────────────── */
   function card(p) {
-    var img = p.image
-      ? '<img class="ph-img" src="' + esc(p.image.url) + '" alt="' +
-        esc(p.image.altText || p.title) + '" loading="lazy" decoding="async">'
-      : '';
+    var img = p.image ? pic(p.image, p.title, [400, 600, 900], '(max-width:700px) 50vw, (max-width:1100px) 33vw, 320px', true) : '';
     var sub = [p.specs.cap_construction, p.specs.length, p.specs.colour]
       .filter(Boolean).join(' · ') || p.specs.size_range || p.type || '';
     var price = p.available
@@ -40,6 +37,13 @@
       '<b>' + esc(p.title) + '</b>' +
       '<small>' + esc(sub) + '</small>' +
       '<span class="price">' + esc(price) + '</span></a>';
+  }
+
+  function pic(im, fallbackAlt, widths, sizes, lazy) {
+    var srcset = widths.map(function (w) { return esc(S.img(im.url, w)) + ' ' + w + 'w'; }).join(', ');
+    return '<img class="ph-img" src="' + esc(S.img(im.url, widths[1] || widths[0])) + '" srcset="' + srcset +
+      '" sizes="' + sizes + '" alt="' + esc(im.altText || fallbackAlt) + '"' +
+      (lazy ? ' loading="lazy"' : '') + ' decoding="async">';
   }
 
   /* wigs / toppers / other — the three tabs on the homepage row */
@@ -214,12 +218,15 @@
     });
   }
 
-  /* ── boutique: five category tiles, filtered in place ──────────── */
+  /* ── boutique: category tabs, search, sort, and a page at a time ──
+     294 pieces in one go was a 29,000px page. Forty-eight at a time, with a
+     Show more button, and the count always says how many are really there. */
   function boutique() {
     var grid = document.getElementById('boutiqueGrid');
     if (!grid) return;
     var tabs = document.getElementById('boutiqueTabs');
     var all = [], cat = new URLSearchParams(location.search).get('c') || 'all';
+    var q = '', sort = 'new', shown = 0, PAGE = 48;
 
     /* Her Shopify types (2026-10-27): jewelry, accessories, hair accessories,
        clothing, hair tools, clothing accessories, cosmetics, Hats, purse,
@@ -232,14 +239,46 @@
       gifts: ['gifts', 'gift'],
       products: ['cosmetics', 'hair tools', 'hair care', 'wig supplies', 'makeup']
     };
-    function render() {
+
+    var bar = document.createElement('div');
+    bar.className = 'shop-bar';
+    bar.innerHTML =
+      '<label class="fsel grow"><span>Search</span><input type="search" id="bq" placeholder="Search the boutique" autocomplete="off" aria-label="Search the boutique"></label>' +
+      '<label class="fsel"><span>Sort</span><select id="bsort">' +
+        SORTS.map(function (x) { return '<option value="' + x[0] + '">' + x[1] + '</option>'; }).join('') +
+      '</select></label>' +
+      '<p class="filter-count" id="bcount" aria-live="polite"></p>';
+    var more = document.createElement('div');
+    more.className = 'shop-more'; more.hidden = true;
+    more.innerHTML = '<button type="button" class="btn ghost">Show more</button>';
+
+    function rowsNow() {
       var words = CATS[cat] || [cat.toLowerCase()];
-      var rows = cat === 'all' ? all : all.filter(function (p) {
+      var rows = cat === 'all' ? all.slice() : all.filter(function (p) {
         var hay = ((p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase();
         return words.some(function (w) { return hay.indexOf(w) > -1; });
       });
-      grid.innerHTML = rows.length ? rows.map(card).join('')
-        : emptyState('Nothing in this category yet.');
+      if (q) rows = rows.filter(function (p) {
+        return ((p.title || '') + ' ' + (p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase().indexOf(q) > -1;
+      });
+      if (sort === 'asc') rows.sort(function (a, b) { return (a.price == null) - (b.price == null) || a.price - b.price; });
+      if (sort === 'desc') rows.sort(function (a, b) { return (a.price == null) - (b.price == null) || b.price - a.price; });
+      return rows;
+    }
+    function render(append) {
+      var rows = rowsNow();
+      if (!append) { shown = 0; grid.innerHTML = ''; }
+      if (!rows.length) {
+        grid.innerHTML = emptyState(q ? 'Nothing matches “' + q + '” here. Try another word or the All tab.' : 'Nothing in this category yet.');
+      } else {
+        var slice = rows.slice(shown, shown + PAGE);
+        grid.insertAdjacentHTML('beforeend', slice.map(card).join(''));
+        shown += slice.length;
+      }
+      more.hidden = shown >= rows.length;
+      var c = document.getElementById('bcount');
+      if (c) c.textContent = rows.length + (rows.length === 1 ? ' piece' : ' pieces') +
+        (shown < rows.length ? ' · showing ' + shown : '');
       if (tabs) Array.prototype.forEach.call(tabs.querySelectorAll('button'), function (b) {
         b.setAttribute('aria-pressed', String(b.dataset.c === cat));
       });
@@ -248,14 +287,26 @@
       var b = e.target.closest('button'); if (!b) return;
       cat = b.dataset.c; history.replaceState(null, '', '?c=' + encodeURIComponent(cat)); render();
     });
+    more.querySelector('button').addEventListener('click', function () { render(true); });
+    var t;
+    bar.addEventListener('input', function (e) {
+      if (e.target.id !== 'bq') return;
+      clearTimeout(t); t = setTimeout(function () { q = e.target.value.trim().toLowerCase(); render(); }, 160);
+    });
+    bar.addEventListener('change', function (e) {
+      if (e.target.id === 'bsort') { sort = e.target.value; render(); }
+    });
 
     if (!S.live) {
       grid.innerHTML = emptyState('The boutique opens as soon as the first pieces are listed.');
-      render(); return;
+      return;
     }
     S.products(null).then(function (rows) {
       if (rows === null) { grid.innerHTML = failState(); return; }
-      all = rows; render();
+      all = rows;
+      grid.parentNode.insertBefore(bar, grid);
+      grid.parentNode.insertBefore(more, grid.nextSibling);
+      render();
     });
   }
 
@@ -306,29 +357,44 @@
           return '<div><dt>' + SPEC_LABELS[k] + '</dt><dd>' + esc(p.specs[k]) + '</dd></div>';
         }).join('');
 
-      var gallery = (p.images.length ? p.images : (p.image ? [p.image] : []))
-        .map(function (im, i) {
-          return '<div class="ph col has-img' + (i ? '' : ' lead') + '">' +
-            '<img class="ph-img" src="' + esc(im.url) + '" alt="' +
-            esc(im.altText || p.title) + '" ' + (i ? 'loading="lazy"' : '') + '></div>';
-        }).join('') || '<div class="ph col"></div>';
+      /* Gallery: on a desktop the first photo leads and the rest sit two-up
+         beneath it; on a phone it is one swipeable row, so the price and the
+         button are one scroll away instead of five photos away. */
+      var imgs = p.images.length ? p.images : (p.image ? [p.image] : []);
+      var gallery = imgs.map(function (im, i) {
+        return '<div class="ph col has-img' + (i ? '' : ' lead') + '" data-src="' + esc(im.url) + '">' +
+          pic(im, p.title, [600, 1000, 1600], '(max-width:900px) 86vw, 640px', i > 0) + '</div>';
+      }).join('') || '<div class="ph col lead"></div>';
+
+      /* Options → a picker. A product with the single Shopify default option
+         ("Title: Default Title") has nothing to choose. */
+      var opts = p.options.filter(function (o) {
+        return !(o.values.length === 1 && o.values[0] === 'Default Title');
+      });
+      var picker = opts.length ? '<div class="prod-opts">' + opts.map(function (o) {
+        return '<div class="opt" data-opt="' + esc(o.name) + '"><span class="opt-l">' + esc(o.name) + ' <b></b></span><div class="opt-vals">' +
+          o.values.map(function (v) {
+            return '<button type="button" data-v="' + esc(v) + '" aria-pressed="false">' + esc(v) + '</button>';
+          }).join('') + '</div></div>';
+      }).join('') + '</div>' : '';
 
       host.innerHTML =
         '<div class="wrap prod">' +
-          '<div class="prod-media">' + gallery + '</div>' +
+          '<div class="prod-media-wrap"><div class="prod-media" id="pMedia">' + gallery + '</div>' +
+            (imgs.length > 1 ? '<p class="prod-count" id="pCount" aria-live="polite">1 / ' + imgs.length + '</p>' : '') +
+          '</div>' +
           '<div class="prod-info">' +
             '<h1 class="d2">' + esc(p.title) + '</h1>' +
-            '<p class="prod-price">' + (p.price != null ? money(p.price) : 'Price on request') + '</p>' +
-            (p.available ? '' : '<p class="pill out" style="display:inline-block">Sold out</p>') +
+            '<p class="prod-price" id="pPrice"></p>' +
+            '<p class="prod-sold" id="pSold" hidden>Sold out</p>' +
             (p.description ? '<div class="prod-desc">' + esc(p.description).replace(/\n/g, '<br>') + '</div>' : '') +
             fitScale(p.fitIndex) +
-            (specRows ? '<h2 class="d3" style="margin-top:28px">Specification</h2><dl class="cfacts">' + specRows + '</dl>' : '') +
+            picker +
             '<div class="prod-cta">' +
-              (p.available && p.variantId
-                ? '<button class="btn pink" type="button" data-add="' + esc(p.variantId) + '">Add to bag</button>'
-                : '') +
+              (p.variants.length ? '<button class="btn pink" type="button" data-add="">Add to bag</button>' : '') +
               '<a class="btn ghost" href="consultation.html">Book a consultation</a>' +
             '</div>' +
+            (specRows ? '<h2 class="d3" style="margin-top:28px">Specification</h2><dl class="cfacts">' + specRows + '</dl>' : '') +
             (isWig(p)
               ? '<p class="hint" style="margin-top:18px"><b>Every wig purchase includes a complimentary ' +
                 'Fringe Benefits service and The Shape-Up Cut</b> — bangs or face-framing detail, and a ' +
@@ -336,6 +402,67 @@
               : '') +
           '</div>' +
         '</div>';
+
+      /* ── variant state ── */
+      var sel = {};
+      var init = p.variants.filter(function (v) { return v.available; })[0] || p.variants[0];
+      if (init) init.selectedOptions.forEach(function (so) { sel[so.name] = so.value; });
+
+      function current() {
+        return p.variants.filter(function (v) {
+          return v.selectedOptions.every(function (so) { return sel[so.name] === so.value; });
+        })[0] || null;
+      }
+      /* Can this value be bought together with everything else chosen? */
+      function possible(name, value) {
+        return p.variants.some(function (v) {
+          return v.available && v.selectedOptions.every(function (so) {
+            return so.name === name ? so.value === value : (sel[so.name] == null || sel[so.name] === so.value);
+          });
+        });
+      }
+      function paintVariant(userChose) {
+        var v = current();
+        Array.prototype.forEach.call(host.querySelectorAll('.opt'), function (el) {
+          var name = el.getAttribute('data-opt');
+          el.querySelector('.opt-l b').textContent = sel[name] || '';
+          Array.prototype.forEach.call(el.querySelectorAll('button'), function (b) {
+            var val = b.getAttribute('data-v');
+            b.setAttribute('aria-pressed', String(sel[name] === val));
+            b.classList.toggle('off', !possible(name, val));
+          });
+        });
+        var price = host.querySelector('#pPrice'), btn = host.querySelector('[data-add]'), sold = host.querySelector('#pSold');
+        if (!v) {
+          price.textContent = p.price != null ? money(p.price) : 'Price on request';
+          if (btn) { btn.disabled = true; btn.textContent = 'Not available in that combination'; }
+          if (sold) sold.hidden = true;
+          return;
+        }
+        price.textContent = v.price != null ? money(v.price) : 'Price on request';
+        if (btn) { btn.setAttribute('data-add', v.id); btn.disabled = !v.available; btn.textContent = v.available ? 'Add to bag' : 'Sold out'; }
+        if (sold) sold.hidden = v.available;
+        // A variant with its own photo: bring that photo into view.
+        if (userChose && v.image) {
+          var tile = host.querySelector('.prod-media .ph[data-src="' + v.image.url.replace(/"/g, '') + '"]');
+          if (tile && tile.scrollIntoView) tile.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'smooth' });
+        }
+      }
+      host.addEventListener('click', function (e) {
+        var b = e.target.closest('.opt-vals button'); if (!b) return;
+        sel[b.closest('.opt').getAttribute('data-opt')] = b.getAttribute('data-v');
+        paintVariant(true);
+      });
+      paintVariant(false);
+
+      /* ── "2 / 4" under the phone gallery ── */
+      var media = host.querySelector('#pMedia'), cnt = host.querySelector('#pCount');
+      if (media && cnt) media.addEventListener('scroll', function () {
+        var first = media.firstElementChild; if (!first) return;
+        var step = first.getBoundingClientRect().width + 10;
+        var i = Math.min(imgs.length, Math.round(media.scrollLeft / step) + 1);
+        cnt.textContent = i + ' / ' + imgs.length;
+      }, { passive: true });
     });
   }
 

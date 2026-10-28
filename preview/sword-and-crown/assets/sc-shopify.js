@@ -83,6 +83,14 @@ window.SCShop = (function () {
     variants(first:1){nodes{id availableForSale quantityAvailable}}\
     metafields(identifiers:[' + metafieldIdents() + ']){key value}';
 
+  /* The single-product query carries every variant and option so the product
+     page can offer Gold / Silver, an initial, a size. The LIST query above must
+     not: 250 products x 100 variants blows Shopify's per-query cost limit. */
+  var PRODUCT_FULL = PRODUCT_FIELDS.replace(
+    'variants(first:1){nodes{id availableForSale quantityAvailable}}',
+    'options{name optionValues{name}} variants(first:100){nodes{id title availableForSale quantityAvailable ' +
+    'price{amount currencyCode} image{url altText} selectedOptions{name value}}}');
+
   function shape(node) {
     if (!node) return null;
     var specs = {};
@@ -104,6 +112,16 @@ window.SCShop = (function () {
       image: node.featuredImage || null,
       images: (node.images && node.images.nodes) || [],
       variantId: node.variants && node.variants.nodes[0] && node.variants.nodes[0].id,
+      options: (node.options || []).map(function (o) {
+        return { name: o.name, values: (o.optionValues || []).map(function (v) { return v.name; }) };
+      }),
+      variants: ((node.variants && node.variants.nodes) || []).map(function (v) {
+        return {
+          id: v.id, title: v.title, available: !!v.availableForSale, stock: v.quantityAvailable,
+          price: v.price ? Number(v.price.amount) : null, image: v.image || null,
+          selectedOptions: v.selectedOptions || []
+        };
+      }),
       specs: specs,
       /* Her clothing fit indicator: Runs small / True to size / Runs large.
          Returned as a 0, 1 or 2 so the slider can position itself. */
@@ -137,6 +155,13 @@ window.SCShop = (function () {
   return {
     live: LIVE,
     domain: DOMAIN,
+
+    /* Shopify's CDN resizes on request. Her originals are up to 3000x4500px;
+       a 250px card does not need 4 MB of JPEG, least of all on a phone. */
+    img: function (url, width) {
+      if (!url) return '';
+      return url + (url.indexOf('?') > -1 ? '&' : '?') + 'width=' + width;
+    },
     wigKeys: WIG_KEYS,
     clothingKeys: CLOTHING_KEYS,
 
@@ -177,7 +202,7 @@ window.SCShop = (function () {
        not tell a visitor a piece doesn't exist because our shop is down. */
     product: function (handle) {
       return gql(
-        'query($h:String!){product(handle:$h){' + PRODUCT_FIELDS + '}}',
+        'query($h:String!){product(handle:$h){' + PRODUCT_FULL + '}}',
         { h: handle }
       ).then(function (d) {
         if (d === null) return false;
