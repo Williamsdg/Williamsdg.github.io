@@ -609,14 +609,15 @@
     if (!tiles.length || !S.live || !C) return;
     S.products(null).then(function (rows) {
       if (!rows) return;
+      var used = {};   // no two doors show the same piece (Holiday overlaps Clothing)
       Array.prototype.forEach.call(tiles, function (t) {
         var key = t.getAttribute('data-cat');
         var all = rows.filter(function (p) { return C.keysOf(p).indexOf(key) > -1; });
-        var withPic = all.filter(function (p) { return p.image; });
+        var withPic = all.filter(function (p) { return p.image && !used[p.handle]; });
         var n = t.querySelector('.st-count');
         if (n && all.length) n.textContent = all.length + (all.length === 1 ? ' piece' : ' pieces');
         if (!withPic.length) return;
-        var p = withPic[0];
+        var p = withPic[0]; used[p.handle] = true;
         t.insertAdjacentHTML('afterbegin', '<span class="st-ph">' +
           pic(p.image, p.title, [480, 900], '(max-width:620px) 50vw, (max-width:1100px) 33vw, 20vw', true) + '</span>');
         t.classList.add('has-ph');
