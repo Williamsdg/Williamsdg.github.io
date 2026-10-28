@@ -34,9 +34,17 @@
       : 'Sold out';
     return '<a class="pcard rv" data-cat="' + catOf(p) + '" href="product.html?p=' + encodeURIComponent(p.handle) + '">' +
       '<div class="ph col' + (img ? ' has-img' : '') + '">' + img + '</div>' +
-      '<b>' + esc(p.title) + '</b>' +
+      '<b>' + esc(niceTitle(p.title)) + '</b>' +
       '<small>' + esc(sub) + '</small>' +
       '<span class="price">' + esc(price) + '</span></a>';
+  }
+
+  function niceTitle(t) {
+    t = String(t || '');
+    if (t.length > 3 && t === t.toUpperCase() && /[A-Z]/.test(t)) {
+      return t.toLowerCase().replace(/(^|[\s\-\/(])([a-z])/g, function (m, a, b) { return a + b.toUpperCase(); });
+    }
+    return t;
   }
 
   function pic(im, fallbackAlt, widths, sizes, lazy) {
@@ -218,96 +226,183 @@
     });
   }
 
-  /* ── boutique: category tabs, search, sort, and a page at a time ──
-     294 pieces in one go was a 29,000px page. Forty-eight at a time, with a
-     Show more button, and the count always says how many are really there. */
+  /* ── boutique ──────────────────────────────────────────────────────
+     Her structure (2026-10-28): four departments with dropdown categories,
+     a Holiday edit and Shop All. Placement comes from sc-catalog.js — her
+     own Shopify tags and explicit assignments, never a guess from a title.
+     Search, sort, count, size / price / stock filters, 48 at a time, and the
+     filters + scroll position come back when a shopper returns from a piece. */
   function boutique() {
     var grid = document.getElementById('boutiqueGrid');
     if (!grid) return;
-    var tabs = document.getElementById('boutiqueTabs');
-    var all = [], cat = new URLSearchParams(location.search).get('c') || 'all';
-    var q = '', sort = 'new', shown = 0, PAGE = 48;
+    var C = window.SC_CATALOG;
+    var navEl = document.getElementById('boutiqueNav'), crumbs = document.getElementById('bCrumbs');
+    var intro = document.getElementById('bIntro');
+    var PAGE = 48, all = [];
+    var st = { c: 'all', q: '', sort: 'new', size: '', max: null, stock: false, shown: 0 };
+    var qs = new URLSearchParams(location.search);
+    if (qs.get('c')) st.c = qs.get('c');
+    if (C && st.c !== 'all' && !C.find(st.c)) st.c = 'all';
 
-    /* Her Shopify types (2026-10-27): jewelry, accessories, hair accessories,
-       clothing, hair tools, clothing accessories, cosmetics, Hats, purse,
-       phone accessories, gifts, sticker, wig supplies, hair care. The tabs are
-       the page's words; this maps each to the words her store actually uses. */
-    var CATS = {
-      apparel: ['clothing', 'shirts', 'jacket', 'hats', 'trucker hat'],
-      jewelry: ['jewelry', 'earrings', 'necklace', 'bracelet', 'rings'],
-      accessories: ['accessories', 'purse', 'bags', 'sunglasses', 'scarf', 'keychain', 'sticker'],
-      gifts: ['gifts', 'gift'],
-      products: ['cosmetics', 'hair tools', 'hair care', 'wig supplies', 'makeup']
-    };
+    /* coming back from a product page: pick up where they left off */
+    var saved = null, restoreY = 0;
+    try { saved = JSON.parse(sessionStorage.getItem('sc_boutique') || 'null'); } catch (e) {}
+    var navType = (performance.getEntriesByType && (performance.getEntriesByType('navigation')[0] || {}).type) || '';
+    var cameBack = navType === 'back_forward' || /product\.html/.test(document.referrer);
+    if (saved && cameBack && (!qs.get('c') || saved.c === st.c)) {
+      st = saved; restoreY = saved.y || 0; st.shown = Math.max(st.shown || 0, PAGE);
+    }
+    function save() {
+      try { st.y = window.scrollY; sessionStorage.setItem('sc_boutique', JSON.stringify(st)); } catch (e) {}
+    }
+    addEventListener('pagehide', save);
 
-    var bar = document.createElement('div');
-    bar.className = 'shop-bar';
-    bar.innerHTML =
-      '<label class="fsel grow"><span>Search</span><input type="search" id="bq" placeholder="Search the boutique" autocomplete="off" aria-label="Search the boutique"></label>' +
-      '<label class="fsel"><span>Sort</span><select id="bsort">' +
-        SORTS.map(function (x) { return '<option value="' + x[0] + '">' + x[1] + '</option>'; }).join('') +
-      '</select></label>' +
-      '<p class="filter-count" id="bcount" aria-live="polite"></p>';
-    var more = document.createElement('div');
-    more.className = 'shop-more'; more.hidden = true;
+    var bar = document.createElement('div'); bar.className = 'shop-bar';
+    var more = document.createElement('div'); more.className = 'shop-more'; more.hidden = true;
     more.innerHTML = '<button type="button" class="btn ghost">Show more</button>';
 
+    function node(key) { return C && key !== 'all' ? C.find(key) : null; }
+    function nameOf(key) { var n = node(key); return n ? n.name : 'Shop All Boutique'; }
+    function inCat(p) { return st.c === 'all' || (C && C.keysOf(p).indexOf(st.c) > -1); }
+    function sizesOf(p) {
+      var o = (p.options || []).filter(function (x) { return /^size$/i.test(x.name); })[0];
+      return o ? o.values : [];
+    }
+
     function rowsNow() {
-      var words = CATS[cat] || [cat.toLowerCase()];
-      var rows = cat === 'all' ? all.slice() : all.filter(function (p) {
-        var hay = ((p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase();
-        return words.some(function (w) { return hay.indexOf(w) > -1; });
+      var rows = all.filter(inCat);
+      if (st.q) rows = rows.filter(function (p) {
+        return ((p.title || '') + ' ' + (p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase().indexOf(st.q) > -1;
       });
-      if (q) rows = rows.filter(function (p) {
-        return ((p.title || '') + ' ' + (p.type || '') + ' ' + (p.tags || []).join(' ')).toLowerCase().indexOf(q) > -1;
-      });
-      if (sort === 'asc') rows.sort(function (a, b) { return (a.price == null) - (b.price == null) || a.price - b.price; });
-      if (sort === 'desc') rows.sort(function (a, b) { return (a.price == null) - (b.price == null) || b.price - a.price; });
+      if (st.size) rows = rows.filter(function (p) { return sizesOf(p).indexOf(st.size) > -1; });
+      if (st.max != null) rows = rows.filter(function (p) { return p.price == null || p.price <= st.max; });
+      if (st.stock) rows = rows.filter(function (p) { return p.available; });
+      if (st.sort === 'asc') rows.sort(function (a, b) { return (a.price == null) - (b.price == null) || a.price - b.price; });
+      if (st.sort === 'desc') rows.sort(function (a, b) { return (a.price == null) - (b.price == null) || b.price - a.price; });
       return rows;
     }
-    function render(append) {
-      var rows = rowsNow();
-      if (!append) { shown = 0; grid.innerHTML = ''; }
-      if (!rows.length) {
-        grid.innerHTML = emptyState(q ? 'Nothing matches “' + q + '” here. Try another word or the All tab.' : 'Nothing in this category yet.');
-      } else {
-        var slice = rows.slice(shown, shown + PAGE);
-        grid.insertAdjacentHTML('beforeend', slice.map(card).join(''));
-        shown += slice.length;
-      }
-      more.hidden = shown >= rows.length;
-      var c = document.getElementById('bcount');
-      if (c) c.textContent = rows.length + (rows.length === 1 ? ' piece' : ' pieces') +
-        (shown < rows.length ? ' · showing ' + shown : '');
-      if (tabs) Array.prototype.forEach.call(tabs.querySelectorAll('button'), function (b) {
-        b.setAttribute('aria-pressed', String(b.dataset.c === cat));
-      });
+
+    /* ── category nav + breadcrumbs ── */
+    function pill(key, label, cls, current) {
+      return '<a href="?c=' + encodeURIComponent(key) + '" data-c="' + esc(key) + '"' + (cls ? ' class="' + cls + '"' : '') +
+        (current ? ' aria-current="true"' : '') + '>' + esc(label) + '</a>';
     }
-    if (tabs) tabs.addEventListener('click', function (e) {
-      var b = e.target.closest('button'); if (!b) return;
-      cat = b.dataset.c; history.replaceState(null, '', '?c=' + encodeURIComponent(cat)); render();
-    });
-    more.querySelector('button').addEventListener('click', function () { render(true); });
-    var t;
-    bar.addEventListener('input', function (e) {
-      if (e.target.id !== 'bq') return;
-      clearTimeout(t); t = setTimeout(function () { q = e.target.value.trim().toLowerCase(); render(); }, 160);
-    });
-    bar.addEventListener('change', function (e) {
-      if (e.target.id === 'bsort') { sort = e.target.value; render(); }
+    function paintNav() {
+      if (!navEl || !C) return;
+      var cur = node(st.c);
+      var mainKey = cur ? cur.main : null;
+      var html = '<div class="shop-tabs">' +
+        '<a href="?c=all" data-c="all"' + (st.c === 'all' ? ' aria-current="true"' : '') + '>All</a>' +
+        C.MAIN.map(function (m) {
+          return '<a href="?c=' + m.key + '" data-c="' + m.key + '"' + (mainKey === m.key ? ' aria-current="true"' : '') + '>' + esc(m.short) + '</a>';
+        }).join('') + '</div>';
+      if (mainKey && C.children(mainKey).length) {
+        var subKey = cur.sub || null;
+        html += '<div class="shop-subs">' + pill(mainKey, 'Shop All ' + C.find(mainKey).name.split(' / ')[0], 'all', st.c === mainKey) +
+          C.children(mainKey).map(function (s) { return pill(s.key, s.name, '', subKey === s.key); }).join('') + '</div>';
+        if (subKey && C.children(subKey).length) {
+          html += '<div class="shop-subs lvl3">' + pill(subKey, 'All ' + C.find(subKey).name, 'all', st.c === subKey) +
+            C.children(subKey).map(function (t) { return pill(t.key, t.name, '', st.c === t.key); }).join('') + '</div>';
+        }
+      }
+      navEl.innerHTML = html;
+      if (crumbs) {
+        var trail = [];
+        var n = cur;
+        while (n) { trail.unshift(n); n = n.parent ? C.find(n.parent) : null; }
+        crumbs.innerHTML = '<a href="index.html">Home</a><span aria-hidden="true">/</span>' +
+          (trail.length ? '<a href="boutique.html">Boutique</a>' : '<span>Boutique</span>') +
+          trail.map(function (t, i) {
+            return '<span aria-hidden="true">/</span>' + (i === trail.length - 1 ? '<span>' + esc(t.name) + '</span>' : '<a href="?c=' + t.key + '">' + esc(t.name) + '</a>');
+          }).join('');
+      }
+      if (intro) intro.hidden = st.c !== 'all';
+      document.title = (cur ? cur.name + ' — The Boutique' : 'The Boutique') + ' — Sword & Crown Salon and Studio';
+    }
+    if (navEl) navEl.addEventListener('click', function (e) {
+      var a = e.target.closest('a[data-c]'); if (!a) return;
+      e.preventDefault();
+      st.c = a.getAttribute('data-c'); st.size = ''; st.shown = 0;
+      history.replaceState(null, '', st.c === 'all' ? 'boutique.html' : '?c=' + encodeURIComponent(st.c));
+      paintNav(); paintBar(); render();
     });
 
-    if (!S.live) {
-      grid.innerHTML = emptyState('The boutique opens as soon as the first pieces are listed.');
-      return;
+    /* ── toolbar: search · sort · size · price · stock · count ── */
+    function paintBar() {
+      var rows = all.filter(inCat);
+      var sizes = [];
+      rows.forEach(function (p) { sizesOf(p).forEach(function (v) { if (sizes.indexOf(v) === -1) sizes.push(v); }); });
+      var ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '1X', '2X', '3X'];
+      sizes.sort(function (a, b) { var ia = ORDER.indexOf(a.toUpperCase()), ib = ORDER.indexOf(b.toUpperCase()); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b, undefined, { numeric: true }); });
+      var prices = rows.map(function (p) { return p.price; }).filter(function (n) { return n != null; });
+      var max = prices.length ? Math.ceil(Math.max.apply(null, prices)) : 0;
+      if (st.max != null && st.max >= max) st.max = null;
+      bar.innerHTML =
+        '<label class="fsel grow"><span>Search</span><input type="search" id="bq" placeholder="Search the boutique" autocomplete="off" aria-label="Search the boutique" value="' + esc(st.q) + '"></label>' +
+        '<label class="fsel"><span>Sort</span><select id="bsort">' +
+          SORTS.map(function (x) { return '<option value="' + x[0] + '"' + (st.sort === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></label>' +
+        (sizes.length ? '<label class="fsel"><span>Size</span><select id="bsize"><option value="">All sizes</option>' +
+          sizes.map(function (v) { return '<option' + (st.size === v ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></label>' : '') +
+        (max > 0 ? '<label class="fsel wide"><span>Max price <b id="pcapv">' + money(st.max != null ? st.max : max) + '</b></span>' +
+          '<input type="range" id="pcap" min="0" max="' + max + '" value="' + (st.max != null ? st.max : max) + '" step="5"></label>' : '') +
+        '<label class="filter-chk"><input type="checkbox" id="bstock"' + (st.stock ? ' checked' : '') + '> In stock only</label>' +
+        '<p class="filter-count" id="bcount" aria-live="polite"></p>';
     }
-    S.products(null).then(function (rows) {
-      if (rows === null) { grid.innerHTML = failState(); return; }
-      all = rows;
-      grid.parentNode.insertBefore(bar, grid);
-      grid.parentNode.insertBefore(more, grid.nextSibling);
-      render();
+    var t;
+    bar.addEventListener('input', function (e) {
+      if (e.target.id === 'bq') { clearTimeout(t); t = setTimeout(function () { st.q = e.target.value.trim().toLowerCase(); render(); }, 160); }
+      if (e.target.id === 'pcap') { st.max = Number(e.target.value); var v = document.getElementById('pcapv'); if (v) v.textContent = money(st.max); render(); }
     });
+    bar.addEventListener('change', function (e) {
+      if (e.target.id === 'bsort') { st.sort = e.target.value; render(); }
+      if (e.target.id === 'bsize') { st.size = e.target.value; render(); }
+      if (e.target.id === 'bstock') { st.stock = e.target.checked; render(); }
+    });
+
+    /* ── the grid ── */
+    function render(append) {
+      var rows = rowsNow();
+      if (!append) { st.shown = Math.max(st.shown && restoreY ? st.shown : 0, 0); grid.innerHTML = ''; }
+      if (!rows.length) {
+        var why = st.q ? 'Nothing matches “' + st.q + '” here. Try another word, or the whole boutique.' :
+          (st.size || st.max != null || st.stock) ? 'Nothing matches those filters. Try widening them.' :
+          'Nothing in ' + nameOf(st.c) + ' yet.';
+        grid.innerHTML = '<div class="empty"><h3>Nothing here yet</h3><p>' + esc(why) + '</p><a class="btn ghost" href="boutique.html">Shop All Boutique</a></div>';
+        st.shown = 0;
+      } else {
+        var from = append ? st.shown : 0, to = append ? st.shown + PAGE : Math.max(PAGE, st.shown || 0);
+        if (!append) grid.innerHTML = '';
+        grid.insertAdjacentHTML('beforeend', rows.slice(from, to).map(card).join(''));
+        st.shown = Math.min(to, rows.length);
+      }
+      more.hidden = st.shown >= rows.length;
+      var c = document.getElementById('bcount');
+      if (c) c.textContent = rows.length + (rows.length === 1 ? ' piece' : ' pieces') + (st.shown < rows.length ? ' · showing ' + st.shown : '');
+      if (restoreY) { var y = restoreY; restoreY = 0; requestAnimationFrame(function () { window.scrollTo(0, y); }); }
+      save();
+    }
+    more.querySelector('button').addEventListener('click', function () { render(true); });
+
+    function load() {
+      grid.innerHTML = '<div class="shop-loading" aria-label="Loading the boutique"><div></div><div></div><div></div><div></div></div>';
+      S.products(null).then(function (rows) {
+        if (rows === null) {
+          grid.innerHTML = failState() + '<p style="text-align:center;margin-top:-10px"><button type="button" class="btn ghost" id="bretry">Try again</button></p>';
+          var r = document.getElementById('bretry'); r && r.addEventListener('click', load);
+          return;
+        }
+        all = rows;
+        if (C) {
+          var orphans = rows.filter(function (p) { return !C.keyOf(p); });
+          window.SC_ORPHANS = orphans;
+          if (orphans.length && window.console) console.info('[sc-shop] ' + orphans.length + ' piece(s) have no category yet — see window.SC_ORPHANS');
+        }
+        if (!bar.parentNode) { grid.parentNode.insertBefore(bar, grid); grid.parentNode.insertBefore(more, grid.nextSibling); }
+        paintNav(); paintBar(); render();
+      });
+    }
+    if (!S.live) { grid.innerHTML = emptyState('The boutique opens as soon as the first pieces are listed.'); return; }
+    paintNav(); load();
   }
 
   /* ── single product ────────────────────────────────────────────── */
@@ -378,8 +473,32 @@
           }).join('') + '</div></div>';
       }).join('') + '</div>' : '';
 
+      var C = window.SC_CATALOG;
+      var trail = (!isWig(p) && C) ? C.trail(p) : [];
+      var deepest = trail.length ? trail[trail.length - 1] : null;
+      var crumbHtml = '<nav class="crumbs prod-crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><span aria-hidden="true">/</span>' +
+        (isWig(p) ? '<a href="wigs.html">Wigs &amp; Toppers</a>' : '<a href="boutique.html">Boutique</a>' +
+          trail.map(function (t) { return '<span aria-hidden="true">/</span><a href="boutique.html?c=' + t.key + '">' + esc(t.name) + '</a>'; }).join('')) +
+        '<span aria-hidden="true">/</span><span>' + esc(niceTitle(p.title)) + '</span></nav>';
+      var backHref = isWig(p) ? 'wigs.html' : 'boutique.html' + (deepest ? '?c=' + deepest.key : '');
+      var backLabel = isWig(p) ? 'Back to the collection' : 'Back to ' + (deepest ? deepest.name : 'the boutique');
+      var clothing = !isWig(p) && (/clothing/i.test(p.type || '') || (deepest && C && C.main(deepest.key) && C.main(deepest.key).key === 'clothing'));
+      var secondary = isWig(p)
+        ? '<a class="btn ghost" href="consultation.html">Book a consultation</a>'
+        : '<button class="btn ghost" type="button" data-soon data-soon-title="' + (clothing ? 'Questions about fit?' : 'Questions?') + '" data-soon-msg="' +
+          (clothing ? 'Ask us anything about fit, sizing or fabric — call or text us at 205•259•6911 and we’ll help.' : 'Ask us anything about this piece — call or text us at 205•259•6911 and we’ll help.') +
+          '">' + (clothing ? 'Questions about fit? Ask us.' : 'Questions? Ask us.') + '</button>';
+      /* clothing facts come from her Shopify fields only — no empty headings, nothing invented */
+      var CLOTH = [['measurements', 'Fit & measurements'], ['size_guide', 'Size guide'], ['fabric', 'Fabric'], ['care', 'Care'], ['model_size', 'Model wears'], ['model_height', 'Model height']];
+      var clothRows = clothing ? CLOTH.filter(function (k) { return p.specs[k[0]]; }).map(function (k) {
+        var v = p.specs[k[0]];
+        var val = /^https?:\/\//.test(v) ? '<a href="' + esc(v) + '" target="_blank" rel="noopener">View size guide</a>' : esc(v).replace(/\n/g, '<br>');
+        return '<div><dt>' + k[1] + '</dt><dd>' + val + '</dd></div>';
+      }).join('') : '';
+      var returns = (clothing || !isWig(p)) ? '<p class="prod-return">Returns and exchanges follow our boutique return policy. <a href="policies.html#returns">Read the policy</a>.</p>' : '';
+
       host.innerHTML =
-        '<div class="wrap prod">' +
+        '<div class="wrap prod">' + crumbHtml +
           '<div class="prod-media-wrap"><div class="prod-media" id="pMedia">' + gallery + '</div>' +
             (imgs.length > 1 ? '<p class="prod-count" id="pCount" aria-live="polite">1 / ' + imgs.length + '</p>' : '') +
           '</div>' +
@@ -392,9 +511,12 @@
             picker +
             '<div class="prod-cta">' +
               (p.variants.length ? '<button class="btn pink" type="button" data-add="">Add to bag</button>' : '') +
-              '<a class="btn ghost" href="consultation.html">Book a consultation</a>' +
+              secondary +
             '</div>' +
-            (specRows ? '<h2 class="d3" style="margin-top:28px">Specification</h2><dl class="cfacts">' + specRows + '</dl>' : '') +
+            (clothRows ? '<h2 class="d3" style="margin-top:28px">Fit &amp; details</h2><dl class="cfacts">' + clothRows + '</dl>' : '') +
+            (specRows && !clothing ? '<h2 class="d3" style="margin-top:28px">Specification</h2><dl class="cfacts">' + specRows + '</dl>' : '') +
+            returns +
+            '<a class="prod-back" href="' + esc(backHref) + '" data-back>&larr; ' + esc(backLabel) + '</a>' +
             (isWig(p)
               ? '<p class="hint" style="margin-top:18px"><b>Every wig purchase includes a complimentary ' +
                 'Fringe Benefits service and The Shape-Up Cut</b> — bangs or face-framing detail, and a ' +
@@ -448,6 +570,11 @@
           if (tile && tile.scrollIntoView) tile.scrollIntoView({ block: 'nearest', inline: 'start', behavior: 'smooth' });
         }
       }
+      /* back = the collection they came from, with its filters and scroll */
+      var back = host.querySelector('[data-back]');
+      if (back) back.addEventListener('click', function (e) {
+        if (history.length > 1 && /boutique\.html|wigs\.html/.test(document.referrer)) { e.preventDefault(); history.back(); }
+      });
       host.addEventListener('click', function (e) {
         var b = e.target.closest('.opt-vals button'); if (!b) return;
         sel[b.closest('.opt').getAttribute('data-opt')] = b.getAttribute('data-v');

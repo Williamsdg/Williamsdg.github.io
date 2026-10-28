@@ -64,7 +64,7 @@ window.SCShop = (function () {
   /* Her spec fields live in metafields so each value lands in its own slot on
      the page rather than being buried in a description paragraph. */
   var WIG_KEYS = ['cap_construction', 'cap_size', 'length', 'texture', 'density', 'colour', 'bangs'];
-  var CLOTHING_KEYS = ['size_range', 'fit', 'fabric', 'model_height', 'care'];
+  var CLOTHING_KEYS = ['size_range', 'fit', 'fabric', 'model_height', 'care', 'measurements', 'size_guide', 'model_size'];
   var ALL_KEYS = WIG_KEYS.concat(CLOTHING_KEYS);
 
   function metafieldIdents() {
@@ -81,6 +81,7 @@ window.SCShop = (function () {
     featuredImage{url altText width height}\
     images(first:8){nodes{url altText width height}}\
     variants(first:1){nodes{id availableForSale quantityAvailable}}\
+    options{name optionValues{name}}\
     metafields(identifiers:[' + metafieldIdents() + ']){key value}';
 
   /* The single-product query carries every variant and option so the product
@@ -88,7 +89,7 @@ window.SCShop = (function () {
      not: 250 products x 100 variants blows Shopify's per-query cost limit. */
   var PRODUCT_FULL = PRODUCT_FIELDS.replace(
     'variants(first:1){nodes{id availableForSale quantityAvailable}}',
-    'options{name optionValues{name}} variants(first:100){nodes{id title availableForSale quantityAvailable ' +
+    'variants(first:100){nodes{id title availableForSale quantityAvailable ' +
     'price{amount currencyCode} image{url altText} selectedOptions{name value}}}');
 
   function shape(node) {

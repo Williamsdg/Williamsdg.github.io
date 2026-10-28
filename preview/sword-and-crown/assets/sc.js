@@ -12,6 +12,57 @@
     addEventListener('scroll', onScroll, { passive: true }); onScroll();
   }
 
+  /* header height → --hdr-h, so anchored headings clear the sticky bar */
+  if (hdr) {
+    var setH = function () { d.documentElement.style.setProperty('--hdr-h', hdr.offsetHeight + 'px'); };
+    setH(); addEventListener('resize', setH, { passive: true });
+  }
+
+  /* ── boutique mega menu (desktop) ─────────────── */
+  $$('.nav-item.has-menu').forEach(function (item) {
+    var btn = $('.nav-more', item);
+    var set = function (open) { item.classList.toggle('open', open); btn && btn.setAttribute('aria-expanded', String(open)); };
+    btn && btn.addEventListener('click', function (e) { e.preventDefault(); set(!item.classList.contains('open')); });
+    d.addEventListener('click', function (e) { if (!item.contains(e.target)) set(false); });
+    d.addEventListener('keydown', function (e) { if (e.key === 'Escape') { set(false); if (item.contains(d.activeElement)) d.activeElement.blur(); } });
+    item.addEventListener('mouseleave', function () { set(false); });
+  });
+  /* drawer: tap-to-expand category groups */
+  $$('.dr-tog').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var open = b.getAttribute('aria-expanded') !== 'true';
+      b.setAttribute('aria-expanded', String(open));
+      var panel = d.getElementById(b.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !open;
+    });
+  });
+
+  /* ── "Coming Soon" prompt (her exact wording, 2026-10-28) ── */
+  var SOON_MSG = 'To learn more, please call or text us at 205\u2022259\u20226911.';
+  var soonEl = null, soonVeil = null, soonLast = null;
+  function soonClose() { if (!soonEl) return; soonEl.hidden = true; soonVeil.hidden = true; d.body.style.overflow = ''; soonLast && soonLast.focus && soonLast.focus(); }
+  function soonOpen(title, msg) {
+    if (!soonEl) {
+      soonVeil = d.createElement('div'); soonVeil.className = 'soon-veil';
+      soonEl = d.createElement('div'); soonEl.className = 'soon-box'; soonEl.setAttribute('role', 'dialog'); soonEl.setAttribute('aria-modal', 'true'); soonEl.setAttribute('aria-labelledby', 'soonT');
+      soonEl.innerHTML = '<button class="icon-btn soon-x" type="button" data-soon-close aria-label="Close"><svg><use href="#i-close"/></svg></button>' +
+        '<h2 id="soonT"></h2><p></p><div class="contact-row"><a class="btn pink" href="tel:+12052596911">Call Us</a><a class="btn ghost" href="sms:+12052596911">Text Us</a></div>';
+      d.body.appendChild(soonVeil); d.body.appendChild(soonEl);
+      soonVeil.addEventListener('click', soonClose);
+      $('[data-soon-close]', soonEl).addEventListener('click', soonClose);
+      d.addEventListener('keydown', function (e) { if (e.key === 'Escape' && soonEl && !soonEl.hidden) soonClose(); });
+    }
+    $('h2', soonEl).textContent = title; $('p', soonEl).textContent = msg;
+    soonLast = d.activeElement;
+    soonEl.hidden = false; soonVeil.hidden = false; d.body.style.overflow = 'hidden';
+    $('[data-soon-close]', soonEl).focus();
+  }
+  d.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-soon]'); if (!b) return;
+    e.preventDefault();
+    soonOpen(b.getAttribute('data-soon-title') || 'Coming soon', b.getAttribute('data-soon-msg') || SOON_MSG);
+  });
+
   /* ── drawer ───────────────────────────────────── */
   var drawer = $('#drawer'), burger = $('.burger');
   function setDrawer(open) {
