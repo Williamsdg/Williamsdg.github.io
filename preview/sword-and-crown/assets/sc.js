@@ -30,7 +30,22 @@
   var io = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) {
     es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
   }, { rootMargin: '0px 0px -8% 0px', threshold: .08 }) : null;
-  $$('.rv,.blade').forEach(function (el) { io ? io.observe(el) : el.classList.add('in'); });
+  function watch(el) { io ? io.observe(el) : el.classList.add('in'); }
+  $$('.rv,.blade').forEach(watch);
+  /* Cards rendered after load (Shopify products, Supabase articles) carry .rv
+     too. Without watching for them they sit at opacity 0 forever and the
+     Boutique is a blank page with 300 invisible products on it. */
+  if ('MutationObserver' in window) {
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) {
+        [].forEach.call(m.addedNodes, function (n) {
+          if (n.nodeType !== 1) return;
+          if (n.matches && n.matches('.rv,.blade')) watch(n);
+          $$('.rv,.blade', n).forEach(watch);
+        });
+      });
+    }).observe(d.body, { childList: true, subtree: true });
+  }
 
   /* ── hero entrance ────────────────────────────── */
   var hero = $('.hero');
