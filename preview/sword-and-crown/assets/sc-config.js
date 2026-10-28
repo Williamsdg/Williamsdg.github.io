@@ -27,7 +27,8 @@ window.SC_CONFIG = {
   // whole thing, <script> tag included) as a string. Empty = the page keeps
   // its call-or-text fallback. Keys match data-vagaro="…" on the pages.
   VAGARO_EMBEDS: {
-    spa: '',        // head-spa.html — Constantina's books (no calendar yet — her $10/mo licence is Elana's call)
+    // head-spa.html — Constantina's provider widget (all spa services on her calendar), #D21C69, 2026-10-28
+    spa: '<div id=\'frameTitle\' class=\'embedded-widget-title\' style=\'font-size: 23px; color: #333;font-family:Arial, Helvetica, sans-serif; line-height:24px; padding: 18px 10px 8px; text-align: center; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box;\'></div>\n<div class="vagaro" style="width:250px; padding:0; border:0; margin:0 auto; text-align:center;"><style>.vagaro a {font-size:14px; color:#AAA; text-decoration:none;}</style><a href="https://www.vagaro.com/pro/">Powered by Vagaro</a>&nbsp;<a href="https://www.vagaro.com/pro/salon-software">Salon Software</a>,&nbsp;<a href="https://www.vagaro.com/pro/spa-software">Spa Software</a>&nbsp;&amp;&nbsp;<a href="https://www.vagaro.com/pro/fitness-software">Fitness Software</a><script type="text/javascript" defer src="https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqqEJ0nDZGcT3qmV35y79oz34mC2PeFJ4mC30m9dSycvCu7gevEhAJDXwOapcUcHiR61kRcHaR4pkvdfYQ71iScu?v=RPR23cgFmmU0FWlnp37y4AT8SHu3N58EoCTxFPMfR0y#"></scr'+'ipt></div>',
     // nano-brows.html — OFF (2026-10-28): tattoo services are Coming Soon until the city
     // approves the licence. Natalie's provider-widget snippet is kept in ~/.config/wd/sc-vagaro-build.md.
     consult: '',
