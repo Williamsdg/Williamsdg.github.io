@@ -117,6 +117,23 @@ window.SCShop = (function () {
     };
   }
 
+  var CART_FIELDS = 'id checkoutUrl totalQuantity cost{subtotalAmount{amount currencyCode}}' +
+    'lines(first:100){nodes{id quantity merchandise{... on ProductVariant{id title ' +
+    'price{amount currencyCode} image{url altText} product{title handle}}}}}';
+  function toLines(lines) {
+    return (lines || []).map(function (l) { return { merchandiseId: l.variantId, quantity: l.qty || 1 }; });
+  }
+  function cartOf(field) {
+    return function (d) {
+      var r = d && d[field];
+      if (!r) return null;
+      if (r.userErrors && r.userErrors.length && window.console) {
+        console.warn('[sc-shopify] ' + field + ': ' + r.userErrors.map(function (e) { return e.message; }).join(' | '));
+      }
+      return r.cart || null;
+    };
+  }
+
   return {
     live: LIVE,
     domain: DOMAIN,
@@ -177,6 +194,32 @@ window.SCShop = (function () {
         if (!d || !d.collection) return null;
         return { title: d.collection.title, products: d.collection.products.nodes.map(shape) };
       });
+    },
+
+    /* ── the bag ──────────────────────────────────────────────────────
+       Shopify's Cart API, so a visitor can put several pieces in one bag
+       across pages. The cart id is kept in localStorage by sc-cart.js; Shopify
+       keeps the cart itself for ~10 days. Each call resolves to the cart, or
+       `null` when the request failed or the cart no longer exists. */
+    cartCreate: function (lines) {
+      return gql('mutation($lines:[CartLineInput!]!){cartCreate(input:{lines:$lines}){cart{' + CART_FIELDS + '}userErrors{message}}}',
+        { lines: toLines(lines) }).then(cartOf('cartCreate'));
+    },
+    cartGet: function (id) {
+      return gql('query($id:ID!){cart(id:$id){' + CART_FIELDS + '}}', { id: id })
+        .then(function (d) { return d && d.cart ? d.cart : null; });
+    },
+    cartAdd: function (id, lines) {
+      return gql('mutation($id:ID!,$lines:[CartLineInput!]!){cartLinesAdd(cartId:$id,lines:$lines){cart{' + CART_FIELDS + '}userErrors{message}}}',
+        { id: id, lines: toLines(lines) }).then(cartOf('cartLinesAdd'));
+    },
+    cartUpdate: function (id, lineId, qty) {
+      return gql('mutation($id:ID!,$lines:[CartLineUpdateInput!]!){cartLinesUpdate(cartId:$id,lines:$lines){cart{' + CART_FIELDS + '}userErrors{message}}}',
+        { id: id, lines: [{ id: lineId, quantity: qty }] }).then(cartOf('cartLinesUpdate'));
+    },
+    cartRemove: function (id, lineId) {
+      return gql('mutation($id:ID!,$ids:[ID!]!){cartLinesRemove(cartId:$id,lineIds:$ids){cart{' + CART_FIELDS + '}userErrors{message}}}',
+        { id: id, ids: [lineId] }).then(cartOf('cartLinesRemove'));
     },
 
     /* Checkout stays on Shopify — it is PCI compliant and already configured.

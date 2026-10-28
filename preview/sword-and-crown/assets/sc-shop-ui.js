@@ -325,7 +325,7 @@
             (specRows ? '<h2 class="d3" style="margin-top:28px">Specification</h2><dl class="cfacts">' + specRows + '</dl>' : '') +
             '<div class="prod-cta">' +
               (p.available && p.variantId
-                ? '<a class="btn pink" href="' + esc(S.checkoutUrl([{ variantId: p.variantId, qty: 1 }])) + '">Add to bag</a>'
+                ? '<button class="btn pink" type="button" data-add="' + esc(p.variantId) + '">Add to bag</button>'
                 : '') +
               '<a class="btn ghost" href="consultation.html">Book a consultation</a>' +
             '</div>' +
