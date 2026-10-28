@@ -222,7 +222,12 @@
       if (!rows.length) return;
       var keep = row.querySelector('.shop-edit');
       row.innerHTML = rows.slice(0, 4).map(card).join('') + (keep ? keep.outerHTML : '');
+      row.classList.remove('shop-row-soon');
       row.setAttribute('data-sc-live', 'true');
+      var tabs = document.getElementById('homeTabs'), soon = document.getElementById('homeShopSoon'), cta = document.getElementById('homeShopCta');
+      if (tabs) tabs.hidden = false;
+      if (soon) soon.hidden = true;
+      if (cta) cta.hidden = false;
     });
   }
 
