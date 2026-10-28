@@ -598,6 +598,32 @@
     });
   }
 
+  /* ── homepage "Find your style" tiles ──────────────────────────
+     Each department door shows a real photo: the newest piece in that
+     department that has a picture, plus how many pieces are in it. Before
+     the feed answers (or with it unreachable) the tile is the plain paper
+     door it ships with. */
+  function styleTiles() {
+    var tiles = document.querySelectorAll('.style-tile[data-cat]');
+    var C = window.SC_CATALOG;
+    if (!tiles.length || !S.live || !C) return;
+    S.products(null).then(function (rows) {
+      if (!rows) return;
+      Array.prototype.forEach.call(tiles, function (t) {
+        var key = t.getAttribute('data-cat');
+        var all = rows.filter(function (p) { return C.keysOf(p).indexOf(key) > -1; });
+        var withPic = all.filter(function (p) { return p.image; });
+        var n = t.querySelector('.st-count');
+        if (n && all.length) n.textContent = all.length + (all.length === 1 ? ' piece' : ' pieces');
+        if (!withPic.length) return;
+        var p = withPic[0];
+        t.insertAdjacentHTML('afterbegin', '<span class="st-ph">' +
+          pic(p.image, p.title, [480, 900], '(max-width:620px) 50vw, (max-width:1100px) 33vw, 20vw', true) + '</span>');
+        t.classList.add('has-ph');
+      });
+    });
+  }
+
   function ready(fn) {
     if (document.readyState !== 'loading') fn();
     else document.addEventListener('DOMContentLoaded', fn);
@@ -613,5 +639,6 @@
     boutique();
     product();
     home();
+    styleTiles();
   });
 })();
