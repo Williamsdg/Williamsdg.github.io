@@ -599,25 +599,30 @@
   }
 
   /* ── homepage "Find your style" tiles ──────────────────────────
-     Each department door shows a real photo: the newest piece in that
-     department that has a picture, plus how many pieces are in it. Before
-     the feed answers (or with it unreachable) the tile is the plain paper
-     door it ships with. */
+     Each department door shows a real photo plus how many pieces are in it.
+     Which photo: the piece Elana chose for that door in sc-config.js
+     (STYLE_TILES, her brief of 2026-10-28 — a year-round piece, not the
+     newest arrival), or, when that handle is gone or has no picture, the
+     newest piece in the department that has one. Before the feed answers
+     (or with it unreachable) the tile is the plain paper door it ships with. */
   function styleTiles() {
     var tiles = document.querySelectorAll('.style-tile[data-cat]');
     var C = window.SC_CATALOG;
     if (!tiles.length || !S.live || !C) return;
+    var chosen = (window.SC_CONFIG && window.SC_CONFIG.STYLE_TILES) || {};
     S.products(null).then(function (rows) {
       if (!rows) return;
       var used = {};   // no two doors show the same piece (Holiday overlaps Clothing)
       Array.prototype.forEach.call(tiles, function (t) {
         var key = t.getAttribute('data-cat');
         var all = rows.filter(function (p) { return C.keysOf(p).indexOf(key) > -1; });
-        var withPic = all.filter(function (p) { return p.image && !used[p.handle]; });
         var n = t.querySelector('.st-count');
         if (n && all.length) n.textContent = all.length + (all.length === 1 ? ' piece' : ' pieces');
-        if (!withPic.length) return;
-        var p = withPic[0]; used[p.handle] = true;
+        var want = chosen[key], p = null;
+        if (want) rows.some(function (r) { if (r.handle === want && r.image) { p = r; return true; } return false; });
+        if (!p) p = all.filter(function (r) { return r.image && !used[r.handle]; })[0] || null;
+        if (!p) return;
+        used[p.handle] = true;
         t.insertAdjacentHTML('afterbegin', '<span class="st-ph">' +
           pic(p.image, p.title, [480, 900], '(max-width:620px) 50vw, (max-width:1100px) 33vw, 20vw', true) + '</span>');
         t.classList.add('has-ph');

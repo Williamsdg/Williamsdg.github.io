@@ -362,16 +362,74 @@
     mode('fresh');
   }
 
-  /* ── announcement bar: rotate + arrows ────────── */
+  /* ── announcement bar: a marquee (her brief of 2026-10-28) ──
+     One line scrolling continuously from right to left, so every message
+     passes through whole. The arrows jump a message back or forward,
+     hovering or focusing pauses it, and with reduced motion it stands still
+     and the arrows step through. The messages are cloned until the strip is
+     wider than the bar twice over, so the loop never shows a gap. */
   var ann = $('.announce');
   if (ann) {
-    var msgs = $$('.announce-msg', ann), ai = 0, timer;
-    var show = function (n) { ai = (n + msgs.length) % msgs.length; msgs.forEach(function (m, k) { m.classList.toggle('on', k === ai); }); };
-    var auto = function () { clearInterval(timer); if (!reduce) timer = setInterval(function () { show(ai + 1); }, 5000); };
-    $$('[data-ann]', ann).forEach(function (b) { b.addEventListener('click', function () { show(ai + (+b.dataset.ann)); auto(); }); });
-    ann.addEventListener('mouseenter', function () { clearInterval(timer); });
-    ann.addEventListener('mouseleave', auto);
-    auto();
+    var abox = $('.announce-msgs', ann), track = $('.announce-track', ann);
+    if (abox && !track) {   // older markup: wrap the messages in a track
+      track = d.createElement('div'); track.className = 'announce-track';
+      $$('.announce-msg', abox).forEach(function (m) { m.classList.remove('on'); track.appendChild(m); });
+      abox.appendChild(track);
+    }
+    if (abox) abox.removeAttribute('aria-live');
+    if (abox && track) {
+      var base = $$('.announce-msg', track), unit = 0, ax = 0, paused = false, tween = null, lastT = 0;
+      var SPEED = 46;   // px per second: a message crosses a phone screen in about eight seconds
+      var place = function () { track.style.transform = 'translate3d(' + ax.toFixed(2) + 'px,0,0)'; };
+      var wrapX = function () { if (unit) { if (ax <= -unit) ax += unit; if (ax > 0) ax -= unit; } };
+      var fill = function () {
+        $$('.ann-clone', track).forEach(function (c) { c.parentNode.removeChild(c); });
+        unit = Math.ceil(track.getBoundingClientRect().width);
+        if (!unit) return;
+        var need = abox.clientWidth * 2 + unit, guard = 0;
+        while (track.getBoundingClientRect().width < need && guard++ < 20) {
+          base.forEach(function (m) {
+            var c = m.cloneNode(true); c.classList.add('ann-clone'); c.setAttribute('aria-hidden', 'true');
+            $$('a', c).forEach(function (a) { a.tabIndex = -1; });
+            track.appendChild(c);
+          });
+        }
+        wrapX(); place();
+      };
+      /* where each message starts within one set, measured from the set's left edge */
+      var edges = function () { var out = [0], w = 0; base.forEach(function (m) { w += m.getBoundingClientRect().width; out.push(w); }); return out; };
+      var jump = function (dir) {
+        if (!unit) return;
+        var e = edges(), pos = ((-ax % unit) + unit) % unit, i = 0, k;
+        for (k = 0; k < base.length; k++) if (pos >= e[k] - 1) i = k;
+        var target = dir > 0 ? e[i + 1] : (pos - e[i] > 2 ? e[i] : (i === 0 ? e[base.length - 1] - unit : e[i - 1]));
+        var delta = -(target - pos);
+        if (reduce) { ax += delta; wrapX(); place(); return; }
+        tween = { from: ax, to: ax + delta, t0: performance.now(), ms: 420 };
+      };
+      var tick = function (t) {
+        if (!lastT) lastT = t;
+        var dt = Math.min(64, t - lastT); lastT = t;
+        if (tween) {
+          var k = Math.min(1, (t - tween.t0) / tween.ms), ease = 1 - Math.pow(1 - k, 3);
+          ax = tween.from + (tween.to - tween.from) * ease;
+          if (k >= 1) { tween = null; wrapX(); }
+          place();
+        } else if (!paused && !reduce && unit) {
+          ax -= SPEED * dt / 1000; wrapX(); place();
+        }
+        requestAnimationFrame(tick);
+      };
+      ann.addEventListener('mouseenter', function () { paused = true; });
+      ann.addEventListener('mouseleave', function () { paused = false; });
+      ann.addEventListener('focusin', function () { paused = true; });
+      ann.addEventListener('focusout', function () { paused = false; });
+      $$('[data-ann]', ann).forEach(function (b) { b.addEventListener('click', function () { jump(+b.dataset.ann); }); });
+      var rt; addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(fill, 120); }, { passive: true });
+      fill();
+      if (d.fonts && d.fonts.ready) d.fonts.ready.then(fill);   // widths change when Poppins lands
+      requestAnimationFrame(tick);
+    }
   }
 
   /* ── three steps: expanding cards ─────────────── */
