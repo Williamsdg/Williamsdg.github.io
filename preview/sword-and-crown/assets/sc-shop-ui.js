@@ -98,6 +98,15 @@
     ['asc', 'Price: low to high'],
     ['desc', 'Price: high to low']
   ];
+  /* the boutique's list (her brief of 2026-10-28): newest ADDED first by
+     default inside every department, with A–Z and Z–A */
+  var BSORTS = [
+    ['new', 'Newest added'],
+    ['az', 'A–Z'],
+    ['za', 'Z–A'],
+    ['asc', 'Price: low to high'],
+    ['desc', 'Price: high to low']
+  ];
 
   function collection(opts) {
     var grid = document.getElementById(opts.gridId);
@@ -244,10 +253,14 @@
     var navEl = document.getElementById('boutiqueNav'), crumbs = document.getElementById('bCrumbs');
     var intro = document.getElementById('bIntro');
     var PAGE = 48, all = [];
-    var st = { c: 'all', q: '', sort: 'new', size: '', max: null, stock: false, shown: 0 };
+    /* st.c is the chosen category key, or '' for none. With none chosen the
+       page is a department chooser — never the whole assortment mixed
+       together (her brief of 2026-10-28). Old "?c=all" links land there too. */
+    var st = { c: '', q: '', sort: 'new', size: '', max: null, stock: false, shown: 0 };
     var qs = new URLSearchParams(location.search);
     if (qs.get('c')) st.c = qs.get('c');
-    if (C && st.c !== 'all' && !C.find(st.c)) st.c = 'all';
+    if (st.c === 'all' || (st.c && C && !C.find(st.c))) st.c = '';
+    var section = grid.closest('section'), chooser = document.getElementById('bChooser');
 
     /* coming back from a product page: pick up where they left off */
     var saved = null, restoreY = 0;
@@ -256,6 +269,7 @@
     var cameBack = navType === 'back_forward' || /product\.html/.test(document.referrer);
     if (saved && cameBack && (!qs.get('c') || saved.c === st.c)) {
       st = saved; restoreY = saved.y || 0; st.shown = Math.max(st.shown || 0, PAGE);
+      if (st.c === 'all' || (st.c && C && !C.find(st.c))) st.c = '';
     }
     function save() {
       try { st.y = window.scrollY; sessionStorage.setItem('sc_boutique', JSON.stringify(st)); } catch (e) {}
@@ -266,9 +280,10 @@
     var more = document.createElement('div'); more.className = 'shop-more'; more.hidden = true;
     more.innerHTML = '<button type="button" class="btn ghost">Show more</button>';
 
-    function node(key) { return C && key !== 'all' ? C.find(key) : null; }
-    function nameOf(key) { var n = node(key); return n ? n.name : 'Shop All Boutique'; }
-    function inCat(p) { return st.c === 'all' || (C && C.keysOf(p).indexOf(st.c) > -1); }
+    function node(key) { return C && key ? C.find(key) : null; }
+    function nameOf(key) { var n = node(key); return n ? n.name : 'The Boutique'; }
+    function choosing() { return !st.c; }
+    function inCat(p) { return !!st.c && !!C && C.keysOf(p).indexOf(st.c) > -1; }
     function sizesOf(p) {
       var o = (p.options || []).filter(function (x) { return /^size$/i.test(x.name); })[0];
       return o ? o.values : [];
@@ -282,9 +297,36 @@
       if (st.size) rows = rows.filter(function (p) { return sizesOf(p).indexOf(st.size) > -1; });
       if (st.max != null) rows = rows.filter(function (p) { return p.price == null || p.price <= st.max; });
       if (st.stock) rows = rows.filter(function (p) { return p.available; });
+      /* 'new' is the order Shopify handed us: CREATED_AT descending, i.e. the
+         date each piece was ADDED to the store — not when its description
+         was last edited, not a collection's manual order. Nothing to do. */
+      if (st.sort === 'az') rows.sort(function (a, b) { return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base', numeric: true }); });
+      if (st.sort === 'za') rows.sort(function (a, b) { return (b.title || '').localeCompare(a.title || '', undefined, { sensitivity: 'base', numeric: true }); });
       if (st.sort === 'asc') rows.sort(function (a, b) { return (a.price == null) - (b.price == null) || a.price - b.price; });
       if (st.sort === 'desc') rows.sort(function (a, b) { return (a.price == null) - (b.price == null) || b.price - a.price; });
       return rows;
+    }
+
+    /* ── the department chooser: five doors, same photos as the homepage ── */
+    function paintChooser() {
+      if (!chooser || !C || chooser.childElementCount) return;
+      chooser.innerHTML = C.MAIN.map(function (m, i) {
+        return '<a class="style-tile" href="?c=' + esc(m.key) + '" data-c="' + esc(m.key) + '" data-cat="' + esc(m.key) + '">' +
+          '<span class="st-n">' + (i < 9 ? '0' : '') + (i + 1) + '</span><b>' + esc(m.name) + '</b><small class="st-count"></small></a>';
+      }).join('');
+    }
+    function paintDoors() { if (chooser) fillDoors(chooser.querySelectorAll('.style-tile[data-cat]'), all); }
+    /* chooser (no category) vs. shopping (a category): the rust intro with
+       the doors, or the tabs + toolbar + grid */
+    function paintMode() {
+      var ch = choosing();
+      if (section) section.classList.toggle('rust', ch);
+      if (intro) intro.hidden = !ch;
+      if (chooser) chooser.hidden = !ch;
+      if (navEl) navEl.hidden = ch;
+      bar.hidden = ch;
+      if (ch) more.hidden = true;
+      grid.hidden = ch;
     }
 
     /* ── category nav + breadcrumbs ── */
@@ -297,7 +339,6 @@
       var cur = node(st.c);
       var mainKey = cur ? cur.main : null;
       var html = '<div class="shop-tabs">' +
-        '<a href="?c=all" data-c="all"' + (st.c === 'all' ? ' aria-current="true"' : '') + '>All</a>' +
         C.MAIN.map(function (m) {
           return '<a href="?c=' + m.key + '" data-c="' + m.key + '"' + (mainKey === m.key ? ' aria-current="true"' : '') + '>' + esc(m.short) + '</a>';
         }).join('') + '</div>';
@@ -321,16 +362,18 @@
             return '<span aria-hidden="true">/</span>' + (i === trail.length - 1 ? '<span>' + esc(t.name) + '</span>' : '<a href="?c=' + t.key + '">' + esc(t.name) + '</a>');
           }).join('');
       }
-      if (intro) intro.hidden = st.c !== 'all';
+      paintMode();
       document.title = (cur ? cur.name + ' — The Boutique' : 'The Boutique') + ' — Sword & Crown Salon and Studio';
     }
-    if (navEl) navEl.addEventListener('click', function (e) {
+    function pick(e) {
       var a = e.target.closest('a[data-c]'); if (!a) return;
       e.preventDefault();
       st.c = a.getAttribute('data-c'); st.size = ''; st.shown = 0;
-      history.replaceState(null, '', st.c === 'all' ? 'boutique.html' : '?c=' + encodeURIComponent(st.c));
+      history.replaceState(null, '', st.c ? '?c=' + encodeURIComponent(st.c) : 'boutique.html');
       paintNav(); paintBar(); render();
-    });
+    }
+    if (navEl) navEl.addEventListener('click', pick);
+    if (chooser) chooser.addEventListener('click', pick);
 
     /* ── toolbar: search · sort · size · price · stock · count ── */
     function paintBar() {
@@ -345,7 +388,7 @@
       bar.innerHTML =
         '<label class="fsel grow"><span>Search</span><input type="search" id="bq" placeholder="Search the boutique" autocomplete="off" aria-label="Search the boutique" value="' + esc(st.q) + '"></label>' +
         '<label class="fsel"><span>Sort</span><select id="bsort">' +
-          SORTS.map(function (x) { return '<option value="' + x[0] + '"' + (st.sort === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></label>' +
+          BSORTS.map(function (x) { return '<option value="' + x[0] + '"' + (st.sort === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></label>' +
         (sizes.length ? '<label class="fsel"><span>Size</span><select id="bsize"><option value="">All sizes</option>' +
           sizes.map(function (v) { return '<option' + (st.size === v ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></label>' : '') +
         (max > 0 ? '<label class="fsel wide"><span>Max price <b id="pcapv">' + money(st.max != null ? st.max : max) + '</b></span>' +
@@ -366,13 +409,14 @@
 
     /* ── the grid ── */
     function render(append) {
+      if (choosing()) { grid.innerHTML = ''; more.hidden = true; paintMode(); save(); return; }
       var rows = rowsNow();
       if (!append) { st.shown = Math.max(st.shown && restoreY ? st.shown : 0, 0); grid.innerHTML = ''; }
       if (!rows.length) {
-        var why = st.q ? 'Nothing matches “' + st.q + '” here. Try another word, or the whole boutique.' :
+        var why = st.q ? 'Nothing matches “' + st.q + '” here. Try another word, or another department.' :
           (st.size || st.max != null || st.stock) ? 'Nothing matches those filters. Try widening them.' :
           'Nothing in ' + nameOf(st.c) + ' yet.';
-        grid.innerHTML = '<div class="empty"><h3>Nothing here yet</h3><p>' + esc(why) + '</p><a class="btn ghost" href="boutique.html">Shop All Boutique</a></div>';
+        grid.innerHTML = '<div class="empty"><h3>Nothing here yet</h3><p>' + esc(why) + '</p><a class="btn ghost" href="boutique.html">Browse departments</a></div>';
         st.shown = 0;
       } else {
         var from = append ? st.shown : 0, to = append ? st.shown + PAGE : Math.max(PAGE, st.shown || 0);
@@ -392,11 +436,13 @@
       grid.innerHTML = '<div class="shop-loading" aria-label="Loading the boutique"><div></div><div></div><div></div><div></div></div>';
       S.products(null).then(function (rows) {
         if (rows === null) {
+          grid.hidden = false;   // the chooser hides the grid; the fault must still show
           grid.innerHTML = failState() + '<p style="text-align:center;margin-top:-10px"><button type="button" class="btn ghost" id="bretry">Try again</button></p>';
           var r = document.getElementById('bretry'); r && r.addEventListener('click', load);
           return;
         }
         all = rows;
+        paintDoors();
         if (C) {
           var orphans = rows.filter(function (p) { return !C.keyOf(p); });
           window.SC_ORPHANS = orphans;
@@ -406,7 +452,8 @@
         paintNav(); paintBar(); render();
       });
     }
-    if (!S.live) { grid.innerHTML = emptyState('The boutique opens as soon as the first pieces are listed.'); return; }
+    paintChooser();
+    if (!S.live) { paintNav(); grid.hidden = false; grid.innerHTML = emptyState('The boutique opens as soon as the first pieces are listed.'); return; }
     paintNav(); load();
   }
 
@@ -524,8 +571,8 @@
             '<a class="prod-back" href="' + esc(backHref) + '" data-back>&larr; ' + esc(backLabel) + '</a>' +
             (isWig(p)
               ? '<p class="hint" style="margin-top:18px"><b>Every wig purchase includes a complimentary ' +
-                'Fringe Benefits service and The Shape-Up Cut</b> — bangs or face-framing detail, and a ' +
-                'maintenance trim, done for you at the salon.</p>'
+                'Fringe Benefits service and The Shape-Up Cut.</b> Bangs or face-framing detail, and a ' +
+                'light layering cut — done for you at the salon.</p>'
               : '') +
           '</div>' +
         '</div>';
@@ -605,29 +652,33 @@
      newest arrival), or, when that handle is gone or has no picture, the
      newest piece in the department that has one. Before the feed answers
      (or with it unreachable) the tile is the plain paper door it ships with. */
+  function fillDoors(tiles, rows) {
+    var C = window.SC_CATALOG;
+    if (!tiles || !tiles.length || !rows || !C) return;
+    var chosen = (window.SC_CONFIG && window.SC_CONFIG.STYLE_TILES) || {};
+    var used = {};   // no two doors show the same piece (Holiday overlaps Clothing)
+    Array.prototype.forEach.call(tiles, function (t) {
+      if (t.querySelector('.st-ph')) return;   // already dressed
+      var key = t.getAttribute('data-cat');
+      var all = rows.filter(function (p) { return C.keysOf(p).indexOf(key) > -1; });
+      var n = t.querySelector('.st-count');
+      if (n && all.length) n.textContent = all.length + (all.length === 1 ? ' piece' : ' pieces');
+      var want = chosen[key], p = null;
+      if (want) rows.some(function (r) { if (r.handle === want && r.image) { p = r; return true; } return false; });
+      if (!p) p = all.filter(function (r) { return r.image && !used[r.handle]; })[0] || null;
+      if (!p) return;
+      used[p.handle] = true;
+      t.insertAdjacentHTML('afterbegin', '<span class="st-ph">' +
+        pic(p.image, p.title, [480, 900], '(max-width:620px) 50vw, (max-width:1100px) 33vw, 20vw', true) + '</span>');
+      t.classList.add('has-ph');
+    });
+  }
+  /* the homepage doors fetch for themselves; the boutique page dresses its
+     chooser from the catalogue it already loads */
   function styleTiles() {
     var tiles = document.querySelectorAll('.style-tile[data-cat]');
-    var C = window.SC_CATALOG;
-    if (!tiles.length || !S.live || !C) return;
-    var chosen = (window.SC_CONFIG && window.SC_CONFIG.STYLE_TILES) || {};
-    S.products(null).then(function (rows) {
-      if (!rows) return;
-      var used = {};   // no two doors show the same piece (Holiday overlaps Clothing)
-      Array.prototype.forEach.call(tiles, function (t) {
-        var key = t.getAttribute('data-cat');
-        var all = rows.filter(function (p) { return C.keysOf(p).indexOf(key) > -1; });
-        var n = t.querySelector('.st-count');
-        if (n && all.length) n.textContent = all.length + (all.length === 1 ? ' piece' : ' pieces');
-        var want = chosen[key], p = null;
-        if (want) rows.some(function (r) { if (r.handle === want && r.image) { p = r; return true; } return false; });
-        if (!p) p = all.filter(function (r) { return r.image && !used[r.handle]; })[0] || null;
-        if (!p) return;
-        used[p.handle] = true;
-        t.insertAdjacentHTML('afterbegin', '<span class="st-ph">' +
-          pic(p.image, p.title, [480, 900], '(max-width:620px) 50vw, (max-width:1100px) 33vw, 20vw', true) + '</span>');
-        t.classList.add('has-ph');
-      });
-    });
+    if (!tiles.length || !S.live || !window.SC_CATALOG || document.getElementById('boutiqueGrid')) return;
+    S.products(null).then(function (rows) { fillDoors(tiles, rows); });
   }
 
   function ready(fn) {

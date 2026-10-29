@@ -10,8 +10,10 @@
  *      which she sets product by product, else
  *   3. her Shopify Product type, which only places a piece in a department
  *      (it shows under that department's Shop All, with no sub-category).
- * Anything that matches none of those is an ORPHAN: it still appears under
- * Shop All Boutique and is listed for her to place.
+ * Anything that matches none of those is an ORPHAN: the boutique has no
+ * whole-assortment view any more (her brief of 2026-10-28), so an orphan is
+ * not reachable from the departments until she places it. They are listed
+ * for her in window.SC_ORPHANS.
  *
  * To move a piece: give it the tag of the category you want (the tag names
  * are the `tags` lists below) or add it to OVERRIDES. "holiday" as a tag puts
