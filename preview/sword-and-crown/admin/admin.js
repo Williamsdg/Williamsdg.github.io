@@ -737,7 +737,7 @@
     rows.sort(function (a, b) { return (b.created_at || '').localeCompare(a.created_at || ''); });
     if (!rows.length) {
       host.innerHTML = '<div class="empty"><h3>Nothing here</h3>' +
-        '<p>Requests from the styling page land here the moment someone sends one.</p></div>';
+        '<p>Requests from the salon, Wig Maintenance and Wig Alterations forms land here the moment someone sends one.</p></div>';
       return;
     }
     host.innerHTML = rows.map(function (r) {
@@ -746,10 +746,13 @@
       return '<div class="row"><div class="thumb ph">' + esc((r.name || '?').slice(0, 2).toUpperCase()) + '</div>' +
         '<div><h3>' + esc(r.name) + '</h3><div class="meta">' +
         '<span class="pill ' + (r.status === 'new' ? 'draft' : 'live') + '">' + esc(r.status) + '</span>' +
+        (/NOT (SENT|DELIVERED)/.test(r.staff_note || '') ? ' <span class="pill fail">Email not delivered</span>' : '') +
         ' &nbsp; ' + esc(r.service) + ' · ' + esc(when) + '<br>' +
         '<a href="tel:' + esc(r.phone) + '">' + esc(r.phone) + '</a> · ' +
         '<a href="mailto:' + esc(r.email) + '">' + esc(r.email) + '</a>' +
-        (r.details ? '<br>' + esc(r.details) : '') + '</div></div>' +
+        (r.details ? '<br>' + esc(r.details).replace(/\n/g, '<br>') : '') +
+        (r.staff_note ? '<br><small class="note' + (/NOT (SENT|DELIVERED)/.test(r.staff_note) ? ' fail' : '') + '">' + esc(r.staff_note) + '</small>' : '') +
+        '</div></div>' +
         '<div class="acts">' +
           (r.status === 'new' ? '<button class="btn ghost sm" data-req="contacted" data-id="' + esc(r.id) + '">Contacted</button>' : '') +
           (r.status !== 'booked' ? '<button class="btn pink sm" data-req="booked" data-id="' + esc(r.id) + '">Booked</button>' : '') +
