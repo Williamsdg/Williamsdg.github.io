@@ -14,6 +14,7 @@
  */
 (function () {
   'use strict';
+  var PAGE_T0 = Date.now();
 
   var form = document.getElementById('reqForm');
   if (!form) return;
@@ -43,6 +44,14 @@
 
     if (!row.name || !row.phone || !row.email || !row.details) {
       msg('Please fill in your name, phone, email and a short description.');
+      return;
+    }
+    /* Spam guard: a hidden "company" field no person can see, and a form that
+       was submitted within three seconds of the page loading. Bots fill the
+       first and do the second; we pretend to accept and save nothing. */
+    var hp = document.getElementById('rqCompany');
+    if ((hp && hp.value) || (Date.now() - PAGE_T0) < 3000) {
+      form.innerHTML = '<div class="req-done"><h3 class="d3">Your request is in!</h3></div>';
       return;
     }
 
