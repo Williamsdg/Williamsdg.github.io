@@ -45,6 +45,9 @@ window.SC_CATALOG = (function () {
       { key: 'earrings', name: 'Earrings' }, { key: 'necklaces', name: 'Necklaces' }, { key: 'bracelets', name: 'Bracelets' },
       { key: 'rings', name: 'Rings' }, { key: 'jewelry-boxes', name: 'Jewelry Boxes' }
     ] },
+    /* Gifts (Elana, 2026-10-29): a department of its own so the gift pieces have
+       a destination now that there is no boutique-wide Shop All. */
+    { key: 'gifts', name: 'Gifts', short: 'Gifts', subs: [] },
     { key: 'holiday', name: 'Holiday', short: 'Holiday', edit: true, subs: [] }
   ];
 
@@ -79,7 +82,15 @@ window.SC_CATALOG = (function () {
     'obsidian-volumizing-anti-pollution-scalp-scrub-shampoo': 'hair-care',
     'nourish-grow-system': 'hair-regrowth',
     'waffle-turban': 'turbans',
-    'pink-heat-protector-pad': 'hair-tools'
+    'pink-heat-protector-pad': 'hair-tools',
+    /* Gifts — her list of 2026-10-29: the pieces that had no department, and the
+       holiday gifts (which also stay in the Holiday edit). */
+    'beaded-iphone-charger': 'gifts', 'vintage-cat-sticker': 'gifts', 'wig-storage-containers': 'gifts',
+    'cowboy-boot-lighter': 'gifts', 'lipstick-lighter': 'gifts', 'badass-babe-journal-lined-notebook': 'gifts',
+    'mom-jotter-gel-pen-set-of-3': 'gifts',
+    'holiday-retro-deer-ornament-pink': 'gifts', 'elf-ornament-nifty-nyah': 'gifts', 'retro-dancing-christmas-santa-red': 'gifts',
+    'gumdrop-tree-night-light-pink': 'gifts', 'extra-naughty-tumbler-gold': 'gifts', 'jingle-juice-holiday-tumbler-gold': 'gifts',
+    'festive-jotter-gel-pen-set-of-3': 'gifts', 'santa-list-holiday-mini-jotter-notebook': 'gifts'
   };
   /* Ceramide Hydra-Balms → Makeup: matched by title prefix because there are
      several colourways with separate handles. */
@@ -104,7 +115,8 @@ window.SC_CATALOG = (function () {
     'luxe-christmas-santa-hat-light-pink',
     'retro-dancing-christmas-santa-red',
     'a-vintage-christmas-graphic-tee',
-    'see-you-under-the-mistletoe-holiday-boxy-cotton-t-shirt'
+    'see-you-under-the-mistletoe-holiday-boxy-cotton-t-shirt',
+    'gumdrop-tree-night-light-pink'
   ];
 
   /* ── lookups ─────────────────────────────────────────────────── */
@@ -129,6 +141,9 @@ window.SC_CATALOG = (function () {
     for (var j = 0; j < tags.length; j++) if (TAGS[tags[j]]) return TAGS[tags[j]];
     var t = norm(p.type);
     if (TYPES[t]) return TYPES[t];
+    /* a "gifts" tag places a piece only when nothing more specific does, so a
+       gift-tagged beanie or necklace stays in its own department */
+    if (tags.indexOf('gifts') > -1) return 'gifts';
     return null;
   }
   /* every key the product belongs under, from department down */

@@ -519,12 +519,32 @@
   d.addEventListener('click', function (e) { if (openPop && !openPop.el.contains(e.target)) closePop(); });
   d.addEventListener('keydown', function (e) { if (e.key === 'Escape' && openPop) { var b = openPop.btn; closePop(); b.focus(); } });
 
-  /* ── opening-soon list (concept: stores nothing) ── */
+  /* ── email list signup ──────────────────────────
+     Email only (her privacy notes, 2026-10-29: email and text consent stay
+     separate; no SMS marketing yet). Until a mailing tool is connected, each
+     signup is saved as a row in the admin's request inbox, service
+     "Email newsletter", so nobody who joins is lost. */
   $$('.list-form').forEach(function (f) {
     f.addEventListener('submit', function (e) {
       e.preventDefault();
-      var ok = f.parentNode.querySelector('.list-ok');
-      f.hidden = true; if (ok) { ok.hidden = false; ok.focus(); }
+      var input = $('input[type=email]', f), btn = $('button[type=submit]', f);
+      var ok = f.parentNode.querySelector('.list-ok'), bad = f.parentNode.querySelector('.list-err');
+      var email = (input && input.value || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) { if (input) { input.setAttribute('aria-invalid', 'true'); input.focus(); } return; }
+      if (input) input.removeAttribute('aria-invalid');
+      var CFG = window.SC_CONFIG || {};
+      if (!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY) { if (bad) bad.hidden = false; return; }
+      if (btn) btn.disabled = true;
+      fetch(CFG.SUPABASE_URL.replace(/\/+$/, '') + '/rest/v1/requests', {
+        method: 'POST',
+        headers: { apikey: CFG.SUPABASE_ANON_KEY, Authorization: 'Bearer ' + CFG.SUPABASE_ANON_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ name: 'Email newsletter signup', phone: '', email: email, service: 'Email newsletter',
+          details: 'Joined the Sword & Crown email list from the website (' + location.pathname.replace(/^.*\//, '') + '). Email only; no text-message consent.' })
+      }).then(function (r) {
+        if (btn) btn.disabled = false;
+        if (!r.ok) throw new Error(r.status);
+        f.hidden = true; if (bad) bad.hidden = true; if (ok) { ok.hidden = false; ok.focus(); }
+      }).catch(function () { if (btn) btn.disabled = false; if (bad) bad.hidden = false; });
     });
   });
 

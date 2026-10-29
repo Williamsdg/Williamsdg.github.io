@@ -48,7 +48,8 @@ window.SC_CONFIG = {
     clothing: 'leopard-micto-t-shirt',          // Leopard Micro Top
     accessories: 'ivory-velvet-turban',         // Ivory Velvet Turban
     products: 'ceramide-hydra-balm-rosewood',   // Ceramide Hydra-Balm, Rosewood
-    jewelry: 'chunky-gold-hoops'                // Chunky Gold Hoops
+    jewelry: 'chunky-gold-hoops',               // Chunky Gold Hoops
+    gifts: 'badass-babe-journal-lined-notebook' // Badass Babe Journal
   },
 
   /* Shopify — the system of record for inventory.

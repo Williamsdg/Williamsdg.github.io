@@ -547,7 +547,10 @@
         var val = /^https?:\/\//.test(v) ? '<a href="' + esc(v) + '" target="_blank" rel="noopener">View size guide</a>' : esc(v).replace(/\n/g, '<br>');
         return '<div><dt>' + k[1] + '</dt><dd>' + val + '</dd></div>';
       }).join('') : '';
-      var returns = (clothing || !isWig(p)) ? '<p class="prod-return">Returns and exchanges follow our boutique return policy. <a href="policies.html#returns">Read the policy</a>.</p>' : '';
+      /* key return terms at the purchase step (Elana's policies, 2026-10-29) */
+      var returns = isWig(p)
+        ? '<p class="prod-return">Wig returns must be initiated within 5 calendar days of delivery or purchase; the wig must be unworn and unaltered, with lace uncut. Approved change-of-mind wig returns incur a $250 restocking fee per wig. <a href="policies.html#wig-returns">Read the return policy</a>.</p>'
+        : '<p class="prod-return">Returns must be initiated within 14 calendar days of delivery or in-store purchase, with items in original condition. Items clearly marked Final Sale are nonreturnable for change of mind. <a href="policies.html#retail-returns">Read the return policy</a>.</p>';
 
       host.innerHTML =
         '<div class="wrap prod">' + crumbHtml +
@@ -565,14 +568,14 @@
               (p.variants.length ? '<button class="btn pink" type="button" data-add="">Add to bag</button>' : '') +
               secondary +
             '</div>' +
+            returns +
             (clothRows ? '<h2 class="d3" style="margin-top:28px">Fit &amp; details</h2><dl class="cfacts">' + clothRows + '</dl>' : '') +
             (specRows && !clothing ? '<h2 class="d3" style="margin-top:28px">Specification</h2><dl class="cfacts">' + specRows + '</dl>' : '') +
-            returns +
             '<a class="prod-back" href="' + esc(backHref) + '" data-back>&larr; ' + esc(backLabel) + '</a>' +
             (isWig(p)
-              ? '<p class="hint" style="margin-top:18px"><b>Every wig purchase includes a complimentary ' +
-                'Fringe Benefits service and The Shape-Up Cut.</b> Bangs or face-framing detail, and a ' +
-                'light layering cut — done for you at the salon.</p>'
+              ? '<p class="hint" style="margin-top:18px"><b>Each wig purchase includes one Fringe Benefits service ' +
+                'and one Shape-Up light layering cut.</b> This is a one-time offer redeemed at the time of an ' +
+                'in-house wig purchase.</p>'
               : '') +
           '</div>' +
         '</div>';
