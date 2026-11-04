@@ -48,18 +48,23 @@
 
   /* service-area map */
   $$('.map-wrap').forEach(el => {
-    const cur = el.dataset.current || '';
-    const shore = W.shore.map(p => p.join(',')).join(' ');
-    const water = `M0,0 L${shore.replace(/ /g, ' L')} L0,760 Z`;
+    const cur = el.dataset.current || '', M = W.map;
+    const counties = M.counties.map(c => `<path class="county${c.served ? ' served' : ''}" d="${c.d}"/>`).join('');
+    const clabels = M.counties.filter(c => c.cx > 40 && c.cx < M.w - 40 && c.cy > 30 && c.cy < M.h - 30).map(c => `<text class="countylabel" x="${c.cx}" y="${c.cy}">${c.n}</text>`).join('');
+    const lakes = M.lakes.map(l => `<ellipse class="lake" cx="${l.cx}" cy="${l.cy}" rx="${l.rx}" ry="${l.ry}" transform="rotate(${l.rot} ${l.cx} ${l.cy})"/>`).join('');
+    const roads = M.roads.map(r => `<path class="road${r.major ? ' major' : ''}" d="${r.d}"/>`).join('');
+    const rlabels = M.roads.filter(r => r.lx != null).map(r => `<text class="roadlabel" x="${r.lx}" y="${r.ly}" text-anchor="${r.anchor}">${r.n}</text>`).join('');
     const towns = W.towns.map(t => {
-      const anchor = t.anchor || 'start', tx = anchor === 'end' ? t.x - 10 : t.x + 10, ty = t.y + (t.dy || 5), r = t.home ? 7 : 5;
-      const cls = 'town' + (t.home ? ' home' : '') + (t.s === cur ? ' home' : '');
-      return `<a class="${cls}" href="town.html?t=${t.s}"><circle class="hit" cx="${t.x}" cy="${t.y}" r="36"/><circle cx="${t.x}" cy="${t.y}" r="${r}"/><text x="${tx}" y="${ty}" text-anchor="${anchor}">${t.n}</text></a>`;
+      const anchor = t.anchor || 'start', dx = t.dx != null ? t.dx : 10, dy = t.dy != null ? t.dy : 5, r = t.home ? 7 : 5;
+      const cls = 'town' + (t.home ? ' home' : '') + (t.s === cur && !t.home ? ' current' : '');
+      return `<a class="${cls}" href="town.html?t=${t.s}"><circle class="hit" cx="${t.x}" cy="${t.y}" r="30"/><circle class="dot" cx="${t.x}" cy="${t.y}" r="${r}"/><text x="${t.x + dx}" y="${t.y + dy}" text-anchor="${anchor}">${t.n}</text></a>`;
     }).join('');
-    el.innerHTML = `<svg viewBox="0 0 600 760" role="img" aria-label="Map of the West Michigan lakeshore with the twenty towns Workman Junk Removal serves, from Ludington down to Grand Rapids">
-      <path class="water" d="${water}"/><path class="shore" d="${water}"/>
-      <ellipse class="water" cx="200" cy="515" rx="17" ry="6"/><ellipse class="water" cx="150" cy="421" rx="6" ry="12"/>
-      <text class="lakelabel" transform="translate(40,440) rotate(-90)">LAKE MICHIGAN</text>${towns}</svg>`;
+    const sc = M.scale;
+    el.innerHTML = `<svg viewBox="0 0 ${M.w} ${M.h}" role="img" aria-label="Map of the West Michigan lakeshore counties with the twenty towns Workman Junk Removal serves, from Ludington down to Grand Rapids">
+      <rect class="water" width="${M.w}" height="${M.h}"/>${counties}${lakes}${roads}${clabels}${rlabels}
+      <text class="lakelabel" transform="translate(${M.lakeLabel.x},${M.lakeLabel.y}) rotate(-90)">LAKE MICHIGAN</text>
+      <g class="scale"><line x1="${sc.x}" y1="${sc.y}" x2="${sc.x + sc.len}" y2="${sc.y}"/><line x1="${sc.x}" y1="${sc.y - 5}" x2="${sc.x}" y2="${sc.y + 5}"/><line x1="${sc.x + sc.len}" y1="${sc.y - 5}" x2="${sc.x + sc.len}" y2="${sc.y + 5}"/><text x="${sc.x + sc.len / 2}" y="${sc.y - 9}" text-anchor="middle">${sc.label}</text></g>
+      ${towns}</svg>`;
   });
   $$('.towns-list').forEach(ul => {
     const cur = ul.dataset.current || '';
@@ -87,6 +92,6 @@
     document.title = `${t.n} junk removal | Workman Junk Removal`;
     $$('.map-wrap').forEach(el => { el.dataset.current = t.s; });
     $$('.town-pick a').forEach(a => { if (a.dataset.s === t.s) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-    $$('.map-wrap .town').forEach(a => a.classList.toggle('home', a.getAttribute('href').endsWith('=' + t.s) || a.getAttribute('href').endsWith('=muskegon')));
+    $$('.map-wrap .town').forEach(a => a.classList.toggle('current', a.getAttribute('href').endsWith('=' + t.s) && t.s !== 'muskegon'));
   }
 })();
