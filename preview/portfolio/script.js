@@ -16,7 +16,7 @@ const FEATURED_SLUGS = new Set([
 
 // Real client work — featured in section 01, never listed in the concept archive.
 const CLIENT_SLUGS = new Set(["auburn-daily"]);
-const CLIENT_COUNT = 7;
+const CLIENT_COUNT = 8;
 
 const ITEMS = [
   // Other featured / case studies / utilities
