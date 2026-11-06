@@ -211,12 +211,15 @@ window.SCShop = (function () {
       });
     },
 
+    /* Like product(): `null` when the handle isn't a collection, `false` when
+       the request itself failed. */
     collection: function (handle, limit) {
       return gql(
-        'query($h:String!,$n:Int!){collection(handle:$h){title products(first:$n)' +
+        'query($h:String!,$n:Int!){collection(handle:$h){title products(first:$n,sortKey:CREATED,reverse:true)' +
         '{nodes{' + PRODUCT_FIELDS + '}}}}',
         { h: handle, n: limit || 250 }
       ).then(function (d) {
+        if (d === null) return false;
         if (!d || !d.collection) return null;
         return { title: d.collection.title, products: d.collection.products.nodes.map(shape) };
       });

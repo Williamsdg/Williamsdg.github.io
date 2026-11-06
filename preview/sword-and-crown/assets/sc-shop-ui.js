@@ -192,6 +192,36 @@
         return type === w || type === w + 's' || tags.indexOf(w) > -1 || tags.indexOf(w + 's') > -1;
       });
     }
+    /* wigs.html?c=<handle> — one of her Shopify wig collections, from the
+       Wigs dropdown. Shows exactly what she put in that collection. */
+    function named(title) {
+      var eb = document.getElementById(opts.eyebrowId);
+      if (eb) eb.textContent = title;
+      var cr = document.getElementById(opts.crumbId);
+      if (cr) {
+        var up = document.createElement('a');
+        up.href = 'wigs.html'; up.textContent = cr.textContent;
+        var sep = document.createElement('span');
+        sep.setAttribute('aria-hidden', 'true'); sep.textContent = '/';
+        cr.parentNode.insertBefore(up, cr);
+        cr.parentNode.insertBefore(sep, cr);
+        cr.textContent = title;
+      }
+      document.title = title + ' \u2014 Sword & Crown Salon and Studio';
+    }
+    if (opts.handle) {
+      S.collection(opts.handle).then(function (res) {
+        if (res === false) { grid.innerHTML = failState(); return; }   // the call failed
+        if (res === null) { opts.handle = null; everything(); return; } // not one of hers: show every wig
+        named(res.title);
+        if (res.products.length) { all = res.products; buildFilters(); render(); return; }
+        grid.innerHTML = emptyState(opts.emptyText);
+      });
+      return;
+    }
+    everything();
+
+    function everything() {
     S.products(opts.query).then(function (rows) {
       if (rows === null) { grid.innerHTML = failState(); return; }   // the call failed
       rows = rows.filter(belongs);   // Shopify's search can over-match on partial words
@@ -215,6 +245,7 @@
         all = near; buildFilters(); render();
       });
     });
+    }
   }
 
   /* ── homepage "Meet your new crown" row ─────────────────────────
@@ -694,6 +725,8 @@
       gridId: 'wigGrid', barId: 'wigFilters', countId: 'wigCount',
       query: 'product_type:Wigs OR product_type:Toppers OR tag:wig',
       match: ['wig', 'topper'],
+      handle: new URLSearchParams(location.search).get('c'),
+      eyebrowId: 'wigEyebrow', crumbId: 'wigCrumb',
       emptyText: 'The collection goes live as the first wigs are washed, set and photographed.'
     });
     boutique();
