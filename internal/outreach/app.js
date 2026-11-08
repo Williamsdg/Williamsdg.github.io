@@ -69,7 +69,7 @@
   const fitEl = f => `<span class="fit ${f >= 60 ? 'hi' : f >= 40 ? 'mid' : ''}">${f ?? 0}</span>`;
   const ring = (label, v) => { const c = v == null ? '' : v >= 90 ? 'g' : v >= 50 ? 'y' : 'r'; return `<div class="ring ${c}"><b>${v == null ? '–' : Math.round(v)}</b>${label}</div>`; };
   const chan = c => ({ email: '✉ email', sms: '💬 text', call: '☎ call' }[c] || '—');
-  const stageLabel = s => ({ found: 'Found', graded: 'Graded', graded_partial: 'Graded (gaps)', contact_found: 'Contact found', no_contact: 'No contact', drafted: 'Draft ready', sent: 'Sent', replied: 'Replied', skipped: 'Skipped', suppressed: 'Suppressed' }[s] || s);
+  const stageLabel = s => ({ found: 'Found', graded: 'Graded', graded_partial: 'Graded (gaps)', contact_found: 'Contact found', no_contact: 'No contact', drafted: 'Draft ready', sent: 'Sent', replied: 'Replied', skipped: 'Skipped', suppressed: 'Suppressed', booked: 'Booked ☎' }[s] || s);
 
   // ---------- router ----------
   const views = {};
@@ -97,7 +97,7 @@
   async function tick() {
     try {
       const r = await api.post('/api/tick');
-      const TICKERS = ['schedule_sends', 'check_replies', 'schedule_followups'];
+      const TICKERS = ['schedule_sends', 'check_replies', 'schedule_followups', 'jarvis_tick'];
       const real = Object.entries(r.types || {}).filter(([t]) => !TICKERS.includes(t)).reduce((n, [, c]) => n + c, 0);
       const onCampaigns = (location.hash || '#campaigns').startsWith('#campaigns');
       if ((real || r.failed) && onCampaigns && !document.activeElement?.closest?.('#newCampaign')) render();
@@ -225,6 +225,7 @@
       <form id="addContact" class="row" style="margin-top:8px"><input name="name" placeholder="Name" style="width:140px"><input name="email" placeholder="Email" style="width:200px"><input name="phone" placeholder="Phone" style="width:140px"><button class="btn small">Add + draft</button></form>
       <h2>Messages</h2>
       ${r.messages.map(m => `<div class="msg"><div class="small muted">Step ${m.step} · ${m.channel} · ${m.status}${m.send_after ? ` · ${fmtDate(m.send_after)}` : ''}${m.sent_at ? ` · sent ${fmtDate(m.sent_at)}` : ''}</div>${m.subject ? `<strong>${esc(m.subject)}</strong>\n` : ''}${esc(m.body_text)}</div>`).join('') || '<p class="muted small">None yet.</p>'}
+      ${(r.calls || []).length ? `<h2>Calls ${b.call_status ? `<span class="small muted">· ${callStatusLabel(b.call_status)}${b.next_call_after ? ` · next ${fmtDate(b.next_call_after)}` : ''}</span>` : ''}</h2>${r.calls.map(c => `<div class="msg"><div class="small muted">${fmtDate(c.created_at)} · ${c.direction} · ${c.status === 'failed' ? 'failed' : outcomeLabel(c.outcome)}${c.duration_secs ? ` · ${dur(c.duration_secs)}` : ''}${c.history_url ? ` · <a href="${esc(c.history_url)}" target="_blank" rel="noopener">listen</a>` : ''}</div>${esc(c.summary || c.error || '')}</div>`).join('')}` : ''}
       ${r.replies.length ? `<h2>Replies</h2>${r.replies.map(x => `<div class="msg"><div class="small muted">${fmtDate(x.received_at)} · ${esc(x.from_addr || '')}${x.is_bounce ? ' · BOUNCE' : ''}${x.is_stop ? ' · STOP' : ''}</div>${esc(x.body || '')}</div>`).join('')}` : ''}
       <h2>Actions</h2>
       <div class="row">
@@ -378,6 +379,127 @@
     $('#supForm').addEventListener('submit', async e => { e.preventDefault(); try { await api.post('/api/suppressions', Object.fromEntries(new FormData(e.target).entries())); toast('Added'); render(); } catch (err) { toast(err.message, true); } });
     $$('[data-del]').forEach(b => b.addEventListener('click', async () => { try { await api.del(`/api/suppressions?id=${b.dataset.del}`); render(); } catch (err) { toast(err.message, true); } }));
     $('#runTick').addEventListener('click', async () => { const r = await tick(); toast(r ? `Worker ran ${r.ran} job(s)${r.failed ? `, ${r.failed} failed` : ''}` : 'Worker call failed', !r); refreshStatus(); });
+  };
+
+
+  // ---------- calls (Jarvis) ----------
+  const callStatusLabel = s => ({ calling: 'On the phone', retry: 'Retry later', callback: 'Callback asked', booked: 'Booked', not_interested: 'Not interested', dnc: 'Do not call', exhausted: 'No more attempts', wrong_number: 'Wrong number', needs_human: 'Cell phone — call yourself', queued: 'Queued' }[s] || (s ? s : '—'));
+  const outcomeLabel = o => ({ booked: 'Booked ✓', callback: 'Callback', not_interested: 'Not interested', wrong_number: 'Wrong number', do_not_call: 'Do not call', voicemail: 'Voicemail', no_answer: 'No answer', busy: 'Busy', gatekeeper: 'Gatekeeper', failed: 'Failed', other: 'Other' }[o] || (o || '—'));
+  const dur = s => s == null ? '' : s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
+  const chk = (name, label, on) => `<label class="chk"><input type="checkbox" name="${name}" ${on ? 'checked' : ''}>${label}</label>`;
+
+  views.calls = async () => {
+    let j;
+    try { j = await api.get('/api/jarvis'); }
+    catch (err) {
+      if (err.status === 404 || err.status === 409) {
+        $('#view').innerHTML = `<h1>Calls</h1><div class="panel warn"><strong>Jarvis calling isn't set up yet.</strong><p class="small" style="margin:8px 0 0">${err.status === 404 ? 'The API has not been deployed with the calling code.' : esc(err.message)} In a terminal run <code>bash ~/wd-outreach-api/scripts/jarvis-setup.sh</code> — it walks through the database step, builds the ElevenLabs agent, and redeploys.</p></div>`;
+        return;
+      }
+      throw err;
+    }
+    const s = j.settings;
+    const dayBoxes = (name, days) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => `<label class="chk"><input type="checkbox" name="${name}" value="${i}" ${days.includes(i) ? 'checked' : ''}>${d}</label>`).join('');
+    const setup = j.configured ? '' : `<div class="panel warn"><strong>ElevenLabs isn't connected yet.</strong> In a terminal run <code>bash ~/wd-outreach-api/scripts/jarvis-setup.sh</code> — it asks for the ElevenLabs API key, builds the agent and imports the Twilio number. Jarvis can't dial until then.</div>`;
+    $('#view').innerHTML = `<div class="row"><h1 style="margin:0">Calls</h1><span class="state ${s.enabled ? 'running' : 'paused'}">${s.enabled ? 'Jarvis is calling' : 'Jarvis is paused'}</span><span class="spacer"></span>
+        <button class="btn small ${s.enabled ? '' : 'primary'}" id="toggleJarvis" ${j.configured ? '' : 'disabled'}>${s.enabled ? 'Pause Jarvis' : 'Turn Jarvis on'}</button></div>
+      ${setup}
+      <div class="kpis" style="margin-top:14px">
+        <div class="kpi"><b>${j.today.calls}<small>of ${j.today.cap}</small></b><span>Calls placed today</span></div>
+        <div class="kpi"><b>${j.queue_eligible}<small>of ${j.queue_total}</small></b><span>Callable right now</span></div>
+        <div class="kpi"><b>${j.booked_total}</b><span>Appointments booked</span></div>
+        <div class="kpi"><b>${j.in_flight.length}</b><span>${j.in_flight.length === 1 ? 'Call in progress' : 'Calls in progress'}</span></div>
+      </div>
+      <div class="grid c2">
+        <div class="panel"><h2 style="margin-top:0">Hear it yourself</h2>
+          <p class="small muted">Jarvis rings this number and runs the real pitch with sample facts (Magic City Roofing). Nothing is saved against a business.</p>
+          <form id="testCall" class="row"><input name="to" placeholder="(205) 555-0100" style="width:200px" required><button class="btn small primary" ${j.configured && !j.in_flight.length ? '' : 'disabled'}>Call me</button></form>
+          <h2>How it decides who to call</h2>
+          <p class="small muted">Landline businesses from the call lane, best fit first, inside their local calling hours, one call at a time, up to the daily cap. Cell phones are never dialled by Jarvis: the FCC treats AI voices as "artificial voice" calls, which need prior consent on cells. Those show up below as "call yourself". "Take me off your list" removes the number everywhere instantly.</p>
+          ${j.calendar.configured ? `<p class="small ${j.calendar.ok ? 'muted' : ''}" style="${j.calendar.ok ? '' : 'color:#fcd34d'}">Calendar: ${j.calendar.ok ? 'connected — busy times are avoided' : 'could not be read on the last check'}</p>` : '<p class="small muted">Calendar: not connected (CALENDAR_ICS_URL) — only booked appointments are avoided.</p>'}
+        </div>
+        <form class="panel" id="jarvisForm"><h2 style="margin-top:0">Rules</h2>
+          <div class="grid c2">
+            <div><label>Calls per day</label><input name="daily_cap" type="number" min="0" max="100" value="${s.daily_cap}"></div>
+            <div><label>Attempts per business</label><input name="max_attempts" type="number" min="1" max="5" value="${s.max_attempts}"></div>
+            <div><label>Days between attempts</label><input name="retry_days" type="number" min="1" max="14" value="${s.retry_days}"></div>
+            <div><label>Minimum fit score</label><input name="min_fit" type="number" min="0" max="100" value="${s.min_fit}"></div>
+            <div><label>Calling hours start (their local time)</label><input name="w_start" value="${esc(s.window.start)}"></div>
+            <div><label>Calling hours end</label><input name="w_end" value="${esc(s.window.end)}"></div>
+          </div>
+          <label>Calling days</label><div class="row">${dayBoxes('w_day', s.window.days)}</div>
+          <h2>Your appointment slots (${esc(s.slots.tz)})</h2>
+          <div class="grid c2">
+            <div><label>Earliest</label><input name="s_start" value="${esc(s.slots.start)}"></div>
+            <div><label>Latest</label><input name="s_end" value="${esc(s.slots.end)}"></div>
+            <div><label>Length (minutes)</label><input name="duration_min" type="number" min="10" max="120" value="${s.slots.duration_min}"></div>
+            <div><label>Minimum notice (hours)</label><input name="lead_hours" type="number" min="1" max="168" value="${s.slots.lead_hours}"></div>
+            <div><label>Days ahead to offer</label><input name="horizon_days" type="number" min="1" max="30" value="${s.slots.horizon_days}"></div>
+            <div><label>Buffer around calendar events (min)</label><input name="buffer_min" type="number" min="0" max="60" value="${s.slots.buffer_min}"></div>
+          </div>
+          <label>Slot days</label><div class="row">${dayBoxes('s_day', s.slots.days)}</div>
+          <h2>Safety</h2>
+          <label>Recording line</label><select name="recording_disclosure"><option value="two_party" ${s.recording_disclosure === 'two_party' ? 'selected' : ''}>Only in two-party-consent states (CA, FL, IL, PA, WA…)</option><option value="always" ${s.recording_disclosure === 'always' ? 'selected' : ''}>On every call</option><option value="never" ${s.recording_disclosure === 'never' ? 'selected' : ''}>Never</option></select>
+          <label>Transfer hot prospects to (your cell; also re-run the setup script)</label><input name="transfer_number" value="${esc(s.transfer_number || '')}" placeholder="blank = no live transfers">
+          <label>Test number — while set, EVERY call rings this number instead of the prospect</label><input name="test_number" value="${esc(s.test_number || '')}" placeholder="blank for real calls">
+          <label>Send booking alerts to</label><input name="notify_email" value="${esc(s.notify_email || '')}" placeholder="Dylan@williamsdigital.io">
+          <div class="grid c2" style="margin-top:12px">
+            ${chk('allow_voip', 'Also call VoIP business lines', s.allow_voip)}
+            ${chk('auto_send_invites', 'Email the prospect’s confirmation automatically (off = Gmail draft for you)', s.auto_send_invites)}
+          </div>
+          <button class="btn primary" style="margin-top:16px">Save rules</button>
+        </form>
+      </div>
+      <h2>Up next <span class="muted small">${j.queue_eligible} callable of ${j.queue_total} in the lane</span></h2>
+      <div class="panel" style="padding:0 8px"><table class="resp"><thead><tr><th>Business</th><th>Phone</th><th>Fit</th><th>Tried</th><th>Status</th><th></th></tr></thead><tbody>
+        ${j.queue.map(q => `<tr>
+          <td data-l="Business"><a href="#" data-open="${q.business_id}"><strong>${esc(q.name)}</strong></a><div class="small muted">${esc([q.city, q.state].filter(Boolean).join(', '))} · ${esc(q.tz.replace('America/', '').replace('_', ' '))}</div></td>
+          <td data-l="Phone" class="small">${esc(q.phone || '—')}${q.phone_type ? ` <span class="dim">[${q.phone_type}]</span>` : ''}</td>
+          <td data-l="Fit">${fitEl(q.fit)}</td><td data-l="Tried">${q.attempts}</td>
+          <td data-l="Status" class="small">${q.eligible ? '<span style="color:var(--ok)">● callable now</span>' : `<span class="muted">${esc(q.reason_text || callStatusLabel(q.call_status))}</span>`}${q.next_call_after && !q.eligible ? `<div class="dim">next ${fmtDate(q.next_call_after)}</div>` : ''}</td>
+          <td><button class="btn small ghost" data-callnow="${q.business_id}" ${j.configured && !j.in_flight.length && q.phone && q.phone_type !== 'mobile' ? '' : 'disabled'} title="Call this business now (still respects their local hours)">Call now</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">Nothing in the call lane yet. Run a campaign; landline-only businesses land here.</td></tr>'}
+      </tbody></table></div>
+      <h2>Recent calls</h2>
+      <div class="panel" style="padding:0 8px"><table class="resp"><thead><tr><th>When</th><th>Business</th><th>Result</th><th>Length</th><th>What happened</th><th></th></tr></thead><tbody>
+        ${j.recent_calls.map(c => `<tr>
+          <td data-l="When" class="small">${fmtDate(c.created_at)}${c.direction === 'inbound' ? ' <span class="pill" style="background:var(--line)">inbound</span>' : ''}</td>
+          <td data-l="Business">${c.business_id ? `<a href="#" data-open="${c.business_id}">${esc(c.business_name || '')}</a>` : `<span class="muted">${esc(c.business_name || (c.direction === 'inbound' ? 'Inbound caller' : 'Unknown'))}</span>`}<div class="small dim">${esc(c.to_number || '')}</div></td>
+          <td data-l="Result">${c.status === 'dialing' || c.status === 'in_progress' ? '<span style="color:var(--warn)">● live</span>' : c.status === 'failed' ? `<span style="color:#fca5a5">failed</span>` : outcomeLabel(c.outcome)}</td>
+          <td data-l="Length" class="small">${dur(c.duration_secs)}</td>
+          <td data-l="Summary" class="small">${esc(c.summary || c.error || '')}${c.transcript && c.transcript.length ? `<details class="tr"><summary>transcript</summary>${c.transcript.map(t => `<div><b>${t.role === 'agent' ? 'Jarvis' : 'Them'}:</b> ${esc(t.message || '')}</div>`).join('')}</details>` : ''}</td>
+          <td class="small">${c.history_url ? `<a href="${esc(c.history_url)}" target="_blank" rel="noopener">listen</a>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No calls yet.</td></tr>'}
+      </tbody></table></div>
+      <h2>Appointments</h2>
+      <div class="panel" style="padding:0 8px"><table class="resp"><thead><tr><th>When</th><th>Business</th><th>Who</th><th>Status</th></tr></thead><tbody>
+        ${j.appointments.map(a => `<tr><td data-l="When"><strong>${esc(a.when)}</strong></td><td data-l="Business">${a.business_id ? `<a href="#" data-open="${a.business_id}">${esc(a.business_name || '')}</a>` : '<span class="muted">inbound caller</span>'}</td>
+          <td data-l="Who" class="small">${esc([a.prospect_name, a.prospect_phone, a.prospect_email].filter(Boolean).join(' · '))}${a.notes ? `<div class="dim">${esc(a.notes)}</div>` : ''}</td>
+          <td data-l="Status" class="small">${esc(a.status)}${a.invite_sent_at ? ' · invite sent' : a.invite_draft_at ? ' · <span style="color:#fcd34d">invite drafted in Gmail — send it</span>' : a.prospect_email ? '' : ' · no email given'}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">Nothing booked yet.</td></tr>'}
+      </tbody></table></div>`;
+
+    $('#toggleJarvis').addEventListener('click', async () => {
+      if (!s.enabled && !confirm('Turn Jarvis on? It will start calling landline businesses in the call lane during their business hours, up to the daily cap.')) return;
+      try { await api.post(`/api/jarvis/${s.enabled ? 'pause' : 'resume'}`); toast(s.enabled ? 'Jarvis paused' : 'Jarvis is on'); render(); } catch (err) { toast(err.message, true); }
+    });
+    $('#testCall').addEventListener('submit', async e => {
+      e.preventDefault();
+      try { await api.post('/api/jarvis/test-call', { to: e.target.to.value }); toast('Ringing you now…'); setTimeout(render, 4000); } catch (err) { toast(err.message, true); }
+    });
+    $('#jarvisForm').addEventListener('submit', async e => {
+      e.preventDefault(); const f = e.target;
+      const patch = {
+        daily_cap: +f.daily_cap.value, max_attempts: +f.max_attempts.value, retry_days: +f.retry_days.value, min_fit: +f.min_fit.value,
+        window: { days: $$('input[name=w_day]:checked', f).map(x => +x.value), start: f.w_start.value, end: f.w_end.value },
+        slots: { days: $$('input[name=s_day]:checked', f).map(x => +x.value), start: f.s_start.value, end: f.s_end.value, duration_min: +f.duration_min.value, lead_hours: +f.lead_hours.value, horizon_days: +f.horizon_days.value, buffer_min: +f.buffer_min.value },
+        recording_disclosure: f.recording_disclosure.value, transfer_number: f.transfer_number.value || null, test_number: f.test_number.value || null, notify_email: f.notify_email.value || null,
+        allow_voip: f.allow_voip.checked, auto_send_invites: f.auto_send_invites.checked,
+      };
+      try { await api.patch('/api/settings', { jarvis: patch }); toast('Saved'); } catch (err) { toast(err.message, true); }
+    });
+    $$('[data-callnow]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Call this business now?')) return;
+      try { await api.post('/api/jarvis/call-now', { business_id: b.dataset.callnow }); toast('Dialling…'); setTimeout(render, 3000); } catch (err) { toast(err.message, true); }
+    }));
+    $$('[data-open]').forEach(el => el.addEventListener('click', e => { e.preventDefault(); openDrawer(el.dataset.open); }));
   };
 
   // ---------- boot ----------
