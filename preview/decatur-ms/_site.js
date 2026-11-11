@@ -1,4 +1,4 @@
-/* Town of Decatur — shared content layer for the concept.
+/* Town of Decatur — shared content layer.
    Content edited in admin.html is saved to the browser and read by the public
    pages, so the editor genuinely works during a demo. A live build would store
    this server-side instead. */
@@ -7,12 +7,12 @@
 
   var DEFAULTS={
     banner:{on:false,level:'info',title:'',msg:'',linkText:'',linkUrl:'',stamp:''},
-    hero:{l1:'Faith. Family.',l2:'Education.',
-          lede:'The Town of Decatur already painted its own front page on a downtown wall. This website just says the same thing — and then gets you to the water bill in two taps.'},
-    week:{garbage:'Wednesdays',garbageNote:'Household garbage pickup, every week.',
-          limbs:'Tuesdays',limbsNote:'Yard debris and cut limbs at the curb.',
-          due:'Due the 10th',dueNote:'Service is disconnected the first working day after the 10th. Reconnection is $50.',
-          hours:'8:00 a.m. – 12:00 p.m., closed for lunch, then 1:00 – 5:00 p.m.',
+    hero:{l1:'Welcome to',l2:'Decatur, Mississippi',
+          lede:'The county seat of Newton County, on State Highway 15 — home to East Central Community College, Newton County Schools and Turkey Creek Water Park.'},
+    week:{garbage:'Wednesday',garbageNote:'One garbage can is furnished at no additional charge.',
+          limbs:'Tuesday',limbsNote:'Limbs and brush at the curb.',
+          due:'Due the 10th',dueNote:'Cut-off is the first working day after the 10th. No partial payments. Reconnect fee $50.',
+          hours:'Monday–Friday, 8:00 a.m. – 12:00 noon and 1:00 – 5:00 p.m.',
           cutoffs:''}  /* computed in apply() when the Town has not set one */,
     news:[],
     depts:{police:true,fire:true,works:true,chamber:false}
@@ -109,8 +109,8 @@
     var items=(d.news||[]).filter(function(n){return n&&(n.t||n.b);});
     if(!items.length){ host.hidden=true; return; }
     host.hidden=false;
-    host.innerHTML='<div class="wrap"><div class="sec-head"><p class="eyebrow">Town news</p>'+
-      '<h2>What&rsquo;s happening in Decatur</h2></div><div class="cards c3">'+
+    host.innerHTML='<div class="wrap"><div class="sec-head"><p class="eyebrow">From Town Hall</p>'+
+      '<h2>Notices</h2></div><div class="cards c3">'+
       items.map(function(n){
         return '<div class="card"><h3>'+esc(n.t||'')+'</h3>'+
           (n.d?'<p style="font-size:13.5px;color:var(--ink-3);font-weight:600;margin-bottom:8px">'+esc(n.d)+'</p>':'')+
