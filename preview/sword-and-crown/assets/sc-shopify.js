@@ -90,7 +90,9 @@ window.SCShop = (function () {
   var PRODUCT_FULL = PRODUCT_FIELDS.replace(
     'variants(first:1){nodes{id availableForSale quantityAvailable}}',
     'variants(first:100){nodes{id title availableForSale quantityAvailable ' +
-    'price{amount currencyCode} image{url altText} selectedOptions{name value}}}');
+    'price{amount currencyCode} image{url altText} selectedOptions{name value}}}')
+    /* the product page shows her description as formatted in Shopify (paragraphs, bold lines) */
+    .replace('title description ', 'title description descriptionHtml ');
 
   function shape(node) {
     if (!node) return null;
@@ -104,6 +106,7 @@ window.SCShop = (function () {
       handle: node.handle,
       title: node.title,
       description: node.description,
+      descriptionHtml: node.descriptionHtml || '',
       type: node.productType || '',
       tags: node.tags || [],
       available: !!node.availableForSale,

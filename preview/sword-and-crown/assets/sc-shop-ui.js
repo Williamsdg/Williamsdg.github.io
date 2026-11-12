@@ -16,6 +16,49 @@
   if (!S) return;
   var esc = (window.SC && window.SC.esc) || function (x) { return String(x == null ? '' : x); };
 
+  /* Product descriptions arrive as Shopify HTML. Keep her paragraphs, line
+     breaks, bold/italic and lists; drop every attribute, span and anything
+     that could run or load (a <template> is inert, so nothing fires while parsing). */
+  function richDesc(html) {
+    var t = document.createElement('template');
+    t.innerHTML = String(html || '');
+    var KEEP = { P: 1, BR: 1, STRONG: 1, B: 1, EM: 1, I: 1, U: 1, UL: 1, OL: 1, LI: 1, A: 1 };
+    var DROP = /^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|SVG|IMG|PICTURE|VIDEO|AUDIO|SOURCE|FORM|INPUT|BUTTON|SELECT|TEXTAREA|TEMPLATE|LINK|META)$/;
+    var BLOCK = 'p,div,ul,ol,li,h1,h2,h3,h4,h5,h6,table';
+    function unwrap(el) { while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el); el.remove(); }
+    (function walk(node) {
+      Array.prototype.slice.call(node.childNodes).forEach(function (c) {
+        if (c.nodeType === 3) return;
+        if (c.nodeType !== 1) { c.remove(); return; }
+        var tag = c.tagName.toUpperCase();
+        if (DROP.test(tag)) { c.remove(); return; }
+        walk(c);
+        if (/^H[1-6]$/.test(tag) || (tag === 'DIV' && !c.querySelector(BLOCK))) {
+          var p = document.createElement('p');
+          var holder = /^H/.test(tag) ? p.appendChild(document.createElement('strong')) : p;
+          while (c.firstChild) holder.appendChild(c.firstChild);
+          c.replaceWith(p);
+          return;
+        }
+        if (!KEEP[tag]) { unwrap(c); return; }
+        var href = tag === 'A' ? (c.getAttribute('href') || '') : '';
+        Array.prototype.slice.call(c.attributes).forEach(function (a) { c.removeAttribute(a.name); });
+        if (tag === 'A') {
+          if (!/^(https?:|mailto:|tel:|\/|#)/i.test(href)) { unwrap(c); return; }
+          c.setAttribute('href', href);
+          if (/^https?:/i.test(href)) { c.setAttribute('target', '_blank'); c.setAttribute('rel', 'noopener'); }
+        }
+      });
+    })(t.content);
+    /* Shopify's editor leaves empty bold runs and trailing <br>s; they would add blank lines */
+    t.content.querySelectorAll('strong,b,em,i,u').forEach(function (el) { if (!el.textContent.trim()) el.remove(); });
+    t.content.querySelectorAll('p,li').forEach(function (el) {
+      while (el.lastChild && (el.lastChild.nodeName === 'BR' || (el.lastChild.nodeType === 3 && !el.lastChild.textContent.trim()))) el.lastChild.remove();
+      if (!el.textContent.trim()) el.remove();
+    });
+    return t.innerHTML.trim();
+  }
+
   function money(n, cur) {
     if (n == null) return '';
     var whole = Math.abs(n % 1) < 0.005;
@@ -592,7 +635,8 @@
             '<h1 class="d2">' + esc(p.title) + '</h1>' +
             '<p class="prod-price" id="pPrice"></p>' +
             '<p class="prod-sold" id="pSold" hidden>Sold out</p>' +
-            (p.description ? '<div class="prod-desc">' + esc(p.description).replace(/\n/g, '<br>') + '</div>' : '') +
+            (p.descriptionHtml ? '<div class="prod-desc">' + richDesc(p.descriptionHtml) + '</div>' :
+              p.description ? '<div class="prod-desc">' + esc(p.description).replace(/\n/g, '<br>') + '</div>' : '') +
             fitScale(p.fitIndex) +
             picker +
             '<div class="prod-cta">' +
