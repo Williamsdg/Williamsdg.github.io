@@ -41,8 +41,8 @@
     $('#scoreVal').textContent = S.score;
     var left = (S.assessed ? 0 : 1) + (S.ref ? 0 : 1);
     $('#greetLine').textContent = S.score >= 100
-      ? 'Your LiftScore is 100. Employers searching for medical assistants see you first.'
-      : 'Your LiftScore is ' + S.score + '. ' + (left === 1 ? 'One more lift' : 'Two more lifts') + ' and employers searching for medical assistants will see you near the top.';
+      ? 'Your profile is complete. Employers searching for medical assistants see everything they need.'
+      : 'Your profile is ' + S.score + '% complete. ' + (left === 1 ? 'One more lift' : 'Two more lifts') + ' and employers searching for medical assistants see everything they need.';
     $('#scoreHint').textContent = left ? 'Things to lift' : 'Nothing left to lift. Nice work.';
     if (S.score >= 85) earn('pro');
   }
@@ -100,7 +100,7 @@
     var assessNote = (!S.assessed && j.cat === 'health') ? '<p class="muted" style="font-size:13.5px;margin:8px 0 0">Pass Patient Care Basics in the Academy to confirm this part of your match.</p>' : '';
     $('#jobBody').innerHTML =
       '<p class="muted" style="margin:0 0 14px">' + esc(j.loc) + '. ' + esc(j.pay) + '. ' + esc(j.type) + '.</p>' +
-      '<h4>About the job</h4><p>' + esc(j.about) + '</p>' +
+      '<h4>About the role</h4><p>' + esc(j.about) + '</p>' +
       '<h4>What they\'re looking for</h4><ul style="margin:0 0 8px;padding-left:20px">' + j.need.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' +
       '<h4>Why you matched, ' + j.match + '%</h4><div class="abar"><div><span>Skills</span><b>' + j.skills + '%</b><i style="--w:' + j.skills + '%"></i></div><div><span>Experience</span><b>' + j.exp + '%</b><i style="--w:' + j.exp + '%"></i></div><div><span>Assessment</span><b>' + j.assess + '%</b><i style="--w:' + j.assess + '%"></i></div></div>' + assessNote;
     syncJobButtons();
@@ -116,7 +116,7 @@
   $('#jobInterest').addEventListener('click', function () {
     if (!curJob) return;
     S.interested[curJob.id] = true; syncJobButtons(); renderJobs();
-    WL.toast(curJob.co + ' can see you\'re interested.');
+    WL.toast(curJob.co + ' can see you\'re interested. Your contact details stay private until you accept an interview.');
   });
   $('#jobSave').addEventListener('click', function () {
     if (!curJob) return;
@@ -277,7 +277,7 @@
   }
   function quizResult() {
     var pct = Math.round(Q.right / QUIZ.length * 100), pass = Q.right >= 4;
-    qb.innerHTML = '<div class="quiz"><div class="result"><div class="ring" style="--p:' + pct + '" role="img" aria-label="Score ' + pct + ' percent"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" cx="60" cy="60" r="52"/></svg><div class="val"><b>' + pct + '%</b></div></div><div class="txt"><h3>' + (pass ? 'You passed. ' : 'Not quite. ') + Q.right + ' of ' + QUIZ.length + '.</h3><p>' + (pass ? 'Patient Care Basics is now on your profile for employers to see. LiftScore up 18.' : 'Four of five is a pass. Reread the explanations and try again whenever you like.') + '</p></div></div></div>';
+    qb.innerHTML = '<div class="quiz"><div class="result"><div class="ring" style="--p:' + pct + '" role="img" aria-label="Score ' + pct + ' percent"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" cx="60" cy="60" r="52"/></svg><div class="val"><b>' + pct + '%</b></div></div><div class="txt"><h3>' + (pass ? 'You passed. ' : 'Not quite. ') + Q.right + ' of ' + QUIZ.length + '.</h3><p>' + (pass ? 'Patient Care Basics is on your profile. Employers see the result while result sharing is on in Privacy. LiftScore up 18.' : 'Four of five is a pass. Reread the explanations and try again whenever you like.') + '</p></div></div></div>';
     qf.innerHTML = pass ? '<button class="btn btn-lift" type="button" id="qDone">Back to the Academy</button>' : '<button class="btn btn-lift" type="button" id="qRetry">Try again</button>';
     if (pass) {
       if (!S.assessed) { S.assessed = true; setScore(S.score + 18); earn('assessed'); }
@@ -321,10 +321,20 @@
 
   /* ---------- interview request ---------- */
   $('#acceptReq').addEventListener('click', function () {
-    $('#req1').innerHTML = '<div class="avatar sm sky">RM</div><div class="who"><b>Red Mountain Family Medicine</b><span>Medical Assistant. Tuesday, Nov 18 at 10:00 am, in person</span></div><div class="acts"><span class="status ok">Accepted</span></div>';
+    $('#req1').innerHTML = '<div class="avatar sm sky">RM</div><div class="who"><b>Red Mountain Family Medicine</b><span>Medical Assistant. Tuesday, Nov 18 at 10:00 am, in person</span><span class="muted" style="font-size:13px;margin-top:4px">Your phone number and email are now shared with Red Mountain.</span></div><div class="acts"><span class="status ok">Accepted</span></div>';
     $('#reqStatus').textContent = '1 accepted'; $('#reqStatus').className = 'status ok';
     earn('interview');
   });
+  $('#declineReq').addEventListener('click', function () {
+    $('#req1').innerHTML = '<div class="avatar sm sky">RM</div><div class="who"><b>Red Mountain Family Medicine</b><span>Medical Assistant. Tuesday, Nov 18 at 10:00 am, in person</span><span class="muted" style="font-size:13px;margin-top:4px">Red Mountain was told you declined. They never saw your contact details.</span></div><div class="acts"><span class="status off">Declined</span></div>';
+    $('#reqStatus').textContent = '0 waiting'; $('#reqStatus').className = 'status off';
+    WL.toast('Declined. Your contact details were not shared.');
+  });
+
+  /* ---------- privacy ---------- */
+  $('#pvVisible').addEventListener('change', function () { WL.toast(this.checked ? 'Your profile is visible in employer searches.' : 'Your profile is hidden. Employers can no longer find you.'); });
+  $('#pvAssess').addEventListener('change', function () { WL.toast(this.checked ? 'Assessment results are shown to employers.' : 'Assessment results are hidden from employers.'); });
+  $('#confirmDelete').addEventListener('click', function () { WL.close('deleteModal'); WL.toast('Prototype: account deletion is switched off on this preview.'); });
 
   /* ---------- boot ---------- */
   renderBadges(); renderTop(); renderJobs(); applyTpl('ma');
