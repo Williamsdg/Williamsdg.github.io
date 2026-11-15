@@ -25,7 +25,7 @@
   var byId = function (id) { return C.filter(function (c) { return c.id === id; })[0]; };
 
   var S = {
-    saved: { 7: true },
+    saved: { 7: true, 1: true },
     requests: [
       { id: 101, cid: 7, role: 'Forklift Operator', when: 'Tue, Nov 18 at 2:00 pm', type: 'In person', status: 'Accepted', shared: 'Nov 14' },
       { id: 102, cid: 3, role: 'Warehouse Associate', when: 'Mon, Nov 17 at 9:00 am', type: 'Phone', status: 'Pending' }
@@ -34,8 +34,17 @@
       { id: 1, f: { role: 'warehouse', dist: '25', av: 'any', exp: '0', pass: true, open: false }, label: 'Warehouse Associate, within 25 miles, assessment passed', since: 'Nov 10', fresh: 1 },
       { id: 2, f: { role: 'forklift', dist: '25', av: 'now', exp: '1', pass: true, open: true }, label: 'Forklift Operator, within 25 miles, available now, 1+ years, assessment passed, nights or weekends', since: 'Nov 4', fresh: 2 }
     ],
+    feed: [
+      { t: 'Nov 14', s: 'Jordan Mims accepted your Forklift Operator interview for Tue, Nov 18 and shared contact details.' },
+      { t: 'Nov 13', s: 'You requested a phone interview with Marcus Tran for Mon, Nov 17.' },
+      { t: 'Nov 13', s: 'Payment of $29.00 received. Next payment Dec 13.' },
+      { t: 'Nov 12', s: '2 new candidates match your Forklift Operator search.' },
+      { t: 'Nov 10', s: 'You saved a search: Warehouse Associate, within 25 miles, assessment passed.' }
+    ],
     cur: null
   };
+  function log(text) { S.feed.unshift({ t: 'Just now', s: text }); }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
   var nextId = 103, nextSearch = 3;
   function reqFor(cid) { return S.requests.filter(function (r) { return r.cid === cid; })[0]; }
   function accepted(cid) { var r = reqFor(cid); return r && r.status === 'Accepted' ? r : null; }
@@ -91,10 +100,7 @@
     var list = C.filter(function (c) { return S.saved[c.id]; });
     $('#savedList').innerHTML = list.length ? list.map(card).join('') : '<div class="empty">Nothing shortlisted yet. Use Shortlist on any candidate in Search to keep them here.</div>';
   }
-  function renderRequests() {
-    var el = $('#reqList');
-    if (!S.requests.length) { el.innerHTML = '<div class="empty">No interview requests yet.</div>'; return; }
-    el.innerHTML = S.requests.map(function (r) {
+  function reqRow(r) {
       var c = byId(r.cid);
       var st = r.status === 'Accepted' ? 'ok' : (r.status === 'Declined' ? 'bad' : 'warn');
       var contact = r.status === 'Accepted'
@@ -104,7 +110,48 @@
         ? '<button class="btn btn-ghost btn-sm" type="button" data-toast="Prototype: messaging is switched off on this preview.">Message</button>'
         : '<button class="btn btn-ghost btn-sm" type="button" disabled title="Available once the candidate accepts">Message</button>';
       return '<div class="req"><div class="avatar sm spark">' + c.in + '</div><div class="who"><b>' + esc(c.n) + ', ' + esc(r.role) + '</b><span>' + esc(r.when) + '. ' + esc(r.type) + '</span>' + contact + '</div><div class="acts"><span class="status ' + st + '">' + r.status + '</span>' + msg + (r.status === 'Pending' ? '<button class="btn btn-ghost btn-sm" type="button" data-cancelreq="' + r.id + '">Withdraw</button>' : '') + '</div></div>';
-    }).join('');
+  }
+  function renderRequests() {
+    var el = $('#reqList');
+    el.innerHTML = S.requests.length ? S.requests.map(reqRow).join('') : '<div class="empty">No interview requests yet. Find a candidate in Search and choose Request interview.</div>';
+  }
+
+  /* ---------- home ---------- */
+  function renderHome() {
+    var acc = S.requests.filter(function (r) { return r.status === 'Accepted'; });
+    var pen = S.requests.filter(function (r) { return r.status === 'Pending'; });
+    var dec = S.requests.filter(function (r) { return r.status === 'Declined'; });
+    var freshS = S.searches.filter(function (x) { return x.fresh > 0; });
+    var fresh = freshS.reduce(function (n, x) { return n + x.fresh; }, 0);
+    var saved = C.filter(function (c) { return S.saved[c.id]; });
+
+    var bits = [];
+    if (acc.length) bits.push(byId(acc[0].cid).n.split(' ')[0] + ' accepted your interview request and shared contact details.');
+    if (fresh) bits.push(plural(fresh, 'new candidate matches', 'new candidates match') + ' your saved searches.');
+    if (pen.length) bits.push(plural(pen.length, 'request is', 'requests are') + ' waiting on an answer.');
+    $('#hGreet').textContent = bits.length ? bits.join(' ') : 'Nothing new since your last visit. Run a search to find your next hire.';
+
+    $('#hNew').textContent = fresh;
+    $('#hNewSub').textContent = freshS.length ? 'across ' + plural(freshS.length, 'saved search', 'saved searches') : (S.searches.length ? 'No new matches yet' : 'Save a search to get alerts');
+    $('#hShort').textContent = saved.length;
+    $('#hShortSub').textContent = saved.length ? saved.slice(0, 3).map(function (c) { return c.n.split(' ')[0]; }).join(', ') + (saved.length > 3 ? ' and ' + (saved.length - 3) + ' more' : '') : 'Nothing set aside yet';
+    $('#hReq').textContent = S.requests.length;
+    var sub = [];
+    if (acc.length) sub.push(acc.length + ' accepted');
+    if (pen.length) sub.push(pen.length + ' waiting');
+    if (dec.length) sub.push(dec.length + ' declined');
+    $('#hReqSub').textContent = sub.join(', ') || 'None sent yet';
+
+    var chip = $('#hReqChip');
+    chip.textContent = pen.length ? pen.length + ' waiting' : (acc.length ? acc.length + ' accepted' : 'None yet');
+    chip.className = 'status ' + (pen.length ? 'warn' : (acc.length ? 'ok' : 'off'));
+    $('#hReqList').innerHTML = S.requests.length ? S.requests.slice(0, 3).map(reqRow).join('') : '<div class="empty">No interview requests yet. Find a candidate in Search and choose Request interview.</div>';
+
+    $('#hFresh').innerHTML = freshS.length
+      ? '<ul class="attn">' + freshS.map(function (x) { return '<li>' + ICON('i-star') + '<span><b>' + plural(x.fresh, 'new candidate', 'new candidates') + '</b> for ' + esc(x.label) + '</span><a href="#search" data-run="' + x.id + '">Run search</a></li>'; }).join('') + '</ul>'
+      : '<div class="empty">No new candidates since your last visit. WorkLift keeps running your saved searches and tells you here when someone new matches.</div>';
+
+    $('#hFeed').innerHTML = S.feed.slice(0, 5).map(function (f) { return '<li><time>' + esc(f.t) + '</time><span>' + esc(f.s) + '</span></li>'; }).join('');
   }
   function renderSearches() {
     var el = $('#searchList');
@@ -113,7 +160,7 @@
       return '<div class="row"><div><b>' + esc(s.label) + '</b><span class="sub">Saved ' + esc(s.since) + '</span></div><div>' + (s.fresh ? '<span class="status ok">' + s.fresh + ' new since ' + esc(s.since) + '</span>' : '<span class="status off">No new candidates</span>') + '</div><div></div><div class="acts"><button class="btn btn-lift btn-sm" type="button" data-run="' + s.id + '">Run search</button><button class="btn btn-ghost btn-sm" type="button" data-delsearch="' + s.id + '">Delete</button></div></div>';
     }).join('');
   }
-  function renderAll() { renderSearch(); renderSaved(); renderRequests(); renderSearches(); }
+  function renderAll() { renderSearch(); renderSaved(); renderRequests(); renderSearches(); renderHome(); }
 
   /* ---------- candidate sheet ---------- */
   function openCand(id) {
@@ -147,6 +194,7 @@
   /* ---------- actions ---------- */
   function toggleSave(id) {
     S.saved[id] = !S.saved[id];
+    log(S.saved[id] ? 'You shortlisted ' + byId(id).n + '.' : 'You removed ' + byId(id).n + ' from your shortlist.');
     WL.toast(S.saved[id] ? byId(id).n.split(' ')[0] + ' added to your shortlist.' : 'Removed from your shortlist.');
     renderAll();
   }
@@ -169,7 +217,9 @@
   }
   $('#reqSend').addEventListener('click', function () {
     var c = byId(reqCid); if (!c) return;
-    S.requests.unshift({ id: nextId++, cid: c.id, role: $('#qRole').value, when: fmtWhen($('#qDate').value, $('#qTime').value), type: $('#qType').value.split(' at ')[0], status: 'Pending' });
+    var type = $('#qType').value.split(' at ')[0], when = fmtWhen($('#qDate').value, $('#qTime').value);
+    S.requests.unshift({ id: nextId++, cid: c.id, role: $('#qRole').value, when: when, type: type, status: 'Pending' });
+    log('You requested ' + (/^[aeiou]/i.test(type) ? 'an ' : 'a ') + type.toLowerCase() + ' interview with ' + c.n + ' for ' + when + '.');
     WL.close('reqModal');
     WL.toast('Interview request sent to ' + c.n.split(' ')[0] + '.');
     renderAll();
@@ -178,7 +228,8 @@
   $('#saveSearch').addEventListener('click', function () {
     var f = readFilters();
     S.searches.unshift({ id: nextSearch++, f: f, label: labelFor(f), since: 'today', fresh: 0 });
-    renderSearches();
+    log('You saved a search: ' + labelFor(f) + '.');
+    renderSearches(); renderHome();
     WL.toast('Search saved. We\'ll tell you when new candidates match.');
   });
 
@@ -188,22 +239,25 @@
     if ((t = e.target.closest('[data-req]'))) { openReq(+t.dataset.req); return; }
     if ((t = e.target.closest('[data-cand]'))) { openCand(+t.dataset.cand); return; }
     if ((t = e.target.closest('[data-cancelreq]'))) {
+      var gone = S.requests.filter(function (r) { return r.id === +t.dataset.cancelreq; })[0];
+      if (gone) log('You withdrew your interview request to ' + byId(gone.cid).n + '.');
       S.requests = S.requests.filter(function (r) { return r.id !== +t.dataset.cancelreq; });
       WL.toast('Request withdrawn.'); renderAll(); return;
     }
     if ((t = e.target.closest('[data-run]'))) {
       var s = S.searches.filter(function (x) { return x.id === +t.dataset.run; })[0];
-      if (s) { writeFilters(s.f); renderSearch(); location.hash = 'search'; }
+      if (s) { writeFilters(s.f); s.fresh = 0; renderSearch(); renderSearches(); renderHome(); location.hash = 'search'; }
       return;
     }
     if ((t = e.target.closest('[data-delsearch]'))) {
       S.searches = S.searches.filter(function (x) { return x.id !== +t.dataset.delsearch; });
-      renderSearches(); WL.toast('Saved search deleted.'); return;
+      log('You deleted a saved search.');
+      renderSearches(); renderHome(); WL.toast('Saved search deleted.'); return;
     }
   });
   ['fRole', 'fDist', 'fAvail', 'fExp', 'fPass', 'fOpen'].forEach(function (id) { $('#' + id).addEventListener('change', renderSearch); });
 
   /* ---------- boot ---------- */
   renderAll();
-  WL.router('search');
+  WL.router('overview');
 })();
