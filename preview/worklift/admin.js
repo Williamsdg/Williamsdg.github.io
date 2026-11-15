@@ -32,11 +32,12 @@
     });
     $('#cCount').textContent = list.length + ' of ' + CANDS.length;
     $('#cRows').innerHTML = list.length ? list.map(function (c) {
-      return '<div class="row' + (c.flag ? '' : '') + '" data-cid="' + c.id + '">' +
-        '<div style="display:flex;gap:10px;align-items:center;min-width:0"><div class="avatar sm">' + initials(c.n) + '</div><div style="min-width:0"><b>' + esc(c.n) + '</b><span class="sub">' + esc(c.r) + '. Joined ' + esc(c.j) + '</span></div></div>' +
-        '<div><span class="sub">Profile</span>' + c.c + '% complete</div>' +
-        '<div><span class="sub">Assessments</span>' + (c.as ? c.as + ' passed' : 'None yet') + '</div>' +
-        '<div class="acts">' + (c.flag ? '<span class="status bad">Flagged, hidden from search</span><button class="btn btn-ghost btn-sm" type="button" data-unflag="' + c.id + '">Clear flag</button>' : '<span class="status ok">Visible</span><button class="btn btn-ghost btn-sm" type="button" data-flag="' + c.id + '">Flag</button>') + '<button class="btn btn-ghost btn-sm" type="button" data-toast="Prototype: the full record opens here, with contact details visible to Owner and Admin staff only.">Open</button></div>' +
+      return '<div class="tr' + (c.flag ? ' flagged' : '') + '" data-cid="' + c.id + '">' +
+        '<div class="who"><div class="avatar sm">' + initials(c.n) + '</div><div style="min-width:0"><b>' + esc(c.n) + '</b><span class="sub">' + esc(c.r) + '. Joined ' + esc(c.j) + '</span></div></div>' +
+        '<div class="pbar' + (c.c < 60 ? ' low' : '') + '" data-l="Profile" aria-label="Profile ' + c.c + '% complete"><i style="--w:' + c.c + '%"></i><b>' + c.c + '%</b></div>' +
+        '<div data-l="Assessments">' + (c.as ? c.as + ' passed' : '<span class="quiet">None yet</span>') + '</div>' +
+        '<div data-l="Status"' + (c.flag ? '' : ' class="dflt"') + '>' + (c.flag ? '<span class="status bad">Hidden</span>' : '<span class="quiet">Searchable</span>') + '</div>' +
+        '<div class="acts">' + (c.flag ? '<button class="tbtn mute" type="button" data-unflag="' + c.id + '">Clear flag</button>' : '<button class="tbtn mute" type="button" data-flag="' + c.id + '">Flag</button>') + '<button class="tbtn" type="button" data-toast="Prototype: the full record opens here, with contact details visible to Owner and Admin staff only.">Open</button></div>' +
         (c.flag ? '<p class="note">' + ICON('i-flag') + esc(c.flag) + '</p>' : '') +
         '</div>';
     }).join('') : '<div class="empty">No candidates match.</div>';
@@ -69,12 +70,12 @@
     $('#eCount').textContent = list.length + ' of ' + EMPS.length;
     $('#eRows').innerHTML = list.length ? list.map(function (e) {
       var acts = e.ver === 'Verified'
-        ? '<button class="btn btn-ghost btn-sm" type="button" data-toast="Prototype: the employer record opens here with searches, requests and invoices.">Open</button>' + (e.sub === 'Past due' ? '<button class="btn btn-ghost btn-sm" type="button" data-toast="Retry scheduled. The card is charged again tonight.">Retry now</button>' : '')
-        : '<button class="btn btn-lift btn-sm" type="button" data-verify="' + e.id + '">Verify</button><button class="btn btn-ghost btn-sm" type="button" data-toast="Prototype: a request for more information would be emailed to ' + esc(e.who) + '.">Ask for info</button>';
-      return '<div class="row">' +
-        '<div><b>' + esc(e.co) + '</b><span class="sub">' + esc(e.who) + '. Joined ' + esc(e.j) + '</span></div>' +
-        '<div>' + verChip(e.ver) + '<span class="sub">' + e.s30 + ' searches, ' + e.r30 + ' requests in 30 days</span></div>' +
-        '<div>' + subChip(e.sub) + '<span class="sub">' + esc(e.next) + '</span></div>' +
+        ? (e.sub === 'Past due' ? '<button class="tbtn mute" type="button" data-toast="Retry scheduled. The card is charged again tonight.">Retry now</button>' : '') + '<button class="tbtn" type="button" data-toast="Prototype: the employer record opens here with searches, requests and invoices.">Open</button>'
+        : '<button class="tbtn mute" type="button" data-toast="Prototype: a request for more information would be emailed to ' + esc(e.who) + '.">Ask for info</button><button class="btn btn-lift btn-sm" type="button" data-verify="' + e.id + '">Verify</button>';
+      return '<div class="tr' + (e.note ? ' flagged' : '') + '">' +
+        '<div class="who"><div style="min-width:0"><b>' + esc(e.co) + '</b><span class="sub">' + esc(e.who) + '. Joined ' + esc(e.j) + '</span></div></div>' +
+        '<div data-l="Verification">' + verChip(e.ver) + '<span class="sub">' + e.s30 + ' searches, ' + e.r30 + ' requests in 30 days</span></div>' +
+        '<div data-l="Subscription">' + subChip(e.sub) + '<span class="sub">' + esc(e.next) + '</span></div>' +
         '<div class="acts">' + acts + '</div>' +
         (e.note ? '<p class="note">' + ICON('i-flag') + esc(e.note) + '</p>' : '') +
         '</div>';
@@ -95,11 +96,12 @@
   ];
   function renderAssess() {
     $('#aRows').innerHTML = ASSESS.map(function (a) {
-      return '<div class="row">' +
-        '<div><b>' + esc(a.n) + '</b><span class="sub">' + a.q + ' questions, pass mark ' + Math.ceil(a.q * 0.8) + ' of ' + a.q + '</span></div>' +
-        '<div><span class="sub">Taken</span>' + (a.taken ? a.taken.toLocaleString() + ' times' : 'Not yet published') + '</div>' +
-        '<div><span class="sub">Pass rate</span>' + (a.pass === null ? 'n/a' : a.pass + '%') + '</div>' +
-        '<div class="acts"><span class="status ' + (a.st === 'Live' ? 'ok' : 'off') + '">' + a.st + '</span><button class="btn btn-ghost btn-sm" type="button" data-toast="Prototype: the assessment editor is switched off on this preview.">Edit questions</button></div>' +
+      return '<div class="tr' + (a.note ? ' flagged' : '') + '">' +
+        '<div class="who"><div style="min-width:0"><b>' + esc(a.n) + '</b><span class="sub">' + a.q + ' questions, pass mark ' + Math.ceil(a.q * 0.8) + ' of ' + a.q + '</span></div></div>' +
+        '<div data-l="Taken">' + (a.taken ? a.taken.toLocaleString() + ' times' : '<span class="quiet">Not yet published</span>') + '</div>' +
+        '<div data-l="Pass rate">' + (a.pass === null ? '<span class="quiet">Not yet</span>' : a.pass + '%') + '</div>' +
+        '<div data-l="Status"><span class="status ' + (a.st === 'Live' ? 'ok' : 'off') + '">' + a.st + '</span></div>' +
+        '<div class="acts"><button class="tbtn" type="button" data-toast="Prototype: the assessment editor is switched off on this preview.">Edit questions</button></div>' +
         (a.note ? '<p class="note">' + ICON('i-flag') + esc(a.note) + '</p>' : '') +
         '</div>';
     }).join('');
