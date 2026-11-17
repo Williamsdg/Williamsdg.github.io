@@ -8,7 +8,7 @@
   var DEFAULTS={
     banner:{on:false,level:'info',title:'',msg:'',linkText:'',linkUrl:'',stamp:''},
     hero:{l1:'Welcome to',l2:'Decatur, Mississippi',
-          lede:'The county seat of Newton County, on State Highway 15 — home to East Central Community College, Newton County Schools and Turkey Creek Water Park.'},
+          lede:'The county seat of Newton County on State Highway 15, home to East Central Community College, Newton County Schools and Turkey Creek Water Park.'},
     week:{garbage:'Wednesday',garbageNote:'One garbage can is furnished at no additional charge.',
           limbs:'Tuesday',limbsNote:'Limbs and brush at the curb.',
           due:'Due the 10th',dueNote:'Cut-off is the first working day after the 10th. No partial payments. Reconnect fee $50.',
@@ -41,16 +41,16 @@
     if(document.getElementById('wd-banner-css')) return;
     var s=document.createElement('style'); s.id='wd-banner-css';
     s.textContent=
-      '.wd-banner{position:relative;z-index:120;padding:14px 0;font-family:Inter,system-ui,sans-serif;'+
+      '.wd-banner{position:relative;z-index:120;padding:14px 0;font-family:Arial,Helvetica,sans-serif;'+
       'padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}'+
       '.wd-banner .wd-in{max-width:1180px;margin:0 auto;padding-inline:clamp(16px,4vw,40px);display:flex;gap:14px;align-items:flex-start}'+
-      '.wd-banner .wd-ic{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;line-height:1;margin-top:1px}'+
+      '.wd-banner .wd-ic{flex:0 0 auto;width:26px;height:26px;border-radius:3px;display:grid;place-items:center;font-weight:800;font-size:15px;line-height:1;margin-top:1px}'+
       '.wd-banner .wd-bd{flex:1;min-width:0}'+
-      '.wd-banner .wd-lab{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.85}'+
+      '.wd-banner .wd-lab{font-size:13px;font-weight:700;opacity:.9}'+
       '.wd-banner .wd-t{font-size:17px;font-weight:800;line-height:1.3;margin-top:3px}'+
       '.wd-banner .wd-m{font-size:15px;line-height:1.55;margin-top:5px}'+
       '.wd-banner a.wd-lk{color:inherit;font-weight:700;text-decoration:underline;display:inline-block;margin-top:8px;min-height:32px}'+
-      '.wd-banner .wd-x{flex:0 0 auto;background:transparent;border:1px solid currentColor;color:inherit;border-radius:8px;'+
+      '.wd-banner .wd-x{flex:0 0 auto;background:transparent;border:1px solid currentColor;color:inherit;border-radius:3px;'+
       'width:34px;height:34px;cursor:pointer;font-size:16px;line-height:1;opacity:.75}'+
       '.wd-banner .wd-x:hover{opacity:1}'+
       '@media(max-width:600px){.wd-banner .wd-t{font-size:16px}.wd-banner .wd-m{font-size:14.5px}}';
@@ -109,13 +109,11 @@
     var items=(d.news||[]).filter(function(n){return n&&(n.t||n.b);});
     if(!items.length){ host.hidden=true; return; }
     host.hidden=false;
-    host.innerHTML='<div class="wrap"><div class="sec-head"><p class="eyebrow">From Town Hall</p>'+
-      '<h2>Notices</h2></div><div class="cards c3">'+
+    host.innerHTML='<h2>News &amp; Notices</h2>'+
       items.map(function(n){
-        return '<div class="card"><h3>'+esc(n.t||'')+'</h3>'+
-          (n.d?'<p style="font-size:13.5px;color:var(--ink-3);font-weight:600;margin-bottom:8px">'+esc(n.d)+'</p>':'')+
+        return '<div class="notice">'+(n.d?'<p class="d">'+esc(n.d)+'</p>':'')+'<h3>'+esc(n.t||'')+'</h3>'+
           '<p>'+esc(n.b||'')+'</p></div>';
-      }).join('')+'</div></div>';
+      }).join('');
   }
 
   function renderDepts(d){
