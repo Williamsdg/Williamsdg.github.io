@@ -7,8 +7,8 @@
 
   var DEFAULTS={
     banner:{on:false,level:'info',title:'',msg:'',linkText:'',linkUrl:'',stamp:''},
-    hero:{l1:'Decatur, Mississippi',l2:'',
-          lede:'The county seat of Newton County, on State Highway 15 in east-central Mississippi. Home to East Central Community College, which opened here in 1928, and to Newton County Schools and Newton County Academy.'},
+    hero:{l1:'Decatur,',l2:'Mississippi',
+          lede:'The seat of Newton County since 1836, on State Highway 15 in east-central Mississippi.'},
     week:{garbage:'Wednesday',garbageNote:'One garbage can is furnished at no additional charge.',
           limbs:'Tuesday',limbsNote:'Limbs and brush at the curb.',
           due:'Due the 10th',dueNote:'Cut-off is the first working day after the 10th. No partial payments. Reconnect fee $50.',
