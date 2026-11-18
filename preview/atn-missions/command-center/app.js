@@ -182,7 +182,7 @@ function renderOverview(C){
         '<div class="panel"><div class="panel-head"><h3>Stories Awaiting Publication</h3><span class="link" data-goto="stories">Manage →</span></div><div class="panel-body">'+
           d.stories.filter(function(s){return s.status!=='published';}).slice(0,4).map(function(s){
             return '<div class="tl" data-story="'+s.id+'"><div class="info"><div class="nm">'+esc(s.title)+'</div><div class="meta">'+esc([s.location,s.region].filter(Boolean).join(' · '))+'</div></div><div>'+statusBadge(s.status)+'</div></div>';
-          }).join('')||'<div style="padding:22px;color:var(--muted-d)">All stories published 🎉</div>'+
+          }).join('')||'<div style="padding:22px;color:var(--muted-d)">'+(d.stories.length?'All stories published 🎉':'No stories yet — write the first one under Stories.')+'</div>'+
         '</div></div>'+
       '</div>';
 
