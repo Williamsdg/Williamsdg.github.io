@@ -142,7 +142,7 @@
 
   function safeUrl(u){ u=normUrl(u); return /^\s*(javascript|data|vbscript|file):/i.test(u)?'':u; }
   function normUrl(u){
-    u=String(u||'').trim();
+    u=String(u||'').replace(/[\x00-\x1F\x7F]/g,'').trim();
     if(!u) return u;
     if(/^(https?:|mailto:|tel:|#|\/|\.\.?\/)/i.test(u)) return u;
     if(/\.(html?|pdf|jpe?g|png|webp)(\?|#|$)/i.test(u)) return u;
@@ -335,7 +335,7 @@
       var a=document.getElementById('wdEx'+n+'a'); if(a&&safeUrl(it.url)) a.href=safeUrl(it.url); applyPhoto('wdEx'+n+'img',it.photo,'wdEx'+n+'fig'); });
     var dp=d.dephotos||{}; applyPhoto('wdDeptImgPolice',dp.police,'wdDeptFigPolice'); applyPhoto('wdDeptImgFire',dp.fire,'wdDeptFigFire'); applyPhoto('wdDeptImgWorks',dp.works,'wdDeptFigWorks');
     var hp=document.getElementById('wdHallPhoto'), hm=document.getElementById('wdHallMark'); if(hp&&d.hall&&d.hall.photo&&resolveSrc(d.hall.photo.src)&&!d.hall.photo.remove){ hp.src=resolveSrc(d.hall.photo.src); hp.alt=d.hall.photo.alt||'Decatur Town Hall'; if(d.hall.photo.pos) hp.style.objectPosition=d.hall.photo.pos; hp.hidden=false; if(hm) hm.style.display='none'; }
-    var ft=d.footer||{}; setText('wdFootAddr',ft.addr); setText('wdFootHours',ft.hours); setText('wdFootPhone',ft.phone); var fe=document.getElementById('wdFootEmail'); if(fe&&ft.email){ fe.textContent=ft.email; fe.href='mailto:'+ft.email; }
+    var ft=d.footer||{}; setText('wdFootAddr',ft.addr); setText('wdFootHours',ft.hours); setText('wdFootPhone',ft.phone); var fp=document.getElementById('wdFootPhone'); if(fp&&ft.phone) fp.href='tel:'+ft.phone.replace(/\D/g,''); var fe=document.getElementById('wdFootEmail'); if(fe&&ft.email){ fe.textContent=ft.email; fe.href='mailto:'+ft.email; }
     if(ft.addr){ var ci=ft.addr.indexOf(', '), a1=ci>-1?ft.addr.slice(0,ci):ft.addr, a2=ci>-1?ft.addr.slice(ci+2):''; setText('wdHallAddr',a1); var h2=document.getElementById('wdHallAddr2'); if(h2) h2.textContent=a2; var ca=document.getElementById('wdContactAddr'); if(ca) ca.innerHTML=esc(a1)+(a2?'<br>'+esc(a2):''); }
     if(ft.phone){ var tel='tel:'+ft.phone.replace(/\D/g,''); setText('wdHallPhone',ft.phone); var hc=document.getElementById('wdHallCall'); if(hc) hc.href=tel; var cp=document.getElementById('wdContactPhone'); if(cp){ cp.textContent=ft.phone; cp.href=tel; } if(fe&&!ft.email){} }
     if(ft.email){ setText('wdHallEmail',ft.email); var he=document.getElementById('wdHallEmailA'); if(he) he.href='mailto:'+ft.email; var ce=document.getElementById('wdContactEmail'); if(ce){ ce.textContent=ft.email; ce.href='mailto:'+ft.email; } }
