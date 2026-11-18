@@ -11,7 +11,7 @@
           lede:'The seat of Newton County since 1836, on State Highway 15 in east-central Mississippi.'},
     week:{garbage:'Wednesday',garbageNote:'One garbage can is furnished at no additional charge.',
           limbs:'Tuesday',limbsNote:'Limbs and brush at the curb.',
-          due:'Due the 10th',dueNote:'Cut-off is the first working day after the 10th. No partial payments. Reconnect fee $50.',
+          due:'due the 10th',dueNote:'Cut-off is the first working day after the 10th. No partial payments. Reconnect fee $50.',
           hours:'Monday–Friday, 8:00 a.m. – 12:00 noon and 1:00 – 5:00 p.m.',
           cutoffs:''}  /* computed in apply() when the Town has not set one */,
     news:[],
