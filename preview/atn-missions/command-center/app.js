@@ -49,6 +49,31 @@ function api(body){
   return fetch(API,{method:'POST',headers:{'Content-Type':'application/json','x-atn-pass':pass},body:JSON.stringify(body||{})})
     .then(function(r){ if(r.status===401) throw new Error('unauthorized'); return r.json(); });
 }
+/* ---------- image upload (-> Supabase Storage through atn-cc) ---------- */
+function upload(file,folder){
+  var fd=new FormData(); fd.append('file',file,file.name||'photo.jpg'); fd.append('folder',folder||'stories');
+  return fetch(API,{method:'POST',headers:{'x-atn-pass':pass},body:fd}).then(function(r){
+    if(r.status===401) throw new Error('unauthorized');
+    return r.json().then(function(j){ if(!r.ok||j.error) throw new Error(j.error||('Upload failed ('+r.status+')')); return j; });
+  });
+}
+/* shrink big camera photos in the browser before upload (longest side 2000px, JPEG) */
+function prepImage(file){
+  return new Promise(function(res){
+    if(!/^image\/(jpeg|png|webp)$/.test(file.type)){ res(file); return; }
+    var url=URL.createObjectURL(file); var im=new Image();
+    im.onload=function(){
+      URL.revokeObjectURL(url);
+      var MAX=2000, w=im.naturalWidth, h=im.naturalHeight;
+      if(w<=MAX && h<=MAX && file.size<1.5*1024*1024){ res(file); return; }
+      var sc=Math.min(1,MAX/Math.max(w,h)); var c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      c.toBlob(function(b){ res(b?new File([b],String(file.name||'photo').replace(/\.\w+$/,'')+'.jpg',{type:'image/jpeg'}):file); },'image/jpeg',.86);
+    };
+    im.onerror=function(){ URL.revokeObjectURL(url); res(file); };
+    im.src=url;
+  });
+}
 function toast(msg){ var t=$('#toast'); $('#toast-msg').textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('show');},2600); }
 function money(n){ n=+n||0; return '$'+n.toLocaleString(); }
 function fmtRange(a,b){ if(!a)return 'Dates TBD'; var o={month:'short',day:'numeric'}; var s=new Date(a+'T00:00:00'); var e=b?new Date(b+'T00:00:00'):null; var y=s.getFullYear(); return s.toLocaleDateString(undefined,o)+(e?' – '+e.toLocaleDateString(undefined,o):'')+', '+y; }
@@ -327,13 +352,13 @@ function renderStories(C){
     var chip=function(k,l){return '<div class="scard" style="padding:16px 20px"><div class="lab">'+l+'</div><div class="val" style="font-size:1.7rem">'+(counts[k]||0)+'</div></div>';};
     var cards=rows.map(function(s){
       return '<div class="card" data-sid="'+s.id+'">'+
-        '<div class="cimg" style="background-image:url(\'../'+esc(s.featured_image||'img/story-community.jpg')+'\')"></div>'+
+        '<div class="cimg" style="background-image:url(\''+esc(imgPath(s.featured_image||'img/story-community.jpg'))+'\')"></div>'+
         '<div class="cbody"><div style="display:flex;justify-content:space-between;align-items:center"><div class="ctitle" style="font-size:.98rem">'+esc(s.title)+'</div>'+statusBadge(s.status)+'</div>'+
         '<div class="cmeta">'+esc([s.location,s.region].filter(Boolean).join(' · '))+'</div>'+
-        '<div class="crow"><span class="muted" style="font-size:.74rem">'+esc(s.category||'')+'</span><button class="btn btn-ghost btn-sm edit-s" data-sid="'+s.id+'">Open editor</button></div></div></div>';
+        '<div class="crow"><span class="muted" style="font-size:.74rem">'+esc([s.category,s.publish_date].filter(Boolean).join(' · '))+'</span><span style="display:flex;gap:10px;align-items:center">'+(storyIsLive(s)&&s.slug?'<a class="lk" href="'+esc(storyUrl(s))+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">View page ↗</a>':'')+'<button class="btn btn-ghost btn-sm edit-s" data-sid="'+s.id+'">Open editor</button></span></div></div></div>';
     }).join('');
-    C.innerHTML='<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-end"><div><h1>Stories of Impact</h1><p>These power the <b>God Is Moving</b> section. Manage which three are featured below.</p></div>'+
-      '<button class="btn btn-primary" id="new-story"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Story</button></div>'+
+    C.innerHTML='<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-end"><div><h1>Stories of Impact</h1><p>Every published story gets its own page on the website. The three you feature below appear in <b>God Is Moving</b> on the homepage.</p></div>'+
+      '<div style="display:flex;gap:10px;align-items:center"><a href="../stories/" target="_blank" rel="noopener" class="btn btn-ghost">Stories page ↗</a><button class="btn btn-primary" id="new-story"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Story</button></div></div>'+
       '<div class="stat-row">'+chip('draft','Drafts')+chip('review','In Review')+chip('scheduled','Scheduled')+chip('published','Published')+'</div>'+
       godIsMovingManager()+
       '<div class="panel-head" style="border:none;padding:6px 0 14px"><h3>All Stories</h3></div>'+
@@ -346,13 +371,13 @@ function renderStories(C){
 }
 
 function godIsMovingManager(){
-  var pubStories=(DATA.stories||[]).filter(function(s){return s.status==='published';});
+  var pubStories=(DATA.stories||[]).filter(storyIsLive);
   var feat=(DATA.featured||[]).slice().sort(function(a,b){return a.position-b.position;});
   var slotHtml=[1,2,3].map(function(pos){
     var f=feat.filter(function(x){return x.position===pos;})[0];
     var story=f?pubStories.filter(function(s){return s.id===f.story_id;})[0]:null;
-    var opts='<option value="">— choose a published story —</option>'+pubStories.map(function(s){return '<option value="'+s.id+'"'+(story&&story.id===s.id?' selected':'')+'>'+esc(s.title)+'</option>';}).join('');
-    var img=story?'../'+esc(story.featured_image||'img/story-community.jpg'):'';
+    var opts='<option value="">— choose a live story —</option>'+pubStories.map(function(s){return '<option value="'+s.id+'"'+(story&&story.id===s.id?' selected':'')+'>'+esc(s.title)+'</option>';}).join('');
+    var img=story?esc(imgPath(story.featured_image||'img/story-community.jpg')):'';
     return '<div class="card" style="cursor:default"><div class="cimg" style="background-image:url(\''+img+'\')"><div style="padding:8px 10px;font-weight:800;color:#fff;font-size:.9rem;text-shadow:0 1px 4px rgba(0,0,0,.6)">0'+pos+'</div></div>'+
       '<div class="cbody"><div class="ctitle" style="font-size:.92rem;min-height:1.3em">'+esc(story?story.title:'Empty slot')+'</div>'+
       '<select class="feat-select" data-pos="'+pos+'" style="width:100%;margin-top:10px;background:#fff;border:1px solid var(--line-2);border-radius:5px;padding:8px;font-size:.82rem">'+opts+'</select></div></div>';
@@ -468,26 +493,188 @@ function travelerForm(trip,x){
   var del=$('#del'); if(del)del.addEventListener('click',function(){ if(!confirm('Remove '+x.name+'?'))return; api({action:'delete',resource:'travelers',id:x.id}).then(function(){closeDrawer();toast('Traveler removed');go('trips:detail',trip);}); });
 }
 
+/* ---------- photo field: drag-drop / choose / paste a link ---------- */
+function imageField(label,name,val,folder){
+  var has=!!val;
+  return '<div class="field"><label>'+esc(label)+'</label>'+
+    '<input type="hidden" name="'+name+'" value="'+esc(val||'')+'">'+
+    '<div class="uploader'+(has?' has':'')+'" data-up="'+name+'" data-folder="'+esc(folder||'stories')+'">'+
+      '<div class="up-prev" style="background-image:url(\''+(has?esc(imgPath(val)):'')+'\')"></div>'+
+      '<div class="up-ctl">'+
+        '<div class="up-empty"><b>Add a photo</b><span>Drag a JPG or PNG here, or choose one below.</span></div>'+
+        '<div class="up-actions"><button type="button" class="btn btn-ghost btn-sm up-pick">Choose photo</button>'+
+          '<button type="button" class="btn btn-ghost btn-sm up-url">Paste a link</button>'+
+          '<button type="button" class="btn btn-ghost btn-sm up-remove">Remove</button></div>'+
+        '<div class="up-hint">Landscape photos look best, at least 1600px wide. Big files are shrunk automatically.</div>'+
+        '<div class="up-status" aria-live="polite"></div>'+
+      '</div>'+
+      '<input type="file" accept="image/jpeg,image/png,image/webp" class="up-file" style="display:none">'+
+    '</div></div>';
+}
+function wireUploader(root){
+  Array.prototype.forEach.call(root.querySelectorAll('.uploader'),function(u){
+    var hidden=root.querySelector('input[name="'+u.dataset.up+'"]'), prev=$('.up-prev',u), file=$('.up-file',u), st=$('.up-status',u);
+    function set(v){ hidden.value=v||''; prev.style.backgroundImage=v?'url(\''+imgPath(v)+'\')':''; u.classList.toggle('has',!!v); }
+    function send(f){
+      if(!f) return;
+      var okType=/^image\/(jpeg|png|webp)$/i.test(f.type)||/\.(jpe?g|png|webp)$/i.test(f.name||'');
+      if(!okType){ st.textContent='Please choose a JPG or PNG photo.'; return; }
+      u.classList.add('busy'); st.textContent='Uploading…';
+      prepImage(f).then(function(ff){ return upload(ff,u.dataset.folder); })
+        .then(function(j){ set(j.url); st.textContent='Photo uploaded'; setTimeout(function(){ if(st.textContent==='Photo uploaded') st.textContent=''; },2200); })
+        .catch(function(e){ st.textContent=e.message==='unauthorized'?'Session expired. Sign in again.':('Upload failed: '+e.message); })
+        .then(function(){ u.classList.remove('busy'); });
+    }
+    $('.up-pick',u).addEventListener('click',function(){ file.click(); });
+    file.addEventListener('change',function(){ send(file.files[0]); file.value=''; });
+    $('.up-url',u).addEventListener('click',function(){ var v=prompt('Paste an image link (https://…) or a site path like img/story-nepal.jpg',hidden.value||''); if(v!==null){ v=v.trim(); if(v) set(v); } });
+    $('.up-remove',u).addEventListener('click',function(){ set(''); st.textContent=''; });
+    ['dragenter','dragover'].forEach(function(ev){ u.addEventListener(ev,function(e){ e.preventDefault(); u.classList.add('drag'); }); });
+    ['dragleave','drop'].forEach(function(ev){ u.addEventListener(ev,function(e){ e.preventDefault(); u.classList.remove('drag'); }); });
+    u.addEventListener('drop',function(e){ var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; send(f); });
+  });
+}
+
+/* ---------- rich text: bold / italic / headings / quote / lists / links ----------
+   Bodies are saved as simple HTML. cleanHtml() keeps only those tags, so the public
+   story page can render them safely with the same whitelist. */
+var RICH_ALLOW={P:1,BR:1,STRONG:1,B:1,EM:1,I:1,U:1,H2:1,H3:1,BLOCKQUOTE:1,UL:1,OL:1,LI:1,A:1};
+var RICH_DROP={SCRIPT:1,STYLE:1,IFRAME:1,OBJECT:1,EMBED:1,TEMPLATE:1,IMG:1,VIDEO:1,SVG:1};
+function cleanHtml(html){
+  var doc=new DOMParser().parseFromString('<div id="r">'+(html||'')+'</div>','text/html'); var root=doc.getElementById('r');
+  Array.prototype.slice.call(root.querySelectorAll('*')).forEach(function(el){
+    if(!el.parentNode) return; var tag=el.tagName;
+    if(RICH_DROP[tag]){ el.parentNode.removeChild(el); return; }
+    if(tag==='DIV'){ var p=doc.createElement('p'); while(el.firstChild)p.appendChild(el.firstChild); el.parentNode.replaceChild(p,el); el=p; tag='P'; }
+    if(/^H[1456]$/.test(tag)){ var h=doc.createElement(tag==='H1'?'h2':'h3'); while(el.firstChild)h.appendChild(el.firstChild); el.parentNode.replaceChild(h,el); el=h; tag=h.tagName; }
+    if(!RICH_ALLOW[tag]){ while(el.firstChild) el.parentNode.insertBefore(el.firstChild,el); el.parentNode.removeChild(el); return; }
+    Array.prototype.slice.call(el.attributes).forEach(function(a){ if(tag==='A'&&a.name==='href'&&/^(https?:\/\/|mailto:)/i.test(a.value.trim())) return; el.removeAttribute(a.name); });
+    if(tag==='A'&&!el.getAttribute('href')){ while(el.firstChild) el.parentNode.insertBefore(el.firstChild,el); el.parentNode.removeChild(el); }
+  });
+  // loose text/inline nodes at the top level become paragraphs
+  var BLOCK={P:1,H2:1,H3:1,BLOCKQUOTE:1,UL:1,OL:1}, para=null;
+  Array.prototype.slice.call(root.childNodes).forEach(function(k){
+    if(k.nodeType===1&&BLOCK[k.tagName]){ para=null; return; }
+    if(k.nodeType===3&&!k.textContent.trim()&&!para){ root.removeChild(k); return; }
+    if(!para){ para=doc.createElement('p'); root.insertBefore(para,k); }
+    para.appendChild(k);
+  });
+  Array.prototype.slice.call(root.querySelectorAll('p')).forEach(function(p){ if(!p.textContent.trim()) p.parentNode.removeChild(p); });
+  return root.innerHTML.trim();
+}
+function toEditorHtml(val){
+  if(!val) return '';
+  return /<(p|h[1-6]|ul|ol|blockquote|div|br)\b/i.test(val)?cleanHtml(val):cleanHtml(nl2p(val));
+}
+function rb(cmd,label,title){ return '<button type="button" class="rb" data-cmd="'+cmd+'" title="'+esc(title)+'">'+label+'</button>'; }
+function richField(label,name,val){
+  var html=toEditorHtml(val);
+  return '<div class="field"><label>'+esc(label)+'</label>'+
+    '<div class="rich-wrap">'+
+      '<div class="rich-bar">'+
+        rb('bold','<b>B</b>','Bold')+rb('italic','<i>I</i>','Italic')+'<span class="sep"></span>'+
+        rb('h2','Heading','Section heading')+rb('h3','Subheading','Small heading')+rb('p','Text','Normal paragraph')+'<span class="sep"></span>'+
+        rb('quote','&ldquo; Quote','Pull quote')+rb('ul','&bull; List','Bulleted list')+rb('ol','1. List','Numbered list')+'<span class="sep"></span>'+
+        rb('link','Link','Add a link')+rb('unlink','Unlink','Remove link')+
+      '</div>'+
+      '<div class="rich-ed" contenteditable="true" data-placeholder="Write the story here. Press Enter to start a new paragraph.">'+html+'</div>'+
+      '<textarea name="'+name+'" style="display:none">'+esc(html)+'</textarea>'+
+    '</div></div>';
+}
+function wireRich(root){
+  Array.prototype.forEach.call(root.querySelectorAll('.rich-wrap'),function(w){
+    var ed=$('.rich-ed',w), ta=$('textarea',w);
+    try{ document.execCommand('defaultParagraphSeparator',false,'p'); }catch(_){}
+    function sync(){ ta.value=cleanHtml(ed.innerHTML); }
+    ed.addEventListener('input',sync); ed.addEventListener('blur',sync);
+    ed.addEventListener('paste',function(e){
+      e.preventDefault(); var cd=e.clipboardData||window.clipboardData; var html=cd.getData('text/html'), text=cd.getData('text/plain')||'';
+      var ins=html?cleanHtml(html):text.split(/\r?\n/).map(function(x){return x.trim()?'<p>'+esc(x.trim())+'</p>':'';}).join('');
+      document.execCommand('insertHTML',false,ins); sync();
+    });
+    Array.prototype.forEach.call(w.querySelectorAll('.rb'),function(b){
+      b.addEventListener('mousedown',function(e){ e.preventDefault(); });
+      b.addEventListener('click',function(){
+        var c=b.dataset.cmd; ed.focus();
+        if(c==='bold'||c==='italic') document.execCommand(c);
+        else if(c==='h2'||c==='h3'||c==='p') document.execCommand('formatBlock',false,c);
+        else if(c==='quote') document.execCommand('formatBlock',false,'blockquote');
+        else if(c==='ul') document.execCommand('insertUnorderedList');
+        else if(c==='ol') document.execCommand('insertOrderedList');
+        else if(c==='link'){ var u=prompt('Link address (https://…)'); if(u){ u=u.trim(); if(!/^(https?:\/\/|mailto:)/i.test(u)) u='https://'+u; document.execCommand('createLink',false,u); } }
+        else if(c==='unlink') document.execCommand('unlink');
+        sync();
+      });
+    });
+  });
+}
+
+function today(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function storyIsLive(s){ return !!s && (s.status==='published' || (s.status==='scheduled' && !!s.publish_date && s.publish_date<=today())); }
+function storyUrl(s){ return s&&s.slug ? new URL('../stories/?s='+encodeURIComponent(s.slug),location.href).href : ''; }
+function copyText(t){ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){toast('Link copied');},function(){prompt('Copy this link',t);}); }
+
+var STATUS_HELP={
+  draft:'Only your team can see this. Nothing on the website changes.',
+  review:'Ready for someone on the team to read before it goes live. Still hidden from the website.',
+  scheduled:'Goes live on the website by itself on the publish date.',
+  published:'Live on the website now. It gets its own page, and you can feature it in God Is Moving.'
+};
+
 function storyEditor(s){
   s=s||{};
+  var isNew=!s.id;
   var partnerOpts=[['','— none —']].concat((DATA.partners||[]).map(function(p){return [p.id,p.name];}));
   var tripOpts=[['','— none —']].concat((DATA.trips||[]).map(function(t){return [t.id,t.name];}));
-  var body=fld('Story Title','title',s.title)+
-    '<div class="grid3">'+fld('Location','location',s.location)+sel('Region','region',s.region,['Africa','Asia','Europe','North America','South America','Global'])+sel('Category','category',s.category,['Church Planting','Leadership Training','Community Development','Outreach','Discipleship','Mercy & Relief'])+'</div>'+
-    fld('Featured Image (path)','featured_image',s.featured_image||'img/')+
-    txt('Excerpt (shown on card)','excerpt',s.excerpt)+
-    txt('Story Body','body',s.body)+
+  var liveUrl=storyUrl(s), live=storyIsLive(s);
+  var body=
+    (liveUrl?'<div class="story-linkbar'+(live?' live':'')+'"><span class="dotg'+(live?'':' off')+'"></span>'+
+      (live?'<b>Live on the website</b>':'<b>Not live yet.</b> Its page will be at')+
+      ' <a href="'+esc(liveUrl)+'" target="_blank" rel="noopener">'+esc(liveUrl.replace(/^https?:\/\//,''))+'</a>'+
+      '<button type="button" class="btn btn-ghost btn-sm" id="copy-link">Copy link</button></div>':'')+
+    fld('Story Title','title',s.title)+
+    '<div class="grid3">'+fld('Location','location',s.location)+sel('Region','region',s.region,['','Africa','Asia','Europe','North America','South America','Global'])+sel('Category','category',s.category,['','Church Planting','Leadership Training','Community Development','Outreach','Discipleship','Mercy & Relief','Trip Report','Ministry Update'])+'</div>'+
+    imageField('Featured Photo','featured_image',s.featured_image,'stories')+
+    '<div class="field"><label>Excerpt</label><textarea name="excerpt" style="min-height:76px">'+esc(s.excerpt||'')+'</textarea><div class="hint">One or two sentences. Shows on the story card and at the top of the story.</div></div>'+
+    richField('Story Body','body',s.body)+
     '<div class="grid2">'+sel('Related Partner','partner_id',s.partner_id,partnerOpts)+sel('Related Trip','trip_id',s.trip_id,tripOpts)+'</div>'+
     '<div class="grid2">'+fld('Author','author',s.author)+fld('Publish Date','publish_date',s.publish_date,'date')+'</div>'+
-    fld('SEO Title','seo_title',s.seo_title)+txt('SEO Description','seo_description',s.seo_description)+
-    sel('Status','status',s.status||'draft',[['draft','Draft'],['review','In Review'],['scheduled','Scheduled'],['published','Published']]);
-  openDrawer(s.id?'Edit Story':'New Story',body,
-    '<button class="btn btn-ghost" id="preview" style="margin-right:auto">👁 Preview</button>'+
+    '<details class="adv"><summary>Search settings (optional)</summary>'+fld('SEO Title','seo_title',s.seo_title)+txt('SEO Description','seo_description',s.seo_description)+'</details>'+
+    sel('Status','status',s.status||'draft',[['draft','Draft'],['review','In Review'],['scheduled','Scheduled'],['published','Published']])+
+    '<div class="status-help" id="status-help"></div>';
+  openDrawer(isNew?'New Story':'Edit Story',body,
+    (isNew?'':'<button class="btn btn-ghost" id="del-story" style="margin-right:auto;color:var(--red)">Delete</button>')+
+    '<button class="btn btn-ghost" id="preview">👁 Preview</button>'+
     '<button class="btn btn-ghost" onclick="__closeDrawer()">Cancel</button><button class="btn btn-primary" id="save">Save Story</button>');
+  var D=$('#drawer-body');
+  wireUploader(D); wireRich(D);
+  var stSel=D.querySelector('[name=status]');
+  function helpUpd(){ $('#status-help').textContent=STATUS_HELP[stSel.value]||''; }
+  stSel.addEventListener('change',helpUpd); helpUpd();
+  var cl=$('#copy-link'); if(cl) cl.addEventListener('click',function(){ copyText(liveUrl); });
   $('#preview').addEventListener('click',function(){ openStoryPreview(collect()); });
   $('#save').addEventListener('click',function(){
-    var v=collect(); var act=s.id?{action:'update',resource:'stories',id:s.id,values:v}:{action:'create',resource:'stories',values:v};
-    api(act).then(function(){ closeDrawer(); toast('Story saved'+(v.status==='published'?' & published':'')); if(v.status==='published')logAct('Story "'+v.title+'" published','story'); else if(!s.id)logAct('New story draft "'+v.title+'" created','story'); go('stories'); }).catch(function(e){alert('Save failed: '+e.message);});
+    var btn=this, v=collect();
+    if(!v.title){ alert('Give the story a title first.'); return; }
+    if(v.status==='scheduled'&&!v.publish_date){ alert('Pick a publish date for a scheduled story.'); return; }
+    if(v.status==='published'&&!v.publish_date) v.publish_date=today();
+    delete v.slug;
+    btn.disabled=true; btn.textContent='Saving…';
+    var act=isNew?{action:'create',resource:'stories',values:v}:{action:'update',resource:'stories',id:s.id,values:v};
+    api(act).then(function(r){
+      if(!r||r.error) throw new Error((r&&r.error)||'Unknown error');
+      closeDrawer(); toast('Story saved'+(v.status==='published'?' and published':''));
+      if(v.status==='published'&&s.status!=='published') logAct('Story "'+v.title+'" published','story');
+      else if(isNew) logAct('New story draft "'+v.title+'" created','story');
+      go('stories');
+    }).catch(function(e){ btn.disabled=false; btn.textContent='Save Story'; alert('Save failed: '+e.message); });
+  });
+  var del=$('#del-story'); if(del) del.addEventListener('click',function(){
+    if(!confirm('Delete "'+(s.title||'this story')+'"? If it is live, it comes off the website too.')) return;
+    api({action:'delete',resource:'stories',id:s.id}).then(function(r){
+      if(!r||r.error) throw new Error((r&&r.error)||'Unknown error');
+      closeDrawer(); toast('Story deleted'); logAct('Story "'+s.title+'" deleted','story'); go('stories');
+    }).catch(function(e){ alert('Delete failed: '+e.message); });
   });
 }
 window.__closeDrawer=closeDrawer;
