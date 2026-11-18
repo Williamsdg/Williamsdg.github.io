@@ -14,7 +14,13 @@
           due:'due the 10th',dueNote:'Cut-off is the first working day after the 10th. No partial payments. Reconnect fee $50.',
           hours:'Monday–Friday, 8:00 a.m. – 12:00 noon and 1:00 – 5:00 p.m.',
           cutoffs:''}  /* computed in apply() when the Town has not set one */,
-    news:[],
+    news:[
+      {d:'2026-11-17',t:'Updated Zoning Ordinance now online',b:'The Town\u2019s current Zoning Ordinance is posted on the Ordinances page as a PDF, replacing the 2001 ordinance.',l:'ordinances.html',lt:'Open the Ordinances page'},
+      {d:'2026-11-17',t:'Board of Aldermen meets Tuesday, December 1',b:'The Mayor and Board of Aldermen hold their regular meeting Tuesday, December 1, at 6:00 p.m. at Town Hall, 66 7th Street. Meetings are open to the public.',l:'calendar.html',lt:'Meeting dates'},
+      {d:'2026-11-17',t:'December water bills are due by the 10th',b:'Water bills are due by December 10. Cut-off for unpaid bills is the first working day after the 10th, Friday, December 11. No partial payments. Reconnect fee $50.',l:'public-works.html',lt:'Pay or read the billing policy'},
+      {d:'2026-11-17',t:'Limb pickup Tuesdays, garbage pickup Wednesdays',b:'Place limbs and brush at the curb for Tuesday pickup. Household garbage is collected Wednesdays; one garbage can is furnished at no additional charge.',l:'public-works.html',lt:'Pickup details'},
+      {d:'2026-11-17',t:'Permit applications and Town forms available online',b:'Building, zoning and road permit applications, the privilege license application, water and sewer service forms and the employment application can be downloaded from the Forms & Permits page or picked up at Town Hall.',l:'forms-and-permits.html',lt:'Forms & Permits'}
+    ],
     depts:{police:true,fire:true,works:true,chamber:false}
   };
 
@@ -103,17 +109,25 @@
 
   function setText(id,val){ var el=document.getElementById(id); if(el&&val!=null&&val!=='') el.textContent=val; }
 
+  var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function fmtDate(s){ if(!s) return ''; var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s).trim()); if(m) return MONTHS[+m[2]-1]+' '+(+m[3])+', '+m[1]; return String(s); }
+  function newsTime(n){ var t=Date.parse(n.d||''); return isNaN(t)?0:t; }
   function renderNews(d){
     var host=document.getElementById('wdNews');
     if(!host) return;
-    var items=(d.news||[]).filter(function(n){return n&&(n.t||n.b);});
-    if(!items.length){ host.hidden=true; return; }
+    var items=(d.news||[]).filter(function(n){return n&&(n.t||n.b);}).map(function(n,i){return {n:n,i:i};});
+    items.sort(function(a,b){ return (newsTime(b.n)-newsTime(a.n)) || (a.i-b.i); });  /* newest first; ties keep editor order */
+    var limit=parseInt(host.getAttribute('data-limit')||'0',10)||0, total=items.length;
+    host.setAttribute('data-total', total);
+    if(!total){ host.hidden=true; host.innerHTML=''; return; }
+    if(limit&&total>limit) items=items.slice(0,limit);
     host.hidden=false;
     host.innerHTML='<h2>News &amp; Notices</h2>'+
-      items.map(function(n){
-        return '<div class="notice">'+(n.d?'<p class="d">'+esc(n.d)+'</p>':'')+'<h3>'+esc(n.t||'')+'</h3>'+
-          '<p>'+esc(n.b||'')+'</p></div>';
+      items.map(function(x){ var n=x.n;
+        return '<div class="notice">'+(n.d?'<p class="d">'+esc(fmtDate(n.d))+'</p>':'')+'<h3>'+esc(n.t||'')+'</h3>'+
+          '<p>'+esc(n.b||'')+(n.l?' <a href="'+esc(n.l)+'">'+esc(n.lt||'Read more')+'</a>':'')+'</p></div>';
       }).join('');
+    var more=document.getElementById('nbMore'); if(more) more.hidden=!(limit&&total>limit);
   }
 
   function renderDepts(d){
