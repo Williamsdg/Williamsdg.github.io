@@ -411,7 +411,7 @@
           '<h4>' + p.name + '</h4>' +
           '<span class="pc-role">' + (p.role || '') + '</span>' +
           '<p>' + (p.story || '') + '</p>' +
-          '<a href="#" class="pc-link">Read the full story &rarr;</a>' +
+          '<a href="missionaries/#' + String(p.country || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '" class="pc-link">Read the full story &rarr;</a>' +
         '</div>';
       cardWrap.classList.add('show');
       document.querySelectorAll('.partner-item').forEach((it) => it.classList.toggle('active', +it.dataset.i === i));
