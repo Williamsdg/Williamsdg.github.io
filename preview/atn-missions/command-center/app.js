@@ -57,22 +57,31 @@ function upload(file,folder){
     return r.json().then(function(j){ if(!r.ok||j.error) throw new Error(j.error||('Upload failed ('+r.status+')')); return j; });
   });
 }
-/* shrink big camera photos in the browser before upload (longest side 2000px, JPEG) */
+/* shrink big camera photos in the browser before upload (longest side 2000px, JPEG).
+   iPhone / Mac HEIC photos are converted to JPEG first (heic2any, loaded only when needed). */
+function isHeic(file){ return /^image\/hei[cf]/i.test(file.type||'') || /\.hei[cf]$/i.test(file.name||''); }
+function loadScript(src){ return new Promise(function(res,rej){ var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=function(){ rej(new Error('Could not load '+src)); }; document.head.appendChild(s); }); }
+function heicToJpeg(file){
+  var ready=window.heic2any?Promise.resolve():loadScript('https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js');
+  return ready.then(function(){ return window.heic2any({blob:file,toType:'image/jpeg',quality:.9}); })
+    .then(function(out){ var b=Array.isArray(out)?out[0]:out; return new File([b],String(file.name||'photo').replace(/\.\w+$/,'')+'.jpg',{type:'image/jpeg'}); });
+}
 function prepImage(file){
-  return new Promise(function(res){
-    if(!/^image\/(jpeg|png|webp)$/.test(file.type)){ res(file); return; }
-    var url=URL.createObjectURL(file); var im=new Image();
+  var start=isHeic(file)?heicToJpeg(file).catch(function(){ return file; }):Promise.resolve(file);
+  return start.then(function(f){ return new Promise(function(res){
+    if(!/^image\/(jpeg|png|webp)$/.test(f.type)){ res(f); return; }
+    var url=URL.createObjectURL(f); var im=new Image();
     im.onload=function(){
       URL.revokeObjectURL(url);
       var MAX=2000, w=im.naturalWidth, h=im.naturalHeight;
-      if(w<=MAX && h<=MAX && file.size<1.5*1024*1024){ res(file); return; }
+      if(w<=MAX && h<=MAX && f.size<1.5*1024*1024){ res(f); return; }
       var sc=Math.min(1,MAX/Math.max(w,h)); var c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
       c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-      c.toBlob(function(b){ res(b?new File([b],String(file.name||'photo').replace(/\.\w+$/,'')+'.jpg',{type:'image/jpeg'}):file); },'image/jpeg',.86);
+      c.toBlob(function(b){ res(b?new File([b],String(f.name||'photo').replace(/\.\w+$/,'')+'.jpg',{type:'image/jpeg'}):f); },'image/jpeg',.86);
     };
-    im.onerror=function(){ URL.revokeObjectURL(url); res(file); };
+    im.onerror=function(){ URL.revokeObjectURL(url); res(f); };
     im.src=url;
-  });
+  }); });
 }
 function toast(msg){ var t=$('#toast'); $('#toast-msg').textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(function(){t.classList.remove('show');},2600); }
 function money(n){ n=+n||0; return '$'+n.toLocaleString(); }
@@ -505,10 +514,10 @@ function imageField(label,name,val,folder){
         '<div class="up-actions"><button type="button" class="btn btn-ghost btn-sm up-pick">Choose photo</button>'+
           '<button type="button" class="btn btn-ghost btn-sm up-url">Paste a link</button>'+
           '<button type="button" class="btn btn-ghost btn-sm up-remove">Remove</button></div>'+
-        '<div class="up-hint">Landscape photos look best, at least 1600px wide. Big files are shrunk automatically.</div>'+
+        '<div class="up-hint">JPG, PNG or iPhone photos. Landscape looks best, at least 1600px wide. Big files are shrunk automatically.</div>'+
         '<div class="up-status" aria-live="polite"></div>'+
       '</div>'+
-      '<input type="file" accept="image/jpeg,image/png,image/webp" class="up-file" style="display:none">'+
+      '<input type="file" accept="image/*,.heic,.heif" class="up-file" style="display:none">'+
     '</div></div>';
 }
 function wireUploader(root){
@@ -517,12 +526,12 @@ function wireUploader(root){
     function set(v){ hidden.value=v||''; prev.style.backgroundImage=v?'url(\''+imgPath(v)+'\')':''; u.classList.toggle('has',!!v); }
     function send(f){
       if(!f) return;
-      var okType=/^image\/(jpeg|png|webp)$/i.test(f.type)||/\.(jpe?g|png|webp)$/i.test(f.name||'');
-      if(!okType){ st.textContent='Please choose a JPG or PNG photo.'; return; }
-      u.classList.add('busy'); st.textContent='Uploading…';
+      var okType=/^image\//i.test(f.type)||/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name||'');
+      if(!okType){ st.textContent='That file is not a photo. Use a JPG, PNG or iPhone photo.'; st.classList.add('err'); toast('That file is not a photo.'); return; }
+      u.classList.add('busy'); st.classList.remove('err'); st.textContent=isHeic(f)?'Converting iPhone photo…':'Uploading…';
       prepImage(f).then(function(ff){ return upload(ff,u.dataset.folder); })
         .then(function(j){ set(j.url); st.textContent='Photo uploaded'; setTimeout(function(){ if(st.textContent==='Photo uploaded') st.textContent=''; },2200); })
-        .catch(function(e){ st.textContent=e.message==='unauthorized'?'Session expired. Sign in again.':('Upload failed: '+e.message); })
+        .catch(function(e){ var msg=e.message==='unauthorized'?'Session expired. Sign in again.':('Upload failed: '+e.message); st.textContent=msg; st.classList.add('err'); toast(msg); })
         .then(function(){ u.classList.remove('busy'); });
     }
     $('.up-pick',u).addEventListener('click',function(){ file.click(); });
@@ -538,8 +547,8 @@ function wireUploader(root){
 /* ---------- rich text: bold / italic / headings / quote / lists / links ----------
    Bodies are saved as simple HTML. cleanHtml() keeps only those tags, so the public
    story page can render them safely with the same whitelist. */
-var RICH_ALLOW={P:1,BR:1,STRONG:1,B:1,EM:1,I:1,U:1,H2:1,H3:1,BLOCKQUOTE:1,UL:1,OL:1,LI:1,A:1};
-var RICH_DROP={SCRIPT:1,STYLE:1,IFRAME:1,OBJECT:1,EMBED:1,TEMPLATE:1,IMG:1,VIDEO:1,SVG:1};
+var RICH_ALLOW={P:1,BR:1,STRONG:1,B:1,EM:1,I:1,U:1,S:1,H2:1,H3:1,BLOCKQUOTE:1,UL:1,OL:1,LI:1,A:1,IMG:1};
+var RICH_DROP={SCRIPT:1,STYLE:1,IFRAME:1,OBJECT:1,EMBED:1,TEMPLATE:1,VIDEO:1,SVG:1};
 function cleanHtml(html){
   var doc=new DOMParser().parseFromString('<div id="r">'+(html||'')+'</div>','text/html'); var root=doc.getElementById('r');
   Array.prototype.slice.call(root.querySelectorAll('*')).forEach(function(el){
@@ -548,8 +557,13 @@ function cleanHtml(html){
     if(tag==='DIV'){ var p=doc.createElement('p'); while(el.firstChild)p.appendChild(el.firstChild); el.parentNode.replaceChild(p,el); el=p; tag='P'; }
     if(/^H[1456]$/.test(tag)){ var h=doc.createElement(tag==='H1'?'h2':'h3'); while(el.firstChild)h.appendChild(el.firstChild); el.parentNode.replaceChild(h,el); el=h; tag=h.tagName; }
     if(!RICH_ALLOW[tag]){ while(el.firstChild) el.parentNode.insertBefore(el.firstChild,el); el.parentNode.removeChild(el); return; }
-    Array.prototype.slice.call(el.attributes).forEach(function(a){ if(tag==='A'&&a.name==='href'&&/^(https?:\/\/|mailto:)/i.test(a.value.trim())) return; el.removeAttribute(a.name); });
+    Array.prototype.slice.call(el.attributes).forEach(function(a){
+      if(tag==='A'&&a.name==='href'&&/^(https?:\/\/|mailto:)/i.test(a.value.trim())) return;
+      if(tag==='IMG'&&(a.name==='alt'||(a.name==='src'&&/^https:\/\//i.test(a.value.trim())))) return;
+      el.removeAttribute(a.name);
+    });
     if(tag==='A'&&!el.getAttribute('href')){ while(el.firstChild) el.parentNode.insertBefore(el.firstChild,el); el.parentNode.removeChild(el); }
+    if(tag==='IMG'&&!el.getAttribute('src')){ el.parentNode.removeChild(el); }
   });
   // loose text/inline nodes at the top level become paragraphs
   var BLOCK={P:1,H2:1,H3:1,BLOCKQUOTE:1,UL:1,OL:1}, para=null;
@@ -559,53 +573,83 @@ function cleanHtml(html){
     if(!para){ para=doc.createElement('p'); root.insertBefore(para,k); }
     para.appendChild(k);
   });
-  Array.prototype.slice.call(root.querySelectorAll('p')).forEach(function(p){ if(!p.textContent.trim()) p.parentNode.removeChild(p); });
+  Array.prototype.slice.call(root.querySelectorAll('p')).forEach(function(p){ if(!p.textContent.trim()&&!p.querySelector('img')) p.parentNode.removeChild(p); });
   return root.innerHTML.trim();
 }
 function toEditorHtml(val){
   if(!val) return '';
   return /<(p|h[1-6]|ul|ol|blockquote|div|br)\b/i.test(val)?cleanHtml(val):cleanHtml(nl2p(val));
 }
-function rb(cmd,label,title){ return '<button type="button" class="rb" data-cmd="'+cmd+'" title="'+esc(title)+'">'+label+'</button>'; }
+/* ---------- rich text editor (Quill) ----------
+   Bodies are saved as simple HTML. cleanHtml() keeps only a short whitelist of tags, and the
+   public story page re-sanitizes with the same whitelist. Pictures inside the story are uploaded
+   to storage first, so no base64 blobs ever reach the database. */
+var PENDING_UPLOADS=0;
 function richField(label,name,val){
   var html=toEditorHtml(val);
   return '<div class="field"><label>'+esc(label)+'</label>'+
-    '<div class="rich-wrap">'+
-      '<div class="rich-bar">'+
-        rb('bold','<b>B</b>','Bold')+rb('italic','<i>I</i>','Italic')+'<span class="sep"></span>'+
-        rb('h2','Heading','Section heading')+rb('h3','Subheading','Small heading')+rb('p','Text','Normal paragraph')+'<span class="sep"></span>'+
-        rb('quote','&ldquo; Quote','Pull quote')+rb('ul','&bull; List','Bulleted list')+rb('ol','1. List','Numbered list')+'<span class="sep"></span>'+
-        rb('link','Link','Add a link')+rb('unlink','Unlink','Remove link')+
-      '</div>'+
-      '<div class="rich-ed" contenteditable="true" data-placeholder="Write the story here. Press Enter to start a new paragraph.">'+html+'</div>'+
-      '<textarea name="'+name+'" style="display:none">'+esc(html)+'</textarea>'+
-    '</div></div>';
+    '<div class="rich-wrap" data-rich="1"><div class="rich-q"></div>'+
+    '<textarea name="'+name+'" style="display:none">'+esc(html)+'</textarea></div>'+
+    '<div class="hint">Select text, then use the toolbar for bold, italic, underline, headings, quotes, lists and links. The picture button puts a photo inside the story.</div></div>';
 }
 function wireRich(root){
-  Array.prototype.forEach.call(root.querySelectorAll('.rich-wrap'),function(w){
-    var ed=$('.rich-ed',w), ta=$('textarea',w);
-    try{ document.execCommand('defaultParagraphSeparator',false,'p'); }catch(_){}
-    function sync(){ ta.value=cleanHtml(ed.innerHTML); }
-    ed.addEventListener('input',sync); ed.addEventListener('blur',sync);
-    ed.addEventListener('paste',function(e){
-      e.preventDefault(); var cd=e.clipboardData||window.clipboardData; var html=cd.getData('text/html'), text=cd.getData('text/plain')||'';
-      var ins=html?cleanHtml(html):text.split(/\r?\n/).map(function(x){return x.trim()?'<p>'+esc(x.trim())+'</p>':'';}).join('');
-      document.execCommand('insertHTML',false,ins); sync();
-    });
-    Array.prototype.forEach.call(w.querySelectorAll('.rb'),function(b){
-      b.addEventListener('mousedown',function(e){ e.preventDefault(); });
-      b.addEventListener('click',function(){
-        var c=b.dataset.cmd; ed.focus();
-        if(c==='bold'||c==='italic') document.execCommand(c);
-        else if(c==='h2'||c==='h3'||c==='p') document.execCommand('formatBlock',false,c);
-        else if(c==='quote') document.execCommand('formatBlock',false,'blockquote');
-        else if(c==='ul') document.execCommand('insertUnorderedList');
-        else if(c==='ol') document.execCommand('insertOrderedList');
-        else if(c==='link'){ var u=prompt('Link address (https://…)'); if(u){ u=u.trim(); if(!/^(https?:\/\/|mailto:)/i.test(u)) u='https://'+u; document.execCommand('createLink',false,u); } }
-        else if(c==='unlink') document.execCommand('unlink');
-        sync();
-      });
-    });
+  Array.prototype.forEach.call(root.querySelectorAll('.rich-wrap[data-rich]'),function(w){
+    var host=$('.rich-q',w), ta=$('textarea',w);
+    if(!window.Quill){ legacyRich(host,ta); return; }
+    var q=new Quill(host,{theme:'snow',placeholder:'Write the story here. Press Enter to start a new paragraph.',
+      modules:{toolbar:{container:[[{header:[2,3,false]}],['bold','italic','underline'],['blockquote',{list:'ordered'},{list:'bullet'}],['link','image'],['clean']],
+        handlers:{image:function(){ pickImageInto(q); }}}}});
+    if(ta.value) q.clipboard.dangerouslyPasteHTML(ta.value);
+    function sync(){ var hasImg=!!q.root.querySelector('img'); ta.value=(q.getText().trim()||hasImg)?cleanHtml(q.root.innerHTML):''; }
+    q._sync=sync;
+    q.on('text-change',function(){ sync(); uploadInlineDataImages(q); });
+    sync();
+    w._quill=q;
+  });
+}
+/* fallback if the editor script could not load: a plain editable box, no toolbar */
+function legacyRich(host,ta){
+  host.className='rich-q rich-ed'; host.setAttribute('contenteditable','true'); host.innerHTML=ta.value;
+  var sync=function(){ ta.value=cleanHtml(host.innerHTML); };
+  host.addEventListener('input',sync); host.addEventListener('blur',sync);
+}
+function pickImageInto(q){
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='image/*,.heic,.heif';
+  inp.addEventListener('change',function(){ var f=inp.files&&inp.files[0]; if(f) insertUploadedImage(q,f,null); });
+  inp.click();
+}
+function insertUploadedImage(q,file,replaceEl){
+  var range=q.getSelection(true), at=range?range.index:Math.max(0,q.getLength()-1);
+  PENDING_UPLOADS++; toast('Uploading photo…');
+  return prepImage(file).then(function(ff){ return upload(ff,'stories'); }).then(function(j){
+    if(replaceEl){ replaceEl.setAttribute('src',j.url); replaceEl.removeAttribute('data-up'); q.update(); }
+    else {
+      // put the picture on its own line, then continue typing below it
+      var idx=at, lineStart=(at===0)||(q.getText(at-1,1)==='\n');
+      if(!lineStart){ q.insertText(idx,'\n','user'); idx++; }
+      q.insertEmbed(idx,'image',j.url,'user'); idx++;
+      q.insertText(idx,'\n','user');
+      q.setSelection(idx+1,0,'silent');
+    }
+    if(q._sync) q._sync();
+    toast('Photo added to the story');
+  }).catch(function(e){
+    if(replaceEl&&replaceEl.parentNode) replaceEl.parentNode.removeChild(replaceEl);
+    if(q._sync) q._sync();
+    toast(e.message==='unauthorized'?'Session expired. Sign in again.':'Photo upload failed: '+e.message);
+  }).then(function(){ PENDING_UPLOADS=Math.max(0,PENDING_UPLOADS-1); });
+}
+/* pasted or dragged pictures arrive as base64 — upload them and swap in the real URL */
+function uploadInlineDataImages(q){
+  Array.prototype.forEach.call(q.root.querySelectorAll('img[src^="data:"]:not([data-up])'),function(img){
+    img.setAttribute('data-up','1');
+    try{
+      var m=(img.getAttribute('src')||'').match(/^data:(image\/[a-z0-9.+-]+);base64,(.*)$/i);
+      if(!m){ img.parentNode.removeChild(img); return; }
+      var bin=atob(m[2]), arr=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+      var ext=(m[1].split('/')[1]||'png').replace('jpeg','jpg');
+      insertUploadedImage(q,new File([arr],'pasted.'+ext,{type:m[1]}),img);
+    }catch(_){ if(img.parentNode) img.parentNode.removeChild(img); }
   });
 }
 
@@ -655,6 +699,7 @@ function storyEditor(s){
   $('#preview').addEventListener('click',function(){ openStoryPreview(collect()); });
   $('#save').addEventListener('click',function(){
     var btn=this, v=collect();
+    if(PENDING_UPLOADS>0){ alert('A photo is still uploading. Give it a second and save again.'); return; }
     if(!v.title){ alert('Give the story a title first.'); return; }
     if(v.status==='scheduled'&&!v.publish_date){ alert('Pick a publish date for a scheduled story.'); return; }
     if(v.status==='published'&&!v.publish_date) v.publish_date=today();
