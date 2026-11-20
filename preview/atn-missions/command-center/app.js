@@ -334,7 +334,7 @@ function renderPartners(C){
     var rows=r.rows||[];
     var cards=rows.map(function(p){
       return '<div class="card" data-pid="'+p.id+'">'+
-        '<div class="cimg" style="background-image:url(\'../'+esc(p.photo||'')+'\')"></div>'+
+        '<div class="cimg" style="background-image:url(\''+esc(imgPath(p.photo))+'\')"></div>'+
         '<div class="cbody"><div class="ctitle">'+esc(p.name)+'</div>'+
         '<div class="cmeta">'+esc(p.country||'')+' · '+esc(p.category||'')+'</div>'+
         '<div class="crow"><div class="toggle'+(p.published?' on':'')+'" data-toggle="'+p.id+'"><span class="track"></span><span class="tl-lab">'+(p.published?'On website':'Hidden')+'</span></div>'+
@@ -433,12 +433,12 @@ function collect(){ var o={}; Array.prototype.forEach.call($('#drawer-body').que
 function partnerForm(p){
   p=p||{};
   var body=fld('Organization / Partner Name','name',p.name)+
-    '<div class="grid2">'+fld('Country','country',p.country)+sel('Region','region',p.region,['Africa','Asia','Europe','North America','South America','Middle East','Global'])+'</div>'+
-    '<div class="grid2">'+sel('Mission Category','category',p.category,['Church Planting','Leadership Training','Church Building','Discipleship','Mercy & Relief','Community Development','Childcare','Bible Translation'])+fld('Partner Since','partner_since',p.partner_since)+'</div>'+
+    '<div class="grid2">'+fld('Country','country',p.country)+sel('Region','region',p.region,['Africa','Asia','Europe','North America','Central America','South America','Middle East','Global'])+'</div>'+
+    '<div class="grid2">'+sel('Mission Category','category',p.category,['Church Planting','Evangelism','Leadership Training','Church Building','Discipleship','Mercy & Relief','Community Development','Childcare','Bible Translation'])+fld('Partner Since','partner_since',p.partner_since)+'</div>'+
     '<div class="grid2">'+fld('Primary Contact','primary_contact',p.primary_contact)+fld('Internal Owner','internal_owner',p.internal_owner)+'</div>'+
     '<div class="grid2">'+fld('Email','email',p.email,'email')+fld('Phone','phone',p.phone)+'</div>'+
     fld('Website','website',p.website)+
-    fld('Public Photo (path)','photo',p.photo||'img/partners/')+
+    imageField('Photo','photo',p.photo,'partners')+
     '<div class="field"><label>Map Location — pin on the globe</label>'+
       '<div style="display:flex;gap:10px;align-items:center">'+
         '<input name="lat" type="number" step="any" placeholder="Latitude" value="'+esc(p.lat==null?'':p.lat)+'" style="flex:1;background:var(--white);border:1px solid var(--line-2);border-radius:5px;padding:10px 12px;font-size:.9rem">'+
@@ -451,6 +451,7 @@ function partnerForm(p){
     '<div class="field"><label>Show on Website</label><select name="published" data-bool="1"><option value="true"'+(p.published?' selected':'')+'>Yes — visible in Where We Serve</option><option value="false"'+(!p.published?' selected':'')+'>No — hidden</option></select></div>';
   openDrawer(p.id?'Edit Partner':'New Partner',body,
     '<button class="btn btn-ghost" onclick="__closeDrawer()">Cancel</button><button class="btn btn-primary" id="save">Save Partner</button>');
+  wireUploader($('#drawer-body'));
   // "From country" button fills lat/lon from the country field
   $('#geo-btn').addEventListener('click',function(){
     var c=$('#drawer-body [name=country]').value;
@@ -459,6 +460,7 @@ function partnerForm(p){
     else toast('Couldn’t find "'+c+'" — enter coordinates manually');
   });
   $('#save').addEventListener('click',function(){
+    if($('#drawer-body .uploader.busy')){ alert('The photo is still uploading. Give it a second and save again.'); return; }
     var v=collect();
     // auto-geocode if coords are blank
     if((v.lat==null||v.lon==null) && v.country){ var ll=geocodeCountry(v.country); if(ll){ v.lat=ll[0]; v.lon=ll[1]; } }
@@ -677,7 +679,7 @@ function storyEditor(s){
       ' <a href="'+esc(liveUrl)+'" target="_blank" rel="noopener">'+esc(liveUrl.replace(/^https?:\/\//,''))+'</a>'+
       '<button type="button" class="btn btn-ghost btn-sm" id="copy-link">Copy link</button></div>':'')+
     fld('Story Title','title',s.title)+
-    '<div class="grid3">'+fld('Location','location',s.location)+sel('Region','region',s.region,['','Africa','Asia','Europe','North America','South America','Global'])+sel('Category','category',s.category,['','Church Planting','Leadership Training','Community Development','Outreach','Discipleship','Mercy & Relief','Trip Report','Ministry Update'])+'</div>'+
+    '<div class="grid3">'+fld('Location','location',s.location)+sel('Region','region',s.region,['','Africa','Asia','Europe','North America','Central America','South America','Global'])+sel('Category','category',s.category,['','Church Planting','Leadership Training','Community Development','Outreach','Discipleship','Mercy & Relief','Trip Report','Ministry Update','NextGen Missions Fund'])+'</div>'+
     imageField('Featured Photo','featured_image',s.featured_image,'stories')+
     '<div class="field"><label>Excerpt</label><textarea name="excerpt" style="min-height:76px">'+esc(s.excerpt||'')+'</textarea><div class="hint">One or two sentences. Shows on the story card and at the top of the story.</div></div>'+
     richField('Story Body','body',s.body)+
