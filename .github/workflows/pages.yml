@@ -19,7 +19,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,20 +42,36 @@ jobs:
         # github-pages were found": deploy-pages queries the artifact listing one
         # second after the upload finalizes, and the listing had not caught up yet
         # (the artifacts were there a minute later). Poll until it shows up first.
+        # 2026-11-21: one sighting was not enough. The listing flickers, so this
+        # step saw the artifact and deploy-pages saw 0 half a second later. Now it
+        # needs 3 sightings in a row, 10 s apart, and the deploy retries once below.
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          for i in $(seq 1 36); do
+          streak=0
+          for i in $(seq 1 60); do
             n=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?name=github-pages" --jq '.total_count' 2>/dev/null || echo 0)
-            if [ "${n:-0}" -ge 1 ]; then echo "artifact visible after $((i*5))s"; exit 0; fi
-            sleep 5
+            if [ "${n:-0}" -ge 1 ]; then streak=$((streak+1)); else streak=0; fi
+            echo "check $i: total_count=${n:-0} streak=$streak"
+            if [ "$streak" -ge 3 ]; then echo "artifact stable in the listing"; exit 0; fi
+            sleep 10
           done
-          echo "artifact never appeared in the listing"; exit 1
+          echo "artifact never stayed visible in the listing"; exit 1
       - name: Deploy to GitHub Pages
         id: deployment
+        continue-on-error: true
         uses: actions/deploy-pages@v4
         with:
           # The Pages file sync for this ~675 MB site normally finishes in about a
           # minute, but on 2026-11-10 four deploys in a row stalled in syncing_files
           # and hit the default 10-minute cap. Allow 30 minutes.
+          timeout: 1800000
+      - name: Pause before retrying the deploy
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 45
+      - name: Deploy to GitHub Pages (retry)
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        with:
           timeout: 1800000
