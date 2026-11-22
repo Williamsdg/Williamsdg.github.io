@@ -102,6 +102,7 @@ var NAV=[
   {id:'partners',label:'Mission Organizations',icon:'M12 21s-7-4.5-9.5-9C1 9 2.5 5.5 6 5.5c2 0 3.2 1.2 6 4 2.8-2.8 4-4 6-4 3.5 0 5 3.5 3.5 6.5C19 16.5 12 21 12 21z'},
   {id:'missionaries',label:'Missionaries',icon:'M12 12a4 4 0 100-8 4 4 0 000 8zM4 20c0-4 4-6 8-6s8 2 8 6',soon:true},
   {id:'stories',label:'Stories',icon:'M4 5h16v14H4zM8 9h8M8 13h8M8 17h5'},
+  {id:'sitetext',label:'Website Text',icon:'M4 6h16M4 11h11M4 16h6M14 20l1-3.5 5.5-5.5 2.5 2.5-5.5 5.5z',probe:true},
   {grp:'Operations'},
   {id:'contacts',label:'Contacts',icon:'M16 7a4 4 0 11-8 0 4 4 0 018 0zM3 21c0-4 4-6 8-6M17 15l2 2 4-4',soon:true},
   {id:'forms',label:'Forms & Applications',icon:'M9 5h6M9 9h6M9 13h4M5 3h14v18H5z',soon:true},
@@ -113,11 +114,11 @@ var NAV=[
 function renderNav(){
   var html=NAV.map(function(n){
     if(n.grp!==undefined) return '<div class="grp">'+esc(n.grp)+'</div>';
-    return '<div class="sb-item" data-view="'+n.id+'"><span class="ic"><svg viewBox="0 0 24 24"><path d="'+n.icon+'"/></svg></span>'+esc(n.label)+(n.soon?'<span class="soon">Soon</span>':'')+'</div>';
+    return '<div class="sb-item'+(n.probe?' hidden':'')+'" data-view="'+n.id+'"><span class="ic"><svg viewBox="0 0 24 24"><path d="'+n.icon+'"/></svg></span>'+esc(n.label)+(n.soon?'<span class="soon">Soon</span>':'')+'</div>';
   }).join('');
   $('#sb-nav').innerHTML=html;
   Array.prototype.forEach.call(document.querySelectorAll('.sb-item'),function(el){
-    el.addEventListener('click',function(){ go(el.dataset.view); $('#sidebar').classList.remove('open'); });
+    el.addEventListener('click',function(){ if(!stCanLeave()) return; go(el.dataset.view); $('#sidebar').classList.remove('open'); });
   });
 }
 function setActive(view){
@@ -138,6 +139,7 @@ function go(view,arg){
   else if(v==='trips'){ if(arg){ $('#crumb').textContent='Trips › '+(arg.name||''); renderTrip(C,arg); } else { $('#crumb').textContent='Trips'; renderTrips(C); } }
   else if(v==='partners'){ $('#crumb').textContent='Mission Organizations'; renderPartners(C); }
   else if(v==='stories'){ $('#crumb').textContent='Stories'; renderStories(C); }
+  else if(v==='sitetext'){ $('#crumb').textContent='Website Text'; renderSiteText(C); }
   else { $('#crumb').textContent=titleFor(v); renderShell(C,v); }
   window.scrollTo(0,0);
 }
@@ -146,7 +148,7 @@ function titleFor(v){ var n=NAV.filter(function(x){return x.id===v;})[0]; return
 /* ================= OVERVIEW ================= */
 function renderOverview(C){
   C.innerHTML='<div class="loading">Loading…</div>';
-  loadOverview().then(function(d){
+  loadOverview().then(function(d){ if(CUR.split(':')[0]!=='overview') return; /* user moved on before this loaded */
     var now=new Date();
     var upcoming=d.trips.filter(function(t){return t.status!=='completed';});
     var travelersThisYear=d.travelers.length;
@@ -204,7 +206,7 @@ function renderOverview(C){
 /* ================= TRIPS ================= */
 function renderTrips(C){
   C.innerHTML='<div class="loading">Loading trips…</div>';
-  loadOverview().then(function(d){
+  loadOverview().then(function(d){ if(CUR.split(':')[0]!=='trips') return; /* user moved on before this loaded */
     var cards=d.trips.map(function(t){
       var trav=d.travelers.filter(function(x){return x.trip_id===t.id;});
       var pct=t.spots_total?Math.round(trav.length/t.spots_total*100):0;
@@ -330,7 +332,7 @@ function exportRoster(t,travs){
 /* ================= PARTNERS ================= */
 function renderPartners(C){
   C.innerHTML='<div class="loading">Loading partners…</div>';
-  api({action:'list',resource:'partners'}).then(function(r){
+  api({action:'list',resource:'partners'}).then(function(r){ if(CUR.split(':')[0]!=='partners') return; /* user moved on before this loaded */
     var rows=r.rows||[];
     var cards=rows.map(function(p){
       return '<div class="card" data-pid="'+p.id+'">'+
@@ -355,7 +357,7 @@ function renderPartners(C){
 /* ================= STORIES ================= */
 function renderStories(C){
   C.innerHTML='<div class="loading">Loading stories…</div>';
-  Promise.all([api({action:'list',resource:'stories',order:'updated_at',asc:false}),api({action:'overview'})]).then(function(res){
+  Promise.all([api({action:'list',resource:'stories',order:'updated_at',asc:false}),api({action:'overview'})]).then(function(res){ if(CUR.split(':')[0]!=='stories') return; /* user moved on before this loaded */
     var rows=res[0].rows||[]; DATA=res[1];
     var counts={draft:0,review:0,scheduled:0,published:0}; rows.forEach(function(s){counts[s.status]=(counts[s.status]||0)+1;});
     var chip=function(k,l){return '<div class="scard" style="padding:16px 20px"><div class="lab">'+l+'</div><div class="val" style="font-size:1.7rem">'+(counts[k]||0)+'</div></div>';};
@@ -792,6 +794,266 @@ function renderPreview(){
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') ov.classList.remove('open'); });
 })();
 
+/* ================= WEBSITE TEXT =================
+   Edits the wording of the public pages. Each editable element on a page carries
+   data-edit="<key>" (plus data-label, data-edit-type, data-accent); this page reads those
+   pages directly, so the form always matches the live site. Saved wording lives in the
+   Supabase table atn_site_text and is applied on the site by site-text.js.
+   Writes go through the atn_site_text_save() database function, which checks the same
+   passphrase the team signs in with. */
+var SB_URL='https://raolhzzsbzvevwpjvvcp.supabase.co';
+var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhb2xoenpzYnp2ZXZ3cGp2dmNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3NTE0NDIsImV4cCI6MjEwMjMyNzQ0Mn0.anZHWJjvaxSHyeFb7vhu-y4SCtOVak0jhZrXiNma7WM';
+var ST_PAGES=[
+  {id:'home',label:'Homepage',url:'../'},
+  {id:'team',label:'Our Team',url:'../team/'},
+  {id:'missionaries',label:'Missionaries',url:'../missionaries/'},
+  {id:'stories',label:'Stories page',url:'../stories/'}
+];
+var ST={page:'home',fields:[],over:{},dirty:{},query:''};
+var ST_PAGE_CACHE={};
+
+function sbHeaders(extra){ var h={apikey:SB_ANON,Authorization:'Bearer '+SB_ANON}; if(extra) for(var k in extra) h[k]=extra[k]; return h; }
+function stNotReady(){ var e=new Error('not-ready'); e.notReady=true; return e; }
+function stFetchOverrides(){
+  return fetch(SB_URL+'/rest/v1/atn_site_text?select=key,value,updated_at',{headers:sbHeaders(),cache:'no-store'}).then(function(r){
+    if(r.status===404) throw stNotReady();
+    if(!r.ok) throw new Error('The saved website text could not be loaded ('+r.status+').');
+    return r.json();
+  }).then(function(rows){ var m={}; (rows||[]).forEach(function(x){ m[x.key]={value:x.value,at:x.updated_at}; }); return m; });
+}
+/* show the Website Text menu item only once the database side is switched on */
+function stProbe(){
+  var show=function(){ var el=document.querySelector('.sb-item[data-view="sitetext"]'); if(el) el.classList.remove('hidden'); };
+  stFetchOverrides().then(show).catch(function(e){ if(!e.notReady) show(); });
+}
+
+function stNorm(v){
+  return String(v==null?'':v).replace(/\r\n?/g,'\n').split('\n').map(function(l){ return l.replace(/[ \t ]+/g,' ').trim(); }).join('\n').replace(/^\n+|\n+$/g,'');
+}
+function stAccentMatch(n,spec){
+  var p=String(spec||'span.hl').split('.');
+  if(n.nodeName.toLowerCase()!==(p[0]||'span')) return false;
+  for(var i=1;i<p.length;i++) if(!n.classList.contains(p[i])) return false;
+  return true;
+}
+/* page HTML -> the plain wording a person edits (line breaks as new lines, gold accents as *asterisks*) */
+function stToMarkup(el){
+  var type=el.getAttribute('data-edit-type')||'text', spec=el.getAttribute('data-accent')||'span.hl';
+  var sq=function(s){ return String(s||'').replace(/\s+/g,' '); };
+  if(type==='lines') return Array.prototype.map.call(el.querySelectorAll('li'),function(li){ return sq(li.textContent).trim(); }).filter(Boolean).join('\n');
+  var out='';
+  Array.prototype.forEach.call(el.childNodes,function(n){
+    if(n.nodeType===3) out+=sq(n.nodeValue);
+    else if(n.nodeName==='BR') out+='\n';
+    else if(n.nodeType===1) out+=(type==='accent'&&stAccentMatch(n,spec))?'*'+sq(n.textContent).trim()+'*':sq(n.textContent);
+  });
+  return stNorm(out);
+}
+/* the same rendering rules site-text.js uses, for the live preview */
+function stRender(el,type,spec,value){
+  while(el.firstChild) el.removeChild(el.firstChild);
+  var v=String(value==null?'':value);
+  if(type==='lines'){ v.split('\n').forEach(function(l){ l=l.trim(); if(!l) return; var d=document.createElement('div'); d.textContent=l; el.appendChild(d); }); return; }
+  v.split('\n').forEach(function(line,i){
+    if(i) el.appendChild(document.createElement('br'));
+    if(type!=='accent'){ el.appendChild(document.createTextNode(line)); return; }
+    line.split('*').forEach(function(part,j){
+      if(!part) return;
+      if(j%2){ var p=String(spec||'span.hl').split('.'); var a=document.createElement(p[0]||'span'); a.className=p.slice(1).join(' ')||'hl'; a.classList.add('acc'); a.textContent=part; el.appendChild(a); }
+      else el.appendChild(document.createTextNode(part));
+    });
+  });
+}
+
+function stLoadPage(pg){
+  if(ST_PAGE_CACHE[pg.id]) return Promise.resolve(ST_PAGE_CACHE[pg.id]);
+  return fetch(pg.url,{cache:'no-store'}).then(function(r){
+    if(!r.ok) throw new Error('The '+pg.label+' page could not be opened ('+r.status+').');
+    return r.text();
+  }).then(function(html){
+    var doc=new DOMParser().parseFromString(html,'text/html');
+    var out=[], seen={};
+    Array.prototype.forEach.call(doc.querySelectorAll('[data-edit]'),function(el){
+      var key=el.getAttribute('data-edit');
+      if(seen[key]) return; seen[key]=1;
+      if(pg.id!=='home'&&key.indexOf('footer.')===0) return; // the shared footer is edited once, on the Homepage tab
+      var sec=el.closest('[data-edit-section]');
+      out.push({key:key,label:el.getAttribute('data-label')||key,type:el.getAttribute('data-edit-type')||'text',
+        accent:el.getAttribute('data-accent')||'span.hl',section:sec?sec.getAttribute('data-edit-section'):'More text',
+        anchor:sec&&sec.id?sec.id:'',def:stToMarkup(el)});
+    });
+    ST_PAGE_CACHE[pg.id]=out;
+    return out;
+  });
+}
+
+function stField(key){ return ST.fields.filter(function(f){ return f.key===key; })[0]; }
+function stSaved(f){ return ST.over[f.key]?stNorm(ST.over[f.key].value):f.def; }
+function stDirtyCount(){ return Object.keys(ST.dirty).length; }
+function stCanLeave(){
+  if(CUR!=='sitetext'||!stDirtyCount()) return true;
+  if(confirm('You have text changes that are not saved yet. Leave without saving them?')){ ST.dirty={}; return true; }
+  return false;
+}
+window.addEventListener('beforeunload',function(e){ if(CUR==='sitetext'&&stDirtyCount()){ e.preventDefault(); e.returnValue=''; } });
+
+function stHead(){ return '<div class="page-head"><h1>Website Text</h1><p>Change the wording on your website. When you save, the new wording is live right away.</p></div>'; }
+
+function renderSiteText(C){
+  var pg=ST_PAGES.filter(function(p){ return p.id===ST.page; })[0]||ST_PAGES[0];
+  C.innerHTML=stHead()+'<div class="loading">Loading the '+esc(pg.label)+' text…</div>';
+  Promise.all([stFetchOverrides(),stLoadPage(pg)]).then(function(res){
+    if(CUR!=='sitetext'||ST.page!==pg.id) return; /* user moved on before this loaded */
+    ST.over=res[0]; ST.fields=res[1]; ST.dirty={};
+    stDraw(C,pg);
+  }).catch(function(e){
+    if(CUR!=='sitetext') return;
+    if(e&&e.notReady){
+      C.innerHTML=stHead()+'<div class="panel st-msg"><h3>Almost ready</h3><p>Website text editing is being switched on by Williams Digital. Nothing for you to do. This page will work once it is on.</p></div>';
+      return;
+    }
+    C.innerHTML=stHead()+'<div class="panel st-msg"><h3>Could not load the website text</h3><p>'+esc(e&&e.message||'Something went wrong.')+' Check your connection and try again.</p><button class="btn btn-ghost btn-sm" id="st-retry">Try again</button></div>';
+    $('#st-retry').addEventListener('click',function(){ renderSiteText(C); });
+  });
+}
+
+function stFieldHtml(f){
+  var saved=stSaved(f);
+  var wide=!f.row&&(f.type!=='text'||f.def.length>70||f.def.indexOf('\n')>-1);
+  var id='st-'+f.key.replace(/[^a-z0-9]/gi,'-');
+  return '<div class="st-field'+(wide?' wide':'')+(f.row?' '+f.row:'')+'" data-key="'+esc(f.key)+'">'+
+    '<div class="st-flabel"><label for="'+id+'">'+esc(f.label)+'</label>'+
+      (f.type==='accent'?'<span class="st-tag gold">Gold accent</span>':'')+'</div>'+
+    '<textarea class="st-input" id="'+id+'" rows="1" spellcheck="true">'+esc(saved)+'</textarea>'+
+    (f.type==='accent'?'<div class="st-acc"><button type="button" class="st-goldbtn" title="Make the selected words gold italic"><i>Aa</i> Gold accent</button><div class="st-prev" aria-label="Preview"></div></div>':'')+
+    (f.type==='lines'?'<div class="st-hint">One name per line.</div>':'')+
+    '<div class="st-meta"><span class="st-tag edited" hidden>Edited</span><span class="st-tag unsaved" hidden>Not saved</span>'+
+      '<button type="button" class="st-reset" hidden>Use original</button></div>'+
+    '<div class="st-orig" hidden><b>Original:</b> <span></span></div>'+
+  '</div>';
+}
+
+function stDraw(C,pg){
+  var groups=[], by={};
+  ST.fields.forEach(function(f){
+    if(!by[f.section]){ by[f.section]={name:f.section,anchor:f.anchor,fields:[]}; groups.push(by[f.section]); }
+    by[f.section].fields.push(f);
+  });
+  groups.forEach(function(g){ g.fields.forEach(function(f,i){
+    f.row='';
+    var mid=/\.joiner$/.test(f.key);
+    if(mid) f.row='tri-mid';
+    else if(g.fields[i+1]&&/\.joiner$/.test(g.fields[i+1].key)) f.row='tri-start';
+    else if(g.fields[i-1]&&/\.joiner$/.test(g.fields[i-1].key)) f.row='tri-end';
+  }); });
+  var y=window.scrollY;
+  C.innerHTML=stHead()+
+    '<div class="tabs st-tabs">'+ST_PAGES.map(function(p){ return '<button class="tab'+(p.id===pg.id?' active':'')+'" data-stpage="'+p.id+'">'+esc(p.label)+'</button>'; }).join('')+'</div>'+
+    '<div class="st-tools"><label class="st-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>'+
+      '<input id="st-q" type="search" placeholder="Find text on this page" value="'+esc(ST.query)+'" aria-label="Find text on this page"></label>'+
+      '<a class="btn btn-ghost btn-sm" href="'+pg.url+'" target="_blank" rel="noopener">Open '+esc(pg.label)+' ↗</a></div>'+
+    '<p class="st-help">Change any wording below, then press <b>Save changes</b>. Press Enter for a new line. On fields marked <span class="st-tag gold">Gold accent</span>, select words and press the Gold accent button to show them in gold italic. That puts *asterisks* around them.</p>'+
+    (groups.length?groups.map(function(g){
+      var edited=g.fields.filter(function(f){ return ST.over[f.key]; }).length;
+      return '<section class="panel st-sec" data-sec="'+esc(g.name)+'">'+
+        '<div class="panel-head"><h3>'+esc(g.name)+'</h3><span class="st-sec-meta">'+(edited?edited+' edited':'')+'</span>'+
+        '<a class="link" href="'+pg.url+(g.anchor?'#'+g.anchor:'')+'" target="_blank" rel="noopener">View on site ↗</a></div>'+
+        '<div class="st-fields">'+g.fields.map(stFieldHtml).join('')+'</div></section>';
+    }).join(''):'<div class="panel st-msg"><p>This page has no editable text yet.</p></div>')+
+    '<p class="st-nomatch" id="st-nomatch" hidden>No text on this page matches your search.</p>'+
+    '<div class="st-bar" id="st-bar" role="region" aria-label="Unsaved changes"><span id="st-count"></span><span class="st-err" id="st-err"></span>'+
+      '<div class="st-bar-btns"><button class="btn btn-ghost btn-sm" id="st-discard">Discard</button><button class="btn btn-primary btn-sm" id="st-save">Save changes</button></div></div>';
+  window.scrollTo(0,y);
+
+  Array.prototype.forEach.call(C.querySelectorAll('.st-field'),function(box){
+    var f=stField(box.dataset.key), ta=$('.st-input',box);
+    stSync(box,f);
+    ta.addEventListener('input',function(){ stChanged(box,f); });
+    $('.st-reset',box).addEventListener('click',function(){ ta.value=f.def; stChanged(box,f); ta.focus(); });
+    var gold=$('.st-goldbtn',box);
+    if(gold) gold.addEventListener('click',function(){
+      var a=ta.selectionStart, b=ta.selectionEnd, v=ta.value;
+      if(a===b){ ta.value=v.slice(0,a)+'**'+v.slice(b); ta.setSelectionRange(a+1,a+1); }
+      else { var sel=v.slice(a,b), lead=sel.match(/^\s*/)[0], tail=sel.match(/\s*$/)[0], core=sel.trim(); ta.value=v.slice(0,a)+lead+'*'+core+'*'+tail+v.slice(b); ta.setSelectionRange(a+lead.length,a+lead.length+core.length+2); }
+      ta.focus(); stChanged(box,f);
+    });
+  });
+  Array.prototype.forEach.call(C.querySelectorAll('[data-stpage]'),function(t){ t.addEventListener('click',function(){
+    if(t.dataset.stpage===ST.page||!stCanLeave()) return;
+    ST.page=t.dataset.stpage; ST.query=''; renderSiteText(C);
+  }); });
+  $('#st-q').addEventListener('input',function(){ ST.query=this.value; stFilter(C); });
+  $('#st-discard').addEventListener('click',function(){ if(confirm('Throw away the changes you have not saved?')){ ST.dirty={}; stDraw(C,pg); } });
+  $('#st-save').addEventListener('click',function(){ stSave(C,pg); });
+  stFilter(C); stBar();
+}
+
+function stGrow(ta){ ta.style.height='auto'; ta.style.height=(ta.scrollHeight+2)+'px'; }
+function stSync(box,f){
+  var ta=$('.st-input',box), v=stNorm(ta.value), saved=stSaved(f), dirty=Object.prototype.hasOwnProperty.call(ST.dirty,f.key);
+  box.classList.toggle('is-dirty',dirty);
+  $('.st-tag.unsaved',box).hidden=!dirty;
+  $('.st-tag.edited',box).hidden=dirty||!ST.over[f.key];
+  $('.st-reset',box).hidden=(v===f.def);
+  var orig=$('.st-orig',box); orig.hidden=(v===f.def); $('span',orig).textContent=f.def||'(empty)';
+  var meta=$('.st-meta',box); meta.hidden=!Array.prototype.some.call(meta.children,function(c){ return !c.hidden; });
+  var prev=$('.st-prev',box); if(prev) stRender(prev,f.type,f.accent,v);
+  stGrow(ta);
+}
+function stChanged(box,f){
+  var v=stNorm($('.st-input',box).value);
+  if(v!==stSaved(f)) ST.dirty[f.key]=v; else delete ST.dirty[f.key];
+  stSync(box,f); stBar();
+}
+function stBar(){
+  var n=stDirtyCount(), bar=$('#st-bar'); if(!bar) return;
+  bar.classList.toggle('show',n>0);
+  $('#st-count').textContent=n===1?'1 change not saved':n+' changes not saved';
+  if(!n) $('#st-err').textContent='';
+}
+function stFilter(C){
+  var q=ST.query.trim().toLowerCase(), any=false;
+  Array.prototype.forEach.call(C.querySelectorAll('.st-sec'),function(sec){
+    var shown=0;
+    Array.prototype.forEach.call(sec.querySelectorAll('.st-field'),function(box){
+      var f=stField(box.dataset.key);
+      var hit=!q||(f.label+' '+f.def+' '+$('.st-input',box).value+' '+sec.dataset.sec).toLowerCase().indexOf(q)>-1;
+      box.hidden=!hit; if(hit) shown++;
+    });
+    sec.hidden=!shown; if(shown) any=true;
+  });
+  var nm=$('#st-nomatch'); if(nm) nm.hidden=any||!q;
+  // textareas that were hidden have no height yet
+  Array.prototype.forEach.call(C.querySelectorAll('.st-field:not([hidden]) .st-input'),stGrow);
+}
+
+function stSave(C,pg){
+  var keys=Object.keys(ST.dirty); if(!keys.length) return;
+  var changes=keys.map(function(k){ var f=stField(k), v=ST.dirty[k]; return {key:k,value:v===f.def?null:v}; });
+  var empty=changes.filter(function(c){ return c.value===''; }).map(function(c){ return stField(c.key).label; });
+  if(empty.length&&!confirm((empty.length===1?'"'+empty[0]+'" is empty':empty.length+' fields are empty')+', so that text will disappear from the website. Save anyway?')) return;
+  var btn=$('#st-save'); btn.disabled=true; btn.textContent='Saving…'; $('#st-err').textContent='';
+  fetch(SB_URL+'/rest/v1/rpc/atn_site_text_save',{method:'POST',headers:sbHeaders({'Content-Type':'application/json'}),body:JSON.stringify({p_pass:pass,p_changes:changes})})
+    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){
+      if(!r.ok){
+        if(r.status===404) throw new Error('Website text saving is not switched on yet.');
+        if(r.status===403||j.code==='28P01') throw new Error('This passphrase is not allowed to change website text. Ask Williams Digital to check it.');
+        throw new Error(j.message||('Saving failed ('+r.status+').'));
+      }
+      return j;
+    }); })
+    .then(function(){
+      var now=new Date().toISOString();
+      changes.forEach(function(c){ if(c.value===null) delete ST.over[c.key]; else ST.over[c.key]={value:c.value,at:now}; });
+      ST.dirty={};
+      stDraw(C,pg);
+      toast(changes.length===1?'Saved. The new wording is live on your website.':'Saved '+changes.length+' changes. The new wording is live on your website.');
+      var names=changes.map(function(c){ var f=stField(c.key); return f.section+': '+f.label+(c.value===null?' (original)':''); });
+      logAct('Website text updated ('+pg.label+'): '+names.slice(0,4).join('; ')+(names.length>4?'; and '+(names.length-4)+' more':''),'site');
+    })
+    .catch(function(e){ btn.disabled=false; btn.textContent='Save changes'; $('#st-err').textContent=e.message||'Saving failed. Try again.'; });
+}
+
 /* ---------- activity ---------- */
 function logAct(message,kind){ api({action:'log',message:message,kind:kind||'info'}).catch(function(){}); }
 
@@ -807,7 +1069,7 @@ function unlock(p){
   return api({action:'overview'}).then(function(){
     sessionStorage.setItem(PASS_KEY,p);
     $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
-    renderNav(); go('overview'); return true;
+    renderNav(); stProbe(); go('overview'); return true;
   }).catch(function(){ $('#gate-err').textContent='Incorrect passphrase.'; return false; });
 }
 $('#gate-btn').addEventListener('click',function(){ var v=$('#gate-input').value.trim(); if(v)unlock(v); });
