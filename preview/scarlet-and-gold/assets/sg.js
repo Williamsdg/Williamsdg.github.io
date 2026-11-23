@@ -21,6 +21,7 @@
   var BY_H = Object.create(null);
   PRODUCTS.forEach(function (p) { BY_H[p.h] = p; });
   SG.chapter = SG.currentChapter();
+  var CH = SG.chapter;
 
   /* ======================================================================
      Basic helpers
@@ -116,11 +117,34 @@
     return null;
   };
 
-  /** "Ships in 5–7 days" (in stock) vs "Made for you · 10–14 days" (made to order). long=true gives the PDP wording. */
+  /**
+   * SG.shipKind(p) → 'in' | 'mto' | 'vendor' | 'check'. The FAQ (source/faq.txt) only makes these claims:
+   *   in     — In Stock items ship in 5–7 business days (p.ship === 'in', from an In Stock collection)
+   *   mto    — Made to Order is "our tees, fleece and Client Collections", printed or embroidered in Auburn, 10–14 business days
+   *   vendor — accessories (stickers, notebooks, bottles…) "ship directly from our manufacturer"
+   *   check  — anything else not in an In Stock collection: no timeline is claimed ("check the shipping timeline")
+   * data.js marks every non-in-stock piece 'mto', so the finer split is derived here from category + collections.
+   */
+  var MTO_CATS = { tee: 1, 'long-sleeve': 1, crewneck: 1, 'quarter-zip': 1, mockneck: 1 };
+  var VENDOR_CATS = { accessory: 1, bow: 1, book: 1, scarf: 1 };
+  var PROGRAM_COLS = Object.create(null);
+  (D.programs || []).forEach(function (pr) { if (pr.h) PROGRAM_COLS[pr.h] = 1; });
+  SG.shipKind = function (p) {
+    if (!p) return 'check';
+    if (p.ship === 'in') return 'in';
+    if (VENDOR_CATS[p.cat]) return 'vendor';
+    var cols = p.cols || [];
+    var client = cols.some(function (c) { return PROGRAM_COLS[c]; });
+    var teesFleece = !!MTO_CATS[p.cat] && cols.some(function (c) { return /-(apparel|tees-fleece(-\d+)?)$/.test(c); });
+    return (client || teesFleece) ? 'mto' : 'check';
+  };
+  /** Card micro-label (short) or PDP wording (long=true) for SG.shipKind(p). */
   SG.shipLabel = function (p, long) {
-    var inStock = p && p.ship === 'in';
-    if (long) return inStock ? 'In stock · ships in 5–7 business days' : 'Made for you in Auburn · ships in 10–14 business days';
-    return inStock ? 'Ships in 5–7 days' : 'Made for you · 10–14 days';
+    var k = SG.shipKind(p);
+    if (k === 'in') return long ? 'In stock · ships in 5–7 business days' : 'Ships in 5–7 days';
+    if (k === 'mto') return long ? 'Made for you in our Auburn shop · ships in 10–14 business days' : 'Made for you · 10–14 days';
+    if (k === 'vendor') return 'Ships from our manufacturer';
+    return long ? 'Check the shipping timeline for this piece before game day' : 'Check shipping timeline';
   };
 
   /** Swatch colour for a colour option name. */
@@ -155,7 +179,7 @@
     'aubie-tee-flatlay': P(960, 640, 'A grey Aubie graphic tee laid flat with sandals and jeans'),
     'auburn-blue-cropped-crewneck-model': P(1600, 1600, 'Smiling woman in a light blue cropped Auburn crewneck and jeans'),
     'auburn-cheer-dress-flat': P(1600, 1600, 'A navy Auburn cheer dress with orange and white stripes, laid flat'),
-    'auburn-embroidered-crewneck-model': P(1600, 1600, 'Woman in a white crewneck with a small embroidered AU and white shorts'),
+    'auburn-embroidered-crewneck-model': P(1600, 1600, 'Smiling woman in a light grey mockneck sweatshirt with blue gingham AUBURN letters and white pants'),
     'auburn-tee-grid-flatlay': P(1600, 1600, 'A grid of Auburn graphic tees laid flat'),
     'auburn-tee-grid-flatlay-2': P(1600, 1598, 'A second grid of Auburn graphic tees laid flat'),
     'ava-airy-set-two-models': P(1443, 1443, 'Two women in Ava Airy crewneck and shorts sets in orange and light blue'),
@@ -169,23 +193,42 @@
     'group-auburn-tees-outdoor': P(1600, 1568, 'Seven women in Auburn graphic tees and jeans under a white colonnade'),
     'kristen-airy-tee-model': P(1600, 1600, 'Woman in a grey Kristen Airy tee and shorts'),
     'mallory-four-models-other-schools': P(1067, 1600, 'Four women in Mallory gingham mocknecks'),
-    'megan-family-bw': P(1064, 1600, 'Founder Megan Smalley with her husband Blake and their boys on a porch, in black and white'),
+    'megan-family-bw': P(1064, 1600, 'Founder Megan Smalley with her husband Blake and their children on a porch, in black and white'),
     'mom-mini-auburn-stripes': P(600, 630, 'A mom and her little girl in matching orange and navy Auburn striped sweatshirts with poms'),
     'original-aubie-collab': P(1200, 1200, 'The Original Aubie Collection artwork, in collaboration with Scarlet & Gold'),
     'sophia-scarf': P(1067, 1600, 'A printed Sophia scarf hanging'),
-    'war-eagle-tank-skort-torso': P(1600, 1600, 'Navy tank and skort with War Eagle patches'),
-    'white-crewneck-shorts-set-model': P(1600, 1600, 'A white tonal crewneck and shorts set')
+    'war-eagle-tank-skort-torso': P(1600, 1600, 'A navy tank and matching navy skort with small orange patches'),
+    'white-crewneck-shorts-set-model': P(1600, 1450, 'A white marbled crewneck and shorts set with a small embroidered AU')   // re-exported from the neck down (the source cut through the mouth)
   };
 
-  /* Collection photos that are the same image as a local webp: resolve to the local copy so the no-repeat picker sees one photo. */
+  /* Collection photos that are the same image as a local webp: resolve to the local copy so the no-repeat picker sees one photo.
+     One substitution: the Alli collection photo (alli-three-models) cuts all three faces at the mouth and shows rival-school
+     patches, so col:the-alli-collection resolves to the Alli tank & skort torso shot instead. */
   var COL_ALIAS = {
     's-g-christmas': 'christmas-three-models', 'the-ava-collection': 'ava-airy-set-two-models', 'the-becca-collection': 'becca-two-girls',
     'the-kristen-collection': 'kristen-airy-tee-model', 'grace-gingham-dresses': 'grace-gingham-dresses-three-models',
-    'mallory-gingham-mocknecks': 'mallory-four-models-other-schools', 'the-alli-collection': 'alli-three-models', 'sophia-scarves': 'sophia-scarf',
+    'mallory-gingham-mocknecks': 'mallory-four-models-other-schools', 'the-alli-collection': 'war-eagle-tank-skort-torso', 'sophia-scarves': 'sophia-scarf',
     'original-aubie-basketball': 'original-aubie-collab', 'auburn': 'auburn-tee-grid-flatlay', 'auburn-kids-apparel': 'auburn-tee-grid-flatlay-2',
-    'auburn-best-sellers': 'group-auburn-tees-outdoor', 'give-grace': 'megan-family-bw', 'girls-cheer-dresses': 'cheer-dresses-three-girls-other-schools',
+    'auburn-best-sellers': 'group-auburn-tees-outdoor', 'girls-cheer-dresses': 'cheer-dresses-three-girls-other-schools',
     'closeout-sale': 'crewnecks-four-models-other-schools'
   };
+  /*
+   * Photo cautions (~/.config/wd/scarletgold-build/assets/editorial/INDEX.md), enforced here for every page:
+   *   NEVER — never resolved as a photo: Megan's family photo (placed by hand, natural ratio, story + Meet Megan only),
+   *           the mouth-cut Alli group, the In Stock collection image (a bare AU logo graphic, not a photo) and the
+   *           Give Grace collection image (also Megan's family photo).
+   *   OTHER — shows another school's marks (or the Alabama-print scarf): skipped by pickPhoto in Auburn slots (ctx.auburn,
+   *           the default for SG.hero / SG.tile / SG.deptTiles). Signature and school contexts may still use them.
+   *   TORSO — photographer's torso crops: only in boxes at least 1.25:1 wide, or where a slot opts in with {torso:true}
+   *           (a product-labelled tile); anchored at the bottom (50% 100%) unless the slot gives a pos.
+   */
+  var NEVER = { 'megan-family-bw': 1, 'alli-three-models': 1, 'col:auburn-university-in-stock-items': 1, 'col:give-grace': 1 };
+  var OTHER = { 'mallory-four-models-other-schools': 1, 'cheer-dresses-three-girls-other-schools': 1, 'crewnecks-four-models-other-schools': 1,
+    'four-women-tees-outdoor': 1, 'becca-two-girls': 1, 'kristen-airy-tee-model': 1, 'sophia-scarf': 1, 'col:cheer-accessories': 1 };
+  var TORSO = { 'white-crewneck-shorts-set-model': 1, 'war-eagle-tank-skort-torso': 1 };
+  var PHOTO_ALT = { 'col:book': 'Megan Smalley’s book Give Grace' };
+  SG.isOtherSchoolPhoto = function (key) { return !!OTHER[key]; };
+  SG.isTorsoPhoto = function (key) { return !!TORSO[key]; };
 
   /**
    * Resolve a photo candidate → {key, src, w, h, alt, pos?, fit?, bg?, label?, sub?, c?} or null.
@@ -197,32 +240,42 @@
     var extra = typeof cand === 'object' ? cand : null;
     var key = extra ? extra.k : cand;
     var out = null;
+    if (!key || NEVER[key]) return null;
     if (key.indexOf('col:') === 0) {
       var h = key.slice(4);
       if (COL_ALIAS[h]) return SG.photo(extra ? Object.assign({}, extra, { k: COL_ALIAS[h] }) : COL_ALIAS[h], w);
       var c = COLS[h];
       if (!c || !c.img) return null;
-      out = { key: key, src: SG.img(c.img, w || 900), w: 900, h: 900, alt: c.t };
+      out = { key: key, src: SG.img(c.img, w || 900), w: 900, h: 900, alt: PHOTO_ALT[key] || c.t };
     } else {
       var m = SG.photos[key];
       if (!m) return null;
       out = { key: key, src: 'img/' + key + '.webp', w: m.w, h: m.h, alt: m.alt };
     }
-    if (extra) ['pos', 'fit', 'bg', 'label', 'sub', 'c', 'alt'].forEach(function (f) { if (extra[f] != null) out[f] = extra[f]; });
+    if (extra) ['pos', 'fit', 'bg', 'label', 'sub', 'c', 'alt', 'torso'].forEach(function (f) { if (extra[f] != null) out[f] = extra[f]; });
     return out;
   };
 
   SG.usedPhotos = Object.create(null);
   /**
-   * SG.pickPhoto(cands, w, strict) → first candidate not yet used on this page (and marks it used).
-   * If every candidate is used: returns the first available one, or null when strict is true.
+   * SG.pickPhoto(cands, w, strict, ctx) → first candidate not yet used on this page (and marks it used).
+   * If every candidate is used: returns the first allowed one, or null when strict is true.
+   * ctx {auburn:true, ratio:<box width/height>}: auburn skips OTHER (rival-school) photos; ratio decides whether a
+   * TORSO crop may be used (≥ 1.25, or the candidate says torso:true). A torso pick comes back with pos '50% 100%'.
    */
-  SG.pickPhoto = function (cands, w, strict) {
+  SG.pickPhoto = function (cands, w, strict, ctx) {
+    ctx = ctx || {};
     cands = [].concat(cands || []);
     var first = null;
     for (var i = 0; i < cands.length; i++) {
       var ph = SG.photo(cands[i], w);
       if (!ph) continue;
+      if (ctx.auburn && OTHER[ph.key]) continue;
+      if (TORSO[ph.key]) {
+        if (!(ph.torso || (ctx.ratio && ctx.ratio >= 1.25))) continue;
+        ph.pos = ph.pos || '50% 100%';   // a slot may aim higher (no faces in either file; the Alli shot's tank patch sits near the top)
+        ph.isTorso = true;
+      }
       if (!first) first = ph;
       if (!SG.usedPhotos[ph.key]) { SG.usedPhotos[ph.key] = 1; return ph; }
     }
@@ -306,6 +359,7 @@
   /**
    * SG.card(p, opts) → HTML string for one product card.
    * opts: { school:true (show school eyebrow), eager:false, ship:true (shipping micro-label), w:600 (image width) }
+   * Sold out (p.av === 0): "Sold out" badge, muted image, "Sold out for now" in place of the shipping label, class .is-out.
    */
   SG.card = function (p, opts) {
     opts = opts || {};
@@ -313,29 +367,31 @@
     var w = opts.w || 600;
     var img0 = p.img && p.img[0], img1 = p.img && p.img[1];
     var ir = p.ir || 0.8;
-    var cover = ir >= 0.72 && ir <= 1.05;   // 2:3-ish → contain on the frame colour; 4:5 to square → cover (heads kept by object-position 50% 14%)
+    var cover = ir >= 0.6 && ir <= 1.05;    // 2:3 to square → cover, anchored near the top (heads kept); taller or wider → contain on the frame
     var hgt = Math.round(w / ir);
     var sale = p.cp && p.cp > p.p;
+    var out = p.av === 0 || p.av === false;
     var sch = opts.school && p.sch ? SG.school(p.sch) : null;
     var co = (p.co || []).filter(Boolean);
     var dots = co.slice(0, 5).map(function (c) {
       return '<li style="--c:' + SG.colorHex(c) + '" title="' + SG.esc(c) + '"></li>';
     }).join('') + (co.length > 5 ? '<li class="more">+' + (co.length - 5) + '</li>' : '');
     var on = SG.saved.has(p.h);
-    return '<article class="pc" data-h="' + SG.esc(p.h) + '">' +
+    return '<article class="pc' + (out ? ' is-out' : '') + '" data-h="' + SG.esc(p.h) + '">' +
       '<div class="pc__media">' +
         (img0 ? '<img src="' + SG.esc(SG.img(img0, w)) + '" alt="" width="' + w + '" height="' + hgt + '"' + (cover ? ' class="is-cover"' : '') +
           (opts.eager ? '' : ' loading="lazy"') + ' decoding="async">' : '') +
         (img1 ? '<img class="pc__alt' + (cover ? ' is-cover' : '') + '" src="' + SG.esc(SG.img(img1, w)) + '" alt="" width="' + w + '" height="' + hgt + '" loading="lazy" decoding="async">' : '') +
-        (sale ? '<span class="pc__badge pc__badge--sale">Sale</span>' : (p['new'] ? '<span class="pc__badge">New</span>' : '')) +
+        (out ? '<span class="pc__badge pc__badge--out">Sold out</span>' : sale ? '<span class="pc__badge pc__badge--sale">Sale</span>' : (p['new'] ? '<span class="pc__badge">New</span>' : '')) +
       '</div>' +
-      '<button type="button" class="pc__heart" aria-pressed="' + on + '" aria-label="Save ' + SG.esc(p.t) + '"><span>' + I.heart + '</span></button>' +
+      '<button type="button" class="pc__heart" data-h="' + SG.esc(p.h) + '" aria-pressed="' + on + '" aria-label="Save ' + SG.esc(p.t) + '"><span>' + I.heart + '</span></button>' +
       '<div class="pc__body">' +
         (sch ? '<p class="pc__school">' + SG.esc(sch.name) + '</p>' : '') +
         '<h3 class="pc__title"><a href="' + SG.productUrl(p.h) + '">' + SG.esc(p.t) + '</a></h3>' +
         '<p class="pc__price">' + (sale ? '<span class="is-sale">' + SG.money(p.p) + '</span><s>' + SG.money(p.cp) + '</s><span class="sr"> (was ' + SG.money(p.cp) + ')</span>' : SG.money(p.p)) + '</p>' +
         (dots ? '<ul class="pc__dots" aria-label="' + co.length + ' color' + (co.length === 1 ? '' : 's') + ': ' + SG.esc(co.slice(0, 5).join(', ')) + '">' + dots + '</ul>' : '') +
-        (opts.ship === false ? '' : '<p class="pc__ship pc__ship--' + (p.ship === 'in' ? 'in' : 'mto') + '">' + SG.shipLabel(p) + '</p>') +
+        (opts.ship === false ? '' : out ? '<p class="pc__ship pc__ship--out">Sold out for now</p>'
+          : '<p class="pc__ship pc__ship--' + SG.shipKind(p) + '">' + SG.shipLabel(p) + '</p>') +
       '</div>' +
     '</article>';
   };
@@ -405,28 +461,39 @@
     if (!live.length) { el.innerHTML = ''; if (opts.hide !== false) target.hidden = true; return 0; }
     target.hidden = false;
     var uid = 'tr' + Math.random().toString(36).slice(2, 7);
+    // one control line: tabs left, "Shop all" + arrows right (the same place every other rail puts them)
     el.innerHTML =
-      '<div class="tabs" role="tablist" aria-label="' + SG.esc(opts.label || 'Departments') + '">' + live.map(function (t, i) {
+      '<div class="tr-head"><div class="tabs" role="tablist" aria-label="' + SG.esc(opts.label || 'Departments') + '">' + live.map(function (t, i) {
         return '<button type="button" class="tab" role="tab" id="' + uid + '-t' + i + '" aria-controls="' + uid + '-p" aria-selected="' + (i === 0) + '" tabindex="' + (i === 0 ? 0 : -1) + '">' + SG.esc(t.label) + '</button>';
       }).join('') + '</div>' +
-      '<div id="' + uid + '-p" role="tabpanel" aria-labelledby="' + uid + '-t0"><div class="tr-rail"></div>' +
-      '<div class="sechead" style="margin:var(--s-5) 0 0;align-items:center"><a class="tlink tr-more" href="#"></a><div class="tr-nav"></div></div></div>';
-    var btns = el.querySelectorAll('.tab'), panel = el.querySelector('[role=tabpanel]');
+      '<div class="tr-side"><a class="tlink tr-more" href="#"></a><div class="tr-nav"></div></div></div>' +
+      '<div id="' + uid + '-p" role="tabpanel" aria-labelledby="' + uid + '-t0"><div class="tr-rail"></div></div>';
+    var btns = el.querySelectorAll('.tab'), panel = el.querySelector('[role=tabpanel]'), tablist = el.querySelector('.tabs');
     var railEl = el.querySelector('.tr-rail'), more = el.querySelector('.tr-more'), nav = el.querySelector('.tr-nav');
-    function show(i) {
+    // phones: the tab row scrolls; its edge fades until the end is reached, and the active tab is kept in view
+    var syncEnd = function () { tablist.classList.toggle('is-end', tablist.scrollLeft + tablist.clientWidth >= tablist.scrollWidth - 2); };
+    tablist.addEventListener('scroll', syncEnd, { passive: true });
+    window.addEventListener('resize', syncEnd);
+    function show(i, scroll) {
       btns.forEach(function (b, j) { b.setAttribute('aria-selected', String(i === j)); b.tabIndex = i === j ? 0 : -1; });
       panel.setAttribute('aria-labelledby', btns[i].id);
       SG.rail(railEl, live[i].products, { limit: opts.limit || 12, nav: nav, hide: railEl, card: opts.card });
       more.href = live[i].href || '#';
       more.textContent = live[i].more || ('Shop all ' + live[i].label);
       more.hidden = !live[i].href;
+      if (scroll && tablist.scrollWidth > tablist.clientWidth) {
+        var b = btns[i], pad = 16;
+        if (b.offsetLeft - pad < tablist.scrollLeft) tablist.scrollTo({ left: Math.max(0, b.offsetLeft - pad), behavior: 'smooth' });
+        else if (b.offsetLeft + b.offsetWidth + pad > tablist.scrollLeft + tablist.clientWidth) tablist.scrollTo({ left: b.offsetLeft + b.offsetWidth + pad - tablist.clientWidth, behavior: 'smooth' });
+      }
+      syncEnd();
     }
     btns.forEach(function (b, i) {
-      b.addEventListener('click', function () { show(i); });
+      b.addEventListener('click', function () { show(i, true); });
       b.addEventListener('keydown', function (e) {
         if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
         var n = (i + (e.key === 'ArrowRight' ? 1 : -1) + btns.length) % btns.length;
-        btns[n].focus(); show(n);
+        btns[n].focus(); show(n, true);
       });
     });
     show(0);
@@ -436,11 +503,14 @@
   /* ======================================================================
      Section renderers (hero, intro, tile band, department tiles, schools)
      ====================================================================== */
-  /** SG.hero(el, cfg): split hero. cfg = chapter.hero shape {eyebrow,line1,line2,body,ctas:[{label,href}x2],cols,images:[{img:[cands],pos,fit,bg}]} */
+  /**
+   * SG.hero(el, cfg): split hero. cfg = chapter.hero shape {eyebrow,line1,line2,body,ctas:[{label,href}x2],cols,images:[{img:[cands],pos,fit,bg}]}
+   * 2 or 3 images (cols sets the widths). Panels are tall and narrow, so torso crops and rival-school photos are never picked.
+   */
   SG.hero = function (el, cfg) {
     el.classList.add('hero');
     var imgs = (cfg.images || []).map(function (im, i) {
-      var ph = SG.pickPhoto(im.img, 1200) || {};
+      var ph = SG.pickPhoto(im.img, 1200, false, { auburn: !cfg.anySchool, ratio: 0.5 }) || {};
       var pos = ph.pos || im.pos, bg = ph.bg || im.bg, fit = ph.fit || im.fit;
       var style = (pos ? '--pos:' + pos + ';' : '') + (bg ? '--ph-bg:' + bg + ';' : '');
       return '<figure class="trip__ph' + (fit === 'contain' ? ' trip__ph--contain' : '') + '"' + (style ? ' style="' + style + '"' : '') + '>' + imgTag(ph.src ? ph : null, { eager: i === 0, alt: im.alt }) + '</figure>';
@@ -468,17 +538,30 @@
       '</div>' + (cfg.cta ? '<a class="btn btn--line-ink" href="' + SG.esc(cfg.cta.href) + '">' + SG.esc(cfg.cta.label) + '</a>' : '') + '</div>';
   };
 
-  /** Single photo tile HTML. t: {t, sub, c|href, img:[cands], pos, fit:'contain', bg, go:'Shop now'} */
+  /**
+   * Single tile HTML. t: {t, sub, c|href, img:[cands], pos, fit:'contain', bg, go:'Shop now', anySchool, made:{tone, patch, big, note}}
+   * Photos come from pickPhoto in an Auburn context (no rival-school photos; torso crops only with torso:true).
+   * With `made`, a designed tile (gold field by default; tone 'scarlet' | 'navy' | 'ivory') is used whenever no photo is
+   * free, so a tile never repeats a photo or shows the wrong one.
+   */
   SG.tile = function (t, w) {
-    var ph = SG.pickPhoto(t.img, w || 900) || {};
+    var ph = SG.pickPhoto(t.img, w || 900, !!t.made, { auburn: !t.anySchool, ratio: t.ratio || 1 }) || {};
     var href = t.href || SG.shopUrl({ c: t.c });
+    var txt = '<span class="tile__txt"><span class="tile__title">' + SG.esc(t.t) + '</span>' +
+      (t.sub ? '<span class="tile__sub">' + SG.esc(t.sub) + '</span>' : '') +
+      '<span class="tile__go">' + SG.esc(t.go || 'Shop now') + '</span></span>';
+    if (!ph.src && t.made) {
+      var m = t.made;
+      return '<a class="tile tile--made tile--t-' + SG.esc(m.tone || 'gold') + '" href="' + SG.esc(href) + '">' +
+        '<span class="tile__face" aria-hidden="true">' +
+          (m.big ? '<span class="tile__big">' + SG.esc(m.big) + '</span>' : '') +
+          (m.patch ? '<span class="patch' + (m.tone === 'navy' ? '' : ' patch--navy') + '">' + (m.dot ? '<span class="patch__dot"></span>' : '') + SG.esc(m.patch) + '</span>' : '') +
+        '</span>' + txt + '</a>';
+    }
     var pos = ph.pos || t.pos, bg = ph.bg || t.bg, fit = ph.fit || t.fit;
     var style = (pos ? '--pos:' + pos + ';' : '') + (bg ? '--tile-bg:' + bg + ';' : '');
     return '<a class="tile' + (fit === 'contain' ? ' tile--contain' : '') + '" href="' + SG.esc(href) + '"' + (style ? ' style="' + style + '"' : '') + '>' +
-      imgTag(ph.src ? ph : null, { alt: '' }) +
-      '<span class="tile__txt"><span class="tile__title">' + SG.esc(t.t) + '</span>' +
-      (t.sub ? '<span class="tile__sub">' + SG.esc(t.sub) + '</span>' : '') +
-      '<span class="tile__go">' + SG.esc(t.go || 'Shop now') + '</span></span></a>';
+      imgTag(ph.src ? ph : null, { alt: '' }) + txt + '</a>';
   };
 
   /** SG.tileBand(el, cfg): full-width coloured band with pill, big H2 and four photo tiles (snap carousel on phones). cfg {tone, pill, title(html), items:[tile]} */
@@ -493,28 +576,30 @@
   };
 
   /**
-   * SG.deptTiles(el, items): department tiles (photo, or a designed tile when a department has no photo).
-   * item {t, c|href, img:[cands], pos, made:{tone:'navy'|'scarlet'|'cream', patch, big, note, ticket:true}}
+   * SG.deptTiles(el, items): 3:4 department tiles with the name + SHOP NOW on the photo (bottom gradient).
+   * item {t, c|href, img:[cands], pos, made:{patch, big, note}}. A photo item that finds no free photo falls back to its
+   * `made` card (a quiet paper card with a gold hairline); an item with `made` and no `img` is always a card.
+   * Photos are picked in an Auburn context (no rival-school photos, no torso crops in these portrait tiles).
    */
   SG.deptTiles = function (el, items) {
     el.classList.add('dept', 'dept--snap');
     el.setAttribute('role', 'list');
     el.innerHTML = items.map(function (it) {
       var href = it.href || SG.shopUrl({ c: it.c });
-      var face;
-      if (it.made) {
-        var m = it.made;
-        face = '<span class="dept__ph dept__ph--made dept__ph--' + (m.tone || 'navy') + (m.ticket ? ' ticket' : '') + '">' +
-          (m.big ? '<span class="dept__big" aria-hidden="true">' + SG.esc(m.big) + '</span>' : '') +
-          (m.patch ? '<span class="patch' + (m.tone === 'cream' ? ' patch--navy' : '') + '">' + SG.esc(m.patch) + '</span>' : '') +
+      var ph = it.img ? SG.pickPhoto(it.img, 600, !!it.made, { auburn: true, ratio: 0.75 }) : null;
+      var face, made = !(ph && ph.src);
+      if (made) {
+        var m = it.made || {};
+        face = '<span class="dept__ph dept__ph--made" aria-hidden="true">' +
+          (m.big ? '<span class="dept__big">' + SG.esc(m.big) + '</span>' : '') +
+          (m.patch ? '<span class="patch patch--navy">' + (m.dot ? '<span class="patch__dot"></span>' : '') + SG.esc(m.patch) + '</span>' : '') +
           (m.note ? '<span class="dept__note">' + SG.esc(m.note) + '</span>' : '') + '</span>';
       } else {
-        var ph = SG.pickPhoto(it.img, 600) || {};
         var pos = ph.pos || it.pos;
-        face = '<span class="dept__ph"' + (pos ? ' style="--pos:' + pos + '"' : '') + '>' + imgTag(ph.src ? ph : null, { alt: '' }) + '</span>';
+        face = '<span class="dept__ph"' + (pos ? ' style="--pos:' + pos + '"' : '') + '>' + imgTag(ph, { alt: '' }) + '</span>';
       }
-      return '<li><a class="dept__a" href="' + SG.esc(href) + '">' + face +
-        '<span class="dept__name">' + SG.esc(it.t) + '</span><span class="dept__go">' + SG.esc(it.go || 'Shop now') + '</span></a></li>';
+      return '<li><a class="dept__a' + (made ? ' dept__a--made' : '') + '" href="' + SG.esc(href) + '">' + face +
+        '<span class="tile__txt dept__txt"><span class="dept__name">' + SG.esc(it.t) + '</span><span class="dept__go">' + SG.esc(it.go || 'Shop now') + '</span></span></a></li>';
     }).join('');
   };
 
@@ -523,7 +608,7 @@
     opts = opts || {};
     var list = (D.schools || []).slice(0, opts.limit || 99);
     var more = opts.collapse && list.length > 8
-      ? '<button type="button" class="btn btn--line-ink btn--block schools__more" aria-expanded="false" data-sg-schools-more>Show all ' + list.length + ' schools</button>' : '';
+      ? '<button type="button" class="btn btn--line-ink btn--block schools__more" aria-expanded="false" data-sg-schools-more>Show all schools</button>' : '';   // never print a count (their own site says 58, 59 and "more than 20")
     return '<ul class="schools' + (opts.collapse ? ' schools--collapse' : '') + '" role="list">' + list.map(function (s) {
       var home = s.slug === 'auburn';
       return '<li><a class="school' + (home ? ' school--home' : '') + '" href="' + SG.shopUrl({ school: s.slug }) + '">' +
@@ -531,6 +616,21 @@
         (home && opts.tag !== false ? '<span class="school__tag"><span class="school__tag-l">Home team</span><span class="school__tag-s" aria-hidden="true">Home</span></span>' : '') + '</span>' +
         '<span class="school__name">' + SG.esc(s.name) + '</span></a></li>';
     }).join('') + '</ul>' + more;
+  };
+
+  /**
+   * SG.schoolsCompact() → compact Shop your school (homepage): the Auburn tile as the single logo (with its Home team tag),
+   * every other school as a text chip (wraps on desktop, swipes on phones). No school count anywhere.
+   */
+  SG.schoolsCompact = function () {
+    var list = D.schools || [], au = list.filter(function (s) { return s.slug === 'auburn'; })[0];
+    var others = list.filter(function (s) { return s.slug !== 'auburn'; });
+    return '<div class="schools-c">' +
+      (au ? '<a class="school school--home" href="' + SG.shopUrl({ school: au.slug }) + '"><span class="school__img"><img src="' + SG.esc(SG.img(au.img, 400)) + '" alt="" width="400" height="400" loading="lazy" decoding="async">' +
+        '<span class="school__tag"><span class="school__tag-l">Home team</span><span class="school__tag-s" aria-hidden="true">Home</span></span></span><span class="school__name">' + SG.esc(au.name) + '</span></a>' : '') +
+      '<ul class="schools-c__chips" role="list" aria-label="Every other school we make">' + others.map(function (s) {
+        return '<li><a href="' + SG.shopUrl({ school: s.slug }) + '">' + SG.esc(s.name) + '</a></li>';
+      }).join('') + '</ul></div>';
   };
 
   /** Visit band (navy, ticket-stub card). Fills [data-sg="visit"] automatically. */
@@ -733,10 +833,15 @@
     document.body.appendChild(scrim);
     return scrim;
   }
-  var hideT = null;
-  function openLayerEl(el, focusSel) {
+  var hideT = null, inerted = [];
+  /*
+   * Modal layers (menu drawer, bag, search): everything else on the page is made inert while one is open, so Tab and
+   * screen readers stay inside it (the toast stays live). `trigger` is the control that opened it: Safari never focuses
+   * a tapped button, so document.activeElement would be <body> and focus could not return to the trigger on close.
+   */
+  function openLayerEl(el, focusSel, trigger) {
     if (openLayer && openLayer !== el) closeLayer(true);
-    lastFocus = document.activeElement;
+    lastFocus = trigger || document.activeElement;
     clearTimeout(hideT);
     el.hidden = false;          // closed layers are hidden (out of layout); unhide, reflow, then animate in
     void el.offsetWidth;
@@ -746,6 +851,10 @@
     el.setAttribute('aria-hidden', 'false');
     document.body.classList.add('is-locked');
     openLayer = el;
+    inerted = Array.prototype.filter.call(document.body.children, function (c) {
+      return c !== el && c !== scrim && !c.classList.contains('toast') && c.tagName !== 'SCRIPT' && !c.inert;
+    });
+    inerted.forEach(function (c) { c.inert = true; });
     var f = focusSel && el.querySelector(focusSel);
     window.setTimeout(function () { (f || el).focus({ preventScroll: true }); }, 60);
   }
@@ -758,12 +867,29 @@
     hideT = setTimeout(function () { if (!el.classList.contains('is-on')) el.hidden = true; }, 380);
     if (scrim) scrim.classList.remove('is-on');
     document.body.classList.remove('is-locked');
+    inerted.forEach(function (c) { c.inert = false; });
+    inerted = [];
     openLayer = null;
     document.querySelectorAll('[aria-expanded="true"][data-sg-opens]').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
     if (!silent && lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
   }
   SG.closeOverlay = closeLayer;
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && openLayer) closeLayer(); });
+  // Tab / Shift+Tab wrap inside the open layer (the rest of the page is inert, so focus would otherwise fall to <body>)
+  function trapTab(e) {
+    if (e.key !== 'Tab' || !openLayer) return;
+    var f = Array.prototype.filter.call(openLayer.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select, textarea, summary, [tabindex]:not([tabindex="-1"])'),
+      function (el) { return !el.closest('[hidden]') && (el.offsetParent !== null || el === document.activeElement); });
+    if (!f.length) return;
+    // move focus ourselves: WebKit's native Tab skips links, so its idea of "the last control" differs from ours
+    e.preventDefault();
+    var i = f.indexOf(document.activeElement);
+    var n = i < 0 ? (e.shiftKey ? f.length - 1 : 0) : (i + (e.shiftKey ? -1 : 1) + f.length) % f.length;
+    f[n].focus();
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && openLayer) { closeLayer(); return; }
+    trapTab(e);
+  });
 
   /* ======================================================================
      Bag (localStorage sg_bag_v1, demo only)
@@ -805,12 +931,12 @@
     bagEl.querySelector('.drawer__title').textContent = 'Your bag' + (bag.length ? ' (' + bagCount() + ')' : '');
     if (!bag.length) {
       body.innerHTML = '<div class="bag__empty"><p>Your bag is empty.</p><small>Start with our home team. Most orders ship from right here in Auburn.</small>' +
-        '<a class="btn btn--scarlet btn--block" href="auburn.html">Shop Auburn</a><a class="btn btn--line-ink btn--block" href="shop.html?c=s-g-christmas">Shop Christmas</a></div>';
+        '<a class="btn btn--scarlet btn--block" href="auburn.html">Shop Auburn</a><a class="btn btn--line-ink btn--block" href="' + SG.esc(SG.shopUrl({ c: CH.featured.c })) + '">Shop ' + SG.esc(CH.nav) + '</a></div>';
       foot.hidden = true;
       return;
     }
     foot.hidden = false;
-    body.innerHTML = '<div class="bag__ship">' + (left > 0 ? 'You\'re <strong>' + SG.money(left) + '</strong> away from free shipping.' : 'Your order ships free.') +
+    body.innerHTML = '<div class="bag__ship">' + (left > 0 ? 'You’re <strong>' + SG.money(left) + '</strong> away from free shipping.' : 'Your order ships free.') +
       '<div class="bag__bar" aria-hidden="true"><i style="width:' + Math.min(100, Math.round(tot / FREE_SHIP * 100)) + '%"></i></div></div>' +
       '<ul class="bag__list">' + bag.map(function (it, i) {
         return '<li class="bag__item"><a class="bag__th" href="' + SG.productUrl(it.h) + '" tabindex="-1" aria-hidden="true">' +
@@ -833,7 +959,7 @@
     items: function () { return bag.slice(); },
     count: bagCount,
     total: bagTotal,
-    open: function () { renderBag(); openLayerEl(bagEl, '.drawer__x'); },
+    open: function (trigger) { renderBag(); openLayerEl(bagEl, '.drawer__x', trigger); },
     close: function () { closeLayer(); },
     clear: function () { bag = []; saveBag(); }
   };
@@ -841,10 +967,9 @@
   /* ======================================================================
      Navigation config (Auburn first after the chapter link)
      ====================================================================== */
-  var CH = SG.chapter;
   var AU_SHOP = [
-    ['Women\'s specialty', 'auburn-womens-specialty'], ['Tees & fleece', 'auburn-adult-apparel'], ['Girls & kids', 'auburn-kids-specialty'],
-    ['Kids tees & fleece', 'auburn-kids-apparel'], ['Men\'s collection', 'auburn-mens-collection'], ['Hats', 'auburn-hat-collection-1'],
+    ['Women’s specialty', 'auburn-womens-specialty'], ['Tees & fleece', 'auburn-adult-apparel'], ['Girls & kids', 'auburn-kids-specialty'],
+    ['Kids tees & fleece', 'auburn-kids-apparel'], ['Men’s collection', 'auburn-mens-collection'], ['Hats', 'auburn-hat-collection-1'],
     ['Accessories & gifts', 'auburn-accessories-gifts']
   ];
   var AU_MORE = [
@@ -858,6 +983,7 @@
   ];
   var SIG_MORE = [['The Madi', 'the-madi-collection'], ['Katy camo sets', 'katy-camo-sets'], ['Sophia scarves', 'sophia-scarves'], ['Script embroidery', 'limited-release-script-embroidered-sweatshirts']];
   SG.nav = { auburn: AU_SHOP.concat(AU_MORE), signatures: SIGS, signaturesMore: SIG_MORE };
+  var CHEER_AU = SG.shopUrl({ c: 'girls-cheer-dresses', school: 'auburn' });   // the all-school cheer page leads with other schools' photos
   function shortProgram(t) { return t.replace(/^Auburn University /, '').replace(/^Auburn /, '').replace(/^AU /, ''); }
 
   function megaList(title, rows) {
@@ -880,10 +1006,11 @@
     return '<div class="mega" id="mega-sig"><div class="wrap mega__in mega__in--sig">' +
       megaList('Our own designs', SIGS.map(function (s) { return [s[0], s[2]]; }).concat(SIG_MORE)) +
       '<div class="mega__sig">' + SIGS.map(function (s) {
-        var c = COLS[s[2]];
-        var wide = s[2] === 'the-alli-collection';
+        // SG.photo applies the photo cautions (the Alli card gets the tank & skort shot, not the mouth-cut group)
+        var ph = SG.photo('col:' + s[2], 400);
+        var pos = ph && TORSO[ph.key] ? '50% 100%' : null;
         return '<a class="mega__card" href="' + SG.shopUrl({ c: s[2] }) + '"><figure>' +
-          (c && c.img ? '<img src="' + SG.esc(SG.img(c.img, 400)) + '" alt="" width="400" height="400" loading="lazy" decoding="async"' + (wide ? ' style="object-fit:contain"' : '') + '>' : '') +
+          (ph ? '<img src="' + SG.esc(ph.src) + '" alt="" width="400" height="400" loading="lazy" decoding="async"' + (pos ? ' style="object-position:' + pos + '"' : '') + '>' : '') +
           '</figure><p>' + SG.esc(s[0]) + '</p><span>' + SG.esc(s[1]) + '</span></a>';
       }).join('') + '</div></div></div>';
   }
@@ -898,7 +1025,7 @@
     { k: 'chapter', label: CH.nav, href: SG.shopUrl({ c: CH.featured.c }), chapter: true },
     { k: 'auburn', label: 'Auburn', href: 'auburn.html', mega: megaAuburn, page: 'auburn' },
     { k: 'signatures', label: 'Signature Styles', href: 'index.html#signatures', mega: megaSignatures },
-    { k: 'cheer', label: 'Cheer', href: SG.shopUrl({ c: 'girls-cheer-dresses' }) },
+    { k: 'cheer', label: 'Cheer', href: CHEER_AU },
     { k: 'schools', label: 'Shop Your School', href: 'index.html#schools', mega: megaSchools },
     { k: 'gifts', label: 'Gifts', href: SG.shopUrl({ c: 'auburn-accessories-gifts' }) },
     { k: 'custom', label: 'Custom', href: STORE.custom, ext: true },
@@ -932,7 +1059,7 @@
           '<button type="button" class="hdr__btn hdr__burger" data-sg-menu data-sg-opens aria-label="Menu" aria-controls="sg-mnav" aria-expanded="false">' + I.menu + '</button>' +
           '<button type="button" class="hdr__btn hdr__search" data-sg-search data-sg-opens aria-label="Search" aria-controls="sg-search" aria-expanded="false">' + I.search + '<span class="hdr__label" aria-hidden="true">Search</span></button>' +
         '</div>' +
-        '<a class="hdr__logo" href="index.html"><img src="assets/logo-scarlet.png" alt="Scarlet &amp; Gold" width="1400" height="153"></a>' +
+        '<a class="hdr__logo" href="index.html"><img src="' + SG.esc(CH.logo || 'assets/logo-scarlet.png') + '" alt="Scarlet &amp; Gold" width="1400" height="153"></a>' +
         '<div class="hdr__right">' +
           '<button type="button" class="hdr__btn hdr__signin" data-sg-signin>' + I.user + '<span class="hdr__label">Sign in</span></button>' +
           '<button type="button" class="hdr__btn hdr__heart" data-sg-saved aria-label="Saved items">' + I.heart + '</button>' +
@@ -954,7 +1081,7 @@
       return '<li><a class="mnav__link' + (cls ? ' ' + cls : '') + '" href="' + SG.esc(href) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + '>' + label + '</a></li>';
     };
     return '<aside class="drawer drawer--left" id="sg-mnav" tabindex="-1" aria-label="Menu" aria-hidden="true" inert hidden>' +
-      '<div class="drawer__head"><a class="hdr__logo" href="index.html"><img src="assets/logo-scarlet.png" alt="Scarlet &amp; Gold" width="1400" height="153" style="height:20px;width:auto"></a>' +
+      '<div class="drawer__head"><a class="hdr__logo" href="index.html"><img src="' + SG.esc(CH.logo || 'assets/logo-scarlet.png') + '" alt="Scarlet &amp; Gold" width="1400" height="153"></a>' +
       '<button type="button" class="drawer__x" aria-label="Close menu">' + I.close + '</button></div>' +
       '<div class="drawer__body">' +
         '<form class="mnav__search" role="search" action="shop.html"><label class="sr" for="mn-q">Search the shop</label>' + I.search +
@@ -963,7 +1090,7 @@
           li('<span aria-hidden="true">★ </span>' + SG.esc(CH.nav), SG.shopUrl({ c: CH.featured.c }), 'mnav__link--chapter') +
           acc('auburn', 'Auburn', '<a href="auburn.html"><strong>The Auburn shop</strong></a>' + links(AU_SHOP) + links(AU_MORE) + '<a href="auburn.html#programs">Colleges &amp; programs</a>') +
           acc('sig', 'Signature Styles', links(SIGS.map(function (s) { return [s[0] + ' · ' + s[1], s[2]]; })) + links(SIG_MORE)) +
-          li('Cheer', SG.shopUrl({ c: 'girls-cheer-dresses' })) +
+          li('Cheer', CHEER_AU) +
           acc('schools', 'Shop Your School', SG.schoolsHTML({ tag: false })) +
           li('Gifts', SG.shopUrl({ c: 'auburn-accessories-gifts' })) +
           li('Custom orders <span class="sr">(opens Scarlet &amp; Gold Custom)</span>', STORE.custom, '', true) +
@@ -1042,21 +1169,21 @@
     return '<footer class="ft">' +
       '<div class="wrap">' +
         '<div class="ft__top"><div><a class="ft__logo" href="index.html"><img src="assets/logo-ivory.png" alt="Scarlet &amp; Gold" width="1400" height="153" loading="lazy"></a>' +
-          '<p class="ft__line">Show up proud. Stay comfortable. <em>Wear it again on Tuesday.</em></p></div>' +
+          '<p class="ft__line" data-sg-ftline>Show up proud. Stay comfortable. <em>Wear it again on Tuesday.</em></p></div>' +
           '<div class="ft__social"><a href="' + STORE.instagram + '" target="_blank" rel="noopener" aria-label="Scarlet &amp; Gold on Instagram">' + I.insta + '</a></div></div>' +
         '<div class="ft__cols">' +
-          col('ft__col--shop', 'Shop', [['Auburn', 'auburn.html'], ['Signature styles', 'index.html#signatures'], ['Cheer dresses', SG.shopUrl({ c: 'girls-cheer-dresses' })],
-            ['Christmas', SG.shopUrl({ c: 's-g-christmas' })], ['Gifts', SG.shopUrl({ c: 'auburn-accessories-gifts' })], ['Sale', SG.shopUrl({ c: 'closeout-sale' })], ['Custom orders', STORE.custom, 1]]) +
           col('ft__col--auburn', 'Auburn', [['The Auburn shop', 'auburn.html'], ['In stock now', SG.shopUrl({ c: 'auburn-university-in-stock-items' })], ['Girls &amp; kids', SG.shopUrl({ c: 'auburn-kids-specialty' })],
             ['Hats', SG.shopUrl({ c: 'auburn-hat-collection-1' })], ['Original Aubie', SG.shopUrl({ c: 'original-aubie-basketball' })], ['Colleges &amp; programs', 'auburn.html#programs']]) +
+          col('ft__col--shop', 'Shop', [['Auburn', 'auburn.html'], ['Signature styles', 'index.html#signatures'], ['Cheer dresses', CHEER_AU],
+            [SG.esc(CH.nav), SG.shopUrl({ c: CH.featured.c })], ['Gifts', SG.shopUrl({ c: 'auburn-accessories-gifts' })], ['Sale', SG.shopUrl({ c: 'closeout-sale' })], ['Custom orders', STORE.custom, 1]]) +
           col('ft__col--help', 'Help', [['Shipping', 'visit.html#shipping'], ['Returns &amp; exchanges', 'visit.html#returns'], ['Start a return', STORE.returns, 1], ['Size guides', STORE.sizeGuides, 1],
             ['FAQ', 'visit.html#help'], ['Our story', 'story.html']]) +
           '<div class="ft__col--visit"><p class="ft__h">Visit</p><address class="ft__addr">' +
             '<a href="' + STORE.maps + '" target="_blank" rel="noopener">' + STORE.street + '<br>' + STORE.city + '</a><br><br>' +
             'Mon–Fri 10:00 AM – 4:30 PM<br>Sat 10:00 AM – 2:00 PM · Sun closed<br><br>' +
             '<a href="tel:' + STORE.tel + '">' + STORE.phone + '</a><br><a href="mailto:' + STORE.email + '">' + STORE.email + '</a></address></div>' +
-          '<div class="ft__news" id="sg-list"><p class="ft__h">Get on the List</p><p>Be first in line for every launch.</p>' +
-            '<small>Our favorite styles sell out fast. Get early access to new drops, restock alerts, and 15% off your first order.</small>' +
+          '<div class="ft__news" id="sg-list"><p class="ft__h">Get on the List</p><p>15% off your first order.</p>' +
+            '<small>Plus early access to new drops and restock alerts.</small>' +
             '<form class="ft__form" data-sg-news><label class="sr" for="ft-email">Email address</label><input id="ft-email" type="email" name="email" placeholder="Email address" autocomplete="email" required>' +
             '<button type="submit">Join</button></form></div>' +
         '</div>' +
@@ -1093,12 +1220,32 @@
   // auto-mounts
   document.querySelectorAll('[data-sg="visit"]').forEach(SG.visitBand);
   document.querySelectorAll('[data-sg="reviews"]').forEach(SG.reviews);
-  document.querySelectorAll('[data-sg="schools"]').forEach(function (el) { el.innerHTML = SG.schoolsHTML({ collapse: true }); });
+  document.querySelectorAll('[data-sg="schools"]').forEach(function (el) {
+    el.innerHTML = el.hasAttribute('data-compact') ? SG.schoolsCompact() : SG.schoolsHTML({ collapse: true });
+  });
 
-  // sticky header: live height for sticky sub-navs + compact shadow once the ticker scrolls away
-  function syncHeader() { document.documentElement.style.setProperty('--sticky-top', hdr.offsetHeight + 'px'); }
+  /*
+   * Sticky header height → --sticky-top (used by scroll-margin-top on every [id] and by sticky sub-navs).
+   * WebKit can run the deferred scripts (this file and the page script) BEFORE any stylesheet has applied: the header is
+   * then position:static with its mega menus open in the flow, and offsetHeight reads ~14,000px. So the value is only
+   * written once the header is actually styled (position:sticky); until then the CSS default (121px / 61px on phones)
+   * stands. A ResizeObserver and the load event re-sync it. Page scripts should call SG.stickyTop() (live, never stale)
+   * instead of reading the custom property at script time.
+   */
+  function headerStyled() { return getComputedStyle(hdr).position === 'sticky'; }
+  SG.stickyTop = function () {
+    if (headerStyled()) return hdr.offsetHeight;
+    // no stylesheet yet: the CSS default if it has applied, else the same defaults sg.css uses
+    return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-top')) ||
+      (window.matchMedia('(max-width: 1023px)').matches ? 61 : 121);
+  };
+  function syncHeader() {
+    if (!headerStyled()) return;
+    document.documentElement.style.setProperty('--sticky-top', hdr.offsetHeight + 'px');
+  }
   syncHeader();
   if ('ResizeObserver' in window) new ResizeObserver(syncHeader).observe(hdr);
+  window.addEventListener('load', syncHeader);
   var tick = document.querySelector('.tick');
   var stuckTick = false;
   window.addEventListener('scroll', function () {
@@ -1113,6 +1260,7 @@
   // mega menus: hover (with a short close delay), focus, tap-to-open on touch, Escape
   var megaItems = hdr.querySelectorAll('.nav__item--mega');
   var megaT = null;
+  var megaFocusLock = false;   // Escape moves focus back to the nav link; that focusin must not re-open the menu
   function setMega(li, open) {
     megaItems.forEach(function (m) {
       var on = open && m === li;
@@ -1124,7 +1272,7 @@
     var link = li.querySelector('.nav__link');
     li.addEventListener('mouseenter', function () { clearTimeout(megaT); setMega(li, true); });
     li.addEventListener('mouseleave', function () { megaT = setTimeout(function () { setMega(li, false); }, 160); });
-    li.addEventListener('focusin', function () { clearTimeout(megaT); setMega(li, true); });
+    li.addEventListener('focusin', function () { if (megaFocusLock) return; clearTimeout(megaT); setMega(li, true); });
     li.addEventListener('focusout', function (e) { if (!li.contains(e.relatedTarget)) setMega(li, false); });
     link.addEventListener('click', function (e) {
       if (window.matchMedia('(hover: none)').matches && !li.classList.contains('is-open')) { e.preventDefault(); setMega(li, true); }
@@ -1135,7 +1283,11 @@
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     var open = hdr.querySelector('.nav__item--mega.is-open');
-    if (open) { setMega(open, false); open.querySelector('.nav__link').focus(); }
+    if (!open) return;
+    megaFocusLock = true;
+    open.querySelector('.nav__link').focus();
+    setMega(open, false);
+    window.setTimeout(function () { megaFocusLock = false; }, 0);
   });
   document.addEventListener('click', function (e) { if (!e.target.closest('.nav__item--mega')) setMega(null, false); });
 
@@ -1152,7 +1304,7 @@
   var sInput = document.getElementById('sg-q'), sT = null;
   sInput.addEventListener('input', function () { clearTimeout(sT); sT = setTimeout(function () { runSearch(sInput.value); }, 90); });
   SG.search = {
-    open: function (q) { if (q != null) { sInput.value = q; runSearch(q); } openLayerEl(srch, '#sg-q'); },
+    open: function (q, trigger) { if (q != null) { sInput.value = q; runSearch(q); } openLayerEl(srch, '#sg-q', trigger); },
     close: function () { closeLayer(); }
   };
 
@@ -1160,31 +1312,36 @@
   document.addEventListener('click', function (e) {
     var t = e.target;
     var el;
-    if ((el = t.closest('[data-sg-menu]'))) { el.setAttribute('aria-expanded', 'true'); openLayerEl(mnav, '.drawer__x'); return; }
-    if ((el = t.closest('[data-sg-search]'))) { el.setAttribute('aria-expanded', 'true'); SG.search.open(); return; }
-    if ((el = t.closest('[data-sg-bag]'))) { el.setAttribute('aria-expanded', 'true'); SG.bag.open(); return; }
+    // the clicked control is passed along so focus can return to it on close (Safari doesn't focus tapped buttons)
+    if ((el = t.closest('[data-sg-menu]'))) { el.setAttribute('aria-expanded', 'true'); openLayerEl(mnav, '.drawer__x', el); return; }
+    if ((el = t.closest('[data-sg-search]'))) { el.setAttribute('aria-expanded', 'true'); SG.search.open(null, el); return; }
+    if ((el = t.closest('[data-sg-bag]'))) { el.setAttribute('aria-expanded', 'true'); SG.bag.open(el); return; }
     if (t.closest('.drawer__x, [data-sg-close]')) { closeLayer(); return; }
     if ((el = t.closest('[data-sg-schools-more]'))) {
       var ul = el.previousElementSibling, all = !ul.classList.contains('is-all');
       ul.classList.toggle('is-all', all);
       el.setAttribute('aria-expanded', String(all));
-      el.textContent = all ? 'Show fewer schools' : 'Show all ' + ul.children.length + ' schools';
+      el.textContent = all ? 'Show fewer schools' : 'Show all schools';
       return;
     }
-    if (t.closest('[data-sg-signin]')) { closeLayer(true); SG.toast('Sign in would open your Scarlet & Gold account on their Shopify store. This concept doesn\'t store accounts.'); return; }
+    if (t.closest('[data-sg-signin]')) { closeLayer(true); SG.toast('Sign in would open your Scarlet & Gold account on their Shopify store. This concept doesn’t store accounts.'); return; }
     if (t.closest('[data-sg-saved]')) {
       var n = SG.saved.list().length;
-      SG.toast(n ? 'You\'ve saved ' + n + ' piece' + (n === 1 ? '' : 's') + '. In the live store, saved items sync to your account.' : 'Tap the heart on any piece to save it for later.');
+      SG.toast(n ? 'You’ve saved ' + n + ' piece' + (n === 1 ? '' : 's') + '. In the live store, saved items sync to your account.' : 'Tap the heart on any piece to save it for later.');
       return;
     }
     if (t.closest('[data-sg-checkout]')) {
-      SG.toast('<b>Concept preview.</b> Checkout would hand off to Scarlet &amp; Gold\'s real Shopify checkout here, with Checkout+ free returns.', { html: true, ms: 5200 });
+      SG.toast('<b>Concept preview.</b> Checkout would hand off to Scarlet &amp; Gold’s real Shopify checkout here, with Checkout+ free returns.', { html: true, ms: 5200 });
       return;
     }
     if ((el = t.closest('.pc__heart'))) {
-      var h = el.closest('.pc').getAttribute('data-h');
+      // the handle rides on the heart itself (SG.card); a heart placed outside a card can carry its own data-h
+      var host = el.hasAttribute('data-h') ? el : el.closest('[data-h]');
+      var h = host && host.getAttribute('data-h');
+      if (!h) return;
       var on = SG.saved.toggle(h);
-      document.querySelectorAll('.pc[data-h="' + (window.CSS && CSS.escape ? CSS.escape(h) : h) + '"] .pc__heart').forEach(function (b) { b.setAttribute('aria-pressed', String(on)); });
+      var hq = window.CSS && CSS.escape ? CSS.escape(h) : h;
+      document.querySelectorAll('.pc__heart[data-h="' + hq + '"], [data-h="' + hq + '"] .pc__heart').forEach(function (b) { b.setAttribute('aria-pressed', String(on)); });
       SG.toast(on ? 'Saved for later.' : 'Removed from saved.');
       return;
     }
@@ -1209,10 +1366,59 @@
   document.addEventListener('submit', function (e) {
     if (e.target.matches('[data-sg-news]')) {
       e.preventDefault();
-      SG.toast('<b>You\'re on the List.</b> (Concept preview: no email was sent. The live store would send your 15% welcome code.)', { html: true, ms: 5200 });
+      SG.toast('<b>You’re on the List.</b> (Concept preview: no email was sent. The live store would send your 15% welcome code.)', { html: true, ms: 5200 });
       e.target.reset();
     }
   });
+
+  /*
+   * The footer's real line ("Show up proud… Wear it again on Tuesday.") is swapped for their other real line when the
+   * page itself already uses it (football hero, Auburn hub women's lede), so it is never repeated on one page.
+   */
+  function dedupeFooterLine() {
+    var line = document.querySelector('[data-sg-ftline]'), main = document.getElementById('main');
+    if (!line || !main) return;
+    var used = /wear it again on tuesday/i.test(main.textContent);
+    if (used && !/feel like yourself/i.test(main.textContent)) line.innerHTML = 'Rep your school. <em>Feel like yourself.</em>';
+    else if (used) line.innerHTML = 'Cute, comfy, and made to wear <em>long after the final whistle.</em>';
+  }
+
+  /*
+   * Arriving on a URL #hash (index.html#schools, auburn.html#programs, visit.html#shipping …), one routine for every page.
+   * The browser's own fragment jump happens before the header is measured and before page scripts render the sections
+   * above the target (and WebKit may run this file before CSS applies), so it lands short. Smooth scrolling stays off
+   * (html.sg-smooth is added only afterwards) so nothing animates toward a stale offset; then, once the page has loaded,
+   * the target is re-landed below the sticky header, twice (after load, and once more after late layout such as web
+   * fonts). A visitor who scrolls in the meantime wins. Pages can listen for 'sg:hashland' (detail.target) to sync a
+   * scroll spy. Don't scroll before 'load' yourself: an early scroll cancels WebKit's own fragment jump.
+   */
+  SG.landOn = function (target) {
+    var y = target.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(target).scrollMarginTop) || 0);
+    window.scrollTo(0, Math.max(0, Math.round(y)));
+    document.dispatchEvent(new CustomEvent('sg:hashland', { detail: { target: target } }));
+  };
+  (function hashLanding() {
+    var root = document.documentElement;
+    var id = '';
+    try { id = decodeURIComponent(location.hash.slice(1)); } catch (e) { id = location.hash.slice(1); }
+    var smoothOn = function () { root.classList.add('sg-smooth'); };
+    if (!id || !document.getElementById(id)) { if (document.readyState === 'complete') smoothOn(); else window.addEventListener('load', smoothOn, { once: true }); return; }
+    var userMoved = false;
+    var stop = function () { userMoved = true; };
+    ['wheel', 'touchmove', 'keydown', 'mousedown'].forEach(function (ev) { window.addEventListener(ev, stop, { passive: true, once: true }); });
+    var land = function () {
+      var t = document.getElementById(id);
+      if (t && !userMoved) SG.landOn(t);
+    };
+    var afterLoad = function () {
+      syncHeader();
+      window.setTimeout(land, 60);
+      window.setTimeout(function () { land(); smoothOn(); }, 450);
+    };
+    if (document.readyState === 'complete') afterLoad(); else window.addEventListener('load', afterLoad, { once: true });
+  })();
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', dedupeFooterLine); else window.setTimeout(dedupeFooterLine, 0);
 
   // season pill (defined in sg-chapters.js)
   SG.chapterPill();

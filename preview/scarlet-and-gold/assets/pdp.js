@@ -40,11 +40,20 @@
       .formatToParts(new Date()).forEach(function (x) { o[x.type] = x.value; });
     return new Date(Date.UTC(+o.year, +o.month - 1, +o.day));
   }
+  /* US holidays UPS Ground doesn't move on (Thanksgiving, Christmas, New Year's Day): skipped like weekends, so the
+     estimate never promises a day early. (Whether the shop also closes the Friday after Thanksgiving is the client's call.) */
+  function isHoliday(x) {
+    var m = x.getUTCMonth(), d = x.getUTCDate(), wd = x.getUTCDay();
+    if (m === 0 && d === 1) return true;                              // New Year's Day
+    if (m === 11 && d === 25) return true;                            // Christmas Day
+    if (m === 10 && wd === 4 && d >= 22 && d <= 28) return true;      // Thanksgiving: 4th Thursday of November
+    return false;
+  }
   function addBusinessDays(d, n) {
     var x = new Date(d.getTime());
     while (n > 0) {
       x.setUTCDate(x.getUTCDate() + 1);
-      if (x.getUTCDay() !== 0 && x.getUTCDay() !== 6) n--;
+      if (x.getUTCDay() !== 0 && x.getUTCDay() !== 6 && !isHoliday(x)) n--;
     }
     return x;
   }
@@ -107,7 +116,8 @@
   view.hidden = false;
   document.body.classList.add('pdp-on');
 
-  var shipLong = p.ship === 'in' ? 'In stock · ships in 5–7 business days' : 'Made for you in our Auburn shop · ships in 10–14 business days';
+  var shipKind = SG.shipKind(p);   // 'in' | 'mto' | 'vendor' | 'check' (only in/mto claim a timeline)
+  var shipLong = SG.shipLabel(p, true);
   setMeta(p.t + ' · Scarlet & Gold',
     'Shop ' + p.t + ' at Scarlet & Gold in Auburn, Alabama. ' + shipLong + '. Free shipping on all orders $100+.');
 
@@ -417,9 +427,10 @@
      Shipping truth: ticket stub
      ====================================================================== */
   function renderShip() {
-    var inStock = p.ship === 'in';
-    var eta = addBusinessDays(TODAY, inStock ? 7 : 14);
+    var inStock = shipKind === 'in', timed = shipKind === 'in' || shipKind === 'mto';
+    var eta = timed ? addBusinessDays(TODAY, inStock ? 7 : 14) : null;
     var pickup = APPAREL.indexOf(p.cat) > -1;
+    var patch = inStock ? 'In stock' : shipKind === 'mto' ? 'Made for you' : shipKind === 'vendor' ? 'From our maker' : 'Shipping';
     var rows = [];
     if (pickup) rows.push([SG.icons.pin, '<strong>Local pickup</strong> for apparel &amp; hats at our Auburn shop']);
     else rows.push([IC.box, 'Accessories and other items <strong>may ship separately</strong> from our manufacturer']);
@@ -429,9 +440,9 @@
     $('[data-pdp="ship"]').innerHTML =
       '<div class="pdp-tix__main">' +
         '<div class="pdp-tix__head"><p class="ticket__label">Shipping</p>' +
-          '<span class="patch' + (inStock ? ' patch--navy' : '') + ' pdp-tix__patch">' + (inStock ? 'In stock' : 'Made for you') + '</span></div>' +
+          '<span class="patch' + (inStock ? ' patch--navy' : '') + ' pdp-tix__patch">' + patch + '</span></div>' +
         '<p class="pdp-tix__line">' + E(shipLong) + '</p>' +
-        '<p class="pdp-tix__eta">' + IC.cal + '<span>Estimated to ship by <strong>' + E(fmtDay(eta)) + '</strong></span></p>' +
+        (eta ? '<p class="pdp-tix__eta">' + IC.cal + '<span>Estimated to ship by <strong>' + E(fmtDay(eta)) + '</strong></span></p>' : '') +
       '</div>' +
       '<span class="ticket__perf" aria-hidden="true"></span>' +
       '<ul class="pdp-tix__list">' + rows.map(function (r) { return '<li>' + r[0] + '<span>' + r[1] + '</span></li>'; }).join('') + '</ul>';
@@ -477,10 +488,11 @@
       '<p><a class="tlink" href="' + STORE.sizeGuides + '" target="_blank" rel="noopener">Open our size guides' + SG.icons.ext + '<span class="sr"> (opens in a new tab)</span></a></p>';
     items.push(['fit', 'Size & fit', fit]);
 
-    var inStock = p.ship === 'in';
+    var inStock = shipKind === 'in', mto = shipKind === 'mto', vendor = shipKind === 'vendor';
     var ship = '<ul class="pdp-policy">' +
       '<li' + (inStock ? ' class="is-this"' : '') + '><strong>In stock</strong> items are ready to ship in 5–7 business days.' + (inStock ? ' <span class="pdp-this">This piece</span>' : '') + '</li>' +
-      '<li' + (!inStock ? ' class="is-this"' : '') + '><strong>Made to order</strong> pieces (tees, fleece and client collections) are printed or embroidered in our Auburn shop in 10–14 business days.' + (!inStock ? ' <span class="pdp-this">This piece</span>' : '') + '</li>' +
+      '<li' + (mto ? ' class="is-this"' : '') + '><strong>Made to order</strong> pieces (tees, fleece and client collections) are printed or embroidered in our Auburn shop in 10–14 business days.' + (mto ? ' <span class="pdp-this">This piece</span>' : '') + '</li>' +
+      '<li' + (vendor ? ' class="is-this"' : '') + '><strong>Accessories</strong> ship directly from our manufacturer, so they may arrive separately from apparel and hats.' + (vendor ? ' <span class="pdp-this">This piece</span>' : '') + '</li>' +
       '<li>Every order ships UPS Ground, and shipping is free on all orders $100+.</li>' +
       '<li>Returns for store credit or exchange can be requested within 14 days of delivery.</li>' +
       '<li>Holiday purchases made November 1 through December 31 can be returned through January 30.</li>' +
@@ -591,25 +603,25 @@
     var mini = pair.kind === 'mini';
     $('[data-pdp="pair-eyebrow"]').textContent = mini ? 'Match your mini' : 'Complete the look';
     if (mini && pair.dress) {
-      $('[data-pdp="pair-title"]').innerHTML = 'Her first game. <em class="br">Your favorite tradition.</em>';
-      $('[data-pdp="pair-lede"]').textContent = 'Cheer dresses in sizes 12M–10 and mom tops that go together, so you\'re both ready for kickoff.';
+      $('[data-pdp="pair-title"]').innerHTML = 'Two of a kind, <em class="br">on the Plains.</em>';
+      $('[data-pdp="pair-lede"]').textContent = 'Her cheer dress, in sizes 12M–10, and a top for you that go together.';
     } else if (mini) {
       $('[data-pdp="pair-title"]').innerHTML = 'Made to match <em class="br">your mini.</em>';
-      $('[data-pdp="pair-lede"]').textContent = 'A piece for you and one for her that go together, so you\'re both ready for kickoff.';
+      $('[data-pdp="pair-lede"]').textContent = 'A piece for you and one for her that go together, so you’re both ready for kickoff.';
     } else {
-      $('[data-pdp="pair-title"]').innerHTML = 'We\'d wear it <em>with…</em>';
+      $('[data-pdp="pair-title"]').innerHTML = 'We’d wear it <em>with…</em>';
       $('[data-pdp="pair-lede"]').textContent = pair.sig
-        ? 'More from ' + pair.sig[0] + (items.length > 2 ? ', plus a finishing touch' : '') + '. Take the whole look, or untick anything you don\'t need.'
-        : 'Pieces we\'d pair with it. Take the whole look, or untick anything you don\'t need.';
+        ? 'More from ' + pair.sig[0] + (items.length > 2 ? ', plus a finishing touch' : '') + '. Take the whole look, or untick anything you don’t need.'
+        : 'Pieces we’d pair with it. Take the whole look, or untick anything you don’t need.';
     }
 
-    // photo: Auburn mom & mini editorial when it fits; otherwise the pieces themselves
-    var ed = mini && pair.dress && isAuburn ? SG.pickPhoto([{ k: 'mom-mini-auburn-stripes', pos: '60% 30%' }], 900, true) : null;
+    // photo: the paired piece leads (sharp product shot); for an Auburn mom & mini pair the 600px mom & mini photo is
+    // the small polaroid inset, where it stays at or above 1:1 on every screen
+    var ed = mini && pair.dress && isAuburn ? SG.pickPhoto([{ k: 'mom-mini-auburn-stripes', pos: '60% 30%' }], 600, true) : null;
     var lead = others[0].p, mine = items.filter(function (it) { return it.p.h === p.h; })[0];
-    if (ed) {
-      var inset = pair.dress.img && pair.dress.img[0] ? pair.dress : null;
-      media.innerHTML = '<div class="look__shot pdp-pair__ed" style="--look-ratio:' + ed.w + '/' + ed.h + ';--pos:' + ed.pos + '">' + SG.imgTag(ed) + '</div>' +
-        (inset ? '<figcaption class="look__inset pdp-pair__inset">' + shotHTML(inset, 'pdp-pair__th', '') + '<span>Her first cheer dress</span></figcaption>' : '');
+    if (ed && lead.img && lead.img[0]) {
+      media.innerHTML = shotHTML(lead, 'look__shot pdp-pair__shot', '') +
+        '<figcaption class="look__inset pdp-pair__inset"><div class="pdp-pair__th" style="--look-ratio:' + ed.w + '/' + ed.h + '">' + SG.imgTag(ed) + '</div><span>Match your mini</span></figcaption>';
     } else if (lead.img && lead.img[0]) {
       media.innerHTML = shotHTML(lead, 'look__shot pdp-pair__shot', '') +
         (p.img && p.img[0] ? '<figcaption class="look__inset pdp-pair__inset">' + shotHTML(p, 'pdp-pair__th', '') + '<span>' + E(mine ? mine.type : 'Your pick') + '</span></figcaption>' : '');
@@ -739,8 +751,8 @@
 
     var links = [
       ['In stock now', 'auburn-university-in-stock-items', 'Ships in 5–7 business days'],
-      ['Women\'s specialty', 'auburn-womens-specialty', 'Women\'s XS–2XL'],
-      ['Girls & kids', 'auburn-kids-specialty', 'Girls\' sizes from 12M'],
+      ['Women’s specialty', 'auburn-womens-specialty', 'Women’s XS–2XL'],
+      ['Girls & kids', 'auburn-kids-specialty', 'Girls’ sizes from 12M'],
       ['Hats', 'auburn-hat-collection-1', 'Local pickup in Auburn'],
       ['Original Aubie', 'original-aubie-basketball', 'In collaboration with S&G'],
       [CH.nav, CH.featured.c, CH.featured.eyebrow]
@@ -754,12 +766,15 @@
     $('[data-pdp="nf-photo"]').innerHTML = SG.imgTag(ph, { eager: true });
 
     SG.deptTiles($('[data-pdp="nf-depts"]'), [
-      { t: 'Women', c: 'auburn-womens-specialty', img: [{ k: 'war-eagle-tank-skort-torso', pos: '50% 30%' }, { k: 'white-crewneck-shorts-set-model', pos: '50% 30%' }] },
-      { t: 'Girls & Kids', c: 'auburn-kids-specialty', img: [{ k: 'auburn-cheer-dress-flat', pos: '50% 45%' }, { k: 'becca-two-girls', pos: '50% 20%' }] },
-      { t: 'Men', c: 'auburn-mens-collection', img: [{ k: 'auburn-tee-grid-flatlay', pos: '50% 50%' }, { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }] },
-      { t: 'Hats', c: 'auburn-hat-collection-1', made: { tone: 'navy', patch: 'Auburn hats', note: 'Local pickup available at our Auburn shop' } },
-      { t: 'Gifts', c: 'auburn-accessories-gifts', made: { tone: 'scarlet', big: '&', note: 'Gifts for every age and occasion' } },
-      { t: 'In stock now', c: 'auburn-university-in-stock-items', made: { tone: 'cream', ticket: true, patch: 'In stock', note: 'Ships in 5–7 business days' } }
+      { t: 'Women', c: 'auburn-womens-specialty', img: ['col:auburn-womens-specialty', { k: 'four-models-sets', pos: '50% 30%' }, { k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }],
+        made: { patch: 'Auburn women', dot: true, note: 'Women’s XS–2XL' } },
+      { t: 'Hats', c: 'auburn-hat-collection-1', img: ['col:auburn-hat-collection-1'], made: { patch: 'Auburn hats', dot: true, note: 'Local pickup at our Auburn shop' } },
+      { t: 'Girls & Kids', c: 'auburn-kids-specialty', img: ['col:auburn-kids-specialty', { k: 'auburn-cheer-dress-flat', pos: '50% 45%' }, { k: 'mom-mini-auburn-stripes', pos: '30% 40%' }],
+        made: { patch: 'Girls & kids', dot: true, note: 'Girls’ sizes from 12M' } },
+      { t: 'Men', c: 'auburn-mens-collection', img: ['col:auburn-mens-collection'], made: { patch: 'Auburn men', dot: true, note: 'For the men in your crew' } },
+      { t: 'Tees & fleece', c: 'auburn-adult-apparel', img: ['col:auburn-adult-apparel', { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }],
+        made: { patch: 'Tees & fleece', dot: true, note: 'Printed or embroidered in Auburn' } },
+      { t: 'Gifts', c: 'auburn-accessories-gifts', img: ['col:auburn-accessories-gifts'], made: { big: '&', note: 'Little extras for every Auburn fan' } }
     ]);
 
     // when the catalogue is loaded, a rail of real Auburn pieces follows

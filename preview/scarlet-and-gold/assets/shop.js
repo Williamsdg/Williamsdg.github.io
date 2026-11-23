@@ -22,6 +22,7 @@
   };
   var CAT_ORDER = Object.keys(CAT);
   var WHO = { women: 'Women', kids: 'Girls & kids', men: 'Men' };
+  /* ship filter = SG.shipKind(p): only in-stock and made-to-order make a timeline claim (vendor/check pieces match neither) */
   var SHIP = { 'in': ['In stock', 'Ships in 5–7 business days', 'In stock · 5–7 days'], mto: ['Made for you', 'In Auburn · 10–14 business days', 'Made for you · 10–14 days'] };
   var PRICES = [['0-40', 'Under $40'], ['40-50', '$40 – $50'], ['50-75', '$50 – $75'], ['75-', '$75 & up']];
   var SORTS = ['featured', 'new', 'price-asc', 'price-desc'];
@@ -125,7 +126,7 @@
   function pass(p, f, skip) {
     if (skip !== 'who' && f.who && p.who !== f.who) return false;
     if (skip !== 'cat' && f.cat.length && f.cat.indexOf(p.cat) < 0) return false;
-    if (skip !== 'ship' && f.ship && p.ship !== f.ship) return false;
+    if (skip !== 'ship' && f.ship && SG.shipKind(p) !== f.ship) return false;
     if (skip !== 'size' && f.size.length) {
       var as = availSizes(p);
       if (!f.size.some(function (s) { return as.indexOf(s) > -1; })) return false;
@@ -171,7 +172,12 @@
     { k: 'auburn-tee-grid-flatlay', pos: '50% 50%' }, { k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }];
   var MADE = {
     'auburn-hat-collection-1': { tone: 'navy', patch: 'Auburn hats', note: 'Local pickup available at our Auburn shop' },
-    'auburn-accessories-gifts': { tone: 'scarlet', big: '&', note: 'Gifts for every age and occasion' },
+    'auburn-accessories-gifts': { tone: 'scarlet', big: '&', note: 'Little extras for every Auburn fan' },
+    'auburn-baseball': { tone: 'navy', patch: 'Auburn baseball', note: 'Ballpark days, sunny Saturdays' },
+    'auburn-gymnastics': { tone: 'scarlet', patch: 'Auburn gymnastics', note: 'Meet day, front row' },
+    'auburn-mens-collection': { tone: 'navy', patch: 'Auburn men', note: 'For the men in your crew' },
+    'auburn-mens-specialty': { tone: 'navy', patch: 'Auburn men', note: 'For the men in your crew' },
+    'closeout-sale': { tone: 'scarlet', patch: 'Sale', note: 'Closeout styles, while they last' },
     'katy-camo-sets': { tone: 'cream', patch: 'The S&G Signatures', note: 'Katy camo sets' },
     'the-madi-collection': { tone: 'cream', patch: 'The S&G Signatures', note: 'The Madi' }
   };
@@ -184,14 +190,14 @@
     'auburn-kids-specialty': [{ k: 'auburn-cheer-dress-flat', pos: '50% 45%' }],
     'auburn-girls-collection': [{ k: 'auburn-cheer-dress-flat', pos: '50% 45%' }],
     'auburn-university-in-stock-items': [{ k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }, { k: 'auburn-blue-cropped-crewneck-model', pos: '50% 12%' }],
-    'auburn-in-stock-sale-eligible': [{ k: 'war-eagle-tank-skort-torso', pos: '50% 30%' }, { k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }],
+    'auburn-in-stock-sale-eligible': [{ k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }, { k: 'auburn-blue-cropped-crewneck-model', pos: '50% 12%' }],
     'auburn-basketball': [{ k: 'original-aubie-collab', fit: 'contain', bg: '#F1E9DC' }],
     'original-aubie-basketball': [{ k: 'col:original-aubie-basketball', fit: 'contain', bg: '#F1E9DC' }],
-    'auburn-baseball': [{ k: 'four-models-sets', pos: '50% 22%' }, { k: 'war-eagle-tank-skort-torso', pos: '50% 30%' }],
-    'auburn-gymnastics': ['white-crewneck-shorts-set-model', 'war-eagle-tank-skort-torso'],
+    'auburn-baseball': ['col:auburn-baseball'],
+    'auburn-gymnastics': ['col:auburn-gymnastics'],
     'auburn-alumni': [{ k: 'group-auburn-tees-outdoor', pos: '50% 40%' }],
-    'auburn-mens-collection': ['auburn-tee-grid-flatlay', 'auburn-tee-grid-flatlay-2'],
-    'auburn-mens-specialty': ['auburn-tee-grid-flatlay-2', 'auburn-tee-grid-flatlay'],
+    'auburn-mens-collection': ['col:auburn-mens-collection'],
+    'auburn-mens-specialty': ['col:auburn-mens-specialty'],
     'auburn-best-sellers': [{ k: 'col:auburn-best-sellers', pos: '50% 40%' }],
     'limited-release-script-embroidered-sweatshirts': [{ k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }],
     's-g-christmas': [{ k: 'col:s-g-christmas', pos: '50% 14%' }],
@@ -204,19 +210,17 @@
     'the-kristen-collection': [{ k: 'col:the-kristen-collection', pos: '50% 12%' }],
     'sophia-scarves': [{ k: 'col:sophia-scarves', pos: '50% 30%' }],
     'give-grace': ['col:book'],
+    'closeout-sale': [],
     'book': ['col:book']
   };
-  /* photo cautions (INDEX.md): never other schools / the Alabama-print scarf in an Auburn slot; never Megan's family photo here */
-  var OTHER = { 'mallory-four-models-other-schools': 1, 'cheer-dresses-three-girls-other-schools': 1, 'crewnecks-four-models-other-schools': 1,
-    'four-women-tees-outdoor': 1, 'col:cheer-accessories': 1 };
-  var ALABAMA = { 'sophia-scarf': 1 };
-  var TORSO = { 'white-crewneck-shorts-set-model': 1, 'war-eagle-tank-skort-torso': 1 };
-  var NEVER = { 'megan-family-bw': 1, 'col:auburn-university-in-stock-items': 1 };   // family photo · a bare logo graphic
-  function isAuburnPhoto(key) { return /^(auburn-|war-eagle|aubie|original-aubie|mom-mini-auburn|group-auburn)/.test(key); }
+  /* photo cautions (INDEX.md) live in sg.js (SG.photo never returns Megan's family photo or the logo graphic;
+     SG.isOtherSchoolPhoto flags rival-school marks and the Alabama-print scarf). Auburn views never show those; another
+     school's view shows neither Auburn photos nor a third school's (the Alabama scarf only on Alabama). */
+  function isAuburnPhoto(key) { return /^(auburn-|war-eagle|aubie|original-aubie|mom-mini-auburn|group-auburn|white-crewneck)/.test(key); }
   function photoOk(ph) {
-    if (!ph || NEVER[ph.key]) return false;
-    if (auburnLabel || (!V.school && !C)) return !OTHER[ph.key] && !ALABAMA[ph.key];
-    if (otherSchool) return !OTHER[ph.key] && !isAuburnPhoto(ph.key) && (!ALABAMA[ph.key] || V.school === 'alabama');
+    if (!ph) return false;
+    if (auburnLabel || (!V.school && !C)) return !SG.isOtherSchoolPhoto(ph.key);
+    if (otherSchool) return !isAuburnPhoto(ph.key) && (!SG.isOtherSchoolPhoto(ph.key) || (ph.key === 'sophia-scarf' && V.school === 'alabama'));
     return true;
   }
   function headCandidates() {
@@ -251,12 +255,13 @@
     if (unknownC) { o.l1 = 'We couldn’t find'; o.l2 = 'that collection.'; o.title = 'Collection not found'; o.lede = JORDAN_HARE; return o; }
     if (V.school && !V.c) {
       o.eyebrow = 'Shop your school';
-      if (V.school === 'auburn') { o.dot = true; o.l1 = 'Auburn,'; o.l2 = 'our home team.'; o.lede = JORDAN_HARE; o.title = 'Shop Auburn'; }
+      if (V.school === 'auburn') { o.dot = true; o.l1 = 'Shop Auburn,'; o.l2 = 'every piece.'; o.lede = JORDAN_HARE; o.title = 'Shop Auburn'; }
       else { o.l1 = SCH.name + ','; o.l2 = 'officially licensed.'; o.lede = SCHOLARSHIP; o.title = 'Shop ' + SCH.name; }
       return o;
     }
     var t = pretty(C);
-    var parts = C === 'auburn' && (!V.school || V.school === 'auburn') ? ['Auburn,', 'our home team.'] : splitTitle(t, V.school ? SCH.name : null);
+    // "our home team" belongs to the Auburn hub; the shop's Auburn page is one step deeper
+    var parts = C === 'auburn' && (!V.school || V.school === 'auburn') ? ['Shop Auburn,', 'every piece.'] : splitTitle(t, V.school ? SCH.name : null);
     o.l1 = parts[0]; o.l2 = parts[1];
     o.title = V.school && t.indexOf(SCH.name) !== 0 ? SCH.name + ' ' + parts[1] : (C === 'auburn' ? 'Shop Auburn' : t);
     if (auburnLabel) { o.eyebrow = 'Our home team'; o.dot = true; }
@@ -278,7 +283,7 @@
       'auburn-university-in-stock-items': 'In stock items ship in 5–7 business days, and orders of $100+ ship free.',
       'auburn-in-stock-sale-eligible': 'In stock items ship in 5–7 business days, and orders of $100+ ship free.',
       'auburn-hat-collection-1': 'Order online and pick up at our Auburn shop: local pickup is available for apparel and hats.',
-      'auburn-accessories-gifts': 'Gifts for every age and occasion, including faith-based books and resources.',
+      'auburn-accessories-gifts': 'Gifts for every Auburn fan on your list.',
       's-g-christmas': 'The Game Day Nutcracker: a holiday classic in your school colors. Holiday purchases are returnable through January 30.',
       'original-aubie-basketball': 'The Original Aubie Collection, in collaboration with Scarlet & Gold.',
       'auburn-basketball': 'The Original Aubie Collection, in collaboration with Scarlet & Gold.',
@@ -297,7 +302,7 @@
 
   function legendHTML() {
     var has = { 'in': 0, mto: 0 };
-    if (SRC.length) SRC.forEach(function (p) { has[p.ship === 'in' ? 'in' : 'mto']++; });
+    if (SRC.length) SRC.forEach(function (p) { var k = SG.shipKind(p); if (has[k] != null) has[k]++; });
     else if (/in-stock/.test(C)) has['in'] = 1;
     else if (C === 'book' || C === 'give-grace' || unknownC) return '';
     else { has['in'] = 1; has.mto = 1; }
@@ -337,13 +342,15 @@
     // media: a real collection photo when it's appropriate, else editorial, else a designed tile
     if (searchOnly) return;
     var media = $('[data-sh="media"]');
-    var ph = unknownC ? null : SG.pickPhoto(headCandidates(), 1200, true);
+    var ph = unknownC ? null : SG.pickPhoto(headCandidates(), 1200, true, { ratio: 1.3 });
     var tile = V.school ? '<span class="sh-head__tile"><img src="' + SG.esc(SG.img(SCH.img, 400)) + '" alt="' + SG.esc(SCH.name) + '" width="400" height="400" decoding="async"></span>' : '';
     if (ph) {
-      var torso = TORSO[ph.key];   // photographer's torso crops: trim the partial face off the top
+      var torso = ph.isTorso;   // torso crops (SG.pickPhoto): a wide 1.3 frame, anchored at the bottom
       var r = torso ? 1.3 : Math.min(1.5, Math.max(0.8, ph.w / ph.h));
-      var style = '--ar:' + r.toFixed(3) + ';--pos:' + (torso ? '50% 100%' : (ph.pos || '50% 30%')) + (ph.bg ? ';--bg:' + ph.bg : '');
-      media.innerHTML = '<figure class="sh-head__fig' + (ph.fit === 'contain' ? ' is-contain' : '') + '" style="' + style + '">' +
+      // phones crop the header to 3:2: people photos anchor at the top there so no one loses the top of their head
+      var people = !torso && ph.fit !== 'contain' && ph.h >= ph.w && !/flat|grid|collab|scarf|^col:book$/.test(ph.key);
+      var style = '--ar:' + r.toFixed(3) + ';--pos:' + (ph.pos || '50% 30%') + (people ? ';--pos-sm:50% 0%' : '') + (ph.bg ? ';--bg:' + ph.bg : '');
+      media.innerHTML = '<figure class="sh-head__fig mat' + (ph.fit === 'contain' ? ' is-contain' : '') + '" style="' + style + '">' +
         SG.imgTag(ph, { eager: true }) + '</figure>' + tile;
     } else if (V.school && otherSchool) {
       media.innerHTML = '<div class="sh-head__made sh-head__made--school"><img src="' + SG.esc(SG.img(SCH.img, 400)) + '" alt="' + SG.esc(SCH.name) + '" width="400" height="400" decoding="async">' +
@@ -451,8 +458,8 @@
     }
     // Ships
     var shipBase = SRC.filter(function (p) { return pass(p, f, 'ship'); });
-    var shipT = tally(shipBase, function (p) { return p.ship === 'in' ? 'in' : 'mto'; });
-    if (distinct(function (p) { return p.ship === 'in' ? 'in' : 'mto'; }).length > 1 || f.ship) {
+    var shipT = tally(shipBase, function (p) { var k = SG.shipKind(p); return SHIP[k] ? k : null; });
+    if (distinct(function (p) { return SG.shipKind(p); }).length > 1 || f.ship) {
       html += group(scope, 'ship', 'Ships', f.ship ? 1 : 0, '<ul class="sh-opts">' +
         opt('radio', 'ship', '', 'Any', shipBase.length, !f.ship) +
         ['in', 'mto'].map(function (k) {
@@ -603,15 +610,7 @@
     sortEl.value = V.sort;
 
     shown = Math.min(Math.max(PER, shown), Math.max(PER, n));
-    SG.grid(gridEl, RES.slice(0, shown), { hide: gridEl, card: { school: mixed, ship: true } });
-    $$('.pc', gridEl).forEach(function (card) {   // SG.card has no sold-out state: mark it here
-      var p = SG.product(card.getAttribute('data-h'));
-      if (!p || p.av !== 0) return;
-      var media = $('.pc__media', card), badge = $('.pc__badge', card), ship = $('.pc__ship', card);
-      if (badge) media.removeChild(badge);
-      media.insertAdjacentHTML('beforeend', '<span class="pc__badge sh-soldout">Sold out</span>');
-      if (ship) ship.parentNode.removeChild(ship);
-    });
+    SG.grid(gridEl, RES.slice(0, shown), { hide: gridEl, card: { school: mixed, ship: true } });   // SG.card marks sold-out styles
 
     if (!n) {
       noneEl.innerHTML = '<p class="sh-none__k">No matches</p>' +
@@ -699,8 +698,8 @@
       aside = linkRows(otherCollections().map(function (r) { return [r[1] || pretty(r[0]), SG.shopUrl({ c: r[0] }), COLS[r[0]].n ? fmt(COLS[r[0]].n) + ' styles' : '']; }));
     } else {
       h2 = (V.school && !V.c ? SG.esc(SCH.name) + ' styles load' : 'This collection loads') + ' from <em class="br">Scarlet &amp; Gold’s Shopify catalogue.</em>';
-      body = 'When this preview is connected to their store, ' + (n ? 'all ' + fmt(n) + ' styles in ' : 'every style in ') + SG.esc(name) +
-        ' appear right here, with live sizes, colors, prices and stock, and new drops show up the moment they launch.';
+      body = 'When this preview is connected to their store, ' + (n ? 'all ' + fmt(n) + ' styles in ' + SG.esc(name) + ' appear' : 'every style in ' + SG.esc(name) + ' appears') +
+        ' right here, with live sizes, colors, prices and stock, and new drops show up the moment they launch.';
       ctas = '<a class="btn btn--scarlet" href="#sg-list">Get new-drop alerts</a>' +
         (otherSchool ? '<a class="btn btn--line-ink" href="' + SG.shopUrl({ c: 'auburn' }) + '">Shop Auburn</a>' : '<a class="btn btn--line-ink" href="#sh-depts">Shop by department</a>');
       asideH = otherSchool ? 'Shop Auburn, our home team' : 'Keep browsing';
@@ -722,31 +721,24 @@
   /* ======================================================================
      Auburn departments (photo-led links to other collections)
      ====================================================================== */
+  /* photo, card, photo, card…: Auburn departments only (the all-school Christmas collection isn't one). A department with
+     no fitting photo is a designed card; real collection photos ('col:') take over once the catalogue has them. */
   var DEPTS = [
-    { t: 'Women', c: 'auburn-womens-specialty', img: [{ k: 'war-eagle-tank-skort-torso', pos: '50% 30%' }, { k: 'white-crewneck-shorts-set-model', pos: '50% 30%' },
-      { k: 'auburn-blue-cropped-crewneck-model', pos: '50% 10%' }, { k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }] },
-    { t: 'Girls & kids', c: 'auburn-kids-specialty', img: [{ k: 'auburn-cheer-dress-flat', pos: '50% 45%' }, { k: 'mom-mini-auburn-stripes', pos: '50% 30%' }] },
-    { t: 'Tees & fleece', c: 'auburn-adult-apparel', img: [{ k: 'group-auburn-tees-outdoor', pos: '50% 40%' }, { k: 'auburn-tee-grid-flatlay', pos: '50% 50%' }, { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }] },
-    { t: 'Hats', c: 'auburn-hat-collection-1', made: { tone: 'navy', patch: 'Auburn hats', note: 'Local pickup available at our Auburn shop' } },
-    { t: 'Gifts', c: 'auburn-accessories-gifts', made: { tone: 'scarlet', big: '&', note: 'Gifts for every age and occasion' } },
-    { t: 'In stock now', c: 'auburn-university-in-stock-items', made: { tone: 'cream', ticket: true, patch: 'In stock', note: 'Ships in 5–7 business days' } },
-    { t: 'Christmas', c: 's-g-christmas', img: [{ k: 'christmas-three-models', pos: '50% 14%' }] },
-    { t: 'Men', c: 'auburn-mens-collection', img: [{ k: 'auburn-tee-grid-flatlay', pos: '50% 50%' }, { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }],
-      made: { tone: 'navy', patch: 'Auburn men', note: 'Tees, quarter-zips and more' } }
+    { t: 'Women', c: 'auburn-womens-specialty', img: ['col:auburn-womens-specialty', { k: 'four-models-sets', pos: '50% 30%' }, { k: 'auburn-blue-cropped-crewneck-model', pos: '50% 10%' },
+      { k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }], made: { patch: 'Auburn women', dot: true, note: 'Women’s XS–2XL' } },
+    { t: 'Hats', c: 'auburn-hat-collection-1', img: ['col:auburn-hat-collection-1'], made: { patch: 'Auburn hats', dot: true, note: 'Local pickup at our Auburn shop' } },
+    { t: 'Girls & kids', c: 'auburn-kids-specialty', img: ['col:auburn-kids-specialty', { k: 'mom-mini-auburn-stripes', pos: '30% 40%' }, { k: 'auburn-cheer-dress-flat', pos: '50% 45%' }],
+      made: { patch: 'Girls & kids', dot: true, note: 'Girls’ sizes from 12M' } },
+    { t: 'Gifts', c: 'auburn-accessories-gifts', img: ['col:auburn-accessories-gifts'], made: { big: '&', note: 'Little extras for every Auburn fan' } },
+    { t: 'Tees & fleece', c: 'auburn-adult-apparel', img: ['col:auburn-adult-apparel', { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }, { k: 'auburn-tee-grid-flatlay', pos: '50% 50%' }],
+      made: { patch: 'Tees & fleece', dot: true, note: 'Printed or embroidered in Auburn' } },
+    { t: 'In stock now', c: 'auburn-university-in-stock-items', made: { patch: 'In stock', dot: true, note: 'Ships in 5–7 business days' } },
+    { t: 'Men', c: 'auburn-mens-collection', img: ['col:auburn-mens-collection'], made: { patch: 'Auburn men', dot: true, note: 'For the men in your crew' } }
   ];
   function renderDepts(empty) {
     var band = $('[data-sh="depts-band"]');
     if (otherSchool) { band.hidden = true; return; }
-    var items = [];
-    DEPTS.forEach(function (d) {
-      if (items.length >= 6 || d.c === C) return;
-      if (d.img) {
-        var ph = SG.pickPhoto(d.img, 600, true);
-        if (ph) { items.push({ t: d.t, c: d.c, img: [{ k: ph.key, pos: ph.pos }] }); return; }
-        if (!d.made) return;
-      }
-      items.push({ t: d.t, c: d.c, made: d.made });
-    });
+    var items = DEPTS.filter(function (d) { return d.c !== C; }).slice(0, 6);
     SG.deptTiles($('[data-sh="depts"]'), items);
     $('[data-sh="depts-title"]').innerHTML = empty ? 'Shop Auburn <em>by department.</em>' : 'Keep shopping <em>Auburn.</em>';
     band.hidden = false;

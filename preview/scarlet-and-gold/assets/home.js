@@ -15,18 +15,26 @@
 
   /* ---------- Home team: Auburn department ---------- */
   var TEAM = [
-    { label: 'Women', cols: ['auburn-womens-specialty', 'auburn-adult-tees-fleece-2026', 'auburn-adult-apparel'], who: 'women', c: 'auburn-womens-specialty',
-      img: [{ k: 'war-eagle-tank-skort-torso', pos: '50% 30%' }, { k: 'white-crewneck-shorts-set-model', pos: '50% 30%' }, { k: 'auburn-blue-cropped-crewneck-model', pos: '50% 10%' }] },
-    { label: 'Girls & Kids', cols: ['auburn-kids-specialty', 'auburn-girls-collection', 'auburn-kids-apparel'], c: 'auburn-kids-specialty',
-      img: [{ k: 'auburn-cheer-dress-flat', pos: '50% 45%' }, { k: 'mom-mini-auburn-stripes', pos: '80% 30%' }] },
-    { label: 'Men', cols: ['auburn-mens-collection', 'auburn-mens-specialty'], c: 'auburn-mens-collection',
-      img: [{ k: 'auburn-tee-grid-flatlay', pos: '50% 50%' }, { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }] },
-    { label: 'Hats', cols: ['auburn-hat-collection-1'], c: 'auburn-hat-collection-1',
-      made: { tone: 'navy', patch: 'Auburn hats', note: 'Local pickup available at our Auburn shop' } },
-    { label: 'Gifts', cols: ['auburn-accessories-gifts'], c: 'auburn-accessories-gifts',
-      made: { tone: 'scarlet', big: '&', note: 'Gifts for every age and occasion' } },
-    { label: 'In stock now', cols: ['auburn-university-in-stock-items'], c: 'auburn-university-in-stock-items',
-      made: { tone: 'cream', ticket: true, patch: 'In stock', note: 'Ships in 5–7 business days' } }
+    { label: 'Women', cols: ['auburn-womens-specialty', 'auburn-adult-tees-fleece-2026', 'auburn-adult-apparel'], who: 'women', c: 'auburn-womens-specialty' },
+    { label: 'Girls & Kids', cols: ['auburn-kids-specialty', 'auburn-girls-collection', 'auburn-kids-apparel'], c: 'auburn-kids-specialty' },
+    { label: 'Men', cols: ['auburn-mens-collection', 'auburn-mens-specialty'], c: 'auburn-mens-collection' },
+    { label: 'Hats', cols: ['auburn-hat-collection-1'], c: 'auburn-hat-collection-1' },
+    { label: 'Gifts', cols: ['auburn-accessories-gifts'], c: 'auburn-accessories-gifts' },
+    { label: 'In stock now', cols: ['auburn-university-in-stock-items'], c: 'auburn-university-in-stock-items' }
+  ];
+  /* No-product fallback: photo and designed cards alternate (never two cards side by side). Real collection photos come
+     first so they take over once the catalogue has them; the editorial fallbacks are photos that are not on their
+     current homepage, and a department without a fitting photo (Men, Hats, Gifts) is a designed card, never a stand-in. */
+  var TEAM_TILES = [
+    { t: 'Women', c: 'auburn-womens-specialty', img: ['col:auburn-womens-specialty', { k: 'four-models-sets', pos: '50% 30%' }],
+      made: { patch: 'Auburn women', dot: true, note: 'Women’s XS–2XL' } },
+    { t: 'Hats', c: 'auburn-hat-collection-1', img: ['col:auburn-hat-collection-1'], made: { patch: 'Auburn hats', dot: true, note: 'Local pickup at our Auburn shop' } },
+    { t: 'Girls & Kids', c: 'auburn-kids-specialty', img: ['col:auburn-kids-specialty', { k: 'mom-mini-auburn-stripes', pos: '30% 40%' }],
+      made: { patch: 'Girls & kids', dot: true, note: 'Girls’ sizes from 12M' } },
+    { t: 'Men', c: 'auburn-mens-collection', img: ['col:auburn-mens-collection'], made: { patch: 'Auburn men', dot: true, note: 'For the men in your crew' } },
+    { t: 'Tees & fleece', c: 'auburn-adult-apparel', img: ['col:auburn-adult-apparel', { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }],
+      made: { patch: 'Tees & fleece', dot: true, note: 'Printed or embroidered in Auburn' } },
+    { t: 'Gifts', c: 'auburn-accessories-gifts', img: ['col:auburn-accessories-gifts'], made: { big: '&', note: 'Little extras for every Auburn fan' } }
   ];
   var tabsEl = $('[data-home="team-tabs"]'), deptEl = $('[data-home="team-depts"]');
   var tabs = TEAM.map(function (t) {
@@ -37,7 +45,7 @@
   if (!shown) {
     tabsEl.hidden = true;
     deptEl.hidden = false;
-    SG.deptTiles(deptEl, TEAM.map(function (t) { return { t: t.label, c: t.c, img: t.img, made: t.made }; }));
+    SG.deptTiles(deptEl, TEAM_TILES);
   }
 
   /* ---------- Every season on the Plains (Auburn) ---------- */
@@ -45,12 +53,14 @@
     tone: 'navy',
     pill: 'Every season on the Plains',
     title: 'From kickoff <em class="br">to the ballpark.</em>',
+    /* sport tiles show their own collection photo once the catalogue has one; until then a designed tile, never a photo
+       of something else. The Original Aubie artwork is the only basketball image (designed tile if the hero has it). */
     items: [
       { t: 'Game day', sub: 'Tees, crewnecks & more', c: 'auburn', img: [{ k: 'group-auburn-tees-outdoor', pos: '50% 45%' }, 'auburn-tee-grid-flatlay'] },
       { t: 'Basketball', sub: 'The Original Aubie collection', c: 'original-aubie-basketball',
-        img: [{ k: 'original-aubie-collab', fit: 'contain', bg: '#F1E9DC' }, { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }] },
-      { t: 'Baseball', c: 'auburn-baseball', img: [{ k: 'four-models-sets', pos: '50% 36%' }, { k: 'war-eagle-tank-skort-torso', pos: '50% 30%' }, 'auburn-tee-grid-flatlay-2'] },
-      { t: 'Gymnastics', c: 'auburn-gymnastics', img: [{ k: 'white-crewneck-shorts-set-model', pos: '50% 30%' }, { k: 'auburn-embroidered-crewneck-model', pos: '50% 12%' }, { k: 'auburn-blue-cropped-crewneck-model', pos: '50% 12%' }] }
+        img: [{ k: 'original-aubie-collab', fit: 'contain', bg: '#F1E9DC' }], made: { tone: 'scarlet', patch: 'Original Aubie', dot: true } },
+      { t: 'Baseball', c: 'auburn-baseball', img: ['col:auburn-baseball'], made: { tone: 'gold', patch: 'Auburn baseball', dot: true } },
+      { t: 'Gymnastics', c: 'auburn-gymnastics', img: ['col:auburn-gymnastics'], made: { tone: 'scarlet', patch: 'Auburn gymnastics', dot: true } }
     ]
   });
 
@@ -65,12 +75,14 @@
   SG.rail($('[data-f="rail"]', feat), SG.auburnFirst(SG.collection(CH.featured.c)), { nav: $('[data-f="nav"]', feat), hide: feat, card: { school: true } });
 
   /* ---------- Match your mini ---------- */
+  /* the big photo is the sharp 1600px cheer dress; the mom & mini photo is only 600px wide, so it rides as the small
+     polaroid inset (shown at or above 1:1 on every screen) when the Home team tiles haven't already used it */
   var media = $('[data-home="mini-media"]');
-  var big = SG.pickPhoto([{ k: 'mom-mini-auburn-stripes', pos: '60% 30%' }, { k: 'auburn-cheer-dress-flat', pos: '50% 45%' }], 900);
-  var inset = SG.pickPhoto(['auburn-cheer-dress-flat'], 600, true);
+  var big = SG.pickPhoto([{ k: 'auburn-cheer-dress-flat', pos: '50% 45%' }, { k: 'mom-mini-auburn-stripes', pos: '60% 30%' }], 1200);
+  var inset = big.key === 'mom-mini-auburn-stripes' ? null : SG.pickPhoto(['mom-mini-auburn-stripes'], 600, true);
   media.innerHTML =
-    '<div class="look__shot hm-mini__shot" style="--look-ratio:' + big.w + '/' + big.h + ';--pos:' + (big.pos || '50% 30%') + '">' + SG.imgTag(big) + '</div>' +
-    (inset && inset.key !== big.key ? '<figcaption class="look__inset">' + SG.imgTag(inset) + '<span>Her first cheer dress</span></figcaption>' : '');
+    '<div class="look__shot hm-mini__shot' + (big.key === 'mom-mini-auburn-stripes' ? ' hm-mini__shot--small' : '') + '" style="--look-ratio:' + big.w + '/' + big.h + ';--pos:' + (big.pos || '50% 30%') + '">' + SG.imgTag(big) + '</div>' +
+    (inset ? '<figcaption class="look__inset">' + SG.imgTag(inset) + '<span>Match your mini</span></figcaption>' : '');
   var miniLook = $('[data-home="mini-look"]');
   if (hasProducts && SG.mini(miniLook, { teamsEl: $('[data-home="mini-teams"]') })) {
     miniLook.hidden = false;
@@ -78,13 +90,17 @@
   }
 
   /* ---------- The S&G Signatures collage ---------- */
+  /* signature-only photos may show other schools' patches (INDEX.md); lead with photos that aren't on their current homepage */
   var SIG_SLOTS = [
     [{ k: 'grace-gingham-dresses-three-models', label: 'The Grace', sub: 'Gingham dresses', c: 'grace-gingham-dresses', pos: '50% 20%' },
+     { k: 'four-models-sets', label: 'Tee & skort sets', sub: 'in Auburn colors', c: 'auburn-womens-specialty', pos: '50% 30%' },
      { k: 'mallory-four-models-other-schools', label: 'The Mallory', sub: 'Gingham mockneck', c: 'mallory-gingham-mocknecks', pos: '50% 22%' }],
-    [{ k: 'ava-airy-set-two-models', label: 'The Ava', sub: 'Airy crewneck & shorts', c: 'the-ava-collection', pos: '50% 20%' },
-     { k: 'kristen-airy-tee-model', label: 'The Kristen', sub: 'Airy tee', c: 'the-kristen-collection', pos: '50% 12%' }],
-    [{ k: 'becca-two-girls', label: 'The Becca', sub: 'Boxy crewneck', c: 'the-becca-collection', pos: '50% 20%' },
-     { k: 'kristen-airy-tee-model', label: 'The Kristen', sub: 'Airy tee', c: 'the-kristen-collection', pos: '50% 12%' }]
+    [{ k: 'kristen-airy-tee-model', label: 'The Kristen', sub: 'Airy tee', c: 'the-kristen-collection', pos: '50% 12%' },
+     { k: 'ava-airy-set-two-models', label: 'The Ava', sub: 'Airy crewneck & shorts', c: 'the-ava-collection', pos: '50% 20%' }],
+    [{ k: 'four-models-sets', label: 'Tee & skort sets', sub: 'in Auburn colors', c: 'auburn-womens-specialty', pos: '50% 30%' },
+     { k: 'ava-airy-set-two-models', label: 'The Ava', sub: 'Airy crewneck & shorts', c: 'the-ava-collection', pos: '50% 20%' },
+     { k: 'becca-two-girls', label: 'The Becca', sub: 'Boxy crewneck', c: 'the-becca-collection', pos: '50% 20%' },
+     { k: 'mallory-four-models-other-schools', label: 'The Mallory', sub: 'Gingham mockneck', c: 'mallory-gingham-mocknecks', pos: '50% 22%' }]
   ];
   $('[data-home="sig-collage"]').innerHTML = SIG_SLOTS.map(function (cands, i) {
     var ph = SG.pickPhoto(cands, 900);
@@ -97,18 +113,18 @@
 
   /* ---------- Find your game day look (quiz) ---------- */
   var Q = [
-    { k: 'who', q: 'Who\'s getting dressed for game day?', opts: [
-      { v: 'women', t: 'Me', s: 'Women\'s XS–2XL', lbl: 'for you' },
-      { v: 'kids', t: 'My mini', s: 'Girls\' sizes from 12M', lbl: 'for your mini' },
+    { k: 'who', q: 'Who’s getting dressed for game day?', opts: [
+      { v: 'women', t: 'Me', s: 'Women’s XS–2XL', lbl: 'for you' },
+      { v: 'kids', t: 'My mini', s: 'Girls’ sizes from 12M', lbl: 'for your mini' },
       { v: 'both', t: 'Both of us', s: 'Mom & mini, matching', lbl: 'for you both' },
-      { v: 'men', t: 'Him', s: 'Men\'s tees & more', lbl: 'for him' }] },
+      { v: 'men', t: 'Him', s: 'Men’s tees & more', lbl: 'for him' }] },
     { k: 'style', q: 'What do you reach for first?', opts: [
       { v: 'cozy', t: 'A cozy crewneck', s: 'Crewnecks, mocknecks & quarter-zips', cat: ['crewneck', 'mockneck', 'quarter-zip'], lbl: 'Cozy crewnecks' },
       { v: 'tee', t: 'A classic tee', s: 'Tees & long sleeves', cat: ['tee', 'long-sleeve'], lbl: 'Classic tees' },
       { v: 'set', t: 'A tank & skort', s: 'Tanks, skorts & sets', cat: ['tank', 'skort', 'set', 'shorts'], lbl: 'Tanks, skorts & sets' },
       { v: 'dress', t: 'A dress', s: 'Dresses & cheer dresses', cat: ['dress', 'cheer-dress'], lbl: 'Dresses' }] },
-    { k: 'when', q: 'When\'s the game?', two: true, opts: [
-      { v: 'in', t: 'This week', s: 'In stock · ships in 5–7 business days', lbl: 'In stock, ships in 5–7 business days' },
+    { k: 'when', q: 'When’s the game?', two: true, opts: [
+      { v: 'in', t: 'Coming up soon', s: 'In stock · ships in 5–7 business days', lbl: 'In stock, ships in 5–7 business days' },
       { v: 'any', t: 'I can plan ahead', s: 'Made for you in Auburn · 10–14 business days', lbl: 'In stock or made for you' }] }
   ];
   var quiz = $('[data-home="quiz"]');

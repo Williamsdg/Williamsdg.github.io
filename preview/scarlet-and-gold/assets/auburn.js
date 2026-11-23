@@ -12,22 +12,24 @@
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* Photos placed in the HTML (hero strip + Original Aubie artwork) are reserved first. */
-  ['group-auburn-tees-outdoor', 'auburn-blue-cropped-crewneck-model', 'war-eagle-tank-skort-torso', 'original-aubie-collab'].forEach(SG.markPhotoUsed);
+  ['group-auburn-tees-outdoor', 'auburn-blue-cropped-crewneck-model', 'auburn-embroidered-crewneck-model', 'original-aubie-collab'].forEach(SG.markPhotoUsed);
 
   /* ---------- departments: collections + photo candidates (Auburn-only photos) ---------- */
   var isAuburn = function (p) { return !p.sch || p.sch === 'auburn'; };
+  /* A department without a fitting photo of its own (men, hats, gifts, baseball, gymnastics) gets a designed face, never a
+     photo of something else: real collection photos ('col:<handle>') take over once the catalogue has them. */
   var DEPTS = [
     { id: 'women', cols: ['auburn-womens-specialty', 'auburn-adult-apparel', 'auburn-adult-tees-fleece-2026'], who: 'women',
-      photo: [{ k: 'auburn-embroidered-crewneck-model', pos: '50% 4%' }, { k: 'four-models-sets', pos: '50% 26%' }], alt: true },
+      photo: ['col:auburn-womens-specialty', { k: 'four-models-sets', pos: '50% 26%' }], alt: true },
     { id: 'kids', cols: ['auburn-kids-specialty', 'auburn-kids-apparel', 'auburn-girls-collection'],
-      photo: [{ k: 'auburn-cheer-dress-flat', pos: '50% 46%' }], alt: true },
-    { id: 'men', cols: ['auburn-mens-collection', 'auburn-mens-specialty'],
-      photo: [{ k: 'auburn-tee-grid-flatlay', pos: '50% 38%' }, { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }], alt: true },
+      photo: ['col:auburn-kids-specialty', { k: 'auburn-cheer-dress-flat', pos: '50% 46%' }], alt: true },
+    { id: 'men', cols: ['auburn-mens-collection', 'auburn-mens-specialty'], photo: ['col:auburn-mens-collection'], alt: true,
+      made: '<span class="au-made__big">Men</span><span class="au-made__band"><span class="patch"><span class="patch__dot"></span>Auburn, AL</span></span><span class="au-made__note">For the men in your crew</span>' },
     { id: 'hats', cols: ['auburn-hat-collection-1'] },
-    { id: 'gifts', cols: ['auburn-accessories-gifts'], photo: [{ k: 'aubie-tee-flatlay', pos: '42% 50%' }] },
+    { id: 'gifts', cols: ['auburn-accessories-gifts'] },
     { id: 'in-stock', cols: ['auburn-university-in-stock-items', 'auburn-in-stock-sale-eligible'] },
     { id: 'basketball', cols: ['original-aubie-basketball', 'auburn-basketball'] },
-    { id: 'baseball', cols: ['auburn-baseball'], photo: [{ k: 'four-models-sets', pos: '50% 30%' }, { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }] },
+    { id: 'baseball', cols: ['auburn-baseball'] },
     { id: 'gymnastics', cols: ['auburn-gymnastics'] },
     { id: 'alumni', cols: ['auburn-alumni'], photo: [{ k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }, { k: 'auburn-tee-grid-flatlay', pos: '50% 50%' }] }
   ];
@@ -39,10 +41,14 @@
     // photo slot (decorative inside card links; described in split features and the banner)
     var slot = $('[data-au-photo]', sec);
     if (slot && d.photo) {
-      var ph = SG.pickPhoto(d.photo, 1200);
+      var ph = SG.pickPhoto(d.photo, 1200, !!d.made, { auburn: true, ratio: 0.8 });
       if (ph) {
         if (ph.pos) slot.style.setProperty('--pos', ph.pos);
         slot.innerHTML = SG.imgTag(ph, { alt: d.alt ? ph.alt : '' });
+      } else if (d.made) {
+        slot.classList.add('au-made', 'au-made--navy', 'au-made--band');
+        slot.setAttribute('aria-hidden', 'true');
+        slot.innerHTML = d.made;
       }
     }
 
@@ -91,9 +97,14 @@
   }
 
   /* ---------- match your mini (Auburn only on the Auburn hub) ---------- */
+  /* the cheer-dress photo leads the Girls & kids section above, so here the 600px mom & mini photo is shown small
+     (capped so it stays at 2x); if the cheer dress is free it leads and the mom & mini photo becomes the polaroid inset */
   var media = $('[data-au="mini-media"]');
-  var big = SG.pickPhoto([{ k: 'mom-mini-auburn-stripes', pos: '60% 30%' }, { k: 'auburn-cheer-dress-flat', pos: '50% 45%' }], 900);
-  media.innerHTML = '<div class="look__shot au-mini__shot" style="--look-ratio:' + big.w + '/' + big.h + ';--pos:' + (big.pos || '50% 30%') + '">' + SG.imgTag(big) + '</div>';
+  var big = SG.pickPhoto([{ k: 'auburn-cheer-dress-flat', pos: '50% 45%' }, { k: 'mom-mini-auburn-stripes', pos: '60% 30%' }], 1200);
+  var small = big.key === 'mom-mini-auburn-stripes';
+  var inset = small ? null : SG.pickPhoto(['mom-mini-auburn-stripes'], 600, true);
+  media.innerHTML = '<div class="look__shot au-mini__shot' + (small ? ' au-mini__shot--small' : '') + '" style="--look-ratio:' + big.w + '/' + big.h + ';--pos:' + (big.pos || '50% 30%') + '">' + SG.imgTag(big) + '</div>' +
+    (inset ? '<figcaption class="look__inset">' + SG.imgTag(inset) + '<span>Match your mini</span></figcaption>' : '');
   if (SG.miniSet('auburn') && SG.mini($('[data-au="mini-look"]'), { school: 'auburn' })) {
     $('[data-au="mini-look"]').hidden = false;
     $('[data-au="mini-fallback"]').hidden = true;
@@ -121,7 +132,7 @@
   }
   function spy() {
     var top = chips.getBoundingClientRect().top;
-    var stuck = top <= px(getComputedStyle(document.documentElement).getPropertyValue('--sticky-top')) + 1 && window.scrollY > 0;
+    var stuck = top <= SG.stickyTop() + 1 && window.scrollY > 0;
     chips.classList.toggle('is-stuck', stuck);
     if (pinned > -1) {
       var landing = px(getComputedStyle(targets[pinned]).scrollMarginTop);
@@ -153,23 +164,10 @@
   window.addEventListener('resize', spy);
   spy();
 
-  /* Arriving with a hash (e.g. auburn.html#programs from the menu): rails and photos above may have changed the
-     layout since the browser's first jump, so land on the target again once the page has loaded. (Scrolling any
-     earlier cancels WebKit's own fragment jump and leaves the page at the top.) */
-  var hashT = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
-  if (hashT) {
-    // the browser's own first jump must be instant: a smooth one keeps animating toward a stale offset and wins
-    document.documentElement.style.scrollBehavior = 'auto';
-    var land = function () {
-      window.setTimeout(function () {
-        var i = targets.indexOf(hashT);
-        if (i > -1) { pinned = i; pinnedUntil = Date.now() + 600; }
-        var y = hashT.getBoundingClientRect().top + window.scrollY - px(getComputedStyle(hashT).scrollMarginTop);
-        window.scrollTo(0, Math.max(0, Math.round(y)));
-        spy();
-        window.setTimeout(function () { document.documentElement.style.scrollBehavior = ''; }, 100);
-      }, 60);
-    };
-    if (document.readyState === 'complete') land(); else window.addEventListener('load', land, { once: true });
-  }
+  /* Arriving with a hash (auburn.html#programs …): sg.js lands it once the page has loaded (SG.landOn); pin the chip. */
+  document.addEventListener('sg:hashland', function (e) {
+    var i = targets.indexOf(e.detail.target);
+    if (i > -1) { pinned = i; pinnedUntil = Date.now() + 600; }
+    spy();
+  });
 })();
