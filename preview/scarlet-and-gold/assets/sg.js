@@ -138,8 +138,14 @@
     var teesFleece = !!MTO_CATS[p.cat] && cols.some(function (c) { return /-(apparel|tees-fleece(-\d+)?)$/.test(c); });
     return (client || teesFleece) ? 'mto' : 'check';
   };
-  /** Card micro-label (short) or PDP wording (long=true) for SG.shipKind(p). */
+  /** Sold out: every variant gone (data.js p.av === 0). Cards, the PDP and shipping labels all ask this one helper. */
+  SG.isSoldOut = function (p) { return !!p && (p.av === 0 || p.av === false); };
+  /**
+   * Card micro-label (short) or PDP wording (long=true) for SG.shipKind(p). A sold-out piece claims no ship time at
+   * all ("Sold out for now"); SG.shipKind(p) still says how it ships once it is back (used by the shop's Ships filter).
+   */
   SG.shipLabel = function (p, long) {
+    if (SG.isSoldOut(p)) return 'Sold out for now';
     var k = SG.shipKind(p);
     if (k === 'in') return long ? 'In stock · ships in 5–7 business days' : 'Ships in 5–7 days';
     if (k === 'mto') return long ? 'Made for you in our Auburn shop · ships in 10–14 business days' : 'Made for you · 10–14 days';
@@ -370,7 +376,7 @@
     var cover = ir >= 0.6 && ir <= 1.05;    // 2:3 to square → cover, anchored near the top (heads kept); taller or wider → contain on the frame
     var hgt = Math.round(w / ir);
     var sale = p.cp && p.cp > p.p;
-    var out = p.av === 0 || p.av === false;
+    var out = SG.isSoldOut(p);
     var sch = opts.school && p.sch ? SG.school(p.sch) : null;
     var co = (p.co || []).filter(Boolean);
     var dots = co.slice(0, 5).map(function (c) {
@@ -390,8 +396,7 @@
         '<h3 class="pc__title"><a href="' + SG.productUrl(p.h) + '">' + SG.esc(p.t) + '</a></h3>' +
         '<p class="pc__price">' + (sale ? '<span class="is-sale">' + SG.money(p.p) + '</span><s>' + SG.money(p.cp) + '</s><span class="sr"> (was ' + SG.money(p.cp) + ')</span>' : SG.money(p.p)) + '</p>' +
         (dots ? '<ul class="pc__dots" aria-label="' + co.length + ' color' + (co.length === 1 ? '' : 's') + ': ' + SG.esc(co.slice(0, 5).join(', ')) + '">' + dots + '</ul>' : '') +
-        (opts.ship === false ? '' : out ? '<p class="pc__ship pc__ship--out">Sold out for now</p>'
-          : '<p class="pc__ship pc__ship--' + SG.shipKind(p) + '">' + SG.shipLabel(p) + '</p>') +
+        (opts.ship === false ? '' : '<p class="pc__ship pc__ship--' + (out ? 'out' : SG.shipKind(p)) + '">' + SG.shipLabel(p) + '</p>') +
       '</div>' +
     '</article>';
   };
@@ -399,6 +404,36 @@
   function hideTarget(el, opts) {
     return (opts && opts.hide) || el.closest('[data-hide-empty]') || el;
   }
+
+  /**
+   * SG.onLayout(els, fn) → dispose(). For anything that measures scroll/overflow (rail arrows, tab-row edge fade).
+   * WebKit can run the deferred scripts BEFORE any stylesheet has applied, so a measurement taken at script time (or in
+   * the next frame) sees unstyled boxes: a tab row that will scroll reads scrollWidth === clientWidth. So fn runs now,
+   * next frame, and again whenever the numbers can change: a ResizeObserver on els (styles applying resize them), the
+   * load event (all stylesheets in), web fonts ready, and window resize. Calls are coalesced to one per frame.
+   */
+  SG.onLayout = function (els, fn) {
+    els = [].concat(els).filter(Boolean);
+    var dead = false, queued = false;
+    var run = function () {
+      if (dead || queued) return;
+      queued = true;
+      window.requestAnimationFrame(function () { queued = false; if (!dead) fn(); });
+    };
+    var ro = 'ResizeObserver' in window ? new ResizeObserver(run) : null;
+    if (ro) els.forEach(function (e) { ro.observe(e); });
+    window.addEventListener('resize', run);
+    if (document.readyState !== 'complete') window.addEventListener('load', run, { once: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
+    fn();
+    run();
+    return function () {
+      dead = true;
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', run);
+      window.removeEventListener('load', run);
+    };
+  };
 
   /**
    * SG.rail(el, products, opts) → number rendered. Renders a snap rail into el.
@@ -409,6 +444,7 @@
     if (!el) throw new Error('SG.rail: missing element');
     list = (list || []).slice(0, opts.limit || 12);
     var target = hideTarget(el, opts);
+    if (opts.nav && opts.nav._sgOff) { opts.nav._sgOff(); opts.nav._sgOff = null; }
     if (!list.length) { el.innerHTML = ''; target.hidden = true; if (opts.nav) opts.nav.innerHTML = ''; return 0; }
     target.hidden = false;
     el.classList.add('rail');
@@ -429,10 +465,9 @@
         b.onclick = function () { track.scrollBy({ left: +b.getAttribute('data-dir') * track.clientWidth * 0.9, behavior: 'smooth' }); };
       });
       track.addEventListener('scroll', function () { window.requestAnimationFrame(sync); }, { passive: true });
-      if (opts.nav._sgSync) window.removeEventListener('resize', opts.nav._sgSync);
-      opts.nav._sgSync = sync;
-      window.addEventListener('resize', sync);
-      window.requestAnimationFrame(sync);
+      // one live measurer per nav (a tabbed rail re-renders into the same nav on every tab switch)
+      if (opts.nav._sgOff) opts.nav._sgOff();
+      opts.nav._sgOff = SG.onLayout([track, track.firstElementChild], sync);
     }
     return list.length;
   };
@@ -458,6 +493,7 @@
     opts = opts || {};
     var live = (tabs || []).filter(function (t) { return t.products && t.products.length; });
     var target = hideTarget(el, opts);
+    if (el._sgTabsOff) { el._sgTabsOff(); el._sgTabsOff = null; }
     if (!live.length) { el.innerHTML = ''; if (opts.hide !== false) target.hidden = true; return 0; }
     target.hidden = false;
     var uid = 'tr' + Math.random().toString(36).slice(2, 7);
@@ -470,10 +506,11 @@
       '<div id="' + uid + '-p" role="tabpanel" aria-labelledby="' + uid + '-t0"><div class="tr-rail"></div></div>';
     var btns = el.querySelectorAll('.tab'), panel = el.querySelector('[role=tabpanel]'), tablist = el.querySelector('.tabs');
     var railEl = el.querySelector('.tr-rail'), more = el.querySelector('.tr-more'), nav = el.querySelector('.tr-nav');
-    // phones: the tab row scrolls; its edge fades until the end is reached, and the active tab is kept in view
+    // phones: the tab row scrolls; its edge fades until the end is reached, and the active tab is kept in view.
+    // Measured live (SG.onLayout), never only at script time: WebKit can run this before CSS applies, when the unstyled
+    // row reads as not overflowing and would get .is-end (no fade) with tabs hidden past the edge.
     var syncEnd = function () { tablist.classList.toggle('is-end', tablist.scrollLeft + tablist.clientWidth >= tablist.scrollWidth - 2); };
     tablist.addEventListener('scroll', syncEnd, { passive: true });
-    window.addEventListener('resize', syncEnd);
     function show(i, scroll) {
       btns.forEach(function (b, j) { b.setAttribute('aria-selected', String(i === j)); b.tabIndex = i === j ? 0 : -1; });
       panel.setAttribute('aria-labelledby', btns[i].id);
@@ -497,6 +534,7 @@
       });
     });
     show(0);
+    el._sgTabsOff = SG.onLayout([tablist].concat([].slice.call(btns)), syncEnd);
     return live.length;
   };
 

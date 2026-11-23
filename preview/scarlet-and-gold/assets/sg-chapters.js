@@ -224,13 +224,13 @@
     try { q = new URLSearchParams(location.search).get('chapter'); } catch (e) { q = null; }
     if (q === 'auto' || q === 'today') {
       try { sessionStorage.removeItem(KEY); } catch (e) { /* storage blocked */ }
-    } else if (q && CH[q]) {
+    } else if (q && Object.prototype.hasOwnProperty.call(CH, q)) {
       try { sessionStorage.setItem(KEY, q); } catch (e) { /* storage blocked */ }
       return CH[q];
     }
     var s = null;
     try { s = sessionStorage.getItem(KEY); } catch (e) { s = null; }
-    if (s && CH[s]) return CH[s];
+    if (s && Object.prototype.hasOwnProperty.call(CH, s)) return CH[s];
     return SG.chapterFor(new Date());
   };
   SG.isChapterOverride = function () { return SG.currentChapter().id !== SG.chapterFor(new Date()).id; };
@@ -283,20 +283,66 @@
     document.body.appendChild(box);
     var btn = box.querySelector('.chap__btn'), panel = box.querySelector('.chap__panel');
     /*
-     * Visibility: shown unless (a) the visitor is scrolling down, or (b) the button would sit on top of a link, button
-     * or field (a hero CTA on a phone, a chip on a laptop…). On phones it sits bottom-right, clear of left-aligned copy. Checked at first paint, when scrolling settles and on
-     * resize; while the panel is open it always shows. The geometry is the button's untransformed box (offsetLeft/Top
-     * ignore the tuck transform), so the check is the same whether it is currently shown or not.
+     * Visibility: shown unless (a) the visitor is scrolling down, or (b) the button would sit on top of anything they
+     * read or use: a link, button or field (a hero CTA on a phone, a chip on a laptop…) or any visible TEXT (a headline,
+     * a paragraph, an address line). Home corner: bottom-left on desktop, bottom-right on phones (clear of left-aligned
+     * copy). When the home corner is busy and the opposite bottom corner is clear, it uses that one (.chap--alt), e.g.
+     * beside the shop's sticky filter column. It only changes corner while tucked, so it never jumps across a screen.
+     * Checked on load, once web fonts are in (they reflow the hero), when scrolling settles and on resize; while the
+     * panel is open it always shows and stays put. The geometry is the collapsed 44px button's
+     * untransformed box (offsetLeft/Top ignore the tuck transform) plus a small margin, so the check is the same whether
+     * it is currently shown or not.
      */
     var SEL = 'a[href], button, input, select, textarea, summary, label, [role="button"], [tabindex]:not([tabindex="-1"])';
+    var PAD = 4;
     var scrollingDown = false, covering = false;
-    function rect() {
-      var l = box.offsetLeft + btn.offsetLeft, t = box.offsetTop + btn.offsetTop;
-      return { left: l, top: t, right: l + Math.max(44, btn.offsetWidth), bottom: t + btn.offsetHeight };
+    // both candidate boxes, from the anchored edge (the label can be slid out, so the width is the collapsed 44px)
+    function spots() {
+      var vw = document.documentElement.clientWidth, S = 44;
+      var t = box.offsetTop + btn.offsetTop, b = t + btn.offsetHeight;
+      var leftSide = box.offsetLeft + box.offsetWidth / 2 < vw / 2;
+      var inset = leftSide ? box.offsetLeft : vw - (box.offsetLeft + box.offsetWidth);
+      var L = { left: inset - PAD, top: t - PAD, right: inset + S + PAD, bottom: b + PAD };
+      var R = { left: vw - inset - S - PAD, top: t - PAD, right: vw - inset + PAD, bottom: b + PAD };
+      var alt = box.classList.contains('chap--alt');
+      var cur = leftSide ? L : R, other = leftSide ? R : L;
+      return { cur: cur, home: alt ? other : cur, alt: alt ? cur : other };
     }
-    function coversSomething() {
-      if (document.body.classList.contains('is-locked')) return false;
-      var r = rect(), els = document.querySelectorAll(SEL);
+    // overlap of two rects, at least 2px each way (ignores hairline touches and 1px visually-hidden boxes)
+    function meets(a, b) { return Math.min(a.right, b.right) - Math.max(a.left, b.left) >= 2 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) >= 2; }
+    // is the part of text rect `tr` under the pill actually painted? (not transparent, not clipped away by a scroller/overflow box)
+    function painted(el, tr, r) {
+      var cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden') return false;
+      var v = { left: Math.max(tr.left, r.left), top: Math.max(tr.top, r.top), right: Math.min(tr.right, r.right), bottom: Math.min(tr.bottom, r.bottom) };
+      for (var a = el; a && a !== document.body; a = a.parentElement) {
+        var s = a === el ? cs : getComputedStyle(a);
+        if (+s.opacity < 0.05) return false;
+        if (s.overflowX !== 'visible' || s.overflowY !== 'visible' || s.clipPath !== 'none') {
+          var b = a.getBoundingClientRect();
+          v = { left: Math.max(v.left, b.left), top: Math.max(v.top, b.top), right: Math.min(v.right, b.right), bottom: Math.min(v.bottom, b.bottom) };
+          if (v.right - v.left < 2 || v.bottom - v.top < 2) return false;
+        }
+      }
+      return true;
+    }
+    function coversText(r) {
+      var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null), rg = document.createRange(), t;
+      while ((t = w.nextNode())) {
+        if (!/\S/.test(t.data)) continue;
+        var el = t.parentElement;
+        // text paints inside its parent's box, so that box is a cheap first filter before measuring the glyph runs
+        if (!el || box.contains(el)) continue;
+        var pb = el.getBoundingClientRect();
+        if (!pb.width || !pb.height || !meets(pb, r) || el.closest('.sr, script, style, noscript, template')) continue;
+        rg.selectNodeContents(t);
+        var rs = rg.getClientRects();
+        for (var i = 0; i < rs.length; i++) if (meets(rs[i], r) && painted(el, rs[i], r)) return true;
+      }
+      return false;
+    }
+    function coversSomething(r) {
+      var els = document.querySelectorAll(SEL);
       for (var i = 0; i < els.length; i++) {
         var e = els[i];
         if (box.contains(e)) continue;
@@ -305,15 +351,39 @@
         if (e.closest('[hidden], [inert]') || getComputedStyle(e).visibility === 'hidden') continue;
         return true;
       }
-      return false;
+      return coversText(r);
     }
-    function apply() { box.classList.toggle('is-tucked', panel.hidden && (scrollingDown || covering)); }
-    function check() { covering = coversSomething(); apply(); }
+    var FADE = 380, tuckedAt = -1e9, swapT = null;   // FADE ≥ the .35s tuck transition in sg.css
+    function apply() {
+      var tuck = panel.hidden && (scrollingDown || covering);
+      if (tuck && !box.classList.contains('is-tucked')) tuckedAt = Date.now();
+      box.classList.toggle('is-tucked', tuck);
+    }
+    function later(ms) { clearTimeout(swapT); swapT = window.setTimeout(check, ms); }
+    function check() {
+      // a modal (menu, bag, search) is open, or the panel is: leave the pill where it is
+      if (!panel.hidden || document.body.classList.contains('is-locked')) { apply(); return; }
+      var g = spots(), alt = box.classList.contains('chap--alt');
+      var curFree = !coversSomething(g.cur);
+      var hiddenFor = box.classList.contains('is-tucked') ? Date.now() - tuckedAt : -1;
+      // shown (or still fading out): keep this corner while it is clear; otherwise tuck, and choose a corner once hidden
+      if (curFree && (hiddenFor < 0 || !alt || hiddenFor < FADE)) { covering = false; apply(); return; }
+      if (hiddenFor < FADE) { covering = true; apply(); later(FADE - Math.max(0, hiddenFor) + 20); return; }
+      var other = alt ? g.home : g.alt;
+      // hidden: prefer the home corner, else the opposite one, else stay tucked
+      var homeFree = alt ? !coversSomething(g.home) : curFree;
+      if (homeFree) { if (alt) box.classList.remove('chap--alt'); covering = false; }
+      else if (alt ? curFree : !coversSomething(other)) { if (!alt) box.classList.add('chap--alt'); covering = false; }
+      else covering = true;
+      apply();
+    }
     function set(open) { panel.hidden = !open; btn.setAttribute('aria-expanded', String(open)); apply(); }
     btn.addEventListener('click', function () { set(panel.hidden); });
+    // First reveal once the page has loaded (sections rendered, web fonts normally in), then again if fonts land later,
+    // so it doesn't appear on the pre-font layout and then hop away.
     box.classList.add('is-tucked');
-    window.requestAnimationFrame(check);
-    window.addEventListener('load', check);
+    function firstCheck() { check(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(check); }
+    if (document.readyState === 'complete') firstCheck(); else window.addEventListener('load', firstCheck, { once: true });
     var lastY = window.scrollY, ticking = false, settleT = null;
     window.addEventListener('scroll', function () {
       clearTimeout(settleT);
@@ -324,15 +394,19 @@
         var y = window.scrollY, dy = y - lastY;
         if (Math.abs(dy) > 6) {
           scrollingDown = dy > 0 && y > 240;
-          if (!scrollingDown) covering = coversSomething();   // coming back up: only reappear on a clear spot
-          apply();
+          if (!scrollingDown) check();   // coming back up: only reappear on a clear spot
+          else apply();
           lastY = y;
         }
         ticking = false;
       });
     }, { passive: true });
     window.addEventListener('resize', function () { clearTimeout(settleT); settleT = window.setTimeout(check, 140); });
-    document.addEventListener('click', function (e) { if (!box.contains(e.target)) set(false); });
+    document.addEventListener('click', function (e) {
+      if (box.contains(e.target) || panel.hidden) return;
+      set(false);
+      check();   // closed by a click elsewhere: the page may have moved under it while it was open
+    });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) { set(false); btn.focus(); } });
   };
 })();

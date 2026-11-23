@@ -101,7 +101,7 @@
     }
   }
   function syncChips() {
-    var line = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-top')) || 64) + 140;
+    var line = SG.stickyTop() + 140;   // live header height (never the pre-CSS value WebKit can report at script time)
     var id = null;
     groups.forEach(function (g) { if (g.getBoundingClientRect().top <= line) id = g.id; });
     var lastBottom = groups[groups.length - 1].getBoundingClientRect().bottom;

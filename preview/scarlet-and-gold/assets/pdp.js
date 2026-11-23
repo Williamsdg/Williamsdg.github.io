@@ -427,10 +427,13 @@
      Shipping truth: ticket stub
      ====================================================================== */
   function renderShip() {
-    var inStock = shipKind === 'in', timed = shipKind === 'in' || shipKind === 'mto';
+    // A sold-out piece makes no shipping promise: no "In stock" patch, no ship time, no ship-by date (shipLong is
+    // already "Sold out for now" via SG.shipLabel). The store-wide policies below stay true either way.
+    var out = SG.isSoldOut(p);
+    var inStock = !out && shipKind === 'in', timed = !out && (shipKind === 'in' || shipKind === 'mto');
     var eta = timed ? addBusinessDays(TODAY, inStock ? 7 : 14) : null;
     var pickup = APPAREL.indexOf(p.cat) > -1;
-    var patch = inStock ? 'In stock' : shipKind === 'mto' ? 'Made for you' : shipKind === 'vendor' ? 'From our maker' : 'Shipping';
+    var patch = out ? 'Sold out' : inStock ? 'In stock' : shipKind === 'mto' ? 'Made for you' : shipKind === 'vendor' ? 'From our maker' : 'Shipping';
     var rows = [];
     if (pickup) rows.push([SG.icons.pin, '<strong>Local pickup</strong> for apparel &amp; hats at our Auburn shop']);
     else rows.push([IC.box, 'Accessories and other items <strong>may ship separately</strong> from our manufacturer']);
@@ -441,7 +444,7 @@
       '<div class="pdp-tix__main">' +
         '<div class="pdp-tix__head"><p class="ticket__label">Shipping</p>' +
           '<span class="patch' + (inStock ? ' patch--navy' : '') + ' pdp-tix__patch">' + patch + '</span></div>' +
-        '<p class="pdp-tix__line">' + E(shipLong) + '</p>' +
+        '<p class="pdp-tix__line">' + E(out ? 'Sold out for now, so there’s no ship date yet' : shipLong) + '</p>' +
         (eta ? '<p class="pdp-tix__eta">' + IC.cal + '<span>Estimated to ship by <strong>' + E(fmtDay(eta)) + '</strong></span></p>' : '') +
       '</div>' +
       '<span class="ticket__perf" aria-hidden="true"></span>' +
