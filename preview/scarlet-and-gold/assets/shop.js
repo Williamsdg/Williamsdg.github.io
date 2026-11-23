@@ -26,8 +26,8 @@
   var SHIP = { 'in': ['In stock', 'Ships in 5–7 business days', 'In stock · 5–7 days'], mto: ['Made for you', 'In Auburn · 10–14 business days', 'Made for you · 10–14 days'] };
   var PRICES = [['0-40', 'Under $40'], ['40-50', '$40 – $50'], ['50-75', '$50 – $75'], ['75-', '$75 & up']];
   var SORTS = ['featured', 'new', 'price-asc', 'price-desc'];
-  var SIZE_ORDER = ['NB', '0-3M', '3-6M', '6M', '6-12M', '9M', '12M', '18M', '24M', '2T', '3T', '4T', '5T', '2', '3', '4', '5', '6', '6X', '7', '8', '10', '12', '14', '16',
-    'XXS', 'XS', 'S', 'M', 'L', 'XL', '2XL', 'XXL', '3XL', '4XL', 'OS', 'ONE SIZE'];
+  var SIZE_ORDER = ['NB', '0-3M', '3-6M', '6M', '6-12M', '9M', '12M', '18M', '24M', '2T', '3T', '4T', '5T', '2', '3', '4', '5', '6', '6X', '7', '8', '9', '10', '12', '14', '16',
+    'YXS', 'YS', 'YM', 'YL', 'YXL', 'XXS', 'XS', 'S', 'M', 'L', 'XL', '2XL', 'XXL', '3XL', '4XL', '5XL', 'OS', 'ONE SIZE'];
   var SCHOLARSHIP = 'Officially licensed: a portion of every purchase goes back to your school to support student scholarships.';
   var JORDAN_HARE = 'Designed in-house in Auburn, a few miles from Jordan-Hare, by women who wear it to the game too.';
   var SIGNATURES = ['mallory-gingham-mocknecks', 'the-becca-collection', 'the-alli-collection', 'the-ava-collection', 'grace-gingham-dresses',
@@ -68,8 +68,72 @@
   var searchOnly = !!V.q && !V.c && !V.school;
   var auburnLabel = V.school === 'auburn' || (!V.school && (!!C && /auburn|aubie/.test(C)));
   var otherSchool = !!V.school && V.school !== 'auburn';
+  /* partial data (brief/data-schema.md): what this view lists vs. their real totals. Never present their total, or
+     "every piece", as what is listed; point to their live store for the rest. */
+  var PART = D.partial ? Object.keys(D.partial.loaded || {}).filter(function (h) { return SG.isPartial(h); }) : [];
+  var partialView = !unknownC && !!PART.length && (C ? SG.isPartial(C) : true);
+  function countLabel(h) {   // collection link sub-label: their total, or "first N of M" when only part is loaded
+    var n = COLS[h] && COLS[h].n;
+    if (!n) return '';
+    if (SG.isPartial(h)) return fmt(SG.loaded(h)) + ' of ' + fmt(n) + ' styles here';
+    return D.partial && !SG.loaded(h) ? fmt(n) + ' on their store' : fmt(n) + ' styles';
+  }
   var shown = PER;
   try { var hs = history.state; if (hs && hs.shown > PER) shown = hs.shown; } catch (e) { /* no state */ }
+
+  /* a view that is exactly a rule-built link (SG.fromAuburn: Shop women, In stock, Auburn gifts…) is headed by that rule */
+  var RULE_HEAD = {
+    'auburn-womens-specialty': ['Auburn women’s,', 'on the Plains.'], 'auburn-adult-apparel': ['Auburn tees,', 'crewnecks & quarter-zips.'],
+    'auburn-kids-specialty': ['Auburn girls & kids,', 'on the Plains.'], 'auburn-kids-apparel': ['Auburn kids’', 'tees & crewnecks.'],
+    'auburn-mens-collection': ['Auburn men’s,', 'on the Plains.'], 'auburn-hat-collection-1': ['Auburn', 'hats.'],
+    'auburn-accessories-gifts': ['Auburn', 'accessories & gifts.'], 'auburn-university-in-stock-items': ['Auburn,', 'in stock now.'],
+    'auburn-gifts-in-stock': ['Auburn gifts,', 'in stock now.'], 'girls-cheer-dresses': ['Auburn', 'cheer dresses.'],
+    'auburn-basketball': ['Auburn', 'basketball.'], 'original-aubie-basketball': ['The Original', 'Aubie.'], 'closeout-sale': ['Auburn,', 'on sale.'],
+    // signature lines (their titles name the line): "The Alli, on the Plains."
+    'the-alli-collection': ['The Alli,', 'on the Plains.'], 'the-ava-collection': ['The Ava,', 'on the Plains.'],
+    'the-becca-collection': ['The Becca,', 'on the Plains.'], 'the-kristen-collection': ['The Kristen,', 'on the Plains.'],
+    'mallory-gingham-mocknecks': ['The Mallory,', 'on the Plains.'], 'grace-gingham-dresses': ['The Grace,', 'on the Plains.'],
+    'the-madi-collection': ['The Madi,', 'on the Plains.']
+  };
+  function normQs(qs) {
+    var u = new URLSearchParams(qs), o = [];
+    ['c', 'school', 'who', 'cat', 'ship', 'sale', 'q'].forEach(function (k) {
+      var v = u.get(k);
+      if (v) o.push(k + '=' + (k === 'cat' ? v.split(',').sort().join(',') : v.toLowerCase()));
+    });
+    return o.join('&');
+  }
+  var RULE = (function () {
+    if (!D.partial || V.c !== 'auburn' || V.school !== 'auburn') return '';
+    var cur = normQs(location.search);
+    var keys = Object.keys(RULE_HEAD);
+    for (var i = 0; i < keys.length; i++) {
+      var d = SG.fromAuburn(keys[i]);
+      if (d && normQs(d.url.split('?')[1] || '') === cur) return keys[i];
+    }
+    return '';
+  })();
+  /* a rule view lists exactly the rule's pieces: its who / cat / ship / sale are the BASE of what is listed (so no
+     filter pills, no ticked boxes, a filter count of 0, and the results count is out of the rule's own pieces), never
+     shopper filters. RULE_F is that base as a filter object; F only ever holds what the shopper adds on top. */
+  var RULE_F = null;
+  if (RULE) {
+    var ru = new URLSearchParams(SG.fromAuburn(RULE).url.split('?')[1] || '');
+    RULE_F = emptyFilters();
+    RULE_F.who = WHO[ru.get('who')] ? ru.get('who') : ''; RULE_F.cat = splitList(ru.get('cat'));
+    RULE_F.ship = SHIP[ru.get('ship')] ? ru.get('ship') : ''; RULE_F.sale = ru.get('sale') === '1';
+  }
+  /* the shopper's own filters from URL state s (a rule view's base values are not the shopper's) */
+  function ownFilters(s) {
+    var f = filtersOf(s);
+    if (!RULE_F) return f;
+    if (f.who === RULE_F.who) f.who = '';
+    if (f.cat.slice().sort().join() === RULE_F.cat.slice().sort().join()) f.cat = [];
+    if (f.ship === RULE_F.ship) f.ship = '';
+    if (f.sale === RULE_F.sale) f.sale = false;
+    return f;
+  }
+  F = ownFilters(URL0);
 
   /* ---------- titles ---------- */
   var TITLE_FIX = {
@@ -108,6 +172,7 @@
     var f = { sch: V.school || null, q: V.q || null };
     if (C) f.cols = [C];
     var list = unknownC ? [] : SG.products(f);
+    if (RULE_F) list = list.filter(function (p) { return pass(p, RULE_F); });   // a rule view: exactly the rule's pieces
     return V.school ? list : SG.auburnFirst(list);
   }
   var SRC = sourceList();
@@ -117,6 +182,19 @@
     return SIZES[p.h];
   }
   function lower(a) { return a.map(function (x) { return String(x).toLowerCase(); }); }
+  /* colours the filter offers and matches: only colours with an available variant (as the size filter), by the name
+     shoppers read (SG.colorName: "Bella + Canvas Navy" is Navy) */
+  var COLS_AV = Object.create(null);
+  function availColors(p) {
+    if (COLS_AV[p.h]) return COLS_AV[p.h];
+    var V = p.v || [], out = [];
+    (p.co || []).forEach(function (c) {
+      var ok = !V.length ? !!p.av : V.some(function (v) { return v[1] === c && v[2]; });
+      var n = SG.colorName(c);
+      if (ok && out.indexOf(n) < 0) out.push(n);
+    });
+    return (COLS_AV[p.h] = out);
+  }
   function range(v) {
     var m = /^(\d+(?:\.\d+)?)-(\d+(?:\.\d+)?)?$/.exec(v || '');
     return m ? [+m[1], m[2] ? +m[2] : Infinity] : null;
@@ -126,13 +204,13 @@
   function pass(p, f, skip) {
     if (skip !== 'who' && f.who && p.who !== f.who) return false;
     if (skip !== 'cat' && f.cat.length && f.cat.indexOf(p.cat) < 0) return false;
-    if (skip !== 'ship' && f.ship && SG.shipKind(p) !== f.ship) return false;
+    if (skip !== 'ship' && f.ship && (SG.shipKind(p) !== f.ship || SG.isSoldOut(p))) return false;   // "In stock" never lists a sold-out piece
     if (skip !== 'size' && f.size.length) {
       var as = availSizes(p);
       if (!f.size.some(function (s) { return as.indexOf(s) > -1; })) return false;
     }
     if (skip !== 'color' && f.color.length) {
-      var want = lower(f.color), co = lower(p.co || []);
+      var want = lower(f.color), co = lower(availColors(p));
       if (!want.some(function (c) { return co.indexOf(c) > -1; })) return false;
     }
     if (skip !== 'price' && f.price) {
@@ -144,7 +222,8 @@
   }
   function sortList(list, by) {
     var idx = list.map(function (p, i) { return [p, i]; });
-    if (by === 'new') idx.sort(function (a, b) { return (b[0]['new'] || 0) - (a[0]['new'] || 0) || String(b[0].pub || '').localeCompare(String(a[0].pub || '')) || a[1] - b[1]; });
+    // newest = most recently CREATED (they re-publish older styles for a new season, so pub is not age)
+    if (by === 'new') idx.sort(function (a, b) { return (b[0]['new'] || 0) - (a[0]['new'] || 0) || String(b[0].cr || b[0].pub || '').localeCompare(String(a[0].cr || a[0].pub || '')) || a[1] - b[1]; });
     if (by === 'price-asc') idx.sort(function (a, b) { return a[0].p - b[0].p || a[1] - b[1]; });
     if (by === 'price-desc') idx.sort(function (a, b) { return b[0].p - a[0].p || a[1] - b[1]; });
     var out = idx.map(function (x) { return x[0]; });
@@ -152,7 +231,9 @@
     return out.filter(function (p) { return p.av !== 0; }).concat(out.filter(function (p) { return p.av === 0; }));
   }
   function sizeRank(s) {
-    var i = SIZE_ORDER.indexOf(String(s).toUpperCase());
+    var u = String(s).toUpperCase(), i = SIZE_ORDER.indexOf(u);
+    var m = i < 0 ? /^(\d+)\/\d+$/.exec(u) : null;   // '6/7', '10/12' sit just after 6, 10
+    if (m && SIZE_ORDER.indexOf(m[1]) > -1) return SIZE_ORDER.indexOf(m[1]) + 0.5;
     return i < 0 ? 999 : i;
   }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
@@ -183,7 +264,10 @@
   };
   var HEAD = {
     'auburn': ['col:auburn'].concat(EDITORIAL_AU),
-    'auburn-womens-specialty': [{ k: 'auburn-blue-cropped-crewneck-model', pos: '50% 12%' }, { k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }],
+    'auburn-womens-specialty': [{ k: 'four-models-sets', pos: '50% 30%' }, { k: 'auburn-blue-cropped-crewneck-model', pos: '50% 12%' }, { k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }],
+    'auburn-hat-collection-1': ['col:auburn-hat-collection-1', { k: 'p:the-vintage-war-eagle-hat-navy-natural#1', pos: '50% 30%' }, 'rule:auburn-hat-collection-1'],
+    'auburn-accessories-gifts': ['col:auburn-accessories-gifts', { k: 'p:the-auburn-university-needlepoint-pillow', pos: '50% 50%' }, 'rule:auburn-accessories-gifts'],
+    'auburn-gifts-in-stock': [{ k: 'p:the-auburn-university-needlepoint-pillow', pos: '50% 50%' }, 'rule:auburn-gifts-in-stock'],
     'auburn-adult-apparel': [{ k: 'group-auburn-tees-outdoor', pos: '50% 40%' }, 'auburn-tee-grid-flatlay-2'],
     'auburn-adult-tees-fleece-2026': ['auburn-tee-grid-flatlay-2', { k: 'group-auburn-tees-outdoor', pos: '50% 40%' }],
     'auburn-kids-apparel': ['col:auburn-kids-apparel', { k: 'auburn-cheer-dress-flat', pos: '50% 45%' }],
@@ -226,6 +310,7 @@
   function headCandidates() {
     var list = (C && HEAD[C]) || (C && COLS[C] && COLS[C].img ? ['col:' + C] : []);
     if (V.school === 'auburn' && !V.c) list = EDITORIAL_AU;
+    if (RULE) list = (HEAD[RULE] || []).concat(['rule:' + RULE], EDITORIAL_AU);   // a rule view: its own photo (women → the sets photo…)
     var ok = list.filter(function (cand) { return photoOk(SG.photo(cand, 1200)); });
     if (!ok.length && auburnLabel && !(C && MADE[C])) ok = EDITORIAL_AU;
     return ok;
@@ -235,6 +320,7 @@
     var out = [['Home', 'index.html']];
     if (searchOnly) out.push(['Search', null]);
     else if (V.school && !V.c) { out.push(['Shop your school', 'index.html#schools']); out.push([SCH.name, null]); }
+    else if (V.school === 'auburn' && C === 'auburn') out.push(['Shop Auburn', null]);   // the Auburn collection, Auburn pieces only
     else {
       if (V.school) out.push([SCH.name, SG.shopUrl({ school: V.school })]);
       else if (C && /auburn|aubie/.test(C) && C !== 'auburn') out.push(['Auburn', 'auburn.html']);
@@ -255,15 +341,15 @@
     if (unknownC) { o.l1 = 'We couldn’t find'; o.l2 = 'that collection.'; o.title = 'Collection not found'; o.lede = JORDAN_HARE; return o; }
     if (V.school && !V.c) {
       o.eyebrow = 'Shop your school';
-      if (V.school === 'auburn') { o.dot = true; o.l1 = 'Shop Auburn,'; o.l2 = 'every piece.'; o.lede = JORDAN_HARE; o.title = 'Shop Auburn'; }
+      if (V.school === 'auburn') { o.dot = true; o.l1 = 'Shop Auburn,'; o.l2 = partialView ? 'on the Plains.' : 'every piece.'; o.lede = JORDAN_HARE; o.title = 'Shop Auburn'; }
       else { o.l1 = SCH.name + ','; o.l2 = 'officially licensed.'; o.lede = SCHOLARSHIP; o.title = 'Shop ' + SCH.name; }
       return o;
     }
     var t = pretty(C);
     // "our home team" belongs to the Auburn hub; the shop's Auburn page is one step deeper
-    var parts = C === 'auburn' && (!V.school || V.school === 'auburn') ? ['Shop Auburn,', 'every piece.'] : splitTitle(t, V.school ? SCH.name : null);
+    var parts = RULE ? RULE_HEAD[RULE] : C === 'auburn' && (!V.school || V.school === 'auburn') ? ['Shop Auburn,', partialView ? 'on the Plains.' : 'every piece.'] : splitTitle(t, V.school ? SCH.name : null);
     o.l1 = parts[0]; o.l2 = parts[1];
-    o.title = V.school && t.indexOf(SCH.name) !== 0 ? SCH.name + ' ' + parts[1] : (C === 'auburn' ? 'Shop Auburn' : t);
+    o.title = RULE ? (parts[0] + ' ' + parts[1]).replace(/[,.]/g, '') : V.school && t.indexOf(SCH.name) !== 0 ? SCH.name + ' ' + parts[1] : (C === 'auburn' ? 'Shop Auburn' : t);
     if (auburnLabel) { o.eyebrow = 'Our home team'; o.dot = true; }
     if (C === 's-g-christmas') o.eyebrow = 'The Christmas collection';
     else if (SIGNATURES.indexOf(C) > -1) o.eyebrow = 'Our own designs';
@@ -296,6 +382,9 @@
       'auburn-best-sellers': 'Our favorite styles sell out fast. Get on the List for early access to new drops and restock alerts.'
     };
     o.lede = L[C] || (SIGNATURES.indexOf(C) > -1 ? 'Cute, comfy, and made to wear long after the final whistle.' : (otherSchool ? SCHOLARSHIP : (auburnLabel ? JORDAN_HARE : SCHOLARSHIP)));
+    // partial data: an unloaded made-to-order collection's page links to derived pieces with mixed ship times, so its
+    // ship-time lede (true of the collection, not of those pieces) gives way to the plain one
+    if (C && D.partial && !SG.loaded(C) && /^Made to order/.test(o.lede) && SG.fromAuburn(C)) o.lede = JORDAN_HARE;
     if (V.school === 'auburn' && C === 'girls-cheer-dresses') o.lede = L[C];
     return o;
   }
@@ -311,11 +400,23 @@
       (has.mto ? '<li><i class="sh-dot sh-dot--mto" aria-hidden="true"></i>Made for you in Auburn · 10–14 business days</li>' : '') + '</ul>';
   }
 
+  var EXT = function (label) { return label + SG.icons.ext + '<span class="sr"> (opens their store in a new tab)</span>'; };
+  /* "first N of M" note for a view built from partially loaded collections, with a link to the rest on their store */
+  function partialNote() {
+    if (!partialView || !SRC.length) return '';
+    var h = C && SG.isPartial(C) ? C : (PART.length === 1 ? PART[0] : '');
+    var live = searchOnly ? 'https://scarletandgoldshop.com/search?q=' + encodeURIComponent(V.q) : SG.liveUrl(h || 'all');
+    var what = h ? 'the first <strong>' + fmt(SG.loaded(h)) + '</strong> of their <strong>' + fmt(SG.total(h)) + '</strong> ' + SG.esc(h === 'auburn' ? 'Auburn' : pretty(h)) + ' styles'
+      : '<strong>' + fmt(CATALOGUE) + '</strong> of their styles';
+    var lead = C && C === h && !V.school && !V.q ? 'Showing ' + what + ' in this preview.' : 'This preview has ' + what + ' loaded' + (searchOnly ? ', so this search covers those.' : '.');
+    return '<p class="sh-partial">' + lead + ' <a class="sh-partial__a" href="' + SG.esc(live) + '" target="_blank" rel="noopener">' +
+      EXT(searchOnly ? 'Search their full catalogue' : 'See every style on their store') + '</a></p>';
+  }
   function renderMeta() {
     var n = C && COLS[C] && !V.school && !V.q ? COLS[C].n : 0;
     var count = SRC.length ? ''   /* the results bar carries the live count */
       : (n ? '<p class="sh-head__count"><strong>' + fmt(n) + '</strong> styles in the live collection</p>' : '');
-    $('[data-sh="meta"]').innerHTML = searchOnly && !SRC.length ? '' : count + legendHTML();
+    $('[data-sh="meta"]').innerHTML = searchOnly && !SRC.length ? '' : count + partialNote() + legendHTML();
   }
 
   function renderHead() {
@@ -339,11 +440,20 @@
     renderMeta();
     if (SRC.length) head.classList.add('has-products');
 
-    // media: a real collection photo when it's appropriate, else editorial, else a designed tile
+    // media: a real collection photo when it's appropriate, else editorial, else a designed tile. Phones listing products skip
+    // it, so the first row of cards is in the first screen (and the decorative photo is never downloaded there)
     if (searchOnly) return;
+    var phoneList = SRC.length && window.matchMedia('(max-width: 719px)').matches;
     var media = $('[data-sh="media"]');
-    var ph = unknownC ? null : SG.pickPhoto(headCandidates(), 1200, true, { ratio: 1.3 });
     var tile = V.school ? '<span class="sh-head__tile"><img src="' + SG.esc(SG.img(SCH.img, 400)) + '" alt="' + SG.esc(SCH.name) + '" width="400" height="400" decoding="async"></span>' : '';
+    if (phoneList) {   // phones listing products: only the school's own tile (small), never the decorative photo
+      if (!tile) return;
+      media.innerHTML = tile;
+      media.hidden = false;
+      head.classList.add('has-media');
+      return;
+    }
+    var ph = unknownC ? null : SG.pickPhoto(headCandidates(), 1200, true, { ratio: 1.3 });
     if (ph) {
       var torso = ph.isTorso;   // torso crops (SG.pickPhoto): a wide 1.3 frame, anchored at the bottom
       var r = torso ? 1.3 : Math.min(1.5, Math.max(0.8, ph.w / ph.h));
@@ -371,7 +481,8 @@
      ====================================================================== */
   function renderSwitch() {
     var chips = [['All Auburn', 'auburn']].concat(SG.nav.auburn);
-    var curC = (!V.school || V.school === 'auburn') && !searchOnly ? (V.c || (V.school === 'auburn' ? 'auburn' : C)) : '';
+    var curC = RULE ? (RULE === 'auburn-womens-specialty' ? '' : RULE)   // (the women rule is every Auburn women's piece, not that collection)
+      : ((!V.school || V.school === 'auburn') && !searchOnly ? (V.c || (V.school === 'auburn' ? 'auburn' : C)) : '');
     var el = $('[data-sh="chips"]');
     el.innerHTML = chips.map(function (ch) {
       var on = ch[1] === curC;
@@ -458,7 +569,7 @@
     }
     // Ships
     var shipBase = SRC.filter(function (p) { return pass(p, f, 'ship'); });
-    var shipT = tally(shipBase, function (p) { var k = SG.shipKind(p); return SHIP[k] ? k : null; });
+    var shipT = tally(shipBase, function (p) { var k = SG.shipKind(p); return SHIP[k] && !SG.isSoldOut(p) ? k : null; });
     if (distinct(function (p) { return SG.shipKind(p); }).length > 1 || f.ship) {
       html += group(scope, 'ship', 'Ships', f.ship ? 1 : 0, '<ul class="sh-opts">' +
         opt('radio', 'ship', '', 'Any', shipBase.length, !f.ship) +
@@ -482,14 +593,14 @@
     }
     // Colour
     var colBase = SRC.filter(function (p) { return pass(p, f, 'color'); });
-    var colT = tally(colBase, function (p) { return p.co || []; });
+    var colT = tally(colBase, availColors);
     var cols = Object.keys(colT).sort(function (a, b) { return colT[b] - colT[a] || a.localeCompare(b); });
     f.color.forEach(function (c) { if (lower(cols).indexOf(c.toLowerCase()) < 0) cols.push(c); });
-    if (distinct(function (p) { return p.co || []; }).length > 1 || f.color.length) {
+    if (distinct(availColors).length > 1 || f.color.length) {
       var colAll = UI[scope].all.color, CL = 10, want = lower(f.color);
       html += group(scope, 'color', 'Colour', f.color.length, '<ul class="sh-opts">' + cols.map(function (c, i) {
         var on = want.indexOf(c.toLowerCase()) > -1;
-        var sw = '<i class="sh-sw" style="--c:' + SG.colorHex(c) + '" aria-hidden="true"></i>';
+        var sw = '<i class="sh-sw" style="--c:' + SG.colorBg(c) + '" aria-hidden="true"></i>';
         var li = opt('checkbox', 'color', c, c, colT[c] || 0, on, sw);
         return i >= CL && !colAll && !on ? li.replace('<li>', '<li hidden>') : li;
       }).join('') + '</ul>', moreToggle(scope, 'color', cols.length, CL));
@@ -579,7 +690,7 @@
     f.color.forEach(function (c) { out.push(['color', c, c]); });
     if (f.price) out.push(['price', f.price, priceLabel(f.price)]);
     if (f.sale) out.push(['sale', '1', 'On sale']);
-    if (V.q && !searchOnly) out.push(['q', V.q, '“' + V.q + '”']);
+    if (V.q && !searchOnly && !RULE) out.push(['q', V.q, '“' + V.q + '”']);   // (a line rule's own words are its base)
     if (!out.length) return '';
     return out.map(function (p) {
       return '<li><button type="button" class="sh-pill" data-rm="' + p[0] + '" data-v="' + SG.esc(p[1]) + '" aria-label="Remove filter: ' + SG.esc(p[2]) + '">' +
@@ -588,16 +699,17 @@
   }
 
   function writeUrl() {
+    var R = RULE_F || emptyFilters();   // a rule view keeps its base in the URL; a shopper filter in the same group narrows it
     var url = SG.shopUrl({
-      c: V.c, school: V.school, q: V.q, who: F.who, cat: F.cat, ship: F.ship, size: F.size, color: F.color, price: F.price,
-      sale: F.sale ? '1' : '', sort: V.sort !== 'featured' ? V.sort : ''
+      c: V.c, school: V.school, q: V.q, who: F.who || R.who, cat: F.cat.length ? F.cat : R.cat, ship: F.ship || R.ship, size: F.size, color: F.color, price: F.price,
+      sale: F.sale || R.sale ? '1' : '', sort: V.sort !== 'featured' ? V.sort : ''
     });
     try { history.replaceState({ shown: shown }, '', url); } catch (e) { /* file:// or sandboxed */ }
   }
 
   function renderResults(focusFrom) {
     RES = sortList(SRC.filter(function (p) { return pass(p, F); }), V.sort);
-    var total = SRC.length, n = RES.length, act = activeCount(F) + (V.q && !searchOnly ? 1 : 0);
+    var total = SRC.length, n = RES.length, act = activeCount(F) + (V.q && !searchOnly && !RULE ? 1 : 0);
     countEl.innerHTML = n === total ? '<strong>' + fmt(n) + '</strong> ' + (n === 1 ? 'style' : 'styles')
       : '<strong>' + fmt(n) + '</strong> of ' + plural(total, 'style');
     pillsEl.innerHTML = pillsHTML(F);
@@ -610,12 +722,17 @@
     sortEl.value = V.sort;
 
     shown = Math.min(Math.max(PER, shown), Math.max(PER, n));
-    SG.grid(gridEl, RES.slice(0, shown), { hide: gridEl, card: { school: mixed, ship: true } });   // SG.card marks sold-out styles
+    var whoNow = F.who || (RULE_F ? RULE_F.who : '');
+    var cardOpts = { school: mixed ? (auburnLabel ? 'others' : true) : false, ship: true, fam: whoNow === 'women' || whoNow === 'men' ? 'adult' : null };   // SG.card marks sold-out styles
+    if (focusFrom != null && focusFrom > 0 && gridEl.children.length === focusFrom) {
+      // "Show more": append only the next cards (the ones already shown stay as they are)
+      gridEl.insertAdjacentHTML('beforeend', RES.slice(focusFrom, shown).map(function (p) { return '<div role="listitem">' + SG.card(p, cardOpts) + '</div>'; }).join(''));
+    } else SG.grid(gridEl, RES.slice(0, shown), { hide: gridEl, card: cardOpts });
 
     if (!n) {
       noneEl.innerHTML = '<p class="sh-none__k">No matches</p>' +
         '<h2 class="h3">Nothing matches <em>all of those.</em></h2>' +
-        '<p>Try removing a filter or two, or clear them all to see every style' + (searchOnly ? ' for “' + SG.esc(V.q) + '”' : '') + '.</p>' +
+        '<p>Try removing a filter or two, or clear them all to see every style' + (searchOnly ? ' for “' + SG.esc(V.q) + '”' : '') + (PART.length ? ' in this preview' : '') + '.</p>' +
         '<button type="button" class="btn btn--scarlet" data-sh-clear>Clear all filters</button>';
     }
     noneEl.hidden = !!n;
@@ -662,7 +779,7 @@
     var cols = Object.keys(COLS).filter(function (h) {
       var t = (COLS[h].t + ' ' + h).toLowerCase();
       return toks.every(function (k) { return t.indexOf(k) > -1 || t.indexOf(k.replace(/s$/, '')) > -1; });
-    }).map(function (h) { return [pretty(h), SG.shopUrl({ c: h }), COLS[h].n ? fmt(COLS[h].n) + ' styles' : '']; });
+    }).map(function (h) { return [pretty(h), SG.shopUrl({ c: h }), countLabel(h)]; });
     return schools.concat(cols).slice(0, 8);
   }
   function linkRows(rows) {
@@ -671,6 +788,25 @@
     }).join('') + '</ul>';
   }
 
+  /* what a derived link (SG.fromAuburn) actually lists: named by its rule, never as the unloaded collection */
+  var DER_LABEL = {
+    'auburn-womens-specialty': 'Auburn women’s pieces', 'auburn-adult-apparel': 'Auburn women’s tees, crewnecks & quarter-zips',
+    'auburn-kids-specialty': 'Auburn girls’ & kids’ pieces', 'auburn-kids-apparel': 'Auburn kids’ tees & crewnecks',
+    'auburn-girls-collection': 'Auburn girls’ & kids’ pieces', 'auburn-adult-tees-fleece-2026': 'Auburn women’s tees, crewnecks & quarter-zips',
+    'auburn-mens-collection': 'Auburn men’s pieces', 'auburn-mens-specialty': 'Auburn men’s pieces', 'auburn-hat-collection-1': 'Auburn hats',
+    'auburn-accessories-gifts': 'Auburn accessories & gifts', 'auburn-university-in-stock-items': 'Auburn pieces in stock now',
+    'auburn-in-stock-sale-eligible': 'Auburn pieces in stock now', 'auburn-basketball': 'Auburn pieces with basketball in the name',
+    'original-aubie-basketball': 'Original Aubie pieces', 'girls-cheer-dresses': 'Auburn cheer dresses', 'closeout-sale': 'Auburn pieces on sale'
+  };
+  /* signature lines read by the line's own name: "see the 14 Becca pieces", "see the 3 Mallory pieces" */
+  var LINE_NAME = { 'the-becca-collection': 'Becca', 'the-alli-collection': 'Alli', 'the-ava-collection': 'Ava', 'the-kristen-collection': 'Kristen',
+    'mallory-gingham-mocknecks': 'Mallory', 'grace-gingham-dresses': 'Grace', 'the-madi-collection': 'Madi' };
+  function derLabel(h, n) {
+    if (DER_LABEL[h]) return DER_LABEL[h];
+    var line = LINE_NAME[h] || pretty(h).replace(/\s+Collection$/, '').replace(/^The\s+/, '');
+    return line + (n === 1 ? ' piece' : ' pieces');
+  }
+  var railCfg = null;
   function renderCatalogueState() {
     var el = $('[data-sh="cat"]');
     var name = unknownC || searchOnly ? '' : (V.school && !V.c ? SCH.name : (C === 'auburn' && !V.school ? 'Auburn' : headCopy().title));
@@ -678,7 +814,12 @@
     var h2, body, ctas, asideH, aside;
     if (searchOnly) {
       var rows = searchMatches(V.q);
-      if (CATALOGUE) {
+      if (CATALOGUE && PART.length) {
+        // partial data: "no match" only means none of the loaded styles match, so say so and point to their search
+        h2 = 'None of the styles in this preview <em class="br">match “' + SG.esc(V.q) + '”.</em>';
+        body = 'This preview has ' + fmt(CATALOGUE) + ' of their styles loaded, so this search only covers those. ' +
+          '<a href="https://scarletandgoldshop.com/search?q=' + encodeURIComponent(V.q) + '" target="_blank" rel="noopener">' + EXT('Search their full catalogue') + '</a>, try a simpler word, or browse the collections.';
+      } else if (CATALOGUE) {
         h2 = 'No styles match <em class="br">“' + SG.esc(V.q) + '”.</em>';
         body = 'Try a simpler word, like “crewneck”, “cheer dress” or a school name, or browse the collections.';
       } else {
@@ -688,22 +829,35 @@
       }
       ctas = '<a class="btn btn--scarlet" href="auburn.html">Shop Auburn</a><a class="btn btn--line-ink" href="index.html#schools">Shop your school</a>';
       asideH = rows.length ? 'Collections &amp; schools that match' : 'Popular right now';
-      aside = linkRows(rows.length ? rows : [['Auburn', SG.shopUrl({ c: 'auburn' }), fmt(COLS.auburn.n) + ' styles'], [pretty('s-g-christmas'), SG.shopUrl({ c: 's-g-christmas' }), ''],
+      aside = linkRows(rows.length ? rows : [['Auburn', SG.shopUrl({ c: 'auburn' }), countLabel('auburn')], [pretty('s-g-christmas'), SG.shopUrl({ c: 's-g-christmas' }), ''],
         [pretty('girls-cheer-dresses'), SG.shopUrl({ c: 'girls-cheer-dresses' }), ''], [pretty('auburn-university-in-stock-items'), SG.shopUrl({ c: 'auburn-university-in-stock-items' }), '']]);
     } else if (unknownC) {
       h2 = 'That collection isn’t <em class="br">in this preview.</em>';
       body = 'The link may be from their current site. Every collection below loads from Scarlet &amp; Gold’s Shopify catalogue.';
       ctas = '<a class="btn btn--scarlet" href="' + SG.shopUrl({ c: 'auburn' }) + '">Shop all Auburn</a><a class="btn btn--line-ink" href="index.html">Back to home</a>';
       asideH = 'Keep browsing';
-      aside = linkRows(otherCollections().map(function (r) { return [r[1] || pretty(r[0]), SG.shopUrl({ c: r[0] }), COLS[r[0]].n ? fmt(COLS[r[0]].n) + ' styles' : '']; }));
+      aside = linkRows(otherCollections().map(function (r) { return [r[1] || pretty(r[0]), SG.shopUrl({ c: r[0] }), countLabel(r[0])]; }));
     } else {
       h2 = (V.school && !V.c ? SG.esc(SCH.name) + ' styles load' : 'This collection loads') + ' from <em class="br">Scarlet &amp; Gold’s Shopify catalogue.</em>';
       body = 'When this preview is connected to their store, ' + (n ? 'all ' + fmt(n) + ' styles in ' + SG.esc(name) + ' appear' : 'every style in ' + SG.esc(name) + ' appears') +
         ' right here, with live sizes, colors, prices and stock, and new drops show up the moment they launch.';
+      // partial data: this collection isn't loaded, but the matching pieces of the loaded Auburn collection are
+      var der = C && !V.school ? SG.fromAuburn(C) : null;
+      var STAND_IN = { 's-g-christmas': 'auburn-gifts-in-stock' };   // no rule of its own: a rule-labelled stand-in
+      var standIn = !der && C && STAND_IN[C] ? SG.fromAuburn(STAND_IN[C]) : null;
+      if (der || standIn) railCfg = { d: der || standIn, h: der ? C : STAND_IN[C] };
+      if (standIn) body += ' Meanwhile, <a href="' + SG.esc(standIn.url) + '">see the ' + standIn.products.length + ' Auburn gifts tagged in stock in this preview</a>.';
+      if (der) {
+        var dn = der.products.length, lbl = derLabel(C, dn);
+        // (no "each card shows how it ships": pieces whose tags give no ship time print no ship line at all)
+        body += ' Meanwhile, <a href="' + SG.esc(der.url) + '">see the ' + dn + ' ' + SG.esc(lbl) + ' in this preview</a>.';
+      }
+      // their live collection is one tap away
+      if (C && !V.school && n) body += ' <a class="sh-cat__live" href="' + SG.esc(SG.liveUrl(C)) + '" target="_blank" rel="noopener">' + EXT('See all ' + fmt(n) + ' on their store') + '</a>';
       ctas = '<a class="btn btn--scarlet" href="#sg-list">Get new-drop alerts</a>' +
         (otherSchool ? '<a class="btn btn--line-ink" href="' + SG.shopUrl({ c: 'auburn' }) + '">Shop Auburn</a>' : '<a class="btn btn--line-ink" href="#sh-depts">Shop by department</a>');
       asideH = otherSchool ? 'Shop Auburn, our home team' : 'Keep browsing';
-      aside = linkRows(otherCollections().map(function (r) { return [r[1] || pretty(r[0]), SG.shopUrl({ c: r[0] }), COLS[r[0]].n ? fmt(COLS[r[0]].n) + ' styles' : '']; }));
+      aside = linkRows(otherCollections().map(function (r) { return [r[1] || pretty(r[0]), SG.shopUrl({ c: r[0] }), countLabel(r[0])]; }));
     }
     el.innerHTML = '<div class="wrap sh-cat__grid">' +
       '<div class="sh-cat__cardwrap"><div class="ticket sh-cat__card">' +
@@ -714,8 +868,14 @@
         '<div class="sh-cat__ctas">' + ctas + '</div>' +
       '</div></div>' +
       '<div class="sh-cat__aside"><p class="eyebrow">' + asideH + '</p>' + aside + '</div>' +
-      '</div>';
+      '</div>' +
+      (railCfg ? '<div class="wrap sh-cat__more"><div class="sechead"><div><p class="eyebrow">While the collection loads</p>' +
+        '<h2 class="h3">' + SG.esc(railCfg.h === 'auburn-gifts-in-stock' ? 'Auburn gifts tagged in stock' : derLabel(railCfg.h, railCfg.d.products.length).replace(/^./, function (c) { return c.toUpperCase(); })) + ', <em>in this preview.</em></h2></div>' +
+        '<div class="sechead__side"><a class="tlink" href="' + SG.esc(railCfg.d.url) + '">See all ' + railCfg.d.products.length + '</a><div data-sh="cat-nav"></div></div></div>' +
+        '<div data-sh="cat-rail"></div></div>' : '');
     el.hidden = false;
+    if (railCfg) SG.rail($('[data-sh="cat-rail"]', el), railCfg.d.products, { limit: 12, nav: $('[data-sh="cat-nav"]', el), hide: $('.sh-cat__more', el),
+      card: { school: false, ship: true, fam: railCfg.d.who === 'women' || railCfg.d.who === 'men' ? 'adult' : null } });   // Women / Men price from adult sizes
   }
 
   /* ======================================================================
@@ -726,19 +886,20 @@
   var DEPTS = [
     { t: 'Women', c: 'auburn-womens-specialty', img: ['col:auburn-womens-specialty', { k: 'four-models-sets', pos: '50% 30%' }, { k: 'auburn-blue-cropped-crewneck-model', pos: '50% 10%' },
       { k: 'auburn-embroidered-crewneck-model', pos: '50% 10%' }], made: { patch: 'Auburn women', dot: true, note: 'Women’s XS–2XL' } },
-    { t: 'Hats', c: 'auburn-hat-collection-1', img: ['col:auburn-hat-collection-1'], made: { patch: 'Auburn hats', dot: true, note: 'Local pickup at our Auburn shop' } },
+    { t: 'Hats', c: 'auburn-hat-collection-1', img: ['col:auburn-hat-collection-1', { k: 'p:the-vintage-war-eagle-hat-navy-natural#1', pos: '50% 30%' }, 'rule:auburn-hat-collection-1'], made: { patch: 'Auburn hats', dot: true, note: 'Local pickup at our Auburn shop' } },
     { t: 'Girls & kids', c: 'auburn-kids-specialty', img: ['col:auburn-kids-specialty', { k: 'mom-mini-auburn-stripes', pos: '30% 40%' }, { k: 'auburn-cheer-dress-flat', pos: '50% 45%' }],
       made: { patch: 'Girls & kids', dot: true, note: 'Girls’ sizes from 12M' } },
-    { t: 'Gifts', c: 'auburn-accessories-gifts', img: ['col:auburn-accessories-gifts'], made: { big: '&', note: 'Little extras for every Auburn fan' } },
+    { t: 'Gifts', c: 'auburn-accessories-gifts', img: ['col:auburn-accessories-gifts', { k: 'p:the-auburn-university-needlepoint-pillow', pos: '50% 50%' }, 'rule:auburn-accessories-gifts'], made: { big: '&', note: 'Little extras for every Auburn fan' } },
     { t: 'Tees & fleece', c: 'auburn-adult-apparel', img: ['col:auburn-adult-apparel', { k: 'auburn-tee-grid-flatlay-2', pos: '50% 50%' }, { k: 'auburn-tee-grid-flatlay', pos: '50% 50%' }],
       made: { patch: 'Tees & fleece', dot: true, note: 'Printed or embroidered in Auburn' } },
-    { t: 'In stock now', c: 'auburn-university-in-stock-items', made: { patch: 'In stock', dot: true, note: 'Ships in 5–7 business days' } },
-    { t: 'Men', c: 'auburn-mens-collection', img: ['col:auburn-mens-collection'], made: { patch: 'Auburn men', dot: true, note: 'For the men in your crew' } }
+    { t: 'In stock now', c: 'auburn-university-in-stock-items', img: ['rule:auburn-university-in-stock-items'], made: { patch: 'In stock', dot: true, note: 'Ships in 5–7 business days' } },
+    { t: 'Men', c: 'auburn-mens-collection', img: ['col:auburn-mens-collection', 'rule:auburn-mens-collection'], made: { patch: 'Auburn men', dot: true, note: 'For the men in your crew' } }
   ];
   function renderDepts(empty) {
     var band = $('[data-sh="depts-band"]');
     if (otherSchool) { band.hidden = true; return; }
-    var items = DEPTS.filter(function (d) { return d.c !== C; }).slice(0, 6);
+    var items = DEPTS.filter(function (d) { return d.c !== C && d.c !== RULE; }).slice(0, 6)
+      .map(function (d) { return d.c === 'auburn-adult-apparel' ? d : Object.assign({}, d, { href: SG.ctaUrl(d.c) }); });   // (the tees tile names a collection)
     SG.deptTiles($('[data-sh="depts"]'), items);
     $('[data-sh="depts-title"]').innerHTML = empty ? 'Shop Auburn <em>by department.</em>' : 'Keep shopping <em>Auburn.</em>';
     band.hidden = false;
@@ -803,6 +964,7 @@
     renderCatalogueState();
   }
   renderDepts(!hasList);
+  document.documentElement.classList.remove('sg-wait');   // the real view is in: show it (shop.html head script hid the placeholder)
 
   /* ---------- events ---------- */
   sortEl.addEventListener('change', function () { V.sort = sortEl.value; shown = PER; renderResults(); });
@@ -826,7 +988,7 @@
       return;
     }
     if (t.closest('[data-sh-clear]')) {
-      var hadQ = V.q && !searchOnly;
+      var hadQ = V.q && !searchOnly && !RULE;
       if (hadQ) { V.q = ''; SRC = sourceList(); renderMeta(); }
       setFilters(emptyFilters());
       return;
@@ -854,6 +1016,6 @@
     var s = readUrl();
     if (s.c !== V.c || s.school !== V.school || s.q !== V.q) { location.reload(); return; }
     V.sort = s.sort;
-    if (hasList) { F = filtersOf(s); renderResults(); }
+    if (hasList) { F = ownFilters(s); renderResults(); }
   });
 })();

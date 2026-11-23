@@ -29,8 +29,8 @@
   var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
   SG.esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ESC[c]; }); };
 
-  var WIDTHS = [400, 600, 900, 1200, 1600];
-  /** Image URL. Local paths (img/, assets/, http) pass through; catalogue paths get the Shopify CDN + ?width= (400/600/900/1200/1600). */
+  var WIDTHS = [200, 400, 600, 900, 1200, 1600];
+  /** Image URL. Local paths (img/, assets/, http) pass through; catalogue paths get the Shopify CDN + ?width= (200/400/600/900/1200/1600). */
   SG.img = function (path, w) {
     if (!path) return '';
     if (/^(https?:)?\/\//.test(path) || /^(img|assets)\//.test(path) || path.indexOf('data:') === 0) return path;
@@ -43,6 +43,19 @@
     n = Number(n);
     if (!isFinite(n)) return '';
     return '$' + (Math.round(n * 100) % 100 ? n.toFixed(2) : String(Math.round(n)));
+  };
+
+  /** "The Brooke Crewneck | Orange & Blue Striped" → name + a muted variant line (cls__name / cls__var), so the pipe never starts a line */
+  SG.titleHTML = function (t, cls, hideName) {
+    t = String(t || '');
+    var i = t.lastIndexOf(' | ');
+    if (i < 3 || i > t.length - 4) return SG.esc(t);
+    var a = t.slice(0, i), b = t.slice(i + 3);
+    // one-line rails (the rail head already names the line): the variant is the title ("Ice Blue Fleece Crew")
+    if (hideName) return '<span class="' + cls + '__name">' + SG.esc(b.replace(/^adult\s+/i, '')) + '</span><span class="sr"> (' + SG.esc(a) + ')</span>';
+    // "The Auburn University | Navy Classic Cheer Dress": the product leads, the school is the muted line
+    if (/^the (collegiate )?auburn university$/i.test(a)) return '<span class="' + cls + '__name">' + SG.esc(b) + '</span><span class="sr"> | </span><span class="' + cls + '__var">' + SG.esc(a) + '</span>';
+    return '<span class="' + cls + '__name">' + SG.esc(a) + '</span><span class="sr"> | </span><span class="' + cls + '__var">' + SG.esc(b) + '</span>';
   };
 
   SG.qs = function (name) { try { return new URLSearchParams(location.search).get(name); } catch (e) { return null; } };
@@ -105,6 +118,78 @@
     return f.limit ? list.slice(0, f.limit) : list;
   };
 
+  /* ---------- partial data (brief/data-schema.md "Partial data") ----------
+     SG.loaded(h)   → how many of collection h's products this preview actually has (0 = not loaded)
+     SG.total(h)    → THEIR real total for h (cols[h].n), or null
+     SG.isPartial(h)→ loaded, but fewer than their total: say "the first N of M", never imply it is everything
+     SG.liveUrl(h)  → their live collection page (where the rest is)
+     SG.fromAuburn(h) → for an Auburn department/feature collection that is NOT loaded, the matching pieces of the loaded
+       main Auburn collection by a rule read from their own data (audience, category, their in-stock tags, their tags or
+       the line their titles name), with a shop URL that lists exactly those pieces. Callers label the result by that
+       rule (Women, Hats, In stock now…), never with the unloaded collection's name. null when h is loaded, has no rule,
+       or nothing matches. */
+  SG.loaded = function (h) { return SG.collection(h).length; };
+  SG.total = function (h) { return COLS[h] && COLS[h].n ? Number(COLS[h].n) : null; };
+  SG.isPartial = function (h) { var n = SG.loaded(h), t = SG.total(h); return !!(n && t && n < t); };
+  SG.liveUrl = function (h) { return 'https://scarletandgoldshop.com/collections/' + encodeURIComponent(h); };
+  var titleLine = function (name) { var rx = new RegExp('^the ' + name + '\\b', 'i'); return function (p) { return rx.test(p.t || ''); }; };
+  var hasTag = function (tag) { return function (p) { return (p.tags || []).some(function (t) { return String(t).toLowerCase() === tag; }); }; };
+  /* department rails list clothing only (no blanket in Women); program-webstore pieces and kids-cut pieces in an adult
+     department are kept (so the shop link's count still matches) but go to the back of the rail */
+  var WEAR = ['cheer-dress', 'dress', 'set', 'skort', 'shorts', 'tank', 'mockneck', 'quarter-zip', 'crewneck', 'long-sleeve', 'tee', 'other'];
+  var wear = function (p) { return WEAR.indexOf(p.cat) > -1; };
+  var DERIVE = {
+    'auburn-womens-specialty': [{ who: 'women', cat: WEAR }, function (p) { return p.who === 'women' && wear(p); }, 'adult'],
+    'auburn-adult-apparel': [{ who: 'women', cat: ['tee', 'long-sleeve', 'crewneck', 'quarter-zip'] }, function (p) { return p.who === 'women' && ['tee', 'long-sleeve', 'crewneck', 'quarter-zip'].indexOf(p.cat) > -1; }],
+    'auburn-kids-specialty': [{ who: 'kids', cat: WEAR }, function (p) { return p.who === 'kids' && wear(p); }],
+    'auburn-kids-apparel': [{ who: 'kids', cat: ['tee', 'long-sleeve', 'crewneck', 'quarter-zip'] }, function (p) { return p.who === 'kids' && ['tee', 'long-sleeve', 'crewneck', 'quarter-zip'].indexOf(p.cat) > -1; }],
+    'auburn-mens-collection': [{ who: 'men', cat: WEAR }, function (p) { return p.who === 'men' && wear(p); }, 'adult'],
+    'auburn-hat-collection-1': [{ cat: ['hat'] }, function (p) { return p.cat === 'hat'; }],
+    'auburn-accessories-gifts': [{ cat: ['accessory', 'scarf', 'bow'] }, function (p) { return ['accessory', 'scarf', 'bow'].indexOf(p.cat) > -1; }],
+    'auburn-university-in-stock-items': [{ ship: 'in' }, function (p) { return SG.shipKind(p) === 'in' && !SG.isSoldOut(p); }],   // in stock NOW: sold-out pieces never count
+    'girls-cheer-dresses': [{ cat: ['cheer-dress'] }, function (p) { return p.cat === 'cheer-dress'; }],
+    'closeout-sale': [{ sale: '1' }, function (p) { return !!(p.cp && p.cp > p.p); }],   // pieces with a compare-at price, NOT their Closeout Sale collection
+    'auburn-basketball': [{ q: 'basketball' }, function (p) { return hasTag('basketball')(p) && /basketball/i.test(p.t); }],
+    'original-aubie-basketball': [{ q: 'original aubie' }, function (p) { return hasTag('original-aubie-basketball')(p) && /original aubie/i.test(p.t); }],
+    'the-alli-collection': [{ q: 'the alli' }, titleLine('alli')], 'the-ava-collection': [{ q: 'the ava airy' }, titleLine('ava airy')],
+    'the-becca-collection': [{ q: 'the becca' }, titleLine('becca')], 'the-kristen-collection': [{ q: 'the kristen' }, titleLine('kristen')],
+    'mallory-gingham-mocknecks': [{ q: 'the mallory' }, titleLine('mallory')], 'grace-gingham-dresses': [{ q: 'the grace' }, titleLine('grace')],
+    'the-madi-collection': [{ q: 'the madi' }, titleLine('madi')]
+  };
+  // not a collection of theirs: a rule-labelled stand-in ("Auburn gifts, in stock now") while S&G Christmas isn't loaded
+  DERIVE['auburn-gifts-in-stock'] = [{ cat: ['accessory', 'scarf', 'bow'], ship: 'in' }, function (p) { return ['accessory', 'scarf', 'bow'].indexOf(p.cat) > -1 && SG.shipKind(p) === 'in' && !SG.isSoldOut(p); }];
+  DERIVE['auburn-in-stock-sale-eligible'] = DERIVE['auburn-university-in-stock-items'];
+  DERIVE['auburn-mens-specialty'] = DERIVE['auburn-mens-collection'];
+  // unloaded sibling collections land on their department's loaded pieces (labelled by the rule, never by their name)
+  DERIVE['auburn-girls-collection'] = DERIVE['auburn-kids-specialty'];
+  DERIVE['auburn-adult-tees-fleece-2026'] = DERIVE['auburn-adult-apparel'];
+  SG.fromAuburn = function (h) {
+    var r = DERIVE[h];
+    if (!r || SG.loaded(h) || !SG.loaded('auburn')) return null;
+    var list = SG.collection('auburn').filter(function (p) { return p.sch === 'auburn' && r[1](p); });
+    if (!list.length) return null;
+    var kidCut = /\b(kids?|youth|toddler|baby|infant)\b/i;
+    list = list.map(function (p, i) { return [p, (isProgramPiece(p) ? 2 : 0) + (r[2] === 'adult' && (kidCut.test(p.t) || kidCut.test(p.h.replace(/-/g, ' '))) ? 1 : 0), i]; })
+      .sort(function (a, b) { return a[1] - b[1] || a[2] - b[2]; }).map(function (x) { return x[0]; });
+    var u = { c: 'auburn', school: 'auburn' };   // school=auburn: the shop view lists exactly these (no multi-school basics)
+    Object.keys(r[0]).forEach(function (k) { u[k] = r[0][k]; });
+    return { products: list, url: SG.shopUrl(u), who: r[0].who || null };   // who: a Women / Men rule prices cards from adult sizes
+  };
+
+  /**
+   * SG.ctaUrl(h, extra) → where a button labelled by a RULE (Shop women, Shop in stock, Gifts, Cheer, Sale…) should go:
+   * the collection when it is loaded; else, when at least 4 loaded Auburn pieces match its rule, the shop view of
+   * exactly those pieces; else the collection page (which explains it loads from their catalogue). Links that NAME an
+   * unloaded collection (Women's Specialty, Tees & Fleece 2026, S&G Christmas) keep SG.shopUrl({c}).
+   */
+  SG.ctaUrl = function (h, extra) {
+    var u = { c: h };
+    Object.keys(extra || {}).forEach(function (k) { u[k] = extra[k]; });
+    if (SG.loaded(h)) return SG.shopUrl(u);
+    var d = SG.fromAuburn(h);
+    return d && d.products.length >= 4 ? d.url : SG.shopUrl(u);
+  };
+
   /** Stable sort: Auburn products first, merch order otherwise. */
   SG.auburnFirst = function (list) {
     return list.map(function (p, i) { return [p, i]; })
@@ -123,15 +208,19 @@
    *   mto    — Made to Order is "our tees, fleece and Client Collections", printed or embroidered in Auburn, 10–14 business days
    *   vendor — accessories (stickers, notebooks, bottles…) "ship directly from our manufacturer"
    *   check  — anything else not in an In Stock collection: no timeline is claimed ("check the shipping timeline")
-   * data.js marks every non-in-stock piece 'mto', so the finer split is derived here from category + collections.
+   * Full data: data.js marks every non-in-stock piece 'mto', so the finer split is derived here from category + collections.
+   * Partial data (D.partial.ship === 'tags', see brief/data-schema.md): p.ship was read from THEIR tags/vendor and is
+   * honoured as is: 'in' and 'mto' claim their FAQ timelines, null claims nothing ('check'). Never guessed from category.
    */
   var MTO_CATS = { tee: 1, 'long-sleeve': 1, crewneck: 1, 'quarter-zip': 1, mockneck: 1 };
   var VENDOR_CATS = { accessory: 1, bow: 1, book: 1, scarf: 1 };
   var PROGRAM_COLS = Object.create(null);
   (D.programs || []).forEach(function (pr) { if (pr.h) PROGRAM_COLS[pr.h] = 1; });
+  var SHIP_FROM_TAGS = !!(D.partial && D.partial.ship === 'tags');
   SG.shipKind = function (p) {
     if (!p) return 'check';
     if (p.ship === 'in') return 'in';
+    if (SHIP_FROM_TAGS) return p.ship === 'mto' ? 'mto' : 'check';
     if (VENDOR_CATS[p.cat]) return 'vendor';
     var cols = p.cols || [];
     var client = cols.some(function (c) { return PROGRAM_COLS[c]; });
@@ -150,7 +239,7 @@
     if (k === 'in') return long ? 'In stock · ships in 5–7 business days' : 'Ships in 5–7 days';
     if (k === 'mto') return long ? 'Made for you in our Auburn shop · ships in 10–14 business days' : 'Made for you · 10–14 days';
     if (k === 'vendor') return 'Ships from our manufacturer';
-    return long ? 'Check the shipping timeline for this piece before game day' : 'Check shipping timeline';
+    return long ? 'Ship time depends on the piece' : 'Ship time varies';
   };
 
   /** Swatch colour for a colour option name. */
@@ -162,24 +251,75 @@
     'light blue': '#A9C6E3', 'powder blue': '#B7D0E8', 'carolina blue': '#7BAFD4', 'columbia blue': '#9BC4E2', 'baby blue': '#BCD6EE', denim: '#5A7397',
     purple: '#5B3A8C', lavender: '#C3B4DC', lilac: '#C8A9D6', pink: '#F1A7C1', 'light pink': '#F6CCD9', blush: '#F2CFC6', rose: '#D9879A', coral: '#EE7D6B',
     peach: '#F6C3A0', yellow: '#F2C94C', gold: '#C9A44C', mustard: '#C99A2E', green: '#2F7A4B', 'kelly green': '#2E8B3E', forest: '#254D32', olive: '#6B6B3A',
-    sage: '#A9B79A', mint: '#BFE3CF', seafoam: '#A8D8C8', teal: '#1F7A7A', camo: '#6F6A4F', brown: '#6B4A33', chocolate: '#4E3427', gingham: '#9FB3D1'
+    sage: '#A9B79A', mint: '#BFE3CF', seafoam: '#A8D8C8', teal: '#1F7A7A', camo: '#6F6A4F', brown: '#6B4A33', chocolate: '#4E3427', gingham: '#9FB3D1',
+    // colour names in their Auburn catalogue
+    chambray: '#9DB4CC', 'ice blue': '#CFE2EC', terracotta: '#C2683F', bone: '#E9E0CD', 'blue jean': '#6E8BAA', jean: '#6E8BAA', 'stone blue': '#8FA6BA',
+    'heritage blue': '#4F6F96', 'columbia blue': '#9BC4E2', 'flint blue': '#6D7F95', azure: '#5C8FC8', crunchberry: '#D9507E', orchid: '#C37FB6',
+    ballerina: '#F2C9D2', taupe: '#A3907A', 'warm taupe': '#A3907A', steel: '#8A9099', beige: '#D8C7A8', 'soft beige': '#DDCDB0', frost: '#DDE6EC',
+    'oatmeal heather': '#DCD2BF', 'natural heather': '#E3DACA', 'flint blue heather': '#7D8DA0', 'athletic heather': '#B9B9B9', 'dark heather': '#5A5C61',
+    'deep orange': '#D9531E', 'bright orange': '#F26B1D', 'bright red': '#D7262E', 'deep red': '#9E1B23', 'neon orange': '#FF6A1A', 'night navy': '#1B2440'
+  };
+  /* a colour word followed by a modifier keeps its base ("Navy Frost" is navy, "Oatmeal Heather" is oatmeal) */
+  var MODIFIERS = { frost: 1, heather: 1, classic: 1, vintage: 1, washed: 1, triblend: 1, 'tri-blend': 1, solid: 1, marble: 1, marbled: 1, dye: 1, tie: 1 };
+  function oneColor(n) {
+    n = String(n || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!n) return null;
+    if (COLORS[n]) return COLORS[n];
+    var words = n.split(/[\s&-]+/).filter(Boolean);
+    // first colour word (or two-word name) that is not a modifier: "Navy Frost" → navy, "Flint Blue Heather" → flint blue
+    for (var i = 0; i < words.length; i++) {
+      var two = words[i + 1] ? words[i] + ' ' + words[i + 1] : null;
+      if (two && COLORS[two]) return COLORS[two];
+      if (COLORS[words[i]] && !MODIFIERS[words[i]]) return COLORS[words[i]];
+    }
+    for (var j = 0; j < words.length; j++) if (COLORS[words[j]]) return COLORS[words[j]];
+    return null;
+  }
+  /* colour family of a colour name: navy, blue, orange, red, white, grey, pink, purple, green, brown, black, camo, gingham, multi */
+  var FAMS = [['navy', /navy|midnight/], ['camo', /camo/], ['gingham', /gingham/], ['multi', /stripe|multi|tie ?dye|plaid/], ['orange', /orange|terracotta|peach|coral/],
+    ['red', /red|crimson|cardinal|garnet|maroon|burgundy|wine/], ['pink', /pink|blush|rose|crunchberry|ballerina|orchid/], ['purple', /purple|lavender|lilac/],
+    ['blue', /blue|chambray|denim|jean|azure|royal|frost|columbia|carolina/], ['green', /green|olive|sage|mint|seafoam|teal|forest/],
+    ['black', /black|charcoal/], ['grey', /grey|gray|heather|ash|silver|steel|smoke/],
+    ['brown', /brown|chocolate|tan|khaki|taupe|sand|beige|oatmeal|mocha/], ['white', /white|ivory|cream|natural|bone|pearl/], ['yellow', /yellow|gold|mustard/]];
+  SG.colorFam = function (name) {
+    var n = String(name || '').toLowerCase().split('/')[0];
+    for (var i = 0; i < FAMS.length; i++) if (FAMS[i][1].test(n)) return FAMS[i][0];
+    return n.trim() || null;
+  };
+  /* what shoppers read: their supplier's brand prefix dropped ("Bella + Canvas Navy" → "Navy"); the raw value still matches variants */
+  SG.colorName = function (name) {
+    var n = String(name || '').replace(/^\s*(bella\s*\+\s*canvas|comfort colors|port authority|rabbit skins|lat|next level|gildan|champion|sport-tek)\s+/i, '').trim();
+    return n || String(name || '');
   };
   SG.colorHex = function (name) {
-    var n = String(name || '').toLowerCase().trim();
-    if (COLORS[n]) return COLORS[n];
-    var words = n.split(/[\s/&-]+/);
-    for (var i = words.length - 1; i >= 0; i--) {
-      var two = words[i - 1] ? words[i - 1] + ' ' + words[i] : null;
-      if (two && COLORS[two]) return COLORS[two];
-      if (COLORS[words[i]]) return COLORS[words[i]];
-    }
+    var parts = String(name || '').split('/').map(function (x) { return x.trim(); }).filter(Boolean);
+    for (var i = 0; i < parts.length; i++) { var c = oneColor(parts[i]); if (c) return c; }   // "Navy/ White" → navy (the first colour)
     return '#D9D3C7';
+  };
+  /** CSS background for a swatch: two-colour names ("Navy/ White") render split; everything else one colour */
+  SG.colorBg = function (name) {
+    var parts = String(name || '').split('/').map(function (x) { return x.trim(); }).filter(Boolean);
+    if (parts.length === 2) {
+      var a = oneColor(parts[0]), b = oneColor(parts[1]);
+      if (a && b && a !== b) return 'linear-gradient(135deg,' + a + ' 50%,' + b + ' 50%)';
+    }
+    return SG.colorHex(name);
   };
 
   /* ======================================================================
      Editorial photos (local webp copies) + no-repeat picker
      ====================================================================== */
   var P = function (w, h, alt) { return { w: w, h: h, alt: alt }; };
+  /* dup: the product whose own photo this editorial image is: once the photo is on the page, rails keep that product
+     out of their first slots (SG.rail), so one screen never shows the same picture twice */
+  var PHOTO_DUP = {
+    'auburn-cheer-dress-flat': 'the-auburn-university-navy-stripe-cheer-dress',
+    'auburn-embroidered-crewneck-model': 'the-auburn-university-gingham-mallory-mockneck-ash',
+    'auburn-blue-cropped-crewneck-model': 'the-auburn-university-gingham-mallory-mockneck-denim',
+    'war-eagle-tank-skort-torso': 'the-navy-ali-tennis-skirt-war-eagle-woven-label',
+    'mom-mini-auburn-stripes': 'the-brooke-kids-orange-blue-striped-crewneck'
+  };
+  SG.railSeen = Object.create(null);
   SG.photos = {
     'alli-three-models': P(1600, 900, 'Three women in Alli ribbed tanks and skorts in blue, purple and red'),
     'aubie-tee-flatlay': P(960, 640, 'A grey Aubie graphic tee laid flat with sandals and jeans'),
@@ -247,7 +387,15 @@
     var key = extra ? extra.k : cand;
     var out = null;
     if (!key || NEVER[key]) return null;
-    if (key.indexOf('col:') === 0) {
+    if (key.indexOf('p:') === 0) {   // a loaded product's own photo (null when that product isn't in this preview)
+      var pm = /^p:([^#]+)(?:#(\d+))?$/.exec(key), pr = pm && BY_H[pm[1]], ix = pm && pm[2] ? +pm[2] : 0;
+      if (!pr || !pr.img || !pr.img[ix]) return null;
+      var lk = /^img\/([a-z0-9-]+)\.webp$/.exec(pr.img[ix]);   // a product photo that IS a local editorial file: same key, so it never repeats
+      if (lk && SG.photos[lk[1]]) return SG.photo(extra ? Object.assign({}, extra, { k: lk[1] }) : lk[1], w);
+      var pw = w || 900, prr = ix === 0 && pr.ir ? pr.ir : 1;
+      out = { key: key, src: SG.img(pr.img[ix], pw), w: pw, h: Math.round(pw / prr), alt: pr.t,
+        set: [600, 900, 1200].map(function (x) { return SG.img(pr.img[ix], x) + ' ' + x + 'w'; }).join(', ') };
+    } else if (key.indexOf('col:') === 0) {
       var h = key.slice(4);
       if (COL_ALIAS[h]) return SG.photo(extra ? Object.assign({}, extra, { k: COL_ALIAS[h] }) : COL_ALIAS[h], w);
       var c = COLS[h];
@@ -256,7 +404,7 @@
     } else {
       var m = SG.photos[key];
       if (!m) return null;
-      out = { key: key, src: 'img/' + key + '.webp', w: m.w, h: m.h, alt: m.alt };
+      out = { key: key, src: 'img/' + key + '.webp', w: m.w, h: m.h, alt: m.alt, set: localSet(key, m.w) };
     }
     if (extra) ['pos', 'fit', 'bg', 'label', 'sub', 'c', 'alt', 'torso'].forEach(function (f) { if (extra[f] != null) out[f] = extra[f]; });
     return out;
@@ -271,7 +419,19 @@
    */
   SG.pickPhoto = function (cands, w, strict, ctx) {
     ctx = ctx || {};
-    cands = [].concat(cands || []);
+    // 'rule:<h>' = the photos of the loaded Auburn pieces matching that department's rule (SG.fromAuburn), first unused wins
+    cands = [].concat(cands || []).reduce(function (a, c) {
+      var k = typeof c === 'object' && c ? c.k : c;
+      if (typeof k === 'string' && k.indexOf('rule:') === 0) {
+        var d = SG.fromAuburn(k.slice(5)) || { products: SG.collection(k.slice(5)) };
+        d.products.filter(function (p) { return p.av && !isProgramPiece(p) && p.img && p.img[0]; }).slice(0, 6).forEach(function (p) {
+          a.push(typeof c === 'object' ? Object.assign({}, c, { k: 'p:' + p.h }) : 'p:' + p.h);
+        });
+        return a;
+      }
+      a.push(c);
+      return a;
+    }, []);
     var first = null;
     for (var i = 0; i < cands.length; i++) {
       var ph = SG.photo(cands[i], w);
@@ -283,17 +443,36 @@
         ph.isTorso = true;
       }
       if (!first) first = ph;
-      if (!SG.usedPhotos[ph.key]) { SG.usedPhotos[ph.key] = 1; return ph; }
+      if (!SG.usedPhotos[ph.key]) { SG.markPhotoUsed(ph.key); return ph; }
     }
+    if (!strict && first) SG.markPhotoUsed(first.key);
     return strict ? null : first;
   };
-  SG.markPhotoUsed = function (key) { SG.usedPhotos[key] = 1; };
+  /* the same picture under two keys (the editorial cheer-dress flat lay IS that dress's product photo) */
+  var SAME_AS = { 'auburn-cheer-dress-flat': 'p:the-auburn-university-navy-stripe-cheer-dress', 'p:the-auburn-university-navy-stripe-cheer-dress': 'auburn-cheer-dress-flat' };
+  SG.markPhotoUsed = function (key) {
+    SG.usedPhotos[key] = 1;
+    if (SAME_AS[key]) SG.usedPhotos[SAME_AS[key]] = 1;
+    if (PHOTO_DUP[key]) SG.railSeen[PHOTO_DUP[key]] = 1;
+    var pm = /^p:([^#]+)/.exec(key);
+    if (pm) SG.railSeen[pm[1]] = 1;   // its card goes to the back of rails on this page
+  };
+  /* the Brooke striped crewneck: the piece both of them wear in the mom & mini photo */
+  SG.momMiniHandle = PHOTO_DUP['mom-mini-auburn-stripes'];
 
+  /* local photos ship as img/<key>.webp (full size) plus img/<key>-800.webp / -1200.webp for every width the original
+     exceeds by 10%+ (generated by the asset step; same rule as here), so phones never download the 1600px file */
+  function localSet(key, w) {
+    var set = [800, 1200].filter(function (x) { return w > x * 1.1; }).map(function (x) { return 'img/' + key + '-' + x + '.webp ' + x + 'w'; });
+    return set.length ? set.concat(['img/' + key + '.webp ' + w + 'w']).join(', ') : '';
+  }
+  SG.photoSet = localSet;
   function imgTag(ph, opts) {
     opts = opts || {};
     if (!ph) return '';
-    return '<img src="' + SG.esc(ph.src) + '" alt="' + SG.esc(opts.alt != null ? opts.alt : ph.alt) + '" width="' + ph.w + '" height="' + ph.h + '"' +
-      (opts.eager ? ' fetchpriority="high"' : ' loading="lazy"') + ' decoding="async"' + (opts.cls ? ' class="' + opts.cls + '"' : '') + '>';
+    var set = ph.set ? ' srcset="' + SG.esc(ph.set) + '" sizes="' + SG.esc(opts.sizes || '(max-width: 719px) 92vw, 50vw') + '"' : '';
+    return '<img src="' + SG.esc(ph.src) + '"' + set + ' alt="' + SG.esc(opts.alt != null ? opts.alt : ph.alt) + '" width="' + ph.w + '" height="' + ph.h + '"' +
+      (opts.eager ? ' fetchpriority="high"' : (opts.low ? ' fetchpriority="low"' : '') + ' loading="lazy"') + ' decoding="async"' + (opts.cls ? ' class="' + opts.cls + '"' : '') + '>';
   }
   SG.imgTag = imgTag;
 
@@ -360,6 +539,42 @@
   };
 
   /* ======================================================================
+     Prices by size family. Their variants can cost more in bigger sizes (The Brooke: $92 12M–5T, $98 youth, $118
+     adult), so a single price is only shown when every (available) variant costs the same; otherwise "From $X".
+     SG.sizeFam(s) → 'baby' | 'kids' | 'adult' | null. SG.priceInfo(p, fam?) → {lo, hi, multi} over p's available
+     variants (all variants when none is available), optionally only sizes of one family ('adult' / 'kids', where
+     kids includes baby & toddler), falling back to every size when the family has none.
+     ====================================================================== */
+  SG.sizeFam = function (s) {
+    var u = String(s || '').toUpperCase().trim();
+    if (!u) return null;
+    if (/^(NB|\d+(-\d+)?M|\dT)$/.test(u)) return 'baby';
+    if (/^Y/.test(u) || /^\d+(\/\d+)?X?$/.test(u)) return 'kids';
+    if (/^(XXS|XS|S|M|L|XL|XXL|\dXL)$/.test(u)) return 'adult';
+    return null;
+  };
+  SG.famOk = function (s, fam) {
+    if (!fam) return true;
+    var f = SG.sizeFam(s);
+    return fam === 'kids' ? (f === 'kids' || f === 'baby') : f === fam;
+  };
+  /** variant rows of p limited to one size family (none of that family → all rows) */
+  SG.famVariants = function (p, fam) {
+    var v = p.v || [];
+    if (!fam) return v;
+    var f = v.filter(function (x) { return x[0] && SG.famOk(x[0], fam); });
+    return f.length ? f : v;
+  };
+  SG.priceInfo = function (p, fam) {
+    var v = SG.famVariants(p, fam).filter(function (x) { return x[3] != null; });
+    var live = v.filter(function (x) { return x[2]; });
+    var list = (live.length ? live : v).map(function (x) { return Number(x[3]); });
+    if (!list.length) return { lo: p.p, hi: p.p, multi: false };
+    var lo = Math.min.apply(null, list), hi = Math.max.apply(null, list);
+    return { lo: lo, hi: hi, multi: hi > lo };
+  };
+
+  /* ======================================================================
      Product card
      ====================================================================== */
   /**
@@ -373,30 +588,50 @@
     var w = opts.w || 600;
     var img0 = p.img && p.img[0], img1 = p.img && p.img[1];
     var ir = p.ir || 0.8;
-    var cover = ir >= 0.6 && ir <= 1.05;    // 2:3 to square → cover, anchored near the top (heads kept); taller or wider → contain on the frame
+    var cover = ir >= 0.6 && ir <= 1.12;    // 2:3 to a touch wider than square (centred flat lays) → cover, anchored near the top; taller or wider → contain
     var hgt = Math.round(w / ir);
-    var sale = p.cp && p.cp > p.p;
+    var pi = SG.priceInfo(p, opts.fam);   // fam 'adult' in Women/Men contexts: The Brooke reads $118, not the toddler $92
+    var sale = p.cp && p.cp > pi.lo;
     var out = SG.isSoldOut(p);
-    var sch = opts.school && p.sch ? SG.school(p.sch) : null;
+    // school: true = always label; 'others' = label only pieces that are not Auburn (an Auburn listing)
+    var sch = opts.school && p.sch && !(opts.school === 'others' && p.sch === 'auburn') ? SG.school(p.sch) : null;
     var co = (p.co || []).filter(Boolean);
-    var dots = co.slice(0, 5).map(function (c) {
-      return '<li style="--c:' + SG.colorHex(c) + '" title="' + SG.esc(c) + '"></li>';
-    }).join('') + (co.length > 5 ? '<li class="more">+' + (co.length - 5) + '</li>' : '');
+    var shownBg = co.slice(0, 5).map(SG.colorBg);
+    var sib = (opts.siblings || []).filter(function (x) {   // a sibling whose swatch looks like one already shown adds nothing
+      if (!x || x.h === p.h || !x.co || !x.co[0]) return false;
+      var bg = SG.colorBg(x.co[0]);
+      if (shownBg.indexOf(bg) > -1) return false;
+      shownBg.push(bg);
+      return true;
+    });
+    var nDots = co.length + sib.length;
+    if (nDots === 1 && !sib.length) nDots = 0;   // one colour, no siblings: the variant line already names it
+    var dots = !nDots ? '' : co.slice(0, 5).map(function (c) {
+      return '<li style="--c:' + SG.colorBg(c) + '" title="' + SG.esc(c) + '"></li>';
+    }).join('') + sib.slice(0, Math.max(0, 5 - co.length)).map(function (x) {
+      // the same style in another colour (folded out of the rail): a real swatch that opens that colour's page
+      return '<li class="is-sib" style="--c:' + SG.colorBg(x.co[0]) + '"><a href="' + SG.productUrl(x.h) + '" title="' + SG.esc(x.co[0]) + '" aria-label="' + SG.esc(x.t) + '"></a></li>';
+    }).join('') + (nDots > 5 ? '<li class="more">+' + (nDots - 5) + '</li>' : '');
+    var shipK = out ? 'out' : SG.shipKind(p);
     var on = SG.saved.has(p.h);
+    // rails defer their images (data-src) until the page's hero photo has loaded (SG.rail wakes them)
+    var sa = opts.defer ? 'data-src' : 'src', ss = opts.defer ? 'data-srcset' : 'srcset';
+    var set = function (path) { return ' ' + ss + '="' + SG.esc(SG.img(path, 400)) + ' 400w, ' + SG.esc(SG.img(path, 600)) + ' 600w" sizes="(max-width: 719px) 44vw, 260px"'; };
     return '<article class="pc' + (out ? ' is-out' : '') + '" data-h="' + SG.esc(p.h) + '">' +
       '<div class="pc__media">' +
-        (img0 ? '<img src="' + SG.esc(SG.img(img0, w)) + '" alt="" width="' + w + '" height="' + hgt + '"' + (cover ? ' class="is-cover"' : '') +
+        (img0 ? '<img ' + sa + '="' + SG.esc(SG.img(img0, w)) + '"' + (w === 600 ? set(img0) : '') + ' alt="" width="' + w + '" height="' + hgt + '"' + (cover ? ' class="is-cover"' : '') +
           (opts.eager ? '' : ' loading="lazy"') + ' decoding="async">' : '') +
-        (img1 ? '<img class="pc__alt' + (cover ? ' is-cover' : '') + '" src="' + SG.esc(SG.img(img1, w)) + '" alt="" width="' + w + '" height="' + hgt + '" loading="lazy" decoding="async">' : '') +
+        (img1 ? '<img class="pc__alt' + (cover ? ' is-cover' : '') + '" ' + sa + '="' + SG.esc(SG.img(img1, w)) + '"' + (w === 600 ? set(img1) : '') + ' alt="" width="' + w + '" height="' + hgt + '" loading="lazy" decoding="async">' : '') +
         (out ? '<span class="pc__badge pc__badge--out">Sold out</span>' : sale ? '<span class="pc__badge pc__badge--sale">Sale</span>' : (p['new'] ? '<span class="pc__badge">New</span>' : '')) +
       '</div>' +
       '<button type="button" class="pc__heart" data-h="' + SG.esc(p.h) + '" aria-pressed="' + on + '" aria-label="Save ' + SG.esc(p.t) + '"><span>' + I.heart + '</span></button>' +
       '<div class="pc__body">' +
         (sch ? '<p class="pc__school">' + SG.esc(sch.name) + '</p>' : '') +
-        '<h3 class="pc__title"><a href="' + SG.productUrl(p.h) + '">' + SG.esc(p.t) + '</a></h3>' +
-        '<p class="pc__price">' + (sale ? '<span class="is-sale">' + SG.money(p.p) + '</span><s>' + SG.money(p.cp) + '</s><span class="sr"> (was ' + SG.money(p.cp) + ')</span>' : SG.money(p.p)) + '</p>' +
-        (dots ? '<ul class="pc__dots" aria-label="' + co.length + ' color' + (co.length === 1 ? '' : 's') + ': ' + SG.esc(co.slice(0, 5).join(', ')) + '">' + dots + '</ul>' : '') +
-        (opts.ship === false ? '' : '<p class="pc__ship pc__ship--' + (out ? 'out' : SG.shipKind(p)) + '">' + SG.shipLabel(p) + '</p>') +
+        '<h3 class="pc__title"><a href="' + SG.productUrl(p.h) + '">' + SG.titleHTML(p.t, 'pc', opts.hideName) + '</a></h3>' +
+        '<p class="pc__price">' + (pi.multi ? '<span class="pc__from">From </span>' : '') + (sale ? '<span class="is-sale">' + SG.money(pi.lo) + '</span><s>' + SG.money(p.cp) + '</s><span class="sr"> (was ' + SG.money(p.cp) + ')</span>' : SG.money(pi.lo)) + '</p>' +
+        '<ul class="pc__dots"' + (nDots ? ' aria-label="' + nDots + ' color' + (nDots === 1 ? '' : 's') + ': ' + SG.esc(co.concat(sib.map(function (x) { return x.co[0]; })).slice(0, 5).join(', ')) + '"' : ' aria-hidden="true"') + '>' + dots + '</ul>' +
+        // no ship time known ('check'): the card says nothing rather than hedging; the product page explains
+        (opts.ship === false || shipK === 'check' ? '' : '<p class="pc__ship pc__ship--' + shipK + '">' + SG.shipLabel(p) + '</p>') +
       '</div>' +
     '</article>';
   };
@@ -439,17 +674,127 @@
    * SG.rail(el, products, opts) → number rendered. Renders a snap rail into el.
    * Empty list → hides opts.hide || closest [data-hide-empty] || el. opts: {limit:12, nav: element for arrows, card:{…SG.card opts}}
    */
+  /** style key: their title before " | " plus audience ("The Mallory Mockneck Auburn Gingham|women") */
+  SG.styleKey = function (p, noWho) {
+    var parts = String(p.t || '').split(' | '), k = parts[0].trim().toLowerCase();
+    if (/^the (collegiate )?auburn university$/.test(k) && parts[1]) k += ':' + parts[1].toLowerCase().replace(/\b(power stripe|stripe)\b/g, 'stripe').replace(/\b(navy|orange|light blue|light|blue|white|red|pink|classic)\b/g, '').replace(/\s+/g, ' ').trim();
+    return noWho ? k : k + '|' + p.who;
+  };
+  /*
+   * Rail curation (rails only; the shop grid keeps their merch order): one card per style (two for The Auburn University
+   * cheer dresses), the folded colours become that card's swatch dots; available pieces first (a sold-out card never
+   * leads); pieces an earlier rail on the page already led with, or whose photo an editorial image already shows, go
+   * to the back. Returns {list, sib: {handle: [sibling products]}}.
+   */
+  /* buttons, stickers and temporary tattoos are one "line" for the variety cap: a rail never leads with three of them */
+  var SMALL_GOODS = /\b(buttons?|stickers?|tattoos?)\b/i;
+  function lineKey(p) { return /war eagle woven label/i.test(p.t || '') ? 'wewl' : SMALL_GOODS.test(p.t || '') ? 'small-goods' : SG.styleKey(p, true); }
+  function curate(list, opts) {
+    opts = opts || {};
+    var seenKey = Object.create(null), keep = [], sib = Object.create(null), owner = Object.create(null);
+    // a line rail (one signature line / collaboration): the youth and adult cuts of a style are one card, led by the adult
+    if (opts.line) list = list.filter(function (p) { return p.who !== 'kids'; }).concat(list.filter(function (p) { return p.who === 'kids'; }));
+    list.forEach(function (p) {
+      var k = SG.styleKey(p, !!opts.line), n = seenKey[k] || 0;
+      if (n < 1) { seenKey[k] = 1; keep.push(p); if (!owner[k]) owner[k] = p.h; }
+      else (sib[owner[k]] = sib[owner[k]] || []).push(p);
+    });
+    // a short list (few styles, many colours) keeps its colours as cards rather than leaving the rail near-empty
+    if (keep.length < 4) {
+      list.forEach(function (p) {
+        if (keep.length >= 4 || keep.indexOf(p) > -1) return;
+        keep.push(p);
+        Object.keys(sib).forEach(function (h) { sib[h] = sib[h].filter(function (x) { return x !== p; }); });
+      });
+    }
+    // sold out last; then pieces already shown on the page; college/program webstore pieces after the shop's own
+    var score = function (p) { return (SG.isSoldOut(p) ? 4 : 0) + (isProgramPiece(p) ? 2 : 0) + (SG.railSeen[p.h] ? 1 : 0); };
+    var ranked = keep.map(function (p, i) { return [p, score(p), i]; })
+      .sort(function (a, b) { return a[1] - b[1] || a[2] - b[2]; }).map(function (x) { return x[0]; });
+    // variety: in the first four cards one line (their "War Eagle Woven Label" pieces count as one) or one colour family
+    // appears at most twice; the next eligible piece of the SAME rank moves up (a sold-out, program or already-shown
+    // piece never jumps ahead of the shop's own available pieces). Pieces with no colour option don't count as a family.
+    var famOf = function (p) { return (p.co || [])[0] && !p.ol ? SG.colorFam(p.co[0]) : null; };
+    var out = [], rest = ranked.slice(), lines = Object.create(null), fams = Object.create(null);
+    var fits = function (x) { var fk = famOf(x); return (lines[lineKey(x)] || 0) < 2 && (!fk || (fams[fk] || 0) < 2); };
+    while (rest.length && out.length < 4) {
+      var j = -1, s0 = score(rest[0]);
+      for (var k = 0; k < rest.length && score(rest[k]) === s0; k++) {
+        if (fits(rest[k])) { j = k; break; }
+      }
+      // every piece of this rank breaks a cap (a gift pool of buttons and stickers): a piece that differs only by having
+      // been shown higher up the page may step up, rather than a third button leading the rail
+      if (j < 0 && s0 % 2 === 0) {
+        for (k = 0; k < rest.length; k++) if (score(rest[k]) === s0 + 1 && fits(rest[k])) { j = k; break; }
+      }
+      if (j < 0) j = 0;
+      var q = rest.splice(j, 1)[0];
+      lines[lineKey(q)] = (lines[lineKey(q)] || 0) + 1;
+      var fm = famOf(q);
+      if (fm) fams[fm] = (fams[fm] || 0) + 1;
+      out.push(q);
+    }
+    return { list: out.concat(rest), sib: sib };
+  }
+
+  /* Rail images wait for the page's hero photo (the high-priority image already on the page) to load, or 2.5s, so
+     below-the-fold cards never compete with it; then only cards near the rail's visible width get a src (the rest
+     follow as the rail scrolls). Cards keep loading="lazy", so the browser still waits until a rail nears the screen. */
+  var heroGate = null;
+  SG.heroGate = function () {
+    if (heroGate) return heroGate;
+    heroGate = new Promise(function (res) {
+      var done = false, go = function () { if (!done) { done = true; res(); } };
+      window.setTimeout(go, 2500);
+      var im = document.querySelector('main img[fetchpriority="high"]');   // (main: not the header logo)
+      if (!im || (im.complete && (im.currentSrc || im.getAttribute('src')))) { go(); return; }
+      im.addEventListener('load', go, { once: true });
+      im.addEventListener('error', go, { once: true });
+    });
+    return heroGate;
+  };
+  function wakeImgs(root) {
+    Array.prototype.forEach.call(root.querySelectorAll('img[data-src]'), function (im) {
+      if (im.hasAttribute('data-srcset')) { im.setAttribute('srcset', im.getAttribute('data-srcset')); im.removeAttribute('data-srcset'); }
+      im.setAttribute('src', im.getAttribute('data-src'));
+      im.removeAttribute('data-src');
+    });
+  }
+  function wakeRail(track) {
+    var lis = Array.prototype.slice.call(track.children);
+    var near = 3;
+    lis.slice(0, near).forEach(wakeImgs);
+    var later = lis.slice(near).filter(function (li) { return li.querySelector('img[data-src]'); });
+    if (!later.length) return;
+    if (!('IntersectionObserver' in window)) { later.forEach(wakeImgs); return; }
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { wakeImgs(e.target); io.unobserve(e.target); } });
+    }, { root: track, rootMargin: '0px 100% 0px 0px' });
+    later.forEach(function (li) { io.observe(li); });
+    track._sgIO = io;
+  }
   SG.rail = function (el, list, opts) {
     opts = opts || {};
     if (!el) throw new Error('SG.rail: missing element');
-    list = (list || []).slice(0, opts.limit || 12);
+    var cur = opts.curate === false ? { list: list || [], sib: {} } : curate(list || [], opts);
+    list = cur.list.slice(0, opts.limit || 12);
+    if (opts.mark !== false) list.slice(0, 4).forEach(function (p) { SG.railSeen[p.h] = 1; });
     var target = hideTarget(el, opts);
     if (opts.nav && opts.nav._sgOff) { opts.nav._sgOff(); opts.nav._sgOff = null; }
     if (!list.length) { el.innerHTML = ''; target.hidden = true; if (opts.nav) opts.nav.innerHTML = ''; return 0; }
     target.hidden = false;
     el.classList.add('rail');
-    el.innerHTML = '<ul class="rail__track" role="list">' + list.map(function (p) { return '<li>' + SG.card(p, opts.card) + '</li>'; }).join('') + '</ul>';
+    var end = opts.end && list.length < 4 ? '<li><a class="pc-end" href="' + SG.esc(opts.end.href) + '" target="_blank" rel="noopener">' +
+      '<span class="pc-end__amp" aria-hidden="true">&amp;</span><span class="pc-end__t">' + SG.esc(opts.end.label) + I.ext + '</span>' +
+      '<span class="sr"> (opens their store in a new tab)</span></a></li>' : '';
+    var old = el.querySelector('.rail__track');
+    if (old && old._sgIO) old._sgIO.disconnect();
+    el.innerHTML = '<ul class="rail__track" role="list">' + list.map(function (p) {
+      var co = Object.assign({}, opts.card || {}, { defer: true }, cur.sib[p.h] ? { siblings: cur.sib[p.h] } : {});
+      return '<li>' + SG.card(p, co) + '</li>';
+    }).join('') + end + '</ul>';
     var track = el.querySelector('.rail__track');
+    SG.heroGate().then(function () { if (track.isConnected) wakeRail(track); });
     if (opts.nav) {
       opts.nav.classList.add('rail__nav');
       opts.nav.innerHTML = '<button type="button" class="rail__btn" data-dir="-1" aria-label="Previous">' + I.left + '</button>' +
@@ -472,6 +817,11 @@
     return list.length;
   };
 
+  /** end card for a short rail: their live collection, when they have more than the preview shows */
+  SG.liveEnd = function (h, shown) {
+    var t = SG.total(h);
+    return t && t > shown ? { href: SG.liveUrl(h), label: 'See all ' + Number(t).toLocaleString('en-US') + ' on their store' } : null;
+  };
   /** SG.grid(el, products, opts) → number rendered. 4-col grid (2 on phones). Empty → hides like SG.rail. */
   SG.grid = function (el, list, opts) {
     opts = opts || {};
@@ -510,11 +860,13 @@
     // Measured live (SG.onLayout), never only at script time: WebKit can run this before CSS applies, when the unstyled
     // row reads as not overflowing and would get .is-end (no fade) with tabs hidden past the edge.
     var syncEnd = function () { tablist.classList.toggle('is-end', tablist.scrollLeft + tablist.clientWidth >= tablist.scrollWidth - 2); };
+    var shownOnce = false;   // only the first tab's lead cards count as "already shown" to later rails
     tablist.addEventListener('scroll', syncEnd, { passive: true });
     function show(i, scroll) {
       btns.forEach(function (b, j) { b.setAttribute('aria-selected', String(i === j)); b.tabIndex = i === j ? 0 : -1; });
       panel.setAttribute('aria-labelledby', btns[i].id);
-      SG.rail(railEl, live[i].products, { limit: opts.limit || 12, nav: nav, hide: railEl, card: opts.card });
+      SG.rail(railEl, live[i].products, { limit: opts.limit || 12, nav: nav, hide: railEl, card: Object.assign({}, opts.card || {}, live[i].card || {}), mark: !shownOnce });
+      shownOnce = true;
       more.href = live[i].href || '#';
       more.textContent = live[i].more || ('Shop all ' + live[i].label);
       more.hidden = !live[i].href;
@@ -551,29 +903,39 @@
       var ph = SG.pickPhoto(im.img, 1200, false, { auburn: !cfg.anySchool, ratio: 0.5 }) || {};
       var pos = ph.pos || im.pos, bg = ph.bg || im.bg, fit = ph.fit || im.fit;
       var style = (pos ? '--pos:' + pos + ';' : '') + (bg ? '--ph-bg:' + bg + ';' : '');
-      return '<figure class="trip__ph' + (fit === 'contain' ? ' trip__ph--contain' : '') + '"' + (style ? ' style="' + style + '"' : '') + '>' + imgTag(ph.src ? ph : null, { eager: i === 0, alt: im.alt }) + '</figure>';
+      return '<figure class="trip__ph' + (fit === 'contain' ? ' trip__ph--contain' : '') + '"' + (style ? ' style="' + style + '"' : '') + '>' + imgTag(ph.src ? ph : null, { eager: i === 0, low: i > 0, alt: im.alt, sizes: '(max-width: 719px) 78vw, 30vw' }) + '</figure>';
     }).join('');
-    var c = cfg.ctas || [];
+    var c = (cfg.ctas || []).map(function (x) {
+      if (x.live && x.c && D.partial && !SG.loaded(x.c)) return { label: x.live, href: SG.liveUrl(x.c), ext: true };
+      return x;
+    });
+    c = c.filter(function (x) { return !x.ext; }).concat(c.filter(function (x) { return x.ext; }));
+    var ctaA = function (x, cls) {
+      return '<a class="btn ' + cls + '" href="' + SG.esc(x.ext ? x.href : ctaHref(x)) + '"' + (x.ext ? ' target="_blank" rel="noopener"' : '') + '>' + SG.esc(x.label) +
+        (x.ext ? I.ext + '<span class="sr"> (opens their store in a new tab)</span>' : '') + '</a>';
+    };
     el.innerHTML =
       '<div class="hero__panel dark">' +
         '<p class="eyebrow">' + SG.esc(cfg.eyebrow) + '</p>' +
         '<h1 class="display">' + SG.esc(cfg.line1) + ' <span class="l2">' + SG.esc(cfg.line2) + '</span></h1>' +
         '<p class="hero__body">' + SG.esc(cfg.body) + '</p>' +
         '<div class="hero__ctas">' +
-          (c[0] ? '<a class="btn btn--ivory" href="' + SG.esc(c[0].href) + '">' + SG.esc(c[0].label) + '</a>' : '') +
-          (c[1] ? '<a class="btn btn--line-ivory" href="' + SG.esc(c[1].href) + '">' + SG.esc(c[1].label) + '</a>' : '') +
+          (c[0] ? ctaA(c[0], 'btn--ivory') : '') +
+          (c[1] ? ctaA(c[1], 'btn--line-ivory') : '') +
         '</div>' +
       '</div>' +
       '<div class="trip" style="--trip-cols:' + SG.esc(cfg.cols || '1fr 1fr 1fr') + '">' + imgs + '</div>';
   };
 
-  /** SG.intro(el, cfg): intro strip. cfg {eyebrow, title (may contain <em>), body, cta:{label,href}} */
+  /* a chapter CTA labelled by a rule ({rule: handle}) goes where those pieces are (SG.ctaUrl); others keep their href */
+  function ctaHref(c) { return c.rule ? SG.ctaUrl(c.rule, c.extra) : c.href; }
+  /** SG.intro(el, cfg): intro strip. cfg {eyebrow, title (may contain <em>), body, cta:{label,href,rule?}} */
   SG.intro = function (el, cfg) {
     el.innerHTML = '<div class="wrap intro"><div>' +
       '<p class="eyebrow">' + SG.esc(cfg.eyebrow) + '</p>' +
       '<h2 class="h2">' + cfg.title + '</h2>' +
       (cfg.body ? '<p class="lede">' + SG.esc(cfg.body) + '</p>' : '') +
-      '</div>' + (cfg.cta ? '<a class="btn btn--line-ink" href="' + SG.esc(cfg.cta.href) + '">' + SG.esc(cfg.cta.label) + '</a>' : '') + '</div>';
+      '</div>' + (cfg.cta ? '<a class="btn btn--line-ink" href="' + SG.esc(ctaHref(cfg.cta)) + '">' + SG.esc(cfg.cta.label) + '</a>' : '') + '</div>';
   };
 
   /**
@@ -584,7 +946,7 @@
    */
   SG.tile = function (t, w) {
     var ph = SG.pickPhoto(t.img, w || 900, !!t.made, { auburn: !t.anySchool, ratio: t.ratio || 1 }) || {};
-    var href = t.href || SG.shopUrl({ c: t.c });
+    var href = t.href || (t.rule ? SG.ctaUrl(t.c, t.extra) : SG.shopUrl({ c: t.c }));   // rule: true = the tile is labelled by a rule, not a collection name
     var txt = '<span class="tile__txt"><span class="tile__title">' + SG.esc(t.t) + '</span>' +
       (t.sub ? '<span class="tile__sub">' + SG.esc(t.sub) + '</span>' : '') +
       '<span class="tile__go">' + SG.esc(t.go || 'Shop now') + '</span></span>';
@@ -599,7 +961,7 @@
     var pos = ph.pos || t.pos, bg = ph.bg || t.bg, fit = ph.fit || t.fit;
     var style = (pos ? '--pos:' + pos + ';' : '') + (bg ? '--tile-bg:' + bg + ';' : '');
     return '<a class="tile' + (fit === 'contain' ? ' tile--contain' : '') + '" href="' + SG.esc(href) + '"' + (style ? ' style="' + style + '"' : '') + '>' +
-      imgTag(ph.src ? ph : null, { alt: '' }) + txt + '</a>';
+      imgTag(ph.src ? ph : null, { alt: '', sizes: '(max-width: 719px) 80vw, 25vw' }) + txt + '</a>';
   };
 
   /** SG.tileBand(el, cfg): full-width coloured band with pill, big H2 and four photo tiles (snap carousel on phones). cfg {tone, pill, title(html), items:[tile]} */
@@ -634,7 +996,7 @@
           (m.note ? '<span class="dept__note">' + SG.esc(m.note) + '</span>' : '') + '</span>';
       } else {
         var pos = ph.pos || it.pos;
-        face = '<span class="dept__ph"' + (pos ? ' style="--pos:' + pos + '"' : '') + '>' + imgTag(ph, { alt: '' }) + '</span>';
+        face = '<span class="dept__ph"' + (pos ? ' style="--pos:' + pos + '"' : '') + '>' + imgTag(ph, { alt: '', sizes: '(max-width: 719px) 46vw, 17vw' }) + '</span>';
       }
       return '<li><a class="dept__a' + (made ? ' dept__a--made' : '') + '" href="' + SG.esc(href) + '">' + face +
         '<span class="tile__txt dept__txt"><span class="dept__name">' + SG.esc(it.t) + '</span><span class="dept__go">' + SG.esc(it.go || 'Shop now') + '</span></span></a></li>';
@@ -720,10 +1082,11 @@
   /* ======================================================================
      Look builder ("Match your mini" / "Wear it with")
      ====================================================================== */
-  function sizesFor(p) {
+  /* sizesFor(p, color?) → [{s, avail}] (colour given: availability in that colour only). Used by the shop's size filter. */
+  function sizesFor(p, color) {
     var out = [];
     (p.sz || []).forEach(function (s) {
-      var avail = (p.v || []).some(function (v) { return v[0] === s && v[2]; });
+      var avail = (p.v || []).some(function (v) { return v[0] === s && (!color || v[1] === color) && v[2]; });
       out.push({ s: s, avail: avail || !(p.v && p.v.length) });
     });
     return out;
@@ -739,65 +1102,129 @@
   /**
    * SG.look(el, items, opts) → renders a look list (thumb, type label, name, size/colour pickers, price, checkbox, total, CTA).
    * items: [{p, type:'For you'}]. opts {cta:'Add the look to bag'}. Returns the number of rows.
+   * Every row works on p's REAL variants: a "For you" row offers adult sizes only and a "For your mini" row kids' sizes
+   * only (when the piece has them); sold-out colours are disabled; the size list follows the chosen colour (a size that
+   * doesn't exist in that colour is disabled, and a picked size that stops existing is cleared with a note); add-to-bag
+   * refuses any (size, colour) that is not an available variant. A row whose sizes cost different amounts reads
+   * "From $X" until a size is chosen, and so does the look total.
    */
   SG.look = function (el, items, opts) {
     opts = opts || {};
     items = (items || []).filter(function (it) { return it && it.p; });
     if (!items.length) { el.innerHTML = ''; return 0; }
+    var M = items.map(function (it) {
+      var p = it.p;
+      var fam = /^for you$/i.test(it.type || '') ? 'adult' : /mini/i.test(it.type || '') ? 'kids' : null;
+      var V = SG.famVariants(p, fam);
+      var famSizes = (p.sz || []).filter(function (s) { return V.some(function (v) { return v[0] === s; }); });
+      var sizes = famSizes.length ? famSizes : (p.sz || []);
+      var cols = (p.co || []).filter(Boolean).filter(function (c) { return !V.length || V.some(function (v) { return v[1] === c; }); });
+      var hasV = V.length > 0;
+      var ok = function (size, color) {   // is (size, colour) an available variant? (null = any)
+        if (!hasV) return !!p.av;
+        return V.some(function (v) { return (!size || v[0] === size) && (!color || v[1] == null || v[1] === color) && v[2]; });
+      };
+      var color0 = cols.filter(function (c) { return ok(null, c); })[0] || cols[0] || '';
+      return { p: p, fam: fam, V: V, sizes: sizes, cols: cols, ok: ok, color0: color0, need: needsSize(p) && sizes.length > 0 };
+    });
     el.innerHTML = '<ul class="look__list">' + items.map(function (it, i) {
-      var p = it.p, sizes = sizesFor(p), cols = (p.co || []).filter(Boolean);
+      var m = M[i], p = m.p;
       return '<li class="look__row" data-i="' + i + '">' +
-        '<a class="look__th" href="' + SG.productUrl(p.h) + '" tabindex="-1" aria-hidden="true">' + (p.img && p.img[0] ? '<img src="' + SG.esc(SG.img(p.img[0], 400)) + '" alt="" width="64" height="80" loading="lazy" decoding="async">' : '') + '</a>' +
-        '<div><span class="look__type">' + SG.esc(it.type || '') + '</span>' +
+        '<a class="look__th" href="' + SG.productUrl(p.h) + '" tabindex="-1" aria-hidden="true">' + (p.img && p.img[0] ? '<img src="' + SG.esc(SG.img(p.img[0], 200)) + '" alt="" width="64" height="80" loading="lazy" decoding="async">' : '') + '</a>' +
+        '<div><span class="look__type">' + SG.esc(it.type || '') + (p.fs ? ' · Final sale' : '') + '</span>' +
           '<a class="look__name" href="' + SG.productUrl(p.h) + '">' + SG.esc(p.t) + '</a>' +
           '<div class="look__opts">' +
-            (needsSize(p) ? '<span class="sel"><select data-k="size" aria-label="Size for ' + SG.esc(p.t) + '"><option value="">Choose a size</option>' +
-              sizes.map(function (s) { return '<option value="' + SG.esc(s.s) + '"' + (s.avail ? '' : ' disabled') + '>' + SG.esc(s.s) + (s.avail ? '' : ' (sold out)') + '</option>'; }).join('') + '</select></span>' : '') +
-            (cols.length > 1 ? '<span class="sel"><select data-k="color" aria-label="Color for ' + SG.esc(p.t) + '">' +
-              cols.map(function (c) { return '<option>' + SG.esc(c) + '</option>'; }).join('') + '</select></span>' : '') +
-          '</div></div>' +
-        '<span class="look__price">' + SG.money(p.p) + '</span>' +
-        '<label class="look__chk"><input type="checkbox" checked aria-label="Include ' + SG.esc(p.t) + '"><span></span></label>' +
+            (m.need ? '<span class="sel"><select data-k="size" aria-label="Size for ' + SG.esc(p.t) + '"><option value="">Choose a size</option>' +
+              m.sizes.map(function (s) { return '<option value="' + SG.esc(s) + '">' + SG.esc(s) + '</option>'; }).join('') + '</select></span>' : '') +
+            (m.cols.length > 1 ? '<span class="sel"><select data-k="color" aria-label="Color for ' + SG.esc(p.t) + '">' +
+              m.cols.map(function (c) { var out = !m.ok(null, c); return '<option value="' + SG.esc(c) + '"' + (out ? ' disabled' : '') + (c === m.color0 ? ' selected' : '') + '>' + SG.esc(c) + (out ? ' (sold out)' : '') + '</option>'; }).join('') + '</select></span>' : '') +
+          '</div><p class="look__msg" role="status"></p></div>' +
+        '<span class="look__price"></span>' +
+        '<label class="look__chk"><input type="checkbox"' + (it.off ? '' : ' checked') + ' aria-label="Include ' + SG.esc(p.t) + '"><span></span></label>' +
       '</li>';
     }).join('') + '</ul>' +
     '<div class="look__total"><span>Look total</span><strong></strong></div>' +
     '<button type="button" class="btn btn--scarlet btn--block look__add">' + SG.esc(opts.cta || 'Add the look to bag') + '</button>' +
-    '<p class="look__note">Pick a size on each piece. Free returns &amp; exchanges with Checkout+.</p>';
+    '<p class="look__note"></p>';
 
     var rows = el.querySelectorAll('.look__row');
     function state(i) {
-      var r = rows[i], p = items[i].p;
+      var r = rows[i], m = M[i];
       var size = r.querySelector('[data-k=size]'), color = r.querySelector('[data-k=color]');
-      return { p: p, on: r.querySelector('input[type=checkbox]').checked, size: size ? size.value : (p.sz && p.sz[0]) || '', color: color ? color.value : (p.co && p.co[0]) || '', sizeEl: size };
+      return { m: m, p: m.p, on: r.querySelector('input[type=checkbox]').checked,
+        size: size ? size.value : (m.need ? '' : (m.sizes[0] || '')), color: color ? color.value : (m.cols[0] || ''), sizeEl: size, row: r };
+    }
+    /* size options follow the chosen colour; a picked size that doesn't exist in it is cleared, with a note */
+    function syncSizes(i, announce) {
+      var s = state(i), msg = s.row.querySelector('.look__msg');
+      if (!s.sizeEl) return;
+      var cleared = '';
+      Array.prototype.forEach.call(s.sizeEl.options, function (o) {
+        if (!o.value) return;
+        var good = s.m.ok(o.value, s.color);
+        o.disabled = !good;
+        o.textContent = o.value + (good ? '' : ' (sold out' + (s.m.cols.length > 1 && s.color ? ' in this color' : '') + ')');
+        if (!good && o.selected) cleared = o.value;
+      });
+      if (cleared) {
+        s.sizeEl.value = '';
+        if (announce) msg.textContent = cleared + ' isn’t available in ' + s.color + '. Choose another size.';
+      }
+    }
+    function rowPrice(s) {
+      if (s.size) return { lo: priceFor(s.p, s.size, s.color || null), exact: true };
+      var v = s.m.V.filter(function (x) { return (!s.color || x[1] == null || x[1] === s.color) && x[3] != null; });
+      var live = v.filter(function (x) { return x[2]; });
+      var list = (live.length ? live : v).map(function (x) { return Number(x[3]); });
+      if (!list.length) return { lo: s.p.p, exact: true };
+      var lo = Math.min.apply(null, list), hi = Math.max.apply(null, list);
+      return { lo: lo, exact: lo === hi };
     }
     function total() {
-      var t = 0;
+      var t = 0, exact = true;
       rows.forEach(function (r, i) {
-        var s = state(i), pr = priceFor(s.p, s.size, s.color);
-        r.querySelector('.look__price').textContent = SG.money(pr);
-        r.style.opacity = s.on ? '' : '.55';
-        if (s.on) t += pr;
+        var s = state(i), pr = rowPrice(s);
+        r.querySelector('.look__price').textContent = (pr.exact ? '' : 'From ') + SG.money(pr.lo);
+        r.classList.toggle('is-off', !s.on);   // unticked: the photo dims, the text stays readable (AA)
+        if (s.on) { t += pr.lo; if (!pr.exact) exact = false; }
       });
-      el.querySelector('.look__total strong').textContent = SG.money(t);
+      el.querySelector('.look__total strong').textContent = (exact ? '' : 'From ') + SG.money(t);
+      // a returns promise only when no ticked piece is final sale (data.js p.fs: its own description says no returns)
+      var fsOn = M.some(function (m, i) { return m.p.fs && state(i).on; });
+      el.querySelector('.look__note').textContent = 'Pick a size on each piece. ' + (fsOn ? 'Pieces marked final sale can’t be returned or exchanged.' : 'Free returns & exchanges with Checkout+.');
     }
     el.onchange = function (e) {   // property, not addEventListener: re-renders (team switch) replace it
+      var r = e.target.closest('.look__row');
       if (e.target.matches('select')) e.target.classList.remove('is-missing');
+      if (r) {
+        r.querySelector('.look__msg').textContent = '';
+        if (e.target.matches('[data-k=color]')) syncSizes(+r.getAttribute('data-i'), true);
+        else if (!e.target.matches('select')) syncSizes(+r.getAttribute('data-i'), false);   // a row pre-filled from outside (the PDP picker)
+      }
       total();
     };
     el.querySelector('.look__add').addEventListener('click', function () {
-      var picks = [], missing = false;
+      var picks = [], missing = false, bad = null;
       rows.forEach(function (r, i) {
         var s = state(i);
         if (!s.on) return;
         if (s.sizeEl && !s.size) { s.sizeEl.classList.add('is-missing'); missing = true; }
+        else if (!s.m.ok(s.size || null, s.color || null)) { bad = bad || s; }
         picks.push(s);
       });
       if (!picks.length) { SG.toast('Tick at least one piece to add.'); return; }
       if (missing) { SG.toast('Pick a size on each piece first.'); var m = el.querySelector('.is-missing'); if (m) m.focus(); return; }
+      if (bad) {   // never add a size/colour combination that isn't a real, available variant
+        bad.row.querySelector('.look__msg').textContent = 'That size and color isn’t available. Choose another.';
+        if (bad.sizeEl) { bad.sizeEl.classList.add('is-missing'); bad.sizeEl.focus(); }
+        SG.toast('One piece isn’t available in that size and color.');
+        return;
+      }
       picks.forEach(function (s) { SG.addToBag({ h: s.p.h, size: s.size, color: s.color }, { open: false, quiet: true }); });
       SG.bag.open();
       SG.toast('Added ' + picks.length + ' piece' + (picks.length === 1 ? '' : 's') + ' to your bag.');
     });
+    rows.forEach(function (r, i) { syncSizes(i, false); });
     total();
     return items.length;
   };
@@ -806,12 +1233,33 @@
    * SG.mini(el, opts) → true if a look was rendered. "Match your mini": a mom piece + her mini's cheer dress (+ bow/accessory).
    * Auburn by default; team chips appear when 2+ schools have both pieces. opts {school:'auburn', teamsEl: element for chips}
    */
+  /* a college/program client-store piece ("webstore" tag, or tagged with a program collection or one of their own
+     program tags, spelling as in their data) is not a mom top, a pairing or a lead card in a department rail */
+  var PROGRAM_TAGS = { 'auburn-nursing': 1, 'auburn-univeristy-college-of-education': 1, 'au-speech-language-hearing-sciences': 1 };
+  function isProgramPiece(p) {
+    return (p.tags || []).some(function (t) { t = String(t).toLowerCase(); return t === 'webstore' || !!PROGRAM_COLS[t] || !!PROGRAM_TAGS[t]; });
+  }
+  SG.isProgramPiece = isProgramPiece;
   SG.miniSet = function (slug) {
-    var mom = SG.collections(['auburn-womens-specialty', 'the-ava-collection', 'the-kristen-collection', 'the-becca-collection', 'mallory-gingham-mocknecks', 'the-alli-collection', 'auburn-adult-apparel'])
-      .concat(PRODUCTS)
-      .filter(function (p) { return p.sch === slug && p.who === 'women' && p.av && ['crewneck', 'mockneck', 'tee', 'set', 'quarter-zip', 'long-sleeve', 'tank'].indexOf(p.cat) > -1; })[0];
     var dress = SG.collection('girls-cheer-dresses').concat(PRODUCTS).filter(function (p) { return p.sch === slug && p.cat === 'cheer-dress' && p.av; })[0];
-    var acc = SG.collection('cheer-accessories').concat(PRODUCTS).filter(function (p) { return p.sch === slug && p.av && (p.cat === 'bow' || p.cat === 'accessory'); })[0];
+    var moms = SG.collections(['auburn-womens-specialty', 'the-ava-collection', 'the-kristen-collection', 'the-becca-collection', 'mallory-gingham-mocknecks', 'the-alli-collection', 'auburn-adult-apparel'])
+      .concat(PRODUCTS)
+      .filter(function (p) { return p.sch === slug && p.who === 'women' && p.av && !isProgramPiece(p) && ['crewneck', 'mockneck', 'tee', 'set', 'quarter-zip', 'long-sleeve', 'tank'].indexOf(p.cat) > -1; });
+    // the top that goes with the dress: same colour first (a navy dress → a navy top), else their merch order
+    var dc = dress ? (dress.co || []).map(function (c) { return String(c).toLowerCase().split(/[\s/]+/)[0]; }) : [];
+    var mom = moms.filter(function (p) { return (p.co || []).some(function (c) { return dc.indexOf(String(c).toLowerCase().split(/[\s/]+/)[0]) > -1; }); })[0] || moms[0];
+    // Auburn: the Brooke striped crewneck is the mom & mini piece in the inset photo; it leads whenever an adult size is in stock
+    var brooke = slug === 'auburn' ? SG.product(PHOTO_DUP['mom-mini-auburn-stripes']) : null;
+    var famLive = function (p, fam) { return (p.v || []).some(function (v) { return v[0] && SG.famOk(v[0], fam) && v[2]; }); };
+    if (brooke && brooke.av && famLive(brooke, 'adult')) {
+      // the photo shows both of them in the Brooke: the look is the Brooke for you and the Brooke for her (kids' sizes)
+      if (famLive(brooke, 'kids')) return [{ p: brooke, type: 'For you' }, { p: brooke, type: 'For your mini' }].concat(dress ? [{ p: dress, type: 'Or her cheer dress', off: true }] : []);
+      mom = brooke;
+    }
+    // the finishing touch is a cheer piece (bow, poms), never just any accessory (a blanket or a sticker)
+    var acc = SG.collection('cheer-accessories').concat(PRODUCTS).filter(function (p) {
+      return p.sch === slug && p.av && (p.cat === 'bow' || (p.cat === 'accessory' && (p.cols || []).indexOf('cheer-accessories') > -1) || (p.cat === 'accessory' && /\b(bows?|poms?|pom poms?)\b/i.test(p.t)));
+    })[0];
     if (!mom || !dress) return null;
     return [{ p: mom, type: 'For you' }, { p: dress, type: 'For your mini' }].concat(acc ? [{ p: acc, type: 'The finishing touch' }] : []);
   };
@@ -978,16 +1426,20 @@
       '<div class="bag__bar" aria-hidden="true"><i style="width:' + Math.min(100, Math.round(tot / FREE_SHIP * 100)) + '%"></i></div></div>' +
       '<ul class="bag__list">' + bag.map(function (it, i) {
         return '<li class="bag__item"><a class="bag__th" href="' + SG.productUrl(it.h) + '" tabindex="-1" aria-hidden="true">' +
-          (it.img ? '<img src="' + SG.esc(SG.img(it.img, 400)) + '" alt="" width="76" height="95" loading="lazy">' : '') + '</a>' +
+          (it.img ? '<img src="' + SG.esc(SG.img(it.img, 200)) + '" alt="" width="76" height="95" loading="lazy">' : '') + '</a>' +
           '<div><p class="bag__t"><a href="' + SG.productUrl(it.h) + '">' + SG.esc(it.t) + '</a></p>' +
-          '<p class="bag__v">' + SG.esc([it.s, it.c].filter(Boolean).join(' · ')) + '</p>' +
+          '<p class="bag__v">' + SG.esc([it.s, it.c, bagFs(it) ? 'Final sale' : ''].filter(Boolean).join(' · ')) + '</p>' +
           '<div class="bag__qty"><button type="button" data-bag="dec" data-i="' + i + '" aria-label="Decrease quantity">−</button><span aria-live="polite">' + it.q + '</span>' +
           '<button type="button" data-bag="inc" data-i="' + i + '" aria-label="Increase quantity">+</button></div><br>' +
           '<button type="button" class="bag__rm" data-bag="rm" data-i="' + i + '">Remove</button></div>' +
           '<span class="bag__p">' + SG.money(it.p * it.q) + '</span></li>';
       }).join('') + '</ul>';
     foot.querySelector('.bag__sub strong').textContent = SG.money(tot);
+    // a returns promise only when no piece in the bag is final sale (data.js p.fs: its own description says no returns)
+    foot.querySelector('.bag__fine').innerHTML = 'Free shipping on orders $100+. Local pickup for apparel &amp; hats at our Auburn shop. ' +
+      (bag.some(bagFs) ? 'Pieces marked final sale can’t be returned or exchanged.' : 'Add Checkout+ for free returns &amp; exchanges.');
   }
+  function bagFs(it) { var x = BY_H[it.h]; return !!(x && x.fs); }
   function updateCounts() {
     var n = bagCount();
     document.querySelectorAll('.hdr__count').forEach(function (c) { c.textContent = n; c.setAttribute('data-n', n); });
@@ -1021,12 +1473,19 @@
   ];
   var SIG_MORE = [['The Madi', 'the-madi-collection'], ['Katy camo sets', 'katy-camo-sets'], ['Sophia scarves', 'sophia-scarves'], ['Script embroidery', 'limited-release-script-embroidered-sweatshirts']];
   SG.nav = { auburn: AU_SHOP.concat(AU_MORE), signatures: SIGS, signaturesMore: SIG_MORE };
-  var CHEER_AU = SG.shopUrl({ c: 'girls-cheer-dresses', school: 'auburn' });   // the all-school cheer page leads with other schools' photos
+  var CHEER_AU = SG.ctaUrl('girls-cheer-dresses', { school: 'auburn' });   // Auburn cheer dresses (the all-school cheer page leads with other schools' photos)
+  var GIFTS_AU = SG.ctaUrl('auburn-accessories-gifts');
+  var INSTOCK_AU = SG.ctaUrl('auburn-university-in-stock-items');
+  /* Sale: the loaded Auburn pieces with a compare-at price (labelled "Sale", never presented as their Closeout Sale collection) */
+  var SALE_URL = SG.ctaUrl('closeout-sale');
+  /* rule-labelled menu rows go where their pieces are (SG.ctaUrl); rows that name a collection keep the collection page */
+  var RULE_ROWS = { 'auburn-kids-specialty': 1, 'auburn-hat-collection-1': 1, 'auburn-accessories-gifts': 1, 'auburn-university-in-stock-items': 1, 'auburn-basketball': 1 };
+  function rowUrl(h) { return RULE_ROWS[h] ? SG.ctaUrl(h) : SG.shopUrl({ c: h }); }
   function shortProgram(t) { return t.replace(/^Auburn University /, '').replace(/^Auburn /, '').replace(/^AU /, ''); }
 
   function megaList(title, rows) {
     return '<div><p class="mega__h">' + SG.esc(title) + '</p><ul class="mega__list">' + rows.map(function (r) {
-      return '<li><a href="' + SG.esc(r[1].indexOf('.html') > -1 || r[1].indexOf('http') === 0 ? r[1] : SG.shopUrl({ c: r[1] })) + '">' + SG.esc(r[0]) + '</a></li>';
+      return '<li><a href="' + SG.esc(r[1].indexOf('.html') > -1 || r[1].indexOf('http') === 0 ? r[1] : rowUrl(r[1])) + '">' + SG.esc(r[0]) + '</a></li>';
     }).join('') + '</ul></div>';
   }
   function megaAuburn() {
@@ -1065,9 +1524,9 @@
     { k: 'signatures', label: 'Signature Styles', href: 'index.html#signatures', mega: megaSignatures },
     { k: 'cheer', label: 'Cheer', href: CHEER_AU },
     { k: 'schools', label: 'Shop Your School', href: 'index.html#schools', mega: megaSchools },
-    { k: 'gifts', label: 'Gifts', href: SG.shopUrl({ c: 'auburn-accessories-gifts' }) },
+    { k: 'gifts', label: 'Gifts', href: GIFTS_AU },
     { k: 'custom', label: 'Custom', href: STORE.custom, ext: true },
-    { k: 'sale', label: 'Sale', href: SG.shopUrl({ c: 'closeout-sale' }) },
+    { k: 'sale', label: 'Sale', href: SALE_URL },
     { k: 'story', label: 'Our Story', href: 'story.html', page: 'story' }
   ];
 
@@ -1097,7 +1556,7 @@
           '<button type="button" class="hdr__btn hdr__burger" data-sg-menu data-sg-opens aria-label="Menu" aria-controls="sg-mnav" aria-expanded="false">' + I.menu + '</button>' +
           '<button type="button" class="hdr__btn hdr__search" data-sg-search data-sg-opens aria-label="Search" aria-controls="sg-search" aria-expanded="false">' + I.search + '<span class="hdr__label" aria-hidden="true">Search</span></button>' +
         '</div>' +
-        '<a class="hdr__logo" href="index.html"><img src="' + SG.esc(CH.logo || 'assets/logo-scarlet.png') + '" alt="Scarlet &amp; Gold" width="1400" height="153"></a>' +
+        '<a class="hdr__logo" href="index.html"><img src="' + SG.esc(CH.logo || 'assets/logo-scarlet.png') + '" alt="Scarlet &amp; Gold" width="1400" height="153" fetchpriority="high"></a>' +
         '<div class="hdr__right">' +
           '<button type="button" class="hdr__btn hdr__signin" data-sg-signin>' + I.user + '<span class="hdr__label">Sign in</span></button>' +
           '<button type="button" class="hdr__btn hdr__heart" data-sg-saved aria-label="Saved items">' + I.heart + '</button>' +
@@ -1114,7 +1573,7 @@
       return '<li><button type="button" class="mnav__acc" aria-expanded="false" aria-controls="mn-' + id + '">' + SG.esc(label) + I.chev + '</button>' +
         '<div class="mnav__panel" id="mn-' + id + '" hidden>' + inner + '</div></li>';
     };
-    var links = function (rows) { return rows.map(function (r) { return '<a href="' + SG.esc(r[1].indexOf('.html') > -1 ? r[1] : SG.shopUrl({ c: r[1] })) + '">' + SG.esc(r[0]) + '</a>'; }).join(''); };
+    var links = function (rows) { return rows.map(function (r) { return '<a href="' + SG.esc(r[1].indexOf('.html') > -1 ? r[1] : rowUrl(r[1])) + '">' + SG.esc(r[0]) + '</a>'; }).join(''); };
     var li = function (label, href, cls, ext) {
       return '<li><a class="mnav__link' + (cls ? ' ' + cls : '') + '" href="' + SG.esc(href) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + '>' + label + '</a></li>';
     };
@@ -1130,9 +1589,9 @@
           acc('sig', 'Signature Styles', links(SIGS.map(function (s) { return [s[0] + ' · ' + s[1], s[2]]; })) + links(SIG_MORE)) +
           li('Cheer', CHEER_AU) +
           acc('schools', 'Shop Your School', SG.schoolsHTML({ tag: false })) +
-          li('Gifts', SG.shopUrl({ c: 'auburn-accessories-gifts' })) +
+          li('Gifts', GIFTS_AU) +
           li('Custom orders <span class="sr">(opens Scarlet &amp; Gold Custom)</span>', STORE.custom, '', true) +
-          li('Sale', SG.shopUrl({ c: 'closeout-sale' })) +
+          li('Sale', SALE_URL) +
           li('Our Story', 'story.html') +
           li('Visit the shop', 'visit.html') +
         '</ul>' +
@@ -1164,7 +1623,7 @@
         '<button type="button" class="drawer__x" data-sg-close aria-label="Close search">' + I.close + '</button></form>' +
       '<div class="wrap srch__body">' +
         '<div><p class="srch__h" id="srch-lh">Popular</p><ul class="srch__links" id="srch-links">' + popular.map(function (r) {
-          return '<li><a href="' + SG.shopUrl({ c: r[1] }) + '">' + SG.esc(r[0]) + '</a></li>'; }).join('') + '</ul></div>' +
+          return '<li><a href="' + SG.esc(r[1] === 'girls-cheer-dresses' ? CHEER_AU : rowUrl(r[1])) + '">' + SG.esc(r[0]) + '</a></li>'; }).join('') + '</ul></div>' +
         '<div id="srch-right"><p class="srch__h">Shop your school</p>' + SG.schoolsHTML({ limit: 8, tag: false }) + '</div>' +
       '</div></div>';
   }
@@ -1191,7 +1650,7 @@
       : '<li class="srch__empty">No collections match “' + SG.esc(q) + '”.</li>';
     var prods = SG.auburnFirst(SG.products({ q: q }));
     if (prods.length) {
-      right.innerHTML = '<p class="srch__h">Products</p><div class="srch__prods">' + prods.slice(0, 8).map(function (p) { return SG.card(p, { ship: false, w: 400 }); }).join('') + '</div>' +
+      right.innerHTML = '<p class="srch__h">' + (D.partial ? 'Products in this preview' : 'Products') + '</p><div class="srch__prods">' + prods.slice(0, 8).map(function (p) { return SG.card(p, { ship: false, w: 400 }); }).join('') + '</div>' +
         '<a class="btn btn--line-ink srch__all" href="' + SG.shopUrl({ q: q }) + '">See all ' + prods.length + ' results</a>';
     } else {
       right.innerHTML = '<p class="srch__h">Products</p><p class="srch__empty">Press Enter to search the shop for “' + SG.esc(q) + '”, or try “Auburn”, “cheer dress” or “crewneck”.</p>';
@@ -1210,10 +1669,10 @@
           '<p class="ft__line" data-sg-ftline>Show up proud. Stay comfortable. <em>Wear it again on Tuesday.</em></p></div>' +
           '<div class="ft__social"><a href="' + STORE.instagram + '" target="_blank" rel="noopener" aria-label="Scarlet &amp; Gold on Instagram">' + I.insta + '</a></div></div>' +
         '<div class="ft__cols">' +
-          col('ft__col--auburn', 'Auburn', [['The Auburn shop', 'auburn.html'], ['In stock now', SG.shopUrl({ c: 'auburn-university-in-stock-items' })], ['Girls &amp; kids', SG.shopUrl({ c: 'auburn-kids-specialty' })],
-            ['Hats', SG.shopUrl({ c: 'auburn-hat-collection-1' })], ['Original Aubie', SG.shopUrl({ c: 'original-aubie-basketball' })], ['Colleges &amp; programs', 'auburn.html#programs']]) +
+          col('ft__col--auburn', 'Auburn', [['The Auburn shop', 'auburn.html'], ['In stock now', INSTOCK_AU], ['Girls &amp; kids', SG.ctaUrl('auburn-kids-specialty')],
+            ['Hats', SG.ctaUrl('auburn-hat-collection-1')], ['Original Aubie', SG.shopUrl({ c: 'original-aubie-basketball' })], ['Colleges &amp; programs', 'auburn.html#programs']]) +
           col('ft__col--shop', 'Shop', [['Auburn', 'auburn.html'], ['Signature styles', 'index.html#signatures'], ['Cheer dresses', CHEER_AU],
-            [SG.esc(CH.nav), SG.shopUrl({ c: CH.featured.c })], ['Gifts', SG.shopUrl({ c: 'auburn-accessories-gifts' })], ['Sale', SG.shopUrl({ c: 'closeout-sale' })], ['Custom orders', STORE.custom, 1]]) +
+            [SG.esc(CH.nav), SG.shopUrl({ c: CH.featured.c })], ['Gifts', GIFTS_AU], ['Sale', SALE_URL], ['Custom orders', STORE.custom, 1]]) +
           col('ft__col--help', 'Help', [['Shipping', 'visit.html#shipping'], ['Returns &amp; exchanges', 'visit.html#returns'], ['Start a return', STORE.returns, 1], ['Size guides', STORE.sizeGuides, 1],
             ['FAQ', 'visit.html#help'], ['Our story', 'story.html']]) +
           '<div class="ft__col--visit"><p class="ft__h">Visit</p><address class="ft__addr">' +
@@ -1369,7 +1828,7 @@
       return;
     }
     if (t.closest('[data-sg-checkout]')) {
-      SG.toast('<b>Concept preview.</b> Checkout would hand off to Scarlet &amp; Gold’s real Shopify checkout here, with Checkout+ free returns.', { html: true, ms: 5200 });
+      SG.toast('<b>Concept preview.</b> Checkout would hand off to Scarlet &amp; Gold’s real Shopify checkout here' + (bag.some(bagFs) ? '.' : ', with Checkout+ free returns.'), { html: true, ms: 5200 });
       return;
     }
     if ((el = t.closest('.pc__heart'))) {

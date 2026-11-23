@@ -24,6 +24,8 @@
    * slots rival-school photos are skipped and torso crops are only used where a tile opts in ({torso:true}). A tile
    * with `made` falls back to a designed (gold / scarlet / navy / ivory) tile whenever none of its photos is free, so a
    * slot never shows the wrong photo. Hero panels hold only single-person or flat-lay photos (narrow, tall frames).
+   * 'p:<handle>[#i]' is a loaded product's own photo and 'rule:<handle>' the photos of the loaded pieces a department
+   * rule matches (sg.js SG.photo / SG.pickPhoto): with an empty catalogue they resolve to nothing and the designed tile shows.
    */
   var CH = {
     christmas: {
@@ -36,11 +38,13 @@
         line2: 'in your school colors.',
         body: 'The Game Day Nutcracker: tees and white crewneck sweatshirts for every team on your list.',
         ctas: [
-          { label: 'Shop Christmas', href: 'shop.html?c=s-g-christmas' },
-          { label: 'Auburn gifts', href: 'shop.html?c=auburn-accessories-gifts' }
+          // while S&G Christmas isn't loaded this opens it on their store, marked ↗ + "opens their store" (sg.js SG.hero);
+          // kept short so both hero buttons stay on one row like the approved design
+          { label: 'Shop Christmas', href: 'shop.html?c=s-g-christmas', c: 's-g-christmas', live: 'Shop Christmas' },
+          { label: 'Auburn gifts', href: 'shop.html?c=auburn-accessories-gifts', rule: 'auburn-accessories-gifts' }
         ],
         cols: '1fr 1.5fr 1fr',
-        images: [
+        images: [   // images[0] is preloaded by the inline <head> script in index.html: keep them in sync
           { img: ['auburn-blue-cropped-crewneck-model'], pos: '50% 12%' },
           { img: ['christmas-three-models'], pos: '50% 22%' },
           { img: ['auburn-tee-grid-flatlay'], pos: '50% 50%' }
@@ -57,15 +61,17 @@
         pill: 'The gift shop',
         title: 'Gifts for every age <em class="br">and occasion.</em>',
         items: [
-          { t: 'Auburn tees & fleece', sub: 'Printed or embroidered in Auburn', c: 'auburn-adult-apparel', img: [{ k: 'aubie-tee-flatlay', pos: '32% 50%' }, 'auburn-tee-grid-flatlay-2'] },
+          { t: 'Auburn tees & fleece', sub: 'Adult tees & fleece', c: 'auburn-adult-apparel', img: [{ k: 'aubie-tee-flatlay', pos: '32% 50%' }, 'auburn-tee-grid-flatlay-2'] },
           { t: 'Auburn sets', sub: 'Women’s specialty', c: 'auburn-womens-specialty', img: [{ k: 'four-models-sets', pos: '50% 30%' }, { k: 'ava-airy-set-two-models', pos: '50% 20%' }] },
-          { t: 'Auburn gifts', sub: 'Accessories & gifts', c: 'auburn-accessories-gifts', img: ['col:auburn-accessories-gifts'],
+          { t: 'Auburn gifts', sub: 'Accessories & gifts', c: 'auburn-accessories-gifts', rule: true, img: ['col:auburn-accessories-gifts', { k: 'p:the-auburn-university-needlepoint-pillow', pos: '50% 50%' }, 'rule:auburn-accessories-gifts'],
             made: { tone: 'gold', big: '&', patch: 'Auburn gifts', dot: true } },
           { t: 'Give Grace', sub: 'By our founder, Megan Smalley', c: 'book', img: [{ k: 'col:book', pos: '38% 50%' }],
             made: { tone: 'ivory', patch: 'Give Grace' } }
         ]
       },
-      featured: { c: 's-g-christmas', eyebrow: 'New for Christmas', title: 'The Game Day <em>Nutcracker</em>', more: 'Shop the collection' }
+      featured: { c: 's-g-christmas', eyebrow: 'New for Christmas', title: 'The Game Day <em>Nutcracker</em>', more: 'Shop the collection',
+        // S&G Christmas not loaded: a rail labelled by its rule (Auburn gifts tagged in stock), never by the collection name
+        derive: 'auburn-gifts-in-stock', alt: { eyebrow: 'Ready to wrap', title: 'Auburn gifts, <em>in stock now</em>' } }
     },
 
     football: {
@@ -79,10 +85,10 @@
         body: 'Cute, comfy, and made to wear long after the final whistle. Designed in-house in Auburn, a few miles from Jordan-Hare.',
         ctas: [
           { label: 'Shop Auburn', href: 'auburn.html' },
-          { label: 'In stock now', href: 'shop.html?c=auburn-university-in-stock-items' }
+          { label: 'In stock now', href: 'shop.html?c=auburn-university-in-stock-items', rule: 'auburn-university-in-stock-items' }
         ],
         cols: '1fr 1fr 1fr',
-        images: [
+        images: [   // images[0] is preloaded by the inline <head> script in index.html: keep them in sync
           { img: ['auburn-blue-cropped-crewneck-model'], pos: '50% 12%' },
           { img: ['auburn-tee-grid-flatlay'], pos: '50% 50%' },
           { img: ['auburn-embroidered-crewneck-model'], pos: '50% 12%' }
@@ -92,7 +98,7 @@
         eyebrow: 'Game coming up?',
         title: 'In stock ships in <em>5–7 business days.</em>',
         body: 'In Stock styles are already made and waiting in our warehouse. Tees, fleece and client collections are printed or embroidered for you in our Auburn shop in 10–14 business days.',
-        cta: { label: 'Shop in stock', href: 'shop.html?c=auburn-university-in-stock-items' }
+        cta: { label: 'Shop in stock', href: 'shop.html?c=auburn-university-in-stock-items', rule: 'auburn-university-in-stock-items' }
       },
       tiles: {
         tone: 'scarlet',
@@ -100,10 +106,10 @@
         title: 'Ready for <em>kickoff.</em>',
         items: [
           { t: 'Tees & fleece', sub: 'Auburn adult tees & fleece', c: 'auburn-adult-apparel', img: ['auburn-tee-grid-flatlay-2', { k: 'aubie-tee-flatlay', pos: '32% 50%' }], pos: '50% 50%' },
-          { t: 'Cheer dresses', sub: 'Sizes 12M–10', href: 'shop.html?c=girls-cheer-dresses&school=auburn', img: [],
+          { t: 'Cheer dresses', sub: 'Sizes 12M–10', c: 'girls-cheer-dresses', rule: true, extra: { school: 'auburn' }, img: ['rule:girls-cheer-dresses'],
             made: { tone: 'gold', patch: 'Auburn cheer', dot: true } },
           { t: 'The Alli', sub: 'Tank & skort', c: 'the-alli-collection', img: [{ k: 'war-eagle-tank-skort-torso', torso: true }, { k: 'four-models-sets', pos: '50% 30%' }] },
-          { t: 'Hats', sub: 'Local pickup in Auburn', c: 'auburn-hat-collection-1', img: ['col:auburn-hat-collection-1'],
+          { t: 'Hats', sub: 'Local pickup in Auburn', c: 'auburn-hat-collection-1', rule: true, img: ['col:auburn-hat-collection-1', { k: 'p:the-vintage-war-eagle-hat-navy-natural#1', pos: '50% 30%' }, 'rule:auburn-hat-collection-1'],
             made: { tone: 'ivory', patch: 'Auburn hats', dot: true } }
         ]
       },
@@ -121,10 +127,10 @@
         body: 'The Original Aubie basketball collection, made in collaboration with Scarlet & Gold. Cozy layers for the tip-off, designed in Auburn.',
         ctas: [
           { label: 'Shop Original Aubie', href: 'shop.html?c=original-aubie-basketball' },
-          { label: 'Auburn basketball', href: 'shop.html?c=auburn-basketball' }
+          { label: 'Auburn basketball', href: 'shop.html?c=auburn-basketball', rule: 'auburn-basketball' }
         ],
         cols: '1fr 1.5fr 1fr',
-        images: [
+        images: [   // images[0] is preloaded by the inline <head> script in index.html: keep them in sync
           { img: ['auburn-embroidered-crewneck-model'], pos: '50% 12%' },
           { img: [{ k: 'original-aubie-collab', fit: 'contain', bg: '#F1E9DC' }] },
           { img: ['auburn-blue-cropped-crewneck-model'], pos: '50% 12%' }
@@ -141,10 +147,10 @@
         pill: 'Cozy season',
         title: 'Courtside <em>& cozy.</em>',
         items: [
-          { t: 'Auburn basketball', sub: 'The Original Aubie & more', c: 'auburn-basketball', img: ['col:auburn-basketball'],
+          { t: 'Auburn basketball', sub: 'The Original Aubie & more', c: 'auburn-basketball', rule: true, img: ['col:auburn-basketball', 'p:the-basketball-aubie-navy-sweatshirt'],
             made: { tone: 'gold', patch: 'Auburn basketball', dot: true } },
           { t: 'The Ava', sub: 'Airy crewneck & shorts', c: 'the-ava-collection', img: [{ k: 'ava-airy-set-two-models', pos: '50% 20%' }] },
-          { t: 'Hats', sub: 'Local pickup in Auburn', c: 'auburn-hat-collection-1', img: ['col:auburn-hat-collection-1'],
+          { t: 'Hats', sub: 'Local pickup in Auburn', c: 'auburn-hat-collection-1', rule: true, img: ['col:auburn-hat-collection-1', { k: 'p:the-vintage-war-eagle-hat-navy-natural#1', pos: '50% 30%' }, 'rule:auburn-hat-collection-1'],
             made: { tone: 'ivory', patch: 'Auburn hats', dot: true } },
           { t: 'Tees & fleece', sub: 'Auburn adult tees & fleece', c: 'auburn-adult-apparel', img: [{ k: 'aubie-tee-flatlay', pos: '32% 50%' }, 'auburn-tee-grid-flatlay-2'] }
         ]
@@ -166,7 +172,7 @@
           { label: 'The Alli Collection', href: 'shop.html?c=the-alli-collection' }
         ],
         cols: '1fr 1.5fr 1fr',
-        images: [
+        images: [   // images[0] is preloaded by the inline <head> script in index.html: keep them in sync
           { img: ['auburn-embroidered-crewneck-model'], pos: '50% 12%' },
           { img: ['auburn-tee-grid-flatlay-2'], pos: '50% 50%' },
           { img: ['auburn-blue-cropped-crewneck-model'], pos: '50% 12%' }
@@ -184,14 +190,14 @@
         title: 'Made for <em>the sunshine.</em>',
         items: [
           { t: 'The Alli', sub: 'Tank & skort', c: 'the-alli-collection', img: [{ k: 'war-eagle-tank-skort-torso', torso: true }, { k: 'four-models-sets', pos: '50% 30%' }] },
-          { t: 'Hats', sub: 'Local pickup in Auburn', c: 'auburn-hat-collection-1', img: ['col:auburn-hat-collection-1'],
+          { t: 'Hats', sub: 'Local pickup in Auburn', c: 'auburn-hat-collection-1', rule: true, img: ['col:auburn-hat-collection-1', { k: 'p:the-vintage-war-eagle-hat-navy-natural#1', pos: '50% 30%' }, 'rule:auburn-hat-collection-1'],
             made: { tone: 'gold', patch: 'Auburn hats', dot: true } },
           { t: 'Grace gingham', sub: 'Dresses', c: 'grace-gingham-dresses', img: [{ k: 'grace-gingham-dresses-three-models', pos: '50% 8%' }] },
           { t: 'The Ava', sub: 'Airy crewneck & shorts', c: 'the-ava-collection', img: [{ k: 'ava-airy-set-two-models', pos: '50% 20%' }],
             made: { tone: 'ivory', patch: 'The Ava' } }
         ]
       },
-      featured: { c: 'the-alli-collection', eyebrow: 'Our signature fabric', title: 'The <em>Alli</em>', more: 'Shop the Alli' }
+      featured: { c: 'the-alli-collection', eyebrow: 'Tank & skort', title: 'The <em>Alli</em>', more: 'Shop the Alli' }
     }
   };
 

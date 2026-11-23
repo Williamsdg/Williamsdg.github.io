@@ -116,6 +116,10 @@
   view.hidden = false;
   document.body.classList.add('pdp-on');
 
+  var FINAL = !!p.fs;   // final sale (prep.py: their description says no returns / exchanges): no returns promise anywhere
+  if (FINAL) {   // the store-wide ticker lines about returns don't apply to this piece
+    $$('.tick__item').forEach(function (t) { if (/return/i.test(t.textContent)) t.remove(); });
+  }
   var shipKind = SG.shipKind(p);   // 'in' | 'mto' | 'vendor' | 'check' (only in/mto claim a timeline)
   var shipLong = SG.shipLabel(p, true);
   setMeta(p.t + ' · Scarlet & Gold',
@@ -160,7 +164,7 @@
      ====================================================================== */
   function renderGallery() {
     var el = $('[data-pdp="gallery"]');
-    var imgs = (p.img || []).filter(Boolean).slice(0, 6);
+    var imgs = (p.img || []).filter(Boolean);
     var ratio = clamp(p.ir || 0.8, 0.667, 1);
     el.style.setProperty('--ratio', String(Math.round(ratio * 1000) / 1000));
     gal.n = imgs.length;
@@ -173,10 +177,11 @@
     var h1200 = Math.round(1200 / (p.ir || 0.8));
     var slides = imgs.map(function (path, i) {
       var alt = i === 0 ? p.t : p.t + ', view ' + (i + 1) + ' of ' + imgs.length;
+      var set = E(SG.img(path, 900)) + ' 900w, ' + E(SG.img(path, 1200)) + ' 1200w, ' + E(SG.img(path, 1600)) + ' 1600w';
       return '<figure class="pdp-slide" role="group" aria-roledescription="slide" aria-label="' + (i + 1) + ' of ' + imgs.length + '">' +
-        '<img src="' + E(SG.img(path, 1200)) + '" srcset="' + E(SG.img(path, 1200)) + ' 1200w, ' + E(SG.img(path, 1600)) + ' 1600w" ' +
+        '<img ' + (i === 0 ? 'src="' + E(SG.img(path, 1200)) + '" srcset="' + set + '"' : 'data-src="' + E(SG.img(path, 1200)) + '" data-srcset="' + set + '"') + ' ' +
         'sizes="(max-width: 1023px) 100vw, 46vw" alt="' + E(alt) + '" width="1200" height="' + h1200 + '"' +
-        (i === 0 ? ' fetchpriority="high"' : (i > 1 ? ' loading="lazy"' : '')) + ' decoding="async"></figure>';
+        (i === 0 ? ' fetchpriority="high"' : '') + ' decoding="async"></figure>';
     }).join('');
     var multi = imgs.length > 1;
     var thumbs = multi ? '<div class="pdp-thumbs" role="group" aria-label="Product images">' + imgs.map(function (path, i) {
@@ -199,6 +204,21 @@
 
     var track = $('.pdp-track', el), stage = $('.pdp-stage', el);
     gal.track = track;
+    /* slides 2+ carry data-src: they load once slide 0 has (when the browser is idle), or right away on a swipe or tap,
+       so they never compete with the first photo */
+    var slideImgs = $$('.pdp-slide img', track);
+    function wakeAt(i) {   // load slide i (if it is still waiting)
+      var im = slideImgs[i];
+      if (!im || !im.hasAttribute('data-src')) return;
+      im.srcset = im.getAttribute('data-srcset'); im.src = im.getAttribute('data-src');
+      im.removeAttribute('data-srcset'); im.removeAttribute('data-src');
+    }
+    function wake() { wakeAt(gal.idx - 1); wakeAt(gal.idx + 1); }   // the neighbours of the slide on screen
+    gal.wake = wake;
+    var first = slideImgs[0];
+    var later = function () { (window.requestIdleCallback || function (fn) { return window.setTimeout(fn, 200); })(function () { wakeAt(1); }, { timeout: 2500 }); };
+    if (first && first.complete) later(); else if (first) { first.addEventListener('load', later, { once: true }); first.addEventListener('error', later, { once: true }); }
+    ['pointerdown', 'touchstart', 'focusin'].forEach(function (ev) { el.addEventListener(ev, function () { wakeAt(1); }, { once: true, passive: true }); });
 
     /* cover only when the photo's shape already matches the frame (≤ 6% trim, top-biased); otherwise contain on the frame colour */
     function fit(img, box, tol) {
@@ -222,6 +242,7 @@
     if (!multi) return;
 
     function mark() {
+      if (gal.live) { wakeAt(gal.idx); wake(); }   // not on the first paint: slide 2 waits for slide 1
       $$('[data-go]', el).forEach(function (b) { b.setAttribute('aria-current', String(+b.getAttribute('data-go') === gal.idx)); });
       $('.pdp-count b', el).textContent = String(gal.idx + 1);
       $('.pdp-arrow--prev', el).disabled = gal.idx === 0;
@@ -255,12 +276,15 @@
       else if (e.key === 'End') { e.preventDefault(); go(gal.n - 1); }
     });
     mark();
+    gal.live = true;
   }
 
   /* ======================================================================
      School chip, title, price
      ====================================================================== */
   function titleHTML(t) {
+    var k = t.lastIndexOf(' | ');
+    if (k > 2 && k < t.length - 3) return E(t.slice(0, k)) + ' <span class="pdp-title__sub"><span class="sr">| </span>' + E(t.slice(k + 3)) + '</span>';
     var i = t.lastIndexOf(' - ');
     if (i < 8 || i > t.length - 4) return E(t);
     return E(t.slice(0, i)) + ' <span class="pdp-title__sub"><span class="sr">- </span>' + E(t.slice(i + 3)) + '</span>';
@@ -300,24 +324,43 @@
   /* ======================================================================
      Colour swatches + size pills, wired to real variants
      ====================================================================== */
+  /* size families (toddler / youth / adult): a piece spanning several, like The Brooke ($92 / $98 / $118), shows each
+     family on its own labelled row with that family's price */
+  function famOf(s) { var f = SG.sizeFam(s); return f === 'baby' ? 'baby' : f || 'other'; }
+  function isMultiFam() {   // (a function: renderOptions runs before this part of the file is reached)
+    var fams = sizes.map(famOf).filter(function (f, i, a) { return a.indexOf(f) === i; });
+    return fams.length > 1 && fams.indexOf('other') < 0;
+  }
+  function famLabel(f) {
+    var name = f === 'baby' ? 'Baby & toddler' : f === 'kids' ? 'Youth' : (p.who === 'men' ? 'Men' : p.who === 'women' ? 'Women' : 'Adult');
+    var v = V.filter(function (x) { return x[0] && famOf(x[0]) === f && x[3] != null; });
+    var live = v.filter(function (x) { return x[2]; });
+    var list = (live.length ? live : v).map(function (x) { return Number(x[3]); });
+    if (!list.length) return name;
+    var lo = Math.min.apply(null, list), hi = Math.max.apply(null, list);
+    return name + ' · ' + (hi > lo ? 'from ' : '') + SG.money(lo);
+  }
   function renderOptions() {
     var colEl = $('[data-pdp="colors"]'), sizeEl = $('[data-pdp="sizes"]');
     if (colors.length) {
       colEl.hidden = false;
-      colEl.innerHTML = '<div class="pdp-opt__head"><span class="pdp-opt__label" id="pdp-col-l">Color</span><span class="pdp-opt__val" data-pdp="col-val"></span></div>' +
+      colEl.innerHTML = '<div class="pdp-opt__head"><span class="pdp-opt__label" id="pdp-col-l">' + E(p.ol || 'Color') + '</span><span class="pdp-opt__val" data-pdp="col-val"></span></div>' +
         '<div class="pdp-swatches" role="radiogroup" aria-labelledby="pdp-col-l">' + colors.map(function (c, i) {
           var out = !avail(null, c);
-          return '<label class="pdp-sw' + (out ? ' is-out' : '') + '" style="--c:' + SG.colorHex(c) + '" title="' + E(c) + (out ? ' (sold out)' : '') + '">' +
+          return '<label class="pdp-sw' + (out ? ' is-out' : '') + '" style="--c:' + SG.colorBg(c) + '" title="' + E(c) + (out ? ' (sold out)' : '') + '">' +
             '<input type="radio" name="pdp-color" value="' + E(c) + '" id="pdp-c' + i + '"' + (out ? ' disabled' : '') + (c === state.color ? ' checked' : '') + '>' +
             '<span class="pdp-sw__dot" aria-hidden="true"></span><span class="sr">' + E(c) + (out ? ', sold out' : '') + '</span></label>';
         }).join('') + '</div>';
     }
     if (needsSize) {
       sizeEl.hidden = false;
+      var multi = isMultiFam();
       sizeEl.innerHTML = '<div class="pdp-opt__head"><span class="pdp-opt__label" id="pdp-size-l">Size</span><span class="pdp-opt__val" data-pdp="size-val"></span>' +
         '<a class="pdp-guide" href="' + STORE.sizeGuides + '" target="_blank" rel="noopener">Size guide' + SG.icons.ext + '<span class="sr"> (opens in a new tab)</span></a></div>' +
         '<div class="pdp-sizes" role="radiogroup" aria-labelledby="pdp-size-l" aria-describedby="pdp-err">' + sizes.map(function (s, i) {
-          return '<label class="pdp-sz"><input type="radio" name="pdp-size" value="' + E(s) + '" id="pdp-s' + i + '"><span class="pdp-sz__t">' + E(s) + '</span><span class="sr pdp-sz__sr"></span></label>';
+          var fam = famOf(s), prev = i ? famOf(sizes[i - 1]) : null;
+          var head = multi && fam !== prev ? '<span class="pdp-sizes__fam" aria-hidden="true">' + E(famLabel(fam)) + '</span>' : '';
+          return head + '<label class="pdp-sz"><input type="radio" name="pdp-size" value="' + E(s) + '" id="pdp-s' + i + '"><span class="pdp-sz__t">' + E(s) + '</span><span class="sr pdp-sz__sr"></span></label>';
         }).join('') + '</div>';
     } else if (sizes.length === 1) {
       var one = $('[data-pdp="onesize"]');
@@ -432,19 +475,23 @@
     var out = SG.isSoldOut(p);
     var inStock = !out && shipKind === 'in', timed = !out && (shipKind === 'in' || shipKind === 'mto');
     var eta = timed ? addBusinessDays(TODAY, inStock ? 7 : 14) : null;
-    var pickup = APPAREL.indexOf(p.cat) > -1;
-    var patch = out ? 'Sold out' : inStock ? 'In stock' : shipKind === 'mto' ? 'Made for you' : shipKind === 'vendor' ? 'From our maker' : 'Shipping';
+    var pickup = APPAREL.indexOf(p.cat) > -1 || (p.cat === 'other' && /\b(onesies?|bodysuit|polo|pants|joggers?)\b/i.test(p.t));   // onesies, polos, pants are apparel too
+    var patch = out ? 'Sold out' : inStock ? 'In stock' : shipKind === 'mto' ? 'Made for you' : shipKind === 'vendor' ? 'From our maker' : '';   // no ship time known: no patch
     var rows = [];
     if (pickup) rows.push([SG.icons.pin, '<strong>Local pickup</strong> for apparel &amp; hats at our Auburn shop']);
     else rows.push([IC.box, 'Accessories and other items <strong>may ship separately</strong> from our manufacturer']);
     rows.push([IC.truck, '<strong>Free shipping</strong> on all orders $100+']);
-    rows.push([IC.ret, '<strong>Free returns &amp; exchanges</strong> with Checkout+']);
-    if (HOLIDAY) rows.push([IC.gift, '<strong>Holiday purchases</strong> (Nov 1–Dec 31) are returnable through Jan 30']);
+    if (FINAL) rows.push([IC.ret, '<strong>Final sale.</strong> No returns or exchanges on this piece']);   // its own description says so
+    else {
+      rows.push([IC.ret, '<strong>Free returns &amp; exchanges</strong> with Checkout+']);
+      if (HOLIDAY) rows.push([IC.gift, '<strong>Holiday purchases</strong> (Nov 1–Dec 31) are returnable through Jan 30']);
+    }
     $('[data-pdp="ship"]').innerHTML =
       '<div class="pdp-tix__main">' +
         '<div class="pdp-tix__head"><p class="ticket__label">Shipping</p>' +
-          '<span class="patch' + (inStock ? ' patch--navy' : '') + ' pdp-tix__patch">' + patch + '</span></div>' +
-        '<p class="pdp-tix__line">' + E(out ? 'Sold out for now, so there’s no ship date yet' : shipLong) + '</p>' +
+          (patch ? '<span class="patch' + (inStock ? ' patch--navy' : '') + ' pdp-tix__patch">' + patch + '</span>' : '') + '</div>' +
+        '<p class="pdp-tix__line">' + E(out ? 'Sold out for now, so there’s no ship date yet' : shipLong) +
+          '</p>' + (!out && shipKind === 'check' ? '<p class="pdp-tix__how"><a class="tlink" href="visit.html#shipping">See how shipping works</a></p>' : '') +
         (eta ? '<p class="pdp-tix__eta">' + IC.cal + '<span>Estimated to ship by <strong>' + E(fmtDay(eta)) + '</strong></span></p>' : '') +
       '</div>' +
       '<span class="ticket__perf" aria-hidden="true"></span>' +
@@ -480,14 +527,16 @@
   }
   function renderAccordions() {
     var items = [];
-    var d = (p.d || []).filter(function (x) { return String(x || '').trim(); });
+    // descriptions ship in data-desc.js (window.SG_DESC, product page only); p.d is the older inline form
+    var d = ((window.SG_DESC || {})[p.h] || p.d || []).filter(function (x) { return String(x || '').trim(); });
     if (d.length) items.push(['desc', 'Description', descHTML(d)]);
 
     var fit = '';
     if (needsSize) fit += '<p>This piece comes in <strong>' + E(sizeRange()) + '</strong>.' + (sizes.some(function (s) { return !avail(s, null); }) ? ' Sold-out sizes are crossed out above.' : '') + '</p>';
     if (p.cat === 'cheer-dress') fit += '<p>Our cheer dresses come in sizes 12M–10, in a soft, stretchy, non-itchy fabric she can jump and cheer in all game long.</p>';
-    fit += '<p>Each product page includes a detailed size guide in the description. Need a little extra guidance? Check out our size guides.</p>' +
-      '<p>Not quite right? Returns for store credit or exchange are free with Checkout+. Live nearby? <a href="visit.html">Come try it on</a> at our shop on Shug Jordan Parkway.</p>' +
+    fit += '<p>Need a little extra guidance on fit? Check out our size guides.</p>' +
+      (FINAL ? '<p>This piece is <strong>final sale</strong>, so it can’t be returned or exchanged. Check the size guide before you order.</p>'
+        : '<p>Not quite right? Returns for store credit or exchange are free with Checkout+. Live nearby? <a href="visit.html">Come try it on</a> at our shop on Shug Jordan Parkway.</p>') +
       '<p><a class="tlink" href="' + STORE.sizeGuides + '" target="_blank" rel="noopener">Open our size guides' + SG.icons.ext + '<span class="sr"> (opens in a new tab)</span></a></p>';
     items.push(['fit', 'Size & fit', fit]);
 
@@ -497,12 +546,14 @@
       '<li' + (mto ? ' class="is-this"' : '') + '><strong>Made to order</strong> pieces (tees, fleece and client collections) are printed or embroidered in our Auburn shop in 10–14 business days.' + (mto ? ' <span class="pdp-this">This piece</span>' : '') + '</li>' +
       '<li' + (vendor ? ' class="is-this"' : '') + '><strong>Accessories</strong> ship directly from our manufacturer, so they may arrive separately from apparel and hats.' + (vendor ? ' <span class="pdp-this">This piece</span>' : '') + '</li>' +
       '<li>Every order ships UPS Ground, and shipping is free on all orders $100+.</li>' +
-      '<li>Returns for store credit or exchange can be requested within 14 days of delivery.</li>' +
-      '<li>Holiday purchases made November 1 through December 31 can be returned through January 30.</li>' +
-      '<li>Choose Hassle Free Returns with Checkout+ for free returns and exchanges, plus package protection.</li>' +
-      '<li>Live nearby? Bring your item and order number to our Auburn store to return or exchange it in person.</li>' +
+      // a final-sale piece (its description: "we cannot offer returns or exchanges") gets no returns promise at all
+      (FINAL ? '<li class="is-this"><strong>Final sale:</strong> this piece can’t be returned or exchanged. <span class="pdp-this">This piece</span></li>'
+        : '<li>Returns for store credit or exchange can be requested within 14 days of delivery.</li>' +
+          '<li>Holiday purchases made November 1 through December 31 can be returned through January 30.</li>' +
+          '<li>Choose Hassle Free Returns with Checkout+ for free returns and exchanges, plus package protection.</li>' +
+          '<li>Live nearby? Bring your item and order number to our Auburn store to return or exchange it in person.</li>') +
       '</ul><p class="pdp-acc__links"><a class="tlink" href="visit.html#returns">Shipping &amp; returns FAQ</a>' +
-      '<a class="tlink" href="' + STORE.returns + '" target="_blank" rel="noopener">Start a return' + SG.icons.ext + '<span class="sr"> (opens in a new tab)</span></a></p>';
+      (FINAL ? '' : '<a class="tlink" href="' + STORE.returns + '" target="_blank" rel="noopener">Start a return' + SG.icons.ext + '<span class="sr"> (opens in a new tab)</span></a>') + '</p>';
     items.push(['ship', 'Shipping & returns', ship]);
 
     var acc = $('[data-pdp="acc"]');
@@ -525,31 +576,75 @@
   /* ======================================================================
      Match your mini / Wear it with
      ====================================================================== */
-  function sigOf(x) { var c = x.cols || []; return SIGS.filter(function (s) { return c.indexOf(s[1]) > -1; })[0] || null; }
-  function sameSchool(x) { return x.h !== p.h && x.av && (p.sch ? x.sch === p.sch : x.sch === 'auburn'); }
-  function pick(list, test) { return list.filter(test)[0] || null; }
+  /* signature line: its collection when loaded, else the line their own title names ("The Alli Tennis Skort …") */
+  function sigOf(x) {
+    var c = x.cols || [];
+    var s = SIGS.filter(function (s) { return c.indexOf(s[1]) > -1; })[0];
+    if (s) return s;
+    var m = /^the\s+([a-z]+)\b/i.exec(x.t || '');
+    if (!m) return null;
+    var nm = 'the ' + m[1].toLowerCase();
+    return SIGS.filter(function (s) { return s[0].toLowerCase() === nm; })[0] || null;
+  }
+  /* college / program client-store pieces (webstore tag or a program tag) are never suggested as a pairing */
+  function isProgram(x) { return SG.isProgramPiece(x); }   // (sg.js: webstore tag, a program collection or their program tags)
+  function sameSchool(x) { return x.h !== p.h && x.av && !isProgram(x) && (p.sch ? x.sch === p.sch : x.sch === 'auburn'); }
+  /* first match, preferring one that shares a colour with `ref` (a navy cheer dress → a navy top) */
+  function base(c) { return String(c).toLowerCase().split(/[\s/]+/)[0]; }
+  /* rotate: choose among the matches by this page's handle, so neighbouring pages don't all get the identical look */
+  function spin(list) {
+    if (list.length < 2) return list[0] || null;
+    var h = 0; for (var i = 0; i < p.h.length; i++) h = (h * 31 + p.h.charCodeAt(i)) >>> 0;
+    return list[h % list.length];
+  }
+  function pick(list, test, ref, rotate) {
+    var hits = list.filter(test);
+    if (ref && hits.length > 1) {
+      var rc = (ref.co || []).map(base);
+      var same = hits.filter(function (x) { return (x.co || []).some(function (c) { return rc.indexOf(base(c)) > -1; }); });
+      if (same.length) return rotate ? spin(same) : same[0];
+    }
+    return rotate ? spin(hits) : (hits[0] || null);
+  }
   function pool() { return SG.auburnFirst(SG.products({})).filter(sameSchool); }
 
   function buildPair() {
     var all = pool(), mySig = sigOf(p);
     var sameSig = function (x) { var s = sigOf(x); return !!(mySig && s && s[1] === mySig[1]); };
+    /* the finishing touch is something you WEAR, colour-matched: a hat, then a scarf, then (for her) a bow or cheer
+       piece. Never a blanket, pillow, bag, sticker or button. */
+    var WEARABLE_ACC = /\b(bows?|poms?|pom poms?|tattoos?)\b/i;
     var finish = function (exclude) {
-      return pick(all, function (x) { return exclude.indexOf(x.h) < 0 && ['bow', 'accessory', 'hat'].indexOf(x.cat) > -1 && (p.who === 'kids' || x.cat !== 'bow'); });
+      // never a second piece of the same kind (a hat page gets a scarf, not another hat)
+      var ok = function (x) { return exclude.indexOf(x.h) < 0 && x.h !== p.h && x.cat !== p.cat; };
+      return pick(all, function (x) { return ok(x) && x.cat === 'hat'; }, p, true) ||
+        pick(all, function (x) { return ok(x) && x.cat === 'scarf'; }, p, true) ||
+        (p.who === 'kids' ? pick(all, function (x) { return ok(x) && (x.cat === 'bow' || (x.cat === 'accessory' && WEARABLE_ACC.test(x.t))); }, p, true) : null);
     };
     var mom, dress, partner, extra;
+    var famLive = function (x, fam) { return (x.v || []).some(function (v) { return v[0] && SG.famOk(v[0], fam) && v[2]; }); };
+    if (p.h === SG.momMiniHandle && famLive(p, 'adult') && famLive(p, 'kids')) {
+      dress = pick(all, function (x) { return x.cat === 'cheer-dress'; }, p);
+      return { kind: 'mini', brooke: true, items: [{ p: p, type: 'For you' }, { p: p, type: 'For your mini' }].concat(dress ? [{ p: dress, type: 'Or her cheer dress', off: true }] : []) };
+    }
 
     // her cheer dress → a mom top (+ a bow)
     if (p.cat === 'cheer-dress') {
-      mom = pick(all, function (x) { return x.who === 'women' && TOPS.concat(['set']).indexOf(x.cat) > -1; });
+      mom = pick(all, function (x) { return x.who === 'women' && TOPS.concat(['set']).indexOf(x.cat) > -1; }, p);
       if (mom) {
-        extra = pick(all, function (x) { return x.who === 'kids' && (x.cat === 'bow' || x.cat === 'accessory'); });
+        extra = pick(all, function (x) { return x.who === 'kids' && (x.cat === 'bow' || (x.cat === 'accessory' && /\b(bows?|poms?)\b/i.test(x.t))); });
         return { kind: 'mini', dress: p, items: [{ p: p, type: 'For your mini' }, { p: mom, type: 'For you' }].concat(extra ? [{ p: extra, type: 'The finishing touch' }] : []) };
       }
     }
     // a kids piece → the matching women's piece (same signature, then same category)
     if (p.who === 'kids' && p.cat !== 'cheer-dress' && ['bow', 'accessory'].indexOf(p.cat) < 0) {
-      mom = pick(all, function (x) { return x.who === 'women' && sameSig(x); }) ||
-        pick(all, function (x) { return x.who === 'women' && x.cat === p.cat; });
+      mom = pick(all, function (x) { return x.who === 'women' && sameSig(x) && x.cat === p.cat; }, p);
+      if (mom) return { kind: 'mini', matched: true, sig: mySig, items: [{ p: p, type: 'For your mini' }, { p: mom, type: 'For you' }] };
+      // the same line, another garment: "more from" the line, never "made to match"
+      mom = pick(all, function (x) { return x.who === 'women' && sameSig(x); }, p);
+      if (mom) return { kind: 'mini', line: true, sig: mySig, items: [{ p: p, type: 'For your mini' }, { p: mom, type: 'For you' }] };
+      // no grown-up version of this line: a same-category piece for her, presented as a suggestion, never as a match
+      mom = pick(all, function (x) { return x.who === 'women' && x.cat === p.cat; }, p, true);
       if (mom) return { kind: 'mini', items: [{ p: p, type: 'For your mini' }, { p: mom, type: 'For you' }] };
     }
     if (p.who === 'women') {
@@ -557,28 +652,31 @@
       if (mySig) {
         partner = pick(all, function (x) {
           return x.who === 'women' && sameSig(x) && ((TOPS.indexOf(p.cat) > -1 && BOTTOMS.indexOf(x.cat) > -1) || (BOTTOMS.indexOf(p.cat) > -1 && TOPS.indexOf(x.cat) > -1));
-        });
+        }, p);
         if (partner) {
           extra = finish([partner.h]);
           return { kind: 'wear', sig: mySig, items: [{ p: p, type: 'Your pick' }, { p: partner, type: TYPE[partner.cat] || 'To pair' }].concat(extra ? [{ p: extra, type: TYPE[extra.cat] || 'The finishing touch' }] : []) };
         }
       }
-      // a mom top → her mini's cheer dress (+ a bow)
-      if (TOPS.concat(['set', 'dress']).indexOf(p.cat) > -1) {
-        dress = pick(all, function (x) { return x.cat === 'cheer-dress'; });
+      // a mom top → her mini's cheer dress (+ a bow); never for a college / program client-store piece
+      if (TOPS.concat(['set', 'dress']).indexOf(p.cat) > -1 && !isProgram(p)) {
+        dress = pick(all, function (x) { return x.cat === 'cheer-dress'; }, p);
         if (dress) {
-          extra = pick(all, function (x) { return x.who === 'kids' && (x.cat === 'bow' || x.cat === 'accessory'); });
+          extra = pick(all, function (x) { return x.who === 'kids' && (x.cat === 'bow' || (x.cat === 'accessory' && /\b(bows?|poms?)\b/i.test(x.t))); });
           return { kind: 'mini', dress: dress, items: [{ p: p, type: 'For you' }, { p: dress, type: 'For your mini' }].concat(extra ? [{ p: extra, type: 'The finishing touch' }] : []) };
         }
         // or her mini's version of the same signature
-        var kid = pick(all, function (x) { return x.who === 'kids' && sameSig(x); });
-        if (kid) return { kind: 'mini', items: [{ p: p, type: 'For you' }, { p: kid, type: 'For your mini' }] };
+        var kid = pick(all, function (x) { return x.who === 'kids' && sameSig(x) && x.cat === p.cat; }, p);
+        if (kid) return { kind: 'mini', matched: true, sig: mySig, items: [{ p: p, type: 'For you' }, { p: kid, type: 'For your mini' }] };
+        kid = pick(all, function (x) { return x.who === 'kids' && sameSig(x); }, p);
+        if (kid) return { kind: 'mini', line: true, sig: mySig, items: [{ p: p, type: 'For you' }, { p: kid, type: 'For your mini' }] };
       }
-      // anything else: a complementary piece from the same school
+      // anything else: a complementary piece from the same school (a hat or scarf gets a top; other accessories,
+      // stickers and gifts get no outfit at all), colour-matched and rotated so pages don't all repeat one look
       partner = pick(all, function (x) {
         return x.who === 'women' && ((TOPS.indexOf(p.cat) > -1 && BOTTOMS.indexOf(x.cat) > -1) || (BOTTOMS.indexOf(p.cat) > -1 && TOPS.indexOf(x.cat) > -1) ||
-          (['hat', 'scarf', 'accessory'].indexOf(p.cat) > -1 && TOPS.indexOf(x.cat) > -1));
-      });
+          (['hat', 'scarf'].indexOf(p.cat) > -1 && TOPS.indexOf(x.cat) > -1));
+      }, p, true);
       if (partner) {
         extra = finish([partner.h, p.h]);
         return { kind: 'wear', items: [{ p: p, type: 'Your pick' }, { p: partner, type: TYPE[partner.cat] || 'To pair' }].concat(extra && extra.h !== p.h ? [{ p: extra, type: TYPE[extra.cat] || 'The finishing touch' }] : []) };
@@ -597,20 +695,44 @@
 
   function renderPair() {
     var sec = $('[data-pdp="pair"]');
+    if (!p.sch) return [];   // multi-school basics (poms, plain shorts): no Auburn outfit built around them
     var pair = buildPair();
     if (!pair) return [];
     var items = pair.items.filter(function (it) { return it.p; });
-    var others = items.filter(function (it) { return it.p.h !== p.h; });
+    var others = pair.brooke ? items.slice(1) : items.filter(function (it) { return it.p.h !== p.h; });
     if (!others.length) return [];
+    // a sold-out piece can't be added: the look leaves it out (and its price out of the total); with fewer than two
+    // pieces left there is no look to shop
+    var soldOut = SG.isSoldOut(p);
+    if (soldOut) {
+      items = others;
+      if (items.length < 2) return [];
+    }
     var media = $('[data-pdp="pair-media"]');
     var mini = pair.kind === 'mini';
-    $('[data-pdp="pair-eyebrow"]').textContent = mini ? 'Match your mini' : 'Complete the look';
-    if (mini && pair.dress) {
+    var you = items.filter(function (it) { return it.type === 'For you'; })[0];
+    var word = !you ? 'piece' : you.p.cat === 'dress' ? 'dress' : you.p.cat === 'set' ? 'set' : TOPS.indexOf(you.p.cat) > -1 ? 'top' : 'piece';
+    // 'Match your mini' only for the same garment in both sizes (the Brooke, or the same line in the same category);
+    // a cheer dress with a different top is never a match, whatever colour words their names share
+    $('[data-pdp="pair-eyebrow"]').textContent = mini ? (pair.brooke || pair.matched ? 'Match your mini' : 'Mom & mini') : 'Complete the look';
+    if (soldOut) {
+      $('[data-pdp="pair-title"]').innerHTML = 'Shop the rest <em class="br">of the look.</em>';
+      $('[data-pdp="pair-lede"]').textContent = 'This piece is sold out for now. These are still available. Take them all, or untick anything you don’t need.';
+    } else if (pair.brooke) {             // the Brooke in both sizes, as in the mom & mini photo
       $('[data-pdp="pair-title"]').innerHTML = 'Two of a kind, <em class="br">on the Plains.</em>';
-      $('[data-pdp="pair-lede"]').textContent = 'Her cheer dress, in sizes 12M–10, and a top for you that go together.';
-    } else if (mini) {
+      $('[data-pdp="pair-lede"]').textContent = 'Matching Brooke crewnecks, for you and for her. Add her cheer dress too, if you like.';
+    } else if (mini && pair.dress) {
+      $('[data-pdp="pair-title"]').innerHTML = 'Her cheer dress, <em class="br">your ' + word + '.</em>';
+      $('[data-pdp="pair-lede"]').textContent = 'Her cheer dress, in sizes 12M–10, and a ' + word + ' for you to wear with it.';
+    } else if (mini && pair.matched) {   // the same signature line, the same garment, in both sizes
       $('[data-pdp="pair-title"]').innerHTML = 'Made to match <em class="br">your mini.</em>';
-      $('[data-pdp="pair-lede"]').textContent = 'A piece for you and one for her that go together, so you’re both ready for kickoff.';
+      $('[data-pdp="pair-lede"]').textContent = (pair.sig ? pair.sig[0] : 'The same line') + ' for you and for her, so you’re both ready for kickoff.';
+    } else if (mini && pair.line) {      // the same line, a different garment: no matching claim
+      $('[data-pdp="pair-title"]').innerHTML = 'More from <em>' + E(pair.sig ? pair.sig[0] : 'the line') + '.</em>';
+      $('[data-pdp="pair-lede"]').textContent = (pair.sig ? pair.sig[0] : 'The same line') + ', one piece for you and one for her. Take both, or untick anything you don’t need.';
+    } else if (mini) {                    // a suggestion only: different designs, no matching claim
+      $('[data-pdp="pair-title"]').innerHTML = 'Something for you, <em class="br">too.</em>';
+      $('[data-pdp="pair-lede"]').textContent = 'A piece we’d pick for you to wear with it on game day. Take both, or untick anything you don’t need.';
     } else {
       $('[data-pdp="pair-title"]').innerHTML = 'We’d wear it <em>with…</em>';
       $('[data-pdp="pair-lede"]').textContent = pair.sig
@@ -620,14 +742,17 @@
 
     // photo: the paired piece leads (sharp product shot); for an Auburn mom & mini pair the 600px mom & mini photo is
     // the small polaroid inset, where it stays at or above 1:1 on every screen
-    var ed = mini && pair.dress && isAuburn ? SG.pickPhoto([{ k: 'mom-mini-auburn-stripes', pos: '60% 30%' }], 600, true) : null;
+    // (only when the look has the Brooke in it: that photo shows both of them wearing the Brooke)
+    var hasBrooke = items.some(function (it) { return it.p.h === SG.momMiniHandle; });
+    var ed = mini && hasBrooke && isAuburn ? SG.pickPhoto([{ k: 'mom-mini-auburn-stripes', pos: '60% 30%' }], 600, true) : null;
     var lead = others[0].p, mine = items.filter(function (it) { return it.p.h === p.h; })[0];
+    if (pair.brooke) lead = p;
     if (ed && lead.img && lead.img[0]) {
       media.innerHTML = shotHTML(lead, 'look__shot pdp-pair__shot', '') +
-        '<figcaption class="look__inset pdp-pair__inset"><div class="pdp-pair__th" style="--look-ratio:' + ed.w + '/' + ed.h + '">' + SG.imgTag(ed) + '</div><span>Match your mini</span></figcaption>';
+        '<figcaption class="look__inset pdp-pair__inset"><div class="pdp-pair__th" style="--look-ratio:' + ed.w + '/' + ed.h + '">' + SG.imgTag(ed) + '</div><span>' + E($('[data-pdp="pair-eyebrow"]').textContent) + '</span></figcaption>';
     } else if (lead.img && lead.img[0]) {
       media.innerHTML = shotHTML(lead, 'look__shot pdp-pair__shot', '') +
-        (p.img && p.img[0] ? '<figcaption class="look__inset pdp-pair__inset">' + shotHTML(p, 'pdp-pair__th', '') + '<span>' + E(mine ? mine.type : 'Your pick') + '</span></figcaption>' : '');
+        (p.img && p.img[0] && !soldOut ? '<figcaption class="look__inset pdp-pair__inset">' + shotHTML(p, 'pdp-pair__th', '') + '<span>' + E(mine ? mine.type : 'Your pick') + '</span></figcaption>' : '');
     } else {
       media.hidden = true;
       sec.classList.add('pdp-pair--noimg');
@@ -645,26 +770,24 @@
   function syncLook() {
     var row = $$('.look__row').filter(function (r) { var a = $('.look__name', r); return a && a.getAttribute('href') === SG.productUrl(p.h); })[0];
     if (!row) return;
-    var changed = false;
     var setSel = function (sel, val) {
       if (!sel || !val) return;
       var o = $$('option', sel).filter(function (x) { return x.value === val && !x.disabled; })[0];
-      if (o && sel.value !== val) { sel.value = val; changed = true; }
+      if (o && sel.value !== val) { sel.value = val; row.dispatchEvent(new Event('change', { bubbles: true })); }   // the row re-gates its sizes for the colour
     };
+    setSel($('[data-k="color"]', row), state.color);   // colour first: which sizes exist depends on it
     setSel($('[data-k="size"]', row), state.size);
-    setSel($('[data-k="color"]', row), state.color);
-    if (changed) row.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   /* ======================================================================
      More rails: this school (non-Auburn), then More Auburn
      ====================================================================== */
   function ranked(list, skip) {
-    var mySig = sigOf(p);
-    return list.filter(function (x) { return x.h !== p.h && skip.indexOf(x.h) < 0; })
+    var mySig = sigOf(p), myKey = SG.styleKey(p);
+    return list.filter(function (x) { return x.h !== p.h && skip.indexOf(x.h) < 0 && SG.styleKey(x) !== myKey; })
       .map(function (x, i) {
         var s = sigOf(x);
-        var score = (x.av ? 0 : 20) - (x.cat === p.cat ? 3 : 0) - (x.who === p.who ? 2 : 0) - (mySig && s && s[1] === mySig[1] ? 2 : 0);
+        var score = (x.av ? 0 : 20) + (isProgram(x) && !isProgram(p) ? 15 : 0) - (x.cat === p.cat ? 3 : 0) - (x.who === p.who ? 2 : 0) - (mySig && s && s[1] === mySig[1] ? 2 : 0);
         return [x, score, i];
       })
       .sort(function (a, b) { return a[1] - b[1] || a[2] - b[2]; })
@@ -709,7 +832,7 @@
     bar.hidden = false;
     $('[data-pdp="bar-title"]').textContent = p.t;
     $('[data-pdp="bar-th"]').innerHTML = p.img && p.img[0]
-      ? '<img src="' + E(SG.img(p.img[0], 400)) + '" alt="" width="48" height="60" loading="lazy" decoding="async">' : '';
+      ? '<img src="' + E(SG.img(p.img[0], 200)) + '" alt="" width="48" height="60" loading="lazy" decoding="async">' : '';
     syncBar();
     $('[data-pdp="bar-btn"]').addEventListener('click', function () {
       if (needsSize && !state.size) {
@@ -783,7 +906,7 @@
     // when the catalogue is loaded, a rail of real Auburn pieces follows
     var more = $('[data-pdp="more"]');
     var au = SG.products({ sch: 'auburn', avail: true });
-    au = au.filter(function (x) { return x['new']; }).concat(au.filter(function (x) { return !x['new']; }));
+    au = au.filter(function (x) { return x['new']; }).concat(au.filter(function (x) { return !x['new']; }));   // new = created within 45 days (prep.py)
     SG.rail($('[data-pdp="more-rail"]'), au, { nav: $('[data-pdp="more-nav"]'), hide: more, card: { school: false } });
   }
 })();
